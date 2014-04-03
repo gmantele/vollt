@@ -16,20 +16,19 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS), Astronomisches Rechen Institute (ARI)
  */
 
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ClauseADQL;
-
 import adql.query.operand.ADQLOperand;
 
 /**
  * It represents any function which is not managed by ADQL.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (04/2014)
  */
 public final class DefaultUDF extends UserDefinedFunction {
 
@@ -38,17 +37,16 @@ public final class DefaultUDF extends UserDefinedFunction {
 
 	protected final String functionName;
 
-
 	/**
 	 * Creates a user function.
 	 * @param params	Parameters of the function.
 	 */
-	public DefaultUDF(final String name, ADQLOperand[] params) throws NullPointerException {
+	public DefaultUDF(final String name, ADQLOperand[] params) throws NullPointerException{
 		functionName = name;
 		parameters = new ClauseADQL<ADQLOperand>();
 		if (params != null){
-			for(int i=0; i<params.length; i++)
-				parameters.set(i, params[i]);
+			for(ADQLOperand p : params)
+				parameters.add(p);
 		}
 	}
 
@@ -59,32 +57,35 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	public DefaultUDF(DefaultUDF toCopy) throws Exception {
+	public DefaultUDF(DefaultUDF toCopy) throws Exception{
 		functionName = toCopy.functionName;
 		parameters = (ADQLList<ADQLOperand>)(toCopy.parameters.getCopy());
 	}
 
-
-	public final boolean isNumeric() {
+	@Override
+	public final boolean isNumeric(){
 		return true;
 	}
 
-	public final boolean isString() {
+	@Override
+	public final boolean isString(){
 		return true;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	@Override
+	public ADQLObject getCopy() throws Exception{
 		return new DefaultUDF(this);
 	}
 
-	public final String getName() {
+	@Override
+	public final String getName(){
 		return functionName;
 	}
 
 	@Override
-	public final ADQLOperand[] getParameters() {
+	public final ADQLOperand[] getParameters(){
 		ADQLOperand[] params = new ADQLOperand[parameters.size()];
-		int i=0;
+		int i = 0;
 		for(ADQLOperand op : parameters)
 			params[i++] = op;
 		return params;
@@ -96,7 +97,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	}
 
 	@Override
-	public final ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public final ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		return parameters.get(index);
 	}
 
@@ -106,7 +107,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * @see adql.query.operand.function.ADQLFunction#setParameter(int, adql.query.operand.ADQLOperand)
 	 */
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		return parameters.set(index, replacer);
 	}
 
