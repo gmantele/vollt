@@ -1,4 +1,4 @@
-package test;
+package adql;
 
 /*
  * This file is part of ADQLLibrary.
