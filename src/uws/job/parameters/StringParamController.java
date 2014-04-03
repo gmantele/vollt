@@ -42,7 +42,6 @@ public class StringParamController implements InputParamController {
 	/** Tells whether the parameter can be modified after its initialization. */
 	private boolean allowModification = true;
 
-
 	/**
 	 * Builds a controller of the specified String parameter.
 	 * 
@@ -74,7 +73,7 @@ public class StringParamController implements InputParamController {
 	 * 
 	 * @return The default value. (MAY BE NULL)
 	 */
-	public final String getDefaultValue() {
+	public final String getDefaultValue(){
 		return defaultValue;
 	}
 
@@ -83,7 +82,7 @@ public class StringParamController implements InputParamController {
 	 * 
 	 * @param defaultValue The new default value. (MAY BE NULL)
 	 */
-	public final void setDefaultValue(String defaultValue) {
+	public final void setDefaultValue(String defaultValue){
 		this.defaultValue = defaultValue;
 	}
 
@@ -92,7 +91,7 @@ public class StringParamController implements InputParamController {
 	 * 
 	 * @return The allowed values. <i><u>note:</u> If NULL or empty, any value is allowed.</i>
 	 */
-	public final String[] getPossibleValues() {
+	public final String[] getPossibleValues(){
 		return possibleValues;
 	}
 
@@ -101,7 +100,7 @@ public class StringParamController implements InputParamController {
 	 * 
 	 * @param possibleValues The new allowed values. <i><u>note:</u> If NULL or empty, any value is allowed.</i>
 	 */
-	public final void setPossibleValues(String[] possibleValues) {
+	public final void setPossibleValues(String[] possibleValues){
 		if (possibleValues == null || possibleValues.length == 0)
 			this.possibleValues = null;
 		else
@@ -109,7 +108,7 @@ public class StringParamController implements InputParamController {
 	}
 
 	@Override
-	public final boolean allowModification() {
+	public final boolean allowModification(){
 		return allowModification;
 	}
 
@@ -118,12 +117,12 @@ public class StringParamController implements InputParamController {
 	 * 
 	 * @param allowModif	<i>true</i> to allow its modification after initialization, <i>false</i> otherwise.
 	 */
-	public final void allowModification(final boolean allowModif) {
+	public final void allowModification(final boolean allowModif){
 		allowModification = allowModif;
 	}
 
 	@Override
-	public Object check(Object value) throws UWSException {
+	public Object check(Object value) throws UWSException{
 		if (value == null)
 			return null;
 
@@ -149,15 +148,15 @@ public class StringParamController implements InputParamController {
 	protected final String getExpectedFormat(){
 		if (possibleValues == null || possibleValues.length == 0){
 			StringBuffer buffer = new StringBuffer("A String value among: ");
-			for(int i=0; i<possibleValues.length; i++)
-				buffer.append((i==0)?"":", ").append(possibleValues[i]);
+			for(int i = 0; i < possibleValues.length; i++)
+				buffer.append((i == 0) ? "" : ", ").append(possibleValues[i]);
 			return buffer.toString();
 		}else
 			return "A String value.";
 	}
 
 	@Override
-	public Object getDefault() {
+	public Object getDefault(){
 		return defaultValue;
 	}
 

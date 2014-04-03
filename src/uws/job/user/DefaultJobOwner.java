@@ -42,7 +42,7 @@ public final class DefaultJobOwner implements JobOwner {
 
 	private final String id;
 	private String pseudo;
-	private HashMap<String, Object> otherData = null;
+	private HashMap<String,Object> otherData = null;
 
 	/**
 	 * Builds a Job Owner which has the given ID.
@@ -60,12 +60,12 @@ public final class DefaultJobOwner implements JobOwner {
 	}
 
 	@Override
-	public final String getID() {
+	public final String getID(){
 		return id;
 	}
 
 	@Override
-	public final String getPseudo() {
+	public final String getPseudo(){
 		return pseudo;
 	}
 
@@ -78,7 +78,7 @@ public final class DefaultJobOwner implements JobOwner {
 	 * @see uws.job.user.JobOwner#hasReadPermission(uws.job.JobList)
 	 */
 	@Override
-	public boolean hasReadPermission(JobList jl) {
+	public boolean hasReadPermission(JobList jl){
 		return true;
 	}
 
@@ -87,7 +87,7 @@ public final class DefaultJobOwner implements JobOwner {
 	 * @see uws.job.user.JobOwner#hasWritePermission(uws.job.JobList)
 	 */
 	@Override
-	public boolean hasWritePermission(JobList jl) {
+	public boolean hasWritePermission(JobList jl){
 		return true;
 	}
 
@@ -96,7 +96,7 @@ public final class DefaultJobOwner implements JobOwner {
 	 * @see uws.job.user.JobOwner#hasReadPermission(uws.job.UWSJob)
 	 */
 	@Override
-	public boolean hasReadPermission(UWSJob job) {
+	public boolean hasReadPermission(UWSJob job){
 		return (job == null) || (job.getOwner() == null) || (job.getOwner().equals(this));
 	}
 
@@ -105,7 +105,7 @@ public final class DefaultJobOwner implements JobOwner {
 	 * @see uws.job.user.JobOwner#hasWritePermission(uws.job.UWSJob)
 	 */
 	@Override
-	public boolean hasWritePermission(UWSJob job) {
+	public boolean hasWritePermission(UWSJob job){
 		return (job == null) || (job.getOwner() == null) || (job.getOwner().equals(this));
 	}
 
@@ -114,13 +114,13 @@ public final class DefaultJobOwner implements JobOwner {
 	 * @see uws.job.user.JobOwner#hasExecutePermission(uws.job.UWSJob)
 	 */
 	@Override
-	public boolean hasExecutePermission(UWSJob job) {
+	public boolean hasExecutePermission(UWSJob job){
 		return (job == null) || (job.getOwner() == null) || (job.getOwner().equals(this));
 	}
 
 	public String putUserData(final String name, final String value){
 		if (otherData == null)
-			otherData = new HashMap<String, Object>();
+			otherData = new HashMap<String,Object>();
 		return (String)otherData.put(name, value);
 	}
 
@@ -137,17 +137,17 @@ public final class DefaultJobOwner implements JobOwner {
 	}
 
 	@Override
-	public Map<String, Object> getDataToSave() {
+	public Map<String,Object> getDataToSave(){
 		return otherData;
 	}
 
 	@Override
-	public void restoreData(Map<String, Object> data) {
+	public void restoreData(Map<String,Object> data){
 		if (data == null || data.isEmpty())
 			return;
 
 		if (otherData == null)
-			otherData = new HashMap<String, Object>(data.size());
+			otherData = new HashMap<String,Object>(data.size());
 
 		otherData.putAll(data);
 	}
@@ -166,7 +166,7 @@ public final class DefaultJobOwner implements JobOwner {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(Object obj){
 		if (obj == null || !(obj instanceof JobOwner))
 			return false;
 
@@ -179,7 +179,7 @@ public final class DefaultJobOwner implements JobOwner {
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
-	public int hashCode() {
+	public int hashCode(){
 		return id.hashCode();
 	}
 

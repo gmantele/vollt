@@ -56,7 +56,6 @@ public class BoxFunction extends GeometryFunction {
 	/** The height of this box (in degrees). */
 	private ADQLOperand height;
 
-
 	/**
 	 * <p>Builds a BOX function.</p>
 	 * 
@@ -68,7 +67,7 @@ public class BoxFunction extends GeometryFunction {
 	 * @throws NullPointerException	If one parameter is <i>null</i>.
 	 * @throws Exception 			If there is another error.
 	 */
-	public BoxFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord, ADQLOperand boxWidth, ADQLOperand boxHeight) throws NullPointerException, Exception {
+	public BoxFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord, ADQLOperand boxWidth, ADQLOperand boxHeight) throws NullPointerException, Exception{
 		super(coordinateSystem);
 
 		if (firstCoord == null || secondCoord == null || boxWidth == null || boxHeight == null)
@@ -86,7 +85,7 @@ public class BoxFunction extends GeometryFunction {
 	 * @param toCopy		The BOX function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public BoxFunction(BoxFunction toCopy) throws Exception {
+	public BoxFunction(BoxFunction toCopy) throws Exception{
 		super(toCopy);
 		coord1 = (ADQLOperand)(toCopy.coord1.getCopy());
 		coord2 = (ADQLOperand)(toCopy.coord2.getCopy());
@@ -94,19 +93,19 @@ public class BoxFunction extends GeometryFunction {
 		height = (ADQLOperand)(toCopy.height.getCopy());
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new BoxFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "BOX";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return false;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return true;
 	}
 
@@ -115,7 +114,7 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @return The first coordinate.
 	 */
-	public final ADQLOperand getCoord1() {
+	public final ADQLOperand getCoord1(){
 		return coord1;
 	}
 
@@ -124,7 +123,7 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @param coord1 The first coordinate.
 	 */
-	public final void setCoord1(ADQLOperand coord1) {
+	public final void setCoord1(ADQLOperand coord1){
 		this.coord1 = coord1;
 	}
 
@@ -133,7 +132,7 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @return The second coordinate.
 	 */
-	public final ADQLOperand getCoord2() {
+	public final ADQLOperand getCoord2(){
 		return coord2;
 	}
 
@@ -142,7 +141,7 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @param coord2 The second coordinate.
 	 */
-	public final void setCoord2(ADQLOperand coord2) {
+	public final void setCoord2(ADQLOperand coord2){
 		this.coord2 = coord2;
 	}
 
@@ -151,7 +150,7 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @return The width.
 	 */
-	public final ADQLOperand getWidth() {
+	public final ADQLOperand getWidth(){
 		return width;
 	}
 
@@ -160,7 +159,7 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @param width The width.
 	 */
-	public final void setWidth(ADQLOperand width) {
+	public final void setWidth(ADQLOperand width){
 		this.width = width;
 	}
 
@@ -169,7 +168,7 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @return The height.
 	 */
-	public final ADQLOperand getHeight() {
+	public final ADQLOperand getHeight(){
 		return height;
 	}
 
@@ -178,69 +177,69 @@ public class BoxFunction extends GeometryFunction {
 	 * 
 	 * @param height The height.
 	 */
-	public final void setHeight(ADQLOperand height) {
+	public final void setHeight(ADQLOperand height){
 		this.height = height;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
-		return new ADQLOperand[]{coordSys, coord1, coord2, width, height};
+	public ADQLOperand[] getParameters(){
+		return new ADQLOperand[]{coordSys,coord1,coord2,width,height};
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return 5;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		switch(index){
-		case 0:
-			return coordSys;
-		case 1:
-			return coord1;
-		case 2:
-			return coord2;
-		case 3:
-			return width;
-		case 4:
-			return height;
-		default:
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			case 0:
+				return coordSys;
+			case 1:
+				return coord1;
+			case 2:
+				return coord2;
+			case 3:
+				return width;
+			case 4:
+				return height;
+			default:
+				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 		}
 	}
 
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (replacer == null)
-			throw new NullPointerException("Impossible to remove one parameter from a "+getName()+" function !");
+			throw new NullPointerException("Impossible to remove one parameter from a " + getName() + " function !");
 		else if (!(replacer instanceof ADQLOperand))
-			throw new Exception("Impossible to replace an ADQLOperand by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+			throw new Exception("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 
 		ADQLOperand replaced = null;
 		switch(index){
-		case 0:
-			replaced = coordSys;
-			setCoordinateSystem(replacer);
-			break;
-		case 1:
-			replaced = coord1;
-			coord1 = replacer;
-			break;
-		case 2:
-			replaced = coord2;
-			coord2 = replacer;
-			break;
-		case 3:
-			replaced = width;
-			width = replacer;
-			break;
-		case 4:
-			replaced = height;
-			height = replacer;
-			break;
-		default:
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			case 0:
+				replaced = coordSys;
+				setCoordinateSystem(replacer);
+				break;
+			case 1:
+				replaced = coord1;
+				coord1 = replacer;
+				break;
+			case 2:
+				replaced = coord2;
+				coord2 = replacer;
+				break;
+			case 3:
+				replaced = width;
+				width = replacer;
+				break;
+			case 4:
+				replaced = height;
+				height = replacer;
+				break;
+			default:
+				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 		}
 		return replaced;
 	}

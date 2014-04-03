@@ -36,14 +36,13 @@ import tap.TAPExecutionReport;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPTypes;
 
-public abstract class JSONFormat<R> implements OutputFormat<R> {
+public abstract class JSONFormat< R > implements OutputFormat<R> {
 
 	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
 	private boolean logFormatReport;
 
 	/** The {@link ServiceConnection} to use (for the log and to have some information about the service (particularly: name, description). */
 	protected final ServiceConnection<R> service;
-
 
 	public JSONFormat(final ServiceConnection<R> service){
 		this(service, false);
@@ -54,16 +53,24 @@ public abstract class JSONFormat<R> implements OutputFormat<R> {
 		this.logFormatReport = logFormatReport;
 	}
 
-	public String getMimeType() { return "application/json"; }
+	public String getMimeType(){
+		return "application/json";
+	}
 
-	public String getShortMimeType() { return "json"; }
+	public String getShortMimeType(){
+		return "json";
+	}
 
-	public String getDescription() { return null; }
+	public String getDescription(){
+		return null;
+	}
 
-	public String getFileExtension() { return "json"; }
+	public String getFileExtension(){
+		return "json";
+	}
 
 	@Override
-	public void writeResult(R queryResult, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException {
+	public void writeResult(R queryResult, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
 		try{
 			long start = System.currentTimeMillis();
 
@@ -84,7 +91,7 @@ public abstract class JSONFormat<R> implements OutputFormat<R> {
 			writer.flush();
 
 			if (logFormatReport)
-				service.getLogger().info("JOB "+execReport.jobID+" WRITTEN\tResult formatted (in JSON ; "+nbRows+" rows ; "+columns.length+" columns) in "+(System.currentTimeMillis()-start)+" ms !");
+				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in JSON ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - start) + " ms !");
 		}catch(JSONException je){
 			throw new TAPException("Error while writing a query result in JSON !", je);
 		}catch(IOException ioe){
@@ -105,7 +112,7 @@ public abstract class JSONFormat<R> implements OutputFormat<R> {
 	 * @throws IOException		If there is an error while writing the field metadata.
 	 * @throws TAPException		If there is any other error (by default: never happen).
 	 */
-	protected void writeFieldMeta(TAPColumn tapCol, JSONWriter out) throws IOException, TAPException, JSONException {
+	protected void writeFieldMeta(TAPColumn tapCol, JSONWriter out) throws IOException, TAPException, JSONException{
 		out.object();
 
 		out.key("name").value(tapCol.getName());
@@ -153,7 +160,7 @@ public abstract class JSONFormat<R> implements OutputFormat<R> {
 	 * @throws IOException		If there is an error while writing the given field value in the given stream.
 	 * @throws TAPException		If there is any other error (by default: never happen).
 	 */
-	protected void writeFieldValue(final Object value, final DBColumn column, final JSONWriter out) throws IOException, TAPException, JSONException {
+	protected void writeFieldValue(final Object value, final DBColumn column, final JSONWriter out) throws IOException, TAPException, JSONException{
 		if (value instanceof Double && (((Double)value).isNaN() || ((Double)value).isInfinite()))
 			out.value((Object)null);
 		else if (value instanceof Float && (((Float)value).isNaN() || ((Float)value).isInfinite()))

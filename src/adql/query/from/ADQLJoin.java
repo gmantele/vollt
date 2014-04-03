@@ -54,7 +54,6 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	/** List of columns on which the join must be done. */
 	protected ArrayList<ADQLColumn> lstColumns = null;
 
-
 	/* ************ */
 	/* CONSTRUCTORS */
 	/* ************ */
@@ -77,7 +76,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public ADQLJoin(ADQLJoin toCopy) throws Exception {
+	public ADQLJoin(ADQLJoin toCopy) throws Exception{
 		leftTable = (FromContent)(toCopy.leftTable.getCopy());
 		rightTable = (FromContent)(toCopy.rightTable.getCopy());
 		natural = toCopy.natural;
@@ -89,7 +88,6 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 		}
 	}
 
-
 	/* ***************** */
 	/* GETTERS & SETTERS */
 	/* ***************** */
@@ -98,7 +96,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @return <i>true</i> means this join is natural, <i>false</i> else.
 	 */
-	public final boolean isNatural() {
+	public final boolean isNatural(){
 		return natural;
 	}
 
@@ -107,7 +105,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @param natural <i>true</i> means this join must be natural, <i>false</i> else.
 	 */
-	public void setNatural(boolean natural) {
+	public void setNatural(boolean natural){
 		this.natural = natural;
 		if (natural){
 			condition = null;
@@ -120,7 +118,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @return The left part of the join.
 	 */
-	public final FromContent getLeftTable() {
+	public final FromContent getLeftTable(){
 		return leftTable;
 	}
 
@@ -129,7 +127,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @param table The left part of the join.
 	 */
-	public void setLeftTable(FromContent table) {
+	public void setLeftTable(FromContent table){
 		leftTable = table;
 	}
 
@@ -147,7 +145,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @param table The right part of the join.
 	 */
-	public void setRightTable(FromContent table) {
+	public void setRightTable(FromContent table){
 		rightTable = table;
 	}
 
@@ -156,7 +154,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @return The join condition.
 	 */
-	public final ClauseConstraints getJoinCondition() {
+	public final ClauseConstraints getJoinCondition(){
 		return condition;
 	}
 
@@ -165,7 +163,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 * 
 	 * @param cond	The join condition (condition following ON).
 	 */
-	public void setJoinCondition(ClauseConstraints cond) {
+	public void setJoinCondition(ClauseConstraints cond){
 		condition = cond;
 		if (condition != null){
 			natural = false;
@@ -180,10 +178,18 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 */
 	public final Iterator<ADQLColumn> getJoinedColumns(){
 		if (lstColumns == null){
-			return new Iterator<ADQLColumn>() {
-				public boolean hasNext() { return false; }
-				public ADQLColumn next() { return null; }
-				public void remove() { ;  }
+			return new Iterator<ADQLColumn>(){
+				public boolean hasNext(){
+					return false;
+				}
+
+				public ADQLColumn next(){
+					return null;
+				}
+
+				public void remove(){
+					;
+				}
 			};
 		}else
 			return lstColumns.iterator();
@@ -216,23 +222,22 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 		}
 	}
 
-
 	/* ***************** */
 	/* INHERITED METHODS */
 	/* ***************** */
-	public String getName() {
+	public String getName(){
 		return getJoinType();
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private int index = -1;
-			private final int nbItems = 2+((condition==null)?0:1)+((lstColumns==null)?0:lstColumns.size());
-			private final int offset = 2+((condition==null)?0:1);
+			private final int nbItems = 2 + ((condition == null) ? 0 : 1) + ((lstColumns == null) ? 0 : lstColumns.size());
+			private final int offset = 2 + ((condition == null) ? 0 : 1);
 			private Iterator<ADQLColumn> itCol = null;
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				index++;
 
 				if (index == 0)
@@ -242,17 +247,18 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 				else if (index == 2 && condition != null)
 					return condition;
 				else if (lstColumns != null && !lstColumns.isEmpty()){
-					if (itCol == null) itCol = lstColumns.iterator();
+					if (itCol == null)
+						itCol = lstColumns.iterator();
 					return itCol.next();
 				}else
 					throw new NoSuchElementException();
 			}
 
-			public boolean hasNext() {
-				return (itCol != null && itCol.hasNext()) || index+1 < nbItems;
+			public boolean hasNext(){
+				return (itCol != null && itCol.hasNext()) || index + 1 < nbItems;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -262,35 +268,35 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 					if (replacer instanceof FromContent)
 						leftTable = (FromContent)replacer;
 					else
-						throw new UnsupportedOperationException("Impossible to replace the left \"table\" of the join ("+leftTable.toADQL()+") by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") ! The replacer must be a FromContent instance.");
+						throw new UnsupportedOperationException("Impossible to replace the left \"table\" of the join (" + leftTable.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") ! The replacer must be a FromContent instance.");
 				}else if (index == 1){
 					if (replacer instanceof FromContent)
 						rightTable = (FromContent)replacer;
 					else
-						throw new UnsupportedOperationException("Impossible to replace the right \"table\" of the join ("+rightTable.toADQL()+") by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") ! The replacer must be a FromContent instance.");
+						throw new UnsupportedOperationException("Impossible to replace the right \"table\" of the join (" + rightTable.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") ! The replacer must be a FromContent instance.");
 				}else if (index == 2 && itCol == null){
 					if (replacer instanceof ClauseConstraints)
 						condition = (ClauseConstraints)replacer;
 					else
-						throw new UnsupportedOperationException("Impossible to replace an ADQLConstraint ("+condition+") by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+						throw new UnsupportedOperationException("Impossible to replace an ADQLConstraint (" + condition + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 				}else if (itCol != null){
 					if (replacer instanceof ADQLColumn)
-						lstColumns.set(index-offset, (ADQLColumn)replacer);
+						lstColumns.set(index - offset, (ADQLColumn)replacer);
 					else
-						throw new UnsupportedOperationException("Impossible to replace an ADQLColumn by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+						throw new UnsupportedOperationException("Impossible to replace an ADQLColumn by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 				}
 
 			}
 
-			public void remove() {
+			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else if (index == 0)
-					throw new UnsupportedOperationException("Impossible to remove the left \"table\" of the join ("+leftTable.toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to remove the left \"table\" of the join (" + leftTable.toADQL() + ") !");
 				else if (index == 1)
-					throw new UnsupportedOperationException("Impossible to remove the right \"table\" of the join ("+rightTable.toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to remove the right \"table\" of the join (" + rightTable.toADQL() + ") !");
 				else if (index == 2 && itCol == null)
-					throw new UnsupportedOperationException("Impossible to remove a condition ("+condition.toADQL()+") from a join ("+toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to remove a condition (" + condition.toADQL() + ") from a join (" + toADQL() + ") !");
 				else if (itCol != null){
 					itCol.remove();
 					index--;
@@ -302,14 +308,14 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	public String toADQL(){
 		StringBuffer adql = new StringBuffer(leftTable.toADQL());
 
-		adql.append(natural?" NATURAL ":" ").append(getJoinType()).append(' ').append(rightTable.toADQL());
+		adql.append(natural ? " NATURAL " : " ").append(getJoinType()).append(' ').append(rightTable.toADQL());
 
 		if (condition != null)
 			adql.append(" ON ").append(condition.toADQL());
-		else if (lstColumns != null) {
+		else if (lstColumns != null){
 			String cols = null;
 			for(ADQLColumn item : lstColumns){
-				cols = (cols==null)?("\""+item.toADQL()+"\""):(cols+", \""+item.toADQL()+"\"");
+				cols = (cols == null) ? ("\"" + item.toADQL() + "\"") : (cols + ", \"" + item.toADQL() + "\"");
 			}
 			adql.append(" USING (").append(cols).append(')');
 		}
@@ -354,7 +360,6 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 		tables.addAll(rightTable.getTablesByAlias(alias, caseSensitive));
 		return tables;
 	}
-
 
 	/* **************** */
 	/* ABSTRACT METHODS */

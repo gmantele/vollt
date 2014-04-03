@@ -35,14 +35,13 @@ public class MaxRecController implements InputParamController {
 	/** Indicates whether the output limit of jobs can be modified. */
 	protected boolean allowModification = true;
 
-
 	public MaxRecController(final ServiceConnection<?> service){
 		this.service = service;
 		allowModification(allowModification);
 	}
 
 	@Override
-	public final Object getDefault() {
+	public final Object getDefault(){
 		if (service.getOutputLimit() != null && service.getOutputLimit().length >= 2 && service.getOutputLimitType() != null && service.getOutputLimitType().length == service.getOutputLimit().length){
 			if (service.getOutputLimit()[0] > 0 && service.getOutputLimitType()[0] == LimitUnit.rows)
 				return service.getOutputLimit()[0];
@@ -59,7 +58,7 @@ public class MaxRecController implements InputParamController {
 	}
 
 	@Override
-	public Object check(Object value) throws UWSException {
+	public Object check(Object value) throws UWSException{
 		if (value == null)
 			return null;
 
@@ -72,15 +71,15 @@ public class MaxRecController implements InputParamController {
 			try{
 				maxRec = Integer.parseInt(strValue);
 			}catch(NumberFormatException nfe){
-				throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_MAX_REC, strValue, null, "An integer value between "+TAPJob.UNLIMITED_MAX_REC+" and "+maxOutputLimit+" (Default value: "+defaultOutputLimit+").");
+				throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_MAX_REC, strValue, null, "An integer value between " + TAPJob.UNLIMITED_MAX_REC + " and " + maxOutputLimit + " (Default value: " + defaultOutputLimit + ").");
 			}
 		}else
-			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_MAX_REC, null, value.getClass().getName(), "An integer value between "+TAPJob.UNLIMITED_MAX_REC+" and "+maxOutputLimit+" (Default value: "+defaultOutputLimit+").");
+			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_MAX_REC, null, value.getClass().getName(), "An integer value between " + TAPJob.UNLIMITED_MAX_REC + " and " + maxOutputLimit + " (Default value: " + defaultOutputLimit + ").");
 
 		if (maxRec < TAPJob.UNLIMITED_MAX_REC)
 			maxRec = TAPJob.UNLIMITED_MAX_REC;
 		else if (maxOutputLimit > TAPJob.UNLIMITED_MAX_REC && maxRec > maxOutputLimit)
-			throw new UWSException(UWSException.BAD_REQUEST, "The TAP limits the maxRec parameter (=output limit) to maximum "+maxOutputLimit+" rows !");
+			throw new UWSException(UWSException.BAD_REQUEST, "The TAP limits the maxRec parameter (=output limit) to maximum " + maxOutputLimit + " rows !");
 
 		return maxRec;
 	}
@@ -93,7 +92,7 @@ public class MaxRecController implements InputParamController {
 	 * 
 	 * @return <i>true</i> if the output limit can be modified, <i>false</i> otherwise.
 	 */
-	public final boolean allowModification() {
+	public final boolean allowModification(){
 		return allowModification;
 	}
 
@@ -102,7 +101,7 @@ public class MaxRecController implements InputParamController {
 	 * 
 	 * @param allowModification <i>true</i> if the output limit can be modified, <i>false</i> otherwise.
 	 */
-	public final void allowModification(boolean allowModification) {
+	public final void allowModification(boolean allowModification){
 		this.allowModification = allowModification;
 	}
 

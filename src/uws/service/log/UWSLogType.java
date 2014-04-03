@@ -28,13 +28,8 @@ package uws.service.log;
  * @see UWSLog
  * @see DefaultUWSLog
  */
-public enum UWSLogType {
-	HTTP_ACTIVITY,
-	DEBUG,
-	INFO,
-	WARNING,
-	ERROR,
-	CUSTOM;
+public enum UWSLogType{
+	HTTP_ACTIVITY, DEBUG, INFO, WARNING, ERROR, CUSTOM;
 
 	protected String customType = this.name();
 

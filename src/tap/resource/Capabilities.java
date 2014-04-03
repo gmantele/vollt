@@ -41,37 +41,43 @@ public class Capabilities implements TAPResource, VOSIResource {
 
 	/**
 	 */
-	public final void setTAPBaseURL(String baseURL) {
-		accessURL = ((baseURL==null)?"":(baseURL+"/"))+getName();
+	public final void setTAPBaseURL(String baseURL){
+		accessURL = ((baseURL == null) ? "" : (baseURL + "/")) + getName();
 	}
 
 	@Override
-	public final String getName() { return RESOURCE_NAME; }
+	public final String getName(){
+		return RESOURCE_NAME;
+	}
 
 	@Override
-	public final String getStandardID() { return "ivo://ivoa.net/std/VOSI#capabilities"; }
+	public final String getStandardID(){
+		return "ivo://ivoa.net/std/VOSI#capabilities";
+	}
 
 	@Override
-	public final String getAccessURL() { return accessURL; }
+	public final String getAccessURL(){
+		return accessURL;
+	}
 
 	@Override
-	public String getCapability() {
+	public String getCapability(){
 		return getDefaultCapability(this);
 	}
 
 	@Override
-	public void init(ServletConfig config) throws ServletException {
+	public void init(ServletConfig config) throws ServletException{
 
 	}
 
 	@Override
-	public void destroy() {
+	public void destroy(){
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		response.setContentType("application/xml");
 
 		StringBuffer xml = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -106,11 +112,7 @@ public class Capabilities implements TAPResource, VOSIResource {
 	}
 
 	public static final String getDefaultCapability(VOSIResource res){
-		return "\t<capability standardID=\""+res.getStandardID()+"\">\n"
-		+ "\t\t<interface xsi:type=\"vs:ParamHTTP\" role=\"std\">\n"
-		+ "\t\t\t<accessURL use=\"full\"> "+((res.getAccessURL()==null)?"":res.getAccessURL())+" </accessURL>\n"
-		+ "\t\t</interface>\n"
-		+ "\t</capability>";
+		return "\t<capability standardID=\"" + res.getStandardID() + "\">\n" + "\t\t<interface xsi:type=\"vs:ParamHTTP\" role=\"std\">\n" + "\t\t\t<accessURL use=\"full\"> " + ((res.getAccessURL() == null) ? "" : res.getAccessURL()) + " </accessURL>\n" + "\t\t</interface>\n" + "\t</capability>";
 	}
 
 }

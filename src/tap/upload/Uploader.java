@@ -56,7 +56,7 @@ public class Uploader {
 
 	protected int nbRows = 0;
 
-	public Uploader(final ServiceConnection<?> service, final DBConnection<?> dbConn) throws TAPException {
+	public Uploader(final ServiceConnection<?> service, final DBConnection<?> dbConn) throws TAPException{
 		if (service == null)
 			throw new NullPointerException("The given ServiceConnection is NULL !");
 		if (dbConn == null)
@@ -82,7 +82,7 @@ public class Uploader {
 		}
 	}
 
-	public TAPSchema upload(final TableLoader[] loaders) throws TAPException {
+	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
 		// Begin a DB transaction:
 		dbConn.startTransaction();
 
@@ -108,7 +108,7 @@ public class Uploader {
 				FieldSet fields = resource.getFieldSet(0);
 
 				// 1st STEP: Convert the VOTable metadata into DBTable:
-				TAPTable tapTable = fetchTableMeta(tableName, System.currentTimeMillis()+"", fields);
+				TAPTable tapTable = fetchTableMeta(tableName, System.currentTimeMillis() + "", fields);
 				uploadSchema.addTable(tapTable);
 
 				// 2nd STEP: Create the corresponding table in the database:
@@ -128,21 +128,23 @@ public class Uploader {
 			throw dbe;
 		}catch(ExceededSizeException ese){
 			dbConn.cancelTransaction();	// ROLLBACK
-			throw new TAPException("Upload limit exceeded ! You can upload at most "+((nbBytesLimit > 0)?(nbBytesLimit+" bytes."):(nbRowsLimit+" rows.")));
+			throw new TAPException("Upload limit exceeded ! You can upload at most " + ((nbBytesLimit > 0) ? (nbBytesLimit + " bytes.") : (nbRowsLimit + " rows.")));
 		}catch(IOException ioe){
 			dbConn.cancelTransaction(); // ROLLBACK
-			throw new TAPException("Error while reading the VOTable of \""+tableName+"\" !", ioe);
+			throw new TAPException("Error while reading the VOTable of \"" + tableName + "\" !", ioe);
 		}catch(NullPointerException npe){
 			dbConn.cancelTransaction();	// ROLLBACK
 			if (votable != null && votable instanceof LimitedSizeInputStream)
-				throw new TAPException("Upload limit exceeded ! You can upload at most "+((nbBytesLimit > 0)?(nbBytesLimit+" bytes."):(nbRowsLimit+" rows.")));
+				throw new TAPException("Upload limit exceeded ! You can upload at most " + ((nbBytesLimit > 0) ? (nbBytesLimit + " bytes.") : (nbRowsLimit + " rows.")));
 			else
 				throw new TAPException(npe);
 		}finally{
 			try{
 				if (votable != null)
 					votable.close();
-			}catch(IOException ioe){;}
+			}catch(IOException ioe){
+				;
+			}
 		}
 
 		// Commit modifications:
@@ -157,9 +159,9 @@ public class Uploader {
 
 	private TAPTable fetchTableMeta(final String tableName, final String userId, final FieldSet fields){
 		TAPTable tapTable = new TAPTable(tableName);
-		tapTable.setDBName(tableName+"_"+userId);
+		tapTable.setDBName(tableName + "_" + userId);
 
-		for(int j=0 ; j<fields.getItemCount(); j++){
+		for(int j = 0; j < fields.getItemCount(); j++){
 			SavotField field = (SavotField)fields.getItemAt(j);
 			int arraysize = TAPTypes.NO_SIZE;
 			if (field.getArraySize() == null || field.getArraySize().trim().isEmpty())
@@ -170,7 +172,7 @@ public class Uploader {
 				try{
 					arraysize = Integer.parseInt(field.getArraySize());
 				}catch(NumberFormatException nfe){
-					service.getLogger().warning("Invalid array-size in the uploaded table \""+tableName+"\" for the field \""+field.getName()+"\": \""+field.getArraySize()+"\" ! It will be considered as \"*\" !");
+					service.getLogger().warning("Invalid array-size in the uploaded table \"" + tableName + "\" for the field \"" + field.getName() + "\": \"" + field.getArraySize() + "\" ! It will be considered as \"*\" !");
 				}
 			}
 			tapTable.addColumn(field.getName(), field.getDescription(), field.getUnit(), field.getUcd(), field.getUtype(), new VotType(field.getDataType(), arraysize, field.getXtype()), false, false, false);
@@ -179,7 +181,7 @@ public class Uploader {
 		return tapTable;
 	}
 
-	private int loadTable(final TAPTable tapTable, final FieldSet fields, final SavotBinary binary) throws TAPException, ExceededSizeException {
+	private int loadTable(final TAPTable tapTable, final FieldSet fields, final SavotBinary binary) throws TAPException, ExceededSizeException{
 		// Read the raw binary data:
 		DataBinaryReader reader = null;
 		try{
@@ -193,20 +195,22 @@ public class Uploader {
 		}catch(ExceededSizeException ese){
 			throw ese;
 		}catch(IOException se){
-			throw new TAPException("Error while reading the binary data of the VOTable of \""+tapTable.getADQLName()+"\" !", se);
+			throw new TAPException("Error while reading the binary data of the VOTable of \"" + tapTable.getADQLName() + "\" !", se);
 		}finally{
 			try{
 				if (reader != null)
 					reader.close();
-			}catch(IOException ioe){;}
+			}catch(IOException ioe){
+				;
+			}
 		}
 
 		return nbRows;
 	}
 
-	private int loadTable(final TAPTable tapTable, final FieldSet fields, final SavotTableData data) throws TAPException, ExceededSizeException {
+	private int loadTable(final TAPTable tapTable, final FieldSet fields, final SavotTableData data) throws TAPException, ExceededSizeException{
 		TRSet rows = data.getTRs();
-		for(int i=0; i<rows.getItemCount(); i++){
+		for(int i = 0; i < rows.getItemCount(); i++){
 			if (nbRowsLimit > 0 && nbRows >= nbRowsLimit)
 				throw new ExceededSizeException();
 			dbConn.insertRow((SavotTR)rows.getItemAt(i), tapTable);

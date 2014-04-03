@@ -43,11 +43,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	public static final String RESOURCE_NAME = "tables";
 
-	protected final Map<String, TAPSchema> schemas;
+	protected final Map<String,TAPSchema> schemas;
 	protected String accessURL = getName();
 
 	public TAPMetadata(){
-		schemas = new HashMap<String, TAPSchema>();
+		schemas = new HashMap<String,TAPSchema>();
 	}
 
 	public final void addSchema(TAPSchema s){
@@ -107,7 +107,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	@Override
-	public final Iterator<TAPSchema> iterator() {
+	public final Iterator<TAPSchema> iterator(){
 		return schemas.values().iterator();
 	}
 
@@ -155,14 +155,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		return nbTables;
 	}
 
-	public static class TableIterator implements Iterator<TAPTable>{
+	public static class TableIterator implements Iterator<TAPTable> {
 		private Iterator<TAPSchema> it;
 		private Iterator<TAPTable> itTables;
 
 		public TableIterator(TAPMetadata tapSchema){
 			it = tapSchema.iterator();
 
-			if(it.hasNext())
+			if (it.hasNext())
 				itTables = it.next().iterator();
 
 			prepareNext();
@@ -179,12 +179,12 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		}
 
 		@Override
-		public boolean hasNext() {
+		public boolean hasNext(){
 			return itTables != null;
 		}
 
 		@Override
-		public TAPTable next() {
+		public TAPTable next(){
 			if (itTables == null)
 				throw new NoSuchElementException("No more table in TAP_SCHEMA !");
 			else{
@@ -197,7 +197,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		}
 
 		@Override
-		public void remove() {
+		public void remove(){
 			if (itTables != null)
 				itTables.remove();
 			else
@@ -206,28 +206,42 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	@Override
-	public String getName() { return RESOURCE_NAME; }
+	public String getName(){
+		return RESOURCE_NAME;
+	}
 
 	@Override
-	public void setTAPBaseURL(String baseURL) { accessURL = ((baseURL==null)?"":(baseURL+"/"))+getName(); }
+	public void setTAPBaseURL(String baseURL){
+		accessURL = ((baseURL == null) ? "" : (baseURL + "/")) + getName();
+	}
 
 	@Override
-	public String getAccessURL() { return accessURL; }
+	public String getAccessURL(){
+		return accessURL;
+	}
 
 	@Override
-	public String getCapability() { return Capabilities.getDefaultCapability(this); }
+	public String getCapability(){
+		return Capabilities.getDefaultCapability(this);
+	}
 
 	@Override
-	public String getStandardID() { return "ivo://ivoa.net/std/VOSI#tables"; }
+	public String getStandardID(){
+		return "ivo://ivoa.net/std/VOSI#tables";
+	}
 
 	@Override
-	public void init(ServletConfig config) throws ServletException { ; }
+	public void init(ServletConfig config) throws ServletException{
+		;
+	}
 
 	@Override
-	public void destroy() { ; }
+	public void destroy(){
+		;
+	}
 
 	@Override
-	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		response.setContentType("application/xml");
 
 		PrintWriter writer = response.getWriter();
@@ -248,7 +262,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		return false;
 	}
 
-	private void writeSchema(TAPSchema s, PrintWriter writer) throws IOException {
+	private void writeSchema(TAPSchema s, PrintWriter writer) throws IOException{
 		final String prefix = "\t\t";
 		writer.println("\t<schema>");
 
@@ -262,10 +276,12 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writer.println("\t</schema>");
 	}
 
-	private void writeTable(TAPTable t, PrintWriter writer) throws IOException {
+	private void writeTable(TAPTable t, PrintWriter writer) throws IOException{
 		final String prefix = "\t\t\t";
 
-		writer.print("\t\t<table type=\""); writer.print(t.getType().equalsIgnoreCase("table")?"base_table":t.getType()); writer.println("\">");
+		writer.print("\t\t<table type=\"");
+		writer.print(t.getType().equalsIgnoreCase("table") ? "base_table" : t.getType());
+		writer.println("\">");
 
 		writeAtt(prefix, "name", t.getFullName(), writer);
 		writeAtt(prefix, "description", t.getDescription(), writer);
@@ -282,10 +298,12 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writer.println("\t\t</table>");
 	}
 
-	private void writeColumn(TAPColumn c, PrintWriter writer) throws IOException {
+	private void writeColumn(TAPColumn c, PrintWriter writer) throws IOException{
 		final String prefix = "\t\t\t\t";
 
-		writer.print("\t\t\t<column std=\""); writer.print(c.isStd()); writer.println("\">");
+		writer.print("\t\t\t<column std=\"");
+		writer.print(c.isStd());
+		writer.println("\">");
 
 		writeAtt(prefix, "name", c.getName(), writer);
 		writeAtt(prefix, "description", c.getDescription(), writer);
@@ -314,7 +332,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writer.println("\t\t\t</column>");
 	}
 
-	private void writeForeignKey(TAPForeignKey fk, PrintWriter writer) throws IOException {
+	private void writeForeignKey(TAPForeignKey fk, PrintWriter writer) throws IOException{
 		final String prefix = "\t\t\t\t";
 
 		writer.println("\t\t\t<foreignKey>");
@@ -323,18 +341,20 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writeAtt(prefix, "description", fk.getDescription(), writer);
 		writeAtt(prefix, "utype", fk.getUtype(), writer);
 
-		final String prefix2 = prefix+"\t";
-		for(Map.Entry<String, String> entry : fk){
-			writer.print(prefix); writer.println("<fkColumn>");
+		final String prefix2 = prefix + "\t";
+		for(Map.Entry<String,String> entry : fk){
+			writer.print(prefix);
+			writer.println("<fkColumn>");
 			writeAtt(prefix2, "fromColumn", entry.getKey(), writer);
 			writeAtt(prefix2, "targetColumn", entry.getValue(), writer);
-			writer.print(prefix); writer.println("</fkColumn>");
+			writer.print(prefix);
+			writer.println("</fkColumn>");
 		}
 
 		writer.println("\t\t\t</foreignKey>");
 	}
 
-	private void writeAtt(String prefix, String attributeName, String attributeValue, PrintWriter writer) throws IOException {
+	private void writeAtt(String prefix, String attributeName, String attributeValue, PrintWriter writer) throws IOException{
 		if (attributeValue != null){
 			StringBuffer xml = new StringBuffer(prefix);
 			xml.append('<').append(attributeName).append('>').append(attributeValue).append("</").append(attributeName).append('>');

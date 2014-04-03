@@ -69,7 +69,6 @@ public class IdentifierItems {
 		}
 	}
 
-
 	/** All identifiers. The position of the different fields change in function of the number of elements.
 	 * If count=4: [0]=catalog, [1]=schema, [2]=table, [3]=column.  */
 	private IdentifierItem[] identifiers = new IdentifierItem[4];
@@ -79,7 +78,6 @@ public class IdentifierItems {
 
 	/** Indicates whether this {@link IdentifierItems} is supposed to represent a table name (true), or a column name (false). */
 	private boolean tableIdent = false;
-
 
 	/**
 	 * Builds an IdentifierItems by specifying it is a table or a column identifier.
@@ -97,7 +95,7 @@ public class IdentifierItems {
 	 * 
 	 * @param item	Additional item (may be null).
 	 */
-	public void append(final IdentifierItem item) {
+	public void append(final IdentifierItem item){
 		if (count >= 4)
 			return;
 		identifiers[count++] = item;
@@ -108,7 +106,9 @@ public class IdentifierItems {
 	 * 
 	 * @return	The number of identifiers.
 	 */
-	public int size() { return count; }
+	public int size(){
+		return count;
+	}
 
 	/**
 	 * Gets the whole ind-th identifier/field.
@@ -117,7 +117,9 @@ public class IdentifierItems {
 	 * 
 	 * @return The wanted identifier/field.
 	 */
-	public IdentifierItem get(final int ind) { return (ind < 0 || identifiers[ind] == null) ? null : identifiers[ind]; }
+	public IdentifierItem get(final int ind){
+		return (ind < 0 || identifiers[ind] == null) ? null : identifiers[ind];
+	}
 
 	/**
 	 * Gets the value of the ind-th identifier/field.
@@ -126,44 +128,74 @@ public class IdentifierItems {
 	 * 
 	 * @return	The value of the wanted identifier/field.
 	 */
-	public String getIdentifier(final int ind) { return (ind < 0 || identifiers[ind] == null) ? null : identifiers[ind].identifier; }
-	public String getCatalog()	{ return getIdentifier(tableIdent ? (count-3) : (count-4)); }
-	public String getSchema()	{ return getIdentifier(tableIdent ? (count-2) : (count-3)); }
-	public String getTable()	{ return getIdentifier(tableIdent ? (count-1) : (count-2)); }
-	public String getColumn()	{ return getIdentifier(tableIdent ?    -1     : (count-1)); }
+	public String getIdentifier(final int ind){
+		return (ind < 0 || identifiers[ind] == null) ? null : identifiers[ind].identifier;
+	}
 
-	public int getBeginLine()	{ return (count == 0 || identifiers[0] == null) ? -1 : identifiers[0].position.beginLine; }
-	public int getEndLine()		{ return (count == 0 || identifiers[count-1] == null) ? -1 : identifiers[count-1].position.endLine; }
-	public int getBeginColumn()	{ return (count == 0 || identifiers[0] == null) ? -1 : identifiers[0].position.beginColumn; }
-	public int getEndColumn()	{ return (count == 0 || identifiers[count-1] == null) ? -1 : identifiers[count-1].position.endColumn; }
+	public String getCatalog(){
+		return getIdentifier(tableIdent ? (count - 3) : (count - 4));
+	}
 
-	public TextPosition getPosition() { return new TextPosition(getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn()); }
+	public String getSchema(){
+		return getIdentifier(tableIdent ? (count - 2) : (count - 3));
+	}
+
+	public String getTable(){
+		return getIdentifier(tableIdent ? (count - 1) : (count - 2));
+	}
+
+	public String getColumn(){
+		return getIdentifier(tableIdent ? -1 : (count - 1));
+	}
+
+	public int getBeginLine(){
+		return (count == 0 || identifiers[0] == null) ? -1 : identifiers[0].position.beginLine;
+	}
+
+	public int getEndLine(){
+		return (count == 0 || identifiers[count - 1] == null) ? -1 : identifiers[count - 1].position.endLine;
+	}
+
+	public int getBeginColumn(){
+		return (count == 0 || identifiers[0] == null) ? -1 : identifiers[0].position.beginColumn;
+	}
+
+	public int getEndColumn(){
+		return (count == 0 || identifiers[count - 1] == null) ? -1 : identifiers[count - 1].position.endColumn;
+	}
+
+	public TextPosition getPosition(){
+		return new TextPosition(getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
+	}
 
 	public byte getCaseSensitivity(){
 		byte sensitivity = IdentifierField.getFullCaseSensitive(false);
 		if (count == 0)
 			return sensitivity;
 
-		int ind = count-1;
+		int ind = count - 1;
 		// COLUMN:
 		if (!tableIdent){
 			if (identifiers[ind] != null)
 				sensitivity = IdentifierField.COLUMN.setCaseSensitive(sensitivity, identifiers[ind].caseSensitivity);
 			ind--;
 		}
-		if (ind < 0) return sensitivity;
+		if (ind < 0)
+			return sensitivity;
 
 		// TABLE:
 		if (identifiers[ind] != null)
 			sensitivity = IdentifierField.TABLE.setCaseSensitive(sensitivity, identifiers[ind].caseSensitivity);
 		ind--;
-		if (ind < 0) return sensitivity;
+		if (ind < 0)
+			return sensitivity;
 
 		// SCHEMA:
 		if (identifiers[ind] != null)
 			sensitivity = IdentifierField.SCHEMA.setCaseSensitive(sensitivity, identifiers[ind].caseSensitivity);
 		ind--;
-		if (ind < 0) return sensitivity;
+		if (ind < 0)
+			return sensitivity;
 
 		// CATALOG:
 		if (identifiers[ind] != null)
@@ -173,9 +205,9 @@ public class IdentifierItems {
 	}
 
 	public boolean getColumnCaseSensitivity(){
-		if (count == 0 || tableIdent || identifiers[count-1] == null)
+		if (count == 0 || tableIdent || identifiers[count - 1] == null)
 			return false;
-		return identifiers[count-1].caseSensitivity;
+		return identifiers[count - 1].caseSensitivity;
 	}
 
 	/**
@@ -193,11 +225,11 @@ public class IdentifierItems {
 			delim = "";
 
 		StringBuffer str = new StringBuffer();
-		for(int i=0; i<count; i++){
+		for(int i = 0; i < count; i++){
 			if (identifiers[i] != null){
 				if (str.length() > 0)
 					str.append(delim);
-				str.append( (identifiers[i]==null) ? "" : identifiers[i].identifier );
+				str.append((identifiers[i] == null) ? "" : identifiers[i].identifier);
 			}
 		}
 		return str.toString();

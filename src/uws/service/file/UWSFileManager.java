@@ -70,7 +70,6 @@ public interface UWSFileManager {
 	 */
 	public PrintWriter getLogOutput(final UWSLogType logType) throws IOException;
 
-
 	/* *********************** */
 	/* RESULT FILES MANAGEMENT */
 	/* *********************** */
@@ -112,7 +111,6 @@ public interface UWSFileManager {
 	 */
 	public boolean deleteResult(final Result result, final UWSJob job) throws IOException;
 
-
 	/* ********************** */
 	/* ERROR FILES MANAGEMENT */
 	/* ********************** */
@@ -153,7 +151,6 @@ public interface UWSFileManager {
 	 * @throws IOException	If there is a grave and unexpected error while deleting the error file.
 	 */
 	public boolean deleteError(final ErrorSummary error, final UWSJob job) throws IOException;
-
 
 	/* *********************** */
 	/* BACKUP FILES MANAGEMENT */

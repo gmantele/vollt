@@ -36,7 +36,6 @@ public abstract class GeometryFunction extends ADQLFunction {
 	/** The coordinate system used to express the coordinates. */
 	protected ADQLOperand coordSys = null;
 
-
 	/**
 	 * Builds a geometry function with no coordinate system.
 	 */
@@ -52,7 +51,7 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * @throws NullPointerException				If the given operand is <i>null</i>.
 	 * @throws Exception						If the given operand is not a string.
 	 */
-	protected GeometryFunction(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, Exception {
+	protected GeometryFunction(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, Exception{
 		setCoordinateSystem(coordSys);
 	}
 
@@ -62,7 +61,7 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * @param toCopy		The geometry function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	protected GeometryFunction(GeometryFunction toCopy) throws Exception {
+	protected GeometryFunction(GeometryFunction toCopy) throws Exception{
 		coordSys = (ADQLOperand)(toCopy.coordSys.getCopy());
 	}
 
@@ -83,15 +82,14 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * @throws NullPointerException				If the given operand is <i>null</i>.
 	 * @throws Exception						If the given operand is not a string.
 	 */
-	public void setCoordinateSystem(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, Exception {
+	public void setCoordinateSystem(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, Exception{
 		if (coordSys == null)
 			throw new NullPointerException("");
 		else if (!coordSys.isString())
-			throw new Exception("A coordinate system must be a string literal: \""+coordSys.toADQL()+"\" is not a string operand !");
+			throw new Exception("A coordinate system must be a string literal: \"" + coordSys.toADQL() + "\" is not a string operand !");
 		else
 			this.coordSys = coordSys;
 	}
-
 
 	/**
 	 * This class represents a parameter of a geometry function
@@ -100,26 +98,26 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 06/2011
 	 */
-	public static final class GeometryValue<F extends GeometryFunction> implements ADQLOperand {
+	public static final class GeometryValue< F extends GeometryFunction > implements ADQLOperand {
 		private ADQLColumn column;
 		private F geomFunct;
 
-		public GeometryValue(ADQLColumn col) throws NullPointerException {
+		public GeometryValue(ADQLColumn col) throws NullPointerException{
 			if (col == null)
 				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function !");
 			setColumn(col);
 		}
 
-		public GeometryValue(F geometry) throws NullPointerException {
+		public GeometryValue(F geometry) throws NullPointerException{
 			if (geometry == null)
 				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function !");
 			setGeometry(geometry);
 		}
 
 		@SuppressWarnings("unchecked")
-		public GeometryValue(GeometryValue<F> toCopy) throws Exception {
-			column = (toCopy.column == null)?null:((ADQLColumn)(toCopy.column.getCopy()));
-			geomFunct = (toCopy.geomFunct == null)?null:((F)(toCopy.geomFunct.getCopy()));
+		public GeometryValue(GeometryValue<F> toCopy) throws Exception{
+			column = (toCopy.column == null) ? null : ((ADQLColumn)(toCopy.column.getCopy()));
+			geomFunct = (toCopy.geomFunct == null) ? null : ((F)(toCopy.geomFunct.getCopy()));
 		}
 
 		public void setColumn(ADQLColumn col){
@@ -137,26 +135,26 @@ public abstract class GeometryFunction extends ADQLFunction {
 		}
 
 		public ADQLOperand getValue(){
-			return (column != null)?column:geomFunct;
+			return (column != null) ? column : geomFunct;
 		}
 
 		public boolean isColumn(){
 			return column != null;
 		}
 
-		public boolean isNumeric() {
+		public boolean isNumeric(){
 			return getValue().isNumeric();
 		}
 
-		public boolean isString() {
+		public boolean isString(){
 			return getValue().isString();
 		}
 
-		public ADQLObject getCopy() throws Exception {
+		public ADQLObject getCopy() throws Exception{
 			return new GeometryValue<F>(this);
 		}
 
-		public String getName() {
+		public String getName(){
 			return getValue().getName();
 		}
 
@@ -164,7 +162,7 @@ public abstract class GeometryFunction extends ADQLFunction {
 			return getValue().adqlIterator();
 		}
 
-		public String toADQL() {
+		public String toADQL(){
 			return getValue().toADQL();
 		}
 	}

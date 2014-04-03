@@ -43,20 +43,19 @@ public class TAPTable implements DBTable {
 
 	private String utype = null;
 
-	protected final Map<String, TAPColumn> columns;
+	protected final Map<String,TAPColumn> columns;
 
 	protected final ArrayList<TAPForeignKey> foreignKeys;
 
 	protected Object otherData = null;
 
-
 	public TAPTable(String tableName){
 		if (tableName == null || tableName.trim().length() == 0)
 			throw new NullPointerException("Missing table name !");
 		int indPrefix = tableName.lastIndexOf('.');
-		adqlName = (indPrefix >= 0)?tableName.substring(indPrefix+1).trim():tableName.trim();
+		adqlName = (indPrefix >= 0) ? tableName.substring(indPrefix + 1).trim() : tableName.trim();
 		dbName = adqlName;
-		columns = new LinkedHashMap<String, TAPColumn>();
+		columns = new LinkedHashMap<String,TAPColumn>();
 		foreignKeys = new ArrayList<TAPForeignKey>();
 	}
 
@@ -73,7 +72,7 @@ public class TAPTable implements DBTable {
 
 	public final String getFullName(){
 		if (schema != null)
-			return schema.getName()+"."+adqlName;
+			return schema.getName() + "." + adqlName;
 		else
 			return adqlName;
 	}
@@ -81,103 +80,103 @@ public class TAPTable implements DBTable {
 	/**
 	 * @return The name.
 	 */
-	public final String getName() {
+	public final String getName(){
 		return getADQLName();
 	}
 
 	@Override
-	public final String getADQLName() {
+	public final String getADQLName(){
 		return adqlName;
 	}
 
 	@Override
-	public final String getDBName() {
+	public final String getDBName(){
 		return dbName;
 	}
 
 	public final void setDBName(String name){
-		name = (name != null)?name.trim():name;
-		dbName = (name == null || name.length() == 0)?adqlName:name;
+		name = (name != null) ? name.trim() : name;
+		dbName = (name == null || name.length() == 0) ? adqlName : name;
 	}
 
 	@Override
-	public String getADQLCatalogName() {
+	public String getADQLCatalogName(){
 		return null;
 	}
 
 	@Override
-	public String getDBCatalogName() {
+	public String getDBCatalogName(){
 		return null;
 	}
 
 	@Override
-	public final String getADQLSchemaName() {
+	public final String getADQLSchemaName(){
 		return schema.getADQLName();
 	}
 
 	@Override
-	public final String getDBSchemaName() {
+	public final String getDBSchemaName(){
 		return schema.getDBName();
 	}
 
 	/**
 	 * @return The schema.
 	 */
-	public final TAPSchema getSchema() {
+	public final TAPSchema getSchema(){
 		return schema;
 	}
 
 	/**
 	 * @param schema The schema to set.
 	 */
-	protected final void setSchema(TAPSchema schema) {
+	protected final void setSchema(TAPSchema schema){
 		this.schema = schema;
 	}
 
 	/**
 	 * @return The type.
 	 */
-	public final String getType() {
+	public final String getType(){
 		return type;
 	}
 
 	/**
 	 * @param type The type to set.
 	 */
-	public final void setType(String type) {
+	public final void setType(String type){
 		this.type = type;
 	}
 
 	/**
 	 * @return The description.
 	 */
-	public final String getDescription() {
+	public final String getDescription(){
 		return description;
 	}
 
 	/**
 	 * @param description The description to set.
 	 */
-	public final void setDescription(String description) {
+	public final void setDescription(String description){
 		this.description = description;
 	}
 
 	/**
 	 * @return The utype.
 	 */
-	public final String getUtype() {
+	public final String getUtype(){
 		return utype;
 	}
 
 	/**
 	 * @param utype The utype to set.
 	 */
-	public final void setUtype(String utype) {
+	public final void setUtype(String utype){
 		this.utype = utype;
 	}
 
 	public Object getOtherData(){
-		return otherData ;
+		return otherData;
 	}
 
 	public void setOtherData(Object data){
@@ -247,7 +246,7 @@ public class TAPTable implements DBTable {
 	}
 
 	@Override
-	public DBColumn getColumn(String colName, boolean byAdqlName) {
+	public DBColumn getColumn(String colName, boolean byAdqlName){
 		if (byAdqlName)
 			return getColumn(colName);
 		else{
@@ -269,7 +268,7 @@ public class TAPTable implements DBTable {
 			return columns.get(columnName);
 	}
 
-	public boolean hasColumn(String colName, boolean byAdqlName) {
+	public boolean hasColumn(String colName, boolean byAdqlName){
 		return (getColumn(colName, byAdqlName) != null);
 	}
 
@@ -308,41 +307,41 @@ public class TAPTable implements DBTable {
 	}
 
 	public final void removeAllColumns(){
-		Iterator<Map.Entry<String, TAPColumn>> it = columns.entrySet().iterator();
+		Iterator<Map.Entry<String,TAPColumn>> it = columns.entrySet().iterator();
 		while(it.hasNext()){
-			Map.Entry<String, TAPColumn> entry = it.next();
+			Map.Entry<String,TAPColumn> entry = it.next();
 			it.remove();
 			deleteColumnRelations(entry.getValue());
 		}
 	}
 
-	public final void addForeignKey(TAPForeignKey key) throws Exception {
+	public final void addForeignKey(TAPForeignKey key) throws Exception{
 		if (key == null)
 			return;
 
 		String keyId = key.getKeyId();
-		final String errorMsgPrefix = "Impossible to add the foreign key \""+keyId+"\" because ";
+		final String errorMsgPrefix = "Impossible to add the foreign key \"" + keyId + "\" because ";
 
 		if (key.getFromTable() == null)
-			throw new Exception(errorMsgPrefix+"no source table is specified !");
+			throw new Exception(errorMsgPrefix + "no source table is specified !");
 
 		if (!this.equals(key.getFromTable()))
-			throw new Exception(errorMsgPrefix+"the source table is not \""+getName()+"\"");
+			throw new Exception(errorMsgPrefix + "the source table is not \"" + getName() + "\"");
 
 		if (key.getTargetTable() == null)
-			throw new Exception(errorMsgPrefix+"no target table is specified !");
+			throw new Exception(errorMsgPrefix + "no target table is specified !");
 
 		if (key.isEmpty())
-			throw new Exception(errorMsgPrefix+"it defines no relation !");
+			throw new Exception(errorMsgPrefix + "it defines no relation !");
 
 		if (foreignKeys.add(key)){
 			try{
 				TAPTable targetTable = key.getTargetTable();
-				for(Map.Entry<String, String> relation : key){
+				for(Map.Entry<String,String> relation : key){
 					if (!hasColumn(relation.getKey()))
-						throw new Exception(errorMsgPrefix+"the source column \""+relation.getKey()+"\" doesn't exist in \""+getName()+"\" !");
+						throw new Exception(errorMsgPrefix + "the source column \"" + relation.getKey() + "\" doesn't exist in \"" + getName() + "\" !");
 					else if (!targetTable.hasColumn(relation.getValue()))
-						throw new Exception(errorMsgPrefix+"the target column \""+relation.getValue()+"\" doesn't exist in \""+targetTable.getName()+"\" !");
+						throw new Exception(errorMsgPrefix + "the target column \"" + relation.getValue() + "\" doesn't exist in \"" + targetTable.getName() + "\" !");
 					else{
 						getColumn(relation.getKey()).addTarget(key);
 						targetTable.getColumn(relation.getValue()).addSource(key);
@@ -355,13 +354,13 @@ public class TAPTable implements DBTable {
 		}
 	}
 
-	public TAPForeignKey addForeignKey(String keyId, TAPTable targetTable, Map<String, String> columns) throws Exception {
+	public TAPForeignKey addForeignKey(String keyId, TAPTable targetTable, Map<String,String> columns) throws Exception{
 		TAPForeignKey key = new TAPForeignKey(keyId, this, targetTable, columns);
 		addForeignKey(key);
 		return key;
 	}
 
-	public TAPForeignKey addForeignKey(String keyId, TAPTable targetTable, Map<String, String> columns, String description, String utype) throws Exception {
+	public TAPForeignKey addForeignKey(String keyId, TAPTable targetTable, Map<String,String> columns, String description, String utype) throws Exception{
 		TAPForeignKey key = new TAPForeignKey(keyId, this, targetTable, columns, description, utype);
 		addForeignKey(key);
 		return key;
@@ -392,34 +391,45 @@ public class TAPTable implements DBTable {
 	}
 
 	protected final void deleteRelations(TAPForeignKey key){
-		for(Map.Entry<String, String> relation : key){
+		for(Map.Entry<String,String> relation : key){
 			TAPColumn col = key.getFromTable().getColumn(relation.getKey());
-			if (col != null) col.removeTarget(key);
+			if (col != null)
+				col.removeTarget(key);
 
 			col = key.getTargetTable().getColumn(relation.getValue());
-			if (col != null) col.removeSource(key);
+			if (col != null)
+				col.removeSource(key);
 		}
 	}
 
 	@Override
-	public Iterator<DBColumn> iterator() {
-		return new Iterator<DBColumn>() {
+	public Iterator<DBColumn> iterator(){
+		return new Iterator<DBColumn>(){
 			private final Iterator<TAPColumn> it = getColumns();
+
 			@Override
-			public boolean hasNext() { return it.hasNext(); }
+			public boolean hasNext(){
+				return it.hasNext();
+			}
+
 			@Override
-			public DBColumn next() { return it.next(); }
+			public DBColumn next(){
+				return it.next();
+			}
+
 			@Override
-			public void remove() { it.remove(); }
+			public void remove(){
+				it.remove();
+			}
 		};
 	}
 
 	@Override
 	public String toString(){
-		return ((schema != null)?(schema.getName()+"."):"")+adqlName;
+		return ((schema != null) ? (schema.getName() + ".") : "") + adqlName;
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception{
 		TAPSchema schema1 = new TAPSchema("monSchema1");
 		TAPSchema schema2 = new TAPSchema("monSchema2");
 
@@ -429,11 +439,11 @@ public class TAPTable implements DBTable {
 		TAPTable t = schema2.addTable("Test");
 		t.addColumn("machin");
 		t.addColumn("truc");
-		HashMap<String, String> mapCols = new HashMap<String, String>();
+		HashMap<String,String> mapCols = new HashMap<String,String>();
 		mapCols.put("machin", "monMachin");
 		TAPForeignKey key = new TAPForeignKey("KeyID", t, tRef, mapCols);
 		t.addForeignKey(key);
-		mapCols = new HashMap<String, String>();
+		mapCols = new HashMap<String,String>();
 		mapCols.put("truc", "monMachin");
 		key = new TAPForeignKey("2ndKey", t, tRef, mapCols);
 		t.addForeignKey(key);
@@ -449,32 +459,32 @@ public class TAPTable implements DBTable {
 	}
 
 	public static void printSchema(TAPSchema schema){
-		System.out.println("*** SCHEMA \""+schema.getName()+"\" ***");
+		System.out.println("*** SCHEMA \"" + schema.getName() + "\" ***");
 		for(TAPTable t : schema)
 			printTable(t);
 	}
 
 	public static void printTable(TAPTable t){
-		System.out.println("TABLE: "+t+"\nNb Columns: "+t.getNbColumns()+"\nNb Relations: "+t.getNbForeignKeys());
+		System.out.println("TABLE: " + t + "\nNb Columns: " + t.getNbColumns() + "\nNb Relations: " + t.getNbForeignKeys());
 		Iterator<TAPColumn> it = t.getColumns();
 		while(it.hasNext()){
 			TAPColumn col = it.next();
-			System.out.print("\t- "+col+"( ");
+			System.out.print("\t- " + col + "( ");
 			Iterator<TAPForeignKey> keys = col.getTargets();
 			while(keys.hasNext())
-				for(Map.Entry<String, String> relation : keys.next())
-					System.out.print(">"+relation.getKey()+"/"+relation.getValue()+" ");
+				for(Map.Entry<String,String> relation : keys.next())
+					System.out.print(">" + relation.getKey() + "/" + relation.getValue() + " ");
 			keys = col.getSources();
 			while(keys.hasNext())
-				for(Map.Entry<String, String> relation : keys.next())
-					System.out.print("<"+relation.getKey()+"/"+relation.getValue()+" ");
+				for(Map.Entry<String,String> relation : keys.next())
+					System.out.print("<" + relation.getKey() + "/" + relation.getValue() + " ");
 			System.out.println(")");
 		}
 	}
 
-	public DBTable copy(final String dbName, final String adqlName) {
-		TAPTable copy = new TAPTable((adqlName==null)?this.adqlName:adqlName);
-		copy.setDBName((dbName==null)?this.dbName:dbName);
+	public DBTable copy(final String dbName, final String adqlName){
+		TAPTable copy = new TAPTable((adqlName == null) ? this.adqlName : adqlName);
+		copy.setDBName((dbName == null) ? this.dbName : dbName);
 		copy.setSchema(schema);
 		Collection<TAPColumn> collColumns = columns.values();
 		for(TAPColumn col : collColumns)

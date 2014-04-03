@@ -42,20 +42,20 @@ import uws.service.log.DefaultUWSLog;
  */
 public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 
-	public DefaultTAPLog(TAPFileManager fm) {
+	public DefaultTAPLog(TAPFileManager fm){
 		super(fm);
 	}
 
-	public DefaultTAPLog(OutputStream output) {
+	public DefaultTAPLog(OutputStream output){
 		super(output);
 	}
 
-	public DefaultTAPLog(PrintWriter writer) {
+	public DefaultTAPLog(PrintWriter writer){
 		super(writer);
 	}
 
 	public void queryFinished(final TAPExecutionReport report){
-		StringBuffer buffer = new StringBuffer("QUERY END FOR "+report.jobID+"");
+		StringBuffer buffer = new StringBuffer("QUERY END FOR " + report.jobID + "");
 		buffer.append(" - success ? ").append(report.success);
 		buffer.append(" - synchronous ? ").append(report.synchronous);
 		buffer.append(" - total duration = ").append(report.getTotalDuration()).append("ms");
@@ -72,8 +72,8 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	}
 
 	public void dbActivity(final String message, final Throwable t){
-		String msgType = (t == null) ? "[INFO] ": "[ERROR] ";
-		log(DBConnection.LOG_TYPE_DB_ACTIVITY, ((message==null)?null:(msgType+message)), t);
+		String msgType = (t == null) ? "[INFO] " : "[ERROR] ";
+		log(DBConnection.LOG_TYPE_DB_ACTIVITY, ((message == null) ? null : (msgType + message)), t);
 	}
 
 	public void dbInfo(final String message){
@@ -85,82 +85,82 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	}
 
 	@Override
-	public void tapMetadataFetched(TAPMetadata metadata) {
+	public void tapMetadataFetched(TAPMetadata metadata){
 		dbActivity("TAP metadata fetched from the database !");
 	}
 
 	@Override
-	public void tapMetadataLoaded(TAPMetadata metadata) {
+	public void tapMetadataLoaded(TAPMetadata metadata){
 		dbActivity("TAP metadata loaded into the database !");
 	}
 
 	@Override
-	public void connectionOpened(DBConnection<?> connection, String dbName) {
+	public void connectionOpened(DBConnection<?> connection, String dbName){
 		//dbActivity("A connection has been opened to the database \""+dbName+"\" !");
 	}
 
 	@Override
-	public void connectionClosed(DBConnection<?> connection) {
+	public void connectionClosed(DBConnection<?> connection){
 		//dbActivity("A database connection has been closed !");
 	}
 
 	@Override
-	public void transactionStarted(final DBConnection<?> connection) {
+	public void transactionStarted(final DBConnection<?> connection){
 		//dbActivity("A transaction has been started !");
 	}
 
 	@Override
-	public void transactionCancelled(final DBConnection<?> connection) {
+	public void transactionCancelled(final DBConnection<?> connection){
 		//dbActivity("A transaction has been cancelled !");
 	}
 
 	@Override
-	public void transactionEnded(final DBConnection<?> connection) {
+	public void transactionEnded(final DBConnection<?> connection){
 		//dbActivity("A transaction has been ended/commited !");
 	}
 
 	@Override
-	public void schemaCreated(final DBConnection<?> connection, String schema) {
-		dbActivity("CREATE SCHEMA \""+schema+"\"\t"+connection.getID());
+	public void schemaCreated(final DBConnection<?> connection, String schema){
+		dbActivity("CREATE SCHEMA \"" + schema + "\"\t" + connection.getID());
 	}
 
 	@Override
-	public void schemaDropped(final DBConnection<?> connection, String schema) {
-		dbActivity("DROP SCHEMA \""+schema+"\"\t"+connection.getID());
+	public void schemaDropped(final DBConnection<?> connection, String schema){
+		dbActivity("DROP SCHEMA \"" + schema + "\"\t" + connection.getID());
 	}
 
 	protected final String getFullDBName(final TAPTable table){
-		return (table.getSchema()!=null) ? (table.getSchema().getDBName()+".") : "";
+		return (table.getSchema() != null) ? (table.getSchema().getDBName() + ".") : "";
 	}
 
 	@Override
-	public void tableCreated(final DBConnection<?> connection, TAPTable table) {
-		dbActivity("CREATE TABLE \""+getFullDBName(table)+"\" (ADQL name: \""+table.getFullName()+"\")\t"+connection.getID());
+	public void tableCreated(final DBConnection<?> connection, TAPTable table){
+		dbActivity("CREATE TABLE \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
 	}
 
 	@Override
-	public void tableDropped(final DBConnection<?> connection, TAPTable table) {
-		dbActivity("DROP TABLE \""+getFullDBName(table)+"\" (ADQL name: \""+table.getFullName()+"\")\t"+connection.getID());
+	public void tableDropped(final DBConnection<?> connection, TAPTable table){
+		dbActivity("DROP TABLE \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
 	}
 
 	@Override
-	public void rowsInserted(final DBConnection<?> connection, TAPTable table, int nbInsertedRows) {
-		dbActivity("INSERT ROWS ("+((nbInsertedRows>0)?nbInsertedRows:"???")+") into \""+getFullDBName(table)+"\" (ADQL name: \""+table.getFullName()+"\")\t"+connection.getID());
+	public void rowsInserted(final DBConnection<?> connection, TAPTable table, int nbInsertedRows){
+		dbActivity("INSERT ROWS (" + ((nbInsertedRows > 0) ? nbInsertedRows : "???") + ") into \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
 	}
 
 	@Override
-	public void sqlQueryExecuting(final DBConnection<?> connection, String sql) {
-		dbActivity("EXECUTING SQL QUERY \t"+connection.getID()+"\n"+((sql == null)?"???":sql.replaceAll("\n", " ").replaceAll("\t", " ").replaceAll("\r", "")));
+	public void sqlQueryExecuting(final DBConnection<?> connection, String sql){
+		dbActivity("EXECUTING SQL QUERY \t" + connection.getID() + "\n" + ((sql == null) ? "???" : sql.replaceAll("\n", " ").replaceAll("\t", " ").replaceAll("\r", "")));
 	}
 
 	@Override
-	public void sqlQueryError(final DBConnection<?> connection, String sql, Throwable t) {
-		dbActivity("EXECUTION ERROR\t"+connection.getID(), t);
+	public void sqlQueryError(final DBConnection<?> connection, String sql, Throwable t){
+		dbActivity("EXECUTION ERROR\t" + connection.getID(), t);
 	}
 
 	@Override
-	public void sqlQueryExecuted(final DBConnection<?> connection, String sql) {
-		dbActivity("SUCCESSFULL END OF EXECUTION\t"+connection.getID());
+	public void sqlQueryExecuted(final DBConnection<?> connection, String sql){
+		dbActivity("SUCCESSFULL END OF EXECUTION\t" + connection.getID());
 	}
 
 }

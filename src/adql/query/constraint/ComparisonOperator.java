@@ -27,17 +27,10 @@ package adql.query.constraint;
  * 
  * @see Comparison
  */
-public enum ComparisonOperator {
-	EQUAL,
-	NOT_EQUAL,
-	LESS_THAN,
-	LESS_OR_EQUAL,
-	GREATER_THAN,
-	GREATER_OR_EQUAL,
-	LIKE,
-	NOTLIKE;
+public enum ComparisonOperator{
+	EQUAL, NOT_EQUAL, LESS_THAN, LESS_OR_EQUAL, GREATER_THAN, GREATER_OR_EQUAL, LIKE, NOTLIKE;
 
-	public static ComparisonOperator getOperator(String str) throws UnsupportedOperationException {
+	public static ComparisonOperator getOperator(String str) throws UnsupportedOperationException{
 		if (str.equalsIgnoreCase("="))
 			return EQUAL;
 		else if (str.equalsIgnoreCase("!=") || str.equalsIgnoreCase("<>"))
@@ -55,29 +48,29 @@ public enum ComparisonOperator {
 		else if (str.equalsIgnoreCase("NOT LIKE"))
 			return NOTLIKE;
 		else
-			throw new UnsupportedOperationException("Comparison operator unknown: \""+str+"\" !");
+			throw new UnsupportedOperationException("Comparison operator unknown: \"" + str + "\" !");
 	}
 
 	public String toADQL(){
 		switch(this){
-		case EQUAL:
-			return "=";
-		case NOT_EQUAL:
-			return "!=";
-		case LESS_THAN:
-			return "<";
-		case LESS_OR_EQUAL:
-			return "<=";
-		case GREATER_THAN:
-			return ">";
-		case GREATER_OR_EQUAL:
-			return ">=";
-		case LIKE:
-			return "LIKE";
-		case NOTLIKE:
-			return "NOT LIKE";
-		default:
-			return "???";
+			case EQUAL:
+				return "=";
+			case NOT_EQUAL:
+				return "!=";
+			case LESS_THAN:
+				return "<";
+			case LESS_OR_EQUAL:
+				return "<=";
+			case GREATER_THAN:
+				return ">";
+			case GREATER_OR_EQUAL:
+				return ">=";
+			case LIKE:
+				return "LIKE";
+			case NOTLIKE:
+				return "NOT LIKE";
+			default:
+				return "???";
 		}
 	}
 

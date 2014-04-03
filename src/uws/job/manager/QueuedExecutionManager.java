@@ -41,7 +41,6 @@ public class QueuedExecutionManager extends AbstractQueuedExecutionManager {
 	/** The value of {@link #nbMaxRunningJobs} which indicates that there is no queue. */
 	public final static int NO_QUEUE = Integer.MAX_VALUE;
 
-
 	/* ************ */
 	/* CONSTRUCTORS */
 	/* ************ */
@@ -60,16 +59,16 @@ public class QueuedExecutionManager extends AbstractQueuedExecutionManager {
 	 * @param logger	The object to user to log some messages (error, info, debug).
 	 * @param maxRunningJobs	The maximum number of running jobs (must be > 0 to have a queue).
 	 */
-	public QueuedExecutionManager(final UWSLog logger, int maxRunningJobs) {
+	public QueuedExecutionManager(final UWSLog logger, int maxRunningJobs){
 		this(logger);
-		nbMaxRunningJobs = (maxRunningJobs <= 0)?NO_QUEUE:maxRunningJobs;
+		nbMaxRunningJobs = (maxRunningJobs <= 0) ? NO_QUEUE : maxRunningJobs;
 	}
 
 	/* ***************** */
 	/* GETTERS & SETTERS */
 	/* ***************** */
 
-	public final void setNoQueue() {
+	public final void setNoQueue(){
 		nbMaxRunningJobs = NO_QUEUE;
 		try{
 			refresh();
@@ -99,13 +98,13 @@ public class QueuedExecutionManager extends AbstractQueuedExecutionManager {
 	 * 
 	 * @see #refresh()
 	 */
-	public void setMaxRunningJobs(int maxRunningJobs) throws UWSException {
-		nbMaxRunningJobs = (maxRunningJobs <= 0)?NO_QUEUE:maxRunningJobs;
+	public void setMaxRunningJobs(int maxRunningJobs) throws UWSException{
+		nbMaxRunningJobs = (maxRunningJobs <= 0) ? NO_QUEUE : maxRunningJobs;
 		refresh();
 	}
 
 	@Override
-	public final boolean isReadyForExecution(final UWSJob jobToExecute) {
+	public final boolean isReadyForExecution(final UWSJob jobToExecute){
 		if (!hasQueue())
 			return true;
 		else

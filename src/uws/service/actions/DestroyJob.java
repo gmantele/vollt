@@ -48,7 +48,7 @@ import uws.service.UWSUrl;
 public class DestroyJob extends UWSAction {
 	private static final long serialVersionUID = 1L;
 
-	public DestroyJob(UWSService u) {
+	public DestroyJob(UWSService u){
 		super(u);
 	}
 
@@ -57,12 +57,12 @@ public class DestroyJob extends UWSAction {
 	 * @see uws.service.actions.UWSAction#getName()
 	 */
 	@Override
-	public String getName() {
+	public String getName(){
 		return DESTROY_JOB;
 	}
 
 	@Override
-	public String getDescription() {
+	public String getDescription(){
 		return "Lets stopping the specified job, removing it from its jobs list and destroying all its associated resources. (URL: {baseUWS_URL}/{jobListName}/{job-id}, Method: HTTP-DELETE, No parameter) or (URL: {baseUWS_URL}/{jobListName}/{job-id}, Method: HTTP-POST, Parameter: ACTION=DELETE)";
 	}
 
@@ -78,13 +78,8 @@ public class DestroyJob extends UWSAction {
 	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException {
-		return (urlInterpreter.hasJobList()
-				&& urlInterpreter.hasJob()
-				&& (request.getMethod().equalsIgnoreCase("delete") || (request.getMethod().equalsIgnoreCase("post")
-						&& request.getParameter(UWSJob.PARAM_ACTION) != null
-						&& request.getParameter(UWSJob.PARAM_ACTION).equalsIgnoreCase(UWSJob.ACTION_DELETE))
-				));
+	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
+		return (urlInterpreter.hasJobList() && urlInterpreter.hasJob() && (request.getMethod().equalsIgnoreCase("delete") || (request.getMethod().equalsIgnoreCase("post") && request.getParameter(UWSJob.PARAM_ACTION) != null && request.getParameter(UWSJob.PARAM_ACTION).equalsIgnoreCase(UWSJob.ACTION_DELETE))));
 	}
 
 	/**
@@ -100,7 +95,7 @@ public class DestroyJob extends UWSAction {
 	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
 	@Override
-	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException {
+	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		// Get the jobs list:
 		JobList jobsList = getJobsList(urlInterpreter);
 

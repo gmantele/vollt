@@ -35,19 +35,18 @@ public class TAPForeignKey implements Iterable<Map.Entry<String,String>> {
 
 	private String utype = null;
 
-	protected final Map<String, String> columnsAssoc;
+	protected final Map<String,String> columnsAssoc;
 
 	protected Object otherData = null;
 
-
-	public TAPForeignKey(String keyId, TAPTable fromTable, TAPTable targetTable, Map<String,String> columns) {
+	public TAPForeignKey(String keyId, TAPTable fromTable, TAPTable targetTable, Map<String,String> columns){
 		this.keyId = keyId;
 		this.fromTable = fromTable;
 		this.targetTable = targetTable;
-		columnsAssoc = new HashMap<String, String>(columns);
+		columnsAssoc = new HashMap<String,String>(columns);
 	}
 
-	public TAPForeignKey(String keyId, TAPTable fromTable, TAPTable targetTable, Map<String, String> columns, String description, String utype) {
+	public TAPForeignKey(String keyId, TAPTable fromTable, TAPTable targetTable, Map<String,String> columns, String description, String utype){
 		this(keyId, fromTable, targetTable, columns);
 		this.description = description;
 		this.utype = utype;
@@ -56,40 +55,40 @@ public class TAPForeignKey implements Iterable<Map.Entry<String,String>> {
 	/**
 	 * @return The keyId.
 	 */
-	public final String getKeyId() {
+	public final String getKeyId(){
 		return keyId;
 	}
 
 	/**
 	 * @return The description.
 	 */
-	public final String getDescription() {
+	public final String getDescription(){
 		return description;
 	}
 
 	/**
 	 * @param description The description to set.
 	 */
-	public final void setDescription(String description) {
+	public final void setDescription(String description){
 		this.description = description;
 	}
 
 	/**
 	 * @return The utype.
 	 */
-	public final String getUtype() {
+	public final String getUtype(){
 		return utype;
 	}
 
 	/**
 	 * @param utype The utype to set.
 	 */
-	public final void setUtype(String utype) {
+	public final void setUtype(String utype){
 		this.utype = utype;
 	}
 
 	public Object getOtherData(){
-		return otherData ;
+		return otherData;
 	}
 
 	public void setOtherData(Object data){
@@ -99,14 +98,14 @@ public class TAPForeignKey implements Iterable<Map.Entry<String,String>> {
 	/**
 	 * @return The fromTable.
 	 */
-	public final TAPTable getFromTable() {
+	public final TAPTable getFromTable(){
 		return fromTable;
 	}
 
 	/**
 	 * @return The targetTable.
 	 */
-	public final TAPTable getTargetTable() {
+	public final TAPTable getTargetTable(){
 		return targetTable;
 	}
 
@@ -123,7 +122,7 @@ public class TAPForeignKey implements Iterable<Map.Entry<String,String>> {
 	}
 
 	public final String getSource(String targetColumnName){
-		for(Map.Entry<String, String> relation : this)
+		for(Map.Entry<String,String> relation : this)
 			if (relation.getValue().equals(targetColumnName))
 				return relation.getKey();
 		return null;
@@ -147,7 +146,7 @@ public class TAPForeignKey implements Iterable<Map.Entry<String,String>> {
 	}
 
 	@Override
-	public Iterator<Map.Entry<String, String>> iterator() {
+	public Iterator<Map.Entry<String,String>> iterator(){
 		return columnsAssoc.entrySet().iterator();
 	}
 

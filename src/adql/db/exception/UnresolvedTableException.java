@@ -50,10 +50,10 @@ public class UnresolvedTableException extends ParseException {
 	 * 
 	 * @param table	The unresolved {@link ADQLTable}.
 	 */
-	public UnresolvedTableException(ADQLTable table) {
+	public UnresolvedTableException(ADQLTable table){
 		super(buildMessage("Unknown table", table));
 		initPosition(table);
-		tableName = (table!=null)?table.getTableName():null;
+		tableName = (table != null) ? table.getTableName() : null;
 	}
 
 	/**
@@ -71,7 +71,7 @@ public class UnresolvedTableException extends ParseException {
 	public UnresolvedTableException(ADQLTable table, String t1, String t2){
 		super(buildMessage("Ambiguous table name", table, t1, t2));
 		initPosition(table);
-		tableName = (table!=null)?table.getTableName():null;
+		tableName = (table != null) ? table.getTableName() : null;
 	}
 
 	/**
@@ -93,7 +93,7 @@ public class UnresolvedTableException extends ParseException {
 	public UnresolvedTableException(ADQLColumn column){
 		super(buildMessage("Unknown table reference", column));
 		initPosition(column);
-		tableName = (column!=null)?column.getTableName():null;
+		tableName = (column != null) ? column.getTableName() : null;
 	}
 
 	/**
@@ -111,7 +111,7 @@ public class UnresolvedTableException extends ParseException {
 	public UnresolvedTableException(ADQLColumn column, String table1, String table2){
 		super(buildMessage("Ambiguous table reference", column, table1, table2));
 		initPosition(column);
-		tableName = (column!=null)?column.getTableName():null;
+		tableName = (column != null) ? column.getTableName() : null;
 	}
 
 	protected final void initPosition(ADQLColumn column){
@@ -125,7 +125,7 @@ public class UnresolvedTableException extends ParseException {
 		if (t.isSubQuery())
 			msg.append(t.getAlias()).append("\" !");
 		else
-			msg.append(t.getFullTableName()).append("\"").append(t.hasAlias()?(" (alias "+t.getAlias()+")"):"").append(" !");
+			msg.append(t.getFullTableName()).append("\"").append(t.hasAlias() ? (" (alias " + t.getAlias() + ")") : "").append(" !");
 
 		return msg.toString();
 	}
@@ -157,7 +157,7 @@ public class UnresolvedTableException extends ParseException {
 			return buildMessage(msgStart, c);
 	}
 
-	public final String getTableName() {
+	public final String getTableName(){
 		return tableName;
 	}
 

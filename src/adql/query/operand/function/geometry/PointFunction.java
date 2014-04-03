@@ -45,7 +45,6 @@ public class PointFunction extends GeometryFunction {
 	/** The second coordinate for this position. */
 	private ADQLOperand coord2;
 
-
 	/**
 	 * Builds a POINT function.
 	 * 
@@ -56,7 +55,7 @@ public class PointFunction extends GeometryFunction {
 	 * @throws NullPointerException				If the given operand is <i>null</i>.
 	 * @throws ParseException					If at least one of the given parameters is incorrect.
 	 */
-	public PointFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord) throws UnsupportedOperationException, NullPointerException, Exception {
+	public PointFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord) throws UnsupportedOperationException, NullPointerException, Exception{
 		super(coordinateSystem);
 
 		if (firstCoord == null || secondCoord == null)
@@ -72,7 +71,7 @@ public class PointFunction extends GeometryFunction {
 	 * @param toCopy		The POINT function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public PointFunction(PointFunction toCopy) throws Exception {
+	public PointFunction(PointFunction toCopy) throws Exception{
 		super(toCopy);
 		coord1 = (ADQLOperand)toCopy.coord1.getCopy();
 		coord2 = (ADQLOperand)toCopy.coord2.getCopy();
@@ -83,7 +82,7 @@ public class PointFunction extends GeometryFunction {
 	 * 
 	 * @return Its first coordinate.
 	 */
-	public final ADQLOperand getCoord1() {
+	public final ADQLOperand getCoord1(){
 		return coord1;
 	}
 
@@ -94,7 +93,7 @@ public class PointFunction extends GeometryFunction {
 	 * @throws NullPointerException		If the given operand is <i>null</i>.
 	 * @throws Exception				If the given operand is not numeric.
 	 */
-	public void setCoord1(ADQLOperand coord1) throws NullPointerException, Exception {
+	public void setCoord1(ADQLOperand coord1) throws NullPointerException, Exception{
 		if (coord1 == null)
 			throw new NullPointerException("The first coordinate of a POINT function must be different from NULL !");
 		else if (!coord1.isNumeric())
@@ -108,7 +107,7 @@ public class PointFunction extends GeometryFunction {
 	 * 
 	 * @return Its second coordinate.
 	 */
-	public final ADQLOperand getCoord2() {
+	public final ADQLOperand getCoord2(){
 		return coord2;
 	}
 
@@ -119,7 +118,7 @@ public class PointFunction extends GeometryFunction {
 	 * @throws NullPointerException	If the given operand is <i>null</i>.
 	 * @throws Exception			If the given operand is not numeric.
 	 */
-	public void setCoord2(ADQLOperand coord2) throws NullPointerException, Exception {
+	public void setCoord2(ADQLOperand coord2) throws NullPointerException, Exception{
 		if (coord2 == null)
 			throw new NullPointerException("The second coordinate of a POINT function must be different from NULL !");
 		else if (!coord2.isNumeric())
@@ -128,67 +127,67 @@ public class PointFunction extends GeometryFunction {
 			this.coord2 = coord2;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new PointFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "POINT";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return false;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return true;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
-		return new ADQLOperand[]{coordSys, coord1, coord2};
+	public ADQLOperand[] getParameters(){
+		return new ADQLOperand[]{coordSys,coord1,coord2};
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return 3;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		switch(index){
-		case 0:
-			return getCoordinateSystem();
-		case 1:
-			return getCoord1();
-		case 2:
-			return getCoord2();
-		default:
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+" !");
+			case 0:
+				return getCoordinateSystem();
+			case 1:
+				return getCoord1();
+			case 2:
+				return getCoord2();
+			default:
+				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + " !");
 		}
 	}
 
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (replacer == null)
-			throw new NullPointerException("Impossible to remove a parameter from the function "+getName()+" !");
+			throw new NullPointerException("Impossible to remove a parameter from the function " + getName() + " !");
 
 		ADQLOperand replaced = null;
 		switch(index){
-		case 0:
-			replaced = getCoordinateSystem();
-			setCoordinateSystem(replacer);
-			break;
-		case 1:
-			replaced = getCoord1();
-			setCoord1(replacer);
-			break;
-		case 2:
-			replaced = getCoord2();
-			setCoord2(replacer);
-			break;
-		default:
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			case 0:
+				replaced = getCoordinateSystem();
+				setCoordinateSystem(replacer);
+				break;
+			case 1:
+				replaced = getCoord1();
+				setCoord1(replacer);
+				break;
+			case 2:
+				replaced = getCoord2();
+				setCoord2(replacer);
+				break;
+			default:
+				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 		}
 
 		return replaced;

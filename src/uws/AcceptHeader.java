@@ -39,42 +39,40 @@ import java.util.Map.Entry;
 public class AcceptHeader {
 
 	/** Quality for each extracted MIME type. */
-	private Map<String, Float> mMimeTypes;
+	private Map<String,Float> mMimeTypes;
 
 	/** Association between a quality and a list of MIME types. */
-	private Map<Float, List<String>> mSortedMimeTypes;
-
+	private Map<Float,List<String>> mSortedMimeTypes;
 
 	/**
 	 * Parses the given value of the Accept field of HTTP request header.
 	 * 
 	 * @param acceptS	The list of MIME types to parse.
 	 */
-	public AcceptHeader(String acceptS) {
+	public AcceptHeader(String acceptS){
 		mMimeTypes = new HashMap<String,Float>();
 		// List of MIME-types
 		String[] mimeTypes = acceptS.split(",");
-		for (String mimeType : Arrays.asList(mimeTypes)) {
+		for(String mimeType : Arrays.asList(mimeTypes)){
 			// Get quality
 			Float quality = new Float(1);
 			String[] split = mimeType.split(";");
-			if (split.length > 1) {
+			if (split.length > 1){
 				String[] qualitySplit = split[1].split("=");
 				quality = Float.parseFloat(qualitySplit[1]);
 			}
 			mMimeTypes.put(split[0], quality);
 		}
 		// Sort mimeTypes by requested quality
-		mSortedMimeTypes = new HashMap<Float, List<String>>();
-		Set<Entry<String, Float>> mimeTypesES = mMimeTypes.entrySet();
-		for (Entry<String, Float> mimeType : mimeTypesES) {
-			if (!mSortedMimeTypes.containsKey(mimeType.getValue())) {
+		mSortedMimeTypes = new HashMap<Float,List<String>>();
+		Set<Entry<String,Float>> mimeTypesES = mMimeTypes.entrySet();
+		for(Entry<String,Float> mimeType : mimeTypesES){
+			if (!mSortedMimeTypes.containsKey(mimeType.getValue())){
 				List<String> mimeTypesL = new ArrayList<String>();
 				mimeTypesL.add(mimeType.getKey());
 				mSortedMimeTypes.put(mimeType.getValue(), mimeTypesL);
-			} else {
-				mSortedMimeTypes.get(mimeType.getValue()).add(
-						mimeType.getKey());
+			}else{
+				mSortedMimeTypes.get(mimeType.getValue()).add(mimeType.getKey());
 			}
 		}
 	}
@@ -84,7 +82,7 @@ public class AcceptHeader {
 	 * 
 	 * @return	Extracted MIME types and their quality.
 	 */
-	public final Map<String, Float> getMimeTypes() {
+	public final Map<String,Float> getMimeTypes(){
 		return mMimeTypes;
 	}
 
@@ -93,7 +91,7 @@ public class AcceptHeader {
 	 * 
 	 * @param mimeTypes	MIME types and their quality.
 	 */
-	public final void setMimeTypes(Map<String, Float> mimeTypes) {
+	public final void setMimeTypes(Map<String,Float> mimeTypes){
 		mMimeTypes = mimeTypes;
 	}
 
@@ -104,31 +102,29 @@ public class AcceptHeader {
 	 * 			or <i>text/xml</i> or <i>application/json</i>
 	 * 			or <i>* /*</i>.
 	 */
-	public String getPreferredMimeType() {
-		if (mSortedMimeTypes.size() == 0) {
+	public String getPreferredMimeType(){
+		if (mSortedMimeTypes.size() == 0){
 			return "*/*";
 		}
 		Float[] qualities = mSortedMimeTypes.keySet().toArray(new Float[0]);
 		Arrays.sort(qualities, Collections.reverseOrder());
 		String choosenMimeType = null;
-		for (Float key : Arrays.asList(qualities)) {
+		for(Float key : Arrays.asList(qualities)){
 			List<String> mimeTypes = mSortedMimeTypes.get(key);
 			String htmlMimeType = null;
-			for (String mimeType : mimeTypes) {
-				if (mimeType.equals("application/xhtml+xml")
-						|| mimeType.equals("text/html")) {
+			for(String mimeType : mimeTypes){
+				if (mimeType.equals("application/xhtml+xml") || mimeType.equals("text/html")){
 					htmlMimeType = mimeType;
 					break;
 				}
-				if (mimeType.equals("text/xml")
-						|| mimeType.equals("application/json")) {
+				if (mimeType.equals("text/xml") || mimeType.equals("application/json")){
 					choosenMimeType = mimeType;
 				}
 			}
-			if (htmlMimeType != null) {
+			if (htmlMimeType != null){
 				return htmlMimeType;
 			}
-			if (choosenMimeType != null) {
+			if (choosenMimeType != null){
 				return choosenMimeType;
 			}
 		}
@@ -145,7 +141,7 @@ public class AcceptHeader {
 		Arrays.sort(qualities, Collections.reverseOrder());
 
 		ArrayList<String> orderedMimeTypes = new ArrayList<String>();
-		for(int i=0; i<qualities.length; i++){
+		for(int i = 0; i < qualities.length; i++){
 			List<String> mimeTypes = mSortedMimeTypes.get(qualities[i]);
 			if (mimeTypes != null)
 				orderedMimeTypes.addAll(mimeTypes);

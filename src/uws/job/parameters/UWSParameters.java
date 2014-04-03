@@ -95,23 +95,23 @@ import uws.service.UWS;
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 06/2012
  */
-public class UWSParameters implements Iterable<Entry<String, Object>> {
+public class UWSParameters implements Iterable<Entry<String,Object>> {
 
 	/**
 	 * <p>Read-Write parameters.</p>
 	 * <p>Names of the UWS parameters whose the value can be modified by the user.</p>
 	 */
-	protected final static String[] UWS_RW_PARAMETERS = new String[]{UWSJob.PARAM_PHASE, UWSJob.PARAM_RUN_ID, UWSJob.PARAM_EXECUTION_DURATION, UWSJob.PARAM_DESTRUCTION_TIME, UWSJob.PARAM_PARAMETERS};
+	protected final static String[] UWS_RW_PARAMETERS = new String[]{UWSJob.PARAM_PHASE,UWSJob.PARAM_RUN_ID,UWSJob.PARAM_EXECUTION_DURATION,UWSJob.PARAM_DESTRUCTION_TIME,UWSJob.PARAM_PARAMETERS};
 	/**
 	 * <p>Read-Only parameters.</p>
 	 * <p>Names of the UWS parameters whose the value can NOT be modified by the user. These value are not kept. They are only ignored.</p>
 	 */
-	protected final static String[] UWS_RO_PARAMETERS = new String[]{UWSJob.PARAM_JOB_ID, UWSJob.PARAM_OWNER, UWSJob.PARAM_QUOTE, UWSJob.PARAM_START_TIME, UWSJob.PARAM_END_TIME, UWSJob.PARAM_RESULTS, UWSJob.PARAM_ERROR_SUMMARY};
+	protected final static String[] UWS_RO_PARAMETERS = new String[]{UWSJob.PARAM_JOB_ID,UWSJob.PARAM_OWNER,UWSJob.PARAM_QUOTE,UWSJob.PARAM_START_TIME,UWSJob.PARAM_END_TIME,UWSJob.PARAM_RESULTS,UWSJob.PARAM_ERROR_SUMMARY};
 
 	/**
 	 * List of all extracted parameters.
 	 */
-	protected final Map<String, Object> params = new HashMap<String, Object>(10);
+	protected final Map<String,Object> params = new HashMap<String,Object>(10);
 
 	/**
 	 * <p>List of all UWS additional parameters.</p>
@@ -119,7 +119,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * It is deleted (set to NULL) when there is a modification in the list of all parameters
 	 * (so in the function {@link #set(String, Object)}, {@link #update(UWSParameters)} and {@link #init()}).</i></p>
 	 */
-	private HashMap<String, Object> additionalParams = null;
+	private HashMap<String,Object> additionalParams = null;
 
 	/**
 	 * List of the expected additional parameters.
@@ -129,8 +129,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	/**
 	 * List of the controllers of all the input parameters.
 	 */
-	protected final Map<String, InputParamController> mapParamControllers;
-
+	protected final Map<String,InputParamController> mapParamControllers;
 
 	/**
 	 * Builds an empty list of UWS parameters.
@@ -154,7 +153,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * 
 	 * @see #getDefaultUWSParamControllers()
 	 */
-	public UWSParameters(final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers){
+	public UWSParameters(final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers){
 		// Set the input parameter controllers:
 		mapParamControllers = getDefaultControllers();
 		if (inputParamControllers != null)
@@ -175,11 +174,9 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * 
 	 * @see #UWSParameters(HttpServletRequest, Collection, Map)
 	 */
-	public UWSParameters(final HttpServletRequest request) throws UWSException {
+	public UWSParameters(final HttpServletRequest request) throws UWSException{
 		this(request, null, null);
 	}
-
-
 
 	/**
 	 * <p>Extracts and identifies all UWS standard and non-standard parameters from the given {@link HttpServletRequest}.</p>
@@ -198,7 +195,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * @see #UWSParameters(Collection, Map)
 	 */
 	@SuppressWarnings("unchecked")
-	public UWSParameters(final HttpServletRequest request, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException {
+	public UWSParameters(final HttpServletRequest request, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException{
 		this(expectedAdditionalParams, inputParamControllers);
 
 		// Load all parameters:
@@ -223,7 +220,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * 
 	 * @see #UWSParameters(Map, Collection, Map)
 	 */
-	public UWSParameters(final Map<String, Object> params) throws UWSException {
+	public UWSParameters(final Map<String,Object> params) throws UWSException{
 		this(params, null, null);
 	}
 
@@ -243,14 +240,14 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * 
 	 * @see #UWSParameters(Collection, Map)
 	 */
-	public UWSParameters(final Map<String, Object> params, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException {
+	public UWSParameters(final Map<String,Object> params, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException{
 		this(expectedAdditionalParams, inputParamControllers);
 
 		// Load all parameters:
 		if (params != null && !params.isEmpty()){
 			synchronized(params){
-				Iterator<Entry<String, Object>> it = params.entrySet().iterator();
-				Entry<String, Object> entry;
+				Iterator<Entry<String,Object>> it = params.entrySet().iterator();
+				Entry<String,Object> entry;
 				while(it.hasNext()){
 					entry = it.next();
 					set(entry.getKey(), entry.getValue());
@@ -264,8 +261,8 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * 
 	 * @return Default list of controllers. <i><u>note:</u> This map can be modified !</i>
 	 */
-	protected HashMap<String, InputParamController> getDefaultControllers(){
-		HashMap<String, InputParamController> controllers = new HashMap<String, InputParamController>(2);
+	protected HashMap<String,InputParamController> getDefaultControllers(){
+		HashMap<String,InputParamController> controllers = new HashMap<String,InputParamController>(2);
 		controllers.put(UWSJob.PARAM_EXECUTION_DURATION, new ExecutionDurationController());
 		controllers.put(UWSJob.PARAM_DESTRUCTION_TIME, new DestructionTimeController());
 		return controllers;
@@ -294,11 +291,11 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * @return		The list of all available controllers or <i>null</i> if there is no controller
 	 * 				or if this {@link UWSParameters} instance doesn't know a {@link UWS}.
 	 */
-	protected Iterator<Entry<String, InputParamController>> getControllers(){
+	protected Iterator<Entry<String,InputParamController>> getControllers(){
 		return mapParamControllers.entrySet().iterator();
 	}
 
-	public final Iterator<Entry<String, Object>> iterator(){
+	public final Iterator<Entry<String,Object>> iterator(){
 		return params.entrySet().iterator();
 	}
 
@@ -332,10 +329,10 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * <p><i><u>note:</u> This method is thread safe (synchronized on the list of parameters) !</i></p>
 	 */
 	public final void init(){
-		Iterator<Entry<String, InputParamController>> itControllers = getControllers();
+		Iterator<Entry<String,InputParamController>> itControllers = getControllers();
 		if (itControllers != null){
 			synchronized(params){
-				Entry<String, InputParamController> entry;
+				Entry<String,InputParamController> entry;
 				while(itControllers.hasNext()){
 					entry = itControllers.next();
 					if (!params.containsKey(entry.getKey()) && entry.getValue().getDefault() != null)
@@ -357,17 +354,17 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * 
 	 * @exception UWSException	If one of the given parameters is not allowed to be modified.
 	 */
-	public String[] update(final UWSParameters newParams) throws UWSException {
+	public String[] update(final UWSParameters newParams) throws UWSException{
 		if (newParams != null && !newParams.params.isEmpty()){
 			synchronized(params){
 				additionalParams = null;
 				String[] updated = new String[newParams.params.size()];
-				int i=0;
-				for(Entry<String, Object> entry : newParams){
+				int i = 0;
+				for(Entry<String,Object> entry : newParams){
 					// Test whether this parameter is allowed to be modified after its initialization:
 					InputParamController controller = getController(entry.getKey());
 					if (controller != null && !controller.allowModification())
-						throw new UWSException("The parameter \""+entry.getKey()+"\" can not be modified after initialization !");
+						throw new UWSException("The parameter \"" + entry.getKey() + "\" can not be modified after initialization !");
 					// If the value is NULL, removes this parameter:
 					if (entry.getValue() == null)
 						params.remove(entry.getKey());
@@ -425,7 +422,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * @see #normalizeParamName(String)
 	 */
 	@SuppressWarnings("unchecked")
-	public final Object set(final String name, Object value) throws UWSException {
+	public final Object set(final String name, Object value) throws UWSException{
 		// Normalize (take into account the case ONLY FOR the non-standard UWS parameters) the given parameter name:
 		String normalizedName = normalizeParamName(name);
 
@@ -445,10 +442,10 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 					// the value MUST BE a Map<String, Object>:
 					if (value instanceof Map){
 						try{
-							Map<String, Object> otherParams = (Map<String,Object>)value;
-							HashMap<String, Object> mapOldValues = new HashMap<String, Object>(otherParams.size());
+							Map<String,Object> otherParams = (Map<String,Object>)value;
+							HashMap<String,Object> mapOldValues = new HashMap<String,Object>(otherParams.size());
 							Object oldValue = null;
-							for(Entry<String, Object> entry : otherParams.entrySet()){
+							for(Entry<String,Object> entry : otherParams.entrySet()){
 								oldValue = set(entry.getKey(), entry.getValue());
 								mapOldValues.put(entry.getKey(), oldValue);
 							}
@@ -573,7 +570,9 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 						params.put(UWSJob.PARAM_EXECUTION_DURATION, duration);
 					}
 					return duration;
-				}catch(NumberFormatException nfe){ ; }
+				}catch(NumberFormatException nfe){
+					;
+				}
 			}
 		}
 		return UWSJob.UNLIMITED_DURATION;
@@ -595,7 +594,9 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 						params.put(UWSJob.PARAM_DESTRUCTION_TIME, destruction);
 					}
 					return destruction;
-				}catch(ParseException pe){ ; }
+				}catch(ParseException pe){
+					;
+				}
 			}
 		}
 		return null;
@@ -609,15 +610,15 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * 
 	 * @return	All the UWS additional parameters.
 	 */
-	public final Map<String, Object> getAdditionalParameters(){
+	public final Map<String,Object> getAdditionalParameters(){
 		if (additionalParams == null){
 			synchronized(params){
-				additionalParams = new HashMap<String, Object>(params.size());
-				for(Entry<String, Object> entry : params.entrySet()){
+				additionalParams = new HashMap<String,Object>(params.size());
+				for(Entry<String,Object> entry : params.entrySet()){
 					boolean uwsParam = false;
-					for(int i=0; !uwsParam && i<UWS_RW_PARAMETERS.length; i++)
+					for(int i = 0; !uwsParam && i < UWS_RW_PARAMETERS.length; i++)
 						uwsParam = entry.getKey().equals(UWS_RW_PARAMETERS[i]);
-					for(int i=0; !uwsParam && i<UWS_RO_PARAMETERS.length; i++)
+					for(int i = 0; !uwsParam && i < UWS_RO_PARAMETERS.length; i++)
 						uwsParam = entry.getKey().equals(UWS_RO_PARAMETERS[i]);
 					if (!uwsParam)
 						additionalParams.put(entry.getKey(), entry.getValue());

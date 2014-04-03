@@ -53,7 +53,7 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @see #serialize(UWSSerializer, String)
 	 */
-	public String serialize(UWSSerializer serializer) throws UWSException {
+	public String serialize(UWSSerializer serializer) throws UWSException{
 		return serialize(serializer, null);
 	}
 
@@ -80,7 +80,7 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @see #serialize(ServletOutputStream, UWSSerializer, String)
 	 */
-	public void serialize(ServletOutputStream output, UWSSerializer serializer) throws UWSException {
+	public void serialize(ServletOutputStream output, UWSSerializer serializer) throws UWSException{
 		serialize(output, serializer, null);
 	}
 
@@ -98,9 +98,9 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @see #serialize(UWSSerializer, String)
 	 */
-	public void serialize(ServletOutputStream output, UWSSerializer serializer, JobOwner owner) throws UWSException {
+	public void serialize(ServletOutputStream output, UWSSerializer serializer, JobOwner owner) throws UWSException{
 		if (output == null)
-			throw UWSExceptionFactory.missingOutputStream("impossible to serialize {"+toString()+"}.");
+			throw UWSExceptionFactory.missingOutputStream("impossible to serialize {" + toString() + "}.");
 
 		try{
 			String serialization = serialize(serializer, owner);
@@ -108,9 +108,9 @@ public abstract class SerializableUWSObject implements Serializable {
 				output.print(serialization);
 				output.flush();
 			}else
-				throw UWSExceptionFactory.incorrectSerialization("NULL", "{"+toString()+"}");
+				throw UWSExceptionFactory.incorrectSerialization("NULL", "{" + toString() + "}");
 		}catch(IOException ex){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ex, "IOException => impossible to serialize {"+toString()+"} !");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ex, "IOException => impossible to serialize {" + toString() + "} !");
 		}
 	}
 }

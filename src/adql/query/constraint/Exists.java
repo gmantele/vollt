@@ -38,7 +38,6 @@ public class Exists implements ADQLConstraint {
 	/** The sub-query. */
 	private ADQLQuery subQuery;
 
-
 	/**
 	 * Builds an Exists constraint instance.
 	 * 
@@ -54,7 +53,7 @@ public class Exists implements ADQLConstraint {
 	 * @param toCopy		The Exists constraint to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public Exists(Exists toCopy) throws Exception {
+	public Exists(Exists toCopy) throws Exception{
 		subQuery = (ADQLQuery)toCopy.subQuery.getCopy();
 	}
 
@@ -73,38 +72,38 @@ public class Exists implements ADQLConstraint {
 	 * @param query					Its new sub-query.
 	 * @throws NullPointerException	If the given query is <i>null</i>.
 	 */
-	public void setSubQuery(ADQLQuery query) throws NullPointerException {
+	public void setSubQuery(ADQLQuery query) throws NullPointerException{
 		if (query == null)
 			throw new NullPointerException("Impossible to build an EXISTS constraint with a sub-query NULL !");
 		else
 			subQuery = query;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new Exists(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "EXISTS";
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private boolean subQueryGot = (subQuery == null);
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				if (subQueryGot)
 					throw new NoSuchElementException();
 				subQueryGot = true;
 				return subQuery;
 			}
 
-			public boolean hasNext() {
+			public boolean hasNext(){
 				return !subQueryGot;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (!subQueryGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -113,10 +112,10 @@ public class Exists implements ADQLConstraint {
 				else if (replacer instanceof ADQLQuery)
 					subQuery = (ADQLQuery)replacer;
 				else
-					throw new UnsupportedOperationException("Impossible to replace an ADQLQuery by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to replace an ADQLQuery by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 			}
 
-			public void remove() {
+			public void remove(){
 				if (!subQueryGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
@@ -125,8 +124,8 @@ public class Exists implements ADQLConstraint {
 		};
 	}
 
-	public String toADQL() {
-		return getName()+"("+subQuery.toADQL()+")";
+	public String toADQL(){
+		return getName() + "(" + subQuery.toADQL() + ")";
 	}
 
 }

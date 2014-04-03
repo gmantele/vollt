@@ -32,15 +32,15 @@ import adql.query.ADQLObject;
  */
 public abstract class RemoveHandler extends SimpleReplaceHandler {
 
-	public RemoveHandler() {
+	public RemoveHandler(){
 		super();
 	}
 
-	public RemoveHandler(boolean recursive, boolean onlyFirstMatch) {
+	public RemoveHandler(boolean recursive, boolean onlyFirstMatch){
 		super(recursive, onlyFirstMatch);
 	}
 
-	public RemoveHandler(boolean recursive) {
+	public RemoveHandler(boolean recursive){
 		super(recursive);
 	}
 
@@ -52,6 +52,8 @@ public abstract class RemoveHandler extends SimpleReplaceHandler {
 	 * @see adql.search.SimpleReplaceHandler#getReplacer(adql.query.ADQLObject)
 	 */
 	@Override
-	public ADQLObject getReplacer(ADQLObject objToReplace) { return null; }
+	public ADQLObject getReplacer(ADQLObject objToReplace){
+		return null;
+	}
 
 }

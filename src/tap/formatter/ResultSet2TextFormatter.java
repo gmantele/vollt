@@ -32,25 +32,25 @@ import tap.TAPExecutionReport;
 
 public class ResultSet2TextFormatter extends TextFormat<ResultSet> implements ResultSetFormatter {
 
-	public ResultSet2TextFormatter(ServiceConnection<ResultSet> service) {
+	public ResultSet2TextFormatter(ServiceConnection<ResultSet> service){
 		super(service);
 	}
 
 	@Override
-	protected String getHeader(ResultSet queryResult, TAPExecutionReport execReport, Thread thread) throws TAPException {
+	protected String getHeader(ResultSet queryResult, TAPExecutionReport execReport, Thread thread) throws TAPException{
 		DBColumn[] selectedColumns = execReport.resultingColumns;
 		StringBuffer line = new StringBuffer();
 		int nbColumns = (selectedColumns == null) ? -1 : selectedColumns.length;
 		if (nbColumns > 0){
-			for(int i=0; i<nbColumns-1; i++)
+			for(int i = 0; i < nbColumns - 1; i++)
 				line.append(selectedColumns[i].getADQLName()).append('|');
-			line.append(selectedColumns[nbColumns-1].getADQLName());
+			line.append(selectedColumns[nbColumns - 1].getADQLName());
 		}
 		return line.toString();
 	}
 
 	@Override
-	protected int writeData(ResultSet queryResult, AsciiTable asciiTable, TAPExecutionReport execReport, Thread thread) throws TAPException {
+	protected int writeData(ResultSet queryResult, AsciiTable asciiTable, TAPExecutionReport execReport, Thread thread) throws TAPException{
 		int nbRows = 0;
 		try{
 			DBColumn[] selectedColumns = execReport.resultingColumns;
@@ -62,9 +62,9 @@ public class ResultSet2TextFormatter extends TextFormat<ResultSet> implements Re
 
 				line.delete(0, line.length());
 				Object value;
-				for(int i=1; i<=nbColumns; i++){
-					value = formatValue(queryResult.getObject(i), selectedColumns[i-1]);
-					writeFieldValue(value, selectedColumns[i-1], line);
+				for(int i = 1; i <= nbColumns; i++){
+					value = formatValue(queryResult.getObject(i), selectedColumns[i - 1]);
+					writeFieldValue(value, selectedColumns[i - 1], line);
 					if (i != nbColumns)
 						line.append('|');
 				}
@@ -72,13 +72,13 @@ public class ResultSet2TextFormatter extends TextFormat<ResultSet> implements Re
 				nbRows++;
 			}
 		}catch(SQLException se){
-			throw new TAPException("Job N°"+execReport.jobID+" - Impossible to get the "+(nbRows+1)+"-th rows from the given ResultSet !", se);
+			throw new TAPException("Job N°" + execReport.jobID + " - Impossible to get the " + (nbRows + 1) + "-th rows from the given ResultSet !", se);
 		}
 		return nbRows;
 	}
 
 	@Override
-	public Object formatValue(Object value, DBColumn colMeta) {
+	public Object formatValue(Object value, DBColumn colMeta){
 		return value;
 	}
 

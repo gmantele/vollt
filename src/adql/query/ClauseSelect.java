@@ -41,11 +41,10 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	/** The maximum number of returned rows. */
 	private int limit = -1;
 
-
 	/**
 	 * Builds an empty SELECT clause.
 	 */
-	public ClauseSelect() {
+	public ClauseSelect(){
 		this(false, -1);
 	}
 
@@ -54,7 +53,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * 
 	 * @param distinctColumns	<i>true</i> means unique rows (= SELECT DISTINCT), <i>false</i> otherwise (= SELECT or = SELECT ALL).
 	 */
-	public ClauseSelect(boolean distinctColumns) {
+	public ClauseSelect(boolean distinctColumns){
 		this(distinctColumns, -1);
 	}
 
@@ -63,7 +62,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * 
 	 * @param limit	Maximum number of returned rows (= SELECT TOP limit).
 	 */
-	public ClauseSelect(int limit) {
+	public ClauseSelect(int limit){
 		this(false, limit);
 	}
 
@@ -73,7 +72,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * @param distinctColumns	<i>true</i> means unique rows (= SELECT DISTINCT), <i>false</i> otherwise (= SELECT or = SELECT ALL).
 	 * @param limit				Maximum number of returned rows (= SELECT TOP limit).
 	 */
-	public ClauseSelect(boolean distinctColumns, int limit) {
+	public ClauseSelect(boolean distinctColumns, int limit){
 		super("SELECT");
 		distinct = distinctColumns;
 		this.limit = limit;
@@ -85,7 +84,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * @param toCopy		The SELECT clause to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public ClauseSelect(ClauseSelect toCopy) throws Exception {
+	public ClauseSelect(ClauseSelect toCopy) throws Exception{
 		super(toCopy);
 		distinct = toCopy.distinct;
 		limit = toCopy.limit;
@@ -155,7 +154,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * 
 	 * @see SelectItem
 	 */
-	public boolean add(ADQLOperand operand) throws NullPointerException {
+	public boolean add(ADQLOperand operand) throws NullPointerException{
 		if (operand == null)
 			throw new NullPointerException("It is impossible to add NULL items to a SELECT clause !");
 		return add(new SelectItem(operand));
@@ -174,7 +173,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * 
 	 * @see SelectItem
 	 */
-	public void add(int index, ADQLOperand operand) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public void add(int index, ADQLOperand operand) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		if (operand == null)
 			throw new NullPointerException("It is impossible to add NULL items to a SELECT clause !");
 		add(index, new SelectItem(operand));
@@ -192,7 +191,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * @throws NullPointerException				If the given item is <i>null</i>.
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
-	public ADQLOperand set(int index, ADQLOperand operand) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public ADQLOperand set(int index, ADQLOperand operand) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		if (operand == null)
 			throw new NullPointerException("It is impossible to replace a SELECT item by a NULL item into a SELECT clause !");
 		SelectItem item = set(index, new SelectItem(operand));
@@ -206,7 +205,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * @return			The corresponding operand.
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
-	public ADQLOperand searchByIndex(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand searchByIndex(int index) throws ArrayIndexOutOfBoundsException{
 		return get(index).getOperand();
 	}
 
@@ -247,7 +246,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 						if (item.getAlias().equalsIgnoreCase(alias))
 							founds.add(item);
 					}
-				} else {
+				}else{
 					if (item.isCaseSensitive()){
 						if (item.getAlias().equals(alias))
 							founds.add(item);
@@ -262,21 +261,21 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ClauseSelect(this);
 	}
 
 	@Override
-	public String toADQL() {
+	public String toADQL(){
 		String adql = null;
 
-		for(int i=0; i<size(); i++){
+		for(int i = 0; i < size(); i++){
 			if (i == 0){
-				adql = getName()+(distinct?" DISTINCT":"")+(hasLimit()?(" TOP "+limit):"");
+				adql = getName() + (distinct ? " DISTINCT" : "") + (hasLimit() ? (" TOP " + limit) : "");
 			}else
-				adql += " "+getSeparator(i);
+				adql += " " + getSeparator(i);
 
-			adql += " "+get(i).toADQL();
+			adql += " " + get(i).toADQL();
 		}
 
 		return adql;

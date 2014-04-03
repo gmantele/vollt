@@ -51,7 +51,7 @@ import uws.service.UWSUrl;
 public class ListJobs extends UWSAction {
 	private static final long serialVersionUID = 1L;
 
-	public ListJobs(UWSService u) {
+	public ListJobs(UWSService u){
 		super(u);
 	}
 
@@ -80,10 +80,8 @@ public class ListJobs extends UWSAction {
 	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException {
-		return (urlInterpreter.hasJobList()
-				&& !urlInterpreter.hasJob()
-				&& request.getMethod().equalsIgnoreCase("get"));
+	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
+		return (urlInterpreter.hasJobList() && !urlInterpreter.hasJob() && request.getMethod().equalsIgnoreCase("get"));
 	}
 
 	/**
@@ -97,7 +95,7 @@ public class ListJobs extends UWSAction {
 	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
 	@Override
-	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException {
+	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		// Get the jobs list:
 		JobList jobsList = getJobsList(urlInterpreter);
 

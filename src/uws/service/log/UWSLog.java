@@ -90,7 +90,6 @@ public interface UWSLog {
 	 */
 	public void error(final String msg, final Throwable t);
 
-
 	/* *************************************** */
 	/* LOGGING METHODS TO WATCH THE UWS STATUS */
 	/* *************************************** */
@@ -148,7 +147,6 @@ public interface UWSLog {
 	 */
 	public void jobDestroyed(final UWSJob job, final JobList jl);
 
-
 	/* ************* */
 	/* HTTP ACTIVITY */
 	/* ************* */
@@ -163,7 +161,6 @@ public interface UWSLog {
 	 * @param responseError			The error sent by the UWS. (MAY BE NULL)
 	 */
 	public void httpRequest(final HttpServletRequest request, final JobOwner user, final String uwsAction, final int responseStatusCode, final String responseMsg, final Throwable responseError);
-
 
 	/* ********************** */
 	/* THREAD STATUS MESSAGES */

@@ -43,14 +43,13 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	/** Indicates whether multiple occurrences are allowed. */
 	private boolean distinct = false;
 
-
 	/* ************ */
 	/* CONSTRUCTORS */
 	/* ************ */
 	/**
 	 * Void constructor.
 	 */
-	public SearchTableList() {
+	public SearchTableList(){
 		super(new DBTableKeyExtractor());
 	}
 
@@ -59,7 +58,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @param collection	Collection of {@link DBTable} to copy.
 	 */
-	public SearchTableList(final Collection<DBTable> collection) {
+	public SearchTableList(final Collection<DBTable> collection){
 		super(collection, new DBTableKeyExtractor());
 	}
 
@@ -68,10 +67,9 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @param initialCapacity	Initial capacity of this list.
 	 */
-	public SearchTableList(final int initialCapacity) {
+	public SearchTableList(final int initialCapacity){
 		super(initialCapacity, new DBTableKeyExtractor());
 	}
-
 
 	/* ******* */
 	/* GETTERS */
@@ -81,7 +79,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @return <i>true</i> means that multiple occurrences are allowed, <i>false</i> otherwise.
 	 */
-	public final boolean isDistinct() {
+	public final boolean isDistinct(){
 		return distinct;
 	}
 
@@ -90,7 +88,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @param distinct <i>true</i> means that multiple occurrences are allowed, <i>false</i> otherwise.
 	 */
-	public final void setDistinct(final boolean distinct) {
+	public final void setDistinct(final boolean distinct){
 		this.distinct = distinct;
 	}
 
@@ -183,18 +181,16 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 			return tmpResult;
 	}
 
-
 	/* ***************** */
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public boolean add(final DBTable item) {
+	public boolean add(final DBTable item){
 		if (distinct && contains(item))
 			return false;
 		else
 			return super.add(item);
 	}
-
 
 	/**
 	 * Lets extracting a key to associate with a given {@link DBTable} instance.
@@ -203,7 +199,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * @version 09/2011
 	 */
 	private static class DBTableKeyExtractor implements KeyExtractor<DBTable> {
-		public String getKey(DBTable obj) {
+		public String getKey(DBTable obj){
 			return obj.getADQLName();
 		}
 	}

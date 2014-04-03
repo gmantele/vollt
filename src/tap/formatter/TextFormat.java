@@ -30,7 +30,7 @@ import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 
-public abstract class TextFormat<R> implements OutputFormat<R> {
+public abstract class TextFormat< R > implements OutputFormat<R> {
 
 	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
 	private boolean logFormatReport;
@@ -46,16 +46,24 @@ public abstract class TextFormat<R> implements OutputFormat<R> {
 		this.logFormatReport = logFormatReport;
 	}
 
-	public String getMimeType() { return "text/plain"; }
+	public String getMimeType(){
+		return "text/plain";
+	}
 
-	public String getShortMimeType() { return "text"; }
+	public String getShortMimeType(){
+		return "text";
+	}
 
-	public String getDescription() { return null; }
+	public String getDescription(){
+		return null;
+	}
 
-	public String getFileExtension() { return "txt"; }
+	public String getFileExtension(){
+		return "txt";
+	}
 
 	@Override
-	public void writeResult(R queryResult, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException {
+	public void writeResult(R queryResult, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
 		try{
 			AsciiTable asciiTable = new AsciiTable('|');
 
@@ -78,7 +86,7 @@ public abstract class TextFormat<R> implements OutputFormat<R> {
 			output.flush();
 
 			if (logFormatReport)
-				service.getLogger().info("JOB "+execReport.jobID+" WRITTEN\tResult formatted (in text ; "+nbRows+" rows ; "+((execReport != null && execReport.resultingColumns != null)?"?":execReport.resultingColumns.length)+" columns) in "+(System.currentTimeMillis()-startTime)+" ms !");
+				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in text ; " + nbRows + " rows ; " + ((execReport != null && execReport.resultingColumns != null) ? "?" : execReport.resultingColumns.length) + " columns) in " + (System.currentTimeMillis() - startTime) + " ms !");
 
 		}catch(Exception ex){
 			service.getLogger().error("While formatting in text/plain !", ex);

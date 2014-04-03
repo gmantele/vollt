@@ -29,12 +29,20 @@ import java.util.NoSuchElementException;
  */
 public class NullADQLIterator implements ADQLIterator {
 
-	public boolean hasNext() { return false; }
+	public boolean hasNext(){
+		return false;
+	}
 
-	public ADQLObject next() { throw new NoSuchElementException(); }
+	public ADQLObject next(){
+		throw new NoSuchElementException();
+	}
 
-	public void remove() { throw new UnsupportedOperationException(); }
+	public void remove(){
+		throw new UnsupportedOperationException();
+	}
 
-	public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException { throw new UnsupportedOperationException(); }
+	public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
+		throw new UnsupportedOperationException();
+	}
 
 }

@@ -41,7 +41,7 @@ public class ASync implements TAPResource {
 	protected final UWSService uws;
 
 	@SuppressWarnings("unchecked")
-	public ASync(ServiceConnection service) throws UWSException, TAPException {
+	public ASync(ServiceConnection service) throws UWSException, TAPException{
 		this.service = service;
 
 		uws = service.getFactory().createUWS();
@@ -65,7 +65,7 @@ public class ASync implements TAPResource {
 			else if (report.length < 4)
 				errorMsg = "Incorrect restoration report format ! => Impossible to know the restoration status !";
 			else if (report[0] != report[1])
-				errorMsg = "FAILED restoration of the asynchronous jobs: "+report[0]+" on "+report[1]+" restored !";
+				errorMsg = "FAILED restoration of the asynchronous jobs: " + report[0] + " on " + report[1] + " restored !";
 			else
 				backupManager.setEnabled(true);
 
@@ -78,23 +78,31 @@ public class ASync implements TAPResource {
 	}
 
 	@Override
-	public String getName() { return RESOURCE_NAME; }
+	public String getName(){
+		return RESOURCE_NAME;
+	}
 
 	@Override
-	public void setTAPBaseURL(String baseURL) { ; }
+	public void setTAPBaseURL(String baseURL){
+		;
+	}
 
 	public final UWSService getUWS(){
 		return uws;
 	}
 
 	@Override
-	public void init(ServletConfig config) throws ServletException { ; }
+	public void init(ServletConfig config) throws ServletException{
+		;
+	}
 
 	@Override
-	public void destroy() { ; }
+	public void destroy(){
+		;
+	}
 
 	@Override
-	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, TAPException, UWSException {
+	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, TAPException, UWSException{
 		return uws.executeRequest(request, response);
 	}
 

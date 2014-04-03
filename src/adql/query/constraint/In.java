@@ -52,7 +52,6 @@ public class In implements ADQLConstraint {
 	/** IN or NOT IN ? */
 	private boolean notIn = false;
 
-
 	/**
 	 * Builds an IN constraint with a sub-query.
 	 * 
@@ -60,7 +59,7 @@ public class In implements ADQLConstraint {
 	 * @param query						A sub-query.
 	 * @throws NullPointerException 	If the given operand and/or the given sub-query is <i>null</i>.
 	 */
-	public In(ADQLOperand op, ADQLQuery query) throws NullPointerException {
+	public In(ADQLOperand op, ADQLQuery query) throws NullPointerException{
 		this(op, query, false);
 	}
 
@@ -72,7 +71,7 @@ public class In implements ADQLConstraint {
 	 * @param notIn					<i>true</i> for NOT IN, <i>false</i> for IN.
 	 * @throws NullPointerException	If the given operand and/or the given sub-query is <i>null</i>.
 	 */
-	public In(ADQLOperand op, ADQLQuery query, boolean notIn) throws NullPointerException {
+	public In(ADQLOperand op, ADQLQuery query, boolean notIn) throws NullPointerException{
 		setOperand(op);
 		setSubQuery(query);
 		setNotIn(notIn);
@@ -85,7 +84,7 @@ public class In implements ADQLConstraint {
 	 * @param valuesList				The values list.
 	 * @throws 	NullPointerException	If the given operand is <i>null</i> and/or the given list is <i>null</i> or empty.
 	 */
-	public In(ADQLOperand op, ADQLOperand[] valuesList) throws NullPointerException {
+	public In(ADQLOperand op, ADQLOperand[] valuesList) throws NullPointerException{
 		this(op, valuesList, false);
 	}
 
@@ -97,7 +96,7 @@ public class In implements ADQLConstraint {
 	 * @param notIn					<i>true</i> for NOT IN, <i>false</i> for IN.
 	 * @throws NullPointerException	If the given operand is <i>null</i> and/or the given list is <i>null</i> or empty.
 	 */
-	public In(ADQLOperand op, ADQLOperand[] valuesList, boolean notIn) throws NullPointerException {
+	public In(ADQLOperand op, ADQLOperand[] valuesList, boolean notIn) throws NullPointerException{
 		setOperand(op);
 		setValuesList(valuesList);
 		setNotIn(notIn);
@@ -110,7 +109,7 @@ public class In implements ADQLConstraint {
 	 * @param valuesList			The values list.
 	 * @throws NullPointerException	If the given operand is <i>null</i> and/or the given list is <i>null</i> or empty.
 	 */
-	public In(ADQLOperand op, ADQLList<ADQLOperand> valuesList) throws NullPointerException {
+	public In(ADQLOperand op, ADQLList<ADQLOperand> valuesList) throws NullPointerException{
 		this(op, valuesList, false);
 	}
 
@@ -122,7 +121,7 @@ public class In implements ADQLConstraint {
 	 * @param notIn					<i>true</i> for NOT IN, <i>false</i> for IN.
 	 * @throws NullPointerException	If the given operand is <i>null</i> and/or the given list is <i>null</i> or empty.
 	 */
-	public In(ADQLOperand op, ADQLList<ADQLOperand> valuesList, boolean notIn) throws NullPointerException {
+	public In(ADQLOperand op, ADQLList<ADQLOperand> valuesList, boolean notIn) throws NullPointerException{
 		setOperand(op);
 		setValuesList(valuesList);
 		setNotIn(notIn);
@@ -135,7 +134,7 @@ public class In implements ADQLConstraint {
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	public In(In toCopy) throws Exception {
+	public In(In toCopy) throws Exception{
 		leftOp = (ADQLOperand)toCopy.leftOp.getCopy();
 		if (toCopy.hasSubQuery())
 			setSubQuery((ADQLQuery)toCopy.subQuery.getCopy());
@@ -159,7 +158,7 @@ public class In implements ADQLConstraint {
 	 * @param newLeftOp					Its new left operand.
 	 * @throws NullPointerException		If the given operand is <i>null</i>.
 	 */
-	public void setOperand(ADQLOperand newLeftOp) throws NullPointerException {
+	public void setOperand(ADQLOperand newLeftOp) throws NullPointerException{
 		if (newLeftOp == null)
 			throw new NullPointerException("Impossible to set a left operand NULL in an IN constraint !");
 		else
@@ -190,7 +189,7 @@ public class In implements ADQLConstraint {
 	 * @param newSubQuery				Its new sub-query.
 	 * @throws NullPointerException		If the given sub-query is <i>null</i>.
 	 */
-	public void setSubQuery(ADQLQuery newSubQuery) throws NullPointerException {
+	public void setSubQuery(ADQLQuery newSubQuery) throws NullPointerException{
 		if (newSubQuery == null)
 			throw new NullPointerException("Impossible to set a sub-query NULL in an IN constraint !");
 		else{
@@ -214,13 +213,13 @@ public class In implements ADQLConstraint {
 	 * @param valuesList				Its new values list.
 	 * @throws NullPointerException		If the given list is <i>null</i>.
 	 */
-	public void setValuesList(ADQLOperand[] valuesList) throws NullPointerException {
+	public void setValuesList(ADQLOperand[] valuesList) throws NullPointerException{
 		if (valuesList == null)
 			throw new NullPointerException("Impossible to set a values list NULL in an IN constraint !");
 		else if (valuesList.length > 0){
 			subQuery = null;
 			list = new ClauseADQL<ADQLOperand>();
-			for(int i=0; i<valuesList.length; i++)
+			for(int i = 0; i < valuesList.length; i++)
 				list.add(valuesList[i]);
 		}
 	}
@@ -231,7 +230,7 @@ public class In implements ADQLConstraint {
 	 * @param valuesList				Its new values list.
 	 * @throws NullPointerException		If the given list is <i>null</i>.
 	 */
-	public void setValuesList(ADQLList<ADQLOperand> valuesList) throws NullPointerException {
+	public void setValuesList(ADQLList<ADQLOperand> valuesList) throws NullPointerException{
 		if (valuesList == null)
 			throw new NullPointerException("Impossible to set a values list NULL in an IN constraint !");
 		else{
@@ -258,35 +257,35 @@ public class In implements ADQLConstraint {
 		this.notIn = notIn;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new In(this);
 	}
 
-	public String getName() {
-		return notIn?"NOT IN":"IN";
+	public String getName(){
+		return notIn ? "NOT IN" : "IN";
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private int index = -1;
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				index++;
 				if (index == 0)
 					return leftOp;
 				else if (index == 1)
-					return hasSubQuery()?subQuery:list;
+					return hasSubQuery() ? subQuery : list;
 				else
 					throw new NoSuchElementException();
 			}
 
-			public boolean hasNext() {
-				return index+1 < 2;
+			public boolean hasNext(){
+				return index + 1 < 2;
 			}
 
 			@SuppressWarnings("unchecked")
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -297,31 +296,31 @@ public class In implements ADQLConstraint {
 					if (replacer instanceof ADQLOperand)
 						leftOp = (ADQLOperand)replacer;
 					else
-						throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+						throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 				}else if (index == 1){
 					if (hasSubQuery() && replacer instanceof ADQLQuery)
 						subQuery = (ADQLQuery)replacer;
 					else if (!hasSubQuery() && replacer instanceof ADQLList)
 						list = (ADQLList<ADQLOperand>)replacer;
 					else
-						throw new UnsupportedOperationException("Impossible to replace an "+(hasSubQuery()?"ADQLQuery":"ADQLList<ADQLOperand>")+" by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+						throw new UnsupportedOperationException("Impossible to replace an " + (hasSubQuery() ? "ADQLQuery" : "ADQLList<ADQLOperand>") + " by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 				}
 			}
 
-			public void remove() {
+			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 
 				if (index == 0)
 					throw new UnsupportedOperationException("Impossible to remove the left operand of the IN constraint !");
 				else if (index == 1)
-					throw new UnsupportedOperationException("Impossible to remove the "+(hasSubQuery()?"sub-query":"values list")+" of the IN constraint !");
+					throw new UnsupportedOperationException("Impossible to remove the " + (hasSubQuery() ? "sub-query" : "values list") + " of the IN constraint !");
 			}
 		};
 	}
 
 	public String toADQL(){
-		return leftOp.toADQL()+" "+getName()+" ("+(hasSubQuery()?subQuery.toADQL():list.toADQL())+")";
+		return leftOp.toADQL() + " " + getName() + " (" + (hasSubQuery() ? subQuery.toADQL() : list.toADQL()) + ")";
 	}
 
 }

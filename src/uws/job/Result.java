@@ -102,7 +102,7 @@ public class Result extends SerializableUWSObject {
 		if (name != null)
 			id = name;
 		redirection = isRedirectionUrl(resultUrl, id, job);
-		href = redirection ? resultUrl :getDefaultUrl(name, job);
+		href = redirection ? resultUrl : getDefaultUrl(name, job);
 	}
 
 	/**
@@ -149,7 +149,7 @@ public class Result extends SerializableUWSObject {
 		if (url == null)
 			return null;
 		else{
-			url.setAttributes(new String[]{UWSJob.PARAM_RESULTS, id});
+			url.setAttributes(new String[]{UWSJob.PARAM_RESULTS,id});
 			return url.toString();
 		}
 	}
@@ -185,7 +185,7 @@ public class Result extends SerializableUWSObject {
 	 * 
 	 * @return	The result id or name.
 	 */
-	public final String getId() {
+	public final String getId(){
 		return id;
 	}
 
@@ -194,7 +194,7 @@ public class Result extends SerializableUWSObject {
 	 * 
 	 * @return	The result file URL.
 	 */
-	public final String getHref() {
+	public final String getHref(){
 		return href;
 	}
 
@@ -213,7 +213,7 @@ public class Result extends SerializableUWSObject {
 	 * 
 	 * @return	The result type.
 	 */
-	public final String getType() {
+	public final String getType(){
 		return type;
 	}
 
@@ -222,7 +222,7 @@ public class Result extends SerializableUWSObject {
 	 * 
 	 * @return The MIME Type.
 	 */
-	public final String getMimeType() {
+	public final String getMimeType(){
 		return mimeType;
 	}
 
@@ -231,7 +231,7 @@ public class Result extends SerializableUWSObject {
 	 * 
 	 * @param mimeType The MIME type to set.
 	 */
-	public final void setMimeType(String mimeType) {
+	public final void setMimeType(String mimeType){
 		this.mimeType = mimeType;
 	}
 
@@ -240,7 +240,7 @@ public class Result extends SerializableUWSObject {
 	 * 
 	 * @return Result file size (in bytes).
 	 */
-	public final long getSize() {
+	public final long getSize(){
 		return size;
 	}
 
@@ -249,7 +249,7 @@ public class Result extends SerializableUWSObject {
 	 * 
 	 * @return size	Result file size (in bytes).
 	 */
-	public final void setSize(long size) {
+	public final void setSize(long size){
 		this.size = size;
 	}
 
@@ -257,12 +257,12 @@ public class Result extends SerializableUWSObject {
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException {
+	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException{
 		return serializer.getResult(this, true);
 	}
 
 	@Override
 	public String toString(){
-		return "RESULT {id: "+id+"; type: \""+((type==null)?"?":type)+"\"; href: "+((href==null)?"none":href)+"; mimeType: "+((mimeType==null)?"none":mimeType)+"}";
+		return "RESULT {id: " + id + "; type: \"" + ((type == null) ? "?" : type) + "\"; href: " + ((href == null) ? "none" : href) + "; mimeType: " + ((mimeType == null) ? "none" : mimeType) + "}";
 	}
 }

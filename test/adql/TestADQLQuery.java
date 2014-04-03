@@ -28,7 +28,7 @@ import adql.search.ISearchHandler;
 import adql.search.SearchColumnHandler;
 
 public class TestADQLQuery {
-	public static final void main(String[] args) throws Exception {
+	public static final void main(String[] args) throws Exception{
 		ADQLQuery query = new ADQLQuery();
 
 		// SELECT:
@@ -60,7 +60,7 @@ public class TestADQLQuery {
 		ClauseADQL<ADQLOrder> orderBy = query.getOrderBy();
 		orderBy.add(new ADQLOrder(1, true));
 
-		System.out.println("*** QUERY ***\n"+query.toADQL());
+		System.out.println("*** QUERY ***\n" + query.toADQL());
 
 		ISearchHandler sHandler = new SearchColumnHandler(false);
 		Iterator<ADQLObject> results = query.search(sHandler);
@@ -82,8 +82,8 @@ public class TestADQLQuery {
 		//		Iterator<ADQLObject> results = sHandler.iterator();
 		System.out.println("\n*** SEARCH ALL COLUMNS ***");
 		while(results.hasNext())
-			System.out.println("\t- "+results.next().toADQL());
+			System.out.println("\t- " + results.next().toADQL());
 
-		System.out.println("\n*** QUERY ***\n"+query.toADQL());
+		System.out.println("\n*** QUERY ***\n" + query.toADQL());
 	}
 }

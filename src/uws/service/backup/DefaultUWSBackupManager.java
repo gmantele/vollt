@@ -111,7 +111,6 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	/** Timer which saves the backup each <i>backupFreq</i> milliseconds. */
 	protected Timer timAutoBackup = null;
 
-
 	/**
 	 * Builds a backup manager in the mode "auto": one file for all users and all jobs, and the backup
 	 * is done all minutes (see {@link #DEFAULT_FREQUENCY}.
@@ -120,7 +119,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @see #DefaultBackupManager(UWS, long)
 	 */
-	public DefaultUWSBackupManager(final UWS uws) {
+	public DefaultUWSBackupManager(final UWS uws){
 		this(uws, DEFAULT_FREQUENCY);
 	}
 
@@ -136,16 +135,16 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * @param uws 		The UWS to save/restore.
 	 * @param frequency	The backup frequency (in ms ; MUST BE positive and different from 0. If negative or 0, the frequency will be automatically set to {@link #DEFAULT_FREQUENCY}).
 	 */
-	public DefaultUWSBackupManager(final UWS uws, final long frequency) {
+	public DefaultUWSBackupManager(final UWS uws, final long frequency){
 		this.uws = uws;
 		this.byUser = false;
 		this.backupFreq = (frequency <= 0) ? MANUAL : frequency;
 
 		if (backupFreq > 0){
 			timAutoBackup = new Timer();
-			timAutoBackup.scheduleAtFixedRate(new TimerTask() {
+			timAutoBackup.scheduleAtFixedRate(new TimerTask(){
 				@Override
-				public void run() {
+				public void run(){
 					saveAll();
 				}
 			}, backupFreq, backupFreq);
@@ -163,7 +162,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @see #DefaultBackupManager(UWS, boolean, long)
 	 */
-	public DefaultUWSBackupManager(final UWS uws, final boolean byUser) throws UWSException {
+	public DefaultUWSBackupManager(final UWS uws, final boolean byUser) throws UWSException{
 		this(uws, byUser, byUser ? AT_USER_ACTION : DEFAULT_FREQUENCY);
 	}
 
@@ -176,7 +175,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @throws UWSException	If the user identification is disabled (that's to say, if the given UWS has no UserIdentifier) while the parameter <i>byUser</i> is <i>true</i>.
 	 */
-	public DefaultUWSBackupManager(final UWS uws, final boolean byUser, final long frequency) throws UWSException {
+	public DefaultUWSBackupManager(final UWS uws, final boolean byUser, final long frequency) throws UWSException{
 		this.uws = uws;
 		this.byUser = byUser;
 		this.backupFreq = frequency;
@@ -188,9 +187,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			backupFreq = MANUAL;
 		else if (backupFreq > 0){
 			timAutoBackup = new Timer();
-			timAutoBackup.scheduleAtFixedRate(new TimerTask() {
+			timAutoBackup.scheduleAtFixedRate(new TimerTask(){
 				@Override
-				public void run() {
+				public void run(){
 					saveAll();
 				}
 			}, backupFreq, backupFreq);
@@ -203,19 +202,19 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @return <i>true</i> if the backup is enabled, <i>false</i> otherwise.
 	 */
-	public final boolean isEnabled() {
+	public final boolean isEnabled(){
 		return enabled;
 	}
 
-	public final void setEnabled(boolean enabled) {
+	public final void setEnabled(boolean enabled){
 		this.enabled = enabled;
 		if (backupFreq > 0){
 			if (this.enabled){
 				if (timAutoBackup == null){
 					timAutoBackup = new Timer();
-					timAutoBackup.scheduleAtFixedRate(new TimerTask() {
+					timAutoBackup.scheduleAtFixedRate(new TimerTask(){
 						@Override
-						public void run() {
+						public void run(){
 							saveAll();
 						}
 					}, backupFreq, backupFreq);
@@ -234,7 +233,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @return The backup frequency (in milliseconds).
 	 */
-	public final long getBackupFreq() {
+	public final long getBackupFreq(){
 		return backupFreq;
 	}
 
@@ -251,7 +250,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @param freq The new backup frequency (in milliseconds) ({@link #AT_USER_ACTION}, {@link #MANUAL}, {@link #DEFAULT_FREQUENCY} or any other positive value).
 	 */
-	public final void setBackupFreq(long freq) {
+	public final void setBackupFreq(long freq){
 		if (freq < 0)
 			freq = MANUAL;
 		else if (freq == AT_USER_ACTION && !byUser)
@@ -265,9 +264,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		if (enabled && backupFreq > 0){
 			timAutoBackup = new Timer();
-			timAutoBackup.scheduleAtFixedRate(new TimerTask() {
+			timAutoBackup.scheduleAtFixedRate(new TimerTask(){
 				@Override
-				public void run() {
+				public void run(){
 					saveAll();
 				}
 			}, 0, backupFreq);
@@ -279,7 +278,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @return The date of the last restoration (MAY BE NULL).
 	 */
-	public final Date getLastRestoration() {
+	public final Date getLastRestoration(){
 		return lastRestoration;
 	}
 
@@ -288,7 +287,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @return The date of the last backup (MAY BE NULL).
 	 */
-	public final Date getLastBackup() {
+	public final Date getLastBackup(){
 		return lastBackup;
 	}
 
@@ -307,12 +306,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			return UWSToolBox.getDefaultLogger();
 	}
 
-
 	/* ************ */
 	/* SAVE METHODS */
 	/* ************ */
 
-	public int[] saveAll() {
+	public int[] saveAll(){
 		if (!enabled)
 			return null;
 
@@ -320,7 +318,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		int nbJobs = 0, nbOwners = 0;
 
 		// List all users of this UWS:
-		HashMap<String, JobOwner> users = new HashMap<String, JobOwner>();
+		HashMap<String,JobOwner> users = new HashMap<String,JobOwner>();
 		for(JobList jl : uws){
 			Iterator<JobOwner> it = jl.getUsers();
 			while(it.hasNext()){
@@ -364,7 +362,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						out.value(getJSONUser(user));
 						nbSavedOwners++;
 					}catch(JSONException je){
-						getLogger().error("Unexpected JSON error while saving the user '"+user.getID()+"' !", je);
+						getLogger().error("Unexpected JSON error while saving the user '" + user.getID() + "' !", je);
 					}
 				}
 				out.endArray();
@@ -380,9 +378,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 							nbSavedJobs++;
 							writer.flush();
 						}catch(UWSException ue){
-							getLogger().error("Unexpected UWS error while saving the job '"+job.getJobId()+"' !", ue);
+							getLogger().error("Unexpected UWS error while saving the job '" + job.getJobId() + "' !", ue);
 						}catch(JSONException je){
-							getLogger().error("Unexpected JSON error while saving the job '"+job.getJobId()+"' !", je);
+							getLogger().error("Unexpected JSON error while saving the job '" + job.getJobId() + "' !", je);
 						}
 					}
 				}
@@ -403,7 +401,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		}
 
 		// Build the report and log it:
-		int[] report = new int[]{nbSavedJobs, nbJobs, nbSavedOwners, nbOwners};
+		int[] report = new int[]{nbSavedJobs,nbJobs,nbSavedOwners,nbOwners};
 		getLogger().uwsSaved(uws, report);
 
 		lastBackup = new Date();
@@ -418,7 +416,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		return saveOwner(user, false);
 	}
 
-	protected int[] saveOwner(JobOwner user, boolean fromSaveAll) {
+	protected int[] saveOwner(JobOwner user, boolean fromSaveAll){
 		if (!enabled)
 			return null;
 
@@ -427,7 +425,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			return new int[]{-1,-1};
 
 		UWSFileManager fileManager = uws.getFileManager();
-		int[] saveReport = new int[]{0, 0};
+		int[] saveReport = new int[]{0,0};
 		PrintWriter writer = null;
 		try{
 			// Create a writer toward the backup file:
@@ -455,9 +453,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						saveReport[0]++;
 						writer.flush();
 					}catch(JSONException je){
-						getLogger().error("Unexpected JSON error while saving the "+saveReport[1]+"-th job of the job list '"+jl.getName()+"' owned by the user '"+user.getID()+"'  !", je);
+						getLogger().error("Unexpected JSON error while saving the " + saveReport[1] + "-th job of the job list '" + jl.getName() + "' owned by the user '" + user.getID() + "'  !", je);
 					}catch(UWSException ue){
-						getLogger().error("Unexpected UWS error while saving the "+saveReport[1]+"-th job of the job list '"+jl.getName()+"' owned by the user '"+user.getID()+"'  !", ue);
+						getLogger().error("Unexpected UWS error while saving the " + saveReport[1] + "-th job of the job list '" + jl.getName() + "' owned by the user '" + user.getID() + "'  !", ue);
 					}
 				}
 			}
@@ -474,9 +472,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			return saveReport;
 
 		}catch(IOException ie){
-			getLogger().error("Unexpected IO error while saving the jobs of user '"+user.getID()+"'  !", ie);
-		}catch (JSONException je) {
-			getLogger().error("Unexpected JSON error while saving the jobs of user '"+user.getID()+"'  !", je);
+			getLogger().error("Unexpected IO error while saving the jobs of user '" + user.getID() + "'  !", ie);
+		}catch(JSONException je){
+			getLogger().error("Unexpected JSON error while saving the jobs of user '" + user.getID() + "'  !", je);
 		}finally{
 			// Close the writer:
 			if (writer != null)
@@ -508,14 +506,14 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	protected JSONObject getJSONUser(final JobOwner user) throws JSONException {
+	protected JSONObject getJSONUser(final JobOwner user) throws JSONException{
 		JSONObject jsonUser = new JSONObject();
 		jsonUser.put("id", user.getID());
 		jsonUser.put("pseudo", user.getPseudo());
 		if (user.getDataToSave() != null){
 			Iterator<Map.Entry<String,Object>> itUserData = user.getDataToSave().entrySet().iterator();
 			while(itUserData.hasNext()){
-				Map.Entry<String, Object> userData = itUserData.next();
+				Map.Entry<String,Object> userData = itUserData.next();
 				jsonUser.put(userData.getKey(), userData.getValue());
 			}
 		}
@@ -539,19 +537,18 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * @throws UWSException		If there is an error while getting job parameters and serializing them.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	protected JSONObject getJSONJob(final UWSJob job, final String jlName) throws UWSException, JSONException {
+	protected JSONObject getJSONJob(final UWSJob job, final String jlName) throws UWSException, JSONException{
 		JSONObject jsonJob = Json4Uws.getJson(job);
-		jsonJob.put(UWSJob.PARAM_OWNER, (job != null && job.getOwner() != null)?job.getOwner().getID():null);
+		jsonJob.put(UWSJob.PARAM_OWNER, (job != null && job.getOwner() != null) ? job.getOwner().getID() : null);
 		jsonJob.put("jobListName", jlName);
 		return jsonJob;
 	}
-
 
 	/* ******************* */
 	/* RESTORATION METHODS */
 	/* ******************* */
 
-	public int[] restoreAll() {
+	public int[] restoreAll(){
 		// Removes all current jobs from the UWS before restoring it from files:
 		for(JobList jl : uws)
 			jl.clear();
@@ -575,7 +572,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			try{
 				itInput = new SingleInputIterator(fileManager.getBackupInput());
 			}catch(IOException ioe){
-				getLogger().error("[restoration] Restoration of the UWS "+uws.getName()+" failed because an unexpected IO error has occured.", ioe);
+				getLogger().error("[restoration] Restoration of the UWS " + uws.getName() + " failed because an unexpected IO error has occured.", ioe);
 				return null;
 			}
 		}
@@ -589,7 +586,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			// Create the JSON reader:
 			JSONTokener in = new JSONTokener(new InputStreamReader(inputStream));
 
-			HashMap<String, JobOwner> users = new HashMap<String, JobOwner>();
+			HashMap<String,JobOwner> users = new HashMap<String,JobOwner>();
 			String key;
 			JSONObject object;
 
@@ -652,7 +649,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 									}
 								}
 							}catch(UWSException ue){
-								getLogger().error("[restoration] The "+nbUsers+"-th user can not be restored !", ue);
+								getLogger().error("[restoration] The " + nbUsers + "-th user can not be restored !", ue);
 							}
 						}
 
@@ -673,13 +670,13 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 								if (restoreJob(object, users))
 									nbRestoredJobs++;
 							}catch(UWSException ue){
-								getLogger().error("[restoration] The "+nbJobs+"-th job can not be restored !", ue);
+								getLogger().error("[restoration] The " + nbJobs + "-th job can not be restored !", ue);
 							}
 						}
 
 					}// any other key is ignore but with a warning message:
 					else
-						getLogger().warning("[restoration] Key '"+key+"' ignored because unknown ! The UWS may be not completely restored !");
+						getLogger().warning("[restoration] Key '" + key + "' ignored because unknown ! The UWS may be not completely restored !");
 				}
 			}catch(JSONException je){
 				getLogger().error("[restoration] Incorrect JSON format for a UWS backup file !", je);
@@ -700,11 +697,10 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		}
 
 		if (!userIdentificationEnabled && nbUsers > 0)
-			getLogger().warning("[restoration] "+nbUsers+" job owners have not been restored because the user identification is disabled in this UWS ! => Jobs of these users have not been restored !");
-
+			getLogger().warning("[restoration] " + nbUsers + " job owners have not been restored because the user identification is disabled in this UWS ! => Jobs of these users have not been restored !");
 
 		// Build the restoration report and log it:
-		int[] report = new int[]{nbRestoredJobs, nbJobs, nbRestoredUsers, nbUsers};
+		int[] report = new int[]{nbRestoredJobs,nbJobs,nbRestoredUsers,nbUsers};
 		getLogger().uwsRestored(uws, report);
 
 		return report;
@@ -721,14 +717,14 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @see JobOwner#restoreData(Map)
 	 */
-	protected JobOwner getUser(final JSONObject json) throws UWSException {
+	protected JobOwner getUser(final JSONObject json) throws UWSException{
 		if (json == null || json.length() == 0)
 			return null;
 
 		// Fetch all user data:
 		String ID = null, pseudo = null;
 		String[] keys = JSONObject.getNames(json);
-		Map<String, Object> userData = new HashMap<String, Object>(keys.length-2);
+		Map<String,Object> userData = new HashMap<String,Object>(keys.length - 2);
 		for(String key : keys){
 			try{
 				if (key.equalsIgnoreCase("id"))
@@ -738,7 +734,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else
 					userData.put(key, json.getString(key));
 			}catch(JSONException je){
-				getLogger().error("[restoration] Incorrect JSON format for the serialization of the user "+ID+" !", je);
+				getLogger().error("[restoration] Incorrect JSON format for the serialization of the user " + ID + " !", je);
 			}
 		}
 
@@ -761,14 +757,14 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 						or if the job list name is incorrect,
 	 * 						or if there is an error with "parameters", "error" and "results".
 	 */
-	protected boolean restoreJob(final JSONObject json, Map<String, JobOwner> users) throws UWSException {
+	protected boolean restoreJob(final JSONObject json, Map<String,JobOwner> users) throws UWSException{
 		if (json == null || json.length() == 0)
 			return false;
 
-		String jobListName=null, jobId=null, ownerID=null, tmp;
+		String jobListName = null, jobId = null, ownerID = null, tmp;
 		//Date destruction=null;
-		long quote = UWSJob.UNLIMITED_DURATION, /*duration = UWSJob.UNLIMITED_DURATION, */startTime=-1, endTime=-1;
-		HashMap<String, Object> inputParams = new HashMap<String, Object>(10);
+		long quote = UWSJob.UNLIMITED_DURATION, /*duration = UWSJob.UNLIMITED_DURATION, */startTime = -1, endTime = -1;
+		HashMap<String,Object> inputParams = new HashMap<String,Object>(10);
 		//Map<String, Object> params = null;
 		ArrayList<Result> results = null;
 		ErrorSummary error = null;
@@ -812,7 +808,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						tmp = json.getString(key);
 						inputParams.put(UWSJob.PARAM_DESTRUCTION_TIME, UWSJob.dateFormat.parse(tmp));
 					}catch(ParseException pe){
-						getLogger().error("[restoration] Incorrect date format for the '"+key+"' parameter !", pe);
+						getLogger().error("[restoration] Incorrect date format for the '" + key + "' parameter !", pe);
 					}
 
 				}// key=START_TIME:
@@ -822,7 +818,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						Date d = UWSJob.dateFormat.parse(tmp);
 						startTime = d.getTime();
 					}catch(ParseException pe){
-						getLogger().error("[restoration] Incorrect date format for the '"+key+"' parameter !", pe);
+						getLogger().error("[restoration] Incorrect date format for the '" + key + "' parameter !", pe);
 					}
 
 				}// key=END_TIME:
@@ -832,7 +828,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						Date d = UWSJob.dateFormat.parse(tmp);
 						endTime = d.getTime();
 					}catch(ParseException pe){
-						getLogger().error("[restoration] Incorrect date format for the '"+key+"' parameter !", pe);
+						getLogger().error("[restoration] Incorrect date format for the '" + key + "' parameter !", pe);
 					}
 
 				}// key=PARAMETERS:
@@ -849,20 +845,20 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 				}// Ignore any other key but with a warning message:
 				else
-					getLogger().warning("[restoration] The job attribute '"+key+"' has been ignored because unknown ! A job may be not completely restored !");
+					getLogger().warning("[restoration] The job attribute '" + key + "' has been ignored because unknown ! A job may be not completely restored !");
 
 			}catch(JSONException je){
-				getLogger().error("[restoration] Incorrect JSON format for a job serialization (attribute: \""+key+"\") !", je);
+				getLogger().error("[restoration] Incorrect JSON format for a job serialization (attribute: \"" + key + "\") !", je);
 			}
 		}
 
 		// The job list name is REQUIRED:
 		if (jobListName == null || jobListName.isEmpty())
-			getLogger().error("[restoration] Missing job list name ! => Can not restore the job "+jobId+" !");
+			getLogger().error("[restoration] Missing job list name ! => Can not restore the job " + jobId + " !");
 
 		// The job list name MUST correspond to an existing job list:
 		else if (uws.getJobList(jobListName) == null)
-			getLogger().error("[restoration] No job list named "+jobListName+" ! => Can not restore the job "+jobId+" !");
+			getLogger().error("[restoration] No job list named " + jobListName + " ! => Can not restore the job " + jobId + " !");
 
 		// The job ID is REQUIRED:
 		else if (jobId == null || jobId.isEmpty())
@@ -875,7 +871,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 			// If the specified user is unknown, display a warning and create the job without owner:
 			if (ownerID != null && !ownerID.isEmpty() && owner == null){
-				getLogger().error("[restoration] Unknown job owner: "+ownerID+" ! => Can not restore the job "+jobId+" !");
+				getLogger().error("[restoration] Unknown job owner: " + ownerID + " ! => Can not restore the job " + jobId + " !");
 				return false;
 			}
 
@@ -916,7 +912,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @see #restoreJob(JSONObject, Map)
 	 */
-	protected void restoreOtherJobParams(final JSONObject json, final UWSJob job) throws UWSException {
+	protected void restoreOtherJobParams(final JSONObject json, final UWSJob job) throws UWSException{
 		;
 	}
 
@@ -930,17 +926,17 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @throws UWSException
 	 */
-	protected Map<String, Object> getParameters(final JSONObject obj) throws UWSException {
+	protected Map<String,Object> getParameters(final JSONObject obj) throws UWSException{
 		if (obj == null || obj.length() == 0)
 			return null;
 
-		HashMap<String, Object> params = new HashMap<String, Object>(obj.length());
+		HashMap<String,Object> params = new HashMap<String,Object>(obj.length());
 		String[] names = JSONObject.getNames(obj);
 		for(String n : names){
 			try{
 				params.put(n, obj.get(n));
 			}catch(JSONException je){
-				getLogger().error("Incorrect JSON format for the serialization of the parameter '"+n+"' !", je);
+				getLogger().error("Incorrect JSON format for the serialization of the parameter '" + n + "' !", je);
 			}
 		}
 		return params;
@@ -958,18 +954,18 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @see {@link #getResult(JSONObject)}
 	 */
-	protected ArrayList<Result> getResults(final JSONArray array) throws UWSException {
+	protected ArrayList<Result> getResults(final JSONArray array) throws UWSException{
 		if (array == null || array.length() == 0)
 			return null;
 
 		ArrayList<Result> results = new ArrayList<Result>(array.length());
-		for(int i=0; i<array.length(); i++){
+		for(int i = 0; i < array.length(); i++){
 			try{
 				Result r = getResult(array.getJSONObject(i));
 				if (r != null)
 					results.add(r);
 			}catch(JSONException je){
-				getLogger().error("Incorrect JSON format for the serialization of the "+(i+1)+"-th result !", je);
+				getLogger().error("Incorrect JSON format for the serialization of the " + (i + 1) + "-th result !", je);
 			}
 		}
 
@@ -986,11 +982,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * @throws JSONException	If there is an error while reading the JSON.
 	 * @throws UWSException
 	 */
-	protected Result getResult(final JSONObject obj) throws JSONException, UWSException {
+	protected Result getResult(final JSONObject obj) throws JSONException, UWSException{
 		if (obj == null || obj.length() == 0)
 			return null;
 
-		String id=null, type=null, href=null, mime=null;
+		String id = null, type = null, href = null, mime = null;
 		boolean redirection = false;
 		long size = -1;
 		String[] names = JSONObject.getNames(obj);
@@ -1008,7 +1004,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			else if (n.equalsIgnoreCase("size"))
 				size = obj.getLong(n);
 			else
-				getLogger().warning("[restoration] The result parameter '"+n+"' has been ignored because unknown ! A result may be not completely restored !");
+				getLogger().warning("[restoration] The result parameter '" + n + "' has been ignored because unknown ! A result may be not completely restored !");
 		}
 
 		if (id == null){
@@ -1031,11 +1027,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @throws UWSException
 	 */
-	protected ErrorSummary getError(final JSONObject obj) throws UWSException {
+	protected ErrorSummary getError(final JSONObject obj) throws UWSException{
 		if (obj == null || obj.length() == 0)
 			return null;
 
-		String type=null, message=null, details=null;
+		String type = null, message = null, details = null;
 		String[] names = JSONObject.getNames(obj);
 		for(String n : names){
 			try{
@@ -1048,7 +1044,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (n.equalsIgnoreCase("message"))
 					message = obj.getString(n);
 				else
-					getLogger().warning("[restoration] The error attribute '"+n+"' has been ignored because unknown ! => An error summary may be not completely restored !");
+					getLogger().warning("[restoration] The error attribute '" + n + "' has been ignored because unknown ! => An error summary may be not completely restored !");
 			}catch(JSONException je){
 				getLogger().error("Incorrect JSON format for an error serialization !", je);
 			}
@@ -1058,7 +1054,6 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		else
 			return null;
 	}
-
 
 	/* **************** */
 	/* USEFUL ITERATORS */
@@ -1082,7 +1077,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		private boolean endReached = false;
 
-		public JSONObjectReader(final JSONTokener input, final UWSLog log) throws JSONException {
+		public JSONObjectReader(final JSONTokener input, final UWSLog log) throws JSONException{
 			this.input = input;
 			this.logger = log;
 
@@ -1095,7 +1090,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				input.back();
 		}
 
-		private void readNext() throws JSONException {
+		private void readNext() throws JSONException{
 			if (nextKey != null){
 				nextKey = null;
 				if (!prepareNextPair()){
@@ -1105,98 +1100,98 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			}
 
 			char c = input.nextClean();
-			switch (c) {
-			case 0:
-				throw input.syntaxError("A JSONObject text must end with '}'");
-			case '}':
-				endReached = true;
-				return;
-			default:
-				input.back();
-				nextKey = input.nextValue().toString();
+			switch(c){
+				case 0:
+					throw input.syntaxError("A JSONObject text must end with '}'");
+				case '}':
+					endReached = true;
+					return;
+				default:
+					input.back();
+					nextKey = input.nextValue().toString();
 			}
 
 			/*
 			 * The key is followed by ':'. We will also tolerate '=' or '=>'.
 			 */
 			c = input.nextClean();
-			if (c == '=') {
-				if (input.next() != '>') {
+			if (c == '='){
+				if (input.next() != '>'){
 					input.back();
 				}
-			} else if (c != ':') {
+			}else if (c != ':'){
 				throw input.syntaxError("Expected a ':' after a key");
 			}
 		}
 
-		private boolean prepareNextPair() throws JSONException {
+		private boolean prepareNextPair() throws JSONException{
 			if (!valueGot)
 				skipValue();
 
 			/*
 			 * Pairs are separated by ','. We will also tolerate ';'.
 			 */
-			switch (input.nextClean()) {
-			case ';':
-			case ',':
-				if (input.nextClean() == '}') {
+			switch(input.nextClean()){
+				case ';':
+				case ',':
+					if (input.nextClean() == '}'){
+						endReached = true;
+						return false;
+					}
+					input.back();
+					break;
+				case '}':
 					endReached = true;
 					return false;
-				}
-				input.back();
-				break;
-			case '}':
-				endReached = true;
-				return false;
-			default:
-				throw input.syntaxError("Expected a ',' or '}'");
+				default:
+					throw input.syntaxError("Expected a ',' or '}'");
 			}
 
 			return true;
 		}
 
-		private void skipValue() throws JSONException {
+		private void skipValue() throws JSONException{
 			valueGot = true;
 			input.nextValue();
 		}
 
-		public JSONObject getJSONObject() throws JSONException {
+		public JSONObject getJSONObject() throws JSONException{
 			valueGot = true;
 			return new JSONObject(input);
 		}
 
-		public JSONArray getJSONArray() throws JSONException {
+		public JSONArray getJSONArray() throws JSONException{
 			valueGot = true;
 			return new JSONArray(input);
 		}
 
-		public String getString() throws JSONException {
+		public String getString() throws JSONException{
 			valueGot = true;
 			return input.nextValue().toString();
 		}
 
-		public Object getValue() throws JSONException {
+		public Object getValue() throws JSONException{
 			valueGot = true;
 			return input.nextValue();
 		}
 
-		public JSONArrayReader getArrayReader() throws JSONException {
+		public JSONArrayReader getArrayReader() throws JSONException{
 			valueGot = true;
 			return new JSONArrayReader(input, logger);
 		}
 
-		public JSONObjectReader getObjectReader() throws JSONException {
+		public JSONObjectReader getObjectReader() throws JSONException{
 			valueGot = true;
 			return new JSONObjectReader(input, logger);
 		}
 
 		@Override
-		public boolean hasNext() {
+		public boolean hasNext(){
 			return !endReached;
 		}
 
 		@Override
-		public String next() throws NoSuchElementException {
+		public String next() throws NoSuchElementException{
 			if (endReached)
 				throw new NoSuchElementException();
 
@@ -1211,7 +1206,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		}
 
 		@Override
-		public void remove() throws UnsupportedOperationException {
+		public void remove() throws UnsupportedOperationException{
 			throw new UnsupportedOperationException();
 		}
 	}
@@ -1232,27 +1227,27 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		private JSONObject nextObj = null;
 
-		public JSONArrayReader(final JSONTokener input, final UWSLog log) throws JSONException {
+		public JSONArrayReader(final JSONTokener input, final UWSLog log) throws JSONException{
 			this.input = input;
 			this.logger = log;
 
 			char c = input.nextClean();
 			switch(c){
-			case '[':
-				closeToken = ']';
-				break;
-			case '(':
-				closeToken = ')';
-				break;
-			default:
-				endReached = true;
-				throw input.syntaxError("A JSONArray text must start with '['");
+				case '[':
+					closeToken = ']';
+					break;
+				case '(':
+					closeToken = ')';
+					break;
+				default:
+					endReached = true;
+					throw input.syntaxError("A JSONArray text must start with '['");
 			}
 
 			readNext();
 		}
 
-		protected void readNext() throws JSONException {
+		protected void readNext() throws JSONException{
 			nextObj = null;
 
 			while(nextObj == null && !endReached){
@@ -1265,36 +1260,36 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				}
 
 				// Ensures the next character is allowed (',' or ']'):
-				switch (c) {
-				case ';':
-				case ',':
-					if (input.nextClean() == ']') {
+				switch(c){
+					case ';':
+					case ',':
+						if (input.nextClean() == ']'){
+							endReached = true;
+							return;
+						}
+						input.back();
+						break;
+					case ']':
+					case ')':
 						endReached = true;
+						if (closeToken != c){
+							throw input.syntaxError("Expected a '" + new Character(closeToken) + "'");
+						}
 						return;
-					}
-					input.back();
-					break;
-				case ']':
-				case ')':
-					endReached = true;
-					if (closeToken != c) {
-						throw input.syntaxError("Expected a '" + new Character(closeToken) + "'");
-					}
-					return;
-				default:
-					endReached = true;
-					throw input.syntaxError("Expected a ',' or ']'");
+					default:
+						endReached = true;
+						throw input.syntaxError("Expected a ',' or ']'");
 				}
 			}
 		}
 
 		@Override
-		public boolean hasNext() {
+		public boolean hasNext(){
 			return (nextObj != null);
 		}
 
 		@Override
-		public JSONObject next() throws NoSuchElementException {
+		public JSONObject next() throws NoSuchElementException{
 			if (nextObj == null && endReached)
 				throw new NoSuchElementException();
 			JSONObject obj = nextObj;
@@ -1309,7 +1304,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		}
 
 		@Override
-		public void remove() throws UnsupportedOperationException {
+		public void remove() throws UnsupportedOperationException{
 			throw new UnsupportedOperationException();
 		}
 
@@ -1325,13 +1320,18 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 */
 	protected final static class SingleInputIterator implements Iterator<InputStream> {
 		private InputStream input;
+
 		public SingleInputIterator(final InputStream input){
 			this.input = input;
 		}
+
 		@Override
-		public boolean hasNext() { return (input != null); }
+		public boolean hasNext(){
+			return (input != null);
+		}
+
 		@Override
-		public InputStream next() throws NoSuchElementException {
+		public InputStream next() throws NoSuchElementException{
 			if (input == null)
 				throw new NoSuchElementException();
 			else{
@@ -1340,8 +1340,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				return in;
 			}
 		}
+
 		@Override
-		public void remove() throws UnsupportedOperationException {
+		public void remove() throws UnsupportedOperationException{
 			throw new UnsupportedOperationException();
 		}
 	}

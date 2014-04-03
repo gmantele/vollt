@@ -43,7 +43,6 @@ public class JobPhase implements Serializable {
 	/** The job whose the current phase is represented by this class. */
 	protected final UWSJob job;
 
-
 	/**
 	 * Builds the phase manager of the given job.
 	 * 
@@ -51,7 +50,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If the given job is <i>null</i>.
 	 */
-	public JobPhase(UWSJob j) throws UWSException {
+	public JobPhase(UWSJob j) throws UWSException{
 		if (j == null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing job instance ! => impossible to build a JobPhase instance.");
 		job = j;
@@ -84,7 +83,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @see #setPhase(ExecutionPhase, boolean)
 	 */
-	public final void setPhase(ExecutionPhase p) throws UWSException {
+	public final void setPhase(ExecutionPhase p) throws UWSException{
 		setPhase(p, false);
 	}
 
@@ -106,31 +105,40 @@ public class JobPhase implements Serializable {
 	 * @see #setSuspendedPhase(boolean)
 	 * @see #setUnknownPhase(boolean)
 	 */
-	public void setPhase(ExecutionPhase p, boolean force) throws UWSException {
+	public void setPhase(ExecutionPhase p, boolean force) throws UWSException{
 		if (p == null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Incorrect phase ! => The phase of a job can not be set to NULL !");
 
 		// Check that the given phase follows the imposed phases order:
 		switch(p){
-		case PENDING:
-			setPendingPhase(force); break;
-		case QUEUED:
-			setQueuedPhase(force); break;
-		case EXECUTING:
-			setExecutingPhase(force); break;
-		case COMPLETED:
-			setCompletedPhase(force); break;
-		case ABORTED:
-			setAbortedPhase(force); break;
-		case ERROR:
-			setErrorPhase(force); break;
-		case HELD:
-			setHeldPhase(force); break;
-		case SUSPENDED:
-			setSuspendedPhase(force); break;
-		case UNKNOWN:
-		default:
-			setUnknownPhase(force); break;
+			case PENDING:
+				setPendingPhase(force);
+				break;
+			case QUEUED:
+				setQueuedPhase(force);
+				break;
+			case EXECUTING:
+				setExecutingPhase(force);
+				break;
+			case COMPLETED:
+				setCompletedPhase(force);
+				break;
+			case ABORTED:
+				setAbortedPhase(force);
+				break;
+			case ERROR:
+				setErrorPhase(force);
+				break;
+			case HELD:
+				setHeldPhase(force);
+				break;
+			case SUSPENDED:
+				setSuspendedPhase(force);
+				break;
+			case UNKNOWN:
+			default:
+				setUnknownPhase(force);
+				break;
 		}
 	}
 
@@ -141,7 +149,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If this phase transition is forbidden <i>(by default: IF force=false AND currentPhase != PENDING or UNKNOWN)</i>.
 	 */
-	protected void setPendingPhase(boolean force) throws UWSException {
+	protected void setPendingPhase(boolean force) throws UWSException{
 		if (!force && phase != ExecutionPhase.PENDING && phase != ExecutionPhase.UNKNOWN)
 			throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.PENDING);
 
@@ -155,7 +163,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If this phase transition is forbidden <i>(by default: IF force=false AND currentPhase != QUEUED or HELD or PENDING or UNKNOWN)</i>.
 	 */
-	protected void setQueuedPhase(boolean force) throws UWSException {
+	protected void setQueuedPhase(boolean force) throws UWSException{
 		if (force)
 			phase = ExecutionPhase.QUEUED;
 		else{
@@ -173,10 +181,10 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If this phase transition is forbidden <i>(by default: IF force=false AND currentPhase != EXECUTING or SUSPENDED or QUEUED or UNKNOWN)</i>.
 	 */
-	protected void setExecutingPhase(boolean force) throws UWSException {
+	protected void setExecutingPhase(boolean force) throws UWSException{
 		if (force)
 			phase = ExecutionPhase.EXECUTING;
-		else {
+		else{
 			if (phase != ExecutionPhase.EXECUTING && phase != ExecutionPhase.SUSPENDED && phase != ExecutionPhase.PENDING && phase != ExecutionPhase.QUEUED && phase != ExecutionPhase.UNKNOWN)
 				throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.EXECUTING);
 
@@ -191,10 +199,10 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If this phase transition is forbidden <i>(by default: IF force=false AND currentPhase != COMPLETED or EXECUTING or UNKNOWN)</i>.
 	 */
-	protected void setCompletedPhase(boolean force) throws UWSException {
+	protected void setCompletedPhase(boolean force) throws UWSException{
 		if (force)
 			phase = ExecutionPhase.COMPLETED;
-		else {
+		else{
 			if (phase != ExecutionPhase.COMPLETED && phase != ExecutionPhase.EXECUTING && phase != ExecutionPhase.UNKNOWN)
 				throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.COMPLETED);
 
@@ -209,7 +217,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If this phase transition is forbidden <i>(by default: IF force=false AND currentPhase = COMPLETED or ERROR)</i>.
 	 */
-	protected void setAbortedPhase(boolean force) throws UWSException {
+	protected void setAbortedPhase(boolean force) throws UWSException{
 		if (force)
 			phase = ExecutionPhase.ABORTED;
 		else{
@@ -227,7 +235,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If this phase transition is forbidden <i>(by default: IF force=false AND currentPhase = COMPLETED or ABORTED)</i>.
 	 */
-	protected void setErrorPhase(boolean force) throws UWSException {
+	protected void setErrorPhase(boolean force) throws UWSException{
 		if (force)
 			phase = ExecutionPhase.ERROR;
 		else{
@@ -245,7 +253,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	If this phase transition is forbidden <i>(by default: IF force=false AND currentPhase != HELD or PENDING or UNKNOWN)</i>.
 	 */
-	protected void setHeldPhase(boolean force) throws UWSException {
+	protected void setHeldPhase(boolean force) throws UWSException{
 		if (!force && phase != ExecutionPhase.HELD && phase != ExecutionPhase.PENDING && phase != ExecutionPhase.UNKNOWN)
 			throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.HELD);
 		phase = ExecutionPhase.HELD;
@@ -258,7 +266,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	By default, never !
 	 */
-	protected void setSuspendedPhase(boolean force) throws UWSException {
+	protected void setSuspendedPhase(boolean force) throws UWSException{
 		phase = ExecutionPhase.SUSPENDED;
 	}
 
@@ -269,7 +277,7 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @throws UWSException	By default, never !
 	 */
-	protected void setUnknownPhase(boolean force) throws UWSException {
+	protected void setUnknownPhase(boolean force) throws UWSException{
 		phase = ExecutionPhase.UNKNOWN;
 	}
 
@@ -308,7 +316,7 @@ public class JobPhase implements Serializable {
 	}
 
 	@Override
-	public String toString() {
+	public String toString(){
 		return ExecutionPhase.getStr(phase);
 	}
 }

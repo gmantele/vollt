@@ -29,17 +29,19 @@ public class TranslationException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
-	public TranslationException() { ; }
+	public TranslationException(){
+		;
+	}
 
-	public TranslationException(String msg) {
+	public TranslationException(String msg){
 		super(msg);
 	}
 
-	public TranslationException(Throwable cause) {
+	public TranslationException(Throwable cause){
 		super(cause);
 	}
 
-	public TranslationException(String msg, Throwable cause) {
+	public TranslationException(String msg, Throwable cause){
 		super(msg, cause);
 	}
 

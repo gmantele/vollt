@@ -57,7 +57,9 @@ public class UWSToolBox {
 	private static UWSLog defaultLogger = null;
 
 	/** <b>THIS CLASS CAN'T BE INSTANTIATED !</b> */
-	private UWSToolBox() { ; }
+	private UWSToolBox(){
+		;
+	}
 
 	/**
 	 * <p>Lets building the absolute URL of any resource available in the root server, from a relative URL.</p>
@@ -81,12 +83,12 @@ public class UWSToolBox {
 		if (serverPath == null || req == null)
 			return null;
 
-		try {
+		try{
 			if (serverPath.length() > 0 && serverPath.charAt(0) != '/')
-				serverPath = "/"+serverPath;
+				serverPath = "/" + serverPath;
 
-			return new URL(req.getRequestURL().substring(0, req.getRequestURL().lastIndexOf(req.getContextPath())+req.getContextPath().length())+serverPath);
-		} catch (MalformedURLException e) {
+			return new URL(req.getRequestURL().substring(0, req.getRequestURL().lastIndexOf(req.getContextPath()) + req.getContextPath().length()) + serverPath);
+		}catch(MalformedURLException e){
 			return null;
 		}
 	}
@@ -119,7 +121,7 @@ public class UWSToolBox {
 	 * @return		The corresponding map of string.
 	 */
 	@SuppressWarnings("unchecked")
-	public static final HashMap<String,String> getParamsMap(HttpServletRequest req) {
+	public static final HashMap<String,String> getParamsMap(HttpServletRequest req){
 		HashMap<String,String> params = new HashMap<String,String>(req.getParameterMap().size());
 
 		Enumeration<String> e = req.getParameterNames();
@@ -137,25 +139,27 @@ public class UWSToolBox {
 	 * @param parameters	A Map of parameters.
 	 * @return				The corresponding query part of an HTTP-GET URL (all keys have been set in upper case).
 	 */
-	public final static String getQueryPart(Map<String, String> parameters){
+	public final static String getQueryPart(Map<String,String> parameters){
 		if (parameters == null || parameters.isEmpty())
 			return "";
 
 		StringBuffer queryPart = new StringBuffer();
-		for(Map.Entry<String,String> e:parameters.entrySet()){
+		for(Map.Entry<String,String> e : parameters.entrySet()){
 			String key = e.getKey();
 			String val = e.getValue();
 
-			if (key != null) key = key.trim().toUpperCase();
-			if (val != null) val = val.trim();
+			if (key != null)
+				key = key.trim().toUpperCase();
+			if (val != null)
+				val = val.trim();
 
-			if(key != null && !key.isEmpty() && val != null && !val.isEmpty()){
-				queryPart.append(e.getKey()+"="+val);
+			if (key != null && !key.isEmpty() && val != null && !val.isEmpty()){
+				queryPart.append(e.getKey() + "=" + val);
 				queryPart.append("&");
 			}
 		}
 
-		return queryPart.substring(0, queryPart.length()-1);
+		return queryPart.substring(0, queryPart.length() - 1);
 	}
 
 	/**
@@ -164,11 +168,11 @@ public class UWSToolBox {
 	 * @param queryPart		A query part of a HTTP-GET URL.
 	 * @return				The corresponding map of parameters (all keys have been set in lower case).
 	 */
-	public final static Map<String, String> getParameters(String queryPart){
+	public final static Map<String,String> getParameters(String queryPart){
 		HashMap<String,String> parameters = new HashMap<String,String>();
 
 		if (queryPart != null){
-			queryPart = queryPart.substring(queryPart.indexOf("?")+1).trim();
+			queryPart = queryPart.substring(queryPart.indexOf("?") + 1).trim();
 			if (!queryPart.isEmpty()){
 				String[] keyValues = queryPart.split("&");
 				for(String item : keyValues){
@@ -208,7 +212,7 @@ public class UWSToolBox {
 	public static final void clearDirectory(File directory){
 		if (directory != null && directory.exists() && directory.isDirectory() && directory.canWrite()){
 			File[] files = directory.listFiles();
-			for(int i=0; i<files.length; i++)
+			for(int i = 0; i < files.length; i++)
 				files[i].delete();
 		}
 	}
@@ -226,9 +230,9 @@ public class UWSToolBox {
 	 * 
 	 * @throws IOException	If there is an error while opening the output stream or while copying.
 	 */
-	public static final void write(final InputStream input, final String mimeType, final long contentSize, final HttpServletResponse response) throws IOException {
+	public static final void write(final InputStream input, final String mimeType, final long contentSize, final HttpServletResponse response) throws IOException{
 		ServletOutputStream output = null;
-		try {
+		try{
 			// Set the HTTP content type:
 			if (mimeType != null)
 				response.setContentType(mimeType);
@@ -241,7 +245,7 @@ public class UWSToolBox {
 			output = response.getOutputStream();
 			byte[] buffer = new byte[1024];
 			int length;
-			while((length=input.read(buffer))>0)
+			while((length = input.read(buffer)) > 0)
 				output.print(new String(buffer, 0, length));
 		}finally{
 			if (output != null)
@@ -268,10 +272,10 @@ public class UWSToolBox {
 			return false;
 
 		PrintWriter pw = new PrintWriter(output);
-		pw.println("Date: "+(new Date()).toString());
-		pw.println("Job: "+job.getJobId());
-		pw.println("Type: "+error.getType());
-		pw.println("Message: "+error.getMessage());
+		pw.println("Date: " + (new Date()).toString());
+		pw.println("Job: " + job.getJobId());
+		pw.println("Type: " + error.getType());
+		pw.println("Message: " + error.getMessage());
 		pw.println("Stack Trace:");
 		printStackTrace(ex, pw);
 		pw.close();
@@ -287,12 +291,12 @@ public class UWSToolBox {
 	 * 
 	 * @throws IOException	If there is an error while printing the stack trace.
 	 */
-	public static final void printStackTrace(final Throwable ex, final PrintWriter pw) throws IOException {
-		pw.println(ex.getClass().getName()+": "+ex.getMessage());
+	public static final void printStackTrace(final Throwable ex, final PrintWriter pw) throws IOException{
+		pw.println(ex.getClass().getName() + ": " + ex.getMessage());
 
 		StackTraceElement[] elements = ex.getStackTrace();
-		for(int i=0; i<elements.length; i++)
-			pw.println("\tat "+elements[i].toString());
+		for(int i = 0; i < elements.length; i++)
+			pw.println("\tat " + elements[i].toString());
 
 		if (ex.getCause() != null){
 			pw.print("Caused by: ");
@@ -314,9 +318,9 @@ public class UWSToolBox {
 	 * @see #printURL(UWSUrl, java.io.OutputStream)
 	 */
 	public static final void printURL(UWSUrl url){
-		try {
+		try{
 			printURL(url, System.out);
-		} catch (IOException e) {
+		}catch(IOException e){
 			e.printStackTrace();
 		}
 	}
@@ -329,7 +333,7 @@ public class UWSToolBox {
 	 * 
 	 * @throws IOException	If there is an error while writing in the given stream.
 	 */
-	public static final void printURL(UWSUrl url, java.io.OutputStream output) throws IOException {
+	public static final void printURL(UWSUrl url, java.io.OutputStream output) throws IOException{
 		StringBuffer toPrint = new StringBuffer();
 		toPrint.append("***** UWS_URL (").append(url.getBaseURI()).append(") *****");
 		toPrint.append("\nRequest URL: ").append(url.getRequestURL());
@@ -351,10 +355,10 @@ public class UWSToolBox {
 	/* MIME TYPE */
 	/* ********* */
 	/** List of file extensions whose the MIME type is known (see {@link #mimeTypes}). */
-	protected static final String[] fileExts = new String[]{"", "vot", "json", "json", "csv", "tsv", "txt", "xml", "xml", "pdf", "ai", "eps", "ps", "html", "zip", "gzip", "gz", "tar", "gif", "jpeg", "jpg", "png", "bmp"};
+	protected static final String[] fileExts = new String[]{"","vot","json","json","csv","tsv","txt","xml","xml","pdf","ai","eps","ps","html","zip","gzip","gz","tar","gif","jpeg","jpg","png","bmp"};
 
 	/** List of known MIME types (see {@link #fileExts}). */
-	protected static final String[] mimeTypes = new String[]{"application/octet-stream", "application/x-votable+xml", "application/json", "text/json", "text/csv", "text/tab-separated-values", "text/plain", "application/xml", "text/xml", "application/pdf", "application/postscript", "application/postscript", "application/postscript", "text/html", "application/zip", "application/x-gzip", "application/x-tar", "image/gif", "image/jpeg", "image/jpeg", "image/png", "image/x-portable-bitmap"};
+	protected static final String[] mimeTypes = new String[]{"application/octet-stream","application/x-votable+xml","application/json","text/json","text/csv","text/tab-separated-values","text/plain","application/xml","text/xml","application/pdf","application/postscript","application/postscript","application/postscript","text/html","application/zip","application/x-gzip","application/x-tar","image/gif","image/jpeg","image/jpeg","image/png","image/x-portable-bitmap"};
 
 	/**
 	 * Gets the MIME type corresponding to the given file extension.
@@ -371,7 +375,7 @@ public class UWSToolBox {
 		if (fileExtension.length() > 0 && fileExtension.charAt(0) == '.')
 			fileExtension = fileExtension.substring(1).trim();
 
-		for(int i=0; i<fileExts.length; i++)
+		for(int i = 0; i < fileExts.length; i++)
 			if (fileExtension.equalsIgnoreCase(fileExts[i]))
 				return mimeTypes[i];
 
@@ -391,7 +395,7 @@ public class UWSToolBox {
 
 		mimeType = mimeType.trim();
 
-		for(int i=0; i<mimeTypes.length; i++)
+		for(int i = 0; i < mimeTypes.length; i++)
 			if (mimeType.equalsIgnoreCase(mimeTypes[i]))
 				return fileExts[i];
 

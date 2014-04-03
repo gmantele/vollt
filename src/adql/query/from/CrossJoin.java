@@ -42,7 +42,7 @@ public class CrossJoin extends ADQLJoin {
 	 * 
 	 * @see ADQLJoin#ADQLJoin(FromContent, FromContent)
 	 */
-	public CrossJoin(FromContent left, FromContent right) {
+	public CrossJoin(FromContent left, FromContent right){
 		super(left, right);
 	}
 
@@ -55,12 +55,14 @@ public class CrossJoin extends ADQLJoin {
 	 * 
 	 * @see ADQLJoin#ADQLJoin(ADQLJoin)
 	 */
-	public CrossJoin(CrossJoin toCopy) throws Exception {
+	public CrossJoin(CrossJoin toCopy) throws Exception{
 		super(toCopy);
 	}
 
 	@Override
-	public String getJoinType() { return "CROSS JOIN"; }
+	public String getJoinType(){
+		return "CROSS JOIN";
+	}
 
 	/**
 	 * Effect-less method: a CROSS join can not be NATURAL.
@@ -68,7 +70,9 @@ public class CrossJoin extends ADQLJoin {
 	 * @see adql.query.from.ADQLJoin#setNatural(boolean)
 	 */
 	@Override
-	public void setNatural(boolean natural) { ; }
+	public void setNatural(boolean natural){
+		;
+	}
 
 	/**
 	 * Effect-less method: no join condition can be specified to make a CROSS join.
@@ -76,7 +80,9 @@ public class CrossJoin extends ADQLJoin {
 	 * @see adql.query.from.ADQLJoin#setJoinCondition(adql.query.ClauseConstraints)
 	 */
 	@Override
-	public void setJoinCondition(ClauseConstraints cond) { ; }
+	public void setJoinCondition(ClauseConstraints cond){
+		;
+	}
 
 	/**
 	 * Effect-less method: no columns can be joined in a CROSS join.
@@ -84,10 +90,12 @@ public class CrossJoin extends ADQLJoin {
 	 * @see adql.query.from.ADQLJoin#setJoinedColumns(java.util.Collection)
 	 */
 	@Override
-	public void setJoinedColumns(Collection<ADQLColumn> columns) { ; }
+	public void setJoinedColumns(Collection<ADQLColumn> columns){
+		;
+	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new CrossJoin(this);
 	}
 

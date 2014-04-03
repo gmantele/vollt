@@ -46,13 +46,12 @@ public class OuterJoin extends ADQLJoin {
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 08/2011
 	 */
-	public static enum OuterType {
+	public static enum OuterType{
 		LEFT, RIGHT, FULL;
 	}
 
 	/** Type of this OUTER join. */
 	private OuterType type = OuterType.LEFT;
-
 
 	/**
 	 * Builds a NATURAL OUTER join between the two given "tables".
@@ -65,7 +64,7 @@ public class OuterJoin extends ADQLJoin {
 	 * @see #setNatural(boolean)
 	 * @see #setType(OuterType)
 	 */
-	public OuterJoin(FromContent left, FromContent right, OuterType type) {
+	public OuterJoin(FromContent left, FromContent right, OuterType type){
 		super(left, right);
 		setNatural(true);
 		setType(type);
@@ -83,7 +82,7 @@ public class OuterJoin extends ADQLJoin {
 	 * @see #setJoinCondition(ClauseConstraints)
 	 * @see #setType(OuterType)
 	 */
-	public OuterJoin(FromContent left, FromContent right, OuterType type, ClauseConstraints condition) {
+	public OuterJoin(FromContent left, FromContent right, OuterType type, ClauseConstraints condition){
 		super(left, right);
 		setJoinCondition(condition);
 		setType(type);
@@ -101,7 +100,7 @@ public class OuterJoin extends ADQLJoin {
 	 * @see #setJoinedColumns(Collection)
 	 * @see #setType(OuterType)
 	 */
-	public OuterJoin(FromContent left, FromContent right, OuterType type, Collection<ADQLColumn> lstColumns) {
+	public OuterJoin(FromContent left, FromContent right, OuterType type, Collection<ADQLColumn> lstColumns){
 		super(left, right);
 		setJoinedColumns(new ArrayList<ADQLColumn>(lstColumns));
 		setType(type);
@@ -117,13 +116,15 @@ public class OuterJoin extends ADQLJoin {
 	 * @see ADQLJoin#ADQLJoin(ADQLJoin)
 	 * @see #setType(OuterType)
 	 */
-	public OuterJoin(OuterJoin toCopy) throws Exception {
+	public OuterJoin(OuterJoin toCopy) throws Exception{
 		super(toCopy);
 		setType(toCopy.type);
 	}
 
 	@Override
-	public String getJoinType() { return type.toString()+" OUTER JOIN"; }
+	public String getJoinType(){
+		return type.toString() + " OUTER JOIN";
+	}
 
 	/**
 	 * Gets the OUTER join type (left, right or full).
@@ -145,7 +146,7 @@ public class OuterJoin extends ADQLJoin {
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new OuterJoin(this);
 	}
 

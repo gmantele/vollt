@@ -33,7 +33,7 @@ import adql.query.ADQLQuery;
  * 
  * @param <R>	Result type of the execution of a query (see {@link #executeQuery(String, ADQLQuery)}.
  */
-public interface DBConnection<R> {
+public interface DBConnection< R > {
 
 	public final static UWSLogType LOG_TYPE_DB_ACTIVITY = UWSLogType.createCustomLogType("DBActivity");
 

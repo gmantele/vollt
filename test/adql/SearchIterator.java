@@ -36,18 +36,17 @@ public class SearchIterator implements Iterator<SearchResult> {
 	/** List of the next SearchResult objects which has at least one result (themselves or included SearchResult). */
 	protected Vector<SearchResult> toExplore;
 
-
 	public SearchIterator(SearchResult r){
 		toExplore = new Vector<SearchResult>();
 		if (r != null && r.hasResult())
 			toExplore.add(r);
 	}
 
-	public boolean hasNext() {
+	public boolean hasNext(){
 		return !toExplore.isEmpty();
 	}
 
-	public SearchResult next() throws NoSuchElementException {
+	public SearchResult next() throws NoSuchElementException{
 		SearchResult next = null;
 
 		while(next == null && !toExplore.isEmpty()){
@@ -70,7 +69,7 @@ public class SearchIterator implements Iterator<SearchResult> {
 		return next;
 	}
 
-	public void remove() throws UnsupportedOperationException {
+	public void remove() throws UnsupportedOperationException{
 		throw new UnsupportedOperationException("The REMOVE operation is not possible in a search result !");
 	}
 

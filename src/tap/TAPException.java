@@ -30,31 +30,31 @@ public class TAPException extends Exception {
 
 	private int httpErrorCode = UWSException.INTERNAL_SERVER_ERROR;
 
-	public TAPException(String message) {
+	public TAPException(String message){
 		super(message);
 	}
 
-	public TAPException(String message, int httpErrorCode) {
+	public TAPException(String message, int httpErrorCode){
 		super(message);
 		this.httpErrorCode = httpErrorCode;
 	}
 
-	public TAPException(String message, String query) {
+	public TAPException(String message, String query){
 		super(message);
 		adqlQuery = query;
 	}
 
-	public TAPException(String message, int httpErrorCode, String query) {
+	public TAPException(String message, int httpErrorCode, String query){
 		this(message, httpErrorCode);
 		adqlQuery = query;
 	}
 
-	public TAPException(String message, String query, ExecutionProgression status) {
+	public TAPException(String message, String query, ExecutionProgression status){
 		this(message, query);
 		executionStatus = status;
 	}
 
-	public TAPException(String message, int httpErrorCode, String query, ExecutionProgression status) {
+	public TAPException(String message, int httpErrorCode, String query, ExecutionProgression status){
 		this(message, httpErrorCode, query);
 		executionStatus = status;
 	}
@@ -63,70 +63,70 @@ public class TAPException extends Exception {
 		this(ue.getMessage(), ue.getCause(), ue.getHttpErrorCode());
 	}
 
-	public TAPException(UWSException cause, int httpErrorCode) {
+	public TAPException(UWSException cause, int httpErrorCode){
 		this(cause);
 		this.httpErrorCode = httpErrorCode;
 	}
 
-	public TAPException(UWSException cause, int httpErrorCode, ExecutionProgression status) {
+	public TAPException(UWSException cause, int httpErrorCode, ExecutionProgression status){
 		this(cause, httpErrorCode);
 		this.executionStatus = status;
 	}
 
-	public TAPException(Throwable cause) {
+	public TAPException(Throwable cause){
 		super(cause);
 	}
 
-	public TAPException(Throwable cause, int httpErrorCode) {
+	public TAPException(Throwable cause, int httpErrorCode){
 		super(cause);
 		this.httpErrorCode = httpErrorCode;
 	}
 
-	public TAPException(Throwable cause, String query) {
+	public TAPException(Throwable cause, String query){
 		super(cause);
 		adqlQuery = query;
 	}
 
-	public TAPException(Throwable cause, int httpErrorCode, String query) {
+	public TAPException(Throwable cause, int httpErrorCode, String query){
 		this(cause, httpErrorCode);
 		adqlQuery = query;
 	}
 
-	public TAPException(Throwable cause, String query, ExecutionProgression status) {
+	public TAPException(Throwable cause, String query, ExecutionProgression status){
 		this(cause, query);
 		executionStatus = status;
 	}
 
-	public TAPException(Throwable cause, int httpErrorCode, String query, ExecutionProgression status) {
+	public TAPException(Throwable cause, int httpErrorCode, String query, ExecutionProgression status){
 		this(cause, httpErrorCode, query);
 		executionStatus = status;
 	}
 
-	public TAPException(String message, Throwable cause) {
+	public TAPException(String message, Throwable cause){
 		super(message, cause);
 	}
 
-	public TAPException(String message, Throwable cause, int httpErrorCode) {
+	public TAPException(String message, Throwable cause, int httpErrorCode){
 		super(message, cause);
 		this.httpErrorCode = httpErrorCode;
 	}
 
-	public TAPException(String message, Throwable cause, String query) {
+	public TAPException(String message, Throwable cause, String query){
 		super(message, cause);
 		adqlQuery = query;
 	}
 
-	public TAPException(String message, Throwable cause, int httpErrorCode, String query) {
+	public TAPException(String message, Throwable cause, int httpErrorCode, String query){
 		this(message, cause, httpErrorCode);
 		adqlQuery = query;
 	}
 
-	public TAPException(String message, Throwable cause, String query, ExecutionProgression status) {
+	public TAPException(String message, Throwable cause, String query, ExecutionProgression status){
 		this(message, cause, query);
 		executionStatus = status;
 	}
 
-	public TAPException(String message, Throwable cause, int httpErrorCode, String query, ExecutionProgression status) {
+	public TAPException(String message, Throwable cause, int httpErrorCode, String query, ExecutionProgression status){
 		this(message, cause, httpErrorCode, query);
 		executionStatus = status;
 	}

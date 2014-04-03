@@ -78,7 +78,6 @@ public interface UWS extends Iterable<JobList> {
 	 */
 	public String getDescription();
 
-
 	/* ******************* */
 	/* JOB LIST MANAGEMENT */
 	/* ******************* */
@@ -132,7 +131,6 @@ public interface UWS extends Iterable<JobList> {
 	 */
 	public boolean destroyJobList(final String name) throws UWSException;
 
-
 	/* **************************** */
 	/* JOB SERIALIZATION MANAGEMENT */
 	/* **************************** */
@@ -152,7 +150,6 @@ public interface UWS extends Iterable<JobList> {
 	 */
 	public UWSSerializer getSerializer(final String mimeTypes) throws UWSException;
 
-
 	/* ******************* */
 	/* UWS URL INTERPRETER */
 	/* ******************* */
@@ -166,7 +163,6 @@ public interface UWS extends Iterable<JobList> {
 	 * @return	Its UWS URL interpreter (SHOULD BE NOT NULL).
 	 */
 	public UWSUrl getUrlInterpreter();
-
 
 	/* ************** */
 	/* LOG MANAGEMENT */
@@ -182,7 +178,6 @@ public interface UWS extends Iterable<JobList> {
 	 */
 	public UWSLog getLogger();
 
-
 	/* ******************* */
 	/* USER IDENTIFICATION */
 	/* ******************* */
@@ -192,7 +187,6 @@ public interface UWS extends Iterable<JobList> {
 	 * @return
 	 */
 	public UserIdentifier getUserIdentifier();
-
 
 	/* *********** */
 	/* JOB FACTORY */
@@ -208,7 +202,6 @@ public interface UWS extends Iterable<JobList> {
 	 */
 	public UWSFactory getFactory();
 
-
 	/* *************** */
 	/* FILE MANAGEMENT */
 	/* *************** */
@@ -221,7 +214,6 @@ public interface UWS extends Iterable<JobList> {
 	 * @return Its file manager.
 	 */
 	public UWSFileManager getFileManager();
-
 
 	/* ***************** */
 	/* BACKUP MANAGEMENT */

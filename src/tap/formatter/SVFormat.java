@@ -29,7 +29,7 @@ import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 
-public abstract class SVFormat<R> implements OutputFormat<R> {
+public abstract class SVFormat< R > implements OutputFormat<R> {
 
 	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
 	private boolean logFormatReport;
@@ -52,7 +52,7 @@ public abstract class SVFormat<R> implements OutputFormat<R> {
 	}
 
 	public SVFormat(final ServiceConnection<R> service, char colSeparator, boolean delimitStrings, final boolean logFormatReport){
-		separator = ""+colSeparator;
+		separator = "" + colSeparator;
 		delimitStr = delimitStrings;
 		this.service = service;
 		this.logFormatReport = logFormatReport;
@@ -63,51 +63,53 @@ public abstract class SVFormat<R> implements OutputFormat<R> {
 	}
 
 	public SVFormat(final ServiceConnection<R> service, String colSeparator, boolean delimitStrings){
-		separator = (colSeparator==null)?(""+COMMA_SEPARATOR):colSeparator;
+		separator = (colSeparator == null) ? ("" + COMMA_SEPARATOR) : colSeparator;
 		delimitStr = delimitStrings;
 		this.service = service;
 	}
 
-	public String getMimeType() {
+	public String getMimeType(){
 		switch(separator.charAt(0)){
-		case COMMA_SEPARATOR:
-		case SEMI_COLON_SEPARATOR:
-			return "text/csv";
-		case TAB_SEPARATOR:
-			return "text/tsv";
-		default:
-			return "text/plain";
+			case COMMA_SEPARATOR:
+			case SEMI_COLON_SEPARATOR:
+				return "text/csv";
+			case TAB_SEPARATOR:
+				return "text/tsv";
+			default:
+				return "text/plain";
 		}
 	}
 
-	public String getShortMimeType() {
+	public String getShortMimeType(){
 		switch(separator.charAt(0)){
-		case COMMA_SEPARATOR:
-		case SEMI_COLON_SEPARATOR:
-			return "csv";
-		case TAB_SEPARATOR:
-			return "tsv";
-		default:
-			return "text";
+			case COMMA_SEPARATOR:
+			case SEMI_COLON_SEPARATOR:
+				return "csv";
+			case TAB_SEPARATOR:
+				return "tsv";
+			default:
+				return "text";
 		}
 	}
 
-	public String getDescription() { return null; }
+	public String getDescription(){
+		return null;
+	}
 
-	public String getFileExtension() {
+	public String getFileExtension(){
 		switch(separator.charAt(0)){
-		case COMMA_SEPARATOR:
-		case SEMI_COLON_SEPARATOR:
-			return "csv";
-		case TAB_SEPARATOR:
-			return "tsv";
-		default:
-			return "txt";
+			case COMMA_SEPARATOR:
+			case SEMI_COLON_SEPARATOR:
+				return "csv";
+			case TAB_SEPARATOR:
+				return "tsv";
+			default:
+				return "txt";
 		}
 	}
 
 	@Override
-	public void writeResult(R queryResult, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException {
+	public void writeResult(R queryResult, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
 		try{
 			final long startTime = System.currentTimeMillis();
 
@@ -122,7 +124,7 @@ public abstract class SVFormat<R> implements OutputFormat<R> {
 			writer.flush();
 
 			if (logFormatReport)
-				service.getLogger().info("JOB "+execReport.jobID+" WRITTEN\tResult formatted (in SV["+delimitStr+"] ; "+nbRows+" rows ; "+columns.length+" columns) in "+(System.currentTimeMillis()-startTime)+" ms !");
+				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in SV[" + delimitStr + "] ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - startTime) + " ms !");
 
 		}catch(Exception ex){
 			service.getLogger().error("While formatting in (T/C)SV !", ex);
@@ -148,7 +150,7 @@ public abstract class SVFormat<R> implements OutputFormat<R> {
 	 * @throws IOException		If there is an error while writing the given field value in the given stream.
 	 * @throws TAPException		If there is any other error (by default: never happen).
 	 */
-	protected void writeFieldValue(final Object value, final DBColumn column, final PrintWriter writer) throws IOException, TAPException {
+	protected void writeFieldValue(final Object value, final DBColumn column, final PrintWriter writer) throws IOException, TAPException{
 		if (value != null){
 			if ((delimitStr && value instanceof String) || value.toString().contains(separator)){
 				writer.print('"');

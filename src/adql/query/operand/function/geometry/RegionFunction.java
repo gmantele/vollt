@@ -45,14 +45,13 @@ public class RegionFunction extends GeometryFunction {
 	/** The only parameter of this function. */
 	protected ADQLOperand parameter;
 
-
 	/**
 	 * Builds a REGION function.
 	 * 
 	 * @param param				The parameter (a string or a column reference or a concatenation or a user function).
 	 * @throws ParseException	If the given parameter is <i>null</i>.
 	 */
-	public RegionFunction(ADQLOperand param) throws NullPointerException, Exception {
+	public RegionFunction(ADQLOperand param) throws NullPointerException, Exception{
 		super();
 		if (param == null)
 			throw new NullPointerException("The ADQL function REGION must have exactly one parameter !");
@@ -67,58 +66,58 @@ public class RegionFunction extends GeometryFunction {
 	 * @param toCopy		The REGION function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public RegionFunction(RegionFunction toCopy) throws Exception {
+	public RegionFunction(RegionFunction toCopy) throws Exception{
 		super();
 		parameter = (ADQLOperand)(toCopy.parameter.getCopy());
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new RegionFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "REGION";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return false;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return true;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
+	public ADQLOperand[] getParameters(){
 		return new ADQLOperand[]{parameter};
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return 1;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index == 0)
 			return parameter;
 		else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 	}
 
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (index == 0){
 			if (replacer == null)
-				throw new NullPointerException("Impossible to remove the only required parameter of a "+getName()+" function !");
+				throw new NullPointerException("Impossible to remove the only required parameter of a " + getName() + " function !");
 			else if (replacer instanceof ADQLOperand){
 				ADQLOperand replaced = parameter;
 				parameter = replaced;
 				return replaced;
 			}else
-				throw new Exception("Impossible to replace an ADQLOperand by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+				throw new Exception("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 		}else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 	}
 
 }

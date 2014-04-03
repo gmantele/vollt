@@ -53,7 +53,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 * 
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator()
 	 */
-	public PgSphereTranslator() {
+	public PgSphereTranslator(){
 		super();
 	}
 
@@ -64,7 +64,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 * 
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean)
 	 */
-	public PgSphereTranslator(boolean column) {
+	public PgSphereTranslator(boolean column){
 		super(column);
 	}
 
@@ -78,12 +78,12 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 * 
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean, boolean, boolean, boolean)
 	 */
-	public PgSphereTranslator(boolean catalog, boolean schema, boolean table, boolean column) {
+	public PgSphereTranslator(boolean catalog, boolean schema, boolean table, boolean column){
 		super(catalog, schema, table, column);
 	}
 
 	@Override
-	public String translate(PointFunction point) throws TranslationException {
+	public String translate(PointFunction point) throws TranslationException{
 		StringBuffer str = new StringBuffer("spoint(");
 		str.append("radians(").append(translate(point.getCoord1())).append("),");
 		str.append("radians(").append(translate(point.getCoord2())).append("))");
@@ -91,7 +91,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(CircleFunction circle) throws TranslationException {
+	public String translate(CircleFunction circle) throws TranslationException{
 		StringBuffer str = new StringBuffer("scircle(");
 		str.append("spoint(radians(").append(translate(circle.getCoord1())).append("),");
 		str.append("radians(").append(translate(circle.getCoord2())).append(")),");
@@ -100,7 +100,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(BoxFunction box) throws TranslationException {
+	public String translate(BoxFunction box) throws TranslationException{
 		StringBuffer str = new StringBuffer("sbox(");
 
 		str.append("spoint(").append("radians(").append(translate(box.getCoord1())).append("+(").append(translate(box.getWidth())).append("/2.0)),");
@@ -112,17 +112,17 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(PolygonFunction polygon) throws TranslationException {
-		try {
+	public String translate(PolygonFunction polygon) throws TranslationException{
+		try{
 			StringBuffer str = new StringBuffer("spoly('{'");
 
 			if (polygon.getNbParameters() > 2){
 				PointFunction point = new PointFunction(polygon.getCoordinateSystem(), polygon.getParameter(1), polygon.getParameter(2));
 				str.append(" || ").append(translate(point));
 
-				for(int i=3; i<polygon.getNbParameters() && i+1<polygon.getNbParameters(); i+=2){
+				for(int i = 3; i < polygon.getNbParameters() && i + 1 < polygon.getNbParameters(); i += 2){
 					point.setCoord1(polygon.getParameter(i));
-					point.setCoord2(polygon.getParameter(i+1));
+					point.setCoord2(polygon.getParameter(i + 1));
 					str.append(" || ',' || ").append(translate(point));
 				}
 			}
@@ -130,14 +130,14 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 			str.append(" || '}')");
 
 			return str.toString();
-		} catch (Exception e) {
+		}catch(Exception e){
 			e.printStackTrace();
 			throw new TranslationException(e);
 		}
 	}
 
 	@Override
-	public String translate(ExtractCoord extractCoord) throws TranslationException {
+	public String translate(ExtractCoord extractCoord) throws TranslationException{
 		StringBuffer str = new StringBuffer("degrees(");
 		if (extractCoord.getName().equalsIgnoreCase("COORD1"))
 			str.append("long(");
@@ -148,43 +148,41 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(DistanceFunction fct) throws TranslationException {
+	public String translate(DistanceFunction fct) throws TranslationException{
 		StringBuffer str = new StringBuffer("degrees(");
 		str.append(translate(fct.getP1())).append(" <-> ").append(translate(fct.getP2())).append(")");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(AreaFunction areaFunction) throws TranslationException {
+	public String translate(AreaFunction areaFunction) throws TranslationException{
 		StringBuffer str = new StringBuffer("degrees(area(");
 		str.append(translate(areaFunction.getParameter())).append("))");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(ContainsFunction fct) throws TranslationException {
+	public String translate(ContainsFunction fct) throws TranslationException{
 		StringBuffer str = new StringBuffer("(");
 		str.append(translate(fct.getLeftParam())).append(" @ ").append(translate(fct.getRightParam())).append(")");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(IntersectsFunction fct) throws TranslationException {
+	public String translate(IntersectsFunction fct) throws TranslationException{
 		StringBuffer str = new StringBuffer("(");
 		str.append(translate(fct.getLeftParam())).append(" && ").append(translate(fct.getRightParam())).append(")");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(Comparison comp) throws TranslationException {
+	public String translate(Comparison comp) throws TranslationException{
 		if ((comp.getLeftOperand() instanceof ContainsFunction || comp.getLeftOperand() instanceof IntersectsFunction) && (comp.getOperator() == ComparisonOperator.EQUAL || comp.getOperator() == ComparisonOperator.NOT_EQUAL) && comp.getRightOperand().isNumeric())
-			return translate(comp.getLeftOperand())+" "+comp.getOperator().toADQL()+" '"+translate(comp.getRightOperand())+"'";
+			return translate(comp.getLeftOperand()) + " " + comp.getOperator().toADQL() + " '" + translate(comp.getRightOperand()) + "'";
 		else if ((comp.getRightOperand() instanceof ContainsFunction || comp.getRightOperand() instanceof IntersectsFunction) && (comp.getOperator() == ComparisonOperator.EQUAL || comp.getOperator() == ComparisonOperator.NOT_EQUAL) && comp.getLeftOperand().isNumeric())
-			return "'"+translate(comp.getLeftOperand())+"' "+comp.getOperator().toADQL()+" "+translate(comp.getRightOperand());
+			return "'" + translate(comp.getLeftOperand()) + "' " + comp.getOperator().toADQL() + " " + translate(comp.getRightOperand());
 		else
 			return super.translate(comp);
 	}
-
-
 
 }

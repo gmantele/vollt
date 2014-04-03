@@ -41,7 +41,7 @@ public class NotConstraint implements ADQLConstraint {
 	 * 
 	 * @throws NullPointerException	If the given constraint is <i>null</i>.
 	 */
-	public NotConstraint(ADQLConstraint constraint) throws NullPointerException {
+	public NotConstraint(ADQLConstraint constraint) throws NullPointerException{
 		if (constraint == null)
 			throw new NullPointerException("Impossible to apply the logical operator NOT on a NULL constraint !");
 		this.constraint = constraint;
@@ -56,31 +56,31 @@ public class NotConstraint implements ADQLConstraint {
 		return constraint;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new NotConstraint((ADQLConstraint)constraint.getCopy());
 	}
 
-	public String getName() {
-		return "NOT "+constraint.getName();
+	public String getName(){
+		return "NOT " + constraint.getName();
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private boolean constraintGot = (constraint == null);
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				if (constraintGot)
 					throw new NoSuchElementException();
 				constraintGot = true;
 				return constraint;
 			}
 
-			public boolean hasNext() {
+			public boolean hasNext(){
 				return !constraintGot;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (!constraintGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -89,10 +89,10 @@ public class NotConstraint implements ADQLConstraint {
 				else if (replacer instanceof ADQLConstraint)
 					constraint = (ADQLConstraint)replacer;
 				else
-					throw new UnsupportedOperationException("Impossible to replace an ADQLConstraint by a "+replacer.getClass().getName()+" !");
+					throw new UnsupportedOperationException("Impossible to replace an ADQLConstraint by a " + replacer.getClass().getName() + " !");
 			}
 
-			public void remove() {
+			public void remove(){
 				if (!constraintGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
@@ -101,8 +101,8 @@ public class NotConstraint implements ADQLConstraint {
 		};
 	}
 
-	public String toADQL() {
-		return "NOT "+constraint.toADQL();
+	public String toADQL(){
+		return "NOT " + constraint.toADQL();
 	}
 
 }

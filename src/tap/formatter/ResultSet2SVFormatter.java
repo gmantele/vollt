@@ -33,32 +33,32 @@ import tap.TAPExecutionReport;
 
 public class ResultSet2SVFormatter extends SVFormat<ResultSet> implements ResultSetFormatter {
 
-	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator, boolean delimitStrings) {
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator, boolean delimitStrings){
 		super(service, colSeparator, delimitStrings);
 	}
 
-	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator) {
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator){
 		super(service, colSeparator);
 	}
 
-	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, String colSeparator, boolean delimitStrings) {
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, String colSeparator, boolean delimitStrings){
 		super(service, colSeparator, delimitStrings);
 	}
 
-	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, String colSeparator) {
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, String colSeparator){
 		super(service, colSeparator);
 	}
 
 	@Override
-	protected DBColumn[] writeMetadata(ResultSet queryResult, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException {
+	protected DBColumn[] writeMetadata(ResultSet queryResult, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
 		DBColumn[] selectedColumns = execReport.resultingColumns;
 		int nbColumns = (selectedColumns == null) ? -1 : selectedColumns.length;
 		if (nbColumns > 0){
-			for(int i=0; i<nbColumns-1; i++){
+			for(int i = 0; i < nbColumns - 1; i++){
 				writer.print(selectedColumns[i].getADQLName());
 				writer.print(separator);
 			}
-			writer.print(selectedColumns[nbColumns-1].getADQLName());
+			writer.print(selectedColumns[nbColumns - 1].getADQLName());
 			writer.println();
 			writer.flush();
 		}
@@ -66,7 +66,7 @@ public class ResultSet2SVFormatter extends SVFormat<ResultSet> implements Result
 	}
 
 	@Override
-	protected int writeData(ResultSet queryResult, DBColumn[] selectedColumns, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException {
+	protected int writeData(ResultSet queryResult, DBColumn[] selectedColumns, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
 		int nbRows = 0;
 		try{
 			int nbColumns = queryResult.getMetaData().getColumnCount();
@@ -75,9 +75,9 @@ public class ResultSet2SVFormatter extends SVFormat<ResultSet> implements Result
 					break;
 
 				Object value;
-				for(int i=1; i<=nbColumns; i++){
-					value = formatValue(queryResult.getObject(i), selectedColumns[i-1]);
-					writeFieldValue(value, selectedColumns[i-1], writer);
+				for(int i = 1; i <= nbColumns; i++){
+					value = formatValue(queryResult.getObject(i), selectedColumns[i - 1]);
+					writeFieldValue(value, selectedColumns[i - 1], writer);
 					if (i != nbColumns)
 						writer.print(separator);
 					if (thread.isInterrupted())
@@ -91,7 +91,7 @@ public class ResultSet2SVFormatter extends SVFormat<ResultSet> implements Result
 			}
 			writer.flush();
 		}catch(SQLException se){
-			throw new TAPException("Job N°"+execReport.jobID+" - Impossible to get the "+(nbRows+1)+"-th rows from the given ResultSet !", se);
+			throw new TAPException("Job N°" + execReport.jobID + " - Impossible to get the " + (nbRows + 1) + "-th rows from the given ResultSet !", se);
 		}
 
 		return nbRows;

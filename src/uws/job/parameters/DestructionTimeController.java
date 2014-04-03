@@ -60,15 +60,11 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @see Calendar
 	 */
-	public static enum DateField {
-		SECOND 	(Calendar.SECOND),
-		MINUTE 	(Calendar.MINUTE),
-		HOUR 	(Calendar.HOUR),
-		DAY 	(Calendar.DAY_OF_MONTH),
-		MONTH 	(Calendar.MONTH),
-		YEAR 	(Calendar.YEAR);
+	public static enum DateField{
+		SECOND(Calendar.SECOND), MINUTE(Calendar.MINUTE), HOUR(Calendar.HOUR), DAY(Calendar.DAY_OF_MONTH), MONTH(Calendar.MONTH), YEAR(Calendar.YEAR);
 
 		private final int index;
+
 		private DateField(int fieldIndex){
 			index = fieldIndex;
 		}
@@ -99,7 +95,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	protected boolean allowModification = true;
 
 	@Override
-	public Object check(Object value) throws UWSException {
+	public Object check(Object value) throws UWSException{
 		if (value == null)
 			return null;
 
@@ -118,13 +114,13 @@ public class DestructionTimeController implements InputParamController, Serializ
 
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))
-			throw new UWSException(UWSException.BAD_REQUEST, "The UWS limits "+((defaultInterval > NO_INTERVAL)?("the DESTRUCTION INTERVAL (since now) to "+maxInterval+" "+maxIntervalField.name().toLowerCase()+"s"):("the DESTRUCTION TIME to "+maxDate))+" !");
+			throw new UWSException(UWSException.BAD_REQUEST, "The UWS limits " + ((defaultInterval > NO_INTERVAL) ? ("the DESTRUCTION INTERVAL (since now) to " + maxInterval + " " + maxIntervalField.name().toLowerCase() + "s") : ("the DESTRUCTION TIME to " + maxDate)) + " !");
 
 		return date;
 	}
 
 	@Override
-	public Object getDefault() {
+	public Object getDefault(){
 		return getDefaultDestructionTime();
 	}
 
@@ -136,7 +132,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return The default destruction time (<i>null</i> means that jobs may stay forever).
 	 */
-	public final Date getDefaultDestructionTime() {
+	public final Date getDefaultDestructionTime(){
 		if (defaultInterval > NO_INTERVAL){
 			Calendar date = Calendar.getInstance();
 			try{
@@ -160,7 +156,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @param defaultDestructionTime The default destruction time to set (<i>null</i> means jobs may stay forever).
 	 */
-	public final void setDefaultDestructionTime(Date defaultDestructionTime) {
+	public final void setDefaultDestructionTime(Date defaultDestructionTime){
 		this.defaultTime = defaultDestructionTime;
 		defaultInterval = NO_INTERVAL;
 		defaultIntervalField = null;
@@ -173,7 +169,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return The default destruction interval.
 	 */
-	public final int getDefaultDestructionInterval() {
+	public final int getDefaultDestructionInterval(){
 		return defaultInterval;
 	}
 
@@ -182,7 +178,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return The default interval field.
 	 */
-	public final DateField getDefaultIntervalField() {
+	public final DateField getDefaultIntervalField(){
 		return defaultIntervalField;
 	}
 
@@ -199,7 +195,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @see #setDefaultDestructionInterval(int, DateField)
 	 */
-	public final void setDefaultDestructionInterval(int defaultDestructionInterval) {
+	public final void setDefaultDestructionInterval(int defaultDestructionInterval){
 		setDefaultDestructionInterval(defaultDestructionInterval, DateField.MINUTE);
 	}
 
@@ -215,7 +211,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * @param defaultDestructionInterval	The default destruction interval ({@link #NO_INTERVAL}, 0 or a negative value mean the job may stay forever).
 	 * @param timeField						The unit of the interval (<i>null</i> means the job may stay forever).
 	 */
-	public final void setDefaultDestructionInterval(int defaultDestructionInterval, DateField timeField) {
+	public final void setDefaultDestructionInterval(int defaultDestructionInterval, DateField timeField){
 		if (defaultDestructionInterval <= 0 || timeField == null){
 			defaultIntervalField = null;
 			defaultInterval = NO_INTERVAL;
@@ -231,7 +227,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return The maximum destruction time (<i>null</i> means that jobs may stay forever).
 	 */
-	public final Date getMaxDestructionTime() {
+	public final Date getMaxDestructionTime(){
 		if (maxInterval > NO_INTERVAL){
 			Calendar date = Calendar.getInstance();
 			try{
@@ -255,7 +251,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @param maxDestructionTime The maximum destruction time to set (<i>null</i> means jobs may stay forever).
 	 */
-	public final void setMaxDestructionTime(Date maxDestructionTime) {
+	public final void setMaxDestructionTime(Date maxDestructionTime){
 		this.maxTime = maxDestructionTime;
 		maxInterval = NO_INTERVAL;
 		maxIntervalField = null;
@@ -268,7 +264,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return The maximum destruction interval.
 	 */
-	public final int getMaxDestructionInterval() {
+	public final int getMaxDestructionInterval(){
 		return maxInterval;
 	}
 
@@ -277,7 +273,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return The maximum interval field.
 	 */
-	public final DateField getMaxIntervalField() {
+	public final DateField getMaxIntervalField(){
 		return maxIntervalField;
 	}
 
@@ -294,7 +290,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @see #setMaxDestructionInterval(int, DateField)
 	 */
-	public final void setMaxDestructionInterval(int maxDestructionInterval) {
+	public final void setMaxDestructionInterval(int maxDestructionInterval){
 		setMaxDestructionInterval(maxDestructionInterval, DateField.MINUTE);
 	}
 
@@ -310,7 +306,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * @param maxDestructionInterval		The maximum destruction interval ({@link #NO_INTERVAL}, 0 or a negative value mean the job may stay forever).
 	 * @param timeField						The unit of the interval (<i>null</i> means the job may stay forever).
 	 */
-	public final void setMaxDestructionInterval(int maxDestructionInterval, DateField timeField) {
+	public final void setMaxDestructionInterval(int maxDestructionInterval, DateField timeField){
 		this.maxInterval = maxDestructionInterval;
 		maxIntervalField = timeField;
 		maxTime = null;
@@ -321,7 +317,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return <i>true</i> if the destruction time can be modified, <i>false</i> otherwise.
 	 */
-	public final boolean allowModification() {
+	public final boolean allowModification(){
 		return allowModification;
 	}
 
@@ -330,7 +326,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @param allowModification <i>true</i> if the destruction time can be modified, <i>false</i> otherwise.
 	 */
-	public final void allowModification(boolean allowModification) {
+	public final void allowModification(boolean allowModification){
 		this.allowModification = allowModification;
 	}
 

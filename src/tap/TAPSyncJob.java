@@ -45,7 +45,7 @@ public class TAPSyncJob {
 
 	private Date startedAt = null;
 
-	public TAPSyncJob(final ServiceConnection<?> service, final TAPParameters params) throws NullPointerException {
+	public TAPSyncJob(final ServiceConnection<?> service, final TAPParameters params) throws NullPointerException{
 		if (params == null)
 			throw new NullPointerException("Missing TAP parameters ! => Impossible to create a synchronous TAP job.");
 		tapParams = params;
@@ -69,11 +69,11 @@ public class TAPSyncJob {
 	 * 
 	 * @return	A unique job identifier.
 	 */
-	protected String generateId() {
-		String generatedId = "S"+System.currentTimeMillis()+"A";
+	protected String generateId(){
+		String generatedId = "S" + System.currentTimeMillis() + "A";
 		if (lastId != null){
 			while(lastId.equals(generatedId))
-				generatedId = generatedId.substring(0, generatedId.length()-1)+(char)(generatedId.charAt(generatedId.length()-1)+1);
+				generatedId = generatedId.substring(0, generatedId.length() - 1) + (char)(generatedId.charAt(generatedId.length() - 1) + 1);
 		}
 		lastId = generatedId;
 		return generatedId;
@@ -87,18 +87,18 @@ public class TAPSyncJob {
 		return tapParams;
 	}
 
-	public final TAPExecutionReport getExecReport() {
+	public final TAPExecutionReport getExecReport(){
 		return execReport;
 	}
 
-	public synchronized boolean start(final HttpServletResponse response) throws IllegalStateException, UWSException, TAPException {
+	public synchronized boolean start(final HttpServletResponse response) throws IllegalStateException, UWSException, TAPException{
 		if (startedAt != null)
 			throw new IllegalStateException("Impossible to restart a synchronous TAP query !");
 
 		ADQLExecutor<?> executor;
-		try {
+		try{
 			executor = service.getFactory().createADQLExecutor();
-		} catch (TAPException e) {
+		}catch(TAPException e){
 			// TODO Log this error !
 			return true;
 		}
@@ -123,9 +123,9 @@ public class TAPSyncJob {
 
 		if (!thread.isSuccess()){
 			if (thread.isAlive())
-				throw new TAPException("Time out (="+tapParams.getExecutionDuration()+"ms) ! However, the thread (synchronous query) can not be stopped !", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				throw new TAPException("Time out (=" + tapParams.getExecutionDuration() + "ms) ! However, the thread (synchronous query) can not be stopped !", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			else if (timeout)
-				throw new TAPException("Time out ! The execution of this synchronous TAP query was limited to "+tapParams.getExecutionDuration()+"ms.", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				throw new TAPException("Time out ! The execution of this synchronous TAP query was limited to " + tapParams.getExecutionDuration() + "ms.", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			else{
 				Throwable t = thread.getError();
 				if (t instanceof InterruptedException)
@@ -152,7 +152,7 @@ public class TAPSyncJob {
 
 		public SyncThread(final ADQLExecutor<?> executor, final String ID, final TAPParameters tapParams, final HttpServletResponse response){
 			super(JobThread.tg, ID);
-			taskDescription = "Executing the synchronous TAP query "+ID;
+			taskDescription = "Executing the synchronous TAP query " + ID;
 			this.executor = executor;
 			this.ID = ID;
 			this.tapParams = tapParams;
@@ -172,14 +172,14 @@ public class TAPSyncJob {
 		}
 
 		@Override
-		public void run() {
+		public void run(){
 			// Log the start of this thread:
 			executor.getLogger().threadStarted(this, taskDescription);
 
-			try {
+			try{
 				report = executor.start(this, ID, tapParams, response);
 				executor.getLogger().threadFinished(this, taskDescription);
-			} catch (Throwable e) {
+			}catch(Throwable e){
 				exception = e;
 				if (e instanceof InterruptedException){
 					// Log the abortion:

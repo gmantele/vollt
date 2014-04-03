@@ -42,11 +42,10 @@ public class DefaultExecutionManager implements ExecutionManager {
 	private static final long serialVersionUID = 1L;
 
 	/** List of running jobs. */
-	protected Map<String, UWSJob> runningJobs;
-
+	protected Map<String,UWSJob> runningJobs;
 
 	public DefaultExecutionManager(){
-		runningJobs = new LinkedHashMap<String, UWSJob>(10);
+		runningJobs = new LinkedHashMap<String,UWSJob>(10);
 	}
 
 	/* ******* */
@@ -67,15 +66,21 @@ public class DefaultExecutionManager implements ExecutionManager {
 	 * @see uws.job.manager.ExecutionManager#getQueuedJobs()
 	 */
 	public final Iterator<UWSJob> getQueuedJobs(){
-		return new Iterator<UWSJob>() {
+		return new Iterator<UWSJob>(){
 			@Override
-			public boolean hasNext() { return false; }
+			public boolean hasNext(){
+				return false;
+			}
 
 			@Override
-			public UWSJob next() { return null; }
+			public UWSJob next(){
+				return null;
+			}
 
 			@Override
-			public void remove() { ; }
+			public void remove(){
+				;
+			}
 		};
 	}
 
@@ -84,16 +89,20 @@ public class DefaultExecutionManager implements ExecutionManager {
 	 * 
 	 * @see uws.job.manager.ExecutionManager#getNbQueuedJobs()
 	 */
-	public final int getNbQueuedJobs(){ return 0; }
+	public final int getNbQueuedJobs(){
+		return 0;
+	}
 
 	/**
 	 * Does nothing in its implementation.
 	 * 
 	 * @see uws.job.manager.ExecutionManager#refresh()
 	 */
-	public final void refresh() throws UWSException { ; }
+	public final void refresh() throws UWSException{
+		;
+	}
 
-	public synchronized ExecutionPhase execute(final UWSJob jobToExecute) throws UWSException {
+	public synchronized ExecutionPhase execute(final UWSJob jobToExecute) throws UWSException{
 		if (jobToExecute == null)
 			return null;
 
@@ -107,7 +116,7 @@ public class DefaultExecutionManager implements ExecutionManager {
 			throw UWSExceptionFactory.incorrectPhaseTransition(jobToExecute.getJobId(), jobToExecute.getPhase(), ExecutionPhase.EXECUTING);
 
 			// Otherwise start it:
-		} else {
+		}else{
 			jobToExecute.start(false);
 			runningJobs.put(jobToExecute.getJobId(), jobToExecute);
 		}
@@ -115,7 +124,7 @@ public class DefaultExecutionManager implements ExecutionManager {
 		return jobToExecute.getPhase();
 	}
 
-	public synchronized void remove(final UWSJob jobToRemove) throws UWSException {
+	public synchronized void remove(final UWSJob jobToRemove) throws UWSException{
 		if (jobToRemove != null)
 			runningJobs.remove(jobToRemove.getJobId());
 	}

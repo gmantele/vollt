@@ -57,12 +57,12 @@ public class SetJobParam extends UWSAction {
 	 * @see uws.service.actions.UWSAction#getName()
 	 */
 	@Override
-	public String getName() {
+	public String getName(){
 		return SET_JOB_PARAM;
 	}
 
 	@Override
-	public String getDescription() {
+	public String getDescription(){
 		return "Sets the value of a job attribute/parameter of the specified job. (URL: {baseUWS_URL}/{jobListName}/{job-id}/{job-attribute}, Method: HTTP-POST or HTTP-PUT, Parameter: {JOB-ATTRIBUTE}={attribute-value})";
 	}
 
@@ -78,20 +78,8 @@ public class SetJobParam extends UWSAction {
 	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException {
-		return (urlInterpreter.hasJobList()
-				&& urlInterpreter.hasJob()
-				&& (
-						(request.getMethod().equalsIgnoreCase("post")
-								&& (!urlInterpreter.hasAttribute() || urlInterpreter.getAttributes().length == 1)
-								&& request.getParameterMap().size() > 0)
-								||
-								(request.getMethod().equalsIgnoreCase("put")
-										&& urlInterpreter.getAttributes().length >= 2
-										&& urlInterpreter.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)
-										&& request.getParameter(urlInterpreter.getAttributes()[1]) != null)
-				)
-		);
+	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
+		return (urlInterpreter.hasJobList() && urlInterpreter.hasJob() && ((request.getMethod().equalsIgnoreCase("post") && (!urlInterpreter.hasAttribute() || urlInterpreter.getAttributes().length == 1) && request.getParameterMap().size() > 0) || (request.getMethod().equalsIgnoreCase("put") && urlInterpreter.getAttributes().length >= 2 && urlInterpreter.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS) && request.getParameter(urlInterpreter.getAttributes()[1]) != null)));
 	}
 
 	/**
@@ -107,7 +95,7 @@ public class SetJobParam extends UWSAction {
 	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
 	@Override
-	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException {
+	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		// Get the job:
 		UWSJob job = getJob(urlInterpreter);
 

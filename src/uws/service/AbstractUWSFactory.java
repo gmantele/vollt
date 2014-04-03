@@ -42,7 +42,6 @@ import uws.job.parameters.DestructionTimeController.DateField;
 
 import uws.job.user.JobOwner;
 
-
 /**
  * <p>Abstract implementation of {@link UWSFactory}.
  * Only the function which creates a {@link JobThread} from a {@link UWSJob} needs to be implemented.</p>
@@ -53,12 +52,14 @@ import uws.job.user.JobOwner;
 public abstract class AbstractUWSFactory implements UWSFactory {
 
 	/** List the controllers of all the input parameters. See {@link UWSParameters} and {@link InputParamController} for more details. */
-	protected final HashMap<String, InputParamController> inputParamControllers = new HashMap<String, InputParamController>(10);
+	protected final HashMap<String,InputParamController> inputParamControllers = new HashMap<String,InputParamController>(10);
 
 	/** List of all expected additional parameters. */
 	protected final ArrayList<String> expectedAdditionalParams = new ArrayList<String>(10);
 
-	public AbstractUWSFactory(){ ; }
+	public AbstractUWSFactory(){
+		;
+	}
 
 	/**
 	 * Builds a factory with a list of the name of all expected additional parameters.
@@ -81,22 +82,22 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	/* ***************** */
 
 	@Override
-	public UWSJob createJob(final HttpServletRequest request, final JobOwner user) throws UWSException {
+	public UWSJob createJob(final HttpServletRequest request, final JobOwner user) throws UWSException{
 		return new UWSJob(user, createUWSParameters(request));
 	}
 
 	@Override
-	public UWSJob createJob(String jobID, JobOwner owner, UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException {
+	public UWSJob createJob(String jobID, JobOwner owner, UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException{
 		return new UWSJob(jobID, owner, params, quote, startTime, endTime, results, error);
 	}
 
 	@Override
-	public UWSParameters createUWSParameters(final Map<String, Object> params) throws UWSException {
+	public UWSParameters createUWSParameters(final Map<String,Object> params) throws UWSException{
 		return new UWSParameters(params, expectedAdditionalParams, inputParamControllers);
 	}
 
 	@Override
-	public UWSParameters createUWSParameters(final HttpServletRequest req) throws UWSException {
+	public UWSParameters createUWSParameters(final HttpServletRequest req) throws UWSException{
 		return new UWSParameters(req, expectedAdditionalParams, inputParamControllers);
 	}
 
@@ -155,7 +156,7 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	 * Gets the list of all UWS input parameter controllers.
 	 * @return	All parameter controllers.
 	 */
-	public final Map<String, InputParamController> getInputParamControllers(){
+	public final Map<String,InputParamController> getInputParamControllers(){
 		return inputParamControllers;
 	}
 
@@ -163,7 +164,7 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	 * Gets an iterator on the list of all UWS input parameter controllers.
 	 * @return	An iterator on all parameter controllers.
 	 */
-	public final Iterator<Map.Entry<String, InputParamController>> getInputParamControllersIterator(){
+	public final Iterator<Map.Entry<String,InputParamController>> getInputParamControllersIterator(){
 		return inputParamControllers.entrySet().iterator();
 	}
 

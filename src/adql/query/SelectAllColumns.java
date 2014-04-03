@@ -38,13 +38,12 @@ public final class SelectAllColumns extends SelectItem {
 	/** The table whose all columns must be selected. */
 	private ADQLTable adqlTable = null;
 
-
 	/**
 	 * Builds a {@link SelectItem} which selects all columns available in the given ADQL query.
 	 * 
 	 * @param query	The query whose all available columns must be selected.
 	 */
-	public SelectAllColumns(final ADQLQuery query) {
+	public SelectAllColumns(final ADQLQuery query){
 		super(null, null);
 		this.query = query;
 	}
@@ -54,7 +53,7 @@ public final class SelectAllColumns extends SelectItem {
 	 * 
 	 * @param table	The table whose all available columns must be selected.
 	 */
-	public SelectAllColumns(final ADQLTable table) {
+	public SelectAllColumns(final ADQLTable table){
 		super(null, null);
 		adqlTable = table;
 	}
@@ -65,7 +64,7 @@ public final class SelectAllColumns extends SelectItem {
 	 * @param toCopy		The {@link SelectAllColumns} to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public SelectAllColumns(SelectAllColumns toCopy) throws Exception {
+	public SelectAllColumns(SelectAllColumns toCopy) throws Exception{
 		super(toCopy);
 	}
 
@@ -106,7 +105,7 @@ public final class SelectAllColumns extends SelectItem {
 	 * 
 	 * @param table	An {@link ADQLTable} (MUST NOT BE NULL).
 	 */
-	public final void setAdqlTable(final ADQLTable table) {
+	public final void setAdqlTable(final ADQLTable table){
 		if (table == null){
 			adqlTable = table;
 			query = null;
@@ -114,63 +113,61 @@ public final class SelectAllColumns extends SelectItem {
 	}
 
 	@Override
-	public final ADQLObject getCopy() throws Exception {
+	public final ADQLObject getCopy() throws Exception{
 		return new SelectAllColumns(this);
 	}
 
 	@Override
-	public final String getName() {
+	public final String getName(){
 		return "*";
 	}
 
 	@Override
 	public final ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private boolean tableGot = (adqlTable == null);
 
-			public ADQLObject next() throws NoSuchElementException {
+			public ADQLObject next() throws NoSuchElementException{
 				if (tableGot)
 					throw new NoSuchElementException();
 				tableGot = true;
 				return adqlTable;
 			}
 
-			public boolean hasNext() {
+			public boolean hasNext(){
 				return !tableGot;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (replacer == null)
 					remove();
 				else if (!tableGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 				else if (!(replacer instanceof ADQLTable))
-					throw new IllegalStateException("Impossible to replace an ADQLTable by a "+replacer.getClass().getName()+" !");
+					throw new IllegalStateException("Impossible to replace an ADQLTable by a " + replacer.getClass().getName() + " !");
 				else
 					adqlTable = (ADQLTable)replacer;
 			}
 
-			public void remove() {
+			public void remove(){
 				if (!tableGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
-					throw new UnsupportedOperationException("Impossible to remove the only operand ("+adqlTable.toADQL()+") from a SelectItem ("+toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to remove the only operand (" + adqlTable.toADQL() + ") from a SelectItem (" + toADQL() + ") !");
 			}
 		};
 	}
 
 	@Override
-	public final String toADQL() {
-		if (adqlTable != null) {
+	public final String toADQL(){
+		if (adqlTable != null){
 			if (adqlTable.hasAlias())
-				return (adqlTable.isCaseSensitive(IdentifierField.ALIAS) ? ("\""+adqlTable.getAlias()+"\"") : adqlTable.getAlias())+".*";
+				return (adqlTable.isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + adqlTable.getAlias() + "\"") : adqlTable.getAlias()) + ".*";
 			else
-				return adqlTable.getFullTableName()+".*";
+				return adqlTable.getFullTableName() + ".*";
 		}else
 			return "*";
 	}
-
-
 
 }

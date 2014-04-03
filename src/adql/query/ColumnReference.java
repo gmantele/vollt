@@ -51,7 +51,6 @@ public class ColumnReference implements ADQLObject {
 	/** Indicates whether the column name/alias is case sensitive. */
 	private boolean caseSensitive = false;
 
-
 	/**
 	 * Builds a column reference with an index of a selected column.
 	 * 
@@ -59,9 +58,9 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	If the given index is less or equal 0.
 	 */
-	public ColumnReference(int index) throws ArrayIndexOutOfBoundsException {
+	public ColumnReference(int index) throws ArrayIndexOutOfBoundsException{
 		if (index <= 0)
-			throw new IndexOutOfBoundsException("Impossible to make a reference to the "+index+"th column: a column index must be greater or equal 1 !");
+			throw new IndexOutOfBoundsException("Impossible to make a reference to the " + index + "th column: a column index must be greater or equal 1 !");
 
 		columnIndex = index;
 		columnName = null;
@@ -74,7 +73,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @throws NullPointerException 	If the given name is <i>null</i> or is an empty string.
 	 */
-	public ColumnReference(String colName) throws NullPointerException {
+	public ColumnReference(String colName) throws NullPointerException{
 		if (!setColumnName(colName))
 			throw new NullPointerException("Impossible to make a reference: the given column name is null or is an empty string !");
 	}
@@ -84,7 +83,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @param toCopy	The column reference to copy.
 	 */
-	public ColumnReference(ColumnReference toCopy) {
+	public ColumnReference(ColumnReference toCopy){
 		columnName = toCopy.columnName;
 		caseSensitive = toCopy.caseSensitive;
 		columnIndex = toCopy.columnIndex;
@@ -104,7 +103,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @param pos	Position of this {@link ColumnReference}.
 	 */
-	public void setPosition(final TextPosition pos) {
+	public void setPosition(final TextPosition pos){
 		position = pos;
 	}
 
@@ -113,7 +112,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @return The index of the referenced column or <i>-1</i> if this column reference has been made with a column name/alias.
 	 */
-	public final int getColumnIndex() {
+	public final int getColumnIndex(){
 		return columnIndex;
 	}
 
@@ -146,7 +145,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @return The referenced column's name/alias or <i>null</i> if this column reference has been made with a column index.
 	 */
-	public final String getColumnName() {
+	public final String getColumnName(){
 		return columnName;
 	}
 
@@ -162,9 +161,9 @@ public class ColumnReference implements ADQLObject {
 
 		StringBuffer n = new StringBuffer(name);
 		n.trimToSize();
-		if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(name.length()-1) == '\"'){
+		if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(name.length() - 1) == '\"'){
 			n.deleteCharAt(0);
-			n.deleteCharAt(n.length()-1);
+			n.deleteCharAt(n.length() - 1);
 			n.trimToSize();
 			if (n.length() > 0)
 				caseSensitive = true;
@@ -201,7 +200,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @return The corresponding {@link DBColumn} if {@link #getColumnName()} is a column name (not an alias), <i>null</i> otherwise.
 	 */
-	public final DBColumn getDBLink() {
+	public final DBColumn getDBLink(){
 		return dbLink;
 	}
 
@@ -212,7 +211,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @param dbLink Its corresponding {@link DBColumn} if {@link #getColumnName()} is a column name (not an alias), <i>null</i> otherwise.
 	 */
-	public final void setDBLink(DBColumn dbLink) {
+	public final void setDBLink(DBColumn dbLink){
 		this.dbLink = dbLink;
 	}
 
@@ -221,7 +220,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @return 	Its source table if {@link #getColumnName()} is a column name (not an alias), otherwise <i>null</i>.
 	 */
-	public final ADQLTable getAdqlTable() {
+	public final ADQLTable getAdqlTable(){
 		return adqlTable;
 	}
 
@@ -232,16 +231,16 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @param adqlTable Its source table if {@link #getColumnName()} is a column name (not an alias), <i>null</i> otherwise.
 	 */
-	public final void setAdqlTable(ADQLTable adqlTable) {
+	public final void setAdqlTable(ADQLTable adqlTable){
 		this.adqlTable = adqlTable;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ColumnReference(this);
 	}
 
-	public String getName() {
-		return isIndex()?(columnIndex+""):columnName;
+	public String getName(){
+		return isIndex() ? (columnIndex + "") : columnName;
 	}
 
 	public final ADQLIterator adqlIterator(){
@@ -249,7 +248,7 @@ public class ColumnReference implements ADQLObject {
 	}
 
 	public String toADQL(){
-		return isIndex()?(""+columnIndex):(isCaseSensitive()?("\""+columnName+"\""):columnName);
+		return isIndex() ? ("" + columnIndex) : (isCaseSensitive() ? ("\"" + columnName + "\"") : columnName);
 	}
 
 }

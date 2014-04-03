@@ -30,7 +30,7 @@ import adql.query.ClauseConstraints;
  * 
  * @see ClauseConstraints
  */
-public class ConstraintsGroup extends ClauseConstraints implements ADQLConstraint  {
+public class ConstraintsGroup extends ClauseConstraints implements ADQLConstraint {
 
 	public ConstraintsGroup(){
 		super((String)null);
@@ -41,15 +41,13 @@ public class ConstraintsGroup extends ClauseConstraints implements ADQLConstrain
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ConstraintsGroup(this);
 	}
 
 	@Override
-	public String toADQL() {
-		return "("+super.toADQL()+")";
+	public String toADQL(){
+		return "(" + super.toADQL() + ")";
 	}
-
-
 
 }

@@ -44,7 +44,6 @@ public class ErrorSummary extends SerializableUWSObject {
 	/** <i>[Optional]</i> The URI/URL toward the file which contains a more detailed description of the error (i.e. an Exception stack trace). */
 	protected String details = null;
 
-
 	/* CONSTRUCTORS */
 	/**
 	 * <p>Builds an error summary from an Exception.</p>
@@ -58,7 +57,7 @@ public class ErrorSummary extends SerializableUWSObject {
 	 * @see ErrorSummary#ErrorSummary(String, ErrorType, String)
 	 */
 	public ErrorSummary(Exception ex, ErrorType errorType, String detailedMsgURI){
-		this(((ex==null)?null:ex.getMessage()), errorType, detailedMsgURI);
+		this(((ex == null) ? null : ex.getMessage()), errorType, detailedMsgURI);
 	}
 
 	/**
@@ -82,9 +81,9 @@ public class ErrorSummary extends SerializableUWSObject {
 	 * @param detailedMsgURI	<i>null</i> or the URI/URL at which a detailed error message is given (different from {jobs}/(job-id)/error).
 	 */
 	public ErrorSummary(String msg, ErrorType errorType, String detailedMsgURI){
-		message = (msg==null)?"{No error message}":msg;
-		type = (errorType==null)?ErrorType.FATAL:errorType;
-		details = (detailedMsgURI == null || detailedMsgURI.trim().length() == 0)?null:detailedMsgURI.trim();
+		message = (msg == null) ? "{No error message}" : msg;
+		type = (errorType == null) ? ErrorType.FATAL : errorType;
+		details = (detailedMsgURI == null || detailedMsgURI.trim().length() == 0) ? null : detailedMsgURI.trim();
 	}
 
 	/* ******* */
@@ -95,7 +94,7 @@ public class ErrorSummary extends SerializableUWSObject {
 	 * 
 	 * @return A short error message.
 	 */
-	public final String getMessage() {
+	public final String getMessage(){
 		return message;
 	}
 
@@ -106,7 +105,7 @@ public class ErrorSummary extends SerializableUWSObject {
 	 * 
 	 * @see ErrorType
 	 */
-	public final ErrorType getType() {
+	public final ErrorType getType(){
 		return type;
 	}
 
@@ -116,7 +115,7 @@ public class ErrorSummary extends SerializableUWSObject {
 	 * 
 	 * @return <i>true</i> if there are more details, <i>false</i> otherwise.
 	 */
-	public final boolean hasDetail() {
+	public final boolean hasDetail(){
 		return details != null;
 	}
 
@@ -125,7 +124,7 @@ public class ErrorSummary extends SerializableUWSObject {
 	 * 
 	 * @return The error details.
 	 */
-	public final String getDetails() {
+	public final String getDetails(){
 		return details;
 	}
 
@@ -133,12 +132,12 @@ public class ErrorSummary extends SerializableUWSObject {
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException {
+	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException{
 		return serializer.getErrorSummary(this, true);
 	}
 
 	@Override
 	public String toString(){
-		return "ERROR_SUMMARY {type: "+type.name()+"; message: \""+message+"\"; details: "+(hasDetail()?details:"none")+"}";
+		return "ERROR_SUMMARY {type: " + type.name() + "; message: \"" + message + "\"; details: " + (hasDetail() ? details : "none") + "}";
 	}
 }

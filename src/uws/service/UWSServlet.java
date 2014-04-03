@@ -70,7 +70,6 @@ import uws.service.actions.UWSAction;
 
 import uws.service.backup.UWSBackupManager;
 
-
 import uws.service.error.DefaultUWSErrorWriter;
 import uws.service.error.ServiceErrorWriter;
 import uws.service.file.LocalUWSFileManager;
@@ -145,10 +144,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	protected String description = null;
 
 	/** List of all managed jobs lists. <i>(it is a LinkedHashMap so that jobs lists are ordered by insertion)</i> */
-	private Map<String, JobList> mapJobLists;
+	private Map<String,JobList> mapJobLists;
 
 	/** List of available serializers. */
-	private Map<String, UWSSerializer> serializers;
+	private Map<String,UWSSerializer> serializers;
 
 	/** The MIME type of the default serialization format. */
 	protected String defaultSerializer = null;
@@ -163,7 +162,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	protected final ArrayList<String> expectedAdditionalParams = new ArrayList<String>(10);
 
 	/** List the controllers of all the input parameters. See {@link UWSParameters} and {@link InputParamController} for more details. */
-	protected final HashMap<String, InputParamController> inputParamControllers = new HashMap<String, InputParamController>(10);
+	protected final HashMap<String,InputParamController> inputParamControllers = new HashMap<String,InputParamController>(10);
 
 	/** Lets managing all UWS files (i.e. log, result, backup, ...). */
 	private UWSFileManager fileManager = null;
@@ -177,14 +176,13 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/** Lets writing/formatting any exception/throwable in a HttpServletResponse. */
 	protected ServiceErrorWriter errorWriter;
 
-
 	@Override
-	public final void init(ServletConfig config) throws ServletException {
+	public final void init(ServletConfig config) throws ServletException{
 		super.init(config);
 	}
 
 	@Override
-	public final void init() throws ServletException {
+	public final void init() throws ServletException{
 		// Set the general information about this UWS:
 		name = getServletConfig().getInitParameter("name");
 		description = getServletConfig().getInitParameter("description");
@@ -203,10 +201,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		errorWriter = new DefaultUWSErrorWriter(this);
 
 		// Initialize the list of jobs:
-		mapJobLists = new LinkedHashMap<String, JobList>();
+		mapJobLists = new LinkedHashMap<String,JobList>();
 
 		// Initialize the list of available serializers:
-		serializers = new HashMap<String, UWSSerializer>();
+		serializers = new HashMap<String,UWSSerializer>();
 		addSerializer(new XMLSerializer());
 		addSerializer(new JSONSerializer());
 
@@ -221,30 +219,30 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	public abstract void initUWS() throws UWSException;
 
-	public UWSFileManager createFileManager() throws UWSException {
+	public UWSFileManager createFileManager() throws UWSException{
 		UWSFileManager fm = null;
 		String rootPath = getServletConfig().getInitParameter("rootDirectory");
 		if (rootPath == null || rootPath.trim().isEmpty())
-			rootPath = ((name!=null && !name.trim().isEmpty())?name.replaceAll("/", "_"):"")+"_files";
+			rootPath = ((name != null && !name.trim().isEmpty()) ? name.replaceAll("/", "_") : "") + "_files";
 		if (rootPath.startsWith("/"))
 			fm = new LocalUWSFileManager(new File(rootPath));
 		else
-			fm = new LocalUWSFileManager(new File(getServletContext().getRealPath("/"+rootPath)));
+			fm = new LocalUWSFileManager(new File(getServletContext().getRealPath("/" + rootPath)));
 		return fm;
 	}
 
 	@Override
-	public UWSFileManager getFileManager() {
+	public UWSFileManager getFileManager(){
 		return fileManager;
 	}
 
 	@Override
-	public final void service(ServletRequest req, ServletResponse resp) throws ServletException, IOException {
+	public final void service(ServletRequest req, ServletResponse resp) throws ServletException, IOException{
 		super.service(req, resp);
 	}
 
 	@Override
-	protected final void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	protected final void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
 		String uwsAction = null;
 		JobOwner user = null;
 
@@ -263,7 +261,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			user = (userIdentifier == null) ? null : userIdentifier.extractUserId(requestUrl, req);
 
 			// METHOD GET:
-			if (method.equals("GET")) {
+			if (method.equals("GET")){
 				// HOME PAGE:
 				if (!requestUrl.hasJobList()){
 					uwsAction = UWSAction.HOME_PAGE;
@@ -321,10 +319,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			}// METHOD PUT:
 			else if (method.equals("PUT")){
 				// SET JOB PARAMETER:
-				if (requestUrl.hasJobList() && requestUrl.hasJob() && req.getMethod().equalsIgnoreCase("put")
-						&& requestUrl.getAttributes().length >= 2
-						&& requestUrl.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)
-						&& req.getParameter(requestUrl.getAttributes()[1]) != null){
+				if (requestUrl.hasJobList() && requestUrl.hasJob() && req.getMethod().equalsIgnoreCase("put") && requestUrl.getAttributes().length >= 2 && requestUrl.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS) && req.getParameter(requestUrl.getAttributes()[1]) != null){
 					uwsAction = UWSAction.SET_JOB_PARAM;
 					doSetJobParam(requestUrl, req, resp, user);
 
@@ -372,7 +367,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/* *********** */
 	/* UWS ACTIONS */
 	/* *********** */
-	protected void writeHomePage(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException {
+	protected void writeHomePage(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		UWSSerializer serializer = getSerializer(req.getHeader("Accept"));
 		resp.setContentType(serializer.getMimeType());
 		String serialization = serializer.getUWS(this);
@@ -381,10 +376,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			output.print(serialization);
 			output.flush();
 		}else
-			throw UWSExceptionFactory.incorrectSerialization(serialization, "the UWS "+getName());
+			throw UWSExceptionFactory.incorrectSerialization(serialization, "the UWS " + getName());
 	}
 
-	protected void doListJob(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException {
+	protected void doListJob(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		// Get the jobs list:
 		JobList jobsList = getJobList(requestUrl.getJobListName());
 
@@ -394,7 +389,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		jobsList.serialize(resp.getOutputStream(), serializer, user);
 	}
 
-	protected void doAddJob(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException {
+	protected void doAddJob(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		// Get the jobs list:
 		JobList jobsList = getJobList(requestUrl.getJobListName());
 
@@ -410,10 +405,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			// Make a redirection to the added job:
 			redirect(requestUrl.jobSummary(jobsList.getName(), newJob.getJobId()).getRequestURL(), req, user, UWSAction.ADD_JOB, resp);
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Unable to add the new job "+newJob.getJobId()+" to the jobs list "+jobsList.getName()+". (ID already used = "+(jobsList.getJob(newJob.getJobId())!=null)+")");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Unable to add the new job " + newJob.getJobId() + " to the jobs list " + jobsList.getName() + ". (ID already used = " + (jobsList.getJob(newJob.getJobId()) != null) + ")");
 	}
 
-	protected void doDestroyJob(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException {
+	protected void doDestroyJob(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		// Get the jobs list:
 		JobList jobsList = getJobList(requestUrl.getJobListName());
 
@@ -424,7 +419,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		redirect(requestUrl.listJobs(jobsList.getName()).getRequestURL(), req, user, UWSAction.DESTROY_JOB, resp);
 	}
 
-	protected void doJobSummary(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException {
+	protected void doJobSummary(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		// Get the job:
 		UWSJob job = getJob(requestUrl);
 
@@ -434,7 +429,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		job.serialize(resp.getOutputStream(), serializer, user);
 	}
 
-	protected void doGetJobParam(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException {
+	protected void doGetJobParam(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		// Get the job:
 		UWSJob job = getJob(requestUrl, user);
 
@@ -453,7 +448,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 					input = getFileManager().getResultInput(result, job);
 					UWSToolBox.write(input, result.getMimeType(), result.getSize(), resp);
 				}catch(IOException ioe){
-					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the result "+result.getId()+" (job ID: "+job.getJobId()+").");
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the result " + result.getId() + " (job ID: " + job.getJobId() + ").");
 				}finally{
 					if (input != null)
 						input.close();
@@ -470,7 +465,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 					input = getFileManager().getErrorInput(error, job);
 					UWSToolBox.write(input, "text/plain", getFileManager().getErrorSize(error, job), resp);
 				}catch(IOException ioe){
-					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the error details (job ID: "+job.getJobId()+").");
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the error details (job ID: " + job.getJobId() + ").");
 				}finally{
 					if (input != null)
 						input.close();
@@ -481,10 +476,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			// Write the value/content of the selected attribute:
 			UWSSerializer serializer = getSerializer(req.getHeader("Accept"));
 			String uwsField = attributes[0];
-			if (uwsField == null || uwsField.trim().isEmpty()	|| (attributes.length <= 1
-					&& (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY)
-							|| uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS)
-							|| uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS))))
+			if (uwsField == null || uwsField.trim().isEmpty() || (attributes.length <= 1 && (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) || uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS) || uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS))))
 				resp.setContentType(serializer.getMimeType());
 			else
 				resp.setContentType("text/plain");
@@ -492,7 +484,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		}
 	}
 
-	protected void doSetJobParam(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException {
+	protected void doSetJobParam(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		// Get the job:
 		UWSJob job = getJob(requestUrl);
 
@@ -505,11 +497,11 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		redirect(requestUrl.jobSummary(requestUrl.getJobListName(), job.getJobId()).getRequestURL(), req, user, UWSAction.SET_JOB_PARAM, resp);
 	}
 
-	public UWSJob getJob(UWSUrl requestUrl) throws UWSException {
+	public UWSJob getJob(UWSUrl requestUrl) throws UWSException{
 		return getJob(requestUrl, null);
 	}
 
-	public UWSJob getJob(UWSUrl requestUrl, JobOwner user) throws UWSException {
+	public UWSJob getJob(UWSUrl requestUrl, JobOwner user) throws UWSException{
 		// Get the jobs list:
 		JobList jobsList = getJobList(requestUrl.getJobListName());
 
@@ -531,27 +523,27 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/* JOB CREATION */
 	/* ************ */
 	@Override
-	public final UWSFactory getFactory() {
+	public final UWSFactory getFactory(){
 		return this;
 	}
 
 	@Override
-	public UWSJob createJob(HttpServletRequest request, JobOwner user) throws UWSException {
+	public UWSJob createJob(HttpServletRequest request, JobOwner user) throws UWSException{
 		return new UWSJob(user, createUWSParameters(request));
 	}
 
 	@Override
-	public UWSJob createJob(final String jobID, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException {
+	public UWSJob createJob(final String jobID, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
 		return new UWSJob(jobID, owner, params, quote, startTime, endTime, results, error);
 	}
 
 	@Override
-	public UWSParameters createUWSParameters(final Map<String, Object> params) throws UWSException {
+	public UWSParameters createUWSParameters(final Map<String,Object> params) throws UWSException{
 		return new UWSParameters(params, expectedAdditionalParams, inputParamControllers);
 	}
 
 	@Override
-	public UWSParameters createUWSParameters(final HttpServletRequest req) throws UWSException {
+	public UWSParameters createUWSParameters(final HttpServletRequest req) throws UWSException{
 		return new UWSParameters(req, expectedAdditionalParams, inputParamControllers);
 	}
 
@@ -568,12 +560,12 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * @throws IOException	If there is an error during the redirection.
 	 * @throws UWSException	If there is any other error.
 	 */
-	public void redirect(String url, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws ServletException, IOException {
+	public void redirect(String url, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws ServletException, IOException{
 		response.setStatus(HttpServletResponse.SC_SEE_OTHER);
 		response.setContentType(request.getContentType());
 		response.setHeader("Location", url);
 		response.flushBuffer();
-		logger.httpRequest(request, user, uwsAction, HttpServletResponse.SC_SEE_OTHER, "[Redirection toward "+url+"]", null);
+		logger.httpRequest(request, user, uwsAction, HttpServletResponse.SC_SEE_OTHER, "[Redirection toward " + url + "]", null);
 	}
 
 	/**
@@ -593,7 +585,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * @see #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * @see #writeError(Throwable, HttpServletResponse, HttpServletRequest, JobOwner, String)
 	 */
-	public void sendError(UWSException error, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws ServletException, IOException {
+	public void sendError(UWSException error, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws ServletException, IOException{
 		if (error.getHttpErrorCode() == UWSException.SEE_OTHER)
 			redirect(error.getMessage(), request, user, uwsAction, response);
 		else{
@@ -614,7 +606,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * 
 	 * @return The error writer/formatter.
 	 */
-	public final ServiceErrorWriter getErrorWriter() {
+	public final ServiceErrorWriter getErrorWriter(){
 		return errorWriter;
 	}
 
@@ -625,11 +617,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * 
 	 * @param errorWriter The new error writer/formatter.
 	 */
-	public final void setErrorWriter(ServiceErrorWriter errorWriter) {
+	public final void setErrorWriter(ServiceErrorWriter errorWriter){
 		if (errorWriter != null)
 			this.errorWriter = errorWriter;
 	}
-
 
 	/* **************** */
 	/* INPUT PARAMETERS */
@@ -690,7 +681,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * Gets the list of all UWS input parameter controllers.
 	 * @return	All parameter controllers.
 	 */
-	public final Map<String, InputParamController> getInputParamControllers(){
+	public final Map<String,InputParamController> getInputParamControllers(){
 		return inputParamControllers;
 	}
 
@@ -698,7 +689,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * Gets an iterator on the list of all UWS input parameter controllers.
 	 * @return	An iterator on all parameter controllers.
 	 */
-	public final Iterator<Map.Entry<String, InputParamController>> getInputParamControllersIterator(){
+	public final Iterator<Map.Entry<String,InputParamController>> getInputParamControllersIterator(){
 		return inputParamControllers.entrySet().iterator();
 	}
 
@@ -807,14 +798,14 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/**
 	 * @return The name.
 	 */
-	public final String getName() {
+	public final String getName(){
 		return name;
 	}
 
 	/**
 	 * @return The description.
 	 */
-	public final String getDescription() {
+	public final String getDescription(){
 		return description;
 	}
 
@@ -825,7 +816,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		return mapJobLists.values().iterator();
 	}
 
-	public JobList getJobList(String name) throws UWSException {
+	public JobList getJobList(String name) throws UWSException{
 		if (name != null)
 			name = name.trim();
 		if (name == null || name.length() == 0)
@@ -849,8 +840,8 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		try{
 			jl.setUWS(this);
 			mapJobLists.put(jl.getName(), jl);
-		}catch (IllegalStateException ise){
-			logger.error("The jobs list \""+jl.getName()+"\" can not be added into the UWS "+getName()+" !", ise);
+		}catch(IllegalStateException ise){
+			logger.error("The jobs list \"" + jl.getName() + "\" can not be added into the UWS " + getName() + " !", ise);
 			return false;
 		}
 
@@ -912,7 +903,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 				jl.clear();
 				jl.setUWS(null);
 			}catch(IllegalStateException ise){
-				getLogger().warning("Impossible to erase completely the association between the jobs list \""+jl.getName()+"\" and the UWS \""+getName()+"\", because: "+ise.getMessage());
+				getLogger().warning("Impossible to erase completely the association between the jobs list \"" + jl.getName() + "\" and the UWS \"" + getName() + "\", because: " + ise.getMessage());
 			}
 		}
 		return jl != null;
@@ -955,7 +946,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * @see AcceptHeader#AcceptHeader(String)
 	 * @see AcceptHeader#getOrderedMimeTypes()
 	 */
-	public final UWSSerializer getSerializer(String mimeTypes) throws UWSException {
+	public final UWSSerializer getSerializer(String mimeTypes) throws UWSException{
 		UWSSerializer choosenSerializer = null;
 
 		if (mimeTypes != null){
@@ -964,7 +955,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			ArrayList<String> lstMimeTypes = accept.getOrderedMimeTypes();
 
 			// Try each of them and stop at the first which match with an existing serializer:
-			for(int i=0; choosenSerializer == null && i<lstMimeTypes.size(); i++)
+			for(int i = 0; choosenSerializer == null && i < lstMimeTypes.size(); i++)
 				choosenSerializer = serializers.get(lstMimeTypes.get(i));
 		}
 
@@ -972,7 +963,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		if (choosenSerializer == null){
 			choosenSerializer = serializers.get(defaultSerializer);
 			if (choosenSerializer == null)
-				throw UWSExceptionFactory.missingSerializer(mimeTypes+" (given MIME types) and "+defaultSerializer+" (default serializer MIME type)");
+				throw UWSExceptionFactory.missingSerializer(mimeTypes + " (given MIME types) and " + defaultSerializer + " (default serializer MIME type)");
 		}
 
 		return choosenSerializer;
@@ -1070,7 +1061,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * 
 	 * @return Its backup manager.
 	 */
-	public final UWSBackupManager getBackupManager() {
+	public final UWSBackupManager getBackupManager(){
 		return backupManager;
 	}
 

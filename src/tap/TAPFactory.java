@@ -37,7 +37,7 @@ import adql.parser.QueryChecker;
 
 import adql.translator.ADQLTranslator;
 
-public interface TAPFactory<R> extends UWSFactory {
+public interface TAPFactory< R > extends UWSFactory {
 
 	public UWSService createUWS() throws TAPException, UWSException;
 

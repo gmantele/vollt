@@ -63,7 +63,6 @@ public class DefaultUWSLog implements UWSLog {
 	 */
 	protected int minResponseCodeForStackTrace = 500;
 
-
 	/**
 	 * <p>Builds a {@link UWSLog} which will use the file manager
 	 * of the given UWS to get the log output (see {@link UWSFileManager#getLogOutput(UWSLogType)}).</p>
@@ -105,7 +104,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * 
 	 * @param output	An output stream.
 	 */
-	public DefaultUWSLog(final OutputStream output) {
+	public DefaultUWSLog(final OutputStream output){
 		uws = null;
 		fileManager = null;
 		defaultOutput = new PrintWriter(output);
@@ -129,7 +128,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * Gets the date formatter/parser to use for any date read/write into this logger.
 	 * @return A date formatter/parser.
 	 */
-	public final DateFormat getDateFormat() {
+	public final DateFormat getDateFormat(){
 		return dateFormat;
 	}
 
@@ -137,7 +136,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * Sets the date formatter/parser to use for any date read/write into this logger.
 	 * @param dateFormat The date formatter/parser to use from now. (MUST BE DIFFERENT FROM NULL)
 	 */
-	public final void setDateFormat(final DateFormat dateFormat) {
+	public final void setDateFormat(final DateFormat dateFormat){
 		if (dateFormat != null)
 			this.dateFormat = dateFormat;
 	}
@@ -215,7 +214,7 @@ public class DefaultUWSLog implements UWSLog {
 			out.println(msg);
 		else if (t != null && t instanceof UWSException){
 			UWSException uwsEx = (UWSException)t;
-			out.println("EXCEPTION "+uwsEx.getClass().getName()+"\t"+uwsEx.getUWSErrorType()+"\tHTTP-"+uwsEx.getHttpErrorCode()+"\t"+uwsEx.getMessage());
+			out.println("EXCEPTION " + uwsEx.getClass().getName() + "\t" + uwsEx.getUWSErrorType() + "\tHTTP-" + uwsEx.getHttpErrorCode() + "\t" + uwsEx.getMessage());
 		}else
 			out.println();
 		// Print the stack trace, if any:
@@ -225,22 +224,44 @@ public class DefaultUWSLog implements UWSLog {
 	}
 
 	@Override
-	public void debug(String msg) 				{ log(UWSLogType.DEBUG, msg, null); }
-	@Override
-	public void debug(Throwable t) 				{ log(UWSLogType.DEBUG, null, t); }
-	@Override
-	public void debug(String msg, Throwable t) 	{ log(UWSLogType.DEBUG, msg, t); }
-	@Override
-	public void info(String msg) 				{ log(UWSLogType.INFO, msg, null); }
-	@Override
-	public void warning(String msg) 			{ log(UWSLogType.WARNING, msg, null); }
-	@Override
-	public void error(String msg) 				{ log(UWSLogType.ERROR, msg, null); }
-	@Override
-	public void error(Throwable t) 				{ log(UWSLogType.ERROR, null, t); }
-	@Override
-	public void error(String msg, Throwable t) 	{ log(UWSLogType.ERROR, msg, t); }
+	public void debug(String msg){
+		log(UWSLogType.DEBUG, msg, null);
+	}
 
+	@Override
+	public void debug(Throwable t){
+		log(UWSLogType.DEBUG, null, t);
+	}
+
+	@Override
+	public void debug(String msg, Throwable t){
+		log(UWSLogType.DEBUG, msg, t);
+	}
+
+	@Override
+	public void info(String msg){
+		log(UWSLogType.INFO, msg, null);
+	}
+
+	@Override
+	public void warning(String msg){
+		log(UWSLogType.WARNING, msg, null);
+	}
+
+	@Override
+	public void error(String msg){
+		log(UWSLogType.ERROR, msg, null);
+	}
+
+	@Override
+	public void error(Throwable t){
+		log(UWSLogType.ERROR, null, t);
+	}
+
+	@Override
+	public void error(String msg, Throwable t){
+		log(UWSLogType.ERROR, msg, t);
+	}
 
 	/* **************************** */
 	/* METHODS ABOUT THE UWS STATUS */
@@ -254,76 +275,75 @@ public class DefaultUWSLog implements UWSLog {
 	 * @return		Name of the given UWS (followed by a space: " ") or an empty string ("").
 	 */
 	protected final static String getUWSName(final UWS uws){
-		return ((uws != null && uws.getName() != null && !uws.getName().trim().isEmpty()) ? (uws.getName()+" ") : "");
+		return ((uws != null && uws.getName() != null && !uws.getName().trim().isEmpty()) ? (uws.getName() + " ") : "");
 	}
 
 	@Override
-	public void uwsInitialized(UWS uws) {
+	public void uwsInitialized(UWS uws){
 		if (uws != null){
-			String msg = "UWS "+getUWSName(uws)+"INITIALIZED !";
+			String msg = "UWS " + getUWSName(uws) + "INITIALIZED !";
 			info(msg);
 			log(UWSLogType.HTTP_ACTIVITY, msg, null);
 		}
 	}
 
 	@Override
-	public void ownerJobsSaved(JobOwner owner, int[] report) {
+	public void ownerJobsSaved(JobOwner owner, int[] report){
 		if (owner != null){
-			String strReport = (report == null || report.length != 2) ? "???" : (report[0]+"/"+report[1]);
-			String ownerPseudo = (owner.getPseudo() != null && !owner.getPseudo().trim().isEmpty() && !owner.getID().equals(owner.getPseudo())) ? (" (alias "+owner.getPseudo()+")") : "";
-			info(strReport+" saved jobs for the user "+owner.getID()+ownerPseudo+" !");
+			String strReport = (report == null || report.length != 2) ? "???" : (report[0] + "/" + report[1]);
+			String ownerPseudo = (owner.getPseudo() != null && !owner.getPseudo().trim().isEmpty() && !owner.getID().equals(owner.getPseudo())) ? (" (alias " + owner.getPseudo() + ")") : "";
+			info(strReport + " saved jobs for the user " + owner.getID() + ownerPseudo + " !");
 		}
 	}
 
 	@Override
-	public void uwsRestored(UWS uws, int[] report) {
+	public void uwsRestored(UWS uws, int[] report){
 		if (uws != null){
-			String strReport = (report == null || report.length != 4) ? "[Unknown report format !]" : (report[0]+"/"+report[1]+" restored jobs and "+report[2]+"/"+report[3]+" restored users");
-			info("UWS "+getUWSName(uws)+"RESTORED => "+strReport);
+			String strReport = (report == null || report.length != 4) ? "[Unknown report format !]" : (report[0] + "/" + report[1] + " restored jobs and " + report[2] + "/" + report[3] + " restored users");
+			info("UWS " + getUWSName(uws) + "RESTORED => " + strReport);
 		}
 	}
 
 	@Override
-	public void uwsSaved(UWS uws, int[] report) {
+	public void uwsSaved(UWS uws, int[] report){
 		if (uws != null){
-			String strReport = (report == null || report.length != 4) ? "[Unknown report format !]" : (report[0]+"/"+report[1]+" saved jobs and "+report[2]+"/"+report[3]+" saved users");
-			info("UWS "+getUWSName(uws)+"SAVED => "+strReport);
+			String strReport = (report == null || report.length != 4) ? "[Unknown report format !]" : (report[0] + "/" + report[1] + " saved jobs and " + report[2] + "/" + report[3] + " saved users");
+			info("UWS " + getUWSName(uws) + "SAVED => " + strReport);
 		}
 	}
 
 	@Override
-	public void jobCreated(UWSJob job) {
+	public void jobCreated(UWSJob job){
 		if (job != null){
 			String jlName = (job.getJobList() != null) ? job.getJobList().getName() : null;
-			info("JOB "+job.getJobId()+" CREATED" + ((jlName!=null) ? (" and added into "+jlName) : "") + " !" );
+			info("JOB " + job.getJobId() + " CREATED" + ((jlName != null) ? (" and added into " + jlName) : "") + " !");
 		}
 	}
 
 	@Override
-	public void jobDestroyed(UWSJob job, JobList jl) {
+	public void jobDestroyed(UWSJob job, JobList jl){
 		if (job != null){
 			String jlName = (jl != null) ? jl.getName() : null;
-			info("JOB "+job.getJobId()+" DESTROYED" + ((jlName!=null) ? (" and removed from "+jlName) : "") + " !" );
+			info("JOB " + job.getJobId() + " DESTROYED" + ((jlName != null) ? (" and removed from " + jlName) : "") + " !");
 		}
 	}
 
 	@Override
-	public void jobStarted(UWSJob job) {
+	public void jobStarted(UWSJob job){
 		if (job != null){
-			info("JOB "+job.getJobId()+" STARTED !" );
+			info("JOB " + job.getJobId() + " STARTED !");
 		}
 	}
 
 	@Override
-	public void jobFinished(UWSJob job) {
+	public void jobFinished(UWSJob job){
 		if (job != null){
 			long endTime = (job.getEndTime() == null) ? -1 : job.getEndTime().getTime();
 			long startTime = (job.getStartTime() == null) ? -1 : job.getStartTime().getTime();
-			long duration = (endTime > 0 && startTime > 0) ? (endTime-startTime) : -1;
-			info("JOB "+job.getJobId()+" FINISHED with the phase "+job.getPhase() + ((duration>0) ? " after an execution of "+duration+"ms" : "" ) + " !");
+			long duration = (endTime > 0 && startTime > 0) ? (endTime - startTime) : -1;
+			info("JOB " + job.getJobId() + " FINISHED with the phase " + job.getPhase() + ((duration > 0) ? " after an execution of " + duration + "ms" : "") + " !");
 		}
 	}
-
 
 	/* ************* */
 	/* HTTP ACTIVITY */
@@ -387,34 +407,33 @@ public class DefaultUWSLog implements UWSLog {
 			str.append(request.getHeader("User-Agent"));
 
 			// Send the log message to the log file:
-			log(UWSLogType.HTTP_ACTIVITY, str.toString(), (responseStatusCode >= minResponseCodeForStackTrace)?responseError:null);
+			log(UWSLogType.HTTP_ACTIVITY, str.toString(), (responseStatusCode >= minResponseCodeForStackTrace) ? responseError : null);
 		}
 	}
-
 
 	/* ********************** */
 	/* THREAD STATUS MESSAGES */
 	/* ********************** */
 
 	@Override
-	public void threadStarted(Thread t, String task) {
+	public void threadStarted(Thread t, String task){
 		if (t != null)
-			info("THREAD "+t.getId()+" STARTED\t"+t.getName()+"\t"+t.getState()+"\t"+t.getThreadGroup().activeCount()+" active threads");
+			info("THREAD " + t.getId() + " STARTED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads");
 	}
 
 	@Override
-	public void threadFinished(Thread t, String task) {
+	public void threadFinished(Thread t, String task){
 		if (t != null)
-			info("THREAD "+t.getId()+" ENDED\t"+t.getName()+"\t"+t.getState()+"\t"+t.getThreadGroup().activeCount()+" active threads");
+			info("THREAD " + t.getId() + " ENDED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads");
 	}
 
 	@Override
-	public void threadInterrupted(Thread t, String task, Throwable error) {
+	public void threadInterrupted(Thread t, String task, Throwable error){
 		if (t != null){
 			if (error == null || error instanceof InterruptedException)
-				info("THREAD "+t.getId()+" CANCELLED\t"+t.getName()+"\t"+t.getState()+"\t"+t.getThreadGroup().activeCount()+" active threads");
+				info("THREAD " + t.getId() + " CANCELLED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads");
 			else
-				error("THREAD "+t.getId()+" INTERRUPTED\t"+t.getName()+"\t"+t.getState()+"\t"+t.getThreadGroup().activeCount()+" active threads", error);
+				error("THREAD " + t.getId() + " INTERRUPTED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads", error);
 		}
 	}
 

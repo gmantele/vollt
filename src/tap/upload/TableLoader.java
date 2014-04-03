@@ -59,7 +59,7 @@ public class TableLoader {
 			if (multipart == null)
 				throw new InvalidParameterException("The URI scheme \"param\" can be used ONLY IF the VOTable is provided inside the HTTP request (multipart/form-data) !");
 			else if (URI.length() <= PARAM_PREFIX.length())
-				throw new InvalidParameterException("Incomplete URI ("+URI+"): empty parameter name !");
+				throw new InvalidParameterException("Incomplete URI (" + URI + "): empty parameter name !");
 			url = null;
 			param = URI.substring(PARAM_PREFIX.length()).trim();
 
@@ -72,7 +72,7 @@ public class TableLoader {
 			}
 
 			if (foundFile == null)
-				throw new InvalidParameterException("Incorrect file reference ("+URI+"): the parameter \""+param+"\" does not exist !");
+				throw new InvalidParameterException("Incorrect file reference (" + URI + "): the parameter \"" + param + "\" does not exist !");
 			else
 				file = foundFile;
 		}else if (URI.matches(URL_REGEXP)){
@@ -84,17 +84,17 @@ public class TableLoader {
 				throw new InvalidParameterException(mue.getMessage());
 			}
 		}else
-			throw new InvalidParameterException("Invalid table URI: \""+URI+"\" !");
+			throw new InvalidParameterException("Invalid table URI: \"" + URI + "\" !");
 	}
 
-	public InputStream openStream() throws IOException {
+	public InputStream openStream() throws IOException{
 		if (url != null)
 			return url.openStream();
 		else
 			return new FileInputStream(file);
 	}
 
-	public boolean deleteFile() {
+	public boolean deleteFile(){
 		if (file != null && file.exists())
 			return file.delete();
 		else

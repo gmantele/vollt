@@ -51,7 +51,7 @@ public class InnerJoin extends ADQLJoin {
 	 * @see ADQLJoin#ADQLJoin(FromContent, FromContent)
 	 * @see #setNatural(boolean)
 	 */
-	public InnerJoin(FromContent left, FromContent right) {
+	public InnerJoin(FromContent left, FromContent right){
 		super(left, right);
 		setNatural(true);
 	}
@@ -66,7 +66,7 @@ public class InnerJoin extends ADQLJoin {
 	 * @see ADQLJoin#ADQLJoin(FromContent, FromContent)
 	 * @see #setJoinCondition(ClauseConstraints)
 	 */
-	public InnerJoin(FromContent left, FromContent right, ClauseConstraints condition) {
+	public InnerJoin(FromContent left, FromContent right, ClauseConstraints condition){
 		super(left, right);
 		setJoinCondition(condition);
 	}
@@ -81,7 +81,7 @@ public class InnerJoin extends ADQLJoin {
 	 * @see ADQLJoin#ADQLJoin(FromContent, FromContent)
 	 * @see #setJoinedColumns(Collection)
 	 */
-	public InnerJoin(FromContent left, FromContent right, Collection<ADQLColumn> lstColumns) {
+	public InnerJoin(FromContent left, FromContent right, Collection<ADQLColumn> lstColumns){
 		super(left, right);
 		setJoinedColumns(new ArrayList<ADQLColumn>(lstColumns));
 	}
@@ -95,15 +95,17 @@ public class InnerJoin extends ADQLJoin {
 	 * 
 	 * @see ADQLJoin#ADQLJoin(ADQLJoin)
 	 */
-	public InnerJoin(InnerJoin toCopy) throws Exception {
+	public InnerJoin(InnerJoin toCopy) throws Exception{
 		super(toCopy);
 	}
 
 	@Override
-	public String getJoinType() { return "INNER JOIN"; }
+	public String getJoinType(){
+		return "INNER JOIN";
+	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new InnerJoin(this);
 	}
 

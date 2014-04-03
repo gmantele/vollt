@@ -35,7 +35,7 @@ import cds.savot.writer.SavotWriter;
 public final class VotType {
 	public final String datatype;
 	/** A negative or null value means "*" (that's to say: an undetermined arraysize). */
-	public int    arraysize;
+	public int arraysize;
 	public final String xtype;
 
 	/**
@@ -52,7 +52,7 @@ public final class VotType {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(Object obj){
 		if (obj == null)
 			return false;
 		try{
@@ -63,12 +63,14 @@ public final class VotType {
 				else
 					return xtype.equalsIgnoreCase(vot.xtype);
 			}
-		}catch(ClassCastException cce){ ; }
+		}catch(ClassCastException cce){
+			;
+		}
 		return false;
 	}
 
 	@Override
-	public int hashCode() {
+	public int hashCode(){
 		return datatype.toLowerCase().hashCode();
 	}
 
@@ -80,7 +82,7 @@ public final class VotType {
 		if (arraysize == TAPTypes.STAR_SIZE)
 			str.append(" arraysize=\"*\"");
 		else if (arraysize != TAPTypes.NO_SIZE && arraysize > 0)
-			str.append(" arraysize=\"").append(SavotWriter.encodeAttribute(""+arraysize)).append('"');
+			str.append(" arraysize=\"").append(SavotWriter.encodeAttribute("" + arraysize)).append('"');
 
 		if (xtype != null)
 			str.append(" xtype=\"").append(SavotWriter.encodeAttribute(xtype)).append('"');

@@ -75,6 +75,6 @@ public interface UserIdentifier extends Serializable {
 	 * 
 	 * @see DefaultUWSBackupManager#restoreAll()
 	 */
-	public JobOwner restoreUser(final String id, final String pseudo, final Map<String, Object> otherData) throws UWSException;
+	public JobOwner restoreUser(final String id, final String pseudo, final Map<String,Object> otherData) throws UWSException;
 
 }

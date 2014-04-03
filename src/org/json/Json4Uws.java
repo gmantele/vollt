@@ -39,7 +39,9 @@ import uws.service.UWSUrl;
  */
 public final class Json4Uws {
 
-	private Json4Uws(){ ; }
+	private Json4Uws(){
+		;
+	}
 
 	/**
 	 * Gets the JSON representation of the given UWS.
@@ -47,7 +49,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final UWS uws) throws JSONException {
+	public final static JSONObject getJson(final UWS uws) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (uws != null){
 			json.put("name", uws.getName());
@@ -75,7 +77,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner) throws JSONException {
+	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (jobsList != null){
 			json.put("name", jobsList.getName());
@@ -99,7 +101,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final UWSJob job) throws JSONException {
+	public final static JSONObject getJson(final UWSJob job) throws JSONException{
 		return getJson(job, null, false);
 	}
 
@@ -112,7 +114,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final UWSJob job, final UWSUrl jobsListUrl, final boolean reference) throws JSONException {
+	public final static JSONObject getJson(final UWSJob job, final UWSUrl jobsListUrl, final boolean reference) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (job != null){
 			json.put(UWSJob.PARAM_JOB_ID, job.getJobId());
@@ -148,7 +150,7 @@ public final class Json4Uws {
 	 * @return					The JSON representation of its parameters.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJobParamsJson(final UWSJob job) throws JSONException {
+	public final static JSONObject getJobParamsJson(final UWSJob job) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (job != null){
 			for(String name : job.getAdditionalParameters())
@@ -163,7 +165,7 @@ public final class Json4Uws {
 	 * @return					The JSON representation of its results.
 	 * @throws JSONException	If there is an error while building the JSON array.
 	 */
-	public final static JSONArray getJobResultsJson(final UWSJob job) throws JSONException {
+	public final static JSONArray getJobResultsJson(final UWSJob job) throws JSONException{
 		JSONArray json = new JSONArray();
 		if (job != null){
 			Iterator<Result> it = job.getResults();
@@ -182,7 +184,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJobResultJson(final Result r) throws JSONException {
+	public final static JSONObject getJobResultJson(final Result r) throws JSONException{
 		JSONObject resultJson = new JSONObject();
 		if (r != null){
 			resultJson.put("id", r.getId());
@@ -202,7 +204,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final ErrorSummary error) throws JSONException {
+	public final static JSONObject getJson(final ErrorSummary error) throws JSONException{
 		JSONObject errorJson = new JSONObject();
 		if (error != null){
 			errorJson.put("type", error.getType());
@@ -220,7 +222,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final String key, final long value) throws JSONException {
+	public final static JSONObject getJson(final String key, final long value) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (key != null && !key.trim().isEmpty())
 			json.put(key, value);
@@ -234,7 +236,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final String key, final String value) throws JSONException {
+	public final static JSONObject getJson(final String key, final String value) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (key != null && !key.trim().isEmpty())
 			json.put(key, value);

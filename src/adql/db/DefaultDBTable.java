@@ -39,8 +39,7 @@ public class DefaultDBTable implements DBTable {
 	protected String adqlSchemaName = null;
 	protected String adqlName = null;
 
-	protected HashMap<String, DBColumn> columns = new HashMap<String, DBColumn>();
-
+	protected HashMap<String,DBColumn> columns = new HashMap<String,DBColumn>();
 
 	/**
 	 * <p>Builds a default {@link DBTable} with the given DB name.</p>
@@ -111,9 +110,7 @@ public class DefaultDBTable implements DBTable {
 	 * @param dbName		Database table name.
 	 * @param adqlName		Table name used in ADQL queries.
 	 */
-	public DefaultDBTable(final String dbCatName, final String adqlCatName
-			, final String dbSchemName, final String adqlSchemName
-			, final String dbName, final String adqlName){
+	public DefaultDBTable(final String dbCatName, final String adqlCatName, final String dbSchemName, final String adqlSchemName, final String dbName, final String adqlName){
 
 		if (dbName == null || dbName.length() == 0)
 			throw new NullPointerException("Missing DB name !");
@@ -128,40 +125,40 @@ public class DefaultDBTable implements DBTable {
 		adqlCatalogName = adqlCatName;
 	}
 
-	public final String getDBName() {
+	public final String getDBName(){
 		return dbName;
 	}
 
-	public final String getDBSchemaName() {
+	public final String getDBSchemaName(){
 		return dbSchemaName;
 	}
 
-	public final String getDBCatalogName() {
+	public final String getDBCatalogName(){
 		return dbCatalogName;
 	}
 
-	public final String getADQLName() {
+	public final String getADQLName(){
 		return adqlName;
 	}
 
 	public void setADQLName(final String name){
-		adqlName = (name != null)?name:dbName;
+		adqlName = (name != null) ? name : dbName;
 	}
 
-	public final String getADQLSchemaName() {
+	public final String getADQLSchemaName(){
 		return adqlSchemaName;
 	}
 
 	public void setADQLSchemaName(final String name){
-		adqlSchemaName = (name != null)?name:dbSchemaName;
+		adqlSchemaName = (name != null) ? name : dbSchemaName;
 	}
 
-	public final String getADQLCatalogName() {
+	public final String getADQLCatalogName(){
 		return adqlCatalogName;
 	}
 
 	public void setADQLCatalogName(final String name){
-		adqlName = (name != null)?null:dbName;
+		adqlName = (name != null) ? null : dbName;
 	}
 
 	/**
@@ -170,7 +167,7 @@ public class DefaultDBTable implements DBTable {
 	 * 
 	 * @see adql.db.DBTable#getColumn(java.lang.String, boolean)
 	 */
-	public DBColumn getColumn(String colName, boolean byAdqlName) {
+	public DBColumn getColumn(String colName, boolean byAdqlName){
 		if (byAdqlName)
 			return columns.get(colName);
 		else{
@@ -182,11 +179,11 @@ public class DefaultDBTable implements DBTable {
 		}
 	}
 
-	public boolean hasColumn(String colName, boolean byAdqlName) {
+	public boolean hasColumn(String colName, boolean byAdqlName){
 		return (getColumn(colName, byAdqlName) != null);
 	}
 
-	public Iterator<DBColumn> iterator() {
+	public Iterator<DBColumn> iterator(){
 		return columns.values().iterator();
 	}
 
@@ -209,39 +206,39 @@ public class DefaultDBTable implements DBTable {
 	 * 
 	 * @return	A String array of 3 items: [0]=catalog, [1]=schema, [0]=table.
 	 */
-	public static final String[] splitTableName(final String table) {
-		String[] splitRes = new String[]{null, null, null};
+	public static final String[] splitTableName(final String table){
+		String[] splitRes = new String[]{null,null,null};
 
 		if (table == null || table.trim().length() == 0)
 			return splitRes;
 
 		String[] names = table.trim().split("\\.");
 		switch(names.length){
-		case 1:
-			splitRes[2] = table.trim();
-			break;
-		case 2:
-			splitRes[2] = names[1].trim();
-			splitRes[1] = names[0].trim();
-			break;
-		case 3:
-			splitRes[2] = names[2].trim();
-			splitRes[1] = names[1].trim();
-			splitRes[0] = names[0].trim();
-			break;
-		default:
-			splitRes[2] = names[names.length-1].trim();
-			splitRes[1] = names[names.length-2].trim();
-			StringBuffer buff = new StringBuffer(names[0].trim());
-			for(int i=1; i<names.length-2; i++)
-				buff.append('.').append(names[i].trim());
-			splitRes[0] = buff.toString();
+			case 1:
+				splitRes[2] = table.trim();
+				break;
+			case 2:
+				splitRes[2] = names[1].trim();
+				splitRes[1] = names[0].trim();
+				break;
+			case 3:
+				splitRes[2] = names[2].trim();
+				splitRes[1] = names[1].trim();
+				splitRes[0] = names[0].trim();
+				break;
+			default:
+				splitRes[2] = names[names.length - 1].trim();
+				splitRes[1] = names[names.length - 2].trim();
+				StringBuffer buff = new StringBuffer(names[0].trim());
+				for(int i = 1; i < names.length - 2; i++)
+					buff.append('.').append(names[i].trim());
+				splitRes[0] = buff.toString();
 		}
 
 		return splitRes;
 	}
 
-	public DBTable copy(final String dbName, final String adqlName) {
+	public DBTable copy(final String dbName, final String adqlName){
 		DefaultDBTable copy = new DefaultDBTable(dbName, adqlName);
 		for(DBColumn col : this)
 			copy.addColumn(col.copy(col.getDBName(), col.getADQLName(), copy));

@@ -38,12 +38,12 @@ public class TAPDestructionTimeController implements InputParamController {
 	protected final ServiceConnection<?> service;
 	protected boolean allowModification = true;
 
-	public TAPDestructionTimeController(final ServiceConnection<?> service) {
+	public TAPDestructionTimeController(final ServiceConnection<?> service){
 		this.service = service;
 	}
 
 	@Override
-	public final boolean allowModification() {
+	public final boolean allowModification(){
 		return allowModification;
 	}
 
@@ -60,7 +60,7 @@ public class TAPDestructionTimeController implements InputParamController {
 	}
 
 	@Override
-	public final Object getDefault() {
+	public final Object getDefault(){
 		int defaultPeriod = getDefaultRetentionPeriod();
 		if (defaultPeriod > 0){
 			Calendar date = Calendar.getInstance();
@@ -97,7 +97,7 @@ public class TAPDestructionTimeController implements InputParamController {
 	}
 
 	@Override
-	public Object check(Object value) throws UWSException {
+	public Object check(Object value) throws UWSException{
 		if (value == null)
 			return null;
 
@@ -116,11 +116,9 @@ public class TAPDestructionTimeController implements InputParamController {
 
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))
-			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the DESTRUCTION INTERVAL (since now) to "+getMaxRetentionPeriod()+" s !");
+			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the DESTRUCTION INTERVAL (since now) to " + getMaxRetentionPeriod() + " s !");
 
 		return date;
 	}
-
-
 
 }

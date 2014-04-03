@@ -32,24 +32,24 @@ import uws.service.backup.DefaultUWSBackupManager;
 
 public class DefaultTAPBackupManager extends DefaultUWSBackupManager {
 
-	public DefaultTAPBackupManager(UWS uws) {
+	public DefaultTAPBackupManager(UWS uws){
 		super(uws);
 	}
 
-	public DefaultTAPBackupManager(UWS uws, long frequency) {
+	public DefaultTAPBackupManager(UWS uws, long frequency){
 		super(uws, frequency);
 	}
 
-	public DefaultTAPBackupManager(UWS uws, boolean byUser) throws UWSException {
+	public DefaultTAPBackupManager(UWS uws, boolean byUser) throws UWSException{
 		super(uws, byUser);
 	}
 
-	public DefaultTAPBackupManager(UWS uws, boolean byUser, long frequency) throws UWSException {
+	public DefaultTAPBackupManager(UWS uws, boolean byUser, long frequency) throws UWSException{
 		super(uws, byUser, frequency);
 	}
 
 	@Override
-	protected JSONObject getJSONJob(UWSJob job, String jlName) throws UWSException, JSONException {
+	protected JSONObject getJSONJob(UWSJob job, String jlName) throws UWSException, JSONException{
 		JSONObject json = super.getJSONJob(job, jlName);
 
 		if (job instanceof TAPJob && ((TAPJob)job).getExecReport() != null){
@@ -77,7 +77,7 @@ public class DefaultTAPBackupManager extends DefaultUWSBackupManager {
 	}
 
 	@Override
-	protected void restoreOtherJobParams(JSONObject json, UWSJob job) throws UWSException {
+	protected void restoreOtherJobParams(JSONObject json, UWSJob job) throws UWSException{
 		if (job != null && json != null && job instanceof TAPJob){
 			TAPJob tapJob = (TAPJob)job;
 			Object obj = job.getAdditionalParameterValue("tapexecreport");
@@ -105,14 +105,14 @@ public class DefaultTAPBackupManager extends DefaultUWSBackupManager {
 							else if (key.equalsIgnoreCase("totalduration"))
 								execReport.setTotalDuration(jsonExecReport.getLong(key));
 							else
-								getLogger().warning("The execution report attribute '"+key+"' of the job \""+job.getJobId()+"\" has been ignored because unknown !");
+								getLogger().warning("The execution report attribute '" + key + "' of the job \"" + job.getJobId() + "\" has been ignored because unknown !");
 						}catch(JSONException je){
-							getLogger().error("[restoration] Incorrect JSON format for the execution report serialization of the job \""+job.getJobId()+"\" (attribute: \""+key+"\") !", je);
+							getLogger().error("[restoration] Incorrect JSON format for the execution report serialization of the job \"" + job.getJobId() + "\" (attribute: \"" + key + "\") !", je);
 						}
 					}
 					tapJob.setExecReport(execReport);
 				}else if (!(obj instanceof JSONObject))
-					getLogger().warning("[restoration] Impossible to restore the execution report of the job \""+job.getJobId()+"\" because the stored object is not a JSONObject !");
+					getLogger().warning("[restoration] Impossible to restore the execution report of the job \"" + job.getJobId() + "\" because the stored object is not a JSONObject !");
 			}
 		}
 	}

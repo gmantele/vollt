@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletResponse;
 import uws.UWSException;
 import uws.UWSExceptionFactory;
 
-
 import uws.job.serializer.UWSSerializer;
 
 import uws.job.user.JobOwner;
@@ -62,12 +61,12 @@ public class ShowHomePage extends UWSAction {
 	 * @see uws.service.actions.UWSAction#getName()
 	 */
 	@Override
-	public String getName() {
+	public String getName(){
 		return HOME_PAGE;
 	}
 
 	@Override
-	public String getDescription() {
+	public String getDescription(){
 		return "Shows the UWS home page. (URL: {baseUWS_URL}, Method: HTTP-GET, No parameter)";
 	}
 
@@ -77,7 +76,7 @@ public class ShowHomePage extends UWSAction {
 	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, uws.job.user.JobOwner, javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException {
+	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
 		return !urlInterpreter.hasJobList();
 	}
 
@@ -99,7 +98,7 @@ public class ShowHomePage extends UWSAction {
 	 * @see UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 */
 	@Override
-	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException {
+	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		if (uws.isDefaultHomePage()){
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 			response.setContentType(serializer.getMimeType());
@@ -109,7 +108,7 @@ public class ShowHomePage extends UWSAction {
 				output.print(serialization);
 				output.flush();
 			}else
-				throw UWSExceptionFactory.incorrectSerialization(serialization, "the UWS "+uws.getName());
+				throw UWSExceptionFactory.incorrectSerialization(serialization, "the UWS " + uws.getName());
 		}else{
 			if (uws.isHomePageRedirection())
 				uws.redirect(uws.getHomePage(), request, user, getName(), response);

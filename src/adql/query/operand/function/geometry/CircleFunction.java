@@ -49,7 +49,6 @@ public class CircleFunction extends GeometryFunction {
 	/** The radius of the circle (in degrees). */
 	private ADQLOperand radius;
 
-
 	/**
 	 * Builds a CIRCLE function.
 	 * 
@@ -60,7 +59,7 @@ public class CircleFunction extends GeometryFunction {
 	 * @throws NullPointerException	If at least one parameter is incorrect or if the coordinate system is unknown.
 	 * @throws Exception 			If there is another error.
 	 */
-	public CircleFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord, ADQLOperand radius) throws NullPointerException, Exception {
+	public CircleFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord, ADQLOperand radius) throws NullPointerException, Exception{
 		super(coordinateSystem);
 
 		if (firstCoord == null || secondCoord == null || radius == null)
@@ -77,26 +76,26 @@ public class CircleFunction extends GeometryFunction {
 	 * @param toCopy		The CIRCLE function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public CircleFunction(CircleFunction toCopy) throws Exception {
+	public CircleFunction(CircleFunction toCopy) throws Exception{
 		super(toCopy);
 		coord1 = (ADQLOperand)(toCopy.coord1.getCopy());
 		coord2 = (ADQLOperand)(toCopy.coord2.getCopy());
 		radius = (ADQLOperand)(toCopy.radius.getCopy());
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new CircleFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "CIRCLE";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return false;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return true;
 	}
 
@@ -105,7 +104,7 @@ public class CircleFunction extends GeometryFunction {
 	 * 
 	 * @return The first coordinate.
 	 */
-	public final ADQLOperand getCoord1() {
+	public final ADQLOperand getCoord1(){
 		return coord1;
 	}
 
@@ -114,7 +113,7 @@ public class CircleFunction extends GeometryFunction {
 	 * 
 	 * @param coord1 The first coordinate.
 	 */
-	public final void setCoord1(ADQLOperand coord1) {
+	public final void setCoord1(ADQLOperand coord1){
 		this.coord1 = coord1;
 	}
 
@@ -123,7 +122,7 @@ public class CircleFunction extends GeometryFunction {
 	 * 
 	 * @return The second coordinate.
 	 */
-	public final ADQLOperand getCoord2() {
+	public final ADQLOperand getCoord2(){
 		return coord2;
 	}
 
@@ -132,7 +131,7 @@ public class CircleFunction extends GeometryFunction {
 	 * 
 	 * @param coord2 The second coordinate.
 	 */
-	public final void setCoord2(ADQLOperand coord2) {
+	public final void setCoord2(ADQLOperand coord2){
 		this.coord2 = coord2;
 	}
 
@@ -141,7 +140,7 @@ public class CircleFunction extends GeometryFunction {
 	 * 
 	 * @return The radius.
 	 */
-	public final ADQLOperand getRadius() {
+	public final ADQLOperand getRadius(){
 		return radius;
 	}
 
@@ -150,61 +149,61 @@ public class CircleFunction extends GeometryFunction {
 	 * 
 	 * @param radius The radius.
 	 */
-	public final void setRadius(ADQLOperand radius) {
+	public final void setRadius(ADQLOperand radius){
 		this.radius = radius;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
-		return new ADQLOperand[]{coordSys, coord1, coord2, radius};
+	public ADQLOperand[] getParameters(){
+		return new ADQLOperand[]{coordSys,coord1,coord2,radius};
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return 4;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		switch(index){
-		case 0:
-			return coordSys;
-		case 1:
-			return coord1;
-		case 2:
-			return coord2;
-		case 3:
-			return radius;
-		default:
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			case 0:
+				return coordSys;
+			case 1:
+				return coord1;
+			case 2:
+				return coord2;
+			case 3:
+				return radius;
+			default:
+				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 		}
 	}
 
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (replacer == null)
-			throw new NullPointerException("Impossible to remove one parameter of a "+getName()+" function !");
+			throw new NullPointerException("Impossible to remove one parameter of a " + getName() + " function !");
 
 		ADQLOperand replaced = null;
 		switch(index){
-		case 0:
-			replaced = coordSys;
-			setCoordinateSystem(replacer);
-			break;
-		case 1:
-			replaced = coord1;
-			coord1 = replacer;
-			break;
-		case 2:
-			replaced = coord2;
-			coord2 = replacer;
-			break;
-		case 3:
-			replaced = radius;
-			radius = replacer;
-			break;
-		default:
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			case 0:
+				replaced = coordSys;
+				setCoordinateSystem(replacer);
+				break;
+			case 1:
+				replaced = coord1;
+				coord1 = replacer;
+				break;
+			case 2:
+				replaced = coord2;
+				coord2 = replacer;
+				break;
+			case 3:
+				replaced = radius;
+				radius = replacer;
+				break;
+			default:
+				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 		}
 		return replaced;
 	}

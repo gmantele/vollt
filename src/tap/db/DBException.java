@@ -38,7 +38,7 @@ public class DBException extends TAPException {
 	 * 
 	 * @param message	Error message.
 	 */
-	public DBException(String message) {
+	public DBException(String message){
 		super(message);
 	}
 
@@ -53,7 +53,7 @@ public class DBException extends TAPException {
 	 * @param message	Error message.
 	 * @param query		ADQL query (this string may be displayed to the user).
 	 */
-	public DBException(String message, String query) {
+	public DBException(String message, String query){
 		super(message, query);
 	}
 
@@ -62,7 +62,7 @@ public class DBException extends TAPException {
 	 * 
 	 * @param cause	Cause of this error.
 	 */
-	public DBException(Throwable cause) {
+	public DBException(Throwable cause){
 		super(cause);
 	}
 
@@ -77,7 +77,7 @@ public class DBException extends TAPException {
 	 * @param cause	Cause of this error.
 	 * @param query	ADQL query (this string may be displayed to the user).
 	 */
-	public DBException(Throwable cause, String query) {
+	public DBException(Throwable cause, String query){
 		super(cause, query);
 	}
 
@@ -87,7 +87,7 @@ public class DBException extends TAPException {
 	 * @param message	Error message.
 	 * @param cause		Cause of this error.
 	 */
-	public DBException(String message, Throwable cause) {
+	public DBException(String message, Throwable cause){
 		super(message, cause);
 	}
 
@@ -103,7 +103,7 @@ public class DBException extends TAPException {
 	 * @param cause		Cause of this error.
 	 * @param query		ADQL query (this string may be displayed to the user).
 	 */
-	public DBException(String message, Throwable cause, String query) {
+	public DBException(String message, Throwable cause, String query){
 		super(message, cause, query);
 	}
 

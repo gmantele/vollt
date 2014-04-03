@@ -112,6 +112,6 @@ public interface UWSFactory {
 	 * 
 	 * @throws UWSException	If an error occurs while extracting parameters.
 	 */
-	public UWSParameters createUWSParameters(final Map<String, Object> params) throws UWSException;
+	public UWSParameters createUWSParameters(final Map<String,Object> params) throws UWSException;
 
 }

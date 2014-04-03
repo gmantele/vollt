@@ -73,34 +73,34 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 	 * 
 	 * @throws DBException	If the specified driver can not be found, or if the database URL or user is incorrect.
 	 */
-	public JDBCConnection(final String ID, final String driverPath, final String dbUrl, final String dbUser, final String dbPassword, final TAPLog logger) throws DBException {
+	public JDBCConnection(final String ID, final String driverPath, final String dbUrl, final String dbUser, final String dbPassword, final TAPLog logger) throws DBException{
 		this.logger = logger;
 		this.ID = ID;
 
 		// Load the specified JDBC driver:
-		try {
+		try{
 			Class.forName(driverPath);
-		} catch (ClassNotFoundException cnfe) {
-			logger.dbError("Impossible to find the JDBC driver \""+driverPath+"\" !", cnfe);
-			throw new DBException("Impossible to find the JDBC driver \""+driverPath+"\" !", cnfe);
+		}catch(ClassNotFoundException cnfe){
+			logger.dbError("Impossible to find the JDBC driver \"" + driverPath + "\" !", cnfe);
+			throw new DBException("Impossible to find the JDBC driver \"" + driverPath + "\" !", cnfe);
 		}
 
 		// Build a connection to the specified database:
-		String url = dbUrl.startsWith(JDBC_PREFIX) ? dbUrl : (JDBC_PREFIX+dbUrl);
-		try {
+		String url = dbUrl.startsWith(JDBC_PREFIX) ? dbUrl : (JDBC_PREFIX + dbUrl);
+		try{
 			connection = DriverManager.getConnection(url, dbUser, dbPassword);
 			logger.connectionOpened(this, dbUrl.substring(dbUrl.lastIndexOf('/')));
-		} catch (SQLException se) {
-			logger.dbError("Impossible to establish a connection to the database \""+url+"\" !", se);
-			throw new DBException("Impossible to establish a connection to the database \""+url+"\" !", se);
+		}catch(SQLException se){
+			logger.dbError("Impossible to establish a connection to the database \"" + url + "\" !", se);
+			throw new DBException("Impossible to establish a connection to the database \"" + url + "\" !", se);
 		}
 	}
 
-	public final String getID() {
+	public final String getID(){
 		return ID;
 	}
 
-	public void startTransaction() throws DBException {
+	public void startTransaction() throws DBException{
 		try{
 			Statement st = connection.createStatement();
 			st.execute("begin");
@@ -111,31 +111,31 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
-	public void cancelTransaction() throws DBException {
-		try {
+	public void cancelTransaction() throws DBException{
+		try{
 			connection.rollback();
 			logger.transactionCancelled(this);
-		} catch (SQLException se) {
+		}catch(SQLException se){
 			logger.dbError("Impossible to cancel/rollback a transaction !", se);
 			throw new DBException("Impossible to cancel (rollback) the transaction !", se);
 		}
 	}
 
-	public void endTransaction() throws DBException {
-		try {
+	public void endTransaction() throws DBException{
+		try{
 			connection.commit();
 			logger.transactionEnded(this);
-		} catch (SQLException se) {
+		}catch(SQLException se){
 			logger.dbError("Impossible to end/commit a transaction !", se);
 			throw new DBException("Impossible to end/commit the transaction !", se);
 		}
 	}
 
-	public void close() throws DBException {
-		try {
+	public void close() throws DBException{
+		try{
 			connection.close();
 			logger.connectionClosed(this);
-		} catch (SQLException se) {
+		}catch(SQLException se){
 			logger.dbError("Impossible to close a database transaction !", se);
 			throw new DBException("Impossible to close the database transaction !", se);
 		}
@@ -144,7 +144,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 	/* ********************* */
 	/* INTERROGATION METHODS */
 	/* ********************* */
-	public ResultSet executeQuery(final String sqlQuery, final ADQLQuery adqlQuery) throws DBException {
+	public ResultSet executeQuery(final String sqlQuery, final ADQLQuery adqlQuery) throws DBException{
 		try{
 			Statement stmt = connection.createStatement();
 			logger.sqlQueryExecuting(this, sqlQuery);
@@ -153,38 +153,38 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 			return result;
 		}catch(SQLException se){
 			logger.sqlQueryError(this, sqlQuery, se);
-			throw new DBException("Unexpected error while executing a SQL query: "+se.getMessage(), se);
+			throw new DBException("Unexpected error while executing a SQL query: " + se.getMessage(), se);
 		}
 	}
 
 	/* ************** */
 	/* UPLOAD METHODS */
 	/* ************** */
-	public void createSchema(final String schemaName) throws DBException {
-		String sql = "CREATE SCHEMA "+schemaName+";";
+	public void createSchema(final String schemaName) throws DBException{
+		String sql = "CREATE SCHEMA " + schemaName + ";";
 		try{
 			Statement stmt = connection.createStatement();
 			stmt.executeUpdate(sql);
 			logger.schemaCreated(this, schemaName);
 		}catch(SQLException se){
-			logger.dbError("Impossible to create the schema \""+schemaName+"\" !", se);
-			throw new DBException("Impossible to create the schema \""+schemaName+"\" !", se);
+			logger.dbError("Impossible to create the schema \"" + schemaName + "\" !", se);
+			throw new DBException("Impossible to create the schema \"" + schemaName + "\" !", se);
 		}
 	}
 
-	public void dropSchema(final String schemaName) throws DBException {
-		String sql = "DROP SCHEMA IF EXISTS "+schemaName+" CASCADE;";
+	public void dropSchema(final String schemaName) throws DBException{
+		String sql = "DROP SCHEMA IF EXISTS " + schemaName + " CASCADE;";
 		try{
 			Statement stmt = connection.createStatement();
 			stmt.executeUpdate(sql);
 			logger.schemaDropped(this, schemaName);
 		}catch(SQLException se){
-			logger.dbError("Impossible to drop the schema \""+schemaName+"\" !", se);
-			throw new DBException("Impossible to drop the schema \""+schemaName+"\" !", se);
+			logger.dbError("Impossible to drop the schema \"" + schemaName + "\" !", se);
+			throw new DBException("Impossible to drop the schema \"" + schemaName + "\" !", se);
 		}
 	}
 
-	public void createTable(final TAPTable table) throws DBException {
+	public void createTable(final TAPTable table) throws DBException{
 		// Build the SQL query:
 		StringBuffer sqlBuf = new StringBuffer();
 		sqlBuf.append("CREATE TABLE ").append(table.getDBSchemaName()).append('.').append(table.getDBName()).append("(");
@@ -204,8 +204,8 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 			stmt.executeUpdate(sql);
 			logger.tableCreated(this, table);
 		}catch(SQLException se){
-			logger.dbError("Impossible to create the table \""+table.getFullName()+"\" !", se);
-			throw new DBException("Impossible to create the table \""+table.getFullName()+"\" !", se);
+			logger.dbError("Impossible to create the table \"" + table.getFullName() + "\" !", se);
+			throw new DBException("Impossible to create the table \"" + table.getFullName() + "\" !", se);
 		}
 	}
 
@@ -218,8 +218,8 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 	 * 
 	 * @return				The corresponding database type or the given datatype if unknown.
 	 */
-	public static String getDBType(String datatype, final int arraysize, final TAPLog logger) {
-		datatype = (datatype == null)?null:datatype.trim().toLowerCase();
+	public static String getDBType(String datatype, final int arraysize, final TAPLog logger){
+		datatype = (datatype == null) ? null : datatype.trim().toLowerCase();
 
 		if (datatype == null || datatype.isEmpty()){
 			if (logger != null)
@@ -228,41 +228,41 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 
 		if (datatype.equals("short"))
-			return (arraysize==1)?"INT2":"BYTEA";
+			return (arraysize == 1) ? "INT2" : "BYTEA";
 		else if (datatype.equals("int"))
-			return (arraysize==1)?"INT4":"BYTEA";
+			return (arraysize == 1) ? "INT4" : "BYTEA";
 		else if (datatype.equals("long"))
-			return (arraysize==1)?"INT8":"BYTEA";
+			return (arraysize == 1) ? "INT8" : "BYTEA";
 		else if (datatype.equals("float"))
-			return (arraysize==1)?"FLOAT4":"BYTEA";
+			return (arraysize == 1) ? "FLOAT4" : "BYTEA";
 		else if (datatype.equals("double"))
-			return (arraysize==1)?"FLOAT8":"BYTEA";
+			return (arraysize == 1) ? "FLOAT8" : "BYTEA";
 		else if (datatype.equals("boolean"))
-			return (arraysize==1)?"BOOL":"BYTEA";
+			return (arraysize == 1) ? "BOOL" : "BYTEA";
 		else if (datatype.equals("char"))
-			return (arraysize==1)?"CHAR(1)":((arraysize<=0)?"VARCHAR":("VARCHAR("+arraysize+")"));
+			return (arraysize == 1) ? "CHAR(1)" : ((arraysize <= 0) ? "VARCHAR" : ("VARCHAR(" + arraysize + ")"));
 		else if (datatype.equals("unsignedbyte"))
 			return "BYTEA";
 		else{
 			if (logger != null)
-				logger.dbInfo("Warning: unknown datatype: \""+datatype+"\" => considered as \""+datatype+"\" !");
+				logger.dbInfo("Warning: unknown datatype: \"" + datatype + "\" => considered as \"" + datatype + "\" !");
 			return datatype;
 		}
 	}
 
-	public void dropTable(final TAPTable table) throws DBException {
-		String sql = "DROP TABLE "+table.getDBSchemaName()+"."+table.getDBName()+";";
+	public void dropTable(final TAPTable table) throws DBException{
+		String sql = "DROP TABLE " + table.getDBSchemaName() + "." + table.getDBName() + ";";
 		try{
 			Statement stmt = connection.createStatement();
 			stmt.executeUpdate(sql);
 			logger.tableDropped(this, table);
 		}catch(SQLException se){
-			logger.dbError("Impossible to drop the table \""+table.getFullName()+"\" !", se);
-			throw new DBException("Impossible to drop the table \""+table.getFullName()+"\" !", se);
+			logger.dbError("Impossible to drop the table \"" + table.getFullName() + "\" !", se);
+			throw new DBException("Impossible to drop the table \"" + table.getFullName() + "\" !", se);
 		}
 	}
 
-	public void insertRow(final SavotTR row, final TAPTable table) throws DBException {
+	public void insertRow(final SavotTR row, final TAPTable table) throws DBException{
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
 		sql.append(table.getDBSchemaName()).append('.').append(table.getDBName()).append(" VALUES (");
 
@@ -270,10 +270,11 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		Iterator<TAPColumn> it = table.getColumns();
 		String datatype, value;
 		TAPColumn col;
-		int i=0;
+		int i = 0;
 		while(it.hasNext()){
 			col = it.next();
-			if (i>0) sql.append(',');
+			if (i > 0)
+				sql.append(',');
 			datatype = col.getDatatype();
 			value = cells.getContent(i);
 			if (value == null || value.isEmpty())
@@ -295,8 +296,8 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 			int nbInsertedRows = stmt.executeUpdate(sql.toString());
 			logger.rowsInserted(this, table, nbInsertedRows);
 		}catch(SQLException se){
-			logger.dbError("Impossible to insert a row into the table \""+table.getFullName()+"\" !", se);
-			throw new DBException("Impossible to insert a row in the table \""+table.getFullName()+"\" !", se);
+			logger.dbError("Impossible to insert a row into the table \"" + table.getFullName() + "\" !", se);
+			throw new DBException("Impossible to insert a row in the table \"" + table.getFullName() + "\" !", se);
 		}
 	}
 }

@@ -50,13 +50,12 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	private static final long serialVersionUID = 1L;
 
 	/** List of running jobs. */
-	protected Map<String, UWSJob> runningJobs;
+	protected Map<String,UWSJob> runningJobs;
 
 	/** List of queued jobs. */
 	protected Vector<UWSJob> queuedJobs;
 
 	protected final UWSLog logger;
-
 
 	/* ************ */
 	/* CONSTRUCTORS */
@@ -65,9 +64,9 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * Builds an execution manager without queue.
 	 */
 	protected AbstractQueuedExecutionManager(final UWSLog logger){
-		runningJobs = new LinkedHashMap<String, UWSJob>();
+		runningJobs = new LinkedHashMap<String,UWSJob>();
 		queuedJobs = new Vector<UWSJob>(0, 10);
-		this.logger = (logger == null)?UWSToolBox.getDefaultLogger():logger;
+		this.logger = (logger == null) ? UWSToolBox.getDefaultLogger() : logger;
 	}
 
 	/* ***************** */
@@ -124,7 +123,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * 
 	 * @see uws.job.manager.ExecutionManager#refresh()
 	 */
-	public synchronized final void refresh() throws UWSException {
+	public synchronized final void refresh() throws UWSException{
 		// Return immediately if no queue:
 		if (!hasQueue())
 			return;
@@ -132,11 +131,11 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 		String allMsg = null;	// the concatenation of all errors which may occur
 
 		// Start the first job of the queue while it can be executed:
-		while (!queuedJobs.isEmpty() && isReadyForExecution(queuedJobs.firstElement())){
+		while(!queuedJobs.isEmpty() && isReadyForExecution(queuedJobs.firstElement())){
 			try{
-				startJob( queuedJobs.remove(0) );
+				startJob(queuedJobs.remove(0));
 			}catch(UWSException ue){
-				allMsg = ((allMsg == null)?"ERRORS THAT OCCURED WHILE REFRESHING THE EXECUTION MANAGER:":allMsg)+"\n\t- "+ue.getMessage();
+				allMsg = ((allMsg == null) ? "ERRORS THAT OCCURED WHILE REFRESHING THE EXECUTION MANAGER:" : allMsg) + "\n\t- " + ue.getMessage();
 			}
 		}
 
@@ -155,7 +154,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * 
 	 * @see UWSJob#start(boolean)
 	 */
-	protected void startJob(final UWSJob jobToStartNow) throws UWSException {
+	protected void startJob(final UWSJob jobToStartNow) throws UWSException{
 		if (jobToStartNow != null){
 			jobToStartNow.start(false);
 			queuedJobs.remove(jobToStartNow);
@@ -178,7 +177,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * 
 	 * @see uws.job.manager.ExecutionManager#execute(AbstractJob)
 	 */
-	public synchronized final ExecutionPhase execute(final UWSJob jobToExecute) throws UWSException {
+	public synchronized final ExecutionPhase execute(final UWSJob jobToExecute) throws UWSException{
 		if (jobToExecute == null)
 			return null;
 
@@ -217,7 +216,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * 
 	 * @see uws.job.manager.ExecutionManager#remove(uws.job.UWSJob)
 	 */
-	public final synchronized void remove(final UWSJob jobToRemove) throws UWSException {
+	public final synchronized void remove(final UWSJob jobToRemove) throws UWSException{
 		if (jobToRemove != null){
 			runningJobs.remove(jobToRemove.getJobId());
 			queuedJobs.remove(jobToRemove);

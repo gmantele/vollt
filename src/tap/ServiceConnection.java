@@ -32,9 +32,9 @@ import tap.metadata.TAPMetadata;
 
 import uws.service.UserIdentifier;
 
-public interface ServiceConnection<R> {
+public interface ServiceConnection< R > {
 
-	public static enum LimitUnit {
+	public static enum LimitUnit{
 		rows, bytes;
 	}
 

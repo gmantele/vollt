@@ -48,21 +48,27 @@ public class Sync implements TAPResource {
 	}
 
 	@Override
-	public String getName() { return RESOURCE_NAME; }
-
-	@Override
-	public void setTAPBaseURL(String baseURL) {
-		accessURL = ((baseURL != null)?(baseURL+"/"):"")+getName();
+	public String getName(){
+		return RESOURCE_NAME;
 	}
 
 	@Override
-	public void init(ServletConfig config) throws ServletException { ; }
+	public void setTAPBaseURL(String baseURL){
+		accessURL = ((baseURL != null) ? (baseURL + "/") : "") + getName();
+	}
 
 	@Override
-	public void destroy() { ; }
+	public void init(ServletConfig config) throws ServletException{
+		;
+	}
 
 	@Override
-	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, TAPException, UWSException {
+	public void destroy(){
+		;
+	}
+
+	@Override
+	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, TAPException, UWSException{
 		TAPParameters params = (TAPParameters)service.getFactory().createUWSParameters(request);
 		params.check();
 

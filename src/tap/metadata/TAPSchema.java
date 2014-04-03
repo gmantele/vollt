@@ -35,12 +35,12 @@ public class TAPSchema implements Iterable<TAPTable> {
 
 	protected Object otherData = null;
 
-	protected final Map<String, TAPTable> tables;
+	protected final Map<String,TAPTable> tables;
 
 	public TAPSchema(String schemaName){
 		adqlName = schemaName;
 		dbName = adqlName;
-		tables = new HashMap<String, TAPTable>();
+		tables = new HashMap<String,TAPTable>();
 	}
 
 	public TAPSchema(String schemaName, String description){
@@ -56,7 +56,7 @@ public class TAPSchema implements Iterable<TAPTable> {
 	/**
 	 * @return The name.
 	 */
-	public final String getName() {
+	public final String getName(){
 		return getADQLName();
 	}
 
@@ -64,40 +64,40 @@ public class TAPSchema implements Iterable<TAPTable> {
 		return adqlName;
 	}
 
-	public final String getDBName() {
+	public final String getDBName(){
 		return dbName;
 	}
 
 	public final void setDBName(String name){
-		name = (name != null)?name.trim():name;
-		dbName = (name == null || name.length() == 0)?adqlName:name;
+		name = (name != null) ? name.trim() : name;
+		dbName = (name == null || name.length() == 0) ? adqlName : name;
 	}
 
 	/**
 	 * @return The description.
 	 */
-	public final String getDescription() {
+	public final String getDescription(){
 		return description;
 	}
 
 	/**
 	 * @param description The description to set.
 	 */
-	public final void setDescription(String description) {
+	public final void setDescription(String description){
 		this.description = description;
 	}
 
 	/**
 	 * @return The utype.
 	 */
-	public final String getUtype() {
+	public final String getUtype(){
 		return utype;
 	}
 
 	/**
 	 * @param utype The utype to set.
 	 */
-	public final void setUtype(String utype) {
+	public final void setUtype(String utype){
 		this.utype = utype;
 	}
 
@@ -169,9 +169,9 @@ public class TAPSchema implements Iterable<TAPTable> {
 	}
 
 	public final void removeAllTables(){
-		Iterator<Map.Entry<String, TAPTable>> it = tables.entrySet().iterator();
+		Iterator<Map.Entry<String,TAPTable>> it = tables.entrySet().iterator();
 		while(it.hasNext()){
-			Map.Entry<String, TAPTable> entry = it.next();
+			Map.Entry<String,TAPTable> entry = it.next();
 			it.remove();
 			entry.getValue().setSchema(null);
 			entry.getValue().removeAllForeignKeys();
@@ -179,7 +179,7 @@ public class TAPSchema implements Iterable<TAPTable> {
 	}
 
 	@Override
-	public Iterator<TAPTable> iterator() {
+	public Iterator<TAPTable> iterator(){
 		return tables.values().iterator();
 	}
 

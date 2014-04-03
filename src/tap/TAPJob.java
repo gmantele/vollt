@@ -62,8 +62,7 @@ public class TAPJob extends UWSJob {
 
 	protected final TAPParameters tapParams;
 
-
-	public TAPJob(final JobOwner owner, final TAPParameters tapParams) throws UWSException, TAPException {
+	public TAPJob(final JobOwner owner, final TAPParameters tapParams) throws UWSException, TAPException{
 		super(owner, tapParams);
 		this.tapParams = tapParams;
 		tapParams.check();
@@ -71,7 +70,7 @@ public class TAPJob extends UWSJob {
 		//loadTAPParams(tapParams);
 	}
 
-	public TAPJob(final String jobID, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException, TAPException {
+	public TAPJob(final String jobID, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException, TAPException{
 		super(jobID, owner, params, quote, startTime, endTime, results, error);
 		this.tapParams = params;
 		this.tapParams.check();
@@ -95,7 +94,7 @@ public class TAPJob extends UWSJob {
 	/**
 	 * @return The tapParams.
 	 */
-	public final TAPParameters getTapParams() {
+	public final TAPParameters getTapParams(){
 		return tapParams;
 	}
 
@@ -134,16 +133,16 @@ public class TAPJob extends UWSJob {
 	/**
 	 * @return The execReport.
 	 */
-	public final TAPExecutionReport getExecReport() {
+	public final TAPExecutionReport getExecReport(){
 		return execReport;
 	}
 
 	/**
 	 * @param execReport The execReport to set.
 	 */
-	public final void setExecReport(TAPExecutionReport execReport) throws UWSException {
+	public final void setExecReport(TAPExecutionReport execReport) throws UWSException{
 		if (getRestorationDate() == null && !isRunning())
-			throw new UWSException("Impossible to set an execution report if the job is not in the EXECUTING phase ! Here, the job \""+jobId+"\" is in the phase "+getPhase());
+			throw new UWSException("Impossible to set an execution report if the job is not in the EXECUTING phase ! Here, the job \"" + jobId + "\" is in the phase " + getPhase());
 		this.execReport = execReport;
 	}
 
@@ -169,7 +168,7 @@ public class TAPJob extends UWSJob {
 	}*/
 
 	@Override
-	protected void stop() {
+	protected void stop(){
 		if (!isStopped()){
 			//try {
 			stopping = true;
@@ -193,10 +192,9 @@ public class TAPJob extends UWSJob {
 	}*/
 
 	@Override
-	public void clearResources() {
+	public void clearResources(){
 		super.clearResources();
 		// TODO deleteResultFiles();
 	}
-
 
 }

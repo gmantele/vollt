@@ -89,7 +89,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @see #getDefaultTaskDescription(UWSJob)
 	 */
-	public JobThread(UWSJob j) throws UWSException {
+	public JobThread(UWSJob j) throws UWSException{
 		this(j, getDefaultTaskDescription(j));
 	}
 
@@ -102,7 +102,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @throws UWSException	If the given job or the given file manager is null.
 	 */
-	public JobThread(UWSJob j, String task) throws UWSException {
+	public JobThread(UWSJob j, String task) throws UWSException{
 		super(tg, j.getJobId());
 		if (j == null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing job instance ! => impossible to build a JobThread instance.");
@@ -119,12 +119,12 @@ public abstract class JobThread extends Thread {
 	protected final static String getDefaultTaskDescription(final UWSJob job){
 		// Describe the task of this thread:
 		String task = "";
-		task = "Executing the job "+job.getJobId();
+		task = "Executing the job " + job.getJobId();
 		if (job.getJobList() != null && job.getJobList().getName() != null && !job.getJobList().getName().trim().isEmpty()){
 			JobList jl = job.getJobList();
-			task += " (JobList: "+job.getJobList().getName();
+			task += " (JobList: " + job.getJobList().getName();
 			if (jl.getUWS() != null && jl.getUWS().getName() != null && !jl.getUWS().getName().trim().isEmpty())
-				task += ", UWS: "+jl.getUWS().getName();
+				task += ", UWS: " + jl.getUWS().getName();
 			task += ")";
 		}
 		return task;
@@ -171,7 +171,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @throws UWSException	If there is an error while changing the execution phase.
 	 */
-	private final void complete() throws UWSException {
+	private final void complete() throws UWSException{
 		if (isInterrupted())
 			job.abort();
 		else{
@@ -191,7 +191,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @see {@link UWSJob#error(ErrorSummary)}
 	 */
-	public void setError(final ErrorSummary error) throws UWSException {
+	public void setError(final ErrorSummary error) throws UWSException{
 		job.error(error);
 	}
 
@@ -212,12 +212,12 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * {@link UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)}
 	 */
-	public void setError(final UWSException ue) throws UWSException {
+	public void setError(final UWSException ue) throws UWSException{
 		if (ue == null)
 			return;
 
 		try{
-			ErrorSummary error = new ErrorSummary(ue, ue.getUWSErrorType(), job.getUrl()+"/"+UWSJob.PARAM_ERROR_SUMMARY+"/details");
+			ErrorSummary error = new ErrorSummary(ue, ue.getUWSErrorType(), job.getUrl() + "/" + UWSJob.PARAM_ERROR_SUMMARY + "/details");
 			OutputStream output = getFileManager().getErrorOutput(error, job);
 
 			UWSToolBox.writeErrorFile(ue, error, job, output);
@@ -225,7 +225,7 @@ public abstract class JobThread extends Thread {
 			setError(error);
 
 		}catch(IOException ioe){
-			job.getLogger().error("The stack trace of a UWSException (job ID: "+job.getJobId()+" ; error message: \""+ue.getMessage()+"\") had not been written !", ioe);
+			job.getLogger().error("The stack trace of a UWSException (job ID: " + job.getJobId() + " ; error message: \"" + ue.getMessage() + "\") had not been written !", ioe);
 			setError(new ErrorSummary(ue.getMessage(), ue.getUWSErrorType()));
 		}
 	}
@@ -246,7 +246,7 @@ public abstract class JobThread extends Thread {
 			int resultCount = 0;
 			do{
 				resultCount++;
-				resultName = Result.DEFAULT_RESULT_NAME+"_"+resultCount;
+				resultName = Result.DEFAULT_RESULT_NAME + "_" + resultCount;
 			}while(job.getResult(resultName) != null);
 		}
 
@@ -276,7 +276,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @see UWSJob#addResult(Result)
 	 */
-	public void publishResult(final Result result) throws UWSException {
+	public void publishResult(final Result result) throws UWSException{
 		job.addResult(result);
 	}
 
@@ -292,7 +292,7 @@ public abstract class JobThread extends Thread {
 	 * @throws IOException	If there is an error while creating the file or the output stream.
 	 * @throws UWSException	If an error occurs in the {@link UWSFileManager#getResultOutput(Result, UWSJob)}.
 	 */
-	public OutputStream getResultOutput(final Result resultToWrite) throws IOException, UWSException {
+	public OutputStream getResultOutput(final Result resultToWrite) throws IOException, UWSException{
 		return getFileManager().getResultOutput(resultToWrite, job);
 	}
 
@@ -307,7 +307,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @see {@link UWSFileManager#getResultSize(Result, UWSJob)}
 	 */
-	public long getResultSize(final Result result) throws IOException {
+	public long getResultSize(final Result result) throws IOException{
 		return getFileManager().getResultSize(result, job);
 	}
 
@@ -353,7 +353,7 @@ public abstract class JobThread extends Thread {
 	 * @see UWSToolBox#publishErrorSummary(UWSJob, String, ErrorType)
 	 */
 	@Override
-	public final void run() {
+	public final void run(){
 		if (!job.getPhaseManager().isExecuting())
 			return;
 		else{
@@ -393,7 +393,7 @@ public abstract class JobThread extends Thread {
 			else
 				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, ErrorType.FATAL);
 
-		}finally {
+		}finally{
 			finished = true;
 
 			// Publish the error if any has occurred:
@@ -401,18 +401,18 @@ public abstract class JobThread extends Thread {
 				// Log the error:
 				job.getLogger().threadInterrupted(this, taskDescription, lastError);
 				// Set the error into the job:
-				try {
+				try{
 					setError(lastError);
-				} catch (UWSException ue) {
+				}catch(UWSException ue){
 					try{
-						job.getLogger().error("[JobThread] LEVEL 1 -> Problem in JobThread.setError(UWSException), while setting the execution error of the job "+job.getJobId(), ue);
-						setError(new ErrorSummary((lastError.getCause() != null)?lastError.getCause().getMessage():lastError.getMessage(), lastError.getUWSErrorType()));
+						job.getLogger().error("[JobThread] LEVEL 1 -> Problem in JobThread.setError(UWSException), while setting the execution error of the job " + job.getJobId(), ue);
+						setError(new ErrorSummary((lastError.getCause() != null) ? lastError.getCause().getMessage() : lastError.getMessage(), lastError.getUWSErrorType()));
 					}catch(UWSException ue2){
-						job.getLogger().error("[JobThread] LEVEL 2 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job "+job.getJobId(), ue2);
-						try {
+						job.getLogger().error("[JobThread] LEVEL 2 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId(), ue2);
+						try{
 							setError(new ErrorSummary(lastError.getMessage(), ErrorType.FATAL));
-						} catch (UWSException ue3){
-							job.getLogger().error("[JobThread] LEVEL 3 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job "+job.getJobId(), ue3);
+						}catch(UWSException ue3){
+							job.getLogger().error("[JobThread] LEVEL 3 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId(), ue3);
 						}
 					}
 				}

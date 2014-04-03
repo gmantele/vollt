@@ -73,7 +73,6 @@ public final class SearchResult implements Iterable<SearchResult> {
 	/** If it is impossible to replace an ADQL object by another one, a SearchResult must be created (with result = true) and this field must contain an error description. */
 	private String error = null;
 
-
 	/**
 	 * <p>Builds a SearchResult (node) with its value (node value).</p>
 	 * <p><i><u>Note:</u> By using this constructor the created SearchResult will not correspond to a matched ADQL object.</i></p>
@@ -96,7 +95,8 @@ public final class SearchResult implements Iterable<SearchResult> {
 
 		value = nodeValue;
 		result = (nodeValue != null) && isResult;
-		if (result) nbResults = 1;
+		if (result)
+			nbResults = 1;
 	}
 
 	/**
@@ -144,7 +144,7 @@ public final class SearchResult implements Iterable<SearchResult> {
 	public final void setError(String msg){
 		if (msg != null){
 			msg = msg.trim();
-			error = (msg.length()==0)?null:msg;
+			error = (msg.length() == 0) ? null : msg;
 		}else
 			error = null;
 	}
@@ -208,9 +208,9 @@ public final class SearchResult implements Iterable<SearchResult> {
 	 * Once the counting phase finished the direct parent node is notify that it must update its own number of results.
 	 */
 	private final void updateNbResults(){
-		synchronized (this) {
+		synchronized(this){
 			// Count all results from this node:
-			nbResults = isResult()?1:0;
+			nbResults = isResult() ? 1 : 0;
 			for(SearchResult r : children)
 				nbResults += r.getNbResults();
 		}
@@ -244,7 +244,7 @@ public final class SearchResult implements Iterable<SearchResult> {
 	 * @see java.lang.Iterable#iterator()
 	 * @see SearchIterator
 	 */
-	public final Iterator<SearchResult> iterator() {
+	public final Iterator<SearchResult> iterator(){
 		return new SearchIterator(this);
 	}
 

@@ -41,7 +41,6 @@ public class AreaFunction extends GeometryFunction {
 	/** The only parameter of this function. */
 	private GeometryValue<GeometryFunction> parameter;
 
-
 	/**
 	 * Builds an AREA function with its parameter.
 	 * 
@@ -49,7 +48,7 @@ public class AreaFunction extends GeometryFunction {
 	 * @throws NullPointerException	If the given operand is <i>null</i> or if it's not a {@link GeometryFunction}.
 	 */
 	@SuppressWarnings("unchecked")
-	public AreaFunction(GeometryValue<GeometryFunction> param) throws NullPointerException {
+	public AreaFunction(GeometryValue<GeometryFunction> param) throws NullPointerException{
 		super();
 		if (param == null)
 			throw new NullPointerException("The only parameter of an AREA function must be different from NULL !");
@@ -66,7 +65,7 @@ public class AreaFunction extends GeometryFunction {
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	public AreaFunction(AreaFunction toCopy) throws Exception {
+	public AreaFunction(AreaFunction toCopy) throws Exception{
 		super();
 		parameter = (GeometryValue<GeometryFunction>)(toCopy.parameter.getCopy());
 	}
@@ -76,7 +75,7 @@ public class AreaFunction extends GeometryFunction {
 	 * 
 	 * @return A region.
 	 */
-	public final GeometryValue<GeometryFunction> getParameter() {
+	public final GeometryValue<GeometryFunction> getParameter(){
 		return parameter;
 	}
 
@@ -85,47 +84,47 @@ public class AreaFunction extends GeometryFunction {
 	 * 
 	 * @param parameter A region.
 	 */
-	public final void setParameter(GeometryValue<GeometryFunction> parameter) {
+	public final void setParameter(GeometryValue<GeometryFunction> parameter){
 		this.parameter = parameter;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new AreaFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "AREA";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return true;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return false;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
+	public ADQLOperand[] getParameters(){
 		return new ADQLOperand[]{parameter.getValue()};
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return 1;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index == 0)
 			return parameter.getValue();
 		else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (index == 0){
 			ADQLOperand replaced = parameter.getValue();
 			if (replacer == null)
@@ -137,10 +136,10 @@ public class AreaFunction extends GeometryFunction {
 			else if (replacer instanceof GeometryFunction)
 				parameter.setGeometry((GeometryFunction)replacer);
 			else
-				throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+				throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 			return replaced;
 		}else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 	}
 
 }

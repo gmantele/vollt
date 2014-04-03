@@ -66,7 +66,6 @@ public class ADQLTable implements ADQLObject, FromContent {
 	/** Position in the original ADQL query string. */
 	private TextPosition position = null;
 
-
 	/**
 	 * Builds a reference to a table with its name (simple or full ({catalog}.{schema}.{table})).
 	 * 
@@ -118,11 +117,11 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public ADQLTable(ADQLTable toCopy) throws Exception {
+	public ADQLTable(ADQLTable toCopy) throws Exception{
 		catalog = toCopy.catalog;
 		schema = toCopy.schema;
 		table = toCopy.table;
-		subQuery = (toCopy.subQuery == null)?null:(ADQLQuery)toCopy.subQuery.getCopy();
+		subQuery = (toCopy.subQuery == null) ? null : (ADQLQuery)toCopy.subQuery.getCopy();
 		alias = toCopy.alias;
 		caseSensitivity = toCopy.caseSensitivity;
 		position = toCopy.position;
@@ -147,9 +146,9 @@ public class ADQLTable implements ADQLObject, FromContent {
 		if (n.length() == 0)
 			return null;
 		else{
-			if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(n.length()-1) == '\"'){
+			if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(n.length() - 1) == '\"'){
 				n.deleteCharAt(0);
-				n.deleteCharAt(n.length()-1);
+				n.deleteCharAt(n.length() - 1);
 				n.trimToSize();
 				if (n.length() == 0)
 					return null;
@@ -174,7 +173,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @param pos	Position of this {@link ADQLTable}.
 	 */
-	public final void setPosition(final TextPosition pos) {
+	public final void setPosition(final TextPosition pos){
 		position = pos;
 	}
 
@@ -183,7 +182,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @return Catalog name.
 	 */
-	public final String getCatalogName() {
+	public final String getCatalogName(){
 		return catalog;
 	}
 
@@ -192,7 +191,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @param catalog The new name of its catalog.
 	 */
-	public final void setCatalogName(String catalog) {
+	public final void setCatalogName(String catalog){
 		final String temp = normalizeName(catalog, IdentifierField.CATALOG);
 		if ((this.catalog == null && temp != null) || (this.catalog != null && !this.catalog.equalsIgnoreCase(temp)))
 			dbLink = null;
@@ -204,7 +203,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @return Schema name.
 	 */
-	public final String getSchemaName() {
+	public final String getSchemaName(){
 		return schema;
 	}
 
@@ -213,7 +212,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @param schema The new name of its schema.
 	 */
-	public final void setSchemaName(String schema) {
+	public final void setSchemaName(String schema){
 		final String temp = normalizeName(schema, IdentifierField.SCHEMA);
 		if ((this.schema == null && temp != null) || (this.schema != null && !this.schema.equalsIgnoreCase(temp)))
 			dbLink = null;
@@ -269,7 +268,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @param newTableName	The new name of the table.
 	 */
-	public void setTableName(String newTableName) {
+	public void setTableName(String newTableName){
 		final String temp = normalizeName(newTableName, IdentifierField.TABLE);
 		if ((this.table == null && temp != null) || (this.table != null && !this.table.equalsIgnoreCase(temp)))
 			dbLink = null;
@@ -284,14 +283,14 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * @param tableRef	The complete table reference ({catalog}.{schema}.{table}).
 	 */
 	public final void setTable(String tableRef){
-		String[] parts = (tableRef == null)?null:tableRef.split("\\.");
+		String[] parts = (tableRef == null) ? null : tableRef.split("\\.");
 		if (parts != null && parts.length > 3)
 			return;
 		else{
-			int i = (parts==null)?-1:(parts.length-1);
-			setTableName((i<0)?null:parts[i--]);
-			setSchemaName((i<0)?null:parts[i--]);
-			setCatalogName((i<0)?null:parts[i]);
+			int i = (parts == null) ? -1 : (parts.length - 1);
+			setTableName((i < 0) ? null : parts[i--]);
+			setSchemaName((i < 0) ? null : parts[i--]);
+			setCatalogName((i < 0) ? null : parts[i]);
 			if (table != null)
 				subQuery = null;
 		}
@@ -360,7 +359,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @return	Table label.
 	 */
-	public final String getAlias() {
+	public final String getAlias(){
 		return alias;
 	}
 
@@ -378,7 +377,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @param alias	Label to put on this table.
 	 */
-	public void setAlias(String alias) {
+	public void setAlias(String alias){
 		this.alias = normalizeName(alias, IdentifierField.ALIAS);
 	}
 
@@ -460,7 +459,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @return The corresponding {@link DBTable}.
 	 */
-	public final DBTable getDBLink() {
+	public final DBTable getDBLink(){
 		return dbLink;
 	}
 
@@ -472,7 +471,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @param dbLink Its corresponding {@link DBTable}.
 	 */
-	public final void setDBLink(DBTable dbLink) {
+	public final void setDBLink(DBTable dbLink){
 		if (!isSubQuery())
 			this.dbLink = dbLink;
 	}
@@ -501,7 +500,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 			if (!caseSensitive){
 				if (getAlias().equalsIgnoreCase(alias))
 					tables.add(this);
-			} else {
+			}else{
 				if (IdentifierField.ALIAS.isCaseSensitive(caseSensitivity)){
 					if (getAlias().equals(alias))
 						tables.add(this);
@@ -515,20 +514,20 @@ public class ADQLTable implements ADQLObject, FromContent {
 		return tables;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ADQLTable(this);
 	}
 
-	public String getName() {
-		return hasAlias()?alias:(isSubQuery()?"{subquery}":getTableName());
+	public String getName(){
+		return hasAlias() ? alias : (isSubQuery() ? "{subquery}" : getTableName());
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private boolean subQueryGot = !isSubQuery();
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				if (!subQueryGot){
 					subQueryGot = true;
 					return subQuery;
@@ -536,11 +535,11 @@ public class ADQLTable implements ADQLObject, FromContent {
 					throw new NoSuchElementException();
 			}
 
-			public boolean hasNext() {
+			public boolean hasNext(){
 				return !subQueryGot;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (!subQueryGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -550,21 +549,20 @@ public class ADQLTable implements ADQLObject, FromContent {
 				if (replacer instanceof ADQLQuery)
 					subQuery = (ADQLQuery)replacer;
 				else
-					throw new UnsupportedOperationException("Impossible to replace a sub-query ("+subQuery.toADQL()+") by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to replace a sub-query (" + subQuery.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 			}
 
-			public void remove() {
+			public void remove(){
 				if (!subQueryGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
-					throw new UnsupportedOperationException("Impossible to remove the sub-query of an ADQLTable ("+toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to remove the sub-query of an ADQLTable (" + toADQL() + ") !");
 			}
 		};
 	}
 
-	public String toADQL() {
-		return (isSubQuery()?("("+subQuery.toADQL()+")"):getFullTableName())
-		+((alias==null)?"":(" AS "+(isCaseSensitive(IdentifierField.ALIAS)?("\""+alias+"\""):alias)));
+	public String toADQL(){
+		return (isSubQuery() ? ("(" + subQuery.toADQL() + ")") : getFullTableName()) + ((alias == null) ? "" : (" AS " + (isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + alias + "\"") : alias)));
 	}
 
 }

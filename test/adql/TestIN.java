@@ -23,9 +23,9 @@ import adql.translator.PostgreSQLTranslator;
 
 public class TestIN {
 
-	public static void main(String[] args) throws Exception {
-		In myIn = new In(new ADQLColumn("typeObj"), new ADQLOperand[]{new StringConstant("galaxy"), new StringConstant("star"), new StringConstant("planet"), new StringConstant("nebula")}, true);
-		System.out.println(myIn.getName()+": "+myIn.toADQL());
+	public static void main(String[] args) throws Exception{
+		In myIn = new In(new ADQLColumn("typeObj"), new ADQLOperand[]{new StringConstant("galaxy"),new StringConstant("star"),new StringConstant("planet"),new StringConstant("nebula")}, true);
+		System.out.println(myIn.getName() + ": " + myIn.toADQL());
 
 		ADQLQuery subQuery = new ADQLQuery();
 
@@ -40,30 +40,30 @@ public class TestIN {
 		orderBy.add(new ADQLOrder(1));
 
 		myIn.setSubQuery(subQuery);
-		System.out.println("\n*** "+myIn.getName().toUpperCase()+" ***\n"+myIn.toADQL());
+		System.out.println("\n*** " + myIn.getName().toUpperCase() + " ***\n" + myIn.toADQL());
 		PostgreSQLTranslator translator = new PostgreSQLTranslator();
-		System.out.println("\n*** SQL TRANSLATION ***\n"+translator.translate(myIn));
+		System.out.println("\n*** SQL TRANSLATION ***\n" + translator.translate(myIn));
 
-		IReplaceHandler sHandler = new SimpleReplaceHandler(true) {
+		IReplaceHandler sHandler = new SimpleReplaceHandler(true){
 
 			@Override
-			public boolean match(ADQLObject obj) {
+			public boolean match(ADQLObject obj){
 				return (obj instanceof ADQLColumn) && ((ADQLColumn)obj).getColumnName().equals("typeObj");
 			}
 
 			@Override
-			public ADQLObject getReplacer(ADQLObject objToReplace) {
+			public ADQLObject getReplacer(ADQLObject objToReplace){
 				return new ADQLColumn("type");
 			}
 		};
 		sHandler.searchAndReplace(myIn);
-		System.out.println("INFO: "+sHandler.getNbReplacement()+"/"+sHandler.getNbMatch()+" replaced objects !");
+		System.out.println("INFO: " + sHandler.getNbReplacement() + "/" + sHandler.getNbMatch() + " replaced objects !");
 		Iterator<ADQLObject> results = sHandler.iterator();
 		System.out.println("\n*** SEARCH RESULTS ***");
 		while(results.hasNext())
-			System.out.println("\t- "+results.next());
+			System.out.println("\t- " + results.next());
 
-		System.out.println("\n*** AFTER REPLACEMENT ***\n"+myIn.toADQL());
+		System.out.println("\n*** AFTER REPLACEMENT ***\n" + myIn.toADQL());
 	}
 
 }

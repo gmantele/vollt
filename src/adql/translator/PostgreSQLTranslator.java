@@ -179,7 +179,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	}
 
 	@SuppressWarnings("unchecked")
-	public String translate(ADQLObject obj) throws TranslationException {
+	public String translate(ADQLObject obj) throws TranslationException{
 		if (obj instanceof ADQLQuery)
 			return translate((ADQLQuery)obj);
 		else if (obj instanceof ADQLList)
@@ -200,7 +200,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return obj.toADQL();
 	}
 
-	public String translate(ADQLQuery query) throws TranslationException {
+	public String translate(ADQLQuery query) throws TranslationException{
 		StringBuffer sql = new StringBuffer(translate(query.getSelect()));
 
 		sql.append("\nFROM ").append(translate(query.getFrom()));
@@ -226,7 +226,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* *************************** */
 	/* ****** LIST & CLAUSE ****** */
 	/* *************************** */
-	public String translate(ADQLList<? extends ADQLObject> list) throws TranslationException {
+	public String translate(ADQLList<? extends ADQLObject> list) throws TranslationException{
 		if (list instanceof ClauseSelect)
 			return translate((ClauseSelect)list);
 		else if (list instanceof ClauseConstraints)
@@ -244,15 +244,15 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	 * 
 	 * @throws TranslationException If there is an error during the translation.
 	 */
-	protected String getDefaultADQLList(ADQLList<? extends ADQLObject> list) throws TranslationException {
-		String sql = (list.getName()==null)?"":(list.getName()+" ");
+	protected String getDefaultADQLList(ADQLList<? extends ADQLObject> list) throws TranslationException{
+		String sql = (list.getName() == null) ? "" : (list.getName() + " ");
 
 		boolean oldInSelect = inSelect;
 		inSelect = (list.getName() != null) && list.getName().equalsIgnoreCase("select");
 
 		try{
-			for(int i=0; i<list.size(); i++)
-				sql += ((i == 0)?"":(" "+list.getSeparator(i)+" ")) + translate(list.get(i));
+			for(int i = 0; i < list.size(); i++)
+				sql += ((i == 0) ? "" : (" " + list.getSeparator(i) + " ")) + translate(list.get(i));
 		}finally{
 			inSelect = oldInSelect;
 		}
@@ -260,26 +260,26 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return sql;
 	}
 
-	public String translate(ClauseSelect clause) throws TranslationException {
+	public String translate(ClauseSelect clause) throws TranslationException{
 		String sql = null;
 
-		for(int i=0; i<clause.size(); i++){
+		for(int i = 0; i < clause.size(); i++){
 			if (i == 0){
-				sql = clause.getName()+(clause.distinctColumns()?" DISTINCT":"");
+				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "");
 			}else
-				sql += " "+clause.getSeparator(i);
+				sql += " " + clause.getSeparator(i);
 
-			sql += " "+translate(clause.get(i));
+			sql += " " + translate(clause.get(i));
 		}
 
 		return sql;
 	}
 
-	public String translate(ClauseConstraints clause) throws TranslationException {
+	public String translate(ClauseConstraints clause) throws TranslationException{
 		return getDefaultADQLList(clause);
 	}
 
-	public String translate(SelectItem item) throws TranslationException {
+	public String translate(SelectItem item) throws TranslationException{
 		if (item instanceof SelectAllColumns)
 			return translate((SelectAllColumns)item);
 
@@ -293,8 +293,8 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return translation.toString();
 	}
 
-	public String translate(SelectAllColumns item) throws TranslationException {
-		HashMap<String, String> mapAlias = new HashMap<String, String>();
+	public String translate(SelectAllColumns item) throws TranslationException{
+		HashMap<String,String> mapAlias = new HashMap<String,String>();
 
 		// Fetch the full list of columns to display:
 		Iterable<DBColumn> dbCols = null;
@@ -303,7 +303,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			dbCols = table.getDBLink();
 			if (table.hasAlias()){
 				String key = appendFullDBName(new StringBuffer(), table.getDBLink()).toString();
-				mapAlias.put(key, table.isCaseSensitive(IdentifierField.ALIAS) ? ("\""+table.getAlias()+"\"") : table.getAlias());
+				mapAlias.put(key, table.isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + table.getAlias() + "\"") : table.getAlias());
 			}
 		}else if (item.getQuery() != null){
 			dbCols = item.getQuery().getFrom().getDBColumns();
@@ -311,7 +311,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			for(ADQLTable table : tables){
 				if (table.hasAlias()){
 					String key = appendFullDBName(new StringBuffer(), table.getDBLink()).toString();
-					mapAlias.put(key, table.isCaseSensitive(IdentifierField.ALIAS) ? ("\""+table.getAlias()+"\"") : table.getAlias());
+					mapAlias.put(key, table.isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + table.getAlias() + "\"") : table.getAlias());
 				}
 			}
 		}
@@ -338,7 +338,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		}
 	}
 
-	public String translate(ColumnReference ref) throws TranslationException {
+	public String translate(ColumnReference ref) throws TranslationException{
 		if (ref instanceof ADQLOrder)
 			return translate((ADQLOrder)ref);
 		else
@@ -354,12 +354,12 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	 * 
 	 * @throws TranslationException If there is an error during the translation.
 	 */
-	protected String getDefaultColumnReference(ColumnReference ref) throws TranslationException {
+	protected String getDefaultColumnReference(ColumnReference ref) throws TranslationException{
 		if (ref.isIndex()){
-			return ""+ref.getColumnIndex();
+			return "" + ref.getColumnIndex();
 		}else{
 			if (ref.getDBLink() == null){
-				return (ref.isCaseSensitive()?("\""+ref.getColumnName()+"\""):ref.getColumnName());
+				return (ref.isCaseSensitive() ? ("\"" + ref.getColumnName() + "\"") : ref.getColumnName());
 			}else{
 				DBColumn dbCol = ref.getDBLink();
 				StringBuffer colName = new StringBuffer();
@@ -378,14 +378,14 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		}
 	}
 
-	public String translate(ADQLOrder order) throws TranslationException {
-		return getDefaultColumnReference(order)+(order.isDescSorting()?" DESC":" ASC");
+	public String translate(ADQLOrder order) throws TranslationException{
+		return getDefaultColumnReference(order) + (order.isDescSorting() ? " DESC" : " ASC");
 	}
 
 	/* ************************** */
 	/* ****** TABLE & JOIN ****** */
 	/* ************************** */
-	public String translate(FromContent content) throws TranslationException {
+	public String translate(FromContent content) throws TranslationException{
 		if (content instanceof ADQLTable)
 			return translate((ADQLTable)content);
 		else if (content instanceof ADQLJoin)
@@ -394,7 +394,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return content.toADQL();
 	}
 
-	public String translate(ADQLTable table) throws TranslationException {
+	public String translate(ADQLTable table) throws TranslationException{
 		StringBuffer sql = new StringBuffer();
 
 		// CASE: SUB-QUERY:
@@ -420,7 +420,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return sql.toString();
 	}
 
-	public String translate(ADQLJoin join) throws TranslationException {
+	public String translate(ADQLJoin join) throws TranslationException{
 		StringBuffer sql = new StringBuffer(translate(join.getLeftTable()));
 
 		if (join.isNatural())
@@ -431,7 +431,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		if (!join.isNatural()){
 			if (join.getJoinCondition() != null)
 				sql.append(translate(join.getJoinCondition()));
-			else if (join.hasJoinedColumns()) {
+			else if (join.hasJoinedColumns()){
 				StringBuffer cols = new StringBuffer();
 				Iterator<ADQLColumn> it = join.getJoinedColumns();
 				while(it.hasNext()){
@@ -453,7 +453,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* ********************* */
 	/* ****** OPERAND ****** */
 	/* ********************* */
-	public String translate(ADQLOperand op) throws TranslationException {
+	public String translate(ADQLOperand op) throws TranslationException{
 		if (op instanceof ADQLColumn)
 			return translate((ADQLColumn)op);
 		else if (op instanceof Concatenation)
@@ -474,7 +474,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return op.toADQL();
 	}
 
-	public String translate(ADQLColumn column) throws TranslationException {
+	public String translate(ADQLColumn column) throws TranslationException{
 		// Use its DB name if known:
 		if (column.getDBLink() != null){
 			DBColumn dbCol = column.getDBLink();
@@ -500,34 +500,34 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return column.getFullColumnName();
 	}
 
-	public String translate(Concatenation concat) throws TranslationException {
+	public String translate(Concatenation concat) throws TranslationException{
 		return translate((ADQLList<ADQLOperand>)concat);
 	}
 
-	public String translate(NegativeOperand negOp) throws TranslationException {
-		return "-"+translate(negOp.getOperand());
+	public String translate(NegativeOperand negOp) throws TranslationException{
+		return "-" + translate(negOp.getOperand());
 	}
 
-	public String translate(NumericConstant numConst) throws TranslationException {
+	public String translate(NumericConstant numConst) throws TranslationException{
 		return numConst.getValue();
 	}
 
-	public String translate(StringConstant strConst) throws TranslationException {
-		return "'"+strConst.getValue()+"'";
+	public String translate(StringConstant strConst) throws TranslationException{
+		return "'" + strConst.getValue() + "'";
 	}
 
-	public String translate(WrappedOperand op) throws TranslationException {
-		return "("+translate(op.getOperand())+")";
+	public String translate(WrappedOperand op) throws TranslationException{
+		return "(" + translate(op.getOperand()) + ")";
 	}
 
-	public String translate(Operation op) throws TranslationException {
-		return translate(op.getLeftOperand())+op.getOperation().toADQL()+translate(op.getRightOperand());
+	public String translate(Operation op) throws TranslationException{
+		return translate(op.getLeftOperand()) + op.getOperation().toADQL() + translate(op.getRightOperand());
 	}
 
 	/* ************************ */
 	/* ****** CONSTRAINT ****** */
 	/* ************************ */
-	public String translate(ADQLConstraint cons) throws TranslationException {
+	public String translate(ADQLConstraint cons) throws TranslationException{
 		if (cons instanceof Comparison)
 			return translate((Comparison)cons);
 		else if (cons instanceof Between)
@@ -544,34 +544,34 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return cons.toADQL();
 	}
 
-	public String translate(Comparison comp) throws TranslationException {
-		return translate(comp.getLeftOperand())+" "+comp.getOperator().toADQL()+" "+translate(comp.getRightOperand());
+	public String translate(Comparison comp) throws TranslationException{
+		return translate(comp.getLeftOperand()) + " " + comp.getOperator().toADQL() + " " + translate(comp.getRightOperand());
 	}
 
-	public String translate(Between comp) throws TranslationException {
-		return translate(comp.getLeftOperand())+" BETWEEN "+translate(comp.getMinOperand())+" AND "+translate(comp.getMaxOperand());
+	public String translate(Between comp) throws TranslationException{
+		return translate(comp.getLeftOperand()) + " BETWEEN " + translate(comp.getMinOperand()) + " AND " + translate(comp.getMaxOperand());
 	}
 
-	public String translate(Exists exists) throws TranslationException {
-		return "EXISTS("+translate(exists.getSubQuery())+")";
+	public String translate(Exists exists) throws TranslationException{
+		return "EXISTS(" + translate(exists.getSubQuery()) + ")";
 	}
 
-	public String translate(In in) throws TranslationException {
-		return translate(in.getOperand())+" "+in.getName()+" ("+(in.hasSubQuery()?translate(in.getSubQuery()):translate(in.getValuesList()))+")";
+	public String translate(In in) throws TranslationException{
+		return translate(in.getOperand()) + " " + in.getName() + " (" + (in.hasSubQuery() ? translate(in.getSubQuery()) : translate(in.getValuesList())) + ")";
 	}
 
-	public String translate(IsNull isNull) throws TranslationException {
-		return translate(isNull.getColumn())+" IS "+(isNull.isNotNull()?"NOT ":"")+"NULL";
+	public String translate(IsNull isNull) throws TranslationException{
+		return translate(isNull.getColumn()) + " IS " + (isNull.isNotNull() ? "NOT " : "") + "NULL";
 	}
 
-	public String translate(NotConstraint notCons) throws TranslationException {
-		return "NOT "+translate(notCons.getConstraint());
+	public String translate(NotConstraint notCons) throws TranslationException{
+		return "NOT " + translate(notCons.getConstraint());
 	}
 
 	/* *********************** */
 	/* ****** FUNCTIONS ****** */
 	/* *********************** */
-	public String translate(ADQLFunction fct) throws TranslationException {
+	public String translate(ADQLFunction fct) throws TranslationException{
 		if (fct instanceof GeometryFunction)
 			return translate((GeometryFunction)fct);
 		else if (fct instanceof MathFunction)
@@ -593,45 +593,45 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	 * 
 	 * @throws TranslationException	If there is an error during the translation.
 	 */
-	protected String getDefaultADQLFunction(ADQLFunction fct) throws TranslationException {
-		String sql = fct.getName()+"(";
+	protected String getDefaultADQLFunction(ADQLFunction fct) throws TranslationException{
+		String sql = fct.getName() + "(";
 
-		for(int i=0; i<fct.getNbParameters(); i++)
-			sql += ((i==0)?"":", ")+translate(fct.getParameter(i));
+		for(int i = 0; i < fct.getNbParameters(); i++)
+			sql += ((i == 0) ? "" : ", ") + translate(fct.getParameter(i));
 
-		return sql+")";
+		return sql + ")";
 	}
 
 	public String translate(SQLFunction fct) throws TranslationException{
 		if (fct.getType() == SQLFunctionType.COUNT_ALL)
-			return "COUNT("+(fct.isDistinct()?"DISTINCT ":"")+"*)";
+			return "COUNT(" + (fct.isDistinct() ? "DISTINCT " : "") + "*)";
 		else
-			return fct.getName()+"("+(fct.isDistinct()?"DISTINCT ":"")+translate(fct.getParameter(0))+")";
+			return fct.getName() + "(" + (fct.isDistinct() ? "DISTINCT " : "") + translate(fct.getParameter(0)) + ")";
 	}
 
-	public String translate(MathFunction fct) throws TranslationException {
+	public String translate(MathFunction fct) throws TranslationException{
 		switch(fct.getType()){
-		case LOG:
-			return "ln("+((fct.getNbParameters()>=1)?translate(fct.getParameter(0)):"")+")";
-		case LOG10:
-			return "log(10, "+((fct.getNbParameters()>=1)?translate(fct.getParameter(0)):"")+")";
-		case RAND:
-			return "random()";
-		case TRUNCATE:
-			return "trunc("+((fct.getNbParameters()>=2)?(translate(fct.getParameter(0))+", "+translate(fct.getParameter(1))):"")+")";
-		default:
-			return getDefaultADQLFunction(fct);
+			case LOG:
+				return "ln(" + ((fct.getNbParameters() >= 1) ? translate(fct.getParameter(0)) : "") + ")";
+			case LOG10:
+				return "log(10, " + ((fct.getNbParameters() >= 1) ? translate(fct.getParameter(0)) : "") + ")";
+			case RAND:
+				return "random()";
+			case TRUNCATE:
+				return "trunc(" + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "") + ")";
+			default:
+				return getDefaultADQLFunction(fct);
 		}
 	}
 
-	public String translate(UserDefinedFunction fct) throws TranslationException {
+	public String translate(UserDefinedFunction fct) throws TranslationException{
 		return getDefaultADQLFunction(fct);
 	}
 
 	/* *********************************** */
 	/* ****** GEOMETRICAL FUNCTIONS ****** */
 	/* *********************************** */
-	public String translate(GeometryFunction fct) throws TranslationException {
+	public String translate(GeometryFunction fct) throws TranslationException{
 		if (fct instanceof AreaFunction)
 			return translate((AreaFunction)fct);
 		else if (fct instanceof BoxFunction)
@@ -671,62 +671,62 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	 * 
 	 * @throws TranslationException If there is an error during the translation.
 	 */
-	protected String getDefaultGeometryFunction(GeometryFunction fct) throws TranslationException {
+	protected String getDefaultGeometryFunction(GeometryFunction fct) throws TranslationException{
 		if (inSelect)
-			return "'"+fct.toADQL().replaceAll("'", "''")+"'";
+			return "'" + fct.toADQL().replaceAll("'", "''") + "'";
 		else
 			return getDefaultADQLFunction(fct);
 	}
 
-	public String translate(GeometryValue<? extends GeometryFunction> geomValue) throws TranslationException {
+	public String translate(GeometryValue<? extends GeometryFunction> geomValue) throws TranslationException{
 		return translate(geomValue.getValue());
 	}
 
-	public String translate(ExtractCoord extractCoord) throws TranslationException {
+	public String translate(ExtractCoord extractCoord) throws TranslationException{
 		return getDefaultGeometryFunction(extractCoord);
 	}
 
-	public String translate(ExtractCoordSys extractCoordSys) throws TranslationException {
+	public String translate(ExtractCoordSys extractCoordSys) throws TranslationException{
 		return getDefaultGeometryFunction(extractCoordSys);
 	}
 
-	public String translate(AreaFunction areaFunction) throws TranslationException {
+	public String translate(AreaFunction areaFunction) throws TranslationException{
 		return getDefaultGeometryFunction(areaFunction);
 	}
 
-	public String translate(CentroidFunction centroidFunction) throws TranslationException {
+	public String translate(CentroidFunction centroidFunction) throws TranslationException{
 		return getDefaultGeometryFunction(centroidFunction);
 	}
 
-	public String translate(DistanceFunction fct) throws TranslationException {
+	public String translate(DistanceFunction fct) throws TranslationException{
 		return getDefaultGeometryFunction(fct);
 	}
 
-	public String translate(ContainsFunction fct) throws TranslationException {
+	public String translate(ContainsFunction fct) throws TranslationException{
 		return getDefaultGeometryFunction(fct);
 	}
 
-	public String translate(IntersectsFunction fct) throws TranslationException {
+	public String translate(IntersectsFunction fct) throws TranslationException{
 		return getDefaultGeometryFunction(fct);
 	}
 
-	public String translate(BoxFunction box) throws TranslationException {
+	public String translate(BoxFunction box) throws TranslationException{
 		return getDefaultGeometryFunction(box);
 	}
 
-	public String translate(CircleFunction circle) throws TranslationException {
+	public String translate(CircleFunction circle) throws TranslationException{
 		return getDefaultGeometryFunction(circle);
 	}
 
-	public String translate(PointFunction point) throws TranslationException {
+	public String translate(PointFunction point) throws TranslationException{
 		return getDefaultGeometryFunction(point);
 	}
 
-	public String translate(PolygonFunction polygon) throws TranslationException {
+	public String translate(PolygonFunction polygon) throws TranslationException{
 		return getDefaultGeometryFunction(polygon);
 	}
 
-	public String translate(RegionFunction region) throws TranslationException {
+	public String translate(RegionFunction region) throws TranslationException{
 		return getDefaultGeometryFunction(region);
 	}
 

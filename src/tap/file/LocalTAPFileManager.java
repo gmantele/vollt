@@ -67,7 +67,7 @@ public class LocalTAPFileManager extends LocalUWSFileManager implements TAPFileM
 	 * @see LocalUWSFileManager#LocalUWSFileManager(File)
 	 * @see #getUploadDirectoryName()
 	 */
-	public LocalTAPFileManager(File root) throws UWSException {
+	public LocalTAPFileManager(File root) throws UWSException{
 		super(root);
 		uploadDirectory = new File(rootDirectory, getUploadDirectoryName());
 	}
@@ -89,7 +89,7 @@ public class LocalTAPFileManager extends LocalUWSFileManager implements TAPFileM
 	 * @see LocalUWSFileManager#LocalUWSFileManager(File, boolean, boolean)
 	 * @see #getUploadDirectoryName()
 	 */
-	public LocalTAPFileManager(File root, boolean oneDirectoryForEachUser, boolean groupUserDirectories) throws UWSException {
+	public LocalTAPFileManager(File root, boolean oneDirectoryForEachUser, boolean groupUserDirectories) throws UWSException{
 		super(root, oneDirectoryForEachUser, groupUserDirectories);
 		uploadDirectory = new File(rootDirectory, getUploadDirectoryName());
 	}
@@ -113,13 +113,13 @@ public class LocalTAPFileManager extends LocalUWSFileManager implements TAPFileM
 	 * @see LocalUWSFileManager#LocalUWSFileManager(File, boolean, boolean, OwnerGroupIdentifier)
 	 * @see #getUploadDirectoryName()
 	 */
-	public LocalTAPFileManager(File root, boolean oneDirectoryForEachUser, boolean groupUserDirectories, OwnerGroupIdentifier ownerGroupIdentifier) throws UWSException {
+	public LocalTAPFileManager(File root, boolean oneDirectoryForEachUser, boolean groupUserDirectories, OwnerGroupIdentifier ownerGroupIdentifier) throws UWSException{
 		super(root, oneDirectoryForEachUser, groupUserDirectories, ownerGroupIdentifier);
 		uploadDirectory = new File(rootDirectory, getUploadDirectoryName());
 	}
 
 	@Override
-	protected String getLogFileName(final String logTypeGroup) {
+	protected String getLogFileName(final String logTypeGroup){
 		if (logTypeGroup != null && logTypeGroup.equals(DBConnection.LOG_TYPE_DB_ACTIVITY.getCustomType()))
 			return DEFAULT_DB_ACTIVITY_LOG_FILE_NAME;
 		else
@@ -139,7 +139,7 @@ public class LocalTAPFileManager extends LocalUWSFileManager implements TAPFileM
 	}
 
 	@Override
-	public final File getUploadDirectory() {
+	public final File getUploadDirectory(){
 		if (uploadDirectory != null && !uploadDirectory.exists())
 			uploadDirectory.mkdirs();
 		return uploadDirectory;

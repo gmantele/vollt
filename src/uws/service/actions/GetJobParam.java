@@ -67,12 +67,12 @@ public class GetJobParam extends UWSAction {
 	 * @see uws.service.actions.UWSAction#getName()
 	 */
 	@Override
-	public String getName() {
+	public String getName(){
 		return GET_JOB_PARAM;
 	}
 
 	@Override
-	public String getDescription() {
+	public String getDescription(){
 		return "Gets the value of a job attribute/parameter of the specified job. (URL: {baseUWS_URL}/{jobListName}/{job-id}/{job-attribute}, Method: HTTP-GET, No parameter)";
 	}
 
@@ -88,11 +88,8 @@ public class GetJobParam extends UWSAction {
 	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException {
-		return (urlInterpreter.hasJobList()
-				&& urlInterpreter.hasJobList()
-				&& urlInterpreter.hasAttribute()
-				&& request.getMethod().equalsIgnoreCase("get"));
+	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
+		return (urlInterpreter.hasJobList() && urlInterpreter.hasJobList() && urlInterpreter.hasAttribute() && request.getMethod().equalsIgnoreCase("get"));
 	}
 
 	/**
@@ -109,7 +106,7 @@ public class GetJobParam extends UWSAction {
 	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
 	@Override
-	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException {
+	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		// Get the job:
 		UWSJob job = getJob(urlInterpreter, user);
 
@@ -128,7 +125,7 @@ public class GetJobParam extends UWSAction {
 					input = uws.getFileManager().getResultInput(result, job);
 					UWSToolBox.write(input, result.getMimeType(), result.getSize(), response);
 				}catch(IOException ioe){
-					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the result "+result.getId()+" (job ID: "+job.getJobId()+").");
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the result " + result.getId() + " (job ID: " + job.getJobId() + ").");
 				}finally{
 					if (input != null)
 						input.close();
@@ -145,7 +142,7 @@ public class GetJobParam extends UWSAction {
 					input = uws.getFileManager().getErrorInput(error, job);
 					UWSToolBox.write(input, "text/plain", uws.getFileManager().getErrorSize(error, job), response);
 				}catch(IOException ioe){
-					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the error details (job ID: "+job.getJobId()+").");
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the error details (job ID: " + job.getJobId() + ").");
 				}finally{
 					if (input != null)
 						input.close();
@@ -157,10 +154,7 @@ public class GetJobParam extends UWSAction {
 			// Write the value/content of the selected attribute:
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 			String uwsField = attributes[0];
-			if (uwsField == null || uwsField.trim().isEmpty()	|| (attributes.length <= 1
-					&& (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY)
-							|| uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS)
-							|| uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS))))
+			if (uwsField == null || uwsField.trim().isEmpty() || (attributes.length <= 1 && (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) || uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS) || uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS))))
 				response.setContentType(serializer.getMimeType());
 			else
 				response.setContentType("text/plain");
@@ -169,8 +163,6 @@ public class GetJobParam extends UWSAction {
 
 		return true;
 	}
-
-
 
 	/**
 	 * Tells whether the URL of this Result is the default one.

@@ -60,7 +60,6 @@ public abstract class UWSSerializer implements Serializable {
 	/** MIME type for HTML: text/html */
 	public static final String MIME_TYPE_HTML = "text/html";
 
-
 	/**
 	 * Serializes the given parameter of the given job
 	 * or serializes the whole job if the given attributes array is empty or <i>null</i>.
@@ -75,7 +74,7 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @throws UWSException If the specified attribute/parameter/result does not exist.
 	 */
-	public String getJob(final UWSJob job, final String[] attributes, final boolean root) throws UWSException {
+	public String getJob(final UWSJob job, final String[] attributes, final boolean root) throws UWSException{
 		if (attributes == null || attributes.length <= 0)
 			return getJob(job, root);
 
@@ -86,28 +85,28 @@ public abstract class UWSSerializer implements Serializable {
 			return job.getJobId();
 		// RUN ID:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_RUN_ID))
-			return (job.getRunId() == null)?"":job.getRunId();
+			return (job.getRunId() == null) ? "" : job.getRunId();
 		// OWNER:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_OWNER))
-			return (job.getOwner() == null)?"":job.getOwner().getPseudo();
+			return (job.getOwner() == null) ? "" : job.getOwner().getPseudo();
 		// PHASE:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_PHASE))
 			return job.getPhase().toString();
 		// QUOTE:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_QUOTE))
-			return job.getQuote()+"";
+			return job.getQuote() + "";
 		// START TIME:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_START_TIME))
-			return (job.getStartTime() == null)?"":UWSJob.dateFormat.format(job.getStartTime());
+			return (job.getStartTime() == null) ? "" : UWSJob.dateFormat.format(job.getStartTime());
 		// END TIME:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_END_TIME))
-			return (job.getEndTime() == null)?"":UWSJob.dateFormat.format(job.getEndTime());
+			return (job.getEndTime() == null) ? "" : UWSJob.dateFormat.format(job.getEndTime());
 		// EXECUTION DURATION:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_EXECUTION_DURATION))
-			return job.getExecutionDuration()+"";
+			return job.getExecutionDuration() + "";
 		// DESTRUCTION TIME:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_DESTRUCTION_TIME))
-			return (job.getDestructionTime() == null)?"":UWSJob.dateFormat.format(job.getDestructionTime());
+			return (job.getDestructionTime() == null) ? "" : UWSJob.dateFormat.format(job.getDestructionTime());
 		// PARAMETERS LIST:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)){
 			if (attributes.length <= 1)
@@ -122,7 +121,7 @@ public abstract class UWSSerializer implements Serializable {
 					throw UWSExceptionFactory.incorrectJobParameter(job.getJobId(), secondAttribute);
 			}
 			// RESULTS LIST:
-		} else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_RESULTS)){
+		}else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_RESULTS)){
 			if (attributes.length <= 1)
 				return getResults(job, root);
 			else{
@@ -135,7 +134,7 @@ public abstract class UWSSerializer implements Serializable {
 					throw UWSExceptionFactory.incorrectJobResult(job.getJobId(), secondAttribute);
 			}
 			// ERROR DETAILS or ERROR SUMMARY:
-		} else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY))
+		}else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY))
 			if (job.getErrorSummary() != null && job.getErrorSummary().hasDetail())
 				throw new UWSException(UWSException.SEE_OTHER, job.getErrorSummary().getDetails().toString());
 			else
@@ -166,7 +165,7 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @see UWSSerializer#getUWS(UWSService, String)
 	 */
-	public String getUWS(final UWS uws) throws UWSException {
+	public String getUWS(final UWS uws) throws UWSException{
 		return getUWS(uws, null);
 	}
 

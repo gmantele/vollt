@@ -110,10 +110,10 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	private final String name;
 
 	/** <b>[Required]</b> List of jobs. */
-	protected final Map<String, UWSJob> jobsList;
+	protected final Map<String,UWSJob> jobsList;
 
 	/** <b>[Required]</b> List of jobs per owner. */
-	protected final Map<JobOwner, Map<String, UWSJob>> ownerJobs;
+	protected final Map<JobOwner,Map<String,UWSJob>> ownerJobs;
 
 	/** The destruction manager to use to take into account the destructionTime field of contained jobs. */
 	private DestructionManager destructionManager = null;
@@ -136,7 +136,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @see #JobList(String, ExecutionManager)
 	 */
-	public JobList(String jobListName) throws UWSException {
+	public JobList(String jobListName) throws UWSException{
 		this(jobListName, new DefaultExecutionManager(), new DefaultDestructionManager());
 	}
 
@@ -148,7 +148,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @throws UWSException		If the given name is <i>null</i> or empty, or if the given execution manager is <i>null</i>.
 	 */
-	public JobList(String jobListName, ExecutionManager executionManager) throws UWSException {
+	public JobList(String jobListName, ExecutionManager executionManager) throws UWSException{
 		this(jobListName, executionManager, new DefaultDestructionManager());
 	}
 
@@ -160,7 +160,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @throws UWSException			If the given name is <i>null</i> or empty, or if the given destruction manager is <i>null</i>.
 	 */
-	public JobList(String jobListName, DestructionManager destructionManager) throws UWSException {
+	public JobList(String jobListName, DestructionManager destructionManager) throws UWSException{
 		this(jobListName, new DefaultExecutionManager(), destructionManager);
 	}
 
@@ -173,7 +173,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @throws UWSException		If the given name is <i>null</i> or empty, or if the given execution or destruction manager is <i>null</i>.
 	 */
-	public JobList(String jobListName, ExecutionManager executionManager, DestructionManager destructionManager) throws UWSException {
+	public JobList(String jobListName, ExecutionManager executionManager, DestructionManager destructionManager) throws UWSException{
 		if (jobListName == null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing job list name ! => Impossible to build the job list.");
 		else{
@@ -184,7 +184,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 
 		name = jobListName;
 		jobsList = new LinkedHashMap<String,UWSJob>();
-		ownerJobs = new LinkedHashMap<JobOwner, Map<String, UWSJob>>();
+		ownerJobs = new LinkedHashMap<JobOwner,Map<String,UWSJob>>();
 
 		if (executionManager == null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing execution manager ! => Impossible to build the job list.");
@@ -219,7 +219,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @throws IllegalStateException	If this jobs list is already associated with a UWS (different from the given one) and contains some jobs.
 	 */
-	public final void setUWS(UWS newUws) throws IllegalStateException {
+	public final void setUWS(UWS newUws) throws IllegalStateException{
 		if (newUws == null)
 			return;
 		else if (newUws.equals(uws))
@@ -227,7 +227,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 		else if (uws == null || getNbJobs() == 0)
 			uws = newUws;
 		else
-			throw new IllegalStateException("This jobs list (here: "+getName()+") is already associated with a UWS and contains some jobs (size="+getNbJobs()+"). A job list can not be part of several UWS instances and can not be moved into another UWS if not empty !");
+			throw new IllegalStateException("This jobs list (here: " + getName() + ") is already associated with a UWS and contains some jobs (size=" + getNbJobs() + "). A job list can not be part of several UWS instances and can not be moved into another UWS if not empty !");
 	}
 
 	/**
@@ -302,7 +302,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * @see ExecutionManager#remove(UWSJob)
 	 * @see ExecutionManager#execute(UWSJob)
 	 */
-	public synchronized final void setExecutionManager(final ExecutionManager manager) throws UWSException {
+	public synchronized final void setExecutionManager(final ExecutionManager manager) throws UWSException{
 		if (manager == null)
 			return;
 
@@ -325,7 +325,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * @see UWSService#getUrlInterpreter()
 	 * @see UWSUrl#listJobs(String)
 	 */
-	public UWSUrl getUrl() {
+	public UWSUrl getUrl(){
 		if (uws == null || uws.getUrlInterpreter() == null)
 			return null;
 		else
@@ -362,7 +362,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @throws UWSException	If the given user is not allowed to read the content of this jobs list or to read the specified job.
 	 */
-	public UWSJob getJob(String jobID, JobOwner user) throws UWSException {
+	public UWSJob getJob(String jobID, JobOwner user) throws UWSException{
 		if (user != null && !user.hasReadPermission(this))
 			throw UWSExceptionFactory.readPermissionDenied(user, true, getName());
 
@@ -399,7 +399,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 					or a NullIterator if the specified owner/user has no job
 	 * 					or an iterator on all the jobs if <i>ownerId</i> is <i>null</i>.
 	 */
-	public Iterator<UWSJob> getJobs(JobOwner user) {
+	public Iterator<UWSJob> getJobs(JobOwner user){
 		if (user == null)
 			return iterator();
 		else{
@@ -407,10 +407,18 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 				return ownerJobs.get(user).values().iterator();
 			else
 				return new Iterator<UWSJob>(){
-				public boolean hasNext() { return false; }
-				public UWSJob next() { return null; }
-				public void remove() {;}
-			};
+					public boolean hasNext(){
+						return false;
+					}
+
+					public UWSJob next(){
+						return null;
+					}
+
+					public void remove(){
+						;
+					}
+				};
 		}
 	}
 
@@ -419,7 +427,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @see java.lang.Iterable#iterator()
 	 */
-	public final Iterator<UWSJob> iterator() {
+	public final Iterator<UWSJob> iterator(){
 		return jobsList.values().iterator();
 	}
 
@@ -481,7 +489,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 */
 	public final ArrayList<UWSJob> searchJobs(String runID){
 		ArrayList<UWSJob> foundJobs = new ArrayList<UWSJob>();
-		runID = (runID != null)?runID.trim():runID;
+		runID = (runID != null) ? runID.trim() : runID;
 
 		if (runID != null && !runID.isEmpty()){
 			for(UWSJob job : this)
@@ -509,7 +517,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * @see DestructionManager#update(UWSJob)
 	 * @see UWSJob#applyPhaseParam(JobOwner)
 	 */
-	public synchronized String addNewJob(final UWSJob j) throws UWSException {
+	public synchronized String addNewJob(final UWSJob j) throws UWSException{
 		if (j == null || jobsList.containsKey(j.getJobId())){
 			return null;
 		}else{
@@ -528,7 +536,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 				if (owner != null){
 					// Index also this job in function of its owner:
 					if (!ownerJobs.containsKey(owner))
-						ownerJobs.put(owner, new LinkedHashMap<String, UWSJob>());
+						ownerJobs.put(owner, new LinkedHashMap<String,UWSJob>());
 					ownerJobs.get(owner).put(j.getJobId(), j);
 				}
 
@@ -547,8 +555,8 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 					getLogger().jobCreated(j);
 
 				return j.getJobId();
-			}catch (IllegalStateException e){
-				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Impossible to add the job "+j.getJobId()+" into the jobs list "+getName()+" !");
+			}catch(IllegalStateException e){
+				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Impossible to add the job " + j.getJobId() + " into the jobs list " + getName() + " !");
 			}
 		}
 	}
@@ -578,7 +586,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 */
 	protected UWSJob removeJob(final String jobId){
 		// Remove the specified job:
-		UWSJob removedJob = (jobId==null)?null:jobsList.remove(jobId);
+		UWSJob removedJob = (jobId == null) ? null : jobsList.remove(jobId);
 
 		if (removedJob != null){
 			// Delete completely their association:
@@ -649,7 +657,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @throws UWSException	If the given user is not allowed to update the content of this jobs list or to destroy the specified job.
 	 */
-	public boolean destroyJob(final String jobId, final JobOwner user) throws UWSException {
+	public boolean destroyJob(final String jobId, final JobOwner user) throws UWSException{
 		if (user != null){
 			if (!user.hasWritePermission(this))
 				throw UWSExceptionFactory.writePermissionDenied(user, true, getName());
@@ -692,7 +700,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * @see #clear()
 	 * @see #destroyJob(String)
 	 */
-	public synchronized void clear(JobOwner owner) throws UWSException {
+	public synchronized void clear(JobOwner owner) throws UWSException{
 		if (owner == null)
 			clear();
 		else if (!owner.hasWritePermission(this))
@@ -711,7 +719,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public String serialize(UWSSerializer serializer, JobOwner user) throws UWSException {
+	public String serialize(UWSSerializer serializer, JobOwner user) throws UWSException{
 		if (user != null && !user.hasReadPermission(this))
 			throw UWSExceptionFactory.readPermissionDenied(user, true, getName());
 
@@ -720,8 +728,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 
 	@Override
 	public String toString(){
-		return "JOB_LIST {name: \""+getName()+"\"; nbJobs: "+jobsList.size()+"}";
+		return "JOB_LIST {name: \"" + getName() + "\"; nbJobs: " + jobsList.size() + "}";
 	}
 
 }
-

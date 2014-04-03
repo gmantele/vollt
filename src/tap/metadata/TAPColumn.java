@@ -59,12 +59,11 @@ public class TAPColumn implements DBColumn {
 
 	protected final ArrayList<TAPForeignKey> lstSources;
 
-
 	public TAPColumn(String columnName){
 		if (columnName == null || columnName.trim().length() == 0)
 			throw new NullPointerException("Missing column name !");
 		int indPrefix = columnName.lastIndexOf('.');
-		adqlName = (indPrefix >= 0)?columnName.substring(indPrefix+1).trim():columnName.trim();
+		adqlName = (indPrefix >= 0) ? columnName.substring(indPrefix + 1).trim() : columnName.trim();
 		dbName = adqlName;
 		lstTargets = new ArrayList<TAPForeignKey>(1);
 		lstSources = new ArrayList<TAPForeignKey>(1);
@@ -90,106 +89,106 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * @return The name.
 	 */
-	public final String getName() {
+	public final String getName(){
 		return getADQLName();
 	}
 
 	@Override
-	public final String getADQLName() {
+	public final String getADQLName(){
 		return adqlName;
 	}
 
 	@Override
-	public final String getDBName() {
+	public final String getDBName(){
 		return dbName;
 	}
 
 	public final void setDBName(String name){
-		name = (name != null)?name.trim():name;
-		dbName = (name == null || name.length() == 0)?adqlName:name;
+		name = (name != null) ? name.trim() : name;
+		dbName = (name == null || name.length() == 0) ? adqlName : name;
 	}
 
 	/**
 	 * @return The table.
 	 */
-	public final DBTable getTable() {
+	public final DBTable getTable(){
 		return table;
 	}
 
 	/**
 	 * @param table The table to set.
 	 */
-	public final void setTable(DBTable table) {
+	public final void setTable(DBTable table){
 		this.table = table;
 	}
 
 	/**
 	 * @return The description.
 	 */
-	public final String getDescription() {
+	public final String getDescription(){
 		return description;
 	}
 
 	/**
 	 * @param description The description to set.
 	 */
-	public final void setDescription(String description) {
+	public final void setDescription(String description){
 		this.description = description;
 	}
 
 	/**
 	 * @return The unit.
 	 */
-	public final String getUnit() {
+	public final String getUnit(){
 		return unit;
 	}
 
 	/**
 	 * @param unit The unit to set.
 	 */
-	public final void setUnit(String unit) {
+	public final void setUnit(String unit){
 		this.unit = unit;
 	}
 
 	/**
 	 * @return The ucd.
 	 */
-	public final String getUcd() {
+	public final String getUcd(){
 		return ucd;
 	}
 
 	/**
 	 * @param ucd The ucd to set.
 	 */
-	public final void setUcd(String ucd) {
+	public final void setUcd(String ucd){
 		this.ucd = ucd;
 	}
 
 	/**
 	 * @return The utype.
 	 */
-	public final String getUtype() {
+	public final String getUtype(){
 		return utype;
 	}
 
 	/**
 	 * @param utype The utype to set.
 	 */
-	public final void setUtype(String utype) {
+	public final void setUtype(String utype){
 		this.utype = utype;
 	}
 
 	/**
 	 * @return The datatype.
 	 */
-	public final String getDatatype() {
+	public final String getDatatype(){
 		return datatype;
 	}
 
 	/**
 	 * @return Array size (>0 or 2 special values: {@link TAPTypes#NO_SIZE} and {@link TAPTypes#STAR_SIZE}).
 	 */
-	public final int getArraySize() {
+	public final int getArraySize(){
 		return size;
 	}
 
@@ -208,9 +207,9 @@ public class TAPColumn implements DBColumn {
 	 * @see TAPTypes#getVotType(String, int)
 	 * @see #setDefaultType()
 	 */
-	public final void setDatatype(String datatype, int size) {
+	public final void setDatatype(String datatype, int size){
 		this.datatype = TAPTypes.getDBType(datatype);
-		this.size = (size <= 0 && size != TAPTypes.STAR_SIZE)?TAPTypes.NO_SIZE:size;
+		this.size = (size <= 0 && size != TAPTypes.STAR_SIZE) ? TAPTypes.NO_SIZE : size;
 
 		if (this.datatype == null)
 			setDefaultType();
@@ -258,47 +257,47 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * @return The principal.
 	 */
-	public final boolean isPrincipal() {
+	public final boolean isPrincipal(){
 		return principal;
 	}
 
 	/**
 	 * @param principal The principal to set.
 	 */
-	public final void setPrincipal(boolean principal) {
+	public final void setPrincipal(boolean principal){
 		this.principal = principal;
 	}
 
 	/**
 	 * @return The indexed.
 	 */
-	public final boolean isIndexed() {
+	public final boolean isIndexed(){
 		return indexed;
 	}
 
 	/**
 	 * @param indexed The indexed to set.
 	 */
-	public final void setIndexed(boolean indexed) {
+	public final void setIndexed(boolean indexed){
 		this.indexed = indexed;
 	}
 
 	/**
 	 * @return The std.
 	 */
-	public final boolean isStd() {
+	public final boolean isStd(){
 		return std;
 	}
 
 	/**
 	 * @param std The std to set.
 	 */
-	public final void setStd(boolean std) {
+	public final void setStd(boolean std){
 		this.std = std;
 	}
 
 	public Object getOtherData(){
-		return otherData ;
+		return otherData;
 	}
 
 	public void setOtherData(Object data){
@@ -348,8 +347,8 @@ public class TAPColumn implements DBColumn {
 	}
 
 	public DBColumn copy(final String dbName, final String adqlName, final DBTable dbTable){
-		TAPColumn copy = new TAPColumn((adqlName==null)?this.adqlName:adqlName, description, unit, ucd, utype);
-		copy.setDBName((dbName==null)?this.dbName:dbName);
+		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, description, unit, ucd, utype);
+		copy.setDBName((dbName == null) ? this.dbName : dbName);
 		copy.setTable(dbTable);
 
 		copy.setDatatype(datatype, size);
@@ -375,7 +374,7 @@ public class TAPColumn implements DBColumn {
 
 	@Override
 	public boolean equals(Object obj){
-		if (! (obj instanceof TAPColumn))
+		if (!(obj instanceof TAPColumn))
 			return false;
 
 		TAPColumn col = (TAPColumn)obj;
@@ -384,7 +383,7 @@ public class TAPColumn implements DBColumn {
 
 	@Override
 	public String toString(){
-		return ((table != null)?(table.getADQLName()+"."):"")+adqlName;
+		return ((table != null) ? (table.getADQLName() + ".") : "") + adqlName;
 	}
 
 }

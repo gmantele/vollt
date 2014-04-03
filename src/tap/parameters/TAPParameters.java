@@ -56,7 +56,7 @@ public class TAPParameters extends UWSParameters {
 	/**
 	 * All the TAP parameters.
 	 */
-	protected static final String[] TAP_PARAMETERS = new String[]{TAPJob.PARAM_REQUEST, TAPJob.PARAM_LANGUAGE, TAPJob.PARAM_VERSION, TAPJob.PARAM_FORMAT, TAPJob.PARAM_QUERY, TAPJob.PARAM_MAX_REC, TAPJob.PARAM_UPLOAD};
+	protected static final String[] TAP_PARAMETERS = new String[]{TAPJob.PARAM_REQUEST,TAPJob.PARAM_LANGUAGE,TAPJob.PARAM_VERSION,TAPJob.PARAM_FORMAT,TAPJob.PARAM_QUERY,TAPJob.PARAM_MAX_REC,TAPJob.PARAM_UPLOAD};
 
 	/** Part of HTTP content type header. */
 	public static final String MULTIPART = "multipart/";
@@ -64,23 +64,22 @@ public class TAPParameters extends UWSParameters {
 	/** All the tables to upload. If NULL, there is no tables to upload. */
 	protected TableLoader[] tablesToUpload = null;
 
-
-	@SuppressWarnings({ "unchecked" })
-	public TAPParameters(final ServiceConnection<?> service) {
+	@SuppressWarnings({"unchecked"})
+	public TAPParameters(final ServiceConnection<?> service){
 		this(service, (Collection)null, null);
 	}
 
-	public TAPParameters(final ServiceConnection<?> service, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) {
+	public TAPParameters(final ServiceConnection<?> service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers){
 		super(expectedAdditionalParams, inputParamControllers);
 		initDefaultTAPControllers(service);
 	}
 
-	public TAPParameters(final HttpServletRequest request, final ServiceConnection<?> service) throws UWSException, TAPException {
+	public TAPParameters(final HttpServletRequest request, final ServiceConnection<?> service) throws UWSException, TAPException{
 		this(request, service, null, null);
 	}
 
 	@SuppressWarnings("unchecked")
-	public TAPParameters(final HttpServletRequest request, final ServiceConnection<?> service, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException, TAPException {
+	public TAPParameters(final HttpServletRequest request, final ServiceConnection<?> service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
 		this(service, expectedAdditionalParams, inputParamControllers);
 		MultipartRequest multipart = null;
 
@@ -91,10 +90,10 @@ public class TAPParameters extends UWSParameters {
 
 			File uploadDir = service.getFileManager().getUploadDirectory();
 			try{
-				multipart = new MultipartRequest(request, (uploadDir != null)?uploadDir.getAbsolutePath():null, service.getMaxUploadSize(), new FileRenamePolicy() {
+				multipart = new MultipartRequest(request, (uploadDir != null) ? uploadDir.getAbsolutePath() : null, service.getMaxUploadSize(), new FileRenamePolicy(){
 					@Override
-					public File rename(File file) {
-						return new File(file.getParentFile(), (new Date()).toString()+"_"+file.getName());
+					public File rename(File file){
+						return new File(file.getParentFile(), (new Date()).toString() + "_" + file.getName());
 					}
 				});
 				Enumeration<String> e = multipart.getParameterNames();
@@ -110,7 +109,7 @@ public class TAPParameters extends UWSParameters {
 					confError = "The maximum upload size (see ServiceConnection.getMaxUploadSize() must be positive !";
 				else if (uploadDir == null)
 					confError = "Missing upload directory (see TAPFileManager.getUploadDirectory()) !";
-				throw new TAPException("Incorrect Upload capability configuration ! "+confError, iae);
+				throw new TAPException("Incorrect Upload capability configuration ! " + confError, iae);
 			}
 
 		}// Classic HTTP parameters (GET or POST):
@@ -129,21 +128,21 @@ public class TAPParameters extends UWSParameters {
 			tablesToUpload = buildLoaders(uploadParam, multipart);
 	}
 
-	public TAPParameters(final ServiceConnection<?> service, final Map<String, Object> params) throws UWSException, TAPException {
+	public TAPParameters(final ServiceConnection<?> service, final Map<String,Object> params) throws UWSException, TAPException{
 		this(service, params, null, null);
 	}
 
-	public TAPParameters(final ServiceConnection<?> service, final Map<String, Object> params, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException, TAPException {
+	public TAPParameters(final ServiceConnection<?> service, final Map<String,Object> params, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
 		super(params, expectedAdditionalParams, inputParamControllers);
 		initDefaultTAPControllers(service);
 	}
 
 	@Override
-	protected final HashMap<String, InputParamController> getDefaultControllers() {
-		return new HashMap<String, InputParamController>(10);
+	protected final HashMap<String,InputParamController> getDefaultControllers(){
+		return new HashMap<String,InputParamController>(10);
 	}
 
-	protected <R> void initDefaultTAPControllers(final ServiceConnection<R> service){
+	protected < R > void initDefaultTAPControllers(final ServiceConnection<R> service){
 		if (!mapParamControllers.containsKey(TAPJob.PARAM_EXECUTION_DURATION))
 			mapParamControllers.put(TAPJob.PARAM_EXECUTION_DURATION, new TAPExecutionDurationController(service));
 
@@ -151,7 +150,7 @@ public class TAPParameters extends UWSParameters {
 			mapParamControllers.put(TAPJob.PARAM_DESTRUCTION_TIME, new TAPDestructionTimeController(service));
 
 		if (!mapParamControllers.containsKey(TAPJob.PARAM_REQUEST))
-			mapParamControllers.put(TAPJob.PARAM_REQUEST, new StringParamController(TAPJob.PARAM_REQUEST, null, new String[]{TAPJob.REQUEST_DO_QUERY, TAPJob.REQUEST_GET_CAPABILITIES}, true));
+			mapParamControllers.put(TAPJob.PARAM_REQUEST, new StringParamController(TAPJob.PARAM_REQUEST, null, new String[]{TAPJob.REQUEST_DO_QUERY,TAPJob.REQUEST_GET_CAPABILITIES}, true));
 
 		if (!mapParamControllers.containsKey(TAPJob.PARAM_LANGUAGE))
 			mapParamControllers.put(TAPJob.PARAM_LANGUAGE, new StringParamController(TAPJob.PARAM_LANGUAGE, TAPJob.LANG_ADQL, null, true));
@@ -173,7 +172,7 @@ public class TAPParameters extends UWSParameters {
 	}
 
 	@Override
-	protected String normalizeParamName(String name) {
+	protected String normalizeParamName(String name){
 		if (name != null && !name.trim().isEmpty()){
 			for(String tapParam : TAP_PARAMETERS){
 				if (name.equalsIgnoreCase(tapParam))
@@ -184,7 +183,7 @@ public class TAPParameters extends UWSParameters {
 	}
 
 	@Override
-	public String[] update(UWSParameters newParams) throws UWSException {
+	public String[] update(UWSParameters newParams) throws UWSException{
 		if (newParams != null && !(newParams instanceof TAPParameters))
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Can not update a TAPParameters instance with only a UWSException !");
 
@@ -242,13 +241,13 @@ public class TAPParameters extends UWSParameters {
 						params.put(TAPJob.PARAM_MAX_REC, maxRec);
 					}
 					return maxRec;
-				}catch(NumberFormatException nfe){ ; }
+				}catch(NumberFormatException nfe){
+					;
+				}
 			}
 		}
 		return null;
 	}
-
-
 
 	/**
 	 * Utility method that determines whether the request contains multipart
@@ -259,15 +258,15 @@ public class TAPParameters extends UWSParameters {
 	 * @return <code>true</code> if the request is multipart;
 	 *         <code>false</code> otherwise.
 	 */
-	public static final boolean isMultipartContent(HttpServletRequest request) {
-		if (!"post".equals(request.getMethod().toLowerCase())) {
+	public static final boolean isMultipartContent(HttpServletRequest request){
+		if (!"post".equals(request.getMethod().toLowerCase())){
 			return false;
 		}
 		String contentType = request.getContentType();
-		if (contentType == null) {
+		if (contentType == null){
 			return false;
 		}
-		if (contentType.toLowerCase().startsWith(MULTIPART)) {
+		if (contentType.toLowerCase().startsWith(MULTIPART)){
 			return true;
 		}
 		return false;
@@ -283,14 +282,14 @@ public class TAPParameters extends UWSParameters {
 	 * 
 	 * @throws TAPException	If the syntax of the "upload" field is incorrect.
 	 */
-	private TableLoader[] buildLoaders(final String upload, final MultipartRequest multipart) throws TAPException {
+	private TableLoader[] buildLoaders(final String upload, final MultipartRequest multipart) throws TAPException{
 		if (upload == null || upload.trim().isEmpty())
 			return new TableLoader[0];
 
 		String[] pairs = upload.split(";");
 		TableLoader[] loaders = new TableLoader[pairs.length];
 
-		for(int i=0; i<pairs.length; i++){
+		for(int i = 0; i < pairs.length; i++){
 			String[] table = pairs[i].split(",");
 			if (table.length != 2)
 				throw new TAPException("Bad syntax ! An UPLOAD parameter must contain a list of pairs separated by a ';'. Each pair is composed of 2 parts, a table name and a URI separated by a ','.");
@@ -300,17 +299,17 @@ public class TAPParameters extends UWSParameters {
 		return loaders;
 	}
 
-	public void check() throws TAPException {
+	public void check() throws TAPException{
 		// Check that required parameters are not NON-NULL:
 		String requestParam = getRequest();
 		if (requestParam == null)
-			throw new TAPException("The parameter \""+TAPJob.PARAM_REQUEST+"\" must be provided and its value must be equal to \""+TAPJob.REQUEST_DO_QUERY+"\" or \""+TAPJob.REQUEST_GET_CAPABILITIES+"\" !");
+			throw new TAPException("The parameter \"" + TAPJob.PARAM_REQUEST + "\" must be provided and its value must be equal to \"" + TAPJob.REQUEST_DO_QUERY + "\" or \"" + TAPJob.REQUEST_GET_CAPABILITIES + "\" !");
 
 		if (requestParam.equals(TAPJob.REQUEST_DO_QUERY)){
 			if (get(TAPJob.PARAM_LANGUAGE) == null)
-				throw new TAPException("The parameter \""+TAPJob.PARAM_LANGUAGE+"\" must be provided if "+TAPJob.PARAM_REQUEST+"="+TAPJob.REQUEST_DO_QUERY+" !");
+				throw new TAPException("The parameter \"" + TAPJob.PARAM_LANGUAGE + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !");
 			else if (get(TAPJob.PARAM_QUERY) == null)
-				throw new TAPException("The parameter \""+TAPJob.PARAM_QUERY+"\" must be provided if "+TAPJob.PARAM_REQUEST+"="+TAPJob.REQUEST_DO_QUERY+" !");
+				throw new TAPException("The parameter \"" + TAPJob.PARAM_QUERY + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !");
 		}
 
 		// Check the version if needed:
@@ -334,7 +333,7 @@ public class TAPParameters extends UWSParameters {
 		}*/
 	}
 
-	public static final void deleteUploadedTables(final TableLoader[] loaders) {
+	public static final void deleteUploadedTables(final TableLoader[] loaders){
 		if (loaders != null){
 			for(TableLoader loader : loaders)
 				loader.deleteFile();

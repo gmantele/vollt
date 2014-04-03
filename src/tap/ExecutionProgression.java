@@ -19,6 +19,6 @@ package tap;
  * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
-public enum ExecutionProgression {
+public enum ExecutionProgression{
 	PENDING, UPLOADING, PARSING, TRANSLATING, EXECUTING_SQL, WRITING_RESULT, FINISHED;
 }

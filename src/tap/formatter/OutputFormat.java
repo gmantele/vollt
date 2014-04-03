@@ -35,7 +35,7 @@ import tap.TAPExecutionReport;
  * 
  * @see VOTableFormat
  */
-public interface OutputFormat<R> {
+public interface OutputFormat< R > {
 
 	/**
 	 * Gets the MIME type corresponding to this format.

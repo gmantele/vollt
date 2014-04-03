@@ -39,16 +39,16 @@ import adql.db.DBColumn;
 
 public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements ResultSetFormatter {
 
-	public ResultSet2JsonFormatter(ServiceConnection<ResultSet> service, boolean logFormatReport) {
+	public ResultSet2JsonFormatter(ServiceConnection<ResultSet> service, boolean logFormatReport){
 		super(service, logFormatReport);
 	}
 
-	public ResultSet2JsonFormatter(ServiceConnection<ResultSet> service) {
+	public ResultSet2JsonFormatter(ServiceConnection<ResultSet> service){
 		super(service);
 	}
 
 	@Override
-	protected DBColumn[] writeMetadata(ResultSet queryResult, JSONWriter out, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException, JSONException {
+	protected DBColumn[] writeMetadata(ResultSet queryResult, JSONWriter out, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException, JSONException{
 		out.array();
 		DBColumn[] selectedColumns = execReport.resultingColumns;
 
@@ -63,8 +63,8 @@ public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements Re
 					}catch(ClassCastException ex){
 						tapCol = new TAPColumn(field.getADQLName());
 						tapCol.setDatatype(meta.getColumnTypeName(indField), TAPTypes.NO_SIZE);
-						service.getLogger().warning("Unknown DB datatype for the field \""+tapCol.getName()+"\" ! It is supposed to be \""+tapCol.getDatatype()+"\" (original value: \""+meta.getColumnTypeName(indField)+"\").");
-						selectedColumns[indField-1] = tapCol;
+						service.getLogger().warning("Unknown DB datatype for the field \"" + tapCol.getName() + "\" ! It is supposed to be \"" + tapCol.getDatatype() + "\" (original value: \"" + meta.getColumnTypeName(indField) + "\").");
+						selectedColumns[indField - 1] = tapCol;
 					}
 					writeFieldMeta(tapCol, out);
 					indField++;
@@ -73,8 +73,8 @@ public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements Re
 						throw new InterruptedException();
 				}
 			}
-		} catch (SQLException e) {
-			service.getLogger().error("Job N°"+execReport.jobID+" - Impossible to get the metadata of the given ResultSet !", e);
+		}catch(SQLException e){
+			service.getLogger().error("Job N°" + execReport.jobID + " - Impossible to get the metadata of the given ResultSet !", e);
 		}
 
 		out.endArray();
@@ -82,7 +82,7 @@ public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements Re
 	}
 
 	@Override
-	protected int writeData(ResultSet queryResult, DBColumn[] selectedColumns, JSONWriter out, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException, JSONException {
+	protected int writeData(ResultSet queryResult, DBColumn[] selectedColumns, JSONWriter out, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException, JSONException{
 		out.array();
 		int nbRows = 0;
 		try{
@@ -93,9 +93,9 @@ public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements Re
 
 				out.array();
 				Object value;
-				for(int i=1; i<=nbColumns; i++){
-					value = formatValue(queryResult.getObject(i), selectedColumns[i-1]);
-					writeFieldValue(value, selectedColumns[i-1], out);
+				for(int i = 1; i <= nbColumns; i++){
+					value = formatValue(queryResult.getObject(i), selectedColumns[i - 1]);
+					writeFieldValue(value, selectedColumns[i - 1], out);
 					if (thread.isInterrupted())
 						throw new InterruptedException();
 				}
@@ -106,7 +106,7 @@ public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements Re
 					throw new InterruptedException();
 			}
 		}catch(SQLException se){
-			throw new TAPException("Job N°"+execReport.jobID+" - Impossible to get the "+(nbRows+1)+"-th rows from the given ResultSet !", se);
+			throw new TAPException("Job N°" + execReport.jobID + " - Impossible to get the " + (nbRows + 1) + "-th rows from the given ResultSet !", se);
 		}
 
 		out.endArray();
@@ -114,7 +114,7 @@ public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements Re
 	}
 
 	@Override
-	public Object formatValue(Object value, DBColumn colMeta) {
+	public Object formatValue(Object value, DBColumn colMeta){
 		return value;
 	}
 

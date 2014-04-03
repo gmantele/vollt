@@ -51,7 +51,6 @@ public abstract class SimpleSearchHandler implements ISearchHandler {
 	/** List of all matching ADQL objects. */
 	protected final ArrayList<ADQLObject> results;
 
-
 	/**
 	 * <p>Builds a SimpleSearchHandler:</p>
 	 * <ul>
@@ -89,7 +88,7 @@ public abstract class SimpleSearchHandler implements ISearchHandler {
 	 * 
 	 * @return	<i>true</i> if recursive, <i>false</i> otherwise.
 	 */
-	public final boolean isRecursive() {
+	public final boolean isRecursive(){
 		return recursive;
 	}
 
@@ -107,7 +106,7 @@ public abstract class SimpleSearchHandler implements ISearchHandler {
 	 * 
 	 * @return	<i>true</i> if it stops at the first match, <i>false</i> otherwise.
 	 */
-	public final boolean onlyFirstMatch() {
+	public final boolean onlyFirstMatch(){
 		return firstMatch;
 	}
 
@@ -116,15 +115,15 @@ public abstract class SimpleSearchHandler implements ISearchHandler {
 	 * 
 	 * @param firstMatch	<i>true</i> if it must stop at the first match, <i>false</i> otherwise.
 	 */
-	public final void setOnlyFirstMatch(boolean firstMatch) {
+	public final void setOnlyFirstMatch(boolean firstMatch){
 		this.firstMatch = firstMatch;
 	}
 
-	public final Iterator<ADQLObject> iterator() {
+	public final Iterator<ADQLObject> iterator(){
 		return results.iterator();
 	}
 
-	public final int getNbMatch() {
+	public final int getNbMatch(){
 		return results.size();
 	}
 

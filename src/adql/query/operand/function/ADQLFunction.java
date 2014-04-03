@@ -83,11 +83,11 @@ public abstract class ADQLFunction implements ADQLOperand {
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private int index = -1;
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				try{
 					return getParameter(++index);
 				}catch(ArrayIndexOutOfBoundsException ex){
@@ -95,43 +95,43 @@ public abstract class ADQLFunction implements ADQLOperand {
 				}
 			}
 
-			public boolean hasNext() {
-				return index+1 < getNbParameters();
+			public boolean hasNext(){
+				return index + 1 < getNbParameters();
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
 				if (replacer == null)
 					remove();
 				else if (replacer instanceof ADQLOperand){
-					try {
+					try{
 						setParameter(index, (ADQLOperand)replacer);
-					} catch (Exception e) {
+					}catch(Exception e){
 						e.printStackTrace();
 						throw new UnsupportedOperationException(e);
 					}
 				}else
-					throw new UnsupportedOperationException("Impossible to replace the "+index+"-th parameter of \""+toADQL()+"\" by an object whose the class ("+replacer.getClass().getName()+") is not ADQLOperand !");
+					throw new UnsupportedOperationException("Impossible to replace the " + index + "-th parameter of \"" + toADQL() + "\" by an object whose the class (" + replacer.getClass().getName() + ") is not ADQLOperand !");
 			}
 
-			public void remove() {
+			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
-					throw new UnsupportedOperationException("Impossible to remove a parameter of an ADQL function (here the "+index+"-th parameter of \""+toADQL()+"\")");
+					throw new UnsupportedOperationException("Impossible to remove a parameter of an ADQL function (here the " + index + "-th parameter of \"" + toADQL() + "\")");
 			}
 		};
 	}
 
-	public String toADQL() {
-		String adql = getName()+"(";
+	public String toADQL(){
+		String adql = getName() + "(";
 
-		for(int i=0; i<getNbParameters(); i++)
-			adql += ((i==0)?"":", ")+getParameter(i).toADQL();
+		for(int i = 0; i < getNbParameters(); i++)
+			adql += ((i == 0) ? "" : ", ") + getParameter(i).toADQL();
 
-		return adql+")";
+		return adql + ")";
 	}
 
 	/**
@@ -145,26 +145,26 @@ public abstract class ADQLFunction implements ADQLOperand {
 		protected final ADQLFunction function;
 		protected int index = -1;
 
-		public ParameterIterator(ADQLFunction fct) throws NullPointerException {
+		public ParameterIterator(ADQLFunction fct) throws NullPointerException{
 			if (fct == null)
 				throw new NullPointerException("Impossible to build an iterator on a function without the function on which the iterator must be applied !");
 			else
 				function = fct;
 		}
 
-		public boolean hasNext() {
-			return (index+1)<function.getNbParameters();
+		public boolean hasNext(){
+			return (index + 1) < function.getNbParameters();
 		}
 
-		public ADQLOperand next() {
+		public ADQLOperand next(){
 			index++;
 			return function.getParameter(index);
 		}
 
-		public void remove() throws UnsupportedOperationException {
-			try {
+		public void remove() throws UnsupportedOperationException{
+			try{
 				function.setParameter(index, null);
-			} catch (Exception e) {
+			}catch(Exception e){
 				throw new UnsupportedOperationException(e);
 			}
 		}

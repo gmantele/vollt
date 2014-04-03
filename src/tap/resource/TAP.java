@@ -39,7 +39,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.ServiceConnection.LimitUnit;
@@ -56,13 +55,13 @@ import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.error.ServiceErrorWriter;
 
-public class TAP<R> implements VOSIResource {
+public class TAP< R > implements VOSIResource {
 
 	private static final long serialVersionUID = 1L;
 
 	protected final ServiceConnection<R> service;
 
-	protected final Map<String, TAPResource> resources;
+	protected final Map<String,TAPResource> resources;
 
 	protected String tapBaseURL = null;
 
@@ -70,9 +69,9 @@ public class TAP<R> implements VOSIResource {
 
 	protected ServiceErrorWriter errorWriter;
 
-	public TAP(ServiceConnection<R> serviceConnection) throws UWSException, TAPException {
+	public TAP(ServiceConnection<R> serviceConnection) throws UWSException, TAPException{
 		service = serviceConnection;
-		resources = new HashMap<String, TAPResource>();
+		resources = new HashMap<String,TAPResource>();
 
 		errorWriter = new DefaultTAPErrorWriter(service);
 
@@ -91,13 +90,13 @@ public class TAP<R> implements VOSIResource {
 
 		if (service.uploadEnabled()){
 			DBConnection<?> dbConn = null;
-			try {
+			try{
 				dbConn = service.getFactory().createDBConnection("TAP(ServiceConnection)");
 				dbConn.dropSchema("TAP_UPLOAD");
 				dbConn.createSchema("TAP_UPLOAD");
-			} catch (TAPException e) {
+			}catch(TAPException e){
 				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Error while creating the schema TAP_UPLOAD !");
-			} finally {
+			}finally{
 				if (dbConn != null)
 					dbConn.close();
 			}
@@ -117,38 +116,38 @@ public class TAP<R> implements VOSIResource {
 	}
 
 	public void setTAPBaseURL(HttpServletRequest request){
-		setTAPBaseURL(request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+request.getContextPath()+request.getServletPath());
+		setTAPBaseURL(request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath() + request.getServletPath());
 	}
 
 	public final Availability getAvailability(){
-		return (Availability) resources.get(Availability.RESOURCE_NAME);
+		return (Availability)resources.get(Availability.RESOURCE_NAME);
 	}
 
 	public final Capabilities getCapabilities(){
-		return (Capabilities) resources.get(Capabilities.RESOURCE_NAME);
+		return (Capabilities)resources.get(Capabilities.RESOURCE_NAME);
 	}
 
 	public final Sync getSync(){
-		return (Sync) resources.get(Sync.RESOURCE_NAME);
+		return (Sync)resources.get(Sync.RESOURCE_NAME);
 	}
 
 	public final ASync getASync(){
-		return (ASync) resources.get(ASync.RESOURCE_NAME);
+		return (ASync)resources.get(ASync.RESOURCE_NAME);
 	}
 
 	public final TAPMetadata getTAPMetadata(){
-		return (TAPMetadata) resources.get(TAPMetadata.RESOURCE_NAME);
+		return (TAPMetadata)resources.get(TAPMetadata.RESOURCE_NAME);
 	}
 
 	public final Iterator<TAPResource> getTAPResources(){
 		return resources.values().iterator();
 	}
 
-	public final ServiceErrorWriter getErrorWriter() {
+	public final ServiceErrorWriter getErrorWriter(){
 		return errorWriter;
 	}
 
-	public final void setErrorWriter(ServiceErrorWriter errorWriter) {
+	public final void setErrorWriter(ServiceErrorWriter errorWriter){
 		if (errorWriter != null){
 			this.errorWriter = errorWriter;
 			getUWS().setErrorWriter(errorWriter);
@@ -156,13 +155,17 @@ public class TAP<R> implements VOSIResource {
 	}
 
 	@Override
-	public String getStandardID() { return "ivo://ivoa.net/std/TAP"; }
+	public String getStandardID(){
+		return "ivo://ivoa.net/std/TAP";
+	}
 
 	@Override
-	public String getAccessURL() { return tapBaseURL; }
+	public String getAccessURL(){
+		return tapBaseURL;
+	}
 
 	@Override
-	public String getCapability() {
+	public String getCapability(){
 		StringBuffer xml = new StringBuffer();
 
 		xml.append("<capability standardID=\"").append(getStandardID()).append("\" xsi:type=\"tr:TableAccess\">\n");
@@ -265,27 +268,27 @@ public class TAP<R> implements VOSIResource {
 	/**
 	 * @return The homePageURI.
 	 */
-	public final String getHomePageURI() {
+	public final String getHomePageURI(){
 		return homePageURI;
 	}
 
 	public final void setHomePageURI(String uri){
-		homePageURI = (uri!=null)?uri.trim():uri;
+		homePageURI = (uri != null) ? uri.trim() : uri;
 		if (homePageURI != null && homePageURI.length() == 0)
 			homePageURI = null;
 	}
 
-	public void init(ServletConfig config) throws ServletException {
+	public void init(ServletConfig config) throws ServletException{
 		for(TAPResource res : resources.values())
 			res.init(config);
 	}
 
-	public void destroy() {
+	public void destroy(){
 		for(TAPResource res : resources.values())
 			res.destroy();
 	}
 
-	public void executeRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void executeRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		response.setContentType("text/plain");
 
 		if (tapBaseURL == null)
@@ -313,29 +316,29 @@ public class TAP<R> implements VOSIResource {
 				if (res != null)
 					res.executeResource(request, response);
 				else
-					errorWriter.writeError("This TAP service does not have a resource named \""+resourceName+"\" !", ErrorType.TRANSIENT, HttpServletResponse.SC_NOT_FOUND, response, request, null, "Get a TAP resource");
+					errorWriter.writeError("This TAP service does not have a resource named \"" + resourceName + "\" !", ErrorType.TRANSIENT, HttpServletResponse.SC_NOT_FOUND, response, request, null, "Get a TAP resource");
 			}
 
 			service.getLogger().httpRequest(request, owner, resourceName, HttpServletResponse.SC_OK, "[OK]", null);
 
 			response.flushBuffer();
 		}catch(IOException ioe){
-			errorWriter.writeError(ioe, response, request, owner, (resourceName==null)?"Writing the TAP home page":("Executing the TAP resource "+resourceName));
+			errorWriter.writeError(ioe, response, request, owner, (resourceName == null) ? "Writing the TAP home page" : ("Executing the TAP resource " + resourceName));
 		}catch(UWSException ue){
-			errorWriter.writeError(ue, response, request, owner, (resourceName==null)?"Writing the TAP home page":("Executing the TAP resource "+resourceName));
+			errorWriter.writeError(ue, response, request, owner, (resourceName == null) ? "Writing the TAP home page" : ("Executing the TAP resource " + resourceName));
 		}catch(TAPException te){
 			writeError(te, response);
 		}catch(Throwable t){
-			errorWriter.writeError(t, response, request, owner, (resourceName==null)?"Writing the TAP home page":("Executing the TAP resource "+resourceName));
+			errorWriter.writeError(t, response, request, owner, (resourceName == null) ? "Writing the TAP home page" : ("Executing the TAP resource " + resourceName));
 		}
 	}
 
-	public void writeHomePage(final PrintWriter writer, final JobOwner owner) throws IOException {
+	public void writeHomePage(final PrintWriter writer, final JobOwner owner) throws IOException{
 		// By default, list all available resources:
 		if (homePageURI == null){
 			writer.println("<html><head><title>TAP HOME PAGE</title></head><body><h1 style=\"text-align: center\">TAP HOME PAGE</h1><h2>Available resources:</h2><ul>");
 			for(TAPResource res : resources.values())
-				writer.println("<li><a href=\""+tapBaseURL+"/"+res.getName()+"\">"+res.getName()+"</a></li>");
+				writer.println("<li><a href=\"" + tapBaseURL + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
 			writer.println("</ul></body></html>");
 		}
 		// or Display the specified home page:
@@ -350,12 +353,12 @@ public class TAP<R> implements VOSIResource {
 				throw new IOException("Incorrect TAP home page URI !");
 			byte[] buffer = new byte[255];
 			int nbReads = 0;
-			while((nbReads=input.read(buffer)) > 0)
+			while((nbReads = input.read(buffer)) > 0)
 				writer.print(new String(buffer, 0, nbReads));
 		}
 	}
 
-	public void writeError(TAPException ex, HttpServletResponse response) throws ServletException, IOException {
+	public void writeError(TAPException ex, HttpServletResponse response) throws ServletException, IOException{
 		service.getLogger().error(ex);
 		response.reset();
 		response.setStatus(ex.getHttpErrorCode());
@@ -363,7 +366,7 @@ public class TAP<R> implements VOSIResource {
 		writeError(ex, response.getWriter());
 	}
 
-	protected void writeError(TAPException ex, PrintWriter output) throws ServletException, IOException {
+	protected void writeError(TAPException ex, PrintWriter output) throws ServletException, IOException{
 		output.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		output.println("<VOTABLE xmlns=\"http://www.ivoa.net/xml/VOTable/v1.2\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VOTable/v1.2\" version=\"1.2\">");
 		output.println("\t<RESOURCE type=\"results\">");
@@ -371,18 +374,21 @@ public class TAP<R> implements VOSIResource {
 		// Print the error:
 		output.println("\t\t<INFO name=\"QUERY_STATUS\" value=\"ERROR\">");
 		output.print("\t\t\t<![CDATA[ ");
-		if (ex.getExecutionStatus()!=null)
-			output.print("[WHILE "+ex.getExecutionStatus()+"] ");
+		if (ex.getExecutionStatus() != null)
+			output.print("[WHILE " + ex.getExecutionStatus() + "] ");
 		output.print(ex.getMessage().replace('«', '\"').replace('»', '\"'));
 		output.println("]]>\t\t</INFO>");
 
 		// Print the current date:
 		DateFormat dateFormat = new SimpleDateFormat(UWSJob.DEFAULT_DATE_FORMAT);
-		output.print("\t\t<INFO name=\"DATE\" value=\""); output.print(dateFormat.format(new Date())); output.println("\" />");
+		output.print("\t\t<INFO name=\"DATE\" value=\"");
+		output.print(dateFormat.format(new Date()));
+		output.println("\" />");
 
 		// Print the provider (if any):
 		if (service.getProviderName() != null){
-			output.print("\t\t<INFO name=\"PROVIDER\" value=\""); output.print(service.getProviderName());
+			output.print("\t\t<INFO name=\"PROVIDER\" value=\"");
+			output.print(service.getProviderName());
 			if (service.getProviderDescription() != null){
 				output.print("\">\n\t\t\t<![CDATA[");
 				output.print(service.getProviderDescription());
@@ -414,7 +420,7 @@ public class TAP<R> implements VOSIResource {
 	public final boolean addResource(String resourceId, TAPResource newResource){
 		if (newResource == null)
 			return false;
-		resources.put((resourceId==null)?newResource.getName():resourceId, newResource);
+		resources.put((resourceId == null) ? newResource.getName() : resourceId, newResource);
 		return true;
 	}
 

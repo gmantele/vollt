@@ -54,11 +54,11 @@ import adql.db.DBTable;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
 
-public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implements TAPFactory<R> {
+public abstract class AbstractTAPFactory< R > extends AbstractUWSFactory implements TAPFactory<R> {
 
 	protected final ServiceConnection<R> service;
 
-	protected AbstractTAPFactory(ServiceConnection<R> service) throws NullPointerException {
+	protected AbstractTAPFactory(ServiceConnection<R> service) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("Can not create a TAPFactory without a ServiceConnection instance !");
 
@@ -66,17 +66,17 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 	}
 
 	@Override
-	public UWSService createUWS() throws TAPException, UWSException {
+	public UWSService createUWS() throws TAPException, UWSException{
 		return new UWSService(this.service.getFactory(), this.service.getFileManager(), this.service.getLogger());
 	}
 
 	@Override
-	public UWSBackupManager createUWSBackupManager(final UWSService uws) throws TAPException, UWSException {
+	public UWSBackupManager createUWSBackupManager(final UWSService uws) throws TAPException, UWSException{
 		return null;
 	}
 
 	@Override
-	public UWSJob createJob(HttpServletRequest request, JobOwner owner) throws UWSException {
+	public UWSJob createJob(HttpServletRequest request, JobOwner owner) throws UWSException{
 		if (!service.isAvailable())
 			throw new UWSException(HttpServletResponse.SC_SERVICE_UNAVAILABLE, service.getAvailability());
 
@@ -89,7 +89,7 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 	}
 
 	@Override
-	public UWSJob createJob(String jobId, JobOwner owner, final UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException {
+	public UWSJob createJob(String jobId, JobOwner owner, final UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException{
 		if (!service.isAvailable())
 			throw new UWSException(HttpServletResponse.SC_SERVICE_UNAVAILABLE, service.getAvailability());
 		try{
@@ -100,7 +100,7 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 	}
 
 	@Override
-	public final JobThread createJobThread(final UWSJob job) throws UWSException {
+	public final JobThread createJobThread(final UWSJob job) throws UWSException{
 		try{
 			return new AsyncThread<R>((TAPJob)job, createADQLExecutor());
 		}catch(TAPException te){
@@ -108,7 +108,7 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 		}
 	}
 
-	public ADQLExecutor<R> createADQLExecutor() throws TAPException {
+	public ADQLExecutor<R> createADQLExecutor() throws TAPException{
 		return new ADQLExecutor<R>(service);
 	}
 
@@ -119,7 +119,7 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 	 * @see uws.service.AbstractUWSFactory#extractParameters(javax.servlet.http.HttpServletRequest, uws.service.UWS)
 	 */
 	@Override
-	public UWSParameters createUWSParameters(HttpServletRequest request) throws UWSException {
+	public UWSParameters createUWSParameters(HttpServletRequest request) throws UWSException{
 		try{
 			return new TAPParameters(request, service, getExpectedAdditionalParameters(), getInputParamControllers());
 		}catch(TAPException te){
@@ -128,10 +128,10 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 	}
 
 	@Override
-	public UWSParameters createUWSParameters(Map<String, Object> params) throws UWSException {
-		try {
+	public UWSParameters createUWSParameters(Map<String,Object> params) throws UWSException{
+		try{
 			return new TAPParameters(service, params, getExpectedAdditionalParameters(), getInputParamControllers());
-		} catch (TAPException te) {
+		}catch(TAPException te){
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te);
 		}
 	}
@@ -142,7 +142,7 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 	}
 
 	@Override
-	public QueryChecker createQueryChecker(TAPSchema uploadSchema) throws TAPException {
+	public QueryChecker createQueryChecker(TAPSchema uploadSchema) throws TAPException{
 		TAPMetadata meta = service.getTAPMetadata();
 		ArrayList<DBTable> tables = new ArrayList<DBTable>(meta.getNbTables());
 		Iterator<TAPTable> it = meta.getTables();
@@ -155,7 +155,7 @@ public abstract class AbstractTAPFactory<R> extends AbstractUWSFactory implement
 		return new DBChecker(tables);
 	}
 
-	public Uploader createUploader(final DBConnection<R> dbConn) throws TAPException {
+	public Uploader createUploader(final DBConnection<R> dbConn) throws TAPException{
 		return new Uploader(service, dbConn);
 	}
 

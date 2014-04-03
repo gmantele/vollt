@@ -54,8 +54,9 @@ public class ExecutionDurationController implements InputParamController, Serial
 	/** Indicates whether the execution duration of jobs can be modified. */
 	protected boolean allowModification = true;
 
-
-	public ExecutionDurationController(){ ; }
+	public ExecutionDurationController(){
+		;
+	}
 
 	public ExecutionDurationController(final long defaultDuration, final long maxDuration, final boolean allowModification){
 		setDefaultExecutionDuration(defaultDuration);
@@ -64,12 +65,12 @@ public class ExecutionDurationController implements InputParamController, Serial
 	}
 
 	@Override
-	public Object getDefault() {
+	public Object getDefault(){
 		return defaultDuration;
 	}
 
 	@Override
-	public Object check(Object value) throws UWSException {
+	public Object check(Object value) throws UWSException{
 		if (value == null)
 			return null;
 
@@ -81,15 +82,15 @@ public class ExecutionDurationController implements InputParamController, Serial
 			try{
 				duration = Long.parseLong(strValue);
 			}catch(NumberFormatException nfe){
-				throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_EXECUTION_DURATION, strValue, null, "A long value between "+UWSJob.UNLIMITED_DURATION+" and "+maxDuration+" (Default value: "+defaultDuration+").");
+				throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_EXECUTION_DURATION, strValue, null, "A long value between " + UWSJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
 			}
 		}else
-			throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_EXECUTION_DURATION, null, value.getClass().getName(), "A long value between "+UWSJob.UNLIMITED_DURATION+" and "+maxDuration+" (Default value: "+defaultDuration+").");
+			throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_EXECUTION_DURATION, null, value.getClass().getName(), "A long value between " + UWSJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
 
 		if (duration < UWSJob.UNLIMITED_DURATION)
 			duration = UWSJob.UNLIMITED_DURATION;
 		else if (maxDuration > UWSJob.UNLIMITED_DURATION && duration > maxDuration)
-			throw new UWSException(UWSException.BAD_REQUEST, "The UWS limits the execution duration to maximum "+maxDuration+" seconds !");
+			throw new UWSException(UWSException.BAD_REQUEST, "The UWS limits the execution duration to maximum " + maxDuration + " seconds !");
 
 		return duration;
 	}
@@ -102,7 +103,7 @@ public class ExecutionDurationController implements InputParamController, Serial
 	 * 
 	 * @return The default execution duration <i>(0 or less mean an unlimited duration)</i>.
 	 */
-	public final long getDefaultExecutionDuration() {
+	public final long getDefaultExecutionDuration(){
 		return defaultDuration;
 	}
 
@@ -111,8 +112,8 @@ public class ExecutionDurationController implements InputParamController, Serial
 	 * 
 	 * @param defaultExecutionDuration The new default execution duration <i>({@link UWSJob#UNLIMITED_DURATION}, 0 or a negative value mean an unlimited duration)</i>.
 	 */
-	public final boolean setDefaultExecutionDuration(long defaultExecutionDuration) {
-		defaultExecutionDuration = (defaultExecutionDuration <= 0)?UWSJob.UNLIMITED_DURATION:defaultExecutionDuration;
+	public final boolean setDefaultExecutionDuration(long defaultExecutionDuration){
+		defaultExecutionDuration = (defaultExecutionDuration <= 0) ? UWSJob.UNLIMITED_DURATION : defaultExecutionDuration;
 
 		if (defaultExecutionDuration != UWSJob.UNLIMITED_DURATION && maxDuration != UWSJob.UNLIMITED_DURATION && defaultExecutionDuration > maxDuration)
 			return false;
@@ -127,7 +128,7 @@ public class ExecutionDurationController implements InputParamController, Serial
 	 * 
 	 * @return The maximum execution duration <i>(0 or less mean an unlimited duration)</i>.
 	 */
-	public final long getMaxExecutionDuration() {
+	public final long getMaxExecutionDuration(){
 		return maxDuration;
 	}
 
@@ -136,8 +137,8 @@ public class ExecutionDurationController implements InputParamController, Serial
 	 * 
 	 * @param maxExecutionDuration The maximum execution duration <i>({@link UWSJob#UNLIMITED_DURATION}, 0 or a negative value mean an unlimited duration)</i>.
 	 */
-	public final void setMaxExecutionDuration(long maxExecutionDuration) {
-		maxDuration = (maxExecutionDuration <= 0)?UWSJob.UNLIMITED_DURATION:maxExecutionDuration;
+	public final void setMaxExecutionDuration(long maxExecutionDuration){
+		maxDuration = (maxExecutionDuration <= 0) ? UWSJob.UNLIMITED_DURATION : maxExecutionDuration;
 		if (defaultDuration != UWSJob.UNLIMITED_DURATION && maxDuration != UWSJob.UNLIMITED_DURATION && defaultDuration > maxDuration)
 			defaultDuration = maxDuration;
 	}
@@ -147,7 +148,7 @@ public class ExecutionDurationController implements InputParamController, Serial
 	 * 
 	 * @return <i>true</i> if the execution duration can be modified, <i>false</i> otherwise.
 	 */
-	public final boolean allowModification() {
+	public final boolean allowModification(){
 		return allowModification;
 	}
 
@@ -156,7 +157,7 @@ public class ExecutionDurationController implements InputParamController, Serial
 	 * 
 	 * @param allowModification <i>true</i> if the execution duration can be modified, <i>false</i> otherwise.
 	 */
-	public final void allowModification(boolean allowModification) {
+	public final void allowModification(boolean allowModification){
 		this.allowModification = allowModification;
 	}
 

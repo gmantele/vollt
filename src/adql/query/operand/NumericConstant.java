@@ -42,7 +42,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @see NumericConstant#setValue(String)
 	 */
-	public NumericConstant(String value) throws NumberFormatException {
+	public NumericConstant(String value) throws NumberFormatException{
 		this(value, true);
 	}
 
@@ -51,8 +51,8 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @param val						The numeric value.
 	 */
-	public NumericConstant(long val) {
-		this(""+val, false);
+	public NumericConstant(long val){
+		this("" + val, false);
 	}
 
 	/**
@@ -61,7 +61,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * @param val						The numeric value.
 	 */
 	public NumericConstant(double val){
-		this(""+val, false);
+		this("" + val, false);
 	}
 
 	/**
@@ -75,7 +75,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @see NumericConstant#setValue(String, boolean)
 	 */
-	public NumericConstant(String value, boolean checkNumeric) throws NumberFormatException {
+	public NumericConstant(String value, boolean checkNumeric) throws NumberFormatException{
 		setValue(value, checkNumeric);
 	}
 
@@ -84,7 +84,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @param toCopy	The NumericConstant to copy.
 	 */
-	public NumericConstant(NumericConstant toCopy) {
+	public NumericConstant(NumericConstant toCopy){
 		this.value = toCopy.value;
 	}
 
@@ -92,7 +92,7 @@ public final class NumericConstant implements ADQLOperand {
 		return value;
 	}
 
-	public final double getNumericValue() {
+	public final double getNumericValue(){
 		try{
 			return Double.parseDouble(value);
 		}catch(NumberFormatException nfe){
@@ -105,8 +105,8 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @param value		The numeric value.
 	 */
-	public final void setValue(long value) {
-		this.value = ""+value;
+	public final void setValue(long value){
+		this.value = "" + value;
 	}
 
 	/**
@@ -114,8 +114,8 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @param value		The numeric value.
 	 */
-	public final void setValue(double value) {
-		this.value = ""+value;
+	public final void setValue(double value){
+		this.value = "" + value;
 	}
 
 	/**
@@ -126,7 +126,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @see NumericConstant#setValue(String, boolean)
 	 */
-	public final void setValue(String value) throws NumberFormatException {
+	public final void setValue(String value) throws NumberFormatException{
 		setValue(value, true);
 	}
 
@@ -139,7 +139,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * @param checkNumeric				<i>true</i> to check whether the given value is numeric, <i>false</i> otherwise.
 	 * @throws NumberFormatException	If the given value can not be converted in a Double.
 	 */
-	public final void setValue(String value, boolean checkNumeric) throws NumberFormatException {
+	public final void setValue(String value, boolean checkNumeric) throws NumberFormatException{
 		if (checkNumeric)
 			Double.parseDouble(value);
 
@@ -160,11 +160,11 @@ public final class NumericConstant implements ADQLOperand {
 		return false;
 	}
 
-	public ADQLObject getCopy() {
+	public ADQLObject getCopy(){
 		return new NumericConstant(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return value;
 	}
 
@@ -172,7 +172,7 @@ public final class NumericConstant implements ADQLOperand {
 		return new NullADQLIterator();
 	}
 
-	public String toADQL() {
+	public String toADQL(){
 		return value;
 	}
 

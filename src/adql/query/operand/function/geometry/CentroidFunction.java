@@ -43,14 +43,13 @@ public class CentroidFunction extends GeometryFunction {
 	/** The geometry whose the centroid must be extracted. */
 	protected GeometryValue<GeometryFunction> parameter;
 
-
 	/**
 	 * Builds a CENTROID function.
 	 * 
 	 * @param param					The geometry whose the centroid must be extracted.
 	 * @throws NullPointerException	If the given parameter is <i>null</i>.
 	 */
-	public CentroidFunction(GeometryValue<GeometryFunction> param) throws NullPointerException {
+	public CentroidFunction(GeometryValue<GeometryFunction> param) throws NullPointerException{
 		super();
 		if (param == null)
 			throw new NullPointerException("The ADQL function CENTROID must have exactly one parameter !");
@@ -64,52 +63,52 @@ public class CentroidFunction extends GeometryFunction {
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	public CentroidFunction(CentroidFunction toCopy) throws Exception {
+	public CentroidFunction(CentroidFunction toCopy) throws Exception{
 		super();
 		parameter = (GeometryValue<GeometryFunction>)(toCopy.parameter.getCopy());
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new CentroidFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "CENTROID";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return true;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return false;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
+	public ADQLOperand[] getParameters(){
 		return new ADQLOperand[]{parameter.getValue()};
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return 1;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index == 0)
 			return parameter.getValue();
 		else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (index == 0){
 			ADQLOperand replaced = null;
 			if (replacer == null)
-				throw new NullPointerException("Impossible to remove the only required parameter of the "+getName()+" function !");
+				throw new NullPointerException("Impossible to remove the only required parameter of the " + getName() + " function !");
 			else if (replacer instanceof GeometryValue)
 				parameter = (GeometryValue<GeometryFunction>)replacer;
 			else if (replacer instanceof ADQLColumn)
@@ -117,10 +116,10 @@ public class CentroidFunction extends GeometryFunction {
 			else if (replacer instanceof GeometryFunction)
 				parameter.setGeometry((GeometryFunction)replacer);
 			else
-				throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+				throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 			return replaced;
 		}else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 	}
 
 }

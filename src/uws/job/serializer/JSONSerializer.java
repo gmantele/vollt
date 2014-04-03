@@ -45,14 +45,13 @@ import uws.service.UWSUrl;
 public class JSONSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
 
-
 	@Override
-	public final String getMimeType() {
+	public final String getMimeType(){
 		return MIME_TYPE_JSON;
 	}
 
 	@Override
-	public String getUWS(final UWS uws, final JobOwner user) throws UWSException {
+	public String getUWS(final UWS uws, final JobOwner user) throws UWSException{
 		try{
 			return Json4Uws.getJson(uws).toString();
 		}catch(JSONException je){
@@ -61,7 +60,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root) throws UWSException {
+	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(jobsList, owner).toString();
 		}catch(JSONException je){
@@ -70,7 +69,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJob(final UWSJob job, final boolean root) throws UWSException {
+	public String getJob(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(job, null, false).toString();
 		}catch(JSONException je){
@@ -79,7 +78,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobRef(final UWSJob job, final UWSUrl jobsListUrl) throws UWSException {
+	public String getJobRef(final UWSJob job, final UWSUrl jobsListUrl) throws UWSException{
 		try{
 			return Json4Uws.getJson(job, jobsListUrl, true).toString();
 		}catch(JSONException je){
@@ -88,7 +87,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobID(final UWSJob job, final boolean root) throws UWSException {
+	public String getJobID(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(UWSJob.PARAM_JOB_ID, job.getJobId()).toString();
 		}catch(JSONException je){
@@ -97,7 +96,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getRunID(final UWSJob job, final boolean root) throws UWSException {
+	public String getRunID(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(UWSJob.PARAM_RUN_ID, job.getRunId()).toString();
 		}catch(JSONException je){
@@ -106,7 +105,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getOwnerID(final UWSJob job, final boolean root) throws UWSException {
+	public String getOwnerID(final UWSJob job, final boolean root) throws UWSException{
 		if (job.getOwner() == null)
 			return "{}";
 		else{
@@ -119,7 +118,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getPhase(final UWSJob job, final boolean root) throws UWSException {
+	public String getPhase(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(UWSJob.PARAM_PHASE, job.getPhase().toString()).toString();
 		}catch(JSONException je){
@@ -128,7 +127,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getQuote(final UWSJob job, final boolean root) throws UWSException {
+	public String getQuote(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(UWSJob.PARAM_QUOTE, job.getQuote()).toString();
 		}catch(JSONException je){
@@ -137,7 +136,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getExecutionDuration(final UWSJob job, final boolean root) throws UWSException {
+	public String getExecutionDuration(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(UWSJob.PARAM_EXECUTION_DURATION, job.getExecutionDuration()).toString();
 		}catch(JSONException je){
@@ -146,7 +145,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getDestructionTime(final UWSJob job, final boolean root) throws UWSException {
+	public String getDestructionTime(final UWSJob job, final boolean root) throws UWSException{
 		if (job.getDestructionTime() != null){
 			try{
 				return Json4Uws.getJson(UWSJob.PARAM_DESTRUCTION_TIME, UWSJob.dateFormat.format(job.getDestructionTime())).toString();
@@ -158,7 +157,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getStartTime(final UWSJob job, final boolean root) throws UWSException {
+	public String getStartTime(final UWSJob job, final boolean root) throws UWSException{
 		if (job.getDestructionTime() != null){
 			try{
 				return Json4Uws.getJson(UWSJob.PARAM_START_TIME, UWSJob.dateFormat.format(job.getDestructionTime())).toString();
@@ -170,7 +169,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getEndTime(final UWSJob job, final boolean root) throws UWSException {
+	public String getEndTime(final UWSJob job, final boolean root) throws UWSException{
 		if (job.getDestructionTime() != null){
 			try{
 				return Json4Uws.getJson(UWSJob.PARAM_END_TIME, UWSJob.dateFormat.format(job.getDestructionTime())).toString();
@@ -182,7 +181,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getErrorSummary(final ErrorSummary error, final boolean root) throws UWSException {
+	public String getErrorSummary(final ErrorSummary error, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(error).toString();
 		}catch(JSONException je){
@@ -191,7 +190,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getAdditionalParameters(final UWSJob job, final boolean root) throws UWSException {
+	public String getAdditionalParameters(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJobParamsJson(job).toString();
 		}catch(JSONException je){
@@ -200,7 +199,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getAdditionalParameter(final String paramName, final Object paramValue, final boolean root) throws UWSException {
+	public String getAdditionalParameter(final String paramName, final Object paramValue, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJson(paramName, (paramValue == null) ? null : paramValue.toString()).toString();
 		}catch(JSONException je){
@@ -209,7 +208,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getResults(final UWSJob job, final boolean root) throws UWSException {
+	public String getResults(final UWSJob job, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJobResultsJson(job).toString();
 		}catch(JSONException je){
@@ -218,7 +217,7 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getResult(final Result result, final boolean root) throws UWSException {
+	public String getResult(final Result result, final boolean root) throws UWSException{
 		try{
 			return Json4Uws.getJobResultJson(result).toString();
 		}catch(JSONException je){

@@ -44,32 +44,32 @@ public final class Concatenation extends ADQLList<ADQLOperand> implements ADQLOp
 	 * @param toCopy		The {@link Concatenation} to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public Concatenation(Concatenation toCopy) throws Exception {
+	public Concatenation(Concatenation toCopy) throws Exception{
 		super(toCopy);
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new Concatenation(this);
 	}
 
 	@Override
-	public String[] getPossibleSeparators() {
+	public String[] getPossibleSeparators(){
 		return new String[]{"||"};
 	}
 
 	@Override
-	public String getSeparator(int index) throws ArrayIndexOutOfBoundsException {
+	public String getSeparator(int index) throws ArrayIndexOutOfBoundsException{
 		if (index <= 0 || index > size())
-			throw new ArrayIndexOutOfBoundsException("Impossible to get the concatenation operator between the item "+(index-1)+" and "+index+" !");
+			throw new ArrayIndexOutOfBoundsException("Impossible to get the concatenation operator between the item " + (index - 1) + " and " + index + " !");
 		return "||";
 	}
 
-	public final boolean isNumeric() {
+	public final boolean isNumeric(){
 		return false;
 	}
 
-	public final boolean isString() {
+	public final boolean isString(){
 		return true;
 	}
 

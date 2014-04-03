@@ -51,7 +51,7 @@ import uws.service.UWSUrl;
 public class JobSummary extends UWSAction {
 	private static final long serialVersionUID = 1L;
 
-	public JobSummary(UWSService u) {
+	public JobSummary(UWSService u){
 		super(u);
 	}
 
@@ -60,12 +60,12 @@ public class JobSummary extends UWSAction {
 	 * @see uws.service.actions.UWSAction#getName()
 	 */
 	@Override
-	public String getName() {
+	public String getName(){
 		return JOB_SUMMARY;
 	}
 
 	@Override
-	public String getDescription() {
+	public String getDescription(){
 		return "Lets getting a summary of the specified job. (URL: {baseUWS_URL}/{jobListName}/{job-id}, Method: HTTP-GET, No parameter)";
 	}
 
@@ -81,11 +81,8 @@ public class JobSummary extends UWSAction {
 	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException {
-		return (urlInterpreter.hasJobList()
-				&& urlInterpreter.hasJob()
-				&& !urlInterpreter.hasAttribute()
-				&& request.getMethod().equalsIgnoreCase("get"));
+	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
+		return (urlInterpreter.hasJobList() && urlInterpreter.hasJob() && !urlInterpreter.hasAttribute() && request.getMethod().equalsIgnoreCase("get"));
 	}
 
 	/**
@@ -99,7 +96,7 @@ public class JobSummary extends UWSAction {
 	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
 	@Override
-	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException {
+	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		// Get the job:
 		UWSJob job = getJob(urlInterpreter);
 

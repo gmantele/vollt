@@ -32,7 +32,6 @@ import uws.job.UWSJob;
 
 import uws.job.user.JobOwner;
 
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
 
@@ -59,12 +58,12 @@ public class AddJob extends UWSAction {
 	 * @see uws.service.actions.UWSAction#getName()
 	 */
 	@Override
-	public String getName() {
+	public String getName(){
 		return ADD_JOB;
 	}
 
 	@Override
-	public String getDescription() {
+	public String getDescription(){
 		return "Lets adding to the specified jobs list a job whose the parameters are given. (URL: {baseUWS_URL}/{jobListName}, Method: HTTP-POST, Parameters: job parameters)";
 	}
 
@@ -78,10 +77,8 @@ public class AddJob extends UWSAction {
 	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException {
-		return (urlInterpreter.hasJobList()
-				&& !urlInterpreter.hasJob()
-				&& request.getMethod().equalsIgnoreCase("post"));
+	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
+		return (urlInterpreter.hasJobList() && !urlInterpreter.hasJob() && request.getMethod().equalsIgnoreCase("post"));
 	}
 
 	/**
@@ -97,7 +94,7 @@ public class AddJob extends UWSAction {
 	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
 	@Override
-	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException {
+	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		// Get the jobs list:
 		JobList jobsList = getJobsList(urlInterpreter);
 
@@ -116,7 +113,7 @@ public class AddJob extends UWSAction {
 
 			return true;
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Unable to add the new job to the jobs list. (ID of the new job = \""+newJob.getJobId()+"\" ; ID already used = "+(jobsList.getJob(newJob.getJobId())!=null)+")");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Unable to add the new job to the jobs list. (ID of the new job = \"" + newJob.getJobId() + "\" ; ID already used = " + (jobsList.getJob(newJob.getJobId()) != null) + ")");
 	}
 
 }

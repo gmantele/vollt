@@ -60,7 +60,6 @@ public class ADQLColumn implements ADQLOperand {
 	/** The {@link ADQLTable} which is supposed to contain this column. By default, this field is automatically filled by {@link adql.db.DBChecker}. */
 	private ADQLTable adqlTable = null;
 
-
 	/* ************ */
 	/* CONSTRUCTORS */
 	/* ************ */
@@ -148,9 +147,9 @@ public class ADQLColumn implements ADQLOperand {
 		if (n.length() == 0)
 			return null;
 		else{
-			if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(n.length()-1) == '\"'){
+			if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(n.length() - 1) == '\"'){
 				n.deleteCharAt(0);
-				n.deleteCharAt(n.length()-1);
+				n.deleteCharAt(n.length() - 1);
 				n.trimToSize();
 				if (n.length() == 0)
 					return null;
@@ -160,7 +159,6 @@ public class ADQLColumn implements ADQLOperand {
 		}
 		return n.toString();
 	}
-
 
 	/* ***************** */
 	/* GETTERS & SETTERS */
@@ -179,7 +177,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @param pos	Position of this {@link ADQLColumn}.
 	 */
-	public void setPosition(final TextPosition pos) {
+	public void setPosition(final TextPosition pos){
 		position = pos;
 	}
 
@@ -188,7 +186,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @return Catalog name.
 	 */
-	public final String getCatalogName() {
+	public final String getCatalogName(){
 		return catalog;
 	}
 
@@ -197,7 +195,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @param catalog New name of the catalog.
 	 */
-	public final void setCatalogName(String catalog) {
+	public final void setCatalogName(String catalog){
 		final String temp = normalizeName(catalog, IdentifierField.CATALOG);
 		if ((this.catalog == null && temp != null) || (this.catalog != null && !this.catalog.equalsIgnoreCase(temp)))
 			dbLink = null;
@@ -209,7 +207,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @return Schema name.
 	 */
-	public final String getSchemaName() {
+	public final String getSchemaName(){
 		return schema;
 	}
 
@@ -218,7 +216,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @param schema New name of the schema.
 	 */
-	public final void setSchemaName(String schema) {
+	public final void setSchemaName(String schema){
 		final String temp = normalizeName(schema, IdentifierField.SCHEMA);
 		if ((this.schema == null && temp != null) || (this.schema != null && !this.schema.equalsIgnoreCase(temp)))
 			dbLink = null;
@@ -332,15 +330,15 @@ public class ADQLColumn implements ADQLOperand {
 	 * @param columnRef	The complete column reference ({catalog}.{schema}.{table}.{column}).
 	 */
 	public final void setColumn(String columnRef){
-		String[] parts = (columnRef == null)?null:columnRef.split("\\.");
+		String[] parts = (columnRef == null) ? null : columnRef.split("\\.");
 		if (parts != null && parts.length > 4)
 			return;
 		else{
-			int i = (parts==null)?-1:(parts.length-1);
-			setColumnName((i<0)?null:parts[i--]);
-			setTableName((i<0)?null:parts[i--]);
-			setSchemaName((i<0)?null:parts[i--]);
-			setCatalogName((i<0)?null:parts[i]);
+			int i = (parts == null) ? -1 : (parts.length - 1);
+			setColumnName((i < 0) ? null : parts[i--]);
+			setTableName((i < 0) ? null : parts[i--]);
+			setSchemaName((i < 0) ? null : parts[i--]);
+			setCatalogName((i < 0) ? null : parts[i]);
 		}
 	}
 
@@ -421,7 +419,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @return The corresponding {@link DBColumn}.
 	 */
-	public final DBColumn getDBLink() {
+	public final DBColumn getDBLink(){
 		return dbLink;
 	}
 
@@ -432,7 +430,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @param dbLink Its corresponding {@link DBColumn}.
 	 */
-	public final void setDBLink(DBColumn dbLink) {
+	public final void setDBLink(DBColumn dbLink){
 		this.dbLink = dbLink;
 	}
 
@@ -441,7 +439,7 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @return 	Its source table.
 	 */
-	public final ADQLTable getAdqlTable() {
+	public final ADQLTable getAdqlTable(){
 		return adqlTable;
 	}
 
@@ -452,10 +450,9 @@ public class ADQLColumn implements ADQLOperand {
 	 * 
 	 * @param adqlTable Its source table.
 	 */
-	public final void setAdqlTable(ADQLTable adqlTable) {
+	public final void setAdqlTable(ADQLTable adqlTable){
 		this.adqlTable = adqlTable;
 	}
-
 
 	/* ***************** */
 	/* INHERITED METHODS */
@@ -464,15 +461,15 @@ public class ADQLColumn implements ADQLOperand {
 		return true;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return true;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ADQLColumn(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return getColumnName();
 	}
 
@@ -480,7 +477,7 @@ public class ADQLColumn implements ADQLOperand {
 		return new NullADQLIterator();
 	}
 
-	public String toADQL() {
+	public String toADQL(){
 		return getFullColumnName();
 	}
 

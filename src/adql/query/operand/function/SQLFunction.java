@@ -42,7 +42,6 @@ public class SQLFunction extends ADQLFunction {
 	/** Distinct values of the parameter ? */
 	private boolean distinct = false;
 
-
 	/**
 	 * Creates a SQL function with one parameter.
 	 * 
@@ -50,7 +49,7 @@ public class SQLFunction extends ADQLFunction {
 	 * @param operand					The only parameter of this function.
 	 * @throws NullPointerException	 	If the given is <i>null</i> or if the given operand is <i>null</i> EXCEPT when the given type is {@link SQLFunctionType#COUNT_ALL}.
 	 */
-	public SQLFunction(SQLFunctionType t, ADQLOperand operand) throws NullPointerException {
+	public SQLFunction(SQLFunctionType t, ADQLOperand operand) throws NullPointerException{
 		this(t, operand, false);
 	}
 
@@ -62,7 +61,7 @@ public class SQLFunction extends ADQLFunction {
 	 * @param distinctValues			<i>true</i> if the quantifier DISTINCT must be used, <i>false</i> otherwise (ALL).
 	 * @throws NullPointerException	 	If the given is <i>null</i> or if the given operand is <i>null</i> EXCEPT when the given type is {@link SQLFunctionType#COUNT_ALL}.
 	 */
-	public SQLFunction(SQLFunctionType t, ADQLOperand operand, boolean distinctValues) throws NullPointerException {
+	public SQLFunction(SQLFunctionType t, ADQLOperand operand, boolean distinctValues) throws NullPointerException{
 		if (t == null)
 			throw new NullPointerException("Impossible to build a SQLFunction without its type (COUNT, SUM, AVG, ...) !");
 		else
@@ -71,7 +70,7 @@ public class SQLFunction extends ADQLFunction {
 		if (type == SQLFunctionType.COUNT_ALL)
 			param = null;
 		else if (operand == null)
-			throw new NullPointerException("Impossible to build the SQL function \""+type.name()+"\" without the operand on which it must apply !");
+			throw new NullPointerException("Impossible to build the SQL function \"" + type.name() + "\" without the operand on which it must apply !");
 		else
 			param = operand;
 
@@ -84,7 +83,7 @@ public class SQLFunction extends ADQLFunction {
 	 * @param toCopy		The SQL function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public SQLFunction(SQLFunction toCopy) throws Exception {
+	public SQLFunction(SQLFunction toCopy) throws Exception{
 		type = toCopy.type;
 		param = (ADQLOperand)toCopy.param.getCopy();
 		distinct = toCopy.distinct;
@@ -104,7 +103,7 @@ public class SQLFunction extends ADQLFunction {
 	 * 
 	 * @param distinctValues	<i>true</i> means distinct values, <i>false</i> else.
 	 */
-	public void setDistinct(boolean distinctValues) {
+	public void setDistinct(boolean distinctValues){
 		distinct = distinctValues;
 	}
 
@@ -117,24 +116,24 @@ public class SQLFunction extends ADQLFunction {
 		return type;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new SQLFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return type.name();
 	}
 
-	public final boolean isNumeric() {
+	public final boolean isNumeric(){
 		return true;
 	}
 
-	public final boolean isString() {
+	public final boolean isString(){
 		return false;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
+	public ADQLOperand[] getParameters(){
 		if (param != null)
 			return new ADQLOperand[]{param};
 		else
@@ -143,24 +142,24 @@ public class SQLFunction extends ADQLFunction {
 
 	@Override
 	public int getNbParameters(){
-		return (type == SQLFunctionType.COUNT_ALL)?0:1;
+		return (type == SQLFunctionType.COUNT_ALL) ? 0 : 1;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index < 0 || index >= getNbParameters())
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+type.name()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" !");
 		else
 			return param;
 	}
 
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (index < 0 || index >= getNbParameters())
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+type.name()+"\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" !");
 
 		if (replacer == null)
-			throw new NullPointerException("Impossible to remove the only required parameter of the function \""+type.name()+"\" !");
+			throw new NullPointerException("Impossible to remove the only required parameter of the function \"" + type.name() + "\" !");
 
 		ADQLOperand replaced = param;
 		param = replacer;
@@ -169,13 +168,11 @@ public class SQLFunction extends ADQLFunction {
 	}
 
 	@Override
-	public String toADQL() {
+	public String toADQL(){
 		if (type == SQLFunctionType.COUNT_ALL)
-			return "COUNT("+(distinct?"DISTINCT ":"")+"*)";
+			return "COUNT(" + (distinct ? "DISTINCT " : "") + "*)";
 		else
-			return getName()+"("+(distinct?"DISTINCT ":"")+param.toADQL()+")";
+			return getName() + "(" + (distinct ? "DISTINCT " : "") + param.toADQL() + ")";
 	}
-
-
 
 }

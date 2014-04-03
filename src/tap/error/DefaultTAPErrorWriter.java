@@ -55,20 +55,20 @@ public class DefaultTAPErrorWriter extends AbstractServiceErrorWriter {
 
 	protected final ServiceConnection<?> service;
 
-	public DefaultTAPErrorWriter(final ServiceConnection<?> service) {
+	public DefaultTAPErrorWriter(final ServiceConnection<?> service){
 		this.service = service;
 	}
 
 	@Override
-	protected final UWSLog getLogger() {
+	protected final UWSLog getLogger(){
 		return service.getLogger();
 	}
 
 	@Override
-	public void writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException {
+	public void writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException{
 		if (t instanceof UWSException){
 			UWSException ue = (UWSException)t;
-			formatError(ue, (ue.getMessage() == null || ue.getMessage().trim().isEmpty()), ue.getUWSErrorType(), ue.getHttpErrorCode(), action, user, response, (request != null)?request.getHeader("Accept"):null);
+			formatError(ue, (ue.getMessage() == null || ue.getMessage().trim().isEmpty()), ue.getUWSErrorType(), ue.getHttpErrorCode(), action, user, response, (request != null) ? request.getHeader("Accept") : null);
 			if (ue.getHttpErrorCode() == UWSException.INTERNAL_SERVER_ERROR)
 				getLogger().error(ue);
 			getLogger().httpRequest(request, user, action, ue.getHttpErrorCode(), ue.getMessage(), ue);

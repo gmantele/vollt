@@ -48,7 +48,6 @@ public class PolygonFunction extends GeometryFunction {
 	/** The coordinates of vertices. */
 	protected Vector<ADQLOperand> coordinates;
 
-
 	/**
 	 * Builds a polygon function with at least 3 2-D coordinates (that is to say, the array must contain at least 6 operands).
 	 * 
@@ -59,13 +58,13 @@ public class PolygonFunction extends GeometryFunction {
 	 * @throws NullPointerException				If one of the parameters is <i>null</i>.
 	 * @throws Exception						If there is another error.
 	 */
-	public PolygonFunction(ADQLOperand coordSystem, ADQLOperand[] coords) throws UnsupportedOperationException, NullPointerException, Exception {
+	public PolygonFunction(ADQLOperand coordSystem, ADQLOperand[] coords) throws UnsupportedOperationException, NullPointerException, Exception{
 		super(coordSystem);
 		if (coords == null || coords.length < 6)
 			throw new NullPointerException("A POLYGON function must have at least 3 2-D coordinates !");
 		else{
 			coordinates = new Vector<ADQLOperand>(coords.length);
-			for(int i=0; i<coords.length; i++)
+			for(int i = 0; i < coords.length; i++)
 				coordinates.add(coords[i]);
 		}
 	}
@@ -80,7 +79,7 @@ public class PolygonFunction extends GeometryFunction {
 	 * @throws NullPointerException				If one of the parameters is <i>null</i>.
 	 * @throws Exception						If there is another error.
 	 */
-	public PolygonFunction(ADQLOperand coordSystem, Vector<ADQLOperand> coords) throws UnsupportedOperationException, NullPointerException, Exception {
+	public PolygonFunction(ADQLOperand coordSystem, Vector<ADQLOperand> coords) throws UnsupportedOperationException, NullPointerException, Exception{
 		super(coordSystem);
 		if (coords == null || coords.size() < 6)
 			throw new NullPointerException("A POLYGON function must have at least 3 2-D coordinates !");
@@ -96,57 +95,57 @@ public class PolygonFunction extends GeometryFunction {
 	 * @param toCopy		The POLYGON function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public PolygonFunction(PolygonFunction toCopy) throws Exception {
+	public PolygonFunction(PolygonFunction toCopy) throws Exception{
 		super(toCopy);
 		coordinates = new Vector<ADQLOperand>(toCopy.coordinates.size());
 		for(ADQLOperand item : toCopy.coordinates)
 			coordinates.add((ADQLOperand)(item.getCopy()));
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new PolygonFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "POLYGON";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return false;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return true;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
-		ADQLOperand[] params = new ADQLOperand[coordinates.size()+1];
+	public ADQLOperand[] getParameters(){
+		ADQLOperand[] params = new ADQLOperand[coordinates.size() + 1];
 
 		params[0] = coordSys;
-		for(int i=0; i<coordinates.size(); i++)
-			params[i+1] = coordinates.get(i);
+		for(int i = 0; i < coordinates.size(); i++)
+			params[i + 1] = coordinates.get(i);
 
 		return params;
 	}
 
 	@Override
-	public int getNbParameters() {
-		return coordinates.size()+1;
+	public int getNbParameters(){
+		return coordinates.size() + 1;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index == 0)
 			return coordSys;
 		else if (index >= 1 && index <= coordinates.size())
-			return coordinates.get(index-1);
+			return coordinates.get(index - 1);
 		else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" ("+toADQL()+") !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" (" + toADQL() + ") !");
 	}
 
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (replacer == null)
 			throw new NullPointerException("Impossible to remove only one parameter from the function POLYGON !");
 
@@ -155,10 +154,10 @@ public class PolygonFunction extends GeometryFunction {
 			replaced = coordSys;
 			setCoordinateSystem(replacer);
 		}else if (index >= 1 && index <= coordinates.size()){
-			replaced = coordinates.get(index-1);
-			coordinates.set(index-1, replacer);
+			replaced = coordinates.get(index - 1);
+			coordinates.set(index - 1, replacer);
 		}else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+getName()+"\" ("+toADQL()+") !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" (" + toADQL() + ") !");
 		return replaced;
 	}
 

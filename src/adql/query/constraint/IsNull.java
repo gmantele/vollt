@@ -39,14 +39,13 @@ public class IsNull implements ADQLConstraint {
 	/** Indicates whether the predicate IS NOT NULL must be used rather than IS NULL. */
 	private boolean isNotNull = false;
 
-
 	/**
 	 * Builds a comparison between the given column and NULL.
 	 * 
 	 * @param column				The column whose the value must be compared to NULL.
 	 * @throws NullPointerException	If the given column is <i>null</i>.
 	 */
-	public IsNull(ADQLColumn column) throws NullPointerException {
+	public IsNull(ADQLColumn column) throws NullPointerException{
 		this(column, false);
 	}
 
@@ -57,7 +56,7 @@ public class IsNull implements ADQLConstraint {
 	 * @param isNot					<i>true</i> means IS NOT NULL, <i>false</i> means IS NULL.
 	 * @throws NullPointerException	If the given column is <i>null</i>.
 	 */
-	public IsNull(ADQLColumn column, boolean isNot) throws NullPointerException {
+	public IsNull(ADQLColumn column, boolean isNot) throws NullPointerException{
 		setColumn(column);
 		isNotNull = isNot;
 	}
@@ -68,7 +67,7 @@ public class IsNull implements ADQLConstraint {
 	 * @param toCopy		The IsNull to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public IsNull(IsNull toCopy) throws Exception {
+	public IsNull(IsNull toCopy) throws Exception{
 		column = (ADQLColumn)toCopy.column.getCopy();
 		isNotNull = toCopy.isNotNull;
 	}
@@ -88,7 +87,7 @@ public class IsNull implements ADQLConstraint {
 	 * @param column					The new column to compare to <i>NULL</i>.
 	 * @throws NullPointerException		If the given column is <i>null</i>.
 	 */
-	public final void setColumn(ADQLColumn column) throws NullPointerException {
+	public final void setColumn(ADQLColumn column) throws NullPointerException{
 		if (column == null)
 			throw new NullPointerException("Impossible to compare nothing to NULL: no column has been given to build a IsNull constraint !");
 		else
@@ -113,31 +112,31 @@ public class IsNull implements ADQLConstraint {
 		isNotNull = notNull;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new IsNull(this);
 	}
 
-	public String getName() {
-		return "IS"+(isNotNull?" NOT ":" ")+"NULL";
+	public String getName(){
+		return "IS" + (isNotNull ? " NOT " : " ") + "NULL";
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private boolean columnGot = (column == null);
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				if (columnGot)
 					throw new NoSuchElementException();
 				columnGot = true;
 				return column;
 			}
 
-			public boolean hasNext() {
+			public boolean hasNext(){
 				return !columnGot;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (!columnGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -146,20 +145,20 @@ public class IsNull implements ADQLConstraint {
 				else if (replacer instanceof ADQLColumn)
 					column = (ADQLColumn)replacer;
 				else
-					throw new UnsupportedOperationException("Impossible to replace a column ("+column.toADQL()+") by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") in a IsNull constraint ("+toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to replace a column (" + column.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") in a IsNull constraint (" + toADQL() + ") !");
 			}
 
-			public void remove() {
+			public void remove(){
 				if (!columnGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
-					throw new UnsupportedOperationException("Impossible to remove the only column ("+column.toADQL()+") of a constraint IsNull ("+toADQL()+") !");
+					throw new UnsupportedOperationException("Impossible to remove the only column (" + column.toADQL() + ") of a constraint IsNull (" + toADQL() + ") !");
 			}
 		};
 	}
 
-	public String toADQL() {
-		return column.toADQL()+" "+getName();
+	public String toADQL(){
+		return column.toADQL() + " " + getName();
 	}
 
 }

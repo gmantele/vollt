@@ -34,8 +34,7 @@ public final class LimitedSizeInputStream extends InputStream {
 
 	private boolean exceed = false;
 
-
-	public LimitedSizeInputStream(final InputStream stream, final long sizeLimit) throws NullPointerException {
+	public LimitedSizeInputStream(final InputStream stream, final long sizeLimit) throws NullPointerException{
 		if (stream == null)
 			throw new NullPointerException("The given input stream is NULL !");
 		input = stream;
@@ -45,7 +44,7 @@ public final class LimitedSizeInputStream extends InputStream {
 		this.sizeLimit = sizeLimit;
 	}
 
-	private void updateCounter(final long nbReads) throws ExceededSizeException {
+	private void updateCounter(final long nbReads) throws ExceededSizeException{
 		if (nbReads > 0){
 			counter += nbReads;
 			if (counter > sizeLimit){
@@ -60,55 +59,55 @@ public final class LimitedSizeInputStream extends InputStream {
 	}
 
 	@Override
-	public int read() throws IOException {
+	public int read() throws IOException{
 		int read = input.read();
 		updateCounter(1);
 		return read;
 	}
 
 	@Override
-	public int read(byte[] b) throws IOException {
+	public int read(byte[] b) throws IOException{
 		int nbRead = input.read(b);
 		updateCounter(nbRead);
 		return nbRead;
 	}
 
 	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
+	public int read(byte[] b, int off, int len) throws IOException{
 		int nbRead = input.read(b, off, len);
 		updateCounter(nbRead);
 		return nbRead;
 	}
 
 	@Override
-	public long skip(long n) throws IOException {
+	public long skip(long n) throws IOException{
 		long nbSkipped = input.skip(n);
 		updateCounter(nbSkipped);
 		return nbSkipped;
 	}
 
 	@Override
-	public int available() throws IOException {
+	public int available() throws IOException{
 		return input.available();
 	}
 
 	@Override
-	public void close() throws IOException {
+	public void close() throws IOException{
 		input.close();
 	}
 
 	@Override
-	public synchronized void mark(int readlimit) throws UnsupportedOperationException {
+	public synchronized void mark(int readlimit) throws UnsupportedOperationException{
 		throw new UnsupportedOperationException("mark() not supported in a LimitedSizeInputStream !");
 	}
 
 	@Override
-	public boolean markSupported() {
+	public boolean markSupported(){
 		return false;
 	}
 
 	@Override
-	public synchronized void reset() throws IOException, UnsupportedOperationException {
+	public synchronized void reset() throws IOException, UnsupportedOperationException{
 		throw new UnsupportedOperationException("mark() not supported in a LimitedSizeInputStream !");
 	}
 

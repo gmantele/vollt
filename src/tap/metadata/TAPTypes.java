@@ -40,9 +40,9 @@ import java.util.Map.Entry;
  */
 public final class TAPTypes {
 
-	private static final Map<String, VotType> dbTypes;
-	private static final Map<String, String> dbTypeAliases;
-	private static final Map<VotType, String> votTypes;
+	private static final Map<String,VotType> dbTypes;
+	private static final Map<String,String> dbTypeAliases;
+	private static final Map<VotType,String> votTypes;
 
 	public static final String SMALLINT = "SMALLINT";
 	public static final String INTEGER = "INTEGER";
@@ -65,9 +65,9 @@ public final class TAPTypes {
 	/** Means '*' (i.e. char(*)). */
 	public static final int STAR_SIZE = -12345;
 
-	static {
-		dbTypes = new HashMap<String, VotType>(14);
-		votTypes = new HashMap<VotType, String>(7);
+	static{
+		dbTypes = new HashMap<String,VotType>(14);
+		votTypes = new HashMap<VotType,String>(7);
 
 		VotType type = new VotType("short", 1, null);
 		dbTypes.put(SMALLINT, type);
@@ -121,7 +121,7 @@ public final class TAPTypes {
 		dbTypes.put(REGION, type);
 		votTypes.put(type, REGION);
 
-		dbTypeAliases = new HashMap<String, String>(8);
+		dbTypeAliases = new HashMap<String,String>(8);
 		// PostgreSQL data types:
 		dbTypeAliases.put("INT2", SMALLINT);
 		dbTypeAliases.put("INT", INTEGER);
@@ -306,49 +306,52 @@ public final class TAPTypes {
 		return true;
 	}
 
-
 	/** SELF TEST */
-	public final static void main(final String[] args) throws Exception {
+	public final static void main(final String[] args) throws Exception{
 		System.out.println("***** DB TYPES *****");
 		Iterator<String> itDB = TAPTypes.getDBTypes();
 		while(itDB.hasNext())
-			System.out.println("\t- "+itDB.next());
+			System.out.println("\t- " + itDB.next());
 
 		System.out.println("\n***** DB TYPE ALIASES *****");
 		Iterator<Entry<String,String>> itAliases = TAPTypes.getDBTypeAliases();
 		while(itAliases.hasNext()){
-			Entry<String, String> e = itAliases.next();
-			System.out.println("\t- "+e.getKey()+" = "+e.getValue());
+			Entry<String,String> e = itAliases.next();
+			System.out.println("\t- " + e.getKey() + " = " + e.getValue());
 		}
 
 		System.out.println("\n***** VOTABLE TYPES *****");
 		Iterator<VotType> itVot = TAPTypes.getVotTypes();
 		while(itVot.hasNext())
-			System.out.println("\t- "+itVot.next());
-
+			System.out.println("\t- " + itVot.next());
 
 		byte[] buffer = new byte[1024];
 		int nbRead = 0;
 		String type = null;
 
 		System.out.print("\nDB Type ? ");
-		nbRead=System.in.read(buffer); type = new String(buffer, 0, nbRead);
+		nbRead = System.in.read(buffer);
+		type = new String(buffer, 0, nbRead);
 		System.out.println(TAPTypes.getVotType(type));
 
 		int arraysize = 1;
 		String xtype = null;
 		VotType votType = null;
 		System.out.print("\nVOTable datatype ? ");
-		nbRead=System.in.read(buffer); type = (new String(buffer, 0, nbRead)).trim();
+		nbRead = System.in.read(buffer);
+		type = (new String(buffer, 0, nbRead)).trim();
 		System.out.print("VOTable arraysize ? ");
-		nbRead=System.in.read(buffer);
+		nbRead = System.in.read(buffer);
 		try{
 			arraysize = Integer.parseInt((new String(buffer, 0, nbRead)).trim());
 		}catch(NumberFormatException nfe){
 			arraysize = STAR_SIZE;
 		}
 		System.out.print("VOTable xtype ? ");
-		nbRead=System.in.read(buffer); xtype = (new String(buffer, 0, nbRead)).trim(); if (xtype != null && xtype.length() == 0) xtype = null;
+		nbRead = System.in.read(buffer);
+		xtype = (new String(buffer, 0, nbRead)).trim();
+		if (xtype != null && xtype.length() == 0)
+			xtype = null;
 		votType = new VotType(type, arraysize, xtype);
 		System.out.println(TAPTypes.getDBType(votType));
 	}

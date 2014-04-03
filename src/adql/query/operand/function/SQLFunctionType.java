@@ -27,11 +27,6 @@ package adql.query.operand.function;
  * 
  * @see SQLFunction
  */
-public enum SQLFunctionType {
-	COUNT_ALL,
-	COUNT,
-	AVG,
-	MAX,
-	MIN,
-	SUM;
+public enum SQLFunctionType{
+	COUNT_ALL, COUNT, AVG, MAX, MIN, SUM;
 }

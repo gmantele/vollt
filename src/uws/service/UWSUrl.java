@@ -66,7 +66,6 @@ public class UWSUrl implements Serializable {
 	/** Name of the job attribute found in uwsURI (i.e. {results, report}). */
 	protected String[] attributes = new String[0];						// {results, report}
 
-
 	/* ************ */
 	/* CONSTRUCTORS */
 	/* ************ */
@@ -94,7 +93,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @throws UWSException		If the given baseURI is <i>null</i> or is an empty string.
 	 */
-	public UWSUrl(String baseURI) throws UWSException {
+	public UWSUrl(String baseURI) throws UWSException{
 		if (baseURI == null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "The given base UWS URI is NULL !");
 
@@ -113,7 +112,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @see #extractBaseURI(HttpServletRequest)
 	 */
-	public UWSUrl(HttpServletRequest request) throws UWSException {
+	public UWSUrl(HttpServletRequest request) throws UWSException{
 		String uri = extractBaseURI(request);
 		if (uri == null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "The extracted base UWS URI is NULL !");
@@ -150,9 +149,9 @@ public class UWSUrl implements Serializable {
 	protected static final String normalizeURI(String uri){
 		uri = uri.trim();
 		if (uri.length() > 0 && uri.charAt(0) != '/')
-			uri = "/"+uri;
-		while (uri.length() >= 1 && uri.charAt(uri.length()-1) == '/')
-			uri = uri.substring(0, uri.length()-1).trim();
+			uri = "/" + uri;
+		while(uri.length() >= 1 && uri.charAt(uri.length() - 1) == '/')
+			uri = uri.substring(0, uri.length() - 1).trim();
 		return uri.trim();
 	}
 
@@ -203,7 +202,9 @@ public class UWSUrl implements Serializable {
 				URL url = null;
 				try{
 					url = new URL(request.getRequestURL().toString());
-				}catch(MalformedURLException ex){;}
+				}catch(MalformedURLException ex){
+					;
+				}
 				load(url);
 				return;
 			}
@@ -299,9 +300,9 @@ public class UWSUrl implements Serializable {
 			}
 
 			if (uriParts.length >= 4){
-				attributes = new String[uriParts.length-3];
-				for(int i=3; i<uriParts.length; i++)
-					attributes[i-3] = uriParts[i].trim();
+				attributes = new String[uriParts.length - 3];
+				for(int i = 3; i < uriParts.length; i++)
+					attributes[i - 3] = uriParts[i].trim();
 			}
 		}
 	}
@@ -314,7 +315,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @return The baseUri.
 	 */
-	public final String getBaseURI() {
+	public final String getBaseURI(){
 		return baseURI;
 	}
 
@@ -324,7 +325,7 @@ public class UWSUrl implements Serializable {
 	 * @return	The presumed UWS name.
 	 */
 	public final String getUWSName(){
-		return baseURI.substring(baseURI.lastIndexOf('/')+1);
+		return baseURI.substring(baseURI.lastIndexOf('/') + 1);
 	}
 
 	/**
@@ -398,7 +399,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @return The extracted jobs list name.
 	 */
-	public final String getJobListName() {
+	public final String getJobListName(){
 		return jobListName;
 	}
 
@@ -416,7 +417,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @return The extracted job ID.
 	 */
-	public final String getJobId() {
+	public final String getJobId(){
 		return jobId;
 	}
 
@@ -492,8 +493,8 @@ public class UWSUrl implements Serializable {
 	 * </p>
 	 */
 	protected void updateRequestURL(){
-		requestURI = baseURI+((uwsURI != null)?uwsURI:"");
-		requestURL = (urlHeader==null)?null:(urlHeader+requestURI);
+		requestURI = baseURI + ((uwsURI != null) ? uwsURI : "");
+		requestURL = (urlHeader == null) ? null : (urlHeader + requestURI);
 	}
 
 	/**
@@ -523,7 +524,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @see #updateUwsURI()
 	 */
-	public final void setJobListName(String jobListName) {
+	public final void setJobListName(String jobListName){
 		this.jobListName = jobListName;
 		updateUwsURI();
 	}
@@ -536,7 +537,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @see #updateUwsURI()
 	 */
-	public final void setJobId(String jobId) {
+	public final void setJobId(String jobId){
 		this.jobId = jobId;
 		updateUwsURI();
 	}
@@ -565,60 +566,145 @@ public class UWSUrl implements Serializable {
 	/* URL BUILDING METHODS */
 	/* ******************** */
 	/** Gets the base UWS URI = UWS home page. */
-	public final UWSUrl homePage() {
+	public final UWSUrl homePage(){
 		UWSUrl url = new UWSUrl(this);
 		url.setUwsURI(null);
 		return url;
 	}
 
 	/** Gets the UWS URL to get the specified <b>jobs list</b>. */
-	public final UWSUrl listJobs		(String jobListName) 								{ UWSUrl url = homePage(); url.setJobListName(jobListName); return url;	}
+	public final UWSUrl listJobs(String jobListName){
+		UWSUrl url = homePage();
+		url.setJobListName(jobListName);
+		return url;
+	}
 
 	/** Gets the UWS URL to get the <b>summary</b>. */
-	public final UWSUrl jobSummary 		(String jobListName, String jobId)					{ UWSUrl url = listJobs(jobListName); url.setJobId(jobId); return url;	}
+	public final UWSUrl jobSummary(String jobListName, String jobId){
+		UWSUrl url = listJobs(jobListName);
+		url.setJobId(jobId);
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>runID</b>. */
-	public final UWSUrl jobName			(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_RUN_ID}); return url;	}
+	public final UWSUrl jobName(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_RUN_ID});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>phase</b>. */
-	public final UWSUrl jobPhase 		(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_PHASE}); return url;	}
+	public final UWSUrl jobPhase(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_PHASE});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>execution duration</b>. */
-	public final UWSUrl jobExecDuration (String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_EXECUTION_DURATION}); return url;		}
+	public final UWSUrl jobExecDuration(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_EXECUTION_DURATION});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>destruction time</b>. */
-	public final UWSUrl jobDestruction 	(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_DESTRUCTION_TIME}); return url;			}
+	public final UWSUrl jobDestruction(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_DESTRUCTION_TIME});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>error summary</b>. */
-	public final UWSUrl jobError 		(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_ERROR_SUMMARY}); return url;			}
+	public final UWSUrl jobError(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_ERROR_SUMMARY});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>quote</b>. */
-	public final UWSUrl jobQuote 		(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_QUOTE}); return url; 	}
+	public final UWSUrl jobQuote(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_QUOTE});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>results</b>. */
-	public final UWSUrl jobResults 		(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_RESULTS}); return url;	}
+	public final UWSUrl jobResults(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_RESULTS});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>specified result</b>. */
-	public final UWSUrl jobResult		(String jobListName, String jobId, String resultId)	{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_RESULTS, resultId}); return url;		}
+	public final UWSUrl jobResult(String jobListName, String jobId, String resultId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_RESULTS,resultId});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>parameters</b>. */
-	public final UWSUrl jobParameters 	(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_PARAMETERS}); return url;		 		}
+	public final UWSUrl jobParameters(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_PARAMETERS});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>parameters/parameter</b>. */
-	public final UWSUrl jobParameter 	(String jobListName, String jobId, String paramName){ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_PARAMETERS, paramName}); return url; 	}
+	public final UWSUrl jobParameter(String jobListName, String jobId, String paramName){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_PARAMETERS,paramName});
+		return url;
+	}
+
 	/** Gets the UWS URL to get the <b>owner ID</b>. */
-	public final UWSUrl jobOwner		(String jobListName, String jobId)					{ UWSUrl url = jobSummary(jobListName, jobId); url.setAttributes(new String[]{UWSJob.PARAM_OWNER}); return url;	}
+	public final UWSUrl jobOwner(String jobListName, String jobId){
+		UWSUrl url = jobSummary(jobListName, jobId);
+		url.setAttributes(new String[]{UWSJob.PARAM_OWNER});
+		return url;
+	}
 
 	/* ******************************* */
 	/* URL BUILDING METHODS (HTTP GET) */
 	/* ******************************* */
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>create</b> a job with the given parameters. */
-	public final String createJob				(String jobListName, Map<String,String> parameters)						{ return listJobs(jobListName)			+"?"+UWSToolBox.getQueryPart(parameters); }
+	public final String createJob(String jobListName, Map<String,String> parameters){
+		return listJobs(jobListName) + "?" + UWSToolBox.getQueryPart(parameters);
+	}
+
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>delete</b> the specified job. */
-	public final String deleteJob				(String jobListName, String jobId)										{ return jobSummary(jobListName, jobId)		+"?"+UWSJob.PARAM_ACTION+"="+UWSJob.ACTION_DELETE; }
+	public final String deleteJob(String jobListName, String jobId){
+		return jobSummary(jobListName, jobId) + "?" + UWSJob.PARAM_ACTION + "=" + UWSJob.ACTION_DELETE;
+	}
+
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>start</b> the specified job. */
-	public final String startJob				(String jobListName, String jobId)										{ return jobPhase(jobListName, jobId)			+"?"+UWSJob.PARAM_PHASE.toUpperCase()+"="+UWSJob.PHASE_RUN; }
+	public final String startJob(String jobListName, String jobId){
+		return jobPhase(jobListName, jobId) + "?" + UWSJob.PARAM_PHASE.toUpperCase() + "=" + UWSJob.PHASE_RUN;
+	}
+
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>abort</b> the specified job. */
-	public final String abortJob				(String jobListName, String jobId)										{ return jobPhase(jobListName, jobId)			+"?"+UWSJob.PARAM_PHASE.toUpperCase()+"="+UWSJob.PHASE_ABORT; }
+	public final String abortJob(String jobListName, String jobId){
+		return jobPhase(jobListName, jobId) + "?" + UWSJob.PARAM_PHASE.toUpperCase() + "=" + UWSJob.PHASE_ABORT;
+	}
 
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the run ID. */
-	public final String changeJobName			(String jobListName, String jobId, String newName)						{ return jobName(jobListName, jobId)			+"?"+UWSJob.PARAM_RUN_ID.toUpperCase()+"="+newName; }
+	public final String changeJobName(String jobListName, String jobId, String newName){
+		return jobName(jobListName, jobId) + "?" + UWSJob.PARAM_RUN_ID.toUpperCase() + "=" + newName;
+	}
+
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the destruction time. */
-	public final String changeDestructionTime	(String jobListName, String jobId, String newDestructionTime)			{ return jobDestruction(jobListName, jobId)	+"?"+UWSJob.PARAM_DESTRUCTION_TIME.toUpperCase()+"="+newDestructionTime; }
+	public final String changeDestructionTime(String jobListName, String jobId, String newDestructionTime){
+		return jobDestruction(jobListName, jobId) + "?" + UWSJob.PARAM_DESTRUCTION_TIME.toUpperCase() + "=" + newDestructionTime;
+	}
+
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the execution duration. */
-	public final String changeExecDuration		(String jobListName, String jobId, String newExecDuration)				{ return jobExecDuration(jobListName, jobId)	+"?"+UWSJob.PARAM_EXECUTION_DURATION.toUpperCase()+"="+newExecDuration; }
+	public final String changeExecDuration(String jobListName, String jobId, String newExecDuration){
+		return jobExecDuration(jobListName, jobId) + "?" + UWSJob.PARAM_EXECUTION_DURATION.toUpperCase() + "=" + newExecDuration;
+	}
+
 	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the specified parameter. */
-	public final String changeJobParam			(String jobListName, String jobId, String paramName, String paramValue)	{ return jobParameters(jobListName, jobId)	+"?"+paramName.toUpperCase()+"="+paramValue; }
+	public final String changeJobParam(String jobListName, String jobId, String paramName, String paramValue){
+		return jobParameters(jobListName, jobId) + "?" + paramName.toUpperCase() + "=" + paramValue;
+	}
 
 	/**
 	 * Gets the full request URL corresponding to this UWSUrl.
@@ -629,7 +715,7 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @see #getRequestURL()
 	 */
-	public URL toURL() throws MalformedURLException {
+	public URL toURL() throws MalformedURLException{
 		String url = getRequestURL();
 		return (url != null) ? (new URL(url)) : null;
 	}

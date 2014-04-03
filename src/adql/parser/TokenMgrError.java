@@ -11,8 +11,7 @@ package adql.parser;
  * 
  */
 @SuppressWarnings("all")
-public class TokenMgrError extends Error
-{
+public class TokenMgrError extends Error {
 
 	/**
 	 * The version identifier for this Serializable class.
@@ -61,46 +60,45 @@ public class TokenMgrError extends Error
 	 * Replaces unprintable characters by their escaped (or unicode escaped)
 	 * equivalents in the given string
 	 */
-	protected static final String addEscapes(String str) {
+	protected static final String addEscapes(String str){
 		StringBuffer retval = new StringBuffer();
 		char ch;
-		for (int i = 0; i < str.length(); i++) {
-			switch (str.charAt(i))
-			{
-			case 0 :
-				continue;
-			case '\b':
-				retval.append("\\b");
-				continue;
-			case '\t':
-				retval.append("\\t");
-				continue;
-			case '\n':
-				retval.append("\\n");
-				continue;
-			case '\f':
-				retval.append("\\f");
-				continue;
-			case '\r':
-				retval.append("\\r");
-				continue;
-			case '\"':
-				retval.append("\\\"");
-				continue;
-			case '\'':
-				retval.append("\\\'");
-				continue;
-			case '\\':
-				retval.append("\\\\");
-				continue;
-			default:
-				if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e) {
-					String s = "0000" + Integer.toString(ch, 16);
-					retval.append("\\u" + s.substring(s.length() - 4, s.length()));
-				} else {
-					retval.append(ch);
-				}
-				continue;
+		for(int i = 0; i < str.length(); i++){
+			switch(str.charAt(i)){
+				case 0:
+					continue;
+				case '\b':
+					retval.append("\\b");
+					continue;
+				case '\t':
+					retval.append("\\t");
+					continue;
+				case '\n':
+					retval.append("\\n");
+					continue;
+				case '\f':
+					retval.append("\\f");
+					continue;
+				case '\r':
+					retval.append("\\r");
+					continue;
+				case '\"':
+					retval.append("\\\"");
+					continue;
+				case '\'':
+					retval.append("\\\'");
+					continue;
+				case '\\':
+					retval.append("\\\\");
+					continue;
+				default:
+					if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e){
+						String s = "0000" + Integer.toString(ch, 16);
+						retval.append("\\u" + s.substring(s.length() - 4, s.length()));
+					}else{
+						retval.append(ch);
+					}
+					continue;
 			}
 		}
 		return retval.toString();
@@ -118,12 +116,8 @@ public class TokenMgrError extends Error
 	 *    curchar     : the offending character
 	 * Note: You can customize the lexical error message by modifying this method.
 	 */
-	protected static String LexicalError(boolean EOFSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar) {
-		return("Lexical error at line " +
-				errorLine + ", column " +
-				errorColumn + ".  Encountered: " +
-				(EOFSeen ? "<EOF> " : ("\"" + addEscapes(String.valueOf(curChar)) + "\"") + " (" + (int)curChar + "), ") +
-				"after : \"" + addEscapes(errorAfter) + "\"");
+	protected static String LexicalError(boolean EOFSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar){
+		return ("Lexical error at line " + errorLine + ", column " + errorColumn + ".  Encountered: " + (EOFSeen ? "<EOF> " : ("\"" + addEscapes(String.valueOf(curChar)) + "\"") + " (" + (int)curChar + "), ") + "after : \"" + addEscapes(errorAfter) + "\"");
 	}
 
 	/**
@@ -135,7 +129,7 @@ public class TokenMgrError extends Error
 	 *
 	 * from this method for such cases in the release version of your parser.
 	 */
-	public String getMessage() {
+	public String getMessage(){
 		return super.getMessage();
 	}
 
@@ -162,17 +156,16 @@ public class TokenMgrError extends Error
 	 */
 
 	/** No arg constructor. */
-	public TokenMgrError() {
-	}
+	public TokenMgrError(){}
 
 	/** Constructor with message and reason. */
-	public TokenMgrError(String message, int reason) {
+	public TokenMgrError(String message, int reason){
 		super(message);
 		errorCode = reason;
 	}
 
 	/** Full Constructor. */
-	public TokenMgrError(boolean EOFSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar, int reason) {
+	public TokenMgrError(boolean EOFSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar, int reason){
 		this(LexicalError(EOFSeen, lexState, errorLine, errorColumn, errorAfter, curChar), reason);
 		this.errorLine = errorLine;
 		this.errorColumn = errorColumn;

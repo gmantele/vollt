@@ -45,18 +45,18 @@ public class TAPExecutionReport {
 
 	protected int getIndexDuration(final ExecutionProgression tapProgression){
 		switch(tapProgression){
-		case UPLOADING:
-			return 0;
-		case PARSING:
-			return 1;
-		case TRANSLATING:
-			return 2;
-		case EXECUTING_SQL:
-			return 3;
-		case WRITING_RESULT:
-			return 4;
-		default:
-			return -1;
+			case UPLOADING:
+				return 0;
+			case PARSING:
+				return 1;
+			case TRANSLATING:
+				return 2;
+			case EXECUTING_SQL:
+				return 3;
+			case WRITING_RESULT:
+				return 4;
+			default:
+				return -1;
 		}
 	}
 

@@ -44,7 +44,7 @@ public class DefaultUWSErrorWriter extends AbstractServiceErrorWriter {
 	}
 
 	@Override
-	public void writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException {
+	public void writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException{
 		if (t instanceof UWSException){
 			UWSException ue = (UWSException)t;
 			formatError(ue, (ue.getMessage() == null || ue.getMessage().trim().isEmpty()), ue.getUWSErrorType(), ue.getHttpErrorCode(), action, user, response, request.getHeader("Accept"));

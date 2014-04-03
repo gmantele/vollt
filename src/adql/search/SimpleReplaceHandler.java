@@ -44,7 +44,6 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 	/** Count matching objects which have been replaced successfully. */
 	protected int nbReplacement = 0;
 
-
 	/**
 	 * <p>Builds a SimpleReplaceHandler:</p>
 	 * <ul>
@@ -75,8 +74,7 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 		super(recursive, onlyFirstMatch);
 	}
 
-
-	public int getNbReplacement() {
+	public int getNbReplacement(){
 		return nbReplacement;
 	}
 
@@ -87,7 +85,7 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 	}
 
 	@Override
-	protected void addMatch(ADQLObject matchObj, ADQLIterator it) {
+	protected void addMatch(ADQLObject matchObj, ADQLIterator it){
 		super.addMatch(matchObj, it);
 
 		if (replaceActive && it != null){

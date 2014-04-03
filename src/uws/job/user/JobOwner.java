@@ -101,13 +101,13 @@ public interface JobOwner {
 	 * 
 	 * @return	A map with some key/value pairs, <i>null</i> or an empty map if no additional user data.
 	 */
-	public Map<String, Object> getDataToSave();
+	public Map<String,Object> getDataToSave();
 
 	/**
 	 * Restores any additional user data from the given map.
 	 * 
 	 * @param data	A map with some key/value pairs, <i>null</i> or an empty map if no additional user data.
 	 */
-	public void restoreData(final Map<String, Object> data);
+	public void restoreData(final Map<String,Object> data);
 
 }

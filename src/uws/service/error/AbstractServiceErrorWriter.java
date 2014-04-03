@@ -38,7 +38,7 @@ import uws.service.log.UWSLog;
  */
 public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 
-	protected final String[] managedFormats = new String[]{"application/json", "json", "text/json", "text/html", "html"};
+	protected final String[] managedFormats = new String[]{"application/json","json","text/json","text/html","html"};
 
 	/**
 	 * Logger to use to display the given errors in the appropriate log files.
@@ -47,21 +47,21 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 	protected abstract UWSLog getLogger();
 
 	@Override
-	public void writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException {
+	public void writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException{
 		if (t != null && response != null){
-			formatError(t, true, ErrorType.FATAL, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, action, user, response, (request!=null)?request.getHeader("Accept"):null);
+			formatError(t, true, ErrorType.FATAL, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, action, user, response, (request != null) ? request.getHeader("Accept") : null);
 			getLogger().error(t);
 			String errorMsg = t.getMessage();
 			if (errorMsg == null || errorMsg.trim().isEmpty())
-				errorMsg = t.getClass().getName()+" (no error message)";
+				errorMsg = t.getClass().getName() + " (no error message)";
 			getLogger().httpRequest(request, user, action, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMsg, t);
 		}
 	}
 
 	@Override
-	public void writeError(String message, ErrorType type, int httpErrorCode, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException {
+	public void writeError(String message, ErrorType type, int httpErrorCode, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException{
 		if (message != null && response != null){
-			formatError(new Exception(message), false, type, httpErrorCode, action, user, response, (request!=null)?request.getHeader("Accept"):null);
+			formatError(new Exception(message), false, type, httpErrorCode, action, user, response, (request != null) ? request.getHeader("Accept") : null);
 			getLogger().httpRequest(request, user, action, httpErrorCode, message, null);
 		}
 	}
@@ -107,7 +107,7 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 	 * @see #formatHTMLError(Throwable, boolean, ErrorType, int, String, JobOwner, HttpServletResponse)
 	 * @see #formatJSONError(Throwable, boolean, ErrorType, int, String, JobOwner, HttpServletResponse)
 	 */
-	protected void formatError(final Throwable t, final boolean printStackTrace, final ErrorType type, final int httpErrorCode, final String action, final JobOwner user, final HttpServletResponse response, final String acceptHeader) throws IOException {
+	protected void formatError(final Throwable t, final boolean printStackTrace, final ErrorType type, final int httpErrorCode, final String action, final JobOwner user, final HttpServletResponse response, final String acceptHeader) throws IOException{
 		// Reset the whole response to ensure the output stream is free:
 		if (response.isCommitted())
 			return;
@@ -134,7 +134,7 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 	 * 
 	 * @throws IOException		If there is an error while writing the given exception.
 	 */
-	protected void formatHTMLError(final Throwable t, final boolean printStackTrace, final ErrorType type, final int httpErrorCode, final String action, final JobOwner user, final HttpServletResponse response) throws IOException {
+	protected void formatHTMLError(final Throwable t, final boolean printStackTrace, final ErrorType type, final int httpErrorCode, final String action, final JobOwner user, final HttpServletResponse response) throws IOException{
 		// Set the HTTP status code and the content type of the response:
 		response.setStatus(httpErrorCode);
 		response.setContentType(UWSSerializer.MIME_TYPE_HTML);
@@ -159,30 +159,30 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 		out.println("\t</head>\n\t<body>");
 
 		// Title:
-		String errorColor = (type == ErrorType.FATAL)?"red":"orange";
-		out.println("\t\t<h1 style=\"text-align: center; background-color:"+errorColor+"; color: white; font-weight: bold;\">SERVICE ERROR - "+httpErrorCode+"</h1>");
+		String errorColor = (type == ErrorType.FATAL) ? "red" : "orange";
+		out.println("\t\t<h1 style=\"text-align: center; background-color:" + errorColor + "; color: white; font-weight: bold;\">SERVICE ERROR - " + httpErrorCode + "</h1>");
 
 		// Description part:
 		out.println("\t\t<h2>Description</h2>");
 		out.println("\t\t<ul>");
-		out.println("\t\t\t<li><b>Type: </b>"+type+"</li>");
+		out.println("\t\t\t<li><b>Type: </b>" + type + "</li>");
 		if (action != null && !action.trim().isEmpty())
-			out.println("\t\t\t<li><b>Action: </b>"+action+"</li>");
-		String context=null;
+			out.println("\t\t\t<li><b>Action: </b>" + action + "</li>");
+		String context = null;
 		String msg = t.getMessage();
 		if (msg != null && !msg.trim().isEmpty()){
-			int start=msg.indexOf("["), end=msg.indexOf("]");
+			int start = msg.indexOf("["), end = msg.indexOf("]");
 			if (start >= 0 && start < end){
-				context = msg.substring(start+1, end);
-				msg = msg.substring(end+1);
+				context = msg.substring(start + 1, end);
+				msg = msg.substring(end + 1);
 			}
 		}else
 			msg = "";
 		if (context != null)
-			out.println("\t\t\t<li><b>Context: </b>"+context+"</li>");
+			out.println("\t\t\t<li><b>Context: </b>" + context + "</li>");
 		if (printStackTrace)
-			out.println("\t\t\t<li><b>Exception: </b>"+t.getClass().getName()+"</li>");
-		out.println("\t\t\t<li><b>Message:</b><p>"+msg+"</p></li>");
+			out.println("\t\t\t<li><b>Exception: </b>" + t.getClass().getName() + "</li>");
+		out.println("\t\t\t<li><b>Message:</b><p>" + msg + "</p></li>");
 		out.println("\t\t</ul>");
 
 		// Stack trace part:
@@ -193,15 +193,15 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 				out.println("\t\t<table style=\"width: ihnerit;\">");
 				out.println("\t\t\t<tr><th>Class</th><th>Method</th><th>Line</th></tr>");
 				StackTraceElement[] trace = cause.getStackTrace();
-				for(int i=0; i<trace.length; i++)
-					out.println("\t\t\t<tr"+((i%2 != 0)?" class=\"alt\"":"")+"><td>"+trace[i].getClassName()+"</td><td>"+trace[i].getMethodName()+"</td><td>"+trace[i].getLineNumber()+"</td></tr>");
+				for(int i = 0; i < trace.length; i++)
+					out.println("\t\t\t<tr" + ((i % 2 != 0) ? " class=\"alt\"" : "") + "><td>" + trace[i].getClassName() + "</td><td>" + trace[i].getMethodName() + "</td><td>" + trace[i].getLineNumber() + "</td></tr>");
 				out.println("\t\t</table>");
 
 				// Print the stack trace of the "next" error:
 				cause = cause.getCause();
 				if (cause != null){
-					out.println("\t\t<p><b>Caused by "+cause.getClass().getName()+":</b></p>");
-					out.println("\t\t<p>"+cause.getMessage()+"</p>");
+					out.println("\t\t<p><b>Caused by " + cause.getClass().getName() + ":</b></p>");
+					out.println("\t\t<p>" + cause.getMessage() + "</p>");
 				}
 			}while(cause != null);
 		}
@@ -224,7 +224,7 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 	 * 
 	 * @throws IOException		If there is an error while writing the given exception.
 	 */
-	protected void formatJSONError(final Throwable t, final boolean printStackTrace, final ErrorType type, final int httpErrorCode, final String action, final JobOwner user, final HttpServletResponse response) throws IOException {
+	protected void formatJSONError(final Throwable t, final boolean printStackTrace, final ErrorType type, final int httpErrorCode, final String action, final JobOwner user, final HttpServletResponse response) throws IOException{
 		// Set the HTTP status code and the content type of the response:
 		response.setStatus(httpErrorCode);
 		response.setContentType(UWSSerializer.MIME_TYPE_JSON);
@@ -238,13 +238,13 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 			json.key("errortype").value(type.toString());
 			json.key("action").value(action);
 
-			String context=null;
+			String context = null;
 			String msg = t.getMessage();
 			if (msg != null && !msg.trim().isEmpty()){
-				int start=msg.indexOf("["), end=msg.indexOf("]");
+				int start = msg.indexOf("["), end = msg.indexOf("]");
 				if (start >= 0 && start < end){
-					context = msg.substring(start+1, end);
-					msg = msg.substring(end+1);
+					context = msg.substring(start + 1, end);
+					msg = msg.substring(end + 1);
 				}
 			}else
 				msg = "";
@@ -263,7 +263,7 @@ public abstract class AbstractServiceErrorWriter implements ServiceErrorWriter {
 					json.key("exception").value(cause.getClass().getName());
 					json.key("stacktrace").array();
 					StackTraceElement[] trace = cause.getStackTrace();
-					for(int i=0; i<trace.length; i++){
+					for(int i = 0; i < trace.length; i++){
 						json.object();
 						json.key("class").value(trace[i].getClassName());
 						json.key("method").value(trace[i].getMethodName());

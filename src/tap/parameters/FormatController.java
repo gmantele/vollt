@@ -28,7 +28,7 @@ import uws.UWSException;
 import uws.UWSExceptionFactory;
 import uws.job.parameters.InputParamController;
 
-public class FormatController<R> implements InputParamController {
+public class FormatController< R > implements InputParamController {
 
 	protected final ServiceConnection<R> service;
 	protected boolean allowModification = true;
@@ -38,7 +38,7 @@ public class FormatController<R> implements InputParamController {
 	}
 
 	@Override
-	public final boolean allowModification() {
+	public final boolean allowModification(){
 		return allowModification;
 	}
 
@@ -47,12 +47,12 @@ public class FormatController<R> implements InputParamController {
 	}
 
 	@Override
-	public Object getDefault() {
+	public Object getDefault(){
 		return TAPJob.FORMAT_VOTABLE;
 	}
 
 	@Override
-	public Object check(Object format) throws UWSException {
+	public Object check(Object format) throws UWSException{
 		if (format == null)
 			return null;
 
@@ -62,21 +62,21 @@ public class FormatController<R> implements InputParamController {
 				return getDefault();
 
 			if (service.getOutputFormat(strFormat) == null)
-				throw new UWSException(UWSException.BAD_REQUEST, "Unknown output format (="+strFormat+") ! This TAP service can format query results ONLY in the following formats:"+getAllowedFormats()+".");
+				throw new UWSException(UWSException.BAD_REQUEST, "Unknown output format (=" + strFormat + ") ! This TAP service can format query results ONLY in the following formats:" + getAllowedFormats() + ".");
 			else
 				return strFormat;
 		}else
-			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_FORMAT, format.toString(), format.getClass().getName(), "A String equals to one of the following values: "+getAllowedFormats()+".");
+			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_FORMAT, format.toString(), format.getClass().getName(), "A String equals to one of the following values: " + getAllowedFormats() + ".");
 	}
 
 	public final String getAllowedFormats(){
 		Iterator<OutputFormat<R>> itFormats = service.getOutputFormats();
 		StringBuffer allowedFormats = new StringBuffer();
-		int i=0;
+		int i = 0;
 		OutputFormat<R> formatter;
 		while(itFormats.hasNext()){
 			formatter = itFormats.next();
-			allowedFormats.append((i==0)?"":", ").append(formatter.getMimeType());
+			allowedFormats.append((i == 0) ? "" : ", ").append(formatter.getMimeType());
 			if (formatter.getShortMimeType() != null && formatter.getShortMimeType().length() > 0)
 				allowedFormats.append(" (or ").append(formatter.getShortMimeType()).append(')');
 			i++;

@@ -30,7 +30,6 @@ public class ADQLOrder extends ColumnReference {
 	/** Gives an indication about how to order the results of a query. (<i>true</i> for DESCending, <i>false</i> for ASCending) */
 	private boolean descSorting = false;
 
-
 	/**
 	 * Builds an order indication with the index of the selected column on which an ASCending ordering will be done.
 	 * 
@@ -40,7 +39,7 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @see ADQLOrder#ADQLOrder(int, boolean)
 	 */
-	public ADQLOrder(int colIndex) throws ArrayIndexOutOfBoundsException {
+	public ADQLOrder(int colIndex) throws ArrayIndexOutOfBoundsException{
 		this(colIndex, false);
 	}
 
@@ -52,7 +51,7 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	If the index is less or equal 0.
 	 */
-	public ADQLOrder(int colIndex, boolean desc) throws ArrayIndexOutOfBoundsException {
+	public ADQLOrder(int colIndex, boolean desc) throws ArrayIndexOutOfBoundsException{
 		super(colIndex);
 		descSorting = desc;
 	}
@@ -66,7 +65,7 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @see ADQLOrder#ADQLOrder(String, boolean)
 	 */
-	public ADQLOrder(String colName) throws NullPointerException {
+	public ADQLOrder(String colName) throws NullPointerException{
 		this(colName, false);
 	}
 
@@ -78,7 +77,7 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @throws NullPointerException	If the given name is <i>null</i> or is an empty string.
 	 */
-	public ADQLOrder(String colName, boolean desc) throws NullPointerException {
+	public ADQLOrder(String colName, boolean desc) throws NullPointerException{
 		super(colName);
 		descSorting = desc;
 	}
@@ -88,7 +87,7 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @param toCopy		The ORDER BY item to copy.
 	 */
-	public ADQLOrder(ADQLOrder toCopy) {
+	public ADQLOrder(ADQLOrder toCopy){
 		super(toCopy);
 		descSorting = toCopy.descSorting;
 	}
@@ -98,7 +97,7 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @return <i>true</i> DESCending order, <i>false</i> ASCending order.
 	 */
-	public boolean isDescSorting() {
+	public boolean isDescSorting(){
 		return descSorting;
 	}
 
@@ -110,9 +109,9 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @throws IndexOutOfBoundsException	If the given index is less or equal 0.
 	 */
-	public void setOrder(int colIndex, boolean desc) throws ArrayIndexOutOfBoundsException {
+	public void setOrder(int colIndex, boolean desc) throws ArrayIndexOutOfBoundsException{
 		if (colIndex <= 0)
-			throw new ArrayIndexOutOfBoundsException("Impossible to make a reference to the "+colIndex+"th column: a column index must be greater or equal 1 !");
+			throw new ArrayIndexOutOfBoundsException("Impossible to make a reference to the " + colIndex + "th column: a column index must be greater or equal 1 !");
 
 		setColumnIndex(colIndex);
 		descSorting = desc;
@@ -126,8 +125,8 @@ public class ADQLOrder extends ColumnReference {
 	 * 
 	 * @throws NullPointerException	If the given name is <i>null</i> or is an empty string.
 	 */
-	public void setOrder(String colName, boolean desc) throws NullPointerException {
-		if (colName ==  null)
+	public void setOrder(String colName, boolean desc) throws NullPointerException{
+		if (colName == null)
 			throw new NullPointerException("Impossible to make a reference: the given name is null or is an empty string !");
 
 		setColumnName(colName);
@@ -135,18 +134,18 @@ public class ADQLOrder extends ColumnReference {
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ADQLOrder(this);
 	}
 
 	@Override
-	public String getName() {
-		return super.getName()+(descSorting?" DESC":" ASC");
+	public String getName(){
+		return super.getName() + (descSorting ? " DESC" : " ASC");
 	}
 
 	@Override
 	public String toADQL(){
-		return super.toADQL()+(descSorting?" DESC":" ASC");
+		return super.toADQL() + (descSorting ? " DESC" : " ASC");
 	}
 
 }

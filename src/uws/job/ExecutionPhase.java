@@ -59,11 +59,11 @@ package uws.job;
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 02/2011
  */
-public enum ExecutionPhase {
+public enum ExecutionPhase{
 	PENDING, QUEUED, EXECUTING, COMPLETED, ERROR, ABORTED, UNKNOWN, HELD, SUSPENDED;
 
 	public static final String getStr(ExecutionPhase ph){
-		return (ph==null)?ExecutionPhase.UNKNOWN.name():ph.name();
+		return (ph == null) ? ExecutionPhase.UNKNOWN.name() : ph.name();
 	}
 
 	public static final ExecutionPhase getPhase(String phStr){
@@ -75,4 +75,3 @@ public enum ExecutionPhase {
 
 	}
 }
-

@@ -82,8 +82,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	protected final boolean groupUserDirectories;
 	protected final OwnerGroupIdentifier ownerGroupId;
 
-	protected Map<String, PrintWriter> logOutputs = new HashMap<String, PrintWriter>();
-
+	protected Map<String,PrintWriter> logOutputs = new HashMap<String,PrintWriter>();
 
 	/**
 	 * <p>Builds a {@link UWSFileManager} which manages all UWS files in the given directory.</p>
@@ -98,7 +97,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @see #LocalUWSFileManager(File, boolean, boolean, OwnerGroupIdentifier)
 	 */
-	public LocalUWSFileManager(final File root) throws UWSException {
+	public LocalUWSFileManager(final File root) throws UWSException{
 		this(root, true, true, null);
 	}
 
@@ -118,7 +117,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @see #LocalUWSFileManager(File, boolean, boolean, OwnerGroupIdentifier)
 	 */
-	public LocalUWSFileManager(final File root, final boolean oneDirectoryForEachUser, final boolean groupUserDirectories) throws UWSException {
+	public LocalUWSFileManager(final File root, final boolean oneDirectoryForEachUser, final boolean groupUserDirectories) throws UWSException{
 		this(root, oneDirectoryForEachUser, groupUserDirectories, null);
 	}
 
@@ -138,7 +137,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 *
 	 * @throws UWSException				If the given root directory is <i>null</i>, is not a directory or has not the READ and WRITE permissions.
 	 */
-	public LocalUWSFileManager(final File root, final boolean oneDirectoryForEachUser, final boolean groupUserDirectories, final OwnerGroupIdentifier ownerGroupIdentifier) throws UWSException {
+	public LocalUWSFileManager(final File root, final boolean oneDirectoryForEachUser, final boolean groupUserDirectories, final OwnerGroupIdentifier ownerGroupIdentifier) throws UWSException{
 		if (root == null)
 			throw new NullPointerException("Missing root directory ! Impossible to create a LocalUWSFileManager.");
 		else if (!root.exists()){
@@ -197,7 +196,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @throws IOException	If there is an error while removing the owner directory.
 	 */
-	protected void cleanOwnerDirectory(final JobOwner owner) throws IOException {
+	protected void cleanOwnerDirectory(final JobOwner owner) throws IOException{
 		// Remove the owner directory if empty or if only the owner backup file exists:
 		if (owner != null && oneDirectoryForEachUser){
 			File ownerDir = getOwnerDirectory(owner);
@@ -234,19 +233,19 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @return			Name of the log type group.
 	 */
-	protected String getLogTypeGroup(final UWSLogType logType) {
+	protected String getLogTypeGroup(final UWSLogType logType){
 		switch(logType){
-		case INFO:
-		case WARNING:
-		case ERROR:
-			return "DefaultLog";
-		case DEBUG:
-		case HTTP_ACTIVITY:
-			return logType.toString();
-		case CUSTOM:
-			return logType.getCustomType();
-		default:
-			return UNKNOWN_LOG_TYPE_GROUP;
+			case INFO:
+			case WARNING:
+			case ERROR:
+				return "DefaultLog";
+			case DEBUG:
+			case HTTP_ACTIVITY:
+				return logType.toString();
+			case CUSTOM:
+				return logType.getCustomType();
+			default:
+				return UNKNOWN_LOG_TYPE_GROUP;
 		}
 	}
 
@@ -281,7 +280,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	}
 
 	@Override
-	public InputStream getLogInput(final UWSLogType logType) throws IOException {
+	public InputStream getLogInput(final UWSLogType logType) throws IOException{
 		String logTypeGroup = getLogTypeGroup(logType);
 		File logFile = getLogFile(logTypeGroup);
 		if (logFile.exists())
@@ -291,7 +290,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	}
 
 	@Override
-	public PrintWriter getLogOutput(final UWSLogType logType) throws IOException {
+	public PrintWriter getLogOutput(final UWSLogType logType) throws IOException{
 		String logTypeGroup = getLogTypeGroup(logType);
 		PrintWriter output = logOutputs.get(logTypeGroup);
 		if (output == null){
@@ -308,9 +307,9 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * Print a header into the log file so that separating older log messages to the new ones.
 	 */
 	protected void printLogHeader(final PrintWriter out){
-		String msgHeader = "########################################### LOG STARTS "+dateFormat.format(new Date())+" ###########################################";
+		String msgHeader = "########################################### LOG STARTS " + dateFormat.format(new Date()) + " ###########################################";
 		StringBuffer buf = new StringBuffer("");
-		for(int i=0; i<msgHeader.length(); i++)
+		for(int i = 0; i < msgHeader.length(); i++)
 			buf.append('#');
 		String separator = buf.toString();
 
@@ -337,7 +336,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * @see UWSToolBox#getFileExtension(String)
 	 */
 	protected String getResultFileName(final Result result, final UWSJob job){
-		String fileName = job.getJobId()+"_";
+		String fileName = job.getJobId() + "_";
 
 		if (result != null && result.getId() != null && !result.getId().trim().isEmpty())
 			fileName += result.getId();
@@ -345,7 +344,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 			fileName += Result.DEFAULT_RESULT_NAME;
 
 		String fileExt = UWSToolBox.getFileExtension(result.getMimeType());
-		fileExt = (fileExt == null) ? "" : ("."+fileExt);
+		fileExt = (fileExt == null) ? "" : ("." + fileExt);
 		fileName += fileExt;
 
 		return fileName;
@@ -368,20 +367,20 @@ public class LocalUWSFileManager implements UWSFileManager {
 	}
 
 	@Override
-	public InputStream getResultInput(Result result, UWSJob job) throws IOException {
+	public InputStream getResultInput(Result result, UWSJob job) throws IOException{
 		File resultFile = getResultFile(result, job);
 		return resultFile.exists() ? new FileInputStream(resultFile) : null;
 	}
 
 	@Override
-	public OutputStream getResultOutput(Result result, UWSJob job) throws IOException {
+	public OutputStream getResultOutput(Result result, UWSJob job) throws IOException{
 		File resultFile = getResultFile(result, job);
 		createParentDir(resultFile);
 		return new FileOutputStream(resultFile);
 	}
 
 	@Override
-	public long getResultSize(Result result, UWSJob job) throws IOException {
+	public long getResultSize(Result result, UWSJob job) throws IOException{
 		File resultFile = getResultFile(result, job);
 		if (resultFile == null || !resultFile.exists())
 			return -1;
@@ -390,7 +389,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	}
 
 	@Override
-	public boolean deleteResult(Result result, UWSJob job) throws IOException {
+	public boolean deleteResult(Result result, UWSJob job) throws IOException{
 		boolean deleted = getResultFile(result, job).delete();
 
 		if (deleted)
@@ -398,7 +397,6 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 		return deleted;
 	}
-
 
 	/* ********************** */
 	/* ERROR FILES MANAGEMENT */
@@ -412,8 +410,8 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @return			Name of the file corresponding to the described error.
 	 */
-	protected String getErrorFileName(final ErrorSummary error, final UWSJob job) {
-		return job.getJobId()+"_ERROR.log";
+	protected String getErrorFileName(final ErrorSummary error, final UWSJob job){
+		return job.getJobId() + "_ERROR.log";
 	}
 
 	/**
@@ -433,20 +431,20 @@ public class LocalUWSFileManager implements UWSFileManager {
 	}
 
 	@Override
-	public InputStream getErrorInput(ErrorSummary error, UWSJob job) throws IOException {
+	public InputStream getErrorInput(ErrorSummary error, UWSJob job) throws IOException{
 		File errorFile = getErrorFile(error, job);
 		return errorFile.exists() ? new FileInputStream(errorFile) : null;
 	}
 
 	@Override
-	public OutputStream getErrorOutput(ErrorSummary error, UWSJob job) throws IOException {
+	public OutputStream getErrorOutput(ErrorSummary error, UWSJob job) throws IOException{
 		File errorFile = getErrorFile(error, job);
 		createParentDir(errorFile);
 		return new FileOutputStream(errorFile);
 	}
 
 	@Override
-	public long getErrorSize(ErrorSummary error, UWSJob job) throws IOException {
+	public long getErrorSize(ErrorSummary error, UWSJob job) throws IOException{
 		File errorFile = getErrorFile(error, job);
 		if (errorFile == null || !errorFile.exists())
 			return -1;
@@ -455,7 +453,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	}
 
 	@Override
-	public boolean deleteError(ErrorSummary error, UWSJob job) throws IOException {
+	public boolean deleteError(ErrorSummary error, UWSJob job) throws IOException{
 		boolean deleted = getErrorFile(error, job).delete();
 
 		if (deleted)
@@ -463,7 +461,6 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 		return deleted;
 	}
-
 
 	/* *********************** */
 	/* BACKUP FILES MANAGEMENT */
@@ -478,14 +475,14 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @throws IllegalArgumentException	If the given owner is <i>null</i> or an empty string.
 	 */
-	protected String getBackupFileName(final JobOwner owner) throws IllegalArgumentException {
+	protected String getBackupFileName(final JobOwner owner) throws IllegalArgumentException{
 		if (owner == null || owner.getID() == null || owner.getID().trim().isEmpty())
 			throw new IllegalArgumentException("Missing owner ! Can not get the backup file of an unknown owner. See LocalUWSFileManager.getBackupFile(JobOwner)");
-		return owner.getID().replaceAll(File.separator, "_")+".backup";
+		return owner.getID().replaceAll(File.separator, "_") + ".backup";
 	}
 
 	@Override
-	public InputStream getBackupInput(JobOwner owner) throws IllegalArgumentException, IOException {
+	public InputStream getBackupInput(JobOwner owner) throws IllegalArgumentException, IOException{
 		File backupFile = new File(getOwnerDirectory(owner), getBackupFileName(owner));
 		return backupFile.exists() ? new FileInputStream(backupFile) : null;
 	}
@@ -496,7 +493,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	}
 
 	@Override
-	public OutputStream getBackupOutput(JobOwner owner) throws IllegalArgumentException, IOException {
+	public OutputStream getBackupOutput(JobOwner owner) throws IllegalArgumentException, IOException{
 		File backupFile = new File(getOwnerDirectory(owner), getBackupFileName(owner));
 		createParentDir(backupFile);
 		return new FileOutputStream(backupFile);
@@ -508,23 +505,22 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @return		The name of the UWS general backup file.
 	 */
-	protected String getBackupFileName() {
+	protected String getBackupFileName(){
 		return DEFAULT_BACKUP_FILE_NAME;
 	}
 
 	@Override
-	public InputStream getBackupInput() throws IOException {
+	public InputStream getBackupInput() throws IOException{
 		File backupFile = new File(rootDirectory, getBackupFileName());
 		return backupFile.exists() ? new FileInputStream(backupFile) : null;
 	}
 
 	@Override
-	public OutputStream getBackupOutput() throws IOException {
+	public OutputStream getBackupOutput() throws IOException{
 		File backupFile = new File(rootDirectory, getBackupFileName());
 		createParentDir(backupFile);
 		return new FileOutputStream(backupFile);
 	}
-
 
 	/* ************** */
 	/* TOOL FUNCTIONS */
@@ -598,7 +594,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 		}
 
 		@Override
-		public boolean hasNext() {
+		public boolean hasNext(){
 			return itBackupFiles != null && itBackupFiles.hasNext();
 		}
 
@@ -609,24 +605,24 @@ public class LocalUWSFileManager implements UWSFileManager {
 		 * @see java.util.Iterator#next()
 		 */
 		@Override
-		public InputStream next() throws NoSuchElementException {
+		public InputStream next() throws NoSuchElementException{
 			if (itBackupFiles == null)
 				throw new NoSuchElementException();
 
-			try {
+			try{
 				File f = itBackupFiles.next();
 				if (!itBackupFiles.hasNext())
 					itBackupFiles = null;
 
 				return (f == null || !f.exists()) ? null : new FileInputStream(f);
 
-			} catch (FileNotFoundException e) {
+			}catch(FileNotFoundException e){
 				return null;
 			}
 		}
 
 		@Override
-		public void remove() {
+		public void remove(){
 			throw new UnsupportedOperationException();
 		}
 
@@ -640,7 +636,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 */
 	protected final static class DirectoryFilter implements FileFilter {
 		@Override
-		public boolean accept(File f) {
+		public boolean accept(File f){
 			return f != null && f.isDirectory();
 		}
 	}
@@ -653,6 +649,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 */
 	protected final class OwnerFileFilter implements FileFilter {
 		protected String ownerID = null;
+
 		/**
 		 * Sets the ID of the user whose the backup file must be returned.
 		 * If <i>null</i>, all the found backup files will be returned EXCEPT the backup file for the whole UWS.
@@ -662,14 +659,15 @@ public class LocalUWSFileManager implements UWSFileManager {
 		public void setOwnerID(final String ownerID){
 			this.ownerID = ownerID;
 		}
+
 		@Override
-		public boolean accept(File f) {
+		public boolean accept(File f){
 			if (f == null || f.isDirectory())
 				return false;
 			else if (ownerID == null || ownerID.trim().isEmpty())
 				return f.getName().endsWith(".backup") && !f.getName().equalsIgnoreCase(getBackupFileName());
 			else
-				return f.getName().equalsIgnoreCase(ownerID+".backup");
+				return f.getName().equalsIgnoreCase(ownerID + ".backup");
 		}
 	}
 

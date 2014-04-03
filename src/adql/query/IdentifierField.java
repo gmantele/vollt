@@ -75,12 +75,8 @@ import adql.query.operand.ADQLColumn;
  * @see ADQLTable
  * @see ADQLColumn
  */
-public enum IdentifierField {
-	COLUMN(0),
-	TABLE(1),
-	SCHEMA(2),
-	CATALOG(3),
-	ALIAS(4);
+public enum IdentifierField{
+	COLUMN(0), TABLE(1), SCHEMA(2), CATALOG(3), ALIAS(4);
 
 	private final byte nbShift;
 

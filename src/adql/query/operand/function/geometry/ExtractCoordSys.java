@@ -43,7 +43,6 @@ public class ExtractCoordSys extends GeometryFunction {
 	/** The geometry from which the coordinate system string must be extracted. */
 	protected GeometryValue<GeometryFunction> geomExpr;
 
-
 	/**
 	 * Builds a COORDSYS function.
 	 * 
@@ -61,52 +60,52 @@ public class ExtractCoordSys extends GeometryFunction {
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	public ExtractCoordSys(ExtractCoordSys toCopy) throws Exception {
+	public ExtractCoordSys(ExtractCoordSys toCopy) throws Exception{
 		super();
 		geomExpr = (GeometryValue<GeometryFunction>)(toCopy.geomExpr.getCopy());
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ExtractCoordSys(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return "COORDSYS";
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric(){
 		return false;
 	}
 
-	public boolean isString() {
+	public boolean isString(){
 		return true;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
+	public ADQLOperand[] getParameters(){
 		return new ADQLOperand[]{geomExpr.getValue()};
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return 1;
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index == 0)
 			return geomExpr.getValue();
 		else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function "+getName()+" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function " + getName() + " !");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (index == 0){
 			ADQLOperand replaced = geomExpr.getValue();
 			if (replacer == null)
-				throw new NullPointerException("Impossible to remove the only required parameter of the "+getName()+" function !");
+				throw new NullPointerException("Impossible to remove the only required parameter of the " + getName() + " function !");
 			else if (replacer instanceof GeometryValue)
 				geomExpr = (GeometryValue<GeometryFunction>)replacer;
 			else if (replacer instanceof ADQLColumn)
@@ -114,10 +113,10 @@ public class ExtractCoordSys extends GeometryFunction {
 			else if (replacer instanceof GeometryFunction)
 				geomExpr.setGeometry((GeometryFunction)replacer);
 			else
-				throw new Exception("Impossible to replace GeometryValue/Column/GeometryFunction by a "+replacer.getClass().getName()+" ("+replacer.toADQL()+") !");
+				throw new Exception("Impossible to replace GeometryValue/Column/GeometryFunction by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 			return replaced;
 		}else
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function "+getName()+" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function " + getName() + " !");
 	}
 
 }

@@ -42,7 +42,6 @@ public class MathFunction extends ADQLFunction {
 	/** Second parameter of this function (may be null). */
 	private ADQLOperand param2 = null;
 
-
 	/**
 	 * Creates a mathematical function without parameter.
 	 * 
@@ -75,23 +74,23 @@ public class MathFunction extends ADQLFunction {
 	 * @param parameter2	Its second parameter.
 	 * @throws Exception	If the given function parameters are incorrect.
 	 */
-	public MathFunction(MathFunctionType t, ADQLOperand parameter1, ADQLOperand parameter2) throws Exception {
+	public MathFunction(MathFunctionType t, ADQLOperand parameter1, ADQLOperand parameter2) throws Exception{
 		type = t;
 		switch(type.nbParams()){
-		case 0:
-			if (parameter1 != null || parameter2 != null)
-				throw new Exception("The function "+type.name()+" must have no parameter !");
-			break;
-		case 1:
-			if (parameter1 == null || parameter2 != null)
-				throw new Exception("The function "+type.name()+" must have only one parameter !");
-			break;
-		case 2:
-			if (parameter1 == null || parameter2 == null)
-				throw new Exception("The function "+type.name()+" must have two parameters !");
-			break;
-		default:
-			throw new Exception("Impossible for MathFunction object to have "+type.nbParams()+" ! It is limited to 2 parameters !");
+			case 0:
+				if (parameter1 != null || parameter2 != null)
+					throw new Exception("The function " + type.name() + " must have no parameter !");
+				break;
+			case 1:
+				if (parameter1 == null || parameter2 != null)
+					throw new Exception("The function " + type.name() + " must have only one parameter !");
+				break;
+			case 2:
+				if (parameter1 == null || parameter2 == null)
+					throw new Exception("The function " + type.name() + " must have two parameters !");
+				break;
+			default:
+				throw new Exception("Impossible for MathFunction object to have " + type.nbParams() + " ! It is limited to 2 parameters !");
 		}
 		param1 = parameter1;
 		param2 = parameter2;
@@ -103,7 +102,7 @@ public class MathFunction extends ADQLFunction {
 	 * @param toCopy		The mathematical function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public MathFunction(MathFunction toCopy) throws Exception {
+	public MathFunction(MathFunction toCopy) throws Exception{
 		type = toCopy.type;
 		param1 = (ADQLOperand)toCopy.param1.getCopy();
 		param2 = (ADQLOperand)toCopy.param2.getCopy();
@@ -120,27 +119,27 @@ public class MathFunction extends ADQLFunction {
 		return type;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new MathFunction(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return type.name();
 	}
 
-	public final boolean isNumeric() {
+	public final boolean isNumeric(){
 		return true;
 	}
 
-	public final boolean isString() {
+	public final boolean isString(){
 		return false;
 	}
 
 	@Override
-	public ADQLOperand[] getParameters() {
+	public ADQLOperand[] getParameters(){
 		if (param1 != null){
 			if (param2 != null)
-				return new ADQLOperand[]{param1, param2};
+				return new ADQLOperand[]{param1,param2};
 			else
 				return new ADQLOperand[]{param1};
 		}else
@@ -148,40 +147,42 @@ public class MathFunction extends ADQLFunction {
 	}
 
 	@Override
-	public int getNbParameters() {
+	public int getNbParameters(){
 		return type.nbParams();
 	}
 
 	@Override
-	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index < 0 || index >= getNbParameters())
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+type.name()+"\" (nb required params = "+type.nbParams()+") !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" (nb required params = " + type.nbParams() + ") !");
 
 		switch(index){
-		case 0:
-			return param1;
-		case 1:
-			return param2;
-		default:
-			return null;
+			case 0:
+				return param1;
+			case 1:
+				return param2;
+			default:
+				return null;
 		}
 	}
 
 	@Override
-	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
+	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (index < 0 || index >= getNbParameters())
-			throw new ArrayIndexOutOfBoundsException("No "+index+"-th parameter for the function \""+type.name()+"\" (nb required params = "+type.nbParams()+") !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" (nb required params = " + type.nbParams() + ") !");
 		else if (replacer == null)
 			throw new NullPointerException("Impossible to remove any parameter from a mathematical function ! All parameters are required !");
 		else{
 			ADQLOperand replaced = null;
 			switch(index){
-			case 0:
-				replaced = param1;
-				param1 = replacer; break;
-			case 1:
-				replaced = param2;
-				param2 = replacer; break;
+				case 0:
+					replaced = param1;
+					param1 = replacer;
+					break;
+				case 1:
+					replaced = param2;
+					param2 = replacer;
+					break;
 			}
 			return replaced;
 		}

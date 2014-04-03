@@ -32,11 +32,7 @@ public class ParseException extends Exception {
 	 * a new object of this type with the fields "currentToken",
 	 * "expectedTokenSequences", and "tokenImage" set.
 	 */
-	public ParseException(Token currentTokenVal,
-			int[][] expectedTokenSequencesVal,
-			String[] tokenImageVal
-	)
-	{
+	public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, String[] tokenImageVal){
 		super(initialise(currentTokenVal, expectedTokenSequencesVal, tokenImageVal));
 		currentToken = currentTokenVal;
 		expectedTokenSequences = expectedTokenSequencesVal;
@@ -55,12 +51,12 @@ public class ParseException extends Exception {
 	 * these constructors.
 	 */
 
-	public ParseException() {
+	public ParseException(){
 		super();
 	}
 
 	/** Constructor with message. */
-	public ParseException(String message) {
+	public ParseException(String message){
 		super(message);
 	}
 
@@ -68,7 +64,6 @@ public class ParseException extends Exception {
 		this(message);
 		position = errorPosition;
 	}
-
 
 	/**
 	 * This is the last token that has been consumed successfully.  If
@@ -110,16 +105,16 @@ public class ParseException extends Exception {
 	 * from the parser) the correct error message
 	 * gets displayed.
 	 */
-	private static String initialise(Token currentToken, int[][] expectedTokenSequences, String[] tokenImage) {
+	private static String initialise(Token currentToken, int[][] expectedTokenSequences, String[] tokenImage){
 		int maxSize = 0;
 
 		// Build the list of expected tokens:
 		StringBuffer expected = new StringBuffer();
-		for (int i = 0; i < expectedTokenSequences.length; i++) {
-			if (maxSize < expectedTokenSequences[i].length) {
+		for(int i = 0; i < expectedTokenSequences.length; i++){
+			if (maxSize < expectedTokenSequences[i].length){
 				maxSize = expectedTokenSequences[i].length;
 			}
-			for (int j = 0; j < expectedTokenSequences[i].length; j++) {
+			for(int j = 0; j < expectedTokenSequences[i].length; j++){
 				expected.append(tokenImage[expectedTokenSequences[i][j]]);
 			}
 			expected.append(" ");
@@ -129,9 +124,10 @@ public class ParseException extends Exception {
 		StringBuffer msg = new StringBuffer();
 		msg.append(" Encountered \"");
 		Token tok = currentToken.next;
-		for (int i = 0; i < maxSize; i++) {
-			if (i != 0) msg.append(' ');
-			if (tok.kind == 0) {
+		for(int i = 0; i < maxSize; i++){
+			if (i != 0)
+				msg.append(' ');
+			if (tok.kind == 0){
 				msg.append(tokenImage[0]);
 				break;
 			}
@@ -141,9 +137,9 @@ public class ParseException extends Exception {
 		msg.append("\".");
 
 		// Append the expected tokens list:
-		if (expectedTokenSequences.length == 1) {
+		if (expectedTokenSequences.length == 1){
 			msg.append(" Was expecting: ");
-		} else {
+		}else{
 			msg.append(" Was expecting one of: ");
 		}
 		msg.append(expected);
@@ -199,46 +195,45 @@ public class ParseException extends Exception {
 	 * when these raw version cannot be used as part of an ASCII
 	 * string literal.
 	 */
-	static String add_escapes(String str) {
+	static String add_escapes(String str){
 		StringBuffer retval = new StringBuffer();
 		char ch;
-		for (int i = 0; i < str.length(); i++) {
-			switch (str.charAt(i))
-			{
-			case 0 :
-				continue;
-			case '\b':
-				retval.append("\\b");
-				continue;
-			case '\t':
-				retval.append("\\t");
-				continue;
-			case '\n':
-				retval.append("\\n");
-				continue;
-			case '\f':
-				retval.append("\\f");
-				continue;
-			case '\r':
-				retval.append("\\r");
-				continue;
-			case '\"':
-				retval.append("\\\"");
-				continue;
-			case '\'':
-				retval.append("\\\'");
-				continue;
-			case '\\':
-				retval.append("\\\\");
-				continue;
-			default:
-				if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e) {
-					String s = "0000" + Integer.toString(ch, 16);
-					retval.append("\\u" + s.substring(s.length() - 4, s.length()));
-				} else {
-					retval.append(ch);
-				}
-				continue;
+		for(int i = 0; i < str.length(); i++){
+			switch(str.charAt(i)){
+				case 0:
+					continue;
+				case '\b':
+					retval.append("\\b");
+					continue;
+				case '\t':
+					retval.append("\\t");
+					continue;
+				case '\n':
+					retval.append("\\n");
+					continue;
+				case '\f':
+					retval.append("\\f");
+					continue;
+				case '\r':
+					retval.append("\\r");
+					continue;
+				case '\"':
+					retval.append("\\\"");
+					continue;
+				case '\'':
+					retval.append("\\\'");
+					continue;
+				case '\\':
+					retval.append("\\\\");
+					continue;
+				default:
+					if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e){
+						String s = "0000" + Integer.toString(ch, 16);
+						retval.append("\\u" + s.substring(s.length() - 4, s.length()));
+					}else{
+						retval.append(ch);
+					}
+					continue;
 			}
 		}
 		return retval.toString();

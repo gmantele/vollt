@@ -44,14 +44,14 @@ public final class NegativeOperand implements ADQLOperand {
 	 * @throws NullPointerException				If the given operand is <i>null</i>.
 	 * @throws UnsupportedOperationException	If the given operand is not numeric (if {@link ADQLOperand#isNumeric()} does not return <i>true</i>).
 	 */
-	public NegativeOperand(ADQLOperand operand) throws NullPointerException, UnsupportedOperationException {
+	public NegativeOperand(ADQLOperand operand) throws NullPointerException, UnsupportedOperationException{
 		if (operand == null)
 			throw new NullPointerException("Impossible to negativate an operand equals to NULL !");
 
 		if (operand.isNumeric())
 			this.operand = operand;
 		else
-			throw new UnsupportedOperationException("Impossible to negativate a non-numeric operand ("+operand.toADQL()+") !");
+			throw new UnsupportedOperationException("Impossible to negativate a non-numeric operand (" + operand.toADQL() + ") !");
 	}
 
 	/**
@@ -77,32 +77,32 @@ public final class NegativeOperand implements ADQLOperand {
 		return false;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		NegativeOperand copy = new NegativeOperand((ADQLOperand)operand.getCopy());
 		return copy;
 	}
 
-	public String getName() {
-		return "-"+operand.getName();
+	public String getName(){
+		return "-" + operand.getName();
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private boolean operandGot = (operand == null);
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				if (operandGot)
 					throw new NoSuchElementException();
 				operandGot = true;
 				return operand;
 			}
 
-			public boolean hasNext() {
+			public boolean hasNext(){
 				return !operandGot;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (!operandGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -111,20 +111,20 @@ public final class NegativeOperand implements ADQLOperand {
 				else if (replacer instanceof ADQLOperand && ((ADQLOperand)replacer).isNumeric())
 					operand = (ADQLOperand)replacer;
 				else
-					throw new UnsupportedOperationException("Impossible to replace the operand \""+operand.toADQL()+"\" by \""+replacer.toADQL()+"\" in the NegativeOperand \""+toADQL()+"\" because the replacer is not an ADQLOperand or is not numeric !");
+					throw new UnsupportedOperationException("Impossible to replace the operand \"" + operand.toADQL() + "\" by \"" + replacer.toADQL() + "\" in the NegativeOperand \"" + toADQL() + "\" because the replacer is not an ADQLOperand or is not numeric !");
 			}
 
-			public void remove() {
+			public void remove(){
 				if (!operandGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
-					throw new UnsupportedOperationException("Impossible to remove the only operand ("+operand.toADQL()+") of a NegativeOperand ("+toADQL()+"). However you can remove the whole NegativeOperand.");
+					throw new UnsupportedOperationException("Impossible to remove the only operand (" + operand.toADQL() + ") of a NegativeOperand (" + toADQL() + "). However you can remove the whole NegativeOperand.");
 			}
 		};
 	}
 
-	public String toADQL() {
-		return "-"+operand.toADQL();
+	public String toADQL(){
+		return "-" + operand.toADQL();
 	}
 
 }

@@ -30,20 +30,20 @@ import adql.query.operand.ADQLColumn;
  */
 public class SearchColumnHandler extends SimpleSearchHandler {
 
-	public SearchColumnHandler() {
+	public SearchColumnHandler(){
 		super();
 	}
 
-	public SearchColumnHandler(boolean recursive, boolean onlyFirstMatch) {
+	public SearchColumnHandler(boolean recursive, boolean onlyFirstMatch){
 		super(recursive, onlyFirstMatch);
 	}
 
-	public SearchColumnHandler(boolean recursive) {
+	public SearchColumnHandler(boolean recursive){
 		super(recursive);
 	}
 
 	@Override
-	public boolean match(ADQLObject obj) {
+	public boolean match(ADQLObject obj){
 		return (obj instanceof ADQLColumn);
 	}
 

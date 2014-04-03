@@ -40,34 +40,46 @@ public class Availability implements TAPResource, VOSIResource {
 		this.service = service;
 	}
 
-	public ServiceConnection<?> getService() {
+	public ServiceConnection<?> getService(){
 		return service;
 	}
 
-	public final void setTAPBaseURL(String baseURL) {
-		accessURL = ((baseURL==null)?"":(baseURL+"/"))+getName();
+	public final void setTAPBaseURL(String baseURL){
+		accessURL = ((baseURL == null) ? "" : (baseURL + "/")) + getName();
 	}
 
 	@Override
-	public final String getName() { return RESOURCE_NAME; }
+	public final String getName(){
+		return RESOURCE_NAME;
+	}
 
 	@Override
-	public final String getStandardID() { return "ivo://ivoa.net/std/VOSI#availability"; }
+	public final String getStandardID(){
+		return "ivo://ivoa.net/std/VOSI#availability";
+	}
 
 	@Override
-	public final String getAccessURL() { return accessURL; }
+	public final String getAccessURL(){
+		return accessURL;
+	}
 
 	@Override
-	public String getCapability() { return Capabilities.getDefaultCapability(this); }
+	public String getCapability(){
+		return Capabilities.getDefaultCapability(this);
+	}
 
 	@Override
-	public void init(ServletConfig config) throws ServletException { ; }
+	public void init(ServletConfig config) throws ServletException{
+		;
+	}
 
 	@Override
-	public void destroy() { ; }
+	public void destroy(){
+		;
+	}
 
 	@Override
-	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		if (!request.getMethod().equalsIgnoreCase("GET"))	// ERREUR 405 selon VOSI (cf p.4)
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "The AVAILABILITY resource is only accessible in HTTP-GET !");
 
@@ -75,7 +87,7 @@ public class Availability implements TAPResource, VOSIResource {
 
 		String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 		xml += "<availability xmlns=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0 http://www.ivoa.net/xml/VOSIAvailability/v1.0\">\n";
-		xml += "\t<available>"+service.isAvailable()+"</available>\n\t<note>"+service.getAvailability()+"</note>\n";
+		xml += "\t<available>" + service.isAvailable() + "</available>\n\t<note>" + service.getAvailability() + "</note>\n";
 		xml += "</availability>";
 
 		PrintWriter pw = response.getWriter();

@@ -132,7 +132,7 @@ public abstract class UWSAction implements Serializable {
 	 * @see UWSUrl#getJobListName()
 	 * @see UWSService#getJobList(String)
 	 */
-	protected final JobList getJobsList(UWSUrl urlInterpreter) throws UWSException {
+	protected final JobList getJobsList(UWSUrl urlInterpreter) throws UWSException{
 		String jlName = urlInterpreter.getJobListName();
 		JobList jobsList = null;
 
@@ -162,7 +162,7 @@ public abstract class UWSAction implements Serializable {
 	 * 
 	 * @see #getJob(UWSUrl, String, boolean)
 	 */
-	protected final UWSJob getJob(UWSUrl urlInterpreter) throws UWSException {
+	protected final UWSJob getJob(UWSUrl urlInterpreter) throws UWSException{
 		return getJob(urlInterpreter, (JobOwner)null);
 	}
 
@@ -185,7 +185,7 @@ public abstract class UWSAction implements Serializable {
 	 * 
 	 * @since 3.1
 	 */
-	protected final UWSJob getJob(UWSUrl urlInterpreter, JobOwner user) throws UWSException {
+	protected final UWSJob getJob(UWSUrl urlInterpreter, JobOwner user) throws UWSException{
 		String jobId = urlInterpreter.getJobId();
 		UWSJob job = null;
 
@@ -215,7 +215,7 @@ public abstract class UWSAction implements Serializable {
 	 * 
 	 * @see #getJob(UWSUrl, JobList, String, boolean)
 	 */
-	protected final UWSJob getJob(UWSUrl urlInterpreter, JobList jobsList) throws UWSException {
+	protected final UWSJob getJob(UWSUrl urlInterpreter, JobList jobsList) throws UWSException{
 		return getJob(urlInterpreter, jobsList, null);
 	}
 
@@ -239,7 +239,7 @@ public abstract class UWSAction implements Serializable {
 	 * 
 	 * @since 3.1
 	 */
-	protected final UWSJob getJob(UWSUrl urlInterpreter, JobList jobsList, JobOwner user) throws UWSException {
+	protected final UWSJob getJob(UWSUrl urlInterpreter, JobList jobsList, JobOwner user) throws UWSException{
 		String jobId = urlInterpreter.getJobId();
 		UWSJob job = null;
 
@@ -302,7 +302,7 @@ public abstract class UWSAction implements Serializable {
 	}
 
 	@Override
-	public String toString() {
+	public String toString(){
 		return getName();
 	}
 

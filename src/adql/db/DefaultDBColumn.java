@@ -63,7 +63,7 @@ public class DefaultDBColumn implements DBColumn {
 		this.table = table;
 	}
 
-	public final String getADQLName() {
+	public final String getADQLName(){
 		return adqlName;
 	}
 
@@ -72,11 +72,11 @@ public class DefaultDBColumn implements DBColumn {
 			this.adqlName = adqlName;
 	}
 
-	public final String getDBName() {
+	public final String getDBName(){
 		return dbName;
 	}
 
-	public final DBTable getTable() {
+	public final DBTable getTable(){
 		return table;
 	}
 

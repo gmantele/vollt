@@ -32,12 +32,12 @@ public class TAPExecutionDurationController implements InputParamController {
 	protected final ServiceConnection<?> service;
 	protected boolean allowModification = true;
 
-	public TAPExecutionDurationController(final ServiceConnection<?> service) {
+	public TAPExecutionDurationController(final ServiceConnection<?> service){
 		this.service = service;
 	}
 
 	@Override
-	public final boolean allowModification() {
+	public final boolean allowModification(){
 		return allowModification;
 	}
 
@@ -46,7 +46,7 @@ public class TAPExecutionDurationController implements InputParamController {
 	}
 
 	@Override
-	public final Object getDefault() {
+	public final Object getDefault(){
 		if (service.getExecutionDuration() != null && service.getExecutionDuration().length >= 2){
 			if (service.getExecutionDuration()[0] > 0)
 				return service.getExecutionDuration()[0];
@@ -63,7 +63,7 @@ public class TAPExecutionDurationController implements InputParamController {
 	}
 
 	@Override
-	public Object check(Object value) throws UWSException {
+	public Object check(Object value) throws UWSException{
 		if (value == null)
 			return null;
 
@@ -76,19 +76,17 @@ public class TAPExecutionDurationController implements InputParamController {
 			try{
 				duration = Long.parseLong((String)value);
 			}catch(NumberFormatException nfe){
-				throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_EXECUTION_DURATION, value.toString(), null, "A long value between "+TAPJob.UNLIMITED_DURATION+" and "+maxDuration+" (Default value: "+defaultDuration+").");
+				throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_EXECUTION_DURATION, value.toString(), null, "A long value between " + TAPJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
 			}
 		}else
-			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_EXECUTION_DURATION, null, value.getClass().getName(), "A long value between "+TAPJob.UNLIMITED_DURATION+" and "+maxDuration+" (Default value: "+defaultDuration+").");
+			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_EXECUTION_DURATION, null, value.getClass().getName(), "A long value between " + TAPJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
 
 		if (duration < TAPJob.UNLIMITED_DURATION)
 			duration = TAPJob.UNLIMITED_DURATION;
 		else if (maxDuration > TAPJob.UNLIMITED_DURATION && duration > maxDuration)
-			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the execution duration to maximum "+maxDuration+" seconds !");
+			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the execution duration to maximum " + maxDuration + " seconds !");
 
 		return duration;
 	}
-
-
 
 }

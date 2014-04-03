@@ -49,28 +49,28 @@ public final class StringConstant implements ADQLOperand {
 		this.value = value;
 	}
 
-	public final boolean isNumeric() {
+	public final boolean isNumeric(){
 		return false;
 	}
 
-	public final boolean isString() {
+	public final boolean isString(){
 		return true;
 	}
 
-	public ADQLObject getCopy() {
+	public ADQLObject getCopy(){
 		return new StringConstant(this);
 	}
 
-	public String getName() {
-		return "'"+value+"'";
+	public String getName(){
+		return "'" + value + "'";
 	}
 
 	public ADQLIterator adqlIterator(){
 		return new NullADQLIterator();
 	}
 
-	public String toADQL() {
-		return "'"+value+"'";
+	public String toADQL(){
+		return "'" + value + "'";
 	}
 
 }

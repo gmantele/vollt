@@ -50,8 +50,8 @@ public class TextPosition {
 	 * @param column	Begin column.
 	 */
 	public TextPosition(final int line, final int column){
-		beginLine = (line<0)?-1:line;
-		beginColumn = (column<0)?-1:column;
+		beginLine = (line < 0) ? -1 : line;
+		beginColumn = (column < 0) ? -1 : column;
 		endLine = endColumn = -1;
 	}
 
@@ -64,10 +64,10 @@ public class TextPosition {
 	 * @param endColumn		End column.
 	 */
 	public TextPosition(final int beginLine, final int beginColumn, final int endLine, final int endColumn){
-		this.beginLine = (beginLine<0)?-1:beginLine;
-		this.beginColumn = (beginColumn<0)?-1:beginColumn;
-		this.endLine = (endLine<0)?-1:endLine;
-		this.endColumn = (endColumn<0)?-1:endColumn;
+		this.beginLine = (beginLine < 0) ? -1 : beginLine;
+		this.beginColumn = (beginColumn < 0) ? -1 : beginColumn;
+		this.endLine = (endLine < 0) ? -1 : endLine;
+		this.endColumn = (endColumn < 0) ? -1 : endColumn;
 	}
 
 	/**
@@ -76,7 +76,7 @@ public class TextPosition {
 	 * @param token	The position will be the one of this token.
 	 */
 	public TextPosition(final Token token){
-		this(token.beginLine, token.beginColumn, token.endLine, (token.endColumn<0)?-1:(token.endColumn+1));
+		this(token.beginLine, token.beginColumn, token.endLine, (token.endColumn < 0) ? -1 : (token.endColumn + 1));
 	}
 
 	/**
@@ -86,7 +86,7 @@ public class TextPosition {
 	 * @param endToken		End position.
 	 */
 	public TextPosition(final Token beginToken, final Token endToken){
-		this(beginToken.beginLine, beginToken.beginColumn, endToken.endLine, (endToken.endColumn<0)?-1:(endToken.endColumn+1));
+		this(beginToken.beginLine, beginToken.beginColumn, endToken.endLine, (endToken.endColumn < 0) ? -1 : (endToken.endColumn + 1));
 	}
 
 	@Override
@@ -94,9 +94,9 @@ public class TextPosition {
 		if (beginLine == -1 && beginColumn == -1)
 			return "[l.? c.?]";
 		else if (endLine == -1 && endColumn == -1)
-			return "[l."+beginLine+" c."+beginColumn+"]";
+			return "[l." + beginLine + " c." + beginColumn + "]";
 		else
-			return "[l."+beginLine+" c."+beginColumn+" - l."+endLine+" c."+endColumn+"]";
+			return "[l." + beginLine + " c." + beginColumn + " - l." + endLine + " c." + endColumn + "]";
 	}
 
 }

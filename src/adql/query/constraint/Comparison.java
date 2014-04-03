@@ -44,7 +44,6 @@ public class Comparison implements ADQLConstraint {
 	/** The right part of the comparison. */
 	private ADQLOperand rightOperand;
 
-
 	/**
 	 * Creates a comparison between two operands.
 	 * 
@@ -58,7 +57,7 @@ public class Comparison implements ADQLConstraint {
 	 * @see Comparison#setLeftOperand(ADQLOperand)
 	 * @see Comparison#setRightOperand(ADQLOperand)
 	 */
-	public Comparison(ADQLOperand left, ComparisonOperator comp, ADQLOperand right) throws NullPointerException, UnsupportedOperationException {
+	public Comparison(ADQLOperand left, ComparisonOperator comp, ADQLOperand right) throws NullPointerException, UnsupportedOperationException{
 		setLeftOperand(left);
 		setRightOperand(right);
 		setOperation(comp);
@@ -70,7 +69,7 @@ public class Comparison implements ADQLConstraint {
 	 * @param toCopy		The comparison to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public Comparison(Comparison toCopy) throws Exception {
+	public Comparison(Comparison toCopy) throws Exception{
 		leftOperand = (ADQLOperand)toCopy.leftOperand.getCopy();
 		compOperator = toCopy.compOperator;
 		rightOperand = (ADQLOperand)toCopy.rightOperand.getCopy();
@@ -81,7 +80,7 @@ public class Comparison implements ADQLConstraint {
 	 * 
 	 * @return The left operand.
 	 */
-	public final ADQLOperand getLeftOperand() {
+	public final ADQLOperand getLeftOperand(){
 		return leftOperand;
 	}
 
@@ -92,13 +91,13 @@ public class Comparison implements ADQLConstraint {
 	 * @throws NullPointerException				If the given operand is <i>null</i>.
 	 * @throws UnsupportedOperationException	If the type of the given operand is incompatible with the right operand and/or with the comparison operator.
 	 */
-	public void setLeftOperand(ADQLOperand newLeftOperand) throws NullPointerException, UnsupportedOperationException {
+	public void setLeftOperand(ADQLOperand newLeftOperand) throws NullPointerException, UnsupportedOperationException{
 		if (newLeftOperand == null)
-			throw new NullPointerException("Impossible to update the left operand of the comparison ("+toADQL()+") with a NULL operand !");
+			throw new NullPointerException("Impossible to update the left operand of the comparison (" + toADQL() + ") with a NULL operand !");
 		if (rightOperand != null && newLeftOperand.isNumeric() != rightOperand.isNumeric() && newLeftOperand.isString() != rightOperand.isString())
-			throw new UnsupportedOperationException("Impossible to update the left operand of the comparison ("+toADQL()+") with \""+newLeftOperand.toADQL()+"\" because its type is not compatible with the type of the right operand !");
+			throw new UnsupportedOperationException("Impossible to update the left operand of the comparison (" + toADQL() + ") with \"" + newLeftOperand.toADQL() + "\" because its type is not compatible with the type of the right operand !");
 		if (compOperator != null && newLeftOperand.isNumeric() && (compOperator == ComparisonOperator.LIKE || compOperator == ComparisonOperator.NOTLIKE))
-			throw new UnsupportedOperationException("Impossible to update the left operand of the comparison ("+toADQL()+") with \""+newLeftOperand.toADQL()+"\" because the comparison operator "+compOperator.toADQL()+" is not applicable on numeric operands !");
+			throw new UnsupportedOperationException("Impossible to update the left operand of the comparison (" + toADQL() + ") with \"" + newLeftOperand.toADQL() + "\" because the comparison operator " + compOperator.toADQL() + " is not applicable on numeric operands !");
 
 		leftOperand = newLeftOperand;
 	}
@@ -108,7 +107,7 @@ public class Comparison implements ADQLConstraint {
 	 * 
 	 * @return The comparison operator.
 	 */
-	public ComparisonOperator getOperator() {
+	public ComparisonOperator getOperator(){
 		return compOperator;
 	}
 
@@ -119,12 +118,11 @@ public class Comparison implements ADQLConstraint {
 	 * @throws NullPointerException				If the given type is <i>null</i>.
 	 * @throws UnsupportedOperationException	If the given type is incompatible with the two operands.
 	 */
-	public void setOperation(ComparisonOperator newOperation) throws NullPointerException, UnsupportedOperationException {
+	public void setOperation(ComparisonOperator newOperation) throws NullPointerException, UnsupportedOperationException{
 		if (newOperation == null)
-			throw new NullPointerException("Impossible to update the comparison operator ("+compOperator.toADQL()+") with a NULL operand !");
-		if ((!leftOperand.isString() || !rightOperand.isString())
-				&& (newOperation == ComparisonOperator.LIKE || newOperation == ComparisonOperator.NOTLIKE))
-			throw new UnsupportedOperationException("Impossible to update the comparison operator"+((compOperator!=null)?(" ("+compOperator.toADQL()+")"):"")+" by "+newOperation.toADQL()+" because the two operands (\""+leftOperand.toADQL()+"\" & \""+rightOperand.toADQL()+"\") are not all Strings !");
+			throw new NullPointerException("Impossible to update the comparison operator (" + compOperator.toADQL() + ") with a NULL operand !");
+		if ((!leftOperand.isString() || !rightOperand.isString()) && (newOperation == ComparisonOperator.LIKE || newOperation == ComparisonOperator.NOTLIKE))
+			throw new UnsupportedOperationException("Impossible to update the comparison operator" + ((compOperator != null) ? (" (" + compOperator.toADQL() + ")") : "") + " by " + newOperation.toADQL() + " because the two operands (\"" + leftOperand.toADQL() + "\" & \"" + rightOperand.toADQL() + "\") are not all Strings !");
 
 		compOperator = newOperation;
 	}
@@ -134,7 +132,7 @@ public class Comparison implements ADQLConstraint {
 	 * 
 	 * @return The right operand.
 	 */
-	public ADQLOperand getRightOperand() {
+	public ADQLOperand getRightOperand(){
 		return rightOperand;
 	}
 
@@ -145,31 +143,31 @@ public class Comparison implements ADQLConstraint {
 	 * @throws NullPointerException				If the given operand is <i>null</i>.
 	 * @throws UnsupportedOperationException	If the type of the given operand is incompatible with the left operand and/or with the comparison operator.
 	 */
-	public void setRightOperand(ADQLOperand newRightOperand) throws NullPointerException, UnsupportedOperationException {
+	public void setRightOperand(ADQLOperand newRightOperand) throws NullPointerException, UnsupportedOperationException{
 		if (newRightOperand == null)
-			throw new NullPointerException("Impossible to update the right operand of the comparison ("+toADQL()+") with a NULL operand !");
+			throw new NullPointerException("Impossible to update the right operand of the comparison (" + toADQL() + ") with a NULL operand !");
 		if (leftOperand != null && newRightOperand.isNumeric() != leftOperand.isNumeric() && newRightOperand.isString() != leftOperand.isString())
-			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison ("+toADQL()+") with \""+newRightOperand.toADQL()+"\" because its type is not compatible with the type of the left operand !");
+			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison (" + toADQL() + ") with \"" + newRightOperand.toADQL() + "\" because its type is not compatible with the type of the left operand !");
 		if (compOperator != null && newRightOperand.isNumeric() && (compOperator == ComparisonOperator.LIKE || compOperator == ComparisonOperator.NOTLIKE))
-			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison ("+toADQL()+") with \""+newRightOperand.toADQL()+"\" because the comparison operator "+compOperator.toADQL()+" is not applicable on numeric operands !");
+			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison (" + toADQL() + ") with \"" + newRightOperand.toADQL() + "\" because the comparison operator " + compOperator.toADQL() + " is not applicable on numeric operands !");
 
 		rightOperand = newRightOperand;
 	}
 
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new Comparison(this);
 	}
 
-	public String getName() {
+	public String getName(){
 		return compOperator.toADQL();
 	}
 
 	public ADQLIterator adqlIterator(){
-		return new ADQLIterator() {
+		return new ADQLIterator(){
 
 			private int index = -1;
 
-			public ADQLObject next() {
+			public ADQLObject next(){
 				index++;
 				if (index == 0)
 					return leftOperand;
@@ -179,11 +177,11 @@ public class Comparison implements ADQLConstraint {
 					throw new NoSuchElementException();
 			}
 
-			public boolean hasNext() {
-				return index+1 < 2;
+			public boolean hasNext(){
+				return index + 1 < 2;
 			}
 
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -195,10 +193,10 @@ public class Comparison implements ADQLConstraint {
 					else if (index == 1)
 						rightOperand = (ADQLOperand)replacer;
 				}else
-					throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a "+replacer.getClass().getName()+" in a comparison !");
+					throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " in a comparison !");
 			}
 
-			public void remove() {
+			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 				else
@@ -207,8 +205,8 @@ public class Comparison implements ADQLConstraint {
 		};
 	}
 
-	public String toADQL() {
-		return ((leftOperand == null)?"NULL":leftOperand.toADQL())+" "+((compOperator == null)?"NULL":compOperator.toADQL())+" "+((rightOperand == null)?"NULL":rightOperand.toADQL());
+	public String toADQL(){
+		return ((leftOperand == null) ? "NULL" : leftOperand.toADQL()) + " " + ((compOperator == null) ? "NULL" : compOperator.toADQL()) + " " + ((rightOperand == null) ? "NULL" : rightOperand.toADQL());
 	}
 
 }

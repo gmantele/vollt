@@ -120,11 +120,11 @@ public class DefaultDestructionManager implements DestructionManager {
 	}
 
 	public final String getNextJobToDestroy(){
-		return (currentJob==null)?null:currentJob.getJobId();
+		return (currentJob == null) ? null : currentJob.getJobId();
 	}
 
 	public final int getNbJobsToDestroy(){
-		return jobsToDestroy.size()+(isRunning()?1:0);
+		return jobsToDestroy.size() + (isRunning() ? 1 : 0);
 	}
 
 	/**
@@ -174,9 +174,9 @@ public class DefaultDestructionManager implements DestructionManager {
 			if (currentJob != null){
 				timDestruction = new Timer();
 				currentDate = currentJob.getDestructionTime();
-				timDestruction.schedule(new TimerTask() {
+				timDestruction.schedule(new TimerTask(){
 					@Override
-					public void run() {
+					public void run(){
 						destroyJob(currentJob);
 					}
 				}, currentDate);
@@ -242,7 +242,7 @@ public class DefaultDestructionManager implements DestructionManager {
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public int compare(UWSJob job1, UWSJob job2) {
+		public int compare(UWSJob job1, UWSJob job2){
 			if (job1 == null && job2 == null)
 				return 0;
 

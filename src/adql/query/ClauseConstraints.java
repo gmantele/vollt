@@ -59,7 +59,6 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * vSeparators.get(i) gives the separator between get(i-1) and get(i)). */
 	private Vector<String> vSeparators = new Vector<String>();
 
-
 	/**
 	 * <p>Builds a constraints list with only its name (which will prefix the whole list).</p>
 	 * 
@@ -67,7 +66,7 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * 
 	 * @param name	The name/prefix of the list.
 	 */
-	public ClauseConstraints(String name) {
+	public ClauseConstraints(String name){
 		super(name);
 		defaultSeparator = OR;
 	}
@@ -83,7 +82,7 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * 
 	 * @see ClauseConstraints#checkSeparator(String)
 	 */
-	public ClauseConstraints(String name, String logicalSep) {
+	public ClauseConstraints(String name, String logicalSep){
 		super(name);
 		defaultSeparator = checkSeparator(logicalSep);
 	}
@@ -96,7 +95,7 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * 
 	 * @see ClauseConstraints#checkSeparator(String)
 	 */
-	public ClauseConstraints(ClauseConstraints toCopy) throws Exception {
+	public ClauseConstraints(ClauseConstraints toCopy) throws Exception{
 		super(toCopy);
 		defaultSeparator = checkSeparator(toCopy.defaultSeparator);
 	}
@@ -129,7 +128,7 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * @see ClauseConstraints#add(String, ADQLConstraint)
 	 */
 	@Override
-	public boolean add(ADQLConstraint constraint) throws NullPointerException {
+	public boolean add(ADQLConstraint constraint) throws NullPointerException{
 		return add(defaultSeparator, constraint);
 	}
 
@@ -138,7 +137,7 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * @see ClauseConstraints#add(int, String, ADQLConstraint)
 	 */
 	@Override
-	public void add(int index, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public void add(int index, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		add(index, defaultSeparator, constraint);
 	}
 
@@ -154,7 +153,7 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * @see ADQLList#add(ADQLObject)
 	 * @see ClauseConstraints#checkSeparator(String)
 	 */
-	public boolean add(String logicalSep, ADQLConstraint constraint) throws NullPointerException {
+	public boolean add(String logicalSep, ADQLConstraint constraint) throws NullPointerException{
 		boolean added = super.add(constraint);
 		if (added && size() > 1)
 			vSeparators.add(checkSeparator(logicalSep));
@@ -174,10 +173,10 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * @see ADQLList#add(int, ADQLObject)
 	 * @see ClauseConstraints#checkSeparator(String)
 	 */
-	public void add(int index, String logicalSep, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public void add(int index, String logicalSep, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		super.add(index, constraint);
 		if (index > 0)
-			vSeparators.add(index-1, checkSeparator(logicalSep));
+			vSeparators.add(index - 1, checkSeparator(logicalSep));
 	}
 
 	/**
@@ -185,7 +184,7 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * @see ClauseConstraints#set(int, String, ADQLConstraint)
 	 */
 	@Override
-	public ADQLConstraint set(int index, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public ADQLConstraint set(int index, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		return set(index, null, constraint);
 	}
 
@@ -202,32 +201,32 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * 
 	 * @see ADQLList#set(int, ADQLObject)
 	 */
-	public ADQLConstraint set(int index, String logicalSep, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public ADQLConstraint set(int index, String logicalSep, ADQLConstraint constraint) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		ADQLConstraint replaced = super.set(index, constraint);
 		if (replaced != null && logicalSep != null && index > 0)
-			vSeparators.set(index-1, logicalSep);
+			vSeparators.set(index - 1, logicalSep);
 		return replaced;
 	}
 
 	@Override
-	public void clear() {
+	public void clear(){
 		super.clear();
 		vSeparators.clear();
 	}
 
 	@Override
-	public ADQLConstraint remove(int index) throws ArrayIndexOutOfBoundsException {
+	public ADQLConstraint remove(int index) throws ArrayIndexOutOfBoundsException{
 		ADQLConstraint removed = super.remove(index);
 		if (removed != null)
 			if (index > 0)
-				vSeparators.remove(index-1);
+				vSeparators.remove(index - 1);
 			else if (index == 0)
 				vSeparators.remove(index);
 		return removed;
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception {
+	public ADQLObject getCopy() throws Exception{
 		return new ClauseConstraints(this);
 	}
 
@@ -237,16 +236,16 @@ public class ClauseConstraints extends ClauseADQL<ADQLConstraint> {
 	 * @see adql.query.ADQLList#getPossibleSeparators()
 	 */
 	@Override
-	public String[] getPossibleSeparators() {
-		return new String[]{AND, OR};
+	public String[] getPossibleSeparators(){
+		return new String[]{AND,OR};
 	}
 
 	@Override
-	public String getSeparator(int index) throws ArrayIndexOutOfBoundsException {
+	public String getSeparator(int index) throws ArrayIndexOutOfBoundsException{
 		if (index <= 0 || index > size())
-			throw new ArrayIndexOutOfBoundsException("Impossible to get the logical separator between the item "+(index-1)+" and "+index+" !");
+			throw new ArrayIndexOutOfBoundsException("Impossible to get the logical separator between the item " + (index - 1) + " and " + index + " !");
 		else
-			return vSeparators.get(index-1);
+			return vSeparators.get(index - 1);
 	}
 
 }

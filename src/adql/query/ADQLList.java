@@ -35,7 +35,7 @@ import java.util.Vector;
  * @see adql.query.operand.Operation
  * @see adql.query.operand.Concatenation
  */
-public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iterable<T> {
+public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, Iterable<T> {
 
 	/** Label of the list. */
 	private final String name;
@@ -43,13 +43,12 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	/** List of ADQL items. */
 	private final Vector<T> list = new Vector<T>();
 
-
 	/**
 	 * Builds an ADQLList with only its name. This name will always prefix the list.
 	 * 
 	 * @param name	Prefix/Name of this list.
 	 */
-	protected ADQLList(String name) {
+	protected ADQLList(String name){
 		if (name != null){
 			name = name.trim();
 			if (name.length() == 0)
@@ -67,7 +66,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	protected ADQLList(ADQLList<T> toCopy) throws Exception {
+	protected ADQLList(ADQLList<T> toCopy) throws Exception{
 		this(toCopy.getName());
 		for(T obj : toCopy)
 			add((T)obj.getCopy());
@@ -80,7 +79,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 * @return						<i>true</i> if the given item has been successfully added, <i>false</i> otherwise.
 	 * @throws NullPointerException	If the given item is <i>null</i>.
 	 */
-	public boolean add(T item) throws NullPointerException {
+	public boolean add(T item) throws NullPointerException{
 		if (item == null)
 			throw new NullPointerException("It is impossible to add NULL items to an ADQL clause !");
 		else
@@ -95,7 +94,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 * @throws NullPointerException				If the given item is <i>null</i>.
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
-	public void add(int index, T item) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public void add(int index, T item) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		if (item != null)
 			list.add(index, item);
 		else
@@ -111,7 +110,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 * @throws NullPointerException				If the given item is <i>null</i>.
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
-	public T set(int index, T item) throws NullPointerException, ArrayIndexOutOfBoundsException {
+	public T set(int index, T item) throws NullPointerException, ArrayIndexOutOfBoundsException{
 		if (item != null)
 			return list.set(index, item);
 		else
@@ -125,7 +124,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 * @return									The corresponding ADQL item.
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
-	public T get(int index) throws ArrayIndexOutOfBoundsException {
+	public T get(int index) throws ArrayIndexOutOfBoundsException{
 		return list.get(index);
 	}
 
@@ -136,7 +135,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 * @return									The removed ADQL item.
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
-	public T remove(int index) throws ArrayIndexOutOfBoundsException {
+	public T remove(int index) throws ArrayIndexOutOfBoundsException{
 		return list.remove(index);
 	}
 
@@ -165,20 +164,20 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 		return list.isEmpty();
 	}
 
-	public String getName() {
+	public String getName(){
 		return name;
 	}
 
-	public String toADQL() {
-		String adql = (getName()==null)?"":(getName()+" ");
+	public String toADQL(){
+		String adql = (getName() == null) ? "" : (getName() + " ");
 
-		for(int i=0; i<size(); i++)
-			adql += ((i == 0)?"":(" "+getSeparator(i)+" ")) + get(i).toADQL();
+		for(int i = 0; i < size(); i++)
+			adql += ((i == 0) ? "" : (" " + getSeparator(i) + " ")) + get(i).toADQL();
 
 		return adql;
 	}
 
-	public Iterator<T> iterator() {
+	public Iterator<T> iterator(){
 		return list.iterator();
 	}
 
@@ -220,16 +219,16 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 			list = (ADQLList<ADQLObject>)lst;
 		}
 
-		public boolean hasNext() {
-			return index+1 < list.size();
+		public boolean hasNext(){
+			return index + 1 < list.size();
 		}
 
-		public ADQLObject next() {
+		public ADQLObject next(){
 			removed = false;
 			return list.get(++index);
 		}
 
-		public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+		public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 			if (index <= -1)
 				throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
@@ -242,7 +241,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 				list.set(index, replacer);
 		}
 
-		public void remove() {
+		public void remove(){
 			if (index <= -1)
 				throw new IllegalStateException("remove() impossible: next() has not yet been called !");
 

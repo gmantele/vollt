@@ -25,44 +25,44 @@ import uws.UWSException;
 
 import uws.job.JobThread;
 
-public class AsyncThread<R> extends JobThread {
+public class AsyncThread< R > extends JobThread {
 
 	protected final ADQLExecutor<R> executor;
 
-	public AsyncThread(TAPJob j, ADQLExecutor<R> executor) throws UWSException {
-		super(j, "Execute the ADQL query of the TAP request "+j.getJobId());
+	public AsyncThread(TAPJob j, ADQLExecutor<R> executor) throws UWSException{
+		super(j, "Execute the ADQL query of the TAP request " + j.getJobId());
 		this.executor = executor;
 	}
 
 	@Override
-	public void interrupt() {
+	public void interrupt(){
 		if (isAlive()){
-			try {
+			try{
 				executor.closeDBConnection();
-			} catch (TAPException e) {
+			}catch(TAPException e){
 				if (job != null && job.getLogger() != null)
-					job.getLogger().error("Can not close the DBConnection for the executing job \""+job.getJobId()+"\" ! => the job will be probably not totally aborted.", e);
+					job.getLogger().error("Can not close the DBConnection for the executing job \"" + job.getJobId() + "\" ! => the job will be probably not totally aborted.", e);
 			}
 		}
 		super.interrupt();
 	}
 
 	@Override
-	protected void jobWork() throws UWSException, InterruptedException {
+	protected void jobWork() throws UWSException, InterruptedException{
 		try{
 			executor.start(this);
 		}catch(InterruptedException ie){
 			throw ie;
 		}catch(UWSException ue){
 			throw ue;
-		}catch(TAPException te) {
+		}catch(TAPException te){
 			throw new UWSException(te.getHttpErrorCode(), te, te.getMessage());
-		}catch(ParseException pe) {
+		}catch(ParseException pe){
 			throw new UWSException(UWSException.BAD_REQUEST, pe, pe.getMessage());
 		}catch(TranslationException te){
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, te.getMessage());
-		}catch(Exception ex) {
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ex, "Error while processing the ADQL query of the job "+job.getJobId()+" !");
+		}catch(Exception ex){
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ex, "Error while processing the ADQL query of the job " + job.getJobId() + " !");
 		}finally{
 			getTAPJob().setExecReport(executor.getExecReport());
 		}

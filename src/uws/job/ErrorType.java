@@ -27,6 +27,6 @@ package uws.job;
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 09/2010
  */
-public enum ErrorType {
+public enum ErrorType{
 	FATAL, TRANSIENT
 }

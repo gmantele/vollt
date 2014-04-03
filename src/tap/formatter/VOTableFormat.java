@@ -63,7 +63,7 @@ import adql.db.DBColumn;
  * 
  * @see ResultSet2VotableFormatter
  */
-public abstract class VOTableFormat<R> implements OutputFormat<R> {
+public abstract class VOTableFormat< R > implements OutputFormat<R> {
 
 	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
 	private boolean logFormatReport;
@@ -86,7 +86,7 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 	 * 
 	 * @see #VOTableFormat(ServiceConnection, boolean)
 	 */
-	public VOTableFormat(final ServiceConnection<R> service) throws NullPointerException {
+	public VOTableFormat(final ServiceConnection<R> service) throws NullPointerException{
 		this(service, false);
 	}
 
@@ -98,20 +98,28 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public VOTableFormat(final ServiceConnection<R> service, final boolean logFormatReport) throws NullPointerException {
+	public VOTableFormat(final ServiceConnection<R> service, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL !");
 		this.service = service;
 		this.logFormatReport = logFormatReport;
 	}
 
-	public final String getMimeType() { return "text/xml"; }
+	public final String getMimeType(){
+		return "text/xml";
+	}
 
-	public final String getShortMimeType() { return "votable"; }
+	public final String getShortMimeType(){
+		return "votable";
+	}
 
-	public String getDescription() { return null; }
+	public String getDescription(){
+		return null;
+	}
 
-	public String getFileExtension() { return "xml"; }
+	public String getFileExtension(){
+		return "xml";
+	}
 
 	/**
 	 * <p>The skeleton of the resulting VOTable is written in this method:</p>
@@ -129,7 +137,7 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 	 * 
 	 * @see tap.formatter.OutputFormat#writeResult(Object, OutputStream, TAPExecutionReport)
 	 */
-	public final void writeResult(final R queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException {
+	public final void writeResult(final R queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException{
 		try{
 			long start = System.currentTimeMillis();
 
@@ -152,7 +160,7 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 			out.flush();
 
 			if (logFormatReport)
-				service.getLogger().info("JOB "+execReport.jobID+" WRITTEN\tResult formatted (in VOTable ; "+nbRows+" rows ; "+columns.length+" columns) in "+(System.currentTimeMillis()-start)+" ms !");
+				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in VOTable ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - start) + " ms !");
 		}catch(IOException ioe){
 			throw new TAPException("Error while writing a query result in VOTable !", ioe);
 		}
@@ -172,7 +180,7 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 	 * @throws IOException	If there is an error while writing the root node in the given Writer.
 	 * @throws TAPException	If there is any other error (by default: never happen).
 	 */
-	protected void writeHeader(final PrintWriter output, final TAPExecutionReport execReport) throws IOException, TAPException {
+	protected void writeHeader(final PrintWriter output, final TAPExecutionReport execReport) throws IOException, TAPException{
 		StringBuffer strBuf = new StringBuffer("<VOTABLE");
 		if (votTableVersion != null)
 			strBuf.append(" version=\"").append(SavotWriter.encodeAttribute(votTableVersion)).append('\"');
@@ -191,8 +199,8 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 
 		// INFO items:
 		output.println("\t\t<INFO name=\"QUERY_STATUS\" value=\"OK\" />");
-		output.println("\t\t<INFO name=\"PROVIDER\" value=\""+((service.getProviderName()==null)?"":SavotWriter.encodeAttribute(service.getProviderName()))+"\">"+((service.getProviderDescription()==null)?"":SavotWriter.encodeElement(service.getProviderDescription()))+"</INFO>");
-		output.println("\t\t<INFO name=\"QUERY\"><![CDATA["+execReport.parameters.getQuery()+"]]></INFO>");
+		output.println("\t\t<INFO name=\"PROVIDER\" value=\"" + ((service.getProviderName() == null) ? "" : SavotWriter.encodeAttribute(service.getProviderName())) + "\">" + ((service.getProviderDescription() == null) ? "" : SavotWriter.encodeElement(service.getProviderDescription())) + "</INFO>");
+		output.println("\t\t<INFO name=\"QUERY\"><![CDATA[" + execReport.parameters.getQuery() + "]]></INFO>");
 	}
 
 	/**
@@ -223,7 +231,7 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 	 * @throws IOException		If there is an error while writing the field metadata.
 	 * @throws TAPException		If there is any other error (by default: never happen).
 	 */
-	protected void writeFieldMeta(TAPColumn col, PrintWriter out) throws IOException, TAPException {
+	protected void writeFieldMeta(TAPColumn col, PrintWriter out) throws IOException, TAPException{
 		StringBuffer fieldline = new StringBuffer("\t\t\t");
 
 		fieldline.append("<FIELD ID=").append('"').append(SavotWriter.encodeAttribute(col.getADQLName())).append('"');
@@ -248,15 +256,15 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 		else
 			description = null;
 
-		if (nullVal != null || description != null) {
+		if (nullVal != null || description != null){
 			fieldline.append(">\n");
 			if (nullVal != null)
-				fieldline.append("<VALUES null=\""+nullVal+"\" />\n");
+				fieldline.append("<VALUES null=\"" + nullVal + "\" />\n");
 			if (description != null)
 				fieldline.append("<DESCRIPTION>").append(SavotWriter.encodeElement(description)).append("</DESCRIPTION>\n");
 			fieldline.append("</FIELD>");
 			out.println(fieldline);
-		} else {
+		}else{
 			fieldline.append("/>");
 			out.println(fieldline);
 		}
@@ -295,8 +303,8 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 	 * @throws IOException		If there is an error while writing the given field value in the given stream.
 	 * @throws TAPException		If there is any other error (by default: never happen).
 	 */
-	protected void writeFieldValue(final Object value, final DBColumn column, final OutputStream output) throws IOException, TAPException {
-		String fieldValue = (value==null)?null:value.toString();
+	protected void writeFieldValue(final Object value, final DBColumn column, final OutputStream output) throws IOException, TAPException{
+		String fieldValue = (value == null) ? null : value.toString();
 		if (fieldValue == null && column instanceof TAPColumn)
 			fieldValue = getNullValue(((TAPColumn)column).getVotType().datatype);
 		if (fieldValue != null)
@@ -323,11 +331,11 @@ public abstract class VOTableFormat<R> implements OutputFormat<R> {
 		datatype = datatype.trim().toLowerCase();
 
 		if (datatype.equals("short"))
-			return ""+Short.MIN_VALUE;
+			return "" + Short.MIN_VALUE;
 		else if (datatype.equals("int"))
-			return ""+Integer.MIN_VALUE;
+			return "" + Integer.MIN_VALUE;
 		else if (datatype.equals("long"))
-			return ""+Long.MIN_VALUE;
+			return "" + Long.MIN_VALUE;
 		else
 			return null;
 	}

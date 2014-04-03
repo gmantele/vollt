@@ -53,11 +53,10 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	private boolean distinct = false;
 
 	/** Case-sensitive dictionary of table aliases. (tableAlias <-> TableName) */
-	private final HashMap<String, String> tableAliases = new HashMap<String, String>();
+	private final HashMap<String,String> tableAliases = new HashMap<String,String>();
 
 	/** Case-insensitive dictionary of table aliases. (tablealias <-> List&lt;TableName&gt;) */
-	private final HashMap<String, ArrayList<String>> mapAliases = new HashMap<String, ArrayList<String>>();
-
+	private final HashMap<String,ArrayList<String>> mapAliases = new HashMap<String,ArrayList<String>>();
 
 	/* ************ */
 	/* CONSTRUCTORS */
@@ -65,7 +64,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	/**
 	 * Void constructor.
 	 */
-	public SearchColumnList() {
+	public SearchColumnList(){
 		super(new DBColumnKeyExtractor());
 	}
 
@@ -74,7 +73,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @param collection	Collection of {@link DBColumn} to copy.
 	 */
-	public SearchColumnList(final Collection<DBColumn> collection) {
+	public SearchColumnList(final Collection<DBColumn> collection){
 		super(collection, new DBColumnKeyExtractor());
 	}
 
@@ -83,10 +82,9 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @param initialCapacity	Initial capacity of this list.
 	 */
-	public SearchColumnList(final int initialCapacity) {
+	public SearchColumnList(final int initialCapacity){
 		super(initialCapacity, new DBColumnKeyExtractor());
 	}
-
 
 	/* ******* */
 	/* GETTERS */
@@ -96,7 +94,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @return <i>true</i> means that multiple occurrences are allowed, <i>false</i> otherwise.
 	 */
-	public final boolean isDistinct() {
+	public final boolean isDistinct(){
 		return distinct;
 	}
 
@@ -105,10 +103,9 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @param distinct <i>true</i> means that multiple occurrences are allowed, <i>false</i> otherwise.
 	 */
-	public final void setDistinct(final boolean distinct) {
+	public final void setDistinct(final boolean distinct){
 		this.distinct = distinct;
 	}
-
 
 	/* ********************** */
 	/* TABLE ALIAS MANAGEMENT */
@@ -228,7 +225,8 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 				DBTable dbTable = match.getTable();
 				if (IdentifierField.TABLE.isCaseSensitive(caseSensitivity)){
 					String tableName = tableAliases.get(table);
-					if (tableName == null) tableName = table;
+					if (tableName == null)
+						tableName = table;
 					if (!dbTable.getADQLName().equals(tableName))
 						continue;
 				}else{
@@ -239,7 +237,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 					}else{
 						boolean foundAlias = false;
 						String temp;
-						for(int a=0; !foundAlias && a<aliases.size(); a++){
+						for(int a = 0; !foundAlias && a < aliases.size(); a++){
 							temp = tableAliases.get(aliases.get(a));
 							if (temp != null)
 								foundAlias = dbTable.getADQLName().equalsIgnoreCase(temp);
@@ -277,7 +275,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 			// Special case: the columns merged by a NATURAL JOIN or a USING may have no table reference:
 			if (tmpResult.size() > 1){
 				ArrayList<DBColumn> result = new ArrayList<DBColumn>(tmpResult.size());
-				for(int i=0; i<tmpResult.size(); i++){
+				for(int i = 0; i < tmpResult.size(); i++){
 					if (tmpResult.get(i).getTable() == null)
 						result.add(tmpResult.remove(i));
 				}
@@ -289,12 +287,11 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 		}
 	}
 
-
 	/* ***************** */
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public boolean add(final DBColumn item) {
+	public boolean add(final DBColumn item){
 		if (distinct && contains(item))
 			return false;
 		else
@@ -302,13 +299,13 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	}
 
 	@Override
-	public boolean addAll(final Collection<? extends DBColumn> c) {
+	public boolean addAll(final Collection<? extends DBColumn> c){
 		boolean changed = super.addAll(c);
 
 		if (changed){
 			if (c instanceof SearchColumnList){
 				SearchColumnList list = (SearchColumnList)c;
-				for(Map.Entry<String, String> entry : list.tableAliases.entrySet())
+				for(Map.Entry<String,String> entry : list.tableAliases.entrySet())
 					putTableAlias(entry.getKey(), entry.getValue());
 			}
 		}
@@ -317,7 +314,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	}
 
 	@Override
-	public boolean removeAll(final Collection<?> c) {
+	public boolean removeAll(final Collection<?> c){
 		boolean changed = super.removeAll(c);
 
 		if (changed){
@@ -331,7 +328,6 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 		return changed;
 	}
 
-
 	/**
 	 * Lets extracting the key to associate with a given {@link DBColumn} instance.
 	 * 
@@ -339,7 +335,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * @version 09/2011
 	 */
 	private static class DBColumnKeyExtractor implements KeyExtractor<DBColumn> {
-		public String getKey(DBColumn obj) {
+		public String getKey(DBColumn obj){
 			return obj.getADQLName();
 		}
 	}

@@ -39,7 +39,7 @@ public class DefaultOwnerGroupIdentifier implements OwnerGroupIdentifier {
 	protected static final Pattern DIR_PREFIX_PATTERN = Pattern.compile(".*([a-zA-Z])[^a-zA-Z]*");
 
 	@Override
-	public String getOwnerGroup(JobOwner owner) {
+	public String getOwnerGroup(JobOwner owner){
 		if (owner == null || owner.getID() == null || owner.getID().trim().isEmpty())
 			return null;
 		else{
