@@ -1,0 +1,1451 @@
+/*
+ * This file is part of ADQLLibrary.
+ * 
+ * ADQLLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * ADQLLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ */
+
+/*
+*  This JavaCC file implements the BNF definition of ADQL v2.0 (IVOA Recommendation 30 Oct 2008 - http://www.ivoa.net/Documents/cover/ADQL-20081030.html).
+*  To generate the parser with this file use JavaCC. This .jj file has been successfully tested with JavaCC 5.0.
+*  
+*  The generated parser checks the syntax of the given ADQL query and generates an object representation but no coherence with any database is done.
+*  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
+*
+*  Author:  Gregory Mantelet (CDS) - gregory.mantelet@astro.unistra.fr
+*  Version: January 2012
+*/
+
+							/* ########### */
+							/* # OPTIONS # */
+							/* ########### */
+options {
+	STATIC = false;
+	IGNORE_CASE = true;
+	DEBUG_PARSER = true;
+}
+
+							/* ########## */
+							/* # PARSER # */
+							/* ########## */
+PARSER_BEGIN(ADQLParser)
+
+package adql.parser;
+
+import java.util.Stack;
+import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Collection;
+
+import java.io.FileReader;
+import java.io.IOException;
+
+import adql.db.exception.UnresolvedIdentifiersException;
+
+import adql.parser.IdentifierItems.IdentifierItem;
+
+import adql.parser.ADQLQueryFactory.JoinType;
+
+import adql.query.*;
+import adql.query.from.*;
+import adql.query.constraint.*;
+
+import adql.query.operand.*;
+
+import adql.query.operand.function.*;
+
+import adql.query.operand.function.geometry.*;
+import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
+
+import adql.translator.PostgreSQLTranslator;
+import adql.translator.TranslationException;
+
+/**
+* <p>Parses an ADQL query thanks to the {@link ADQLParser#Query()} function. </p>
+* 
+* <p>This parser is able, thanks to a {@link QueryChecker} object, to check each ADQLQuery just after its generation.
+* It could be used to check the consistency between the ADQL query to parse and the "database" on which the query must be executed.
+* By default, there is no {@link QueryChecker}. Thus you must extend {@link QueryChecker} to check semantically all generated ADQLQuery objects.</p>
+* 
+* <p>To create an object representation of the given ADQL query, this parser uses a {@link ADQLQueryFactory} object. So if you want customize some object (ie. CONTAINS) of this representation
+* you just have to extend the corresponding default object (ie. ContainsFunction) and to extend the corresponding function of {@link ADQLQueryFactory} (ie. createContains(...)).</p>
+* 
+* <p><b><u>WARNING:</u> To modify this class it's strongly encouraged to modify the .jj file in the section between <i>PARSER_BEGIN</i> and <i>PARSER_END</i> and to re-compile it with JavaCC.</b></p>
+*
+* @see QueryChecker
+* @see ADQLQueryFactory
+*
+* @author Gr&eacute;gory Mantelet (CDS) - gregory.mantelet@astro.unistra.fr
+* @version January 2012
+*/
+public class ADQLParser {
+	
+	/** Tools to build the object representation of the ADQL query. */
+	private ADQLQueryFactory queryFactory = new ADQLQueryFactory();
+	
+	/** The stack of queries (because there may be some sub-queries). */
+	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
+	
+	/** The object representation of the ADQL query to parse. (ONLY USED DURING THE PARSING, else it is always <i>null</i>). */
+	private ADQLQuery query = null;
+	
+	/** Checks each ADQLQuery (sub-query or not) just after their generation. */
+	private QueryChecker queryChecker = null;
+	
+	/** The first token of a table/column name. This token is extracted by {@link #Identifier()}. */
+	private Token currentIdentifierToken = null;
+	
+	/** List of all allowed coordinate systems. */
+	private ArrayList<String> allowedCoordSys = new ArrayList<String>();
+	
+	/**
+	* Builds an ADQL parser without a query to parse.
+	*/
+	public ADQLParser(){
+		this(new java.io.ByteArrayInputStream("".getBytes()));
+	}
+	
+	/**
+	* Builds an ADQL parser without a query to parse but with a QueryChecker and a ADQLQueryFactory.
+	*
+	* @param checker	The object to use to check each ADQLQuery.
+	* @param factory	The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(QueryChecker checker, ADQLQueryFactory factory) {
+		this();
+		
+		queryChecker = checker;
+			
+		if (factory != null)
+			queryFactory = factory;
+	}
+	
+	/**
+	* Builds an ADQL parser without a query to parse but with a QueryChecker.
+	*
+	* @param checker	The object to use to check each ADQLQuery.
+	*/
+	public ADQLParser(QueryChecker checker) {
+		this(checker, null);
+	}
+	
+	/**
+	* Builds an ADQL parser without a query to parse but with a ADQLQueryFactory.
+	*
+	* @param factory	The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(ADQLQueryFactory factory) {
+		this((QueryChecker)null, factory);
+	}
+	
+	/**
+	* Builds a parser with a stream containing the query to parse.
+	*
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param checker	The object to use to check each ADQLQuery.
+	* @param factory	The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
+		this(stream);
+		
+		queryChecker = checker;
+		
+		if (factory != null)
+			queryFactory = factory;
+	}
+	
+	/**
+	* Builds a parser with a stream containing the query to parse.
+	*
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param checker	The object to use to check each ADQLQuery.
+	*/
+	public ADQLParser(java.io.InputStream stream, QueryChecker checker) {
+		this(stream, checker, null);
+	}
+	
+	/**
+	* Builds a parser with a stream containing the query to parse.
+	*
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param factory	The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(java.io.InputStream stream, ADQLQueryFactory factory) {
+		this(stream, (QueryChecker)null, factory);
+	}
+	
+	/**
+	* Builds a parser with a stream containing the query to parse.
+	*
+	* @param stream			The stream in which the ADQL query to parse is given.
+	* @param encoding		The supplied encoding.
+	* @param checker		The object to use to check each ADQLQuery.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
+		this(stream, encoding);
+		
+		queryChecker = checker;
+		
+		if (factory != null)
+			queryFactory = factory;
+	}
+	
+	/**
+	* Builds a parser with a stream containing the query to parse.
+	*
+	* @param stream			The stream in which the ADQL query to parse is given.
+	* @param encoding		The supplied encoding.
+	* @param checker		The object to use to check each ADQLQuery.
+	*/
+	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker) {
+		this(stream, encoding, checker, null);
+	}
+	
+	/**
+	* Builds a parser with a stream containing the query to parse.
+	*
+	* @param stream			The stream in which the ADQL query to parse is given.
+	* @param encoding		The supplied encoding.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(java.io.InputStream stream, String encoding, ADQLQueryFactory factory) {
+		this(stream, encoding, null, factory);
+	}
+	
+	/**
+	* Builds a parser with a reader containing the query to parse.
+	*
+	* @param reader			The reader in which the ADQL query to parse is given.
+	* @param checker		The object to use to check each ADQLQuery.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
+		this(reader);
+		
+		queryChecker = checker;
+
+		if (factory != null)
+			queryFactory = factory;
+	}
+	
+	/**
+	* Builds a parser with a reader containing the query to parse.
+	*
+	* @param reader			The reader in which the ADQL query to parse is given.
+	* @param checker		The object to use to check each ADQLQuery.
+	*/
+	public ADQLParser(java.io.Reader reader, QueryChecker checker) {
+		this(reader, checker, null);
+	}
+	
+	/**
+	* Builds a parser with a reader containing the query to parse.
+	*
+	* @param reader		The reader in which the ADQL query to parse is given.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(java.io.Reader reader, ADQLQueryFactory factory) {
+		this(reader, null, factory);
+	}
+	
+	/**
+	* Builds a parser with another token manager.
+	*
+	* @param tm				The manager which associates a token to a numeric code.
+	* @param checker		The object to use to check each ADQLQuery.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
+		this(tm);
+		
+		queryChecker = checker;
+
+		if (factory != null)
+			queryFactory = factory;
+	}
+	
+	/**
+	* Builds a parser with another token manager.
+	*
+	* @param tm				The manager which associates a token to a numeric code.
+	* @param checker		The object to use to check each ADQLQuery.
+	*/
+	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker) {
+		this(tm, checker, null);
+	}
+	
+	/**
+	* Builds a parser with another token manager.
+	*
+	* @param tm				The manager which associates a token to a numeric code.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
+	*/
+	public ADQLParser(ADQLParserTokenManager tm, ADQLQueryFactory factory) {
+		this(tm, null, factory);
+	}
+	
+	/**
+	* Parses the query given at the creation of this parser or in the <i>ReInit</i> functions.
+	*
+	* @return 					The object representation of the given ADQL query.
+	* @throws ParseException	If there is at least one syntactic error.
+	*
+	* @see ADQLParser#Query()
+	*/
+	public final ADQLQuery parseQuery() throws ParseException {
+		stackQuery.clear();
+		query = null;
+		return Query();
+	}
+	
+	/**
+	* Parses the query given in parameter.
+	*
+	* @param q					The ADQL query to parse.
+	* @return 					The object representation of the given ADQL query.
+	* @throws ParseException	If there is at least one syntactic error.
+	*
+	* @see ADQLParser#ReInit(java.io.InputStream)
+	* @see ADQLParser#setDebug(boolean)
+	* @see ADQLParser#Query()
+	*/
+	public final ADQLQuery parseQuery(String q) throws ParseException {
+		stackQuery.clear();
+		query = null;
+		ReInit(new java.io.ByteArrayInputStream(q.getBytes()));
+		return Query();
+	}
+	
+	/**
+	* Parses the query contained in the stream given in parameter.
+	*
+	* @param stream				The stream which contains the ADQL query to parse.
+	* @return 					The object representation of the given ADQL query.
+	* @throws ParseException	If there is at least one syntactic error.
+	*
+	* @see ADQLParser#ReInit(java.io.InputStream)
+	* @see ADQLParser#setDebug(boolean)
+	* @see ADQLParser#Query()
+	*/
+	public final ADQLQuery parseQuery(java.io.InputStream stream) throws ParseException {
+		stackQuery.clear();
+		query = null;
+		ReInit(stream);
+		return Query();
+	}
+	
+	public final void addCoordinateSystem(final String coordSys){
+		allowedCoordSys.add(coordSys);
+	}
+	
+	public final void setCoordinateSystems(final Collection<String> coordSys){
+		allowedCoordSys.clear();
+		if (coordSys != null)
+			allowedCoordSys.addAll(coordSys);
+	}
+	
+	public final boolean isAllowedCoordSys(final String coordSys) {
+		for(String cs : allowedCoordSys){
+			if (cs.equalsIgnoreCase(coordSys))
+				return true;
+		}
+		return false;
+	}
+	
+	public final void setDebug(boolean debug){
+		if (debug) enable_tracing();
+		else       disable_tracing();
+	}
+	
+	public final QueryChecker getQueryChecker(){
+		return queryChecker;
+	}
+	
+	public final void setQueryChecker(QueryChecker checker){
+		queryChecker = checker;
+	}
+	
+	public final ADQLQueryFactory getQueryFactory(){
+		return queryFactory;
+	}
+	
+	public final void setQueryFactory(ADQLQueryFactory factory){
+		queryFactory = (factory!=null)?factory:(new ADQLQueryFactory());
+	}
+	
+	private final ParseException generateParseException(Exception ex){
+		if (!(ex instanceof ParseException)){
+			ParseException pex = new ParseException("["+ex.getClass().getName()+"] "+ex.getMessage());
+			pex.setStackTrace(ex.getStackTrace());
+			return pex;
+		}else
+			return (ParseException)ex;
+	}
+
+	/**
+	* <p>Gets the specified ADQL query and parses the given ADQL query. The SQL translation is then printed if the syntax is correct.</p>
+	* <p><b>ONLY the syntax is checked: the query is NOT EXECUTED !</b></p>
+	* <p>Supplied parameters are: <ul><li>[-debug] -url http://...</li><li>[-debug] -file ...</li><li>[-debug] -query SELECT...</li></ul></p>
+	*
+	* @param args
+	* @throws Exception
+	*/
+	public static final void main(String[] args) throws Exception {
+		final String USAGE = "Usage:\n\tadqlParser.jar [-d] [-v] [-e] [-a|-s] [<FILE>|<URL>]\n\nNOTE: If no file or URL is given, the ADQL query is expected in the standard input. This query must end with a ';' !\n\nParameters:\n\t-v or --verbose : Print the main steps of the parsing\n\t-d or --debug   : Print stack traces when a grave error occurs\n\t-e or --explain : Explain the ADQL parsing (or Expand the parsing tree)\n\t-a or --adql    : Display the understood ADQL query\n\t-s or --sql     : Ask the SQL translation of the given ADQL query (SQL compatible with PostgreSQL)\n\nReturn:\n\tBy default: nothing if the query is correct. Otherwise a message explaining why the query is not correct is displayed.\n\tWith the -s option, the SQL translation of the given ADQL query will be returned.\n\tWith the -a option, the ADQL query is returned as it has been understood.\n\nExit status:\n\t0\tOK !\n\t1\tParameter error (missing or incorrect parameter)\n\t2\tFile error (incorrect file/url, reading error, ...)\n\t3\tParsing error (syntactic or semantic error)\n\t4\tTranslation error (a problem has occurred during the translation of the given ADQL query in SQL).";
+
+		ADQLParser parser;
+
+		final String urlRegex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+
+		String file = null, metaFile = null;
+		short mode = -1;
+		boolean verbose=false, debug=false, explain=false;
+
+		// Parameters reading:
+		for(int i=0; i<args.length; i++){
+			if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("--debug"))
+				debug = true;
+			else if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("--verbose"))
+				verbose = true;
+			else if (args[i].equalsIgnoreCase("-e") || args[i].equalsIgnoreCase("--explain"))
+				explain = true;
+			else if (args[i].equalsIgnoreCase("-a") || args[i].equalsIgnoreCase("--adql")){
+				if (mode != -1){
+					System.err.println("((!)) Too much parameter: you must choose between -s, -c, -a or nothing ((!))\n"+USAGE);
+					System.exit(1);
+				}else
+					mode = 1;
+			}else if (args[i].equalsIgnoreCase("-s") || args[i].equalsIgnoreCase("--sql")){
+				if (mode != -1){
+					System.err.println("((!)) Too much parameter: you must choose between -s, -c, -a or nothing ((!))\n"+USAGE);
+					System.exit(1);
+				}else
+					mode = 2;
+			}else if (args[i].equalsIgnoreCase("-h") || args[i].equalsIgnoreCase("--help")){
+				System.out.println(USAGE);
+				System.exit(0);
+			}else if (args[i].startsWith("-")){
+				System.err.println("((!)) Unknown parameter: \""+args[i]+"\" ((!))\u005cn"+USAGE);
+				System.exit(1);
+			}else
+				file = args[i].trim();
+		}
+
+		try{
+
+			if (file == null || file.isEmpty())
+				parser = new ADQLParser(System.in);
+			else if (file.matches(urlRegex))
+				parser = new ADQLParser((new java.net.URL(file)).openStream());
+			else
+				parser = new ADQLParser(new FileReader(file));
+
+			parser.setDebug(explain);
+
+			// Query parsing:
+			try{
+				if (verbose)	System.out.print("((i)) Parsing ADQL query...");
+				ADQLQuery q = parser.parseQuery();
+				if (verbose)	System.out.println("((i)) CORRECT ADQL QUERY ((i))");
+				if (mode==2){
+					PostgreSQLTranslator translator = new PostgreSQLTranslator();
+					if (verbose)	System.out.print("((i)) Translating in SQL...");
+					String sql = translator.translate(q);
+					if (verbose)	System.out.println("ok");
+					System.out.println(sql);
+				}else if (mode==1){
+					System.out.println(q.toADQL());
+				}
+			}catch(UnresolvedIdentifiersException uie){
+				System.err.println("((X)) "+uie.getNbErrors()+" unresolved identifiers:");
+				for(ParseException pe : uie)
+					System.err.println("\t - at "+pe.getPosition()+": "+uie.getMessage());
+				if (debug)		uie.printStackTrace(System.err);
+				System.exit(3);
+			}catch(ParseException pe){
+				System.err.println("((X)) Syntax error: "+pe.getMessage()+" ((X))");
+				if (debug)		pe.printStackTrace(System.err);
+				System.exit(3);
+			}catch(TranslationException te){
+				if (verbose)	System.out.println("error");
+				System.err.println("((X)) Translation error: "+te.getMessage()+" ((X))");
+				if (debug)		te.printStackTrace(System.err);
+				System.exit(4);
+			}
+
+		}catch(IOException ioe){
+			System.err.println("\n((X)) Error while reading the file \""+file+"\": "+ioe.getMessage()+" ((X))");
+			if (debug)		ioe.printStackTrace(System.err);
+			System.exit(2);
+		}
+    	
+    }
+}
+
+PARSER_END(ADQLParser)
+
+
+							/* ########### */
+							/* # GRAMMAR # */
+							/* ########### */
+/* ******************** */
+/* Characters to ignore */
+/* ******************** */
+SKIP : { < " " | "\t" | "\n" | "\r" | "\r\n" > }
+
+/* *********** */
+/* Punctuation */
+/* *********** */
+TOKEN : {
+	< LEFT_PAR: "(" >
+|	< RIGHT_PAR: ")" > 
+|	< DOT: "." >
+|	< COMMA: "," >
+|	< EOQ: ";">
+|	< CONCAT: "||" >
+}
+
+/* ******************** */
+/* Arithmetic operators */
+/* ******************** */
+TOKEN : {
+	< PLUS: "+" >
+|	< MINUS: "-" >
+|	< ASTERISK: "*" >
+|	< DIVIDE: "/" >
+}
+
+/* ******************** */
+/* Comparison operators */
+/* ******************** */
+TOKEN : {
+	< EQUAL: "=" >
+|	< NOT_EQUAL: "<>" | "!=" >
+|	< LESS_THAN: "<" >
+|	< LESS_EQUAL_THAN: "<=" >
+|	< GREATER_THAN: ">" >
+|	< GREATER_EQUAL_THAN: ">=" >
+}
+
+/* *************** */
+/* SELECT's tokens */
+/* *************** */
+TOKEN : {
+	< SELECT: "SELECT" >
+|	< QUANTIFIER: "DISTINCT" | "ALL" >
+|	< TOP: "TOP" >
+}
+
+/* ************* */
+/* FROM's tokens */
+/* ************* */
+TOKEN : {
+	< FROM: "FROM" >
+|	< AS: "AS" >
+|	< NATURAL: "NATURAL" >
+|	< INNER: "INNER" >
+|	< OUTER: "OUTER" >
+|	< RIGHT: "RIGHT" >
+|	< LEFT: "LEFT" >
+|	< FULL: "FULL" >
+|	< JOIN: "JOIN" >
+|	< ON: "ON" >
+|	< USING: "USING" >
+}
+
+/* ************** */
+/* WHERE's tokens */
+/* ************** */
+TOKEN : {
+	< WHERE: "WHERE" >
+|	< AND: "AND" >
+|	< OR: "OR" >
+|	< NOT: "NOT" >
+|	< IS: "IS" >
+|	< NULL: "NULL" >
+|	< BETWEEN: "BETWEEN" >
+|	< LIKE: "LIKE" >
+|	< IN: "IN" >
+|	< EXISTS: "EXISTS" >
+}
+
+/* ********************* */
+/* Other clauses' tokens */
+/* ********************* */
+TOKEN : {
+	< GROUP_BY: "GROUP BY" >
+|	< HAVING: "HAVING" >
+|	< ORDER_BY: "ORDER BY" >
+|	< ASC: "ASC" >
+|	< DESC: "DESC" >
+}
+
+/* ************* */
+/* SQL functions */
+/* ************* */
+TOKEN : {
+	< AVG: "AVG" >
+|	< MAX: "MAX" >
+|	< MIN: "MIN" >
+|	< SUM: "SUM" >
+|	< COUNT: "COUNT" >
+}
+
+/* ************** */
+/* ADQL functions */
+/* ************** */
+TOKEN : {
+	< BOX: "BOX" >
+|	< CENTROID: "CENTROID" >
+|	< CIRCLE: "CIRCLE" >
+|	< POINT: "POINT" >
+|	< POLYGON: "POLYGON" >
+|	< REGION: "REGION" >
+
+|	< CONTAINS: "CONTAINS" >
+|	< INTERSECTS: "INTERSECTS" >
+|	< AREA: "AREA" >
+|	< COORD1: "COORD1" >
+|	< COORD2: "COORD2" >
+|	< COORDSYS: "COORDSYS" >
+|	< DISTANCE: "DISTANCE" >
+}
+
+/* ********************** */
+/* Mathematical functions */
+/* ********************** */
+TOKEN : {
+	< ABS: "ABS" >
+|	< CEILING: "CEILING" >
+|	< DEGREES: "DEGREES" >
+|	< EXP: "EXP" >
+|	< FLOOR: "FLOOR" >
+|	< LOG: "LOG" >
+|	< LOG10: "LOG10" >
+|	< MOD: "MOD" >
+|	< PI: "PI" >
+|	< POWER: "POWER" >
+|	< RADIANS: "RADIANS" >
+|	< RAND: "RAND" >
+|	< ROUND: "ROUND" >
+|	< SQRT: "SQRT" >
+|	< TRUNCATE: "TRUNCATE" >
+}
+
+/* ************************* */
+/* Trigonometrical functions */
+/* ************************* */
+TOKEN : {
+	< ACOS: "ACOS" >
+|	< ASIN: "ASIN" >
+|	< ATAN: "ATAN" >
+|	< ATAN2: "ATAN2" >
+|	< COS: "COS" >
+|	< COT: "COT" >
+|	< SIN: "SIN" >
+|	< TAN: "TAN" >
+}
+
+/* ******* */
+/* Comment */
+/* ******* */
+<DEFAULT> MORE : { < <MINUS>(<MINUS>)+ >: WithinComment }
+<WithinComment> SKIP : { < "\n" | "\r" | "\r\n" >: DEFAULT }
+<WithinComment> MORE : { < ~[] > }
+
+/* ****** */
+/* String */
+/* ****** */
+<DEFAULT> MORE : { "'" : WithinString }
+<WithinString> MORE : { < ~["'"] | ("''") > }
+<WithinString> TOKEN : { < STRING_LITERAL: "'" >: DEFAULT }
+
+/* ************************************************* */
+/* Identifier (column, tables, ...) */
+/* ************************************************* */
+<DEFAULT> MORE : { "\"" : WithinDelimitedId }
+<WithinDelimitedId> MORE : { < ~["\""] | ("\"\"") > }
+<WithinDelimitedId> TOKEN : { < DELIMITED_IDENTIFIER: "\"" >: DEFAULT }
+
+TOKEN : {
+	< REGULAR_IDENTIFIER: (<Letter>)+ (<DIGIT> | <Letter> | "_")* >
+|	< #Letter: ["a"-"z","A"-"Z"] >
+}
+
+/* *************** */
+/* Primary numbers */
+/* *************** */
+TOKEN : {
+	< SCIENTIFIC_NUMBER: (<UNSIGNED_FLOAT>|<UNSIGNED_INTEGER>) "E" (<PLUS>|<MINUS>)? <UNSIGNED_INTEGER> >
+|	< UNSIGNED_FLOAT: (<UNSIGNED_INTEGER> <DOT> (<UNSIGNED_INTEGER>)?) | (<DOT> <UNSIGNED_INTEGER>) >
+|	< UNSIGNED_INTEGER: (<DIGIT>)+ >
+|	< #DIGIT: ["0"-"9"] >
+}
+
+							/* ########## */
+							/* # SYNTAX # */
+							/* ########## */
+							
+/* ******************* */
+/* GENERAL ADQL SYNTAX */
+/* ******************* */
+/**
+* Parses the ADQL query given at the parser creation or in the {@link ADQLParser#ReInit(java.io.InputStream)}
+* or in the <i>parseQuery</i> functions.
+*
+* @return					The object representation of the query.
+* @throws ParseException	If the query syntax is incorrect.
+*/
+ADQLQuery Query(): {ADQLQuery q = null;}{
+	q=QueryExpression() (<EOF> | <EOQ>)
+	{ return q; }
+}
+
+ADQLQuery QueryExpression(): {} {
+	{
+		try{
+			// create the query:
+			query = queryFactory.createQuery();
+			stackQuery.push(query);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+	Select()
+	From()
+	[Where()]
+	[GroupBy()]
+	[Having()]
+	[OrderBy()]
+	{
+		// check the query:
+		if (queryChecker != null)
+			queryChecker.check(query);
+			
+		// get the previous query (!= null if the current query is a sub-query):
+		ADQLQuery previousQuery = stackQuery.pop();
+		if (stackQuery.isEmpty())
+			query = null;
+		else
+			query = stackQuery.peek();
+			
+		return previousQuery;
+	}
+}
+
+ADQLQuery SubQueryExpression(): {ADQLQuery q = null;} {
+	<LEFT_PAR> q=QueryExpression() <RIGHT_PAR>
+	{return q;}
+}
+
+void Select(): {ClauseSelect select = query.getSelect(); SelectItem item=null; Token t = null;} {
+	<SELECT>
+	[t=<QUANTIFIER> {select.setDistinctColumns(t.image.equalsIgnoreCase("DISTINCT"));}]
+	[<TOP> t=<UNSIGNED_INTEGER>
+	 {
+	  try{
+	  	select.setLimit(Integer.parseInt(t.image));
+	  }catch(NumberFormatException nfe){
+	  	throw new ParseException("[l."+t.beginLine+";c."+t.beginColumn+"] The TOP limit (\""+t.image+"\") isn't a regular unsigned integer !");
+	  }
+	 }
+	]
+	
+	item=SelectItem() {select.add(item);}
+	(<COMMA> item=SelectItem() {select.add(item);})*
+}
+
+SelectItem SelectItem(): {IdentifierItems identifiers = new IdentifierItems(true); IdentifierItem id = null, label = null; ADQLOperand op = null;} {
+	(
+		( <ASTERISK> {return new SelectAllColumns(query);} )
+	|LOOKAHEAD(7)
+		(
+			id=Identifier() <DOT> { identifiers.append(id); }
+			(
+				id=Identifier() <DOT> { identifiers.append(id); }
+				(
+					id=Identifier() <DOT> { identifiers.append(id); }
+				)?
+			)?
+			<ASTERISK>
+			{
+				try{;
+					return new SelectAllColumns( queryFactory.createTable(identifiers, null) );
+				}catch(Exception ex) {
+					throw generateParseException(ex);
+				}
+			}
+		)
+		
+	| 
+		(op=ValueExpression()(<AS> label=Identifier())?)
+	)
+	
+	{
+		try{
+			SelectItem item = queryFactory.createSelectItem(op, (label==null)?null:label.identifier);
+			if (label != null)
+				item.setCaseSensitive(label.caseSensitivity);
+			return item;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+void From():{FromContent content = null, content2 = null;}{
+	try{
+		<FROM> content=TableRef()
+		(<COMMA> content2=TableRef() { content = queryFactory.createJoin(JoinType.CROSS, content, content2); } )*
+		{ query.setFrom(content); }
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+}
+
+void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condition;} {
+	<WHERE> ConditionsList(where)
+}
+
+void GroupBy(): {ClauseADQL<ColumnReference> groupBy = query.getGroupBy(); ColumnReference colRef = null;} {
+	<GROUP_BY> colRef=ColumnRef() { groupBy.add(colRef); }
+	( <COMMA> colRef=ColumnRef() { groupBy.add(colRef); } )*}void Having(): {ClauseConstraints having = query.getHaving();} {
+	<HAVING> ConditionsList(having)}void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder order = null;} {	<ORDER_BY> order=OrderItem() {orderBy.add(order);}
+	( <COMMA> order=OrderItem() {orderBy.add(order);} )*}
+
+/* *************************** */
+/* COLUMN AND TABLE REFERENCES */
+/* *************************** */
+IdentifierItem Identifier(): {Token t;} {
+	(
+		t=<REGULAR_IDENTIFIER>
+		{ return new IdentifierItem(t, false); }
+	|
+		t=<DELIMITED_IDENTIFIER>
+		{ return new IdentifierItem(t, true); }
+	)
+}
+
+/**
+ * Extracts the name of a table with its possible catalog and schema prefixes.
+ * 
+ * @return A {@link IdentifierItems} which contains at most three items: catalogName, schemaName and tableName.
+ */
+IdentifierItems TableName(): {IdentifierItems identifiers=new IdentifierItems(true); IdentifierItem id=null;} {
+	(
+		id=Identifier() {identifiers.append(id);}						// catalog
+		(LOOKAHEAD(1) <DOT> id=Identifier() {identifiers.append(id);})?	// schema
+		(LOOKAHEAD(1) <DOT> id=Identifier() {identifiers.append(id);})?	// table
+	)
+	{ return identifiers; }
+}
+
+/**
+ * Extracts the name of a column with its possible catalog, schema and table prefixes.
+ * 
+ * @return A {@link IdentifierItems} which contains at most four items: catalogName, schemaName, tableName and columnName.
+ */
+IdentifierItems ColumnName(): {IdentifierItem id; IdentifierItems table=null, identifiers=new IdentifierItems(false);} {
+	( id=Identifier() (LOOKAHEAD(1) <DOT> table=TableName())? )
+	{
+		identifiers.append(id);
+		if (table != null){
+			for(int i=0; i<table.size(); i++)
+				identifiers.append(table.get(i));
+		}
+		return identifiers;
+	}
+}
+
+ADQLColumn Column(): {IdentifierItems identifiers;} {
+	identifiers = ColumnName()
+	{
+		try{
+			return queryFactory.createColumn(identifiers);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+ColumnReference ColumnRef(): {IdentifierItems identifiers = null; Token ind = null;}{
+	( identifiers=ColumnName() | ind=<UNSIGNED_INTEGER> )
+	{
+		try{
+			ColumnReference colRef = null;
+			if (identifiers != null)
+				colRef = queryFactory.createColRef(identifiers);
+			else
+				colRef = queryFactory.createColRef(Integer.parseInt(ind.image), new TextPosition(ind));
+			return colRef;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+ADQLOrder OrderItem(): {IdentifierItems identifiers = null; Token ind = null, desc = null;}{
+	(identifiers=ColumnName() | ind=<UNSIGNED_INTEGER>) (<ASC> | desc=<DESC>)?
+	{
+		try{
+			ADQLOrder order = null;
+			if (identifiers != null)
+				order = queryFactory.createOrder(identifiers, desc!=null);
+			else
+				order = queryFactory.createOrder(Integer.parseInt(ind.image), desc!=null, new TextPosition(ind));
+			return order;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+FromContent SimpleTableRef(): {IdentifierItem alias = null; IdentifierItems identifiers = null; ADQLQuery subQuery = null; FromContent content = null;} {
+	try{
+		(
+			identifiers=TableName() [[<AS>] alias=Identifier()]
+			{ return queryFactory.createTable(identifiers, alias); }
+		|LOOKAHEAD(2)
+			subQuery=SubQueryExpression() [<AS>] alias=Identifier()
+			{ return queryFactory.createTable(subQuery, alias); }
+		|
+			<LEFT_PAR> content=JoinedTable() <RIGHT_PAR>
+			{ return content; }
+		)
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+}
+
+FromContent TableRef(): { FromContent content; } {
+	content=SimpleTableRef()
+	( LOOKAHEAD(2) content=JoinSpecification(content) )*
+	{ return content; }
+}
+
+FromContent JoinedTable(): { FromContent content; } {
+	content=SimpleTableRef()
+	( content=JoinSpecification(content) )+
+	{ return content; }
+}
+
+
+ADQLJoin JoinSpecification(FromContent leftTable): { boolean natural = false; JoinType type = JoinType.INNER;  ClauseConstraints condition = new ClauseConstraints("ON"); ArrayList<ADQLColumn> lstColumns=new ArrayList<ADQLColumn>(); IdentifierItem id; FromContent rightTable;} {
+	try{
+		(
+			<NATURAL> {natural=true;} [<INNER> | ((<LEFT> {type = JoinType.OUTER_LEFT;}|<RIGHT> {type = JoinType.OUTER_RIGHT;}|<FULL> {type = JoinType.OUTER_FULL;}) [<OUTER>])] <JOIN> rightTable=TableRef()
+			{ return queryFactory.createJoin(type, leftTable, rightTable); }
+		|
+			[<INNER> | ((<LEFT> {type = JoinType.OUTER_LEFT;}|<RIGHT> {type = JoinType.OUTER_RIGHT;}|<FULL> {type = JoinType.OUTER_FULL;}) [<OUTER>])] <JOIN> rightTable=TableRef()
+			(
+				<ON> ConditionsList(condition)
+				{ return queryFactory.createJoin(type, leftTable, rightTable, condition); }
+			|
+				<USING> <LEFT_PAR> id=Identifier()
+						{ lstColumns.add( queryFactory.createColumn(id) ); }
+						(
+							<COMMA> id=Identifier()
+							{ lstColumns.add( queryFactory.createColumn(id) ); }
+						)* <RIGHT_PAR>
+				{ return queryFactory.createJoin(type, leftTable, rightTable, lstColumns); }
+			)
+		)
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+}
+
+/* ****** */
+/* STRING */
+/* ****** */
+String String(): {Token t; String str="";} {
+	(t=<STRING_LITERAL> {str += t.image;})+
+	{return (str!=null)?str.substring(1,str.length()-1):str;}
+}
+
+/* ************* */
+/* NUMERIC TYPES */
+/* ************* */
+String UnsignedNumeric(): {Token t;} {
+	(t=<SCIENTIFIC_NUMBER>
+	| t=<UNSIGNED_FLOAT>
+	| t=<UNSIGNED_INTEGER>)
+	{return t.image;}
+}
+
+String UnsignedFloat(): {Token t;} {
+	(t=<UNSIGNED_INTEGER>
+	| t=<UNSIGNED_FLOAT>)
+	{return t.image;}
+}
+
+String SignedInteger(): {Token sign=null, number;} {
+	((sign=<PLUS>|sign=<MINUS>)? number=<UNSIGNED_INTEGER>)
+	{return ((sign==null)?"":sign.image)+number.image;}
+}
+
+/* *********** */
+/* EXPRESSIONS */
+/* *********** */
+ADQLOperand ValueExpressionPrimary(): {String expr; ADQLColumn column; ADQLOperand op;} {
+	(
+		try{
+	// unsigned_value_specification
+			expr=UnsignedNumeric() {return queryFactory.createNumericConstant(expr);}
+	| 		expr=String() {return queryFactory.createStringConstant(expr);}
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	// column_reference
+	| column=Column() {return column;}
+	// set_function_specification
+	| op=SqlFunction() {return op;}
+	// LEFT_PAR value_expression RIGHT_PAR
+	| (<LEFT_PAR> op=ValueExpression() <RIGHT_PAR>) {return op;})
+}
+
+ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {	(valueExpr=GeometryValueFunction()	| LOOKAHEAD(<PLUS> | <MINUS>) valueExpr=NumericExpression()
+	| LOOKAHEAD(<COORDSYS>) valueExpr=StringExpression()
+	| LOOKAHEAD(StringFactor() <CONCAT>) valueExpr=StringExpression()
+	| valueExpr=NumericExpression())
+	{return valueExpr;}}
+
+ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
+	(leftOp=NumericTerm() ((sign=<PLUS> | sign=<MINUS>) rightOp=NumericExpression())?)
+	{
+	if (sign == null)
+		return leftOp;
+	else{
+		try{
+			return queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+	}
+}
+
+ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
+	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=NumericTerm())?)
+	{
+	if (sign == null)
+		return leftOp;
+	else{
+		try{
+			return queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+	}
+}
+
+ADQLOperand Factor(): {boolean negative = false;; ADQLOperand op;} {
+	(
+		(<PLUS> | (<MINUS> {negative = true;}))?
+		(LOOKAHEAD(2) op=NumericFunction() | op=ValueExpressionPrimary())
+	)
+	
+	{
+		if (negative){
+			try{
+				op = queryFactory.createNegativeOperand(op);
+			}catch(Exception ex){
+				throw generateParseException(ex);
+			}
+		}
+		
+		return op;
+	}
+}
+
+ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;} {	leftOp=StringFactor()
+	(
+		<CONCAT>
+		rightOp=StringFactor()
+		{
+			if (!(leftOp instanceof Concatenation)){
+				try{
+					ADQLOperand temp = leftOp;
+					leftOp = queryFactory.createConcatenation();
+					((Concatenation)leftOp).add(temp);
+				}catch(Exception ex){
+					throw generateParseException(ex);
+				}
+			}
+			((Concatenation)leftOp).add(rightOp);
+		}
+	)*
+	{ return leftOp; }}
+
+ADQLOperand StringFactor(): {ADQLOperand op;} {
+	(op=ExtractCoordSys()
+	| LOOKAHEAD(2) op=UserDefinedFunction()
+	| op=ValueExpressionPrimary())
+	{return op;}
+}
+
+GeometryValue<GeometryFunction> GeometryExpression(): {ADQLColumn col = null; GeometryFunction gf = null;} {
+	(col=Column() | gf=GeometryValueFunction())
+	{
+		if (col != null)
+			return new GeometryValue<GeometryFunction>(col);
+		else
+			return new GeometryValue<GeometryFunction>(gf);
+	}
+}
+
+/* ********************************** */
+/* BOOLEAN EXPRESSIONS (WHERE clause) */
+/* ********************************** */
+ClauseConstraints ConditionsList(ClauseConstraints clause): {ADQLConstraint constraint = null; Token op = null; boolean notOp = false;} {
+	try{
+		[<NOT> {notOp = true;}]
+		constraint=Constraint()
+		{
+			if (notOp) constraint = queryFactory.createNot(constraint);
+			notOp = false;
+			if (clause instanceof ADQLConstraint)
+				clause.add(constraint);
+			else
+				clause.add(constraint);
+		}
+		(
+			(op=<AND> | op=<OR>)
+			[<NOT> {notOp = true;}]
+			constraint=Constraint()
+			{
+				if (notOp) constraint = queryFactory.createNot(constraint);
+				notOp = false;
+				if (clause instanceof ADQLConstraint)
+					clause.add(op.image, constraint);
+				else
+					clause.add(op.image, constraint);
+			}
+		)*
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+	{return clause;}
+}
+
+ADQLConstraint Constraint(): {ADQLConstraint constraint =  null;} {
+	(LOOKAHEAD(Predicate()) constraint=Predicate()
+	| (
+		<LEFT_PAR>
+		{
+			try{
+				constraint = queryFactory.createGroupOfConstraints();
+			}catch(Exception ex){
+				throw generateParseException(ex);
+			}
+		}
+		ConditionsList((ConstraintsGroup)constraint)
+		<RIGHT_PAR>
+	))
+	{return constraint;}
+}
+
+ADQLConstraint Predicate(): {ADQLQuery q=null; ADQLColumn column=null; ADQLOperand strExpr1=null, strExpr2=null; ADQLOperand op; Token notToken = null; ADQLConstraint constraint = null;} {
+	try{
+		// exists_predicate
+		((<EXISTS> q=SubQueryExpression()) {return queryFactory.createExists(q);}
+		// null_predicate
+		| LOOKAHEAD(Column() <IS>)(column=Column() <IS> [notToken=<NOT>] <NULL> {return queryFactory.createIsNull((notToken!=null), column);})
+		// like_predicate
+		| LOOKAHEAD(StringExpression() [<NOT>] <LIKE>) (strExpr1=StringExpression() [notToken=<NOT>] <LIKE> strExpr2=StringExpression() {return queryFactory.createComparison(strExpr1, (notToken==null)?ComparisonOperator.LIKE:ComparisonOperator.NOTLIKE, strExpr2);})
+		| (op=ValueExpression()
+			(// comparison_predicate
+			(constraint=ComparisonEnd(op))
+			// between predicate
+			| LOOKAHEAD(2) constraint=BetweenEnd(op)
+			// in_predicate
+			| constraint=InEnd(op)
+			)
+		))
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+	{return constraint;}
+}
+
+Comparison ComparisonEnd(ADQLOperand leftOp): {Token comp; ADQLOperand rightOp;} {
+	((comp=<EQUAL> | comp=<NOT_EQUAL> | comp=<LESS_THAN> | comp=<LESS_EQUAL_THAN> | comp=<GREATER_THAN> | comp=<GREATER_EQUAL_THAN>) rightOp=ValueExpression())
+	{
+		try{
+			return queryFactory.createComparison(leftOp, ComparisonOperator.getOperator(comp.image), rightOp);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+Between BetweenEnd(ADQLOperand leftOp): {Token notToken=null; ADQLOperand min, max;} {
+	[notToken=<NOT>] <BETWEEN> min=ValueExpression() <AND> max=ValueExpression()
+	{
+		try{
+			return queryFactory.createBetween((notToken!=null), leftOp, min, max);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+In InEnd(ADQLOperand leftOp): {Token not=null; ADQLQuery q = null; ADQLOperand item; Vector<ADQLOperand> items = new Vector<ADQLOperand>();} {
+	[not=<NOT>] <IN>
+	(LOOKAHEAD(2) q=SubQueryExpression()
+	| (<LEFT_PAR> item=ValueExpression() {items.add(item);} (<COMMA> item=ValueExpression() {items.add(item);})* <RIGHT_PAR>))
+	{
+		try{
+			if (q != null)
+				return queryFactory.createIn(leftOp, q, not!=null);
+			else{
+				ADQLOperand[] list = new ADQLOperand[items.size()];
+				int i=0;
+				for(ADQLOperand op : items)
+					list[i++] = op;
+				return queryFactory.createIn(leftOp, list, not!=null);
+			}
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+
+/* ************* */
+/* SQL FUNCTIONS */
+/* ************* */
+SQLFunction SqlFunction(): {Token fct, all=null, distinct=null; ADQLOperand op=null; SQLFunction funct = null;}{	try{
+		(
+			(<COUNT> <LEFT_PAR> [distinct=<QUANTIFIER>] (all=<ASTERISK> | op=ValueExpression()) <RIGHT_PAR>
+			{ funct = queryFactory.createSQLFunction((all!=null)?SQLFunctionType.COUNT_ALL:SQLFunctionType.COUNT, op, distinct != null && distinct.image.equalsIgnoreCase("distinct")); })
+		|
+			((fct=<AVG> | fct=<MAX> | fct=<MIN> | fct=<SUM>) <LEFT_PAR> [distinct=<QUANTIFIER>] op=ValueExpression() <RIGHT_PAR> 
+			{ funct = queryFactory.createSQLFunction(SQLFunctionType.valueOf(fct.image.toUpperCase()), op, distinct != null && distinct.image.equalsIgnoreCase("distinct")); })
+		)
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+	{ return funct; }}
+
+
+/* ************** */
+/* ADQL FUNCTIONS */
+/* ************** */
+ADQLOperand[] Coordinates(): {ADQLOperand[] ops = new ADQLOperand[2];} {
+	ops[0]=NumericExpression() <COMMA> ops[1]=NumericExpression()
+	{return ops;}
+}
+
+GeometryFunction GeometryFunction(): {Token t=null; GeometryValue<GeometryFunction> gvf1, gvf2; GeometryValue<PointFunction> gvp1, gvp2; GeometryFunction gf = null; PointFunction p1=null, p2=null; ADQLColumn col1 = null, col2 = null;} {
+	try{
+		// predicate_geometry_function
+		(
+			((t=<CONTAINS> | t=<INTERSECTS>) <LEFT_PAR> gvf1=GeometryExpression() <COMMA> gvf2=GeometryExpression() <RIGHT_PAR>
+			{
+				if (t.image.equalsIgnoreCase("contains"))
+					gf = queryFactory.createContains(gvf1, gvf2);
+				else
+					gf = queryFactory.createIntersects(gvf1, gvf2);
+			})
+		// non_predicate_geometry_function
+		|	(<AREA> <LEFT_PAR> gvf1=GeometryExpression() <RIGHT_PAR>) {gf = queryFactory.createArea(gvf1);}
+		|	(<COORD1> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord1(p1);} | col1=Column() {gf = queryFactory.createCoord1(col1);}) <RIGHT_PAR>)
+		|	(<COORD2> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord2(p1);} | col1=Column() {gf = queryFactory.createCoord2(col1);}) <RIGHT_PAR>)
+		|	(<DISTANCE>
+				<LEFT_PAR>
+				(p1=Point()|col1=Column()) 
+				{
+					if (p1 != null)
+						gvp1 = new GeometryValue<PointFunction>(p1);
+					else
+						gvp1 = new GeometryValue<PointFunction>(col1);
+				}
+				<COMMA>
+				(p2=Point()|col2=Column())
+				{
+					if (p2 != null)
+						gvp2 = new GeometryValue<PointFunction>(p2);
+					else
+						gvp2 = new GeometryValue<PointFunction>(col2);
+				} 
+				<RIGHT_PAR>
+				{gf = queryFactory.createDistance(gvp1, gvp2);}
+			)
+		)
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+	
+	{ return gf; }
+}
+
+ADQLOperand CoordinateSystem(): { Token oldToken = token; ADQLOperand coordSys=null;}{
+	coordSys=StringExpression()
+	{
+		if (allowedCoordSys.size() > 0){
+			TextPosition position = new TextPosition(oldToken.next, token);
+			if (coordSys == null)
+				throw new ParseException("A coordinate system must always be provided !", position);
+			if (coordSys instanceof StringConstant && !isAllowedCoordSys(((StringConstant)coordSys).getValue()))
+				throw new ParseException("\""+coordSys.toADQL()+"\" is not an allowed coordinate systems !", position);
+		}
+			
+		return coordSys;
+	}
+}
+
+GeometryFunction GeometryValueFunction(): {ADQLOperand coordSys; ADQLOperand width, height; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; ADQLOperand op=null; GeometryValue<GeometryFunction> gvf = null; GeometryFunction gf = null;} {
+	try{
+		// BOX:
+		((<BOX> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
+				<COMMA> coords=Coordinates() // coordinates
+				<COMMA> width=NumericExpression() <COMMA> height=NumericExpression() <RIGHT_PAR>)
+		 {gf = queryFactory.createBox(coordSys, coords[0], coords[1], width, height);}
+		 
+		// CENTROID:
+		| (<CENTROID> <LEFT_PAR> gvf=GeometryExpression() <RIGHT_PAR>) {gf = queryFactory.createCentroid(gvf);}
+		
+		// CIRCLE:
+		| (<CIRCLE> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
+				<COMMA> coords=Coordinates() // coordinates
+				<COMMA> width=NumericExpression() <RIGHT_PAR>) // radius
+		 {gf = queryFactory.createCircle(coordSys, coords[0], coords[1], width);}
+		
+		// POINT: 
+		| gf=Point()
+		
+		// POLYGON:
+		| (<POLYGON> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
+				{ vCoords = new Vector<ADQLOperand>(); } // coordinates
+				<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+				<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+				<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+				(<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);})*
+				<RIGHT_PAR>)
+		  { gf = queryFactory.createPolygon(coordSys, vCoords); }
+		  
+		// REGION:
+		| (<REGION> <LEFT_PAR> op=StringExpression() <RIGHT_PAR>) {gf = queryFactory.createRegion(op);})
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+	
+	{return gf;}
+}
+
+PointFunction Point(): {ADQLOperand coordSys; ADQLOperand[] coords;} {
+	<POINT> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
+			<COMMA> coords=Coordinates() <RIGHT_PAR> // coordinates
+	{
+		try{
+			return queryFactory.createPoint(coordSys, coords[0], coords[1]);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+GeometryFunction ExtractCoordSys(): {GeometryValue<GeometryFunction> gvf;} {
+	<COORDSYS> <LEFT_PAR> gvf=GeometryExpression() <RIGHT_PAR>
+	{
+		try{
+			return queryFactory.createExtractCoordSys(gvf);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+/* ***************** */
+/* NUMERIC FUNCTIONS */
+/* ***************** */
+ADQLFunction NumericFunction(): {ADQLFunction fct;} {
+	(fct=MathFunction()
+	| fct=TrigFunction()
+	| fct=GeometryFunction()
+	| fct=UserDefinedFunction())
+	{return fct;}
+}
+
+MathFunction MathFunction(): {Token fct=null; ADQLOperand param1=null, param2=null; String integerValue = null;} {
+	try{
+		((fct=<ABS> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<CEILING> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<DEGREES> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<EXP> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<FLOOR> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<LOG> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<LOG10> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<MOD> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
+		| (fct=<PI> <LEFT_PAR><RIGHT_PAR>)
+		| (fct=<POWER> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
+		| (fct=<RADIANS> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<RAND> <LEFT_PAR> (param1=NumericExpression())? <RIGHT_PAR>)
+		| (fct=<ROUND> <LEFT_PAR> param1=NumericExpression() (<COMMA> integerValue=SignedInteger() {param2 = queryFactory.createOperation(queryFactory.createNumericConstant(integerValue), null, null);})? <RIGHT_PAR>)
+		| (fct=<SQRT> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<TRUNCATE> <LEFT_PAR> param1=NumericExpression() (<COMMA> integerValue=SignedInteger() {param2 = queryFactory.createOperation(queryFactory.createNumericConstant(integerValue), null, null);})? <RIGHT_PAR>))
+		{
+			if (param1 != null)
+				return queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
+			else
+				return null;
+		}
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+}
+
+MathFunction TrigFunction(): {Token fct=null; ADQLOperand param1=null, param2=null;} {
+	((fct=<ACOS> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+	| (fct=<ASIN> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+	| (fct=<ATAN> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+	| (fct=<ATAN2> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
+	| (fct=<COS> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+	| (fct=<COT> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+	| (fct=<SIN> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+	| (fct=<TAN> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>))
+	{
+		try{
+			if (param1 != null)
+				return queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
+			else
+				return null;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+/* /!\ WARNING: The function name may be prefixed by "udf_" but there is no way to check it here ! */
+UserDefinedFunction UserDefinedFunction(): {Token fct; Vector<ADQLOperand> params = new Vector<ADQLOperand>(); ADQLOperand op;} {
+	fct=<REGULAR_IDENTIFIER> <LEFT_PAR> (op=ValueExpression() {params.add(op);} (<COMMA> op=ValueExpression() {params.add(op);})*)? <RIGHT_PAR>
+	{
+		//System.out.println("INFO [ADQLParser]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
+		try{
+			ADQLOperand[] parameters = new ADQLOperand[params.size()];
+			for(int i=0; i<params.size(); i++)
+				parameters[i] = params.get(i);
+			return queryFactory.createUserDefinedFunction(fct.image, parameters);
+		}catch(UnsupportedOperationException uoe){
+			throw new ParseException(uoe.getMessage(), new TextPosition(fct, token));
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+

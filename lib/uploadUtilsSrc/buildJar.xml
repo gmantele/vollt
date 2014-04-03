@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project>
+<project name="TAPUploaderTest" basedir="." default="jarBuild">
+	<target name="init">
+		<property name="srcRep" value="src" />
+		<property name="buildRep" value="build"/>
+		<property name="jarFile" value="uploadUtils.jar" />
+		<property name="jarDest" value=".." />
+	</target>
+	
+	<target name="jarBuild" depends="init" >
+		<echo>Création du jar (${jarDest}/${jarFile})...</echo>
+		<jar destfile="${jarDest}/${jarFile}">
+			<zipfileset src="binarySavot.jar" excludes="META-INF/*" />
+			<zipfileset src="cds.savot.common.jar" excludes="META-INF/*" />
+			<zipfileset src="cds.savot.model.jar" excludes="META-INF/*" />
+			<zipfileset src="cds.savot.pull.jar" excludes="META-INF/*" />
+			<zipfileset src="cds.savot.writer.jar" excludes="META-INF/*" />
+			<zipfileset src="kxml2-min.jar" excludes="META-INF/*" />
+			<zipfileset src="cos.jar" excludes="META-INF/*" />
+		</jar>
+	</target>
+</project>

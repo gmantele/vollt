@@ -1,0 +1,68 @@
+package adqlParser.geometryFunctions;
+
+import saadadb.database.DbmsWrapper;
+
+import adqlParser.ParseException;
+
+public class ContainsFunction implements GeometryFunction {
+
+	public final GeometryFunction leftParam;	// POINT
+	public final GeometryFunction rightParam;	// BOX, CIRCLE
+	
+	public final String[] sqlColumns;
+	
+	public ContainsFunction(GeometryFunction left, GeometryFunction right) throws ParseException {
+		if (left == null || right == null)
+			throw new ParseException("At least one parameter of the CONTAINS function is null: both must be non-null !");
+		
+		leftParam = left;
+		rightParam = right;
+		
+		String[] leftColumns = leftParam.getSQLColumns();
+		String[] rightColumns= rightParam.getSQLColumns();
+		int ln = ((leftColumns==null)?0:leftColumns.length)+((rightColumns==null)?0:rightColumns.length);
+		sqlColumns = new String[ln];
+		int c = 0;
+		if (leftColumns != null)
+			for(int i=0; i < leftColumns.length; i++, c++)
+				sqlColumns[c] = leftColumns[i];
+		if (rightColumns != null)
+			for(int i=0; i < rightColumns.length; i++, c++)
+				sqlColumns[c] = rightColumns[i];
+	}
+	
+	public String[] getSQLColumns() {
+		return sqlColumns;
+	}
+
+	public String toSQL() {
+		String sql = getFunctionName()+"("+leftParam.toSQL()+", "+rightParam.toSQL()+")";
+		// POINT, ...
+		if (leftParam.getFunctionName().equalsIgnoreCase("POINT")){
+			PointFunction p = (PointFunction)leftParam;
+			// BOX
+			if (rightParam.getFunctionName().equalsIgnoreCase("BOX")){
+				BoxFunction b = (BoxFunction)rightParam;
+				sql = DbmsWrapper.getIsInBoxConstraint(p.coord1, p.coord2, b.coord1, b.coord2, b.width, b.height);
+				
+			// CIRCLE
+			}else if (rightParam.getFunctionName().equalsIgnoreCase("CIRCLE")){
+				CircleFunction c = (CircleFunction)rightParam;
+				sql = DbmsWrapper.getADQLIsInCircleConstraint(p.coord1, p.coord2, c.coord1, c.coord2, c.radius);
+			}
+		}
+		return sql;
+	}
+
+	public String toText() {
+		return "'"+getFunctionName()+"("+leftParam.toSQL().replaceAll("'", "''")+", "+rightParam.toSQL().replaceAll("'", "''")+")'";
+	}
+	
+	public String toString(){
+		return toText();
+	}
+
+	public String getFunctionName() {
+		return "CONTAINS";
+	}
+}
