@@ -16,7 +16,8 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.util.ArrayList;
@@ -25,22 +26,19 @@ import java.util.NoSuchElementException;
 
 import adql.db.DBColumn;
 import adql.db.DefaultDBColumn;
-
 import adql.parser.ADQLParser;
-
+import adql.parser.ParseException;
 import adql.query.from.FromContent;
-
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
-
 import adql.search.ISearchHandler;
 
 /**
  * <p>Object representation of an ADQL query or sub-query.</p>
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (11/2013)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -240,10 +238,12 @@ public class ADQLQuery implements ADQLObject {
 			orderBy = newOrderBy;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new ADQLQuery(this);
 	}
 
+	@Override
 	public String getName(){
 		return "{ADQL query}";
 	}
@@ -261,7 +261,11 @@ public class ADQLQuery implements ADQLObject {
 		for(SelectItem item : select){
 			ADQLOperand operand = item.getOperand();
 			if (item instanceof SelectAllColumns){
-				columns.addAll(from.getDBColumns());
+				try{
+					columns.addAll(from.getDBColumns());
+				}catch(ParseException pe){
+					// Here, this error should not occur any more, since it must have been caught by the DBChecker!
+				}
 			}else{
 				DBColumn col = null;
 				if (item.hasAlias()){
@@ -296,12 +300,14 @@ public class ADQLQuery implements ADQLObject {
 		return sHandler.iterator();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private int index = -1;
 			private ClauseADQL<?> currentClause = null;
 
+			@Override
 			public ADQLObject next(){
 				index++;
 				switch(index){
@@ -329,10 +335,12 @@ public class ADQLQuery implements ADQLObject {
 				return currentClause;
 			}
 
+			@Override
 			public boolean hasNext(){
 				return index + 1 < 6;
 			}
 
+			@Override
 			@SuppressWarnings("unchecked")
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
@@ -382,6 +390,7 @@ public class ADQLQuery implements ADQLObject {
 				}
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -394,6 +403,7 @@ public class ADQLQuery implements ADQLObject {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		StringBuffer adql = new StringBuffer(select.toADQL());
 		adql.append("\nFROM ").append(from.toADQL());

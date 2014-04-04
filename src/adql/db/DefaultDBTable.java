@@ -16,7 +16,8 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.Collection;
@@ -26,8 +27,8 @@ import java.util.Iterator;
 /**
  * Default implementation of {@link DBTable}.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (11/2013)
  */
 public class DefaultDBTable implements DBTable {
 
@@ -125,18 +126,22 @@ public class DefaultDBTable implements DBTable {
 		adqlCatalogName = adqlCatName;
 	}
 
+	@Override
 	public final String getDBName(){
 		return dbName;
 	}
 
+	@Override
 	public final String getDBSchemaName(){
 		return dbSchemaName;
 	}
 
+	@Override
 	public final String getDBCatalogName(){
 		return dbCatalogName;
 	}
 
+	@Override
 	public final String getADQLName(){
 		return adqlName;
 	}
@@ -145,6 +150,7 @@ public class DefaultDBTable implements DBTable {
 		adqlName = (name != null) ? name : dbName;
 	}
 
+	@Override
 	public final String getADQLSchemaName(){
 		return adqlSchemaName;
 	}
@@ -153,6 +159,7 @@ public class DefaultDBTable implements DBTable {
 		adqlSchemaName = (name != null) ? name : dbSchemaName;
 	}
 
+	@Override
 	public final String getADQLCatalogName(){
 		return adqlCatalogName;
 	}
@@ -167,6 +174,7 @@ public class DefaultDBTable implements DBTable {
 	 * 
 	 * @see adql.db.DBTable#getColumn(java.lang.String, boolean)
 	 */
+	@Override
 	public DBColumn getColumn(String colName, boolean byAdqlName){
 		if (byAdqlName)
 			return columns.get(colName);
@@ -183,6 +191,7 @@ public class DefaultDBTable implements DBTable {
 		return (getColumn(colName, byAdqlName) != null);
 	}
 
+	@Override
 	public Iterator<DBColumn> iterator(){
 		return columns.values().iterator();
 	}
@@ -238,10 +247,15 @@ public class DefaultDBTable implements DBTable {
 		return splitRes;
 	}
 
+	@Override
 	public DBTable copy(final String dbName, final String adqlName){
 		DefaultDBTable copy = new DefaultDBTable(dbName, adqlName);
-		for(DBColumn col : this)
-			copy.addColumn(col.copy(col.getDBName(), col.getADQLName(), copy));
+		for(DBColumn col : this){
+			if (col instanceof DBCommonColumn)
+				copy.addColumn(new DBCommonColumn((DBCommonColumn)col, col.getDBName(), col.getADQLName()));
+			else
+				copy.addColumn(col.copy(col.getDBName(), col.getADQLName(), copy));
+		}
 		return copy;
 	}
 

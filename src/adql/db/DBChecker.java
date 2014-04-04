@@ -16,7 +16,8 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2011 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2011,2013-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.util.ArrayList;
@@ -26,10 +27,8 @@ import java.util.HashMap;
 import adql.db.exception.UnresolvedColumnException;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnresolvedTableException;
-
 import adql.parser.ParseException;
 import adql.parser.QueryChecker;
-
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
@@ -38,9 +37,7 @@ import adql.query.IdentifierField;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
 import adql.query.from.ADQLTable;
-
 import adql.query.operand.ADQLColumn;
-
 import adql.search.ISearchHandler;
 import adql.search.SearchColumnHandler;
 import adql.search.SimpleSearchHandler;
@@ -62,8 +59,8 @@ import adql.search.SimpleSearchHandler;
  * 	can be replaced in SQL by their DB name, if different. This mapping is done automatically by {@link adql.translator.PostgreSQLTranslator}.
  * </i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (11/2013)
  */
 public class DBChecker implements QueryChecker {
 
@@ -162,6 +159,7 @@ public class DBChecker implements QueryChecker {
 	 * @see #resolveColumn(ADQLColumn, SearchColumnList)
 	 * @see #checkColumnReference(ColumnReference, ClauseSelect, SearchColumnList)
 	 */
+	@Override
 	public void check(final ADQLQuery query) throws ParseException{
 		UnresolvedIdentifiersException errors = new UnresolvedIdentifiersException();
 		HashMap<DBTable,ADQLTable> mapTables = new HashMap<DBTable,ADQLTable>();
@@ -215,14 +213,13 @@ public class DBChecker implements QueryChecker {
 			}
 		}
 
-		SearchColumnList list = query.getFrom().getDBColumns();
-
-		//		// DEBUG
-		//		System.out.println("\n*** FROM COLUMNS ***");
-		//		for(DBColumn dbCol : list){
-		//			System.out.println("\t- "+dbCol.getADQLName()+" in "+((dbCol.getTable()==null)?"<NULL>":dbCol.getTable().getADQLName())+" (= "+dbCol.getDBName()+" in "+((dbCol.getTable()==null)?"<NULL>":dbCol.getTable().getDBName())+")");
-		//		}
-		//		System.out.println();
+		SearchColumnList list;
+		try{
+			list = query.getFrom().getDBColumns();
+		}catch(ParseException pe){
+			errors.addException(pe);
+			list = new SearchColumnList();
+		}
 
 		// Check the existence of all columns:
 		sHandler = new SearchColumnHandler();

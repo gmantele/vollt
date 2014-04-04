@@ -16,7 +16,8 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ import java.util.Iterator;
 
 import adql.db.DBColumn;
 import adql.db.DBTable;
-
+import adql.db.exception.UnresolvedJoin;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
@@ -36,7 +37,6 @@ import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
-
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
 import adql.query.constraint.Comparison;
@@ -44,11 +44,9 @@ import adql.query.constraint.Exists;
 import adql.query.constraint.In;
 import adql.query.constraint.IsNull;
 import adql.query.constraint.NotConstraint;
-
-import adql.query.from.FromContent;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
-
+import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
@@ -57,13 +55,11 @@ import adql.query.operand.NumericConstant;
 import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
-
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
 import adql.query.operand.function.UserDefinedFunction;
-
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -73,11 +69,11 @@ import adql.query.operand.function.geometry.DistanceFunction;
 import adql.query.operand.function.geometry.ExtractCoord;
 import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.GeometryFunction;
+import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
-import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 
 /**
  * <p>Translates all ADQL objects into the SQL adaptation of Postgres.</p>
@@ -86,8 +82,8 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * You will probably need to extend this translator to correctly manage the geometrical functions.
  * An extension is already available for PgSphere: {@link PgSphereTranslator}.</b></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (11/2013)
  * 
  * @see PgSphereTranslator
  */
@@ -178,6 +174,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return str.append(id);
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public String translate(ADQLObject obj) throws TranslationException{
 		if (obj instanceof ADQLQuery)
@@ -200,6 +197,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return obj.toADQL();
 	}
 
+	@Override
 	public String translate(ADQLQuery query) throws TranslationException{
 		StringBuffer sql = new StringBuffer(translate(query.getSelect()));
 
@@ -226,6 +224,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* *************************** */
 	/* ****** LIST & CLAUSE ****** */
 	/* *************************** */
+	@Override
 	public String translate(ADQLList<? extends ADQLObject> list) throws TranslationException{
 		if (list instanceof ClauseSelect)
 			return translate((ClauseSelect)list);
@@ -260,6 +259,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return sql;
 	}
 
+	@Override
 	public String translate(ClauseSelect clause) throws TranslationException{
 		String sql = null;
 
@@ -275,10 +275,12 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return sql;
 	}
 
+	@Override
 	public String translate(ClauseConstraints clause) throws TranslationException{
 		return getDefaultADQLList(clause);
 	}
 
+	@Override
 	public String translate(SelectItem item) throws TranslationException{
 		if (item instanceof SelectAllColumns)
 			return translate((SelectAllColumns)item);
@@ -293,6 +295,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return translation.toString();
 	}
 
+	@Override
 	public String translate(SelectAllColumns item) throws TranslationException{
 		HashMap<String,String> mapAlias = new HashMap<String,String>();
 
@@ -306,7 +309,11 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 				mapAlias.put(key, table.isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + table.getAlias() + "\"") : table.getAlias());
 			}
 		}else if (item.getQuery() != null){
-			dbCols = item.getQuery().getFrom().getDBColumns();
+			try{
+				dbCols = item.getQuery().getFrom().getDBColumns();
+			}catch(UnresolvedJoin pe){
+				throw new TranslationException("Due to a join problem, the ADQL to SQL translation can not be completed!", pe);
+			}
 			ArrayList<ADQLTable> tables = item.getQuery().getFrom().getTables();
 			for(ADQLTable table : tables){
 				if (table.hasAlias()){
@@ -332,12 +339,13 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 				appendIdentifier(cols, col.getDBName(), IdentifierField.COLUMN);
 				cols.append(" AS \"").append(col.getADQLName()).append('\"');
 			}
-			return cols.toString();
+			return (cols.length() > 0) ? cols.toString() : item.toADQL();
 		}else{
 			return item.toADQL();
 		}
 	}
 
+	@Override
 	public String translate(ColumnReference ref) throws TranslationException{
 		if (ref instanceof ADQLOrder)
 			return translate((ADQLOrder)ref);
@@ -378,6 +386,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		}
 	}
 
+	@Override
 	public String translate(ADQLOrder order) throws TranslationException{
 		return getDefaultColumnReference(order) + (order.isDescSorting() ? " DESC" : " ASC");
 	}
@@ -385,6 +394,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* ************************** */
 	/* ****** TABLE & JOIN ****** */
 	/* ************************** */
+	@Override
 	public String translate(FromContent content) throws TranslationException{
 		if (content instanceof ADQLTable)
 			return translate((ADQLTable)content);
@@ -394,6 +404,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return content.toADQL();
 	}
 
+	@Override
 	public String translate(ADQLTable table) throws TranslationException{
 		StringBuffer sql = new StringBuffer();
 
@@ -420,6 +431,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return sql.toString();
 	}
 
+	@Override
 	public String translate(ADQLJoin join) throws TranslationException{
 		StringBuffer sql = new StringBuffer(translate(join.getLeftTable()));
 
@@ -453,6 +465,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* ********************* */
 	/* ****** OPERAND ****** */
 	/* ********************* */
+	@Override
 	public String translate(ADQLOperand op) throws TranslationException{
 		if (op instanceof ADQLColumn)
 			return translate((ADQLColumn)op);
@@ -474,6 +487,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return op.toADQL();
 	}
 
+	@Override
 	public String translate(ADQLColumn column) throws TranslationException{
 		// Use its DB name if known:
 		if (column.getDBLink() != null){
@@ -500,26 +514,32 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return column.getFullColumnName();
 	}
 
+	@Override
 	public String translate(Concatenation concat) throws TranslationException{
 		return translate((ADQLList<ADQLOperand>)concat);
 	}
 
+	@Override
 	public String translate(NegativeOperand negOp) throws TranslationException{
 		return "-" + translate(negOp.getOperand());
 	}
 
+	@Override
 	public String translate(NumericConstant numConst) throws TranslationException{
 		return numConst.getValue();
 	}
 
+	@Override
 	public String translate(StringConstant strConst) throws TranslationException{
 		return "'" + strConst.getValue() + "'";
 	}
 
+	@Override
 	public String translate(WrappedOperand op) throws TranslationException{
 		return "(" + translate(op.getOperand()) + ")";
 	}
 
+	@Override
 	public String translate(Operation op) throws TranslationException{
 		return translate(op.getLeftOperand()) + op.getOperation().toADQL() + translate(op.getRightOperand());
 	}
@@ -527,6 +547,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* ************************ */
 	/* ****** CONSTRAINT ****** */
 	/* ************************ */
+	@Override
 	public String translate(ADQLConstraint cons) throws TranslationException{
 		if (cons instanceof Comparison)
 			return translate((Comparison)cons);
@@ -544,26 +565,32 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return cons.toADQL();
 	}
 
+	@Override
 	public String translate(Comparison comp) throws TranslationException{
 		return translate(comp.getLeftOperand()) + " " + comp.getOperator().toADQL() + " " + translate(comp.getRightOperand());
 	}
 
+	@Override
 	public String translate(Between comp) throws TranslationException{
 		return translate(comp.getLeftOperand()) + " BETWEEN " + translate(comp.getMinOperand()) + " AND " + translate(comp.getMaxOperand());
 	}
 
+	@Override
 	public String translate(Exists exists) throws TranslationException{
 		return "EXISTS(" + translate(exists.getSubQuery()) + ")";
 	}
 
+	@Override
 	public String translate(In in) throws TranslationException{
 		return translate(in.getOperand()) + " " + in.getName() + " (" + (in.hasSubQuery() ? translate(in.getSubQuery()) : translate(in.getValuesList())) + ")";
 	}
 
+	@Override
 	public String translate(IsNull isNull) throws TranslationException{
 		return translate(isNull.getColumn()) + " IS " + (isNull.isNotNull() ? "NOT " : "") + "NULL";
 	}
 
+	@Override
 	public String translate(NotConstraint notCons) throws TranslationException{
 		return "NOT " + translate(notCons.getConstraint());
 	}
@@ -571,6 +598,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* *********************** */
 	/* ****** FUNCTIONS ****** */
 	/* *********************** */
+	@Override
 	public String translate(ADQLFunction fct) throws TranslationException{
 		if (fct instanceof GeometryFunction)
 			return translate((GeometryFunction)fct);
@@ -602,6 +630,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		return sql + ")";
 	}
 
+	@Override
 	public String translate(SQLFunction fct) throws TranslationException{
 		if (fct.getType() == SQLFunctionType.COUNT_ALL)
 			return "COUNT(" + (fct.isDistinct() ? "DISTINCT " : "") + "*)";
@@ -609,6 +638,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return fct.getName() + "(" + (fct.isDistinct() ? "DISTINCT " : "") + translate(fct.getParameter(0)) + ")";
 	}
 
+	@Override
 	public String translate(MathFunction fct) throws TranslationException{
 		switch(fct.getType()){
 			case LOG:
@@ -624,6 +654,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 		}
 	}
 
+	@Override
 	public String translate(UserDefinedFunction fct) throws TranslationException{
 		return getDefaultADQLFunction(fct);
 	}
@@ -631,6 +662,7 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 	/* *********************************** */
 	/* ****** GEOMETRICAL FUNCTIONS ****** */
 	/* *********************************** */
+	@Override
 	public String translate(GeometryFunction fct) throws TranslationException{
 		if (fct instanceof AreaFunction)
 			return translate((AreaFunction)fct);
@@ -678,54 +710,67 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 			return getDefaultADQLFunction(fct);
 	}
 
+	@Override
 	public String translate(GeometryValue<? extends GeometryFunction> geomValue) throws TranslationException{
 		return translate(geomValue.getValue());
 	}
 
+	@Override
 	public String translate(ExtractCoord extractCoord) throws TranslationException{
 		return getDefaultGeometryFunction(extractCoord);
 	}
 
+	@Override
 	public String translate(ExtractCoordSys extractCoordSys) throws TranslationException{
 		return getDefaultGeometryFunction(extractCoordSys);
 	}
 
+	@Override
 	public String translate(AreaFunction areaFunction) throws TranslationException{
 		return getDefaultGeometryFunction(areaFunction);
 	}
 
+	@Override
 	public String translate(CentroidFunction centroidFunction) throws TranslationException{
 		return getDefaultGeometryFunction(centroidFunction);
 	}
 
+	@Override
 	public String translate(DistanceFunction fct) throws TranslationException{
 		return getDefaultGeometryFunction(fct);
 	}
 
+	@Override
 	public String translate(ContainsFunction fct) throws TranslationException{
 		return getDefaultGeometryFunction(fct);
 	}
 
+	@Override
 	public String translate(IntersectsFunction fct) throws TranslationException{
 		return getDefaultGeometryFunction(fct);
 	}
 
+	@Override
 	public String translate(BoxFunction box) throws TranslationException{
 		return getDefaultGeometryFunction(box);
 	}
 
+	@Override
 	public String translate(CircleFunction circle) throws TranslationException{
 		return getDefaultGeometryFunction(circle);
 	}
 
+	@Override
 	public String translate(PointFunction point) throws TranslationException{
 		return getDefaultGeometryFunction(point);
 	}
 
+	@Override
 	public String translate(PolygonFunction polygon) throws TranslationException{
 		return getDefaultGeometryFunction(polygon);
 	}
 
+	@Override
 	public String translate(RegionFunction region) throws TranslationException{
 		return getDefaultGeometryFunction(region);
 	}

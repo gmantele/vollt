@@ -16,26 +16,32 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import adql.db.DBColumn;
+import adql.db.DBCommonColumn;
 import adql.db.SearchColumnList;
+import adql.db.exception.UnresolvedJoin;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ClauseConstraints;
+import adql.query.IdentifierField;
 import adql.query.operand.ADQLColumn;
 
 /**
  * Defines a join between two "tables".
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (11/2013)
  */
 public abstract class ADQLJoin implements ADQLObject, FromContent {
 
@@ -179,14 +185,17 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	public final Iterator<ADQLColumn> getJoinedColumns(){
 		if (lstColumns == null){
 			return new Iterator<ADQLColumn>(){
+				@Override
 				public boolean hasNext(){
 					return false;
 				}
 
+				@Override
 				public ADQLColumn next(){
 					return null;
 				}
 
+				@Override
 				public void remove(){
 					;
 				}
@@ -225,10 +234,12 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	/* ***************** */
 	/* INHERITED METHODS */
 	/* ***************** */
+	@Override
 	public String getName(){
 		return getJoinType();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
@@ -237,6 +248,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			private final int offset = 2 + ((condition == null) ? 0 : 1);
 			private Iterator<ADQLColumn> itCol = null;
 
+			@Override
 			public ADQLObject next(){
 				index++;
 
@@ -254,10 +266,12 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 					throw new NoSuchElementException();
 			}
 
+			@Override
 			public boolean hasNext(){
 				return (itCol != null && itCol.hasNext()) || index + 1 < nbItems;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -288,6 +302,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -305,6 +320,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		StringBuffer adql = new StringBuffer(leftTable.toADQL());
 
@@ -323,38 +339,111 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 		return adql.toString();
 	}
 
-	public SearchColumnList getDBColumns(){
+	@Override
+	public SearchColumnList getDBColumns() throws UnresolvedJoin{
 		SearchColumnList list = new SearchColumnList();
+		SearchColumnList leftList = leftTable.getDBColumns();
+		SearchColumnList rightList = rightTable.getDBColumns();
 
-		SearchColumnList leftList = leftTable.getDBColumns(), rightList = rightTable.getDBColumns();
-		list.addAll(leftList);
-		list.addAll(rightList);
-
+		/* 1. Figure out duplicated columns */
+		HashMap<String,DBCommonColumn> mapDuplicated = new HashMap<String,DBCommonColumn>();
+		// CASE: NATURAL
 		if (natural){
-			SearchColumnList doublons = new SearchColumnList(leftList);
-			doublons.retainAll(rightList);
-			for(DBColumn dbCol : doublons)
-				list.add(dbCol.copy(dbCol.getDBName(), dbCol.getADQLName(), null));	// makes a copy which keeps the same DB and ADQL name but set to NULL the dbTable
-		}else if (lstColumns != null){
-			for(ADQLColumn col : lstColumns){
-				ArrayList<DBColumn> dbCols = list.search(col.getCatalogName(), col.getSchemaName(), col.getTableName(), col.getColumnName(), col.getCaseSensitive());
-				if (dbCols.size() > 0){
-					DBColumn match = dbCols.get(0);
-					list.add(match.copy(match.getDBName(), match.getADQLName(), null)); // makes a copy which keeps the same DB and ADQL name but set to NULL the dbTable
+			// Find duplicated items between the two lists and add one common column in mapDuplicated for each
+			DBColumn rightCol;
+			for(DBColumn leftCol : leftList){
+				// search for at most one column with the same name in the RIGHT list
+				// and throw an exception is there are several matches:
+				rightCol = findAtMostOneColumn(leftCol.getADQLName(), (byte)0, rightList, false);
+				// if there is one...
+				if (rightCol != null){
+					// ...check there is only one column with this name in the LEFT list,
+					// and throw an exception if it is not the case:
+					findExactlyOneColumn(leftCol.getADQLName(), (byte)0, leftList, true);
+					// ...create a common column:
+					mapDuplicated.put(leftCol.getADQLName().toLowerCase(), new DBCommonColumn(leftCol, rightCol));
 				}
 			}
 
 		}
+		// CASE: USING
+		else if (lstColumns != null && !lstColumns.isEmpty()){
+			// For each columns of usingList, check there is in each list exactly one matching column, and then, add it in mapDuplicated
+			DBColumn leftCol, rightCol;
+			for(ADQLColumn usingCol : lstColumns){
+				// search for exactly one column with the same name in the LEFT list
+				// and throw an exception if there is none, or if there are several matches:
+				leftCol = findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), leftList, true);
+				// idem in the RIGHT list:
+				rightCol = findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), rightList, false);
+				// create a common column:
+				mapDuplicated.put((usingCol.isCaseSensitive(IdentifierField.COLUMN) ? ("\"" + usingCol.getColumnName() + "\"") : usingCol.getColumnName().toLowerCase()), new DBCommonColumn(leftCol, rightCol));
+			}
+
+		}
+		// CASE: NO DUPLICATION TO FIGURE OUT
+		else{
+			// Return the union of both lists:
+			list.addAll(leftList);
+			list.addAll(rightList);
+			return list;
+		}
+
+		/* 2. Add all columns of the left list except the ones identified as duplications */
+		addAllExcept(leftList, list, mapDuplicated);
+
+		/* 3. Add all columns of the right list except the ones identified as duplications */
+		addAllExcept(rightList, list, mapDuplicated);
+
+		/* 4. Add all common columns of mapDuplicated */
+		list.addAll(mapDuplicated.values());
 
 		return list;
 	}
 
+	public final static void addAllExcept(final SearchColumnList itemsToAdd, final SearchColumnList target, final Map<String,DBCommonColumn> exception){
+		for(DBColumn col : itemsToAdd){
+			if (!exception.containsKey(col.getADQLName().toLowerCase()) && !exception.containsKey("\"" + col.getADQLName() + "\""))
+				target.add(col);
+		}
+	}
+
+	public final static DBColumn findExactlyOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoin{
+		DBColumn result = findAtMostOneColumn(columnName, caseSensitive, list, leftList);
+		if (result == null)
+			throw new UnresolvedJoin("Column \"" + columnName + "\" specified in USING clause does not exist in " + (leftList ? "left" : "right") + " table!");
+		else
+			return result;
+	}
+
+	public final static DBColumn findAtMostOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoin{
+		ArrayList<DBColumn> result = list.search(null, null, null, columnName, caseSensitive);
+		if (result.isEmpty())
+			return null;
+		else if (result.size() > 1)
+			throw new UnresolvedJoin("Common column name \"" + columnName + "\" appears more than once in " + (leftList ? "left" : "right") + " table!");
+		else
+			return result.get(0);
+	}
+
+	/**
+	 * Tells whether the given column is a common column (that's to say, a unification of several columns of the same name).
+	 * 
+	 * @param col	A DBColumn.
+	 * @return		true if the given column is a common column, false otherwise (particularly if col = null).
+	 */
+	public static final boolean isCommonColumn(final DBColumn col){
+		return (col != null && col instanceof DBCommonColumn);
+	}
+
+	@Override
 	public ArrayList<ADQLTable> getTables(){
 		ArrayList<ADQLTable> tables = leftTable.getTables();
 		tables.addAll(rightTable.getTables());
 		return tables;
 	}
 
+	@Override
 	public ArrayList<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
 		ArrayList<ADQLTable> tables = leftTable.getTablesByAlias(alias, caseSensitive);
 		tables.addAll(rightTable.getTablesByAlias(alias, caseSensitive));
@@ -371,6 +460,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 */
 	public abstract String getJoinType();
 
+	@Override
 	public abstract ADQLObject getCopy() throws Exception;
 
 }

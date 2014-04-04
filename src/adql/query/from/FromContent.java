@@ -16,22 +16,23 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.util.ArrayList;
 
 import adql.db.DBColumn;
 import adql.db.SearchColumnList;
-
+import adql.db.exception.UnresolvedJoin;
 import adql.query.ADQLObject;
 
 /**
  * Represents the content of the whole or a part of the clause FROM.
  * It could be either a table ({@link ADQLTable}) or a join ({@link ADQLJoin}).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (11/2013)
  */
 public interface FromContent extends ADQLObject {
 
@@ -41,8 +42,9 @@ public interface FromContent extends ADQLObject {
 	 * <p><i><u>Note:</u> In the most cases, this list is generated on the fly !</i></p>
 	 * 
 	 * @return	All the available {@link DBColumn}s.
+	 * @throws UnresolvedJoin If a join is not possible.
 	 */
-	public SearchColumnList getDBColumns();
+	public SearchColumnList getDBColumns() throws UnresolvedJoin;
 
 	/**
 	 * Gets all {@link ADQLTable} instances contained in this FROM part (itself included, if it is an {@link ADQLTable}).
