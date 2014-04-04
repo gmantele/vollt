@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>TAP configuration file</title>
+		<style type="text/css">
+			p { text-align: justify; text-indent: 1em; }
+			table {
+				font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+				width:100%;
+				border-collapse:collapse;
+			}
+			td, th {
+				font-size:1em;
+				border:1px solid #084B8A;
+				padding:3px 7px 2px 7px;
+				color: black;
+				background-color: #EFF5FB;
+			}
+			th, td[colspan="5"] {
+				font-size:1em;
+				text-align: left;
+				padding-top:5px;
+				padding-bottom:4px;
+				background-color:#045FB4;
+				color:#ffffff;
+			}
+			td[colspan="5"] {
+				font-style: italic;
+			}
+			tr.mandatory td {
+				color: black;
+				background-color: #CEE3F6;
+			}
+			th:nth-child(2), td:nth-child(2) {
+				font-weight: bold;
+				text-align: center;
+				max-width: 2em;
+			}
+			td:nth-child(5) {
+				font-family: monospace;
+			}
+			table ul  { list-style-position:inside; padding: 0; margin: 0; }
+			table p   { margin: 0; padding: 0; text-align: left; text-indent: 0; }
+			table p+p { padding-top: .5em; }
+		</style>
+	</head>
+	<body>
+		<h1>TAP Configuration File</h1>
+		<p>
+			All properties listed in the below table are all the possible TAP configuration properties.
+			Some of them are mandatory. If one of these properties is missing, the TAP Service will not able to start:
+			an error will be displayed immediately in the application server log and a HTTP 503 error will be sent when accessing the TAP URL.
+		</p>
+		<p>Besides, you should know that any property key not listed in this table will be ignored without error or warning message.</p>
+		<p>
+			However, any not allowed property value will generate a warning message in the application server log and the default value will be kept.
+			Thus, the TAP Service will be started and available but the desired configuration value will not be set. So, you should take a look
+			at the application server log every times you start the TAP Service!
+		</p>
+		
+		<p>Here is an empty minimum TAP configuration file: <a href="tap_min.properties">tap_min.properties</a> and a complete one: <a href="tap_full.properties">tap_full.properties</a>.</p>
+		
+		<p><i><u>Legend:</u> <b>M</b> means that the property is mandatory. If nothing is written for the second column, the property is optional.</i>
+	
+		<table>
+			<tr>
+				<th>Property</th>
+				<th></th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Example</th>
+			</tr>
+			
+			<tr><td colspan="5">General</td></tr>
+			<tr>
+				<td>service_home_page</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Path to the page which will be the index/home page of the TAP Service.</p>
+					<p><i>A default home page - just listing the TAP resources - is set if none is provided.</i></p>
+				</td>
+				<td><ul><li>home.html</li><li>/home/foo/my_tap_homepage.jsp</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Provider</td></tr>
+			<tr>
+				<td>provider_name</td>
+				<td></td>
+				<td>text</td>
+				<td>Name of the provider of the TAP Service.</td>
+				<td><ul><li>ARI</li><li>Mr. Smith</li></ul></td>
+			</tr>
+			<tr>
+				<td>service_description</td>
+				<td></td>
+				<td>text</td>
+				<td>Description of the TAP Service.</td>
+				<td></td>
+			</tr>
+			
+			<tr><td colspan="5">Availability</td></tr>
+			<tr>
+				<td>is_available</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>Tells whether the service is up or down.</p>
+					<p>If no value is provided, the service will be made available.</p>
+					<p>A value different from "true" (whatever is the case), will be considered as "false".</p>
+				</td>
+				<td><ul><li>true <i>(default)</i></li><li>false</li></ul></td>
+			</tr>
+			<tr>
+				<td>disability_reason</td>
+				<td></td>
+				<td>text</td>
+				<td>Message returns to a client of this TAP Service when it is not available.</p></td>
+				<td>This TAP Service is temporarily unavailable for DB maintenance.</td>
+			</tr>
+			
+			<tr><td colspan="5">Database</td></tr>
+			<tr>
+				<td>jdbc_driver</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>JDBC driver path. By default, it is guessed in function of the database name provided
+					in the jdbc_url property. It <strong>MUST be provided if</strong> another DBMS is used or if the JDBC driver path
+					does not match the following ones:</p>
+					<ul>
+						<li><u>Oracle    :</u> oracle.jdbc.OracleDriver</li>
+						<li><u>PostgreSQL:</u> org.postgresql.Driver</li>
+						<li><u>MySQL     :</u> com.mysql.jdbc.Driver</li>
+						<li><u>SQLite    :</u> org.sqlite.JDBC</li>
+					</ul>
+				</td>
+				<td>oracle.jdbc.driver.OracleDriver</td>
+			</tr>
+			<tr class="mandatory">
+				<td>jdbc_url</td>
+				<td>M</td>
+				<td>text</td>
+				<td>
+					<p>It must be a JDBC driver URL.</p>
+					<p><em><u>Note:</u> The username, password or other parameters may be included in it, but in this case, the corresponding properties
+					should leave empty or not provided at all.</em></p>
+				</td>
+				<td><ul><li>jdbc:postgresql:mydb</li><li>jdbc:postgresql://myserver:1234/mydb</li><li>jdbc:sqlite:Database.db</li></ul></td>
+			</tr>
+			<tr>
+				<td>db_username</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> the username is not already provided in jdbc_url</p>
+					<p>Username used to access to the database.</p>
+				</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td>db_password</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> the password is not already provided in jdbc_url</p>
+					<p>Password used by db_username to access to the database.</p>
+					<p><em><u>Note:</u> No password encryption can be done in this configuration file for the moment.</em></p>
+				</td>
+				<td></td>
+			</tr>
+			<tr class="mandatory">
+				<td>db_tables</td>
+				<td>M</td>
+				<td>text</td>
+				<td>
+					<p>List all tables that must be accessed thanks to this TAP Service.</p>
+					<p>Table names must be separated by a comma. A table name may explicitly specify the schema (if not, the table will be considered as part of the "public" schema).</p>
+					<p>For each table, you can restrict the list of columns that you to expose via the TAP Service.
+					This list is not mandatory, but if provided it must be within parenthesis and comma separated.</p> 
+				</td>
+				<td>schema1.*, schema2.table1, table2, table3(col1, col2, col4, ...)</td>
+			</tr>
+			<tr class="mandatory">
+				<td>sql_translator</td>
+				<td>M</td>
+				<td>text</td>
+				<td>
+					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
+					<p>The TAP library supports only Postgresql (without spatial extension) and PgSphere for the moment. But you can provide your own SQL translator
+					(even if it does not have spatial features), by providing a path to a class (within brackets: {...}) that implements ADQLTranslator and which have at least an empty constructor.</p>
+				</td>
+				<td><ul><li>postgres</li><li>pgsphere</li><li>{apackage.MyADQLTranslator}</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Files</td></tr>
+			<tr class="mandatory">
+				<td>file_manager</td>
+				<td>M</td>
+				<td>text</td>
+				<td>
+					<p>Type of the file manager.</p>
+					<p>Accepted values are: local (to manage files on the local system).
+					You can also add another way to manage files by providing the path (within brackets: {...}) to a class implementing TAPFileManager and having at least one constructor with only a java.util.Properties parameter.</p>
+				</td>
+				<td><ul><li>local</li><li>{apackage.MyTAPFileManager}</li></ul></td>
+			</tr>
+			<tr class="mandatory">
+				<td>file_root_path</td>
+				<td>M</td>
+				<td>text</td>
+				<td>File path of the directory in which all TAP files (logs, errors, job results, backup, ...) must be.</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td>directory_per_user</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>Tells whether a directory should be created for each user. If yes, the user directory will be named with the user ID. In this directory, there will be error files, job results
+					and it may be the backup file of the user.</p>
+					<p><em>The default value is: true.</em></p>
+				</td>
+				<td><ul><li>true <i>(default)</i></li><li>false</li></ul></td>
+			</tr>
+			<tr>
+				<td>group_user_directories</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>Tells whether user directories must be grouped. If yes, directories are grouped by the first letter found in the user ID.</p>
+					<p><em>The default value is: false.</em></p>
+				</td>
+				<td><ul><li>true</li><li>false <i>(default)</i></li></ul></td>
+			</tr>
+			<tr>
+				<td>default_retention_period</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>The default period (in seconds) to keep query results. The prefix "default" means here that this value is put by default by the TAP Service
+					if the client does not provide a value for it.</p>
+					<p>The default period MUST be less or equals to the maximum retention period. If this rule is not respected, the default retention period is set immediately
+					 to the maximum retention period.</p>
+					<p>A negative or null value means there is no restriction over the default retention period: job results will be kept forever. Float values are not allowed.</p>
+					<p><em>By default query results are kept forever: default_retention_period=0.</em></p></td>
+				<td>86400 <em>(1 day)</em></td>
+			</tr>
+			<tr>
+				<td>max_retention_period</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>The maximum period (in seconds) to keep query results. The prefix "max" means here that the client can not set a retention period greater than this one.</p>
+					<p>The maximum period MUST be greater or equals to the default retention period. If this rule is not respected, the default retention period is set immediately
+					 to the maximum retention period.</p>
+					<p>A negative or null value means there is no restriction over the maximum retention period: the job results will be kept forever. Float values are not allowed.</p>
+					<p><em>By default query results are kept forever: max_retention_period=0.</em></p></td>
+				<td>604800 <em>(1 week)</em></td>
+			</tr>
+			<tr>
+				<td>irods_host</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> file_manager=irods</p>
+					<p>Host of the IRODS service.</p>
+				<td></td>
+			</tr>
+			<tr>
+				<td>irods_port</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p><strong>Mandatory if</strong> file_manager=irods</p>
+					<p>Port of the IRODS service located on the irodsHost host.</p>
+				<td></td>
+			</tr>
+			<tr>
+				<td>irods_user</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> file_manager=irods</p>
+					<p>Username to use in order to access the IRODS service located at irodsHost host.</p>
+				<td></td>
+			</tr>
+			<tr>
+				<td>irods_password</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> file_manager=irods</p>
+					<p>Password associated with the username used to access the IRODS service located at irodsHost host.</p>
+				<td></td>
+			</tr>
+			<tr>
+				<td>irods_zone</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> file_manager=irods</p>
+					<p>Zone of the IRODS service in which the TAP Service must manage its files.</p>
+				<td></td>
+			</tr>
+			<tr>
+				<td>irods_default_storage_resource</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> file_manager=irods</p>
+					<p>Default storage resource of the IRODS service.</p>
+				<td></td>
+			</tr>
+			
+			<tr><td colspan="5">UWS Backup</td></tr>
+			<tr>
+				<td>backup_frequency</td>
+				<td></td>
+				<td>text or integer</td>
+				<td>
+					<p>Frequency at which the UWS service (that's to say, all its users and jobs) must be backuped.</p>
+					<p>Allowed values are: never (no backup will never be done), user_action (each time a user does a writing action, like creating or execution a job), a time (must be positive and not null) in milliseconds.</p>
+					<p><em>By default, no backup is done, so: backup_frequency=never.</em></p>
+				</td>
+				<td><ul><li>never <em>(default)</em></li><li>user_action</li><li>3600000 <em>(1 hour)</em></li></ul></td>
+			</tr>
+			<tr>
+				<td>backup_mode</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Tells whether the backup must be one file for every user, or one file for each user. This second option should be chosen if your TAP Service is organizing its files by user directories ; see the property <em>directory_per_user</em>.</p>
+					<p>Allowed values are: user (one backup file for each user), whole (one file for all users ; may generates a big file).</p>
+					<p><em>The default mode is: whole.</em></p>
+				</td>
+				<td><ul><li>whole <em>(default)</em></li><li>user</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Query Execution</td></tr>
+			<tr>
+				<td>default_execution_duration</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Default time (in milliseconds) for query execution. The prefix "default" means here that the execution duration will be this one if the client does not set one.</p>
+					<p>The default duration MUST be less or equals to the maximum execution duration. If this rule is not respected, the default execution duration is set immediately
+					 to the maximum execution duration.</p>
+					<p>A negative or null value means there is no restriction over the default execution duration: the execution could never end. Float values are not allowed.</p>
+					<p><em>By default, there is no restriction: default_execution_duration=0.</em></p>
+				</td>
+				<td>600000 <em>(10 minutes)</em></td>
+			</tr>
+			<tr>
+				<td>max_execution_duration</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Maximum time (in milliseconds) for query execution. The prefix "max" means here that the client can not set a time greater than this one.</p>
+					<p>The maximum duration MUST be greater or equals to the default execution duration. If this rule is not respected, the default execution duration is set immediately
+					 to the maximum execution duration.</p>
+					<p>A negative or null value means there is no restriction over the maximum execution duration: the execution could never end. Float values are not allowed.</p>
+					<p><em>By default, there is no restriction: max_execution_duration=0.</em></p>
+				</td>
+				<td>3600000 <em>(1 hour)</em></td>
+			</tr>
+			
+			<tr><td colspan="5">Output</td></tr>
+			<tr>
+				<td>output_add_formats</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Output formats for query results, in addition to the VOTable.</p>
+					<p>Allowed values are: json, csv, tsv, or a path (within brackets: {...}) toward a class which implements OutputFormat&lt;ResultSet&gt;.</p>
+				</td>
+				<td><ul><li>json</li><li>csv</li><li>tsv</li><li>{apackage.FooOutputFormat}</li></ul></td>
+			</tr>
+			<tr>
+				<td>output_default_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Default limit for the result output. The prefix "default" means here that this value will be set if the client does not provide one.</p>
+					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
+					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "b", "kb", "Mb" or "Gb".
+					Here, unit is case sensitive (except for the last character: "b"). No other storage unit is allowed.</p>
+					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>Obviously this limit MUST be less or equal than output_max_limit.</p>
+					<p><em>By default, there is no restriction: output_default_limit=0</em></p>
+				</td>
+				<td><ul><li>0 <em>(default)</em></li><li>20r</li><li>200kb</li><li>200kB</li></ul></td>
+			</tr>
+			<tr>
+				<td>output_max_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Maximum limit for the result output. The prefix "max" means here that the client can not set a limit greater than this one.</p>
+					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
+					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "b", "kb", "Mb" or "Gb".
+					Here, unit is case sensitive (except for the last character: "b"). No other storage unit is allowed.</p>
+					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>Obviously this limit MUST be greater or equal than output_default_limit.</p>
+					<p><em>By default, there is no restriction: output_max_limit=0</em></p>
+				</td>
+				<td><ul><li>0 <em>(default)</em></li><li>10000r</li><li>1Mb</li><li>1MB</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Upload</td></tr>
+			<tr>
+				<td>upload_enabled</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>Tells whether the Upload must be enabled. If enabled, files can be uploaded in the file_root_path, 
+					the corresponding tables can be added inside the UPLOAD_SCHEMA of the database, queried and then deleted.</p>
+					<p>By default, the Upload is disabled: upload_enabled=false.</p>
+				</td>
+				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
+			</tr>
+			<tr>
+				<td>upload_default_db_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Default limit for the number of uploaded records that can be inserted inside the database. The prefix "default" means here that this value will be set if the client does not provide one.</p>
+					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
+					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "b", "kb", "Mb" or "Gb".
+					Here, unit is case sensitive (except for the last character: "b"). No other storage unit is allowed.</p>
+					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>Obviously this limit MUST be less or equal than upload_max_db_limit.</p>
+					<p><em>By default, there is no restriction: upload_default_db_limit=0</em></p>
+				</td>
+				<td><ul><li>0 <em>(default)</em></li><li>20r</li><li>200kb</li><li>200kB</li></ul></td>
+			</tr>
+			<tr>
+				<td>upload_max_db_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Maximum limit for the number of uploaded records that can be inserted inside the database. The prefix "max" means here that the client can not set a limit greater than this one.</p>
+					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
+					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "b", "kb", "Mb" or "Gb".
+					Here, unit is case sensitive (except for the last character: "b"). No other storage unit is allowed.</p>
+					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>Obviously this limit MUST be greater or equal than upload_default_db_limit.</p>
+					<p><em>By default, there is no restriction: upload_max_db_limit=0</em></p>
+				</td>
+				<td><ul><li>0 <em>(default)</em></li><li>10000r</li><li>1Mb</li><li>1MB</li></ul></td>
+			</tr>
+			<tr>
+				<td>upload_max_file_size</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Maximum allowed size for the uploaded file.</p>
+					<p>This limit MUST be expressed in bytes. Thus, you have to suffix the numeric value by "b", "kb", "Mb" or "Gb".
+					Here, unit is case sensitive (except for the last character: "b"). No other storage unit is allowed.</p>
+					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>In function of the chosen upload_max_db_limit type, upload_max_file_size should be greater in order to figure out the metadata part.</p>
+					<p><em>By default, there is no restriction: upload_max_file_size=0</em></p>
+				</td>
+				<td><ul><li>0 <em>(default)</em></li><li>2Mb</li><li>2MB</li></ul></td>
+			</tr>
+		</table>
+	</body>
+</html>
