@@ -16,7 +16,8 @@ package cds.utils;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.ArrayList;
@@ -37,8 +38,8 @@ import java.util.HashMap;
  * <p><b><u>WARNING:</u> The extracted key MUST be CASE-SENSITIVE and UNIQUE !</b></p>
  * 
  * @param <E>	Type of object to manage in this list.
- * @author 		Gr&eacute;gory Mantelet (CDS)
- * @version 	09/2011
+ * @author 		Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 	1.1 (11/2013)
  */
 public class TextualSearchList< E > extends ArrayList<E> {
 	private static final long serialVersionUID = 1L;
@@ -141,6 +142,31 @@ public class TextualSearchList< E > extends ArrayList<E> {
 	}
 
 	/**
+	 * Returns true if this list contains the specified element.
+	 * More formally, returns true if and only if this list contains at least one element
+	 * e such that (keyExtractor.getKey(o).equals(keyExtractor.getKey(e))).
+	 * 
+	 * @see java.util.ArrayList#contains(java.lang.Object)
+	 * @see #getKey(Object)
+	 * 
+	 * @since 1.1
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean contains(Object o){
+		try{
+			if (o == null)
+				return false;
+			else{
+				E object = (E)o;
+				return !get(getKey(object)).isEmpty();
+			}
+		}catch(Exception e){
+			return false;
+		}
+	}
+
+	/**
 	 * Searches (CASE-INSENSITIVE) the object which has the given key.
 	 * 
 	 * @param key	Textual key of the object to search.
@@ -159,6 +185,7 @@ public class TextualSearchList< E > extends ArrayList<E> {
 	 * 
 	 * @return		All the objects whose the key is the same as the given one.
 	 */
+	@SuppressWarnings("unchecked")
 	public ArrayList<E> get(final String key, final boolean caseSensitive){
 		if (key == null)
 			return new ArrayList<E>(0);
@@ -167,7 +194,7 @@ public class TextualSearchList< E > extends ArrayList<E> {
 		if (founds == null)
 			return new ArrayList<E>(0);
 		else
-			return founds;
+			return (ArrayList<E>)founds.clone();
 	}
 
 	/**
@@ -457,6 +484,7 @@ public class TextualSearchList< E > extends ArrayList<E> {
 	 * @param <E>	Type of object from which a textual key must be extracted.
 	 */
 	protected static class DefaultKeyExtractor< E > implements KeyExtractor<E> {
+		@Override
 		public String getKey(final E obj){
 			return obj.toString();
 		}
