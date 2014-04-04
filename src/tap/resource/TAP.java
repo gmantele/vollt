@@ -16,7 +16,8 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -26,22 +27,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
-import tap.TAPException;
 import tap.ServiceConnection.LimitUnit;
+import tap.TAPException;
 import tap.db.DBConnection;
 import tap.error.DefaultTAPErrorWriter;
 import tap.formatter.OutputFormat;
@@ -394,7 +394,7 @@ public class TAP< R > implements VOSIResource {
 				output.print(service.getProviderDescription());
 				output.println("]]>\n\t\t</INFO>");
 			}else
-				output.println("\">");
+				output.println("\" />");
 		}
 
 		// Print the query (if any):
