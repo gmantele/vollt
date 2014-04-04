@@ -16,7 +16,8 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.sql.Connection;
@@ -24,29 +25,26 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import java.util.Iterator;
-
-import cds.savot.model.SavotTR;
-import cds.savot.model.TDSet;
 
 import tap.log.TAPLog;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPTable;
-
 import adql.query.ADQLQuery;
+import cds.savot.model.SavotTR;
+import cds.savot.model.TDSet;
 
 /**
  * Simple implementation of the {@link DBConnection} interface.
  * It creates and manages a JDBC connection to a specified database.
  * Thus results of any executed SQL query will be a {@link ResultSet}.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.1 (04/2014)
  */
 public class JDBCConnection implements DBConnection<ResultSet> {
 
-	/** JDBC prefix of any database URL (for instance: jdbc:postgresql://127.0.0.1/myDB). */
+	/** JDBC prefix of any database URL (for instance: jdbc:postgresql://127.0.0.1/myDB or jdbc:postgresql:myDB). */
 	public final static String JDBC_PREFIX = "jdbc";
 
 	/** Connection ID (typically, the job ID). */
@@ -89,17 +87,19 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		String url = dbUrl.startsWith(JDBC_PREFIX) ? dbUrl : (JDBC_PREFIX + dbUrl);
 		try{
 			connection = DriverManager.getConnection(url, dbUser, dbPassword);
-			logger.connectionOpened(this, dbUrl.substring(dbUrl.lastIndexOf('/')));
+			logger.connectionOpened(this, (dbUrl.lastIndexOf('/') > 0 ? dbUrl.substring(dbUrl.lastIndexOf('/')) : dbUrl.substring(dbUrl.lastIndexOf(':'))));
 		}catch(SQLException se){
 			logger.dbError("Impossible to establish a connection to the database \"" + url + "\" !", se);
 			throw new DBException("Impossible to establish a connection to the database \"" + url + "\" !", se);
 		}
 	}
 
+	@Override
 	public final String getID(){
 		return ID;
 	}
 
+	@Override
 	public void startTransaction() throws DBException{
 		try{
 			Statement st = connection.createStatement();
@@ -111,6 +111,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
+	@Override
 	public void cancelTransaction() throws DBException{
 		try{
 			connection.rollback();
@@ -121,6 +122,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
+	@Override
 	public void endTransaction() throws DBException{
 		try{
 			connection.commit();
@@ -131,6 +133,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
+	@Override
 	public void close() throws DBException{
 		try{
 			connection.close();
@@ -144,6 +147,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 	/* ********************* */
 	/* INTERROGATION METHODS */
 	/* ********************* */
+	@Override
 	public ResultSet executeQuery(final String sqlQuery, final ADQLQuery adqlQuery) throws DBException{
 		try{
 			Statement stmt = connection.createStatement();
@@ -160,6 +164,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 	/* ************** */
 	/* UPLOAD METHODS */
 	/* ************** */
+	@Override
 	public void createSchema(final String schemaName) throws DBException{
 		String sql = "CREATE SCHEMA " + schemaName + ";";
 		try{
@@ -172,6 +177,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
+	@Override
 	public void dropSchema(final String schemaName) throws DBException{
 		String sql = "DROP SCHEMA IF EXISTS " + schemaName + " CASCADE;";
 		try{
@@ -184,6 +190,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
+	@Override
 	public void createTable(final TAPTable table) throws DBException{
 		// Build the SQL query:
 		StringBuffer sqlBuf = new StringBuffer();
@@ -250,6 +257,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
+	@Override
 	public void dropTable(final TAPTable table) throws DBException{
 		String sql = "DROP TABLE " + table.getDBSchemaName() + "." + table.getDBName() + ";";
 		try{
@@ -262,6 +270,7 @@ public class JDBCConnection implements DBConnection<ResultSet> {
 		}
 	}
 
+	@Override
 	public void insertRow(final SavotTR row, final TAPTable table) throws DBException{
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
 		sql.append(table.getDBSchemaName()).append('.').append(table.getDBName()).append(" VALUES (");
