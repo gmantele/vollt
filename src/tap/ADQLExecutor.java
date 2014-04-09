@@ -16,43 +16,43 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
-
 import java.sql.SQLException;
 
 import javax.servlet.http.HttpServletResponse;
 
-import adql.parser.ADQLParser;
-import adql.parser.ADQLQueryFactory;
-import adql.parser.ParseException;
-import adql.parser.QueryChecker;
-
-import adql.query.ADQLQuery;
-
-import adql.translator.ADQLTranslator;
-import adql.translator.TranslationException;
-
 import tap.db.DBConnection;
 import tap.db.DBException;
-
 import tap.formatter.OutputFormat;
-
 import tap.log.TAPLog;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 import tap.parameters.TAPParameters;
-
 import tap.upload.TableLoader;
-
 import uws.UWSException;
-
 import uws.job.JobThread;
 import uws.job.Result;
+import adql.parser.ADQLParser;
+import adql.parser.ADQLQueryFactory;
+import adql.parser.ParseException;
+import adql.parser.QueryChecker;
+import adql.query.ADQLQuery;
+import adql.translator.ADQLTranslator;
+import adql.translator.TranslationException;
 
+/**
+ * 
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
+ * @version 1.1 (12/2013)
+ * 
+ * @param <R>
+ */
 public class ADQLExecutor< R > {
 
 	protected final ServiceConnection<R> service;
@@ -123,8 +123,8 @@ public class ADQLExecutor< R > {
 		report.resultingColumns = adql.getResultingColumns();
 
 		final int limit = adql.getSelect().getLimit();
-		final int maxRec = tapParams.getMaxRec();
-		if (maxRec > -1){
+		final Integer maxRec = tapParams.getMaxRec();
+		if (maxRec != null && maxRec > -1){
 			if (limit <= -1 || limit > maxRec)
 				adql.getSelect().setLimit(maxRec + 1);
 		}
