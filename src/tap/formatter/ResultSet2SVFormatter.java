@@ -16,28 +16,46 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.io.IOException;
 import java.io.PrintWriter;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import adql.db.DBColumn;
 
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
+import adql.db.DBColumn;
 
+/**
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
+ * @version 1.1 (12/2013)
+ */
 public class ResultSet2SVFormatter extends SVFormat<ResultSet> implements ResultSetFormatter {
+
+	/**
+	 * @since 1.1
+	 */
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator){
+		super(service, colSeparator);
+	}
 
 	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator, boolean delimitStrings){
 		super(service, colSeparator, delimitStrings);
 	}
 
-	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator){
+	/**
+	 * @since 1.1
+	 */
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, char colSeparator, boolean delimitStrings, String mimeType, String typeAlias){
+		super(service, colSeparator, delimitStrings, mimeType, typeAlias);
+	}
+
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, String colSeparator){
 		super(service, colSeparator);
 	}
 
@@ -45,8 +63,11 @@ public class ResultSet2SVFormatter extends SVFormat<ResultSet> implements Result
 		super(service, colSeparator, delimitStrings);
 	}
 
-	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, String colSeparator){
-		super(service, colSeparator);
+	/**
+	 * @since 1.1
+	 */
+	public ResultSet2SVFormatter(final ServiceConnection<ResultSet> service, String colSeparator, boolean delimitStrings, String mimeType, String typeAlias){
+		super(service, colSeparator, delimitStrings, mimeType, typeAlias);
 	}
 
 	@Override
