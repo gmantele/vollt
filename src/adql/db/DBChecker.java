@@ -17,18 +17,21 @@ package adql.db;
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2011,2013-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ *                            Astronomishes Rechen Institute (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Stack;
 
 import adql.db.exception.UnresolvedColumnException;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnresolvedTableException;
 import adql.parser.ParseException;
 import adql.parser.QueryChecker;
+import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
@@ -37,6 +40,7 @@ import adql.query.IdentifierField;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
 import adql.query.from.ADQLTable;
+import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.search.ISearchHandler;
 import adql.search.SearchColumnHandler;
@@ -60,7 +64,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.1 (11/2013)
+ * @version 1.2 (04/2014)
  */
 public class DBChecker implements QueryChecker {
 
@@ -112,6 +116,26 @@ public class DBChecker implements QueryChecker {
 	/* CHECK METHODS */
 	/* ************* */
 	/**
+	 * <p>Check all the columns, tables and UDFs references inside the given query.</p>
+	 * 
+	 * <p><i>
+	 * 	<u>Note:</u> This query has already been parsed ; thus it is already syntactically correct.
+	 * 	Only the consistency with the published tables, columns and all the defined UDFs must be checked.
+	 * </i></p>
+	 * 
+	 * @param query			The query to check.
+	 * @param fatherColumns	List of all columns available in the father query.
+	 * 
+	 * @throws ParseException	An {@link UnresolvedIdentifiersException} if some tables or columns can not be resolved.
+	 * 
+	 * @see #check(ADQLQuery, Stack)
+	 */
+	@Override
+	public void check(final ADQLQuery query) throws ParseException{
+		check(query, null);
+	}
+
+	/**
 	 * Followed algorithm:
 	 * <pre>
 	 * Map&lt;DBTable,ADQLTable&gt; mapTables;
@@ -150,17 +174,19 @@ public class DBChecker implements QueryChecker {
 	 * End
 	 * </pre>
 	 * 
-	 * @param query				The query to check.
+	 * @param query			The query to check.
+	 * @param fathersList	List of all columns available in the father query.
 	 * 
-	 * @throws ParseException	An {@link UnresolvedIdentifiersException} if some tables or columns can not be resolved.
+	 * @throws UnresolvedIdentifiersException	An {@link UnresolvedIdentifiersException} if some tables or columns can not be resolved.
+	 * 
+	 * @since 1.2
 	 * 
 	 * @see #resolveTable(ADQLTable)
 	 * @see #generateDBTable(ADQLQuery, String)
 	 * @see #resolveColumn(ADQLColumn, SearchColumnList)
 	 * @see #checkColumnReference(ColumnReference, ClauseSelect, SearchColumnList)
 	 */
-	@Override
-	public void check(final ADQLQuery query) throws ParseException{
+	protected void check(final ADQLQuery query, Stack<SearchColumnList> fathersList) throws UnresolvedIdentifiersException{
 		UnresolvedIdentifiersException errors = new UnresolvedIdentifiersException();
 		HashMap<DBTable,ADQLTable> mapTables = new HashMap<DBTable,ADQLTable>();
 		ISearchHandler sHandler;
@@ -171,15 +197,20 @@ public class DBChecker implements QueryChecker {
 		for(ADQLObject result : sHandler){
 			try{
 				ADQLTable table = (ADQLTable)result;
+
 				// resolve the table:
 				DBTable dbTable = null;
 				if (table.isSubQuery()){
+					// check the subquery tables:
+					check(table.getSubQuery(), fathersList);
+					// generate its DBTable:
 					dbTable = generateDBTable(table.getSubQuery(), table.getAlias());
 				}else{
 					dbTable = resolveTable(table);
 					if (table.hasAlias())
 						dbTable = dbTable.copy(dbTable.getDBName(), table.getAlias());
 				}
+
 				// link with the matched DBTable:
 				table.setDBLink(dbTable);
 				mapTables.put(dbTable, table);
@@ -189,6 +220,10 @@ public class DBChecker implements QueryChecker {
 		}
 
 		// Attach table information on wildcards with the syntax "{tableName}.*" of the SELECT clause:
+		/* Note: no need to check the table name among the father tables, because there is
+		 *       no interest to select a father column in a subquery
+		 *       (which can return only one column ; besides, no aggregate is not allowed
+		 *       in subqueries).*/
 		sHandler = new SearchWildCardHandler();
 		sHandler.search(query.getSelect());
 		for(ADQLObject result : sHandler){
@@ -213,6 +248,7 @@ public class DBChecker implements QueryChecker {
 			}
 		}
 
+		// Get the list of all columns made available in the clause FROM:
 		SearchColumnList list;
 		try{
 			list = query.getFrom().getDBColumns();
@@ -228,7 +264,7 @@ public class DBChecker implements QueryChecker {
 			try{
 				ADQLColumn adqlColumn = (ADQLColumn)result;
 				// resolve the column:
-				DBColumn dbColumn = resolveColumn(adqlColumn, list);
+				DBColumn dbColumn = resolveColumn(adqlColumn, list, fathersList);
 				// link with the matched DBColumn:
 				adqlColumn.setDBLink(dbColumn);
 				adqlColumn.setAdqlTable(mapTables.get(dbColumn.getTable()));
@@ -238,6 +274,8 @@ public class DBChecker implements QueryChecker {
 		}
 
 		// Check the correctness of all column references:
+		/* Note: no need to provide the father tables when resolving column references,
+		 *       because no father column can be used in ORDER BY and/or GROUP BY. */
 		sHandler = new SearchColReferenceHandler();
 		sHandler.search(query);
 		ClauseSelect select = query.getSelect();
@@ -253,6 +291,32 @@ public class DBChecker implements QueryChecker {
 			}catch(ParseException pe){
 				errors.addException(pe);
 			}
+		}
+
+		// Check subqueries outside the clause FROM:
+		sHandler = new SearchSubQueryHandler();
+		sHandler.search(query);
+		if (sHandler.getNbMatch() > 0){
+
+			// Push the list of columns in the father columns stack:
+			if (fathersList == null)
+				fathersList = new Stack<SearchColumnList>();
+			fathersList.push(list);
+
+			// Check each found subquery (except the first one because it is the current query):
+			for(ADQLObject result : sHandler){
+				try{
+					check((ADQLQuery)result, fathersList);
+				}catch(UnresolvedIdentifiersException uie){
+					Iterator<ParseException> itPe = uie.getErrors();
+					while(itPe.hasNext())
+						errors.addException(itPe.next());
+				}
+			}
+
+			// Pop the list of columns from the father columns stack:
+			fathersList.pop();
+
 		}
 
 		// Throw all errors if any:
@@ -284,17 +348,21 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * Resolves the given column, that's to say searches for the corresponding {@link DBColumn}.
+	 * <p>Resolves the given column, that's to say searches for the corresponding {@link DBColumn}.</p>
+	 * <p>The third parameter is used only if this function is called inside a subquery. In this case,
+	 * column is tried to be resolved with the first list (dbColumns). If no match is found,
+	 * the resolution is tried with the father columns list (fatherColumns).</p>
 	 * 
 	 * @param column		The column to resolve.
 	 * @param dbColumns		List of all available {@link DBColumn}s.
+	 * @param fathersList	List of all columns available in the father query ; a list for each father-level.
 	 * 
-	 * @return				The corresponding {@link DBColumn} if found, <i>null</i> otherwise.
+	 * @return 				The corresponding {@link DBColumn} if found. Otherwise an exception is thrown.
 	 * 
 	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
 	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
 	 */
-	protected DBColumn resolveColumn(final ADQLColumn column, final SearchColumnList dbColumns) throws ParseException{
+	protected DBColumn resolveColumn(final ADQLColumn column, final SearchColumnList dbColumns, Stack<SearchColumnList> fathersList) throws ParseException{
 		ArrayList<DBColumn> foundColumns = dbColumns.search(column);
 
 		// good if only one column has been found:
@@ -307,8 +375,15 @@ public class DBChecker implements QueryChecker {
 			else
 				throw new UnresolvedTableException(column, (foundColumns.get(0).getTable() == null) ? "<NULL>" : foundColumns.get(0).getTable().getADQLName(), (foundColumns.get(1).getTable() == null) ? "<NULL>" : foundColumns.get(1).getTable().getADQLName());
 		}// otherwise (no match): unknown column !
-		else
-			throw new UnresolvedColumnException(column);
+		else{
+			if (fathersList == null || fathersList.isEmpty())
+				throw new UnresolvedColumnException(column);
+			else{
+				Stack<SearchColumnList> subStack = new Stack<SearchColumnList>();
+				subStack.addAll(fathersList.subList(0, fathersList.size() - 1));
+				return resolveColumn(column, fathersList.peek(), subStack);
+			}
+		}
 	}
 
 	/**
@@ -325,7 +400,7 @@ public class DBChecker implements QueryChecker {
 	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
 	 * 
 	 * @see ClauseSelect#searchByAlias(String)
-	 * @see #resolveColumn(ADQLColumn, SearchColumnList)
+	 * @see #resolveColumn(ADQLColumn, SearchColumnList, SearchColumnList)
 	 */
 	protected DBColumn checkColumnReference(final ColumnReference colRef, final ClauseSelect select, final SearchColumnList dbColumns) throws ParseException{
 		if (colRef.isIndex()){
@@ -352,7 +427,7 @@ public class DBChecker implements QueryChecker {
 			}
 
 			// check the corresponding column:
-			return resolveColumn(col, dbColumns);
+			return resolveColumn(col, dbColumns, null);
 		}
 	}
 
@@ -419,6 +494,36 @@ public class DBChecker implements QueryChecker {
 		@Override
 		public boolean match(final ADQLObject obj){
 			return (obj instanceof ColumnReference);
+		}
+	}
+
+	/**
+	 * <p>Lets searching subqueries in every clause except the FROM one (hence the modification of the {@link #goInto(ADQLObject)}.</p>
+	 * 
+	 * <p><i>
+	 * 	<u>Note:</u> The function {@link #addMatch(ADQLObject, ADQLIterator)} has been modified in order to
+	 * 	not have the root search object (here: the main query) in the list of results.
+	 * </i></p>
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 1.2 (12/2013)
+	 * @since 1.2
+	 */
+	private static class SearchSubQueryHandler extends SimpleSearchHandler {
+		@Override
+		protected void addMatch(ADQLObject matchObj, ADQLIterator it){
+			if (it != null)
+				super.addMatch(matchObj, it);
+		}
+
+		@Override
+		protected boolean goInto(ADQLObject obj){
+			return super.goInto(obj) && !(obj instanceof FromContent);
+		}
+
+		@Override
+		protected boolean match(ADQLObject obj){
+			return (obj instanceof ADQLQuery);
 		}
 	}
 

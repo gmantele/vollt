@@ -16,14 +16,15 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 /**
  * Represents an ADQL clause (i.e. SELECT, FROM, WHERE, ...).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 11/2010
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.2 (12/2013)
  */
 public class ClauseADQL< T extends ADQLObject > extends ADQLList<T> {
 
@@ -53,10 +54,9 @@ public class ClauseADQL< T extends ADQLObject > extends ADQLList<T> {
 		super(toCopy);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public ADQLObject getCopy() throws Exception{
-		return new ClauseADQL(this);
+		return new ClauseADQL<T>(this);
 	}
 
 	/**

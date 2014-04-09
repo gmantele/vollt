@@ -21,7 +21,6 @@ import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
 /** Token Manager. */
-@SuppressWarnings("all")
 public class ADQLParserTokenManager implements ADQLParserConstants {
 
 	/** Debug output. */

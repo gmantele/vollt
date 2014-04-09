@@ -16,7 +16,8 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import adql.db.DBChecker;
@@ -27,13 +28,19 @@ import adql.query.ADQLQuery;
  * 
  * <p>Usually, it consists to check the existence of referenced columns and tables. In this case, one default implementation of this interface can be used: {@link DBChecker}</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.2 (12/2013)
  */
 public interface QueryChecker {
 
 	/**
-	 * <p>Checks (non-recursively in sub-queries) the given {@link ADQLQuery}.</p>
+	 * <p>Checks the given {@link ADQLQuery}.</p>
+	 * 
+	 * <p><b>
+	 * 	<u>Important note:</u>
+	 * 	All subqueries must also be checked when calling this function!
+	 * </b></p>
+	 * 
 	 * <p>If the query is correct, nothing happens. However at the first detected error, a {@link ParseException} is thrown.</p>
 	 * 
 	 * @param query				The query to check.
