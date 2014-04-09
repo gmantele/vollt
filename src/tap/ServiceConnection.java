@@ -16,26 +16,31 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.Collection;
 import java.util.Iterator;
 
 import tap.file.TAPFileManager;
-
 import tap.formatter.OutputFormat;
-
 import tap.log.TAPLog;
-
 import tap.metadata.TAPMetadata;
-
 import uws.service.UserIdentifier;
 
+/**
+ * 
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
+ * @version 1.1 (12/2013)
+ * 
+ * @param <R>
+ */
 public interface ServiceConnection< R > {
 
 	public static enum LimitUnit{
-		rows, bytes;
+		rows, bytes, kilobytes, megabytes, gigabytes;
 	}
 
 	public String getProviderName();

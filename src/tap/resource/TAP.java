@@ -55,6 +55,12 @@ import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.error.ServiceErrorWriter;
 
+/**
+ * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
+ * @version 1.1 (12/2013)
+ * 
+ * @param <R>
+ */
 public class TAP< R > implements VOSIResource {
 
 	private static final long serialVersionUID = 1L;
@@ -243,10 +249,50 @@ public class TAP< R > implements VOSIResource {
 			if (uploadLimit != null && uploadLimit.length >= 2 && uploadLimitType != null && uploadLimitType.length >= 2){
 				if (uploadLimit[0] > -1 || uploadLimit[1] > -1){
 					xml.append("\t<uploadLimit>\n");
-					if (uploadLimit[0] > -1)
-						xml.append("\t\t<default unit=\"").append(uploadLimitType[0]).append("\">").append(uploadLimit[0]).append("</default>\n");
-					if (uploadLimit[1] > -1)
-						xml.append("\t\t<hard unit=\"").append(uploadLimitType[1]).append("\">").append(uploadLimit[1]).append("</hard>\n");
+					if (uploadLimit[0] > -1){
+						String limitType;
+						long limit = uploadLimit[0];
+						switch(uploadLimitType[0]){
+							case kilobytes:
+								limit *= 1000l;
+								limitType = LimitUnit.rows.toString();
+								break;
+							case megabytes:
+								limit *= 1000000l;
+								limitType = LimitUnit.rows.toString();
+								break;
+							case gigabytes:
+								limit *= 1000000000l;
+								limitType = LimitUnit.rows.toString();
+								break;
+							default:
+								limitType = uploadLimitType[0].toString();
+								break;
+						}
+						xml.append("\t\t<default unit=\"").append(limitType).append("\">").append(limit).append("</default>\n");
+					}
+					if (uploadLimit[1] > -1){
+						String limitType;
+						long limit = uploadLimit[1];
+						switch(uploadLimitType[1]){
+							case kilobytes:
+								limit *= 1000l;
+								limitType = LimitUnit.rows.toString();
+								break;
+							case megabytes:
+								limit *= 1000000l;
+								limitType = LimitUnit.rows.toString();
+								break;
+							case gigabytes:
+								limit *= 1000000000l;
+								limitType = LimitUnit.rows.toString();
+								break;
+							default:
+								limitType = uploadLimitType[1].toString();
+								break;
+						}
+						xml.append("\t\t<hard unit=\"").append(limitType).append("\">").append(limit).append("</hard>\n");
+					}
 					xml.append("\t</uploadLimit>\n");
 				}
 			}

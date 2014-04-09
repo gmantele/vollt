@@ -55,7 +55,7 @@ public class Uploader {
 	protected final ServiceConnection<?> service;
 	protected final DBConnection<?> dbConn;
 	protected final int nbRowsLimit;
-	protected final int nbBytesLimit;
+	protected final long nbBytesLimit;
 
 	protected int nbRows = 0;
 
@@ -66,7 +66,6 @@ public class Uploader {
 			throw new NullPointerException("The given DBConnection is NULL !");
 
 		this.service = service;
-
 		this.dbConn = dbConn;
 
 		if (service.uploadEnabled()){
@@ -74,7 +73,23 @@ public class Uploader {
 				nbRowsLimit = ((service.getUploadLimit()[1] > 0) ? service.getUploadLimit()[1] : -1);
 				nbBytesLimit = -1;
 			}else{
-				nbBytesLimit = ((service.getUploadLimit()[1] > 0) ? service.getUploadLimit()[1] : -1);
+				long limit = ((service.getUploadLimit()[1] > 0) ? service.getUploadLimit()[1] : -1);
+				if (limit > 0){
+					switch(service.getUploadLimitType()[1]){
+						case kilobytes:
+							limit *= 1000l;
+							break;
+						case megabytes:
+							limit *= 1000000l;
+							break;
+						case gigabytes:
+							limit *= 1000000000l;
+							break;
+						default:
+							break;
+					}
+				}
+				nbBytesLimit = limit;
 				nbRowsLimit = -1;
 			}
 		}else
