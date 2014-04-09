@@ -1,14 +1,24 @@
 package tap.config;
 
-import static tap.config.TAPConfiguration.*;
+import static tap.config.TAPConfiguration.DEFAULT_BACKUP_BY_USER;
+import static tap.config.TAPConfiguration.DEFAULT_BACKUP_FREQUENCY;
+import static tap.config.TAPConfiguration.KEY_BACKUP_BY_USER;
+import static tap.config.TAPConfiguration.KEY_BACKUP_FREQUENCY;
+import static tap.config.TAPConfiguration.KEY_DB_PASSWORD;
+import static tap.config.TAPConfiguration.KEY_DB_USERNAME;
+import static tap.config.TAPConfiguration.KEY_JDBC_DRIVER;
+import static tap.config.TAPConfiguration.KEY_JDBC_URL;
+import static tap.config.TAPConfiguration.KEY_SQL_TRANSLATOR;
+import static tap.config.TAPConfiguration.VALUE_JDBC_DRIVERS;
+import static tap.config.TAPConfiguration.VALUE_PGSPHERE;
+import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
+import static tap.config.TAPConfiguration.VALUE_USER_ACTION;
+import static tap.config.TAPConfiguration.getProperty;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.util.Properties;
 
-import adql.translator.ADQLTranslator;
-import adql.translator.PgSphereTranslator;
-import adql.translator.PostgreSQLTranslator;
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
 import tap.TAPException;
@@ -18,6 +28,9 @@ import tap.db.JDBCConnection;
 import uws.UWSException;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
+import adql.translator.ADQLTranslator;
+import adql.translator.PgSphereTranslator;
+import adql.translator.PostgreSQLTranslator;
 
 public final class DefaultTAPFactory extends AbstractTAPFactory<ResultSet> {
 
@@ -31,15 +44,13 @@ public final class DefaultTAPFactory extends AbstractTAPFactory<ResultSet> {
 	private boolean backupByUser;
 	private long backupFrequency;
 
-	@SuppressWarnings("unchecked")
 	public DefaultTAPFactory(ServiceConnection<ResultSet> service, final Properties tapConfig) throws NullPointerException, TAPException{
 		super(service);
 
 		/* 0. Extract the DB type and deduce the JDBC Driver path */
 		String jdbcDriver = getProperty(tapConfig, KEY_JDBC_DRIVER);
-		String dbUrl = null;
+		String dbUrl = getProperty(tapConfig, KEY_JDBC_URL);
 		if (jdbcDriver == null){
-			dbUrl = getProperty(tapConfig, KEY_JDBC_URL);
 			if (dbUrl == null)
 				throw new TAPException("JDBC URL missing.");
 			else if (!dbUrl.startsWith(JDBCConnection.JDBC_PREFIX + ":"))
@@ -67,20 +78,13 @@ public final class DefaultTAPFactory extends AbstractTAPFactory<ResultSet> {
 			translator = PostgreSQLTranslator.class;
 
 		// case c.) PgSphere translator
-		else if (sqlTranslator.equals(VALUE_PGSPHERE))
+		else if (sqlTranslator.equalsIgnoreCase(VALUE_PGSPHERE))
 			translator = PgSphereTranslator.class;
 
 		// case d.) a client defined ADQLTranslator (with the provided class path)
-		else if (sqlTranslator.charAt(0) == '{' && sqlTranslator.charAt(sqlTranslator.length() - 1) == '}'){
-			sqlTranslator = sqlTranslator.substring(1, sqlTranslator.length() - 2);
-			try{
-				translator = (Class<? extends ADQLTranslator>)ClassLoader.getSystemClassLoader().loadClass(sqlTranslator);
-			}catch(ClassNotFoundException cnfe){
-				throw new TAPException("Unable to load the SQL Translator! The class specified by the property sql_translator (" + sqlTranslator + ") can not be found.");
-			}catch(ClassCastException cce){
-				throw new TAPException("Unable to load the SQL Translator! The class specified by the property sql_translator (" + sqlTranslator + ") is not implementing adql.translator.ADQLTranslator.");
-			}
-		}
+		else if (TAPConfiguration.isClassPath(sqlTranslator))
+			translator = TAPConfiguration.fetchClass(sqlTranslator, KEY_SQL_TRANSLATOR, ADQLTranslator.class);
+
 		// case e.) unsupported value
 		else
 			throw new TAPException("Unsupported value for the property sql_translator: \"" + sqlTranslator + "\" !");
