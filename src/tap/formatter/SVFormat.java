@@ -16,28 +16,19 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institute (ARI)
+ * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
+import cds.savot.writer.SavotWriter;
+import adql.db.DBColumn;
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
-import adql.db.DBColumn;
-import cds.savot.writer.SavotWriter;
 
-/**
- * 
- * 
- * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (12/2013)
- * 
- * @param <R>
- */
 public abstract class SVFormat< R > implements OutputFormat<R> {
 
 	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
@@ -51,112 +42,60 @@ public abstract class SVFormat< R > implements OutputFormat<R> {
 
 	protected final String separator;
 	protected final boolean delimitStr;
-	protected final String mimeType;
-	protected final String shortMimeType;
 
 	public SVFormat(final ServiceConnection<R> service, char colSeparator){
 		this(service, colSeparator, true);
 	}
 
-	/**
-	 * @since 1.1
-	 */
+	public SVFormat(final ServiceConnection<R> service, char colSeparator, boolean delimitStrings){
+		this(service, colSeparator, delimitStrings, false);
+	}
+
+	public SVFormat(final ServiceConnection<R> service, char colSeparator, boolean delimitStrings, final boolean logFormatReport){
+		separator = "" + colSeparator;
+		delimitStr = delimitStrings;
+		this.service = service;
+		this.logFormatReport = logFormatReport;
+	}
+
 	public SVFormat(final ServiceConnection<R> service, String colSeparator){
 		this(service, colSeparator, true);
 	}
 
-	public SVFormat(final ServiceConnection<R> service, char colSeparator, boolean delimitStrings){
-		this(service, "" + colSeparator, delimitStrings);
-	}
-
-	/**
-	 * @since 1.1
-	 */
 	public SVFormat(final ServiceConnection<R> service, String colSeparator, boolean delimitStrings){
-		this(service, colSeparator, delimitStrings, null, null);
-	}
-
-	/**
-	 * @since 1.1
-	 */
-	public SVFormat(final ServiceConnection<R> service, char colSeparator, boolean delimitStrings, String mimeType, String typeAlias){
-		this(service, "" + colSeparator, delimitStrings, mimeType, typeAlias);
-	}
-
-	/**
-	 * @since 1.1
-	 */
-	public SVFormat(final ServiceConnection<R> service, String colSeparator, boolean delimitStrings, String mimeType, String typeAlias){
-		this(service, colSeparator, delimitStrings, mimeType, typeAlias, false);
-	}
-
-	/**
-	 * @since 1.1
-	 */
-	public SVFormat(final ServiceConnection<R> service, char colSeparator, boolean delimitStrings, String mimeType, String typeAlias, final boolean logFormatReport){
-		this(service, "" + colSeparator, delimitStrings, mimeType, typeAlias, logFormatReport);
-	}
-
-	/**
-	 * @since 1.1
-	 */
-	public SVFormat(final ServiceConnection<R> service, String colSeparator, boolean delimitStrings, String mimeType, String typeAlias, final boolean logFormatReport){
 		separator = (colSeparator == null) ? ("" + COMMA_SEPARATOR) : colSeparator;
 		delimitStr = delimitStrings;
 		this.service = service;
-		this.logFormatReport = logFormatReport;
-
-		// Set the MIME type:
-		if (mimeType == null || mimeType.length() == 0){
-			// if none is provided, guess it from the separator:
-			switch(separator.charAt(0)){
-				case COMMA_SEPARATOR:
-				case SEMI_COLON_SEPARATOR:
-					this.mimeType = "text/csv";
-					break;
-				case TAB_SEPARATOR:
-					this.mimeType = "text/tsv";
-					break;
-				default:
-					this.mimeType = "text/plain";
-			}
-		}else
-			this.mimeType = mimeType;
-
-		// Set the short MIME type (or the alias):
-		if (typeAlias == null || typeAlias.length() == 0){
-			// if none is provided, guess it from the separator:
-			switch(separator.charAt(0)){
-				case COMMA_SEPARATOR:
-				case SEMI_COLON_SEPARATOR:
-					this.shortMimeType = "csv";
-					break;
-				case TAB_SEPARATOR:
-					this.shortMimeType = "tsv";
-					break;
-				default:
-					this.shortMimeType = "text";
-			}
-		}else
-			this.shortMimeType = typeAlias;
 	}
 
-	@Override
 	public String getMimeType(){
-		return mimeType;
+		switch(separator.charAt(0)){
+			case COMMA_SEPARATOR:
+			case SEMI_COLON_SEPARATOR:
+				return "text/csv";
+			case TAB_SEPARATOR:
+				return "text/tsv";
+			default:
+				return "text/plain";
+		}
 	}
 
-	@Override
 	public String getShortMimeType(){
-		return shortMimeType;
+		switch(separator.charAt(0)){
+			case COMMA_SEPARATOR:
+			case SEMI_COLON_SEPARATOR:
+				return "csv";
+			case TAB_SEPARATOR:
+				return "tsv";
+			default:
+				return "text";
+		}
 	}
 
-	@Override
 	public String getDescription(){
 		return null;
 	}
 
-	@Override
 	public String getFileExtension(){
 		switch(separator.charAt(0)){
 			case COMMA_SEPARATOR:
