@@ -38,7 +38,7 @@ import adql.search.ISearchHandler;
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.1 (11/2013)
+ * @version 1.2 (11/2013)
  */
 public class ADQLQuery implements ADQLObject {
 

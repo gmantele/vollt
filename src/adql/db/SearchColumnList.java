@@ -46,7 +46,7 @@ import cds.utils.TextualSearchList;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.1 (11/2013)
+ * @version 1.2 (11/2013)
  */
 public class SearchColumnList extends TextualSearchList<DBColumn> {
 	private static final long serialVersionUID = 1L;
@@ -404,8 +404,8 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * @param <E> Type of the item that this Iterator must return.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
-	 * @version 1.1 (11/2013)
-	 * @since 1.1
+	 * @version 1.2 (11/2013)
+	 * @since 1.2
 	 */
 	private static class SingleIterator< E > implements Iterator<E> {
 		private final E item;

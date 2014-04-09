@@ -28,7 +28,7 @@ import adql.query.operand.ADQLOperand;
  * It represents any function which is not managed by ADQL.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.1 (04/2014)
+ * @version 1.2 (04/2014)
  */
 public final class DefaultUDF extends UserDefinedFunction {
 

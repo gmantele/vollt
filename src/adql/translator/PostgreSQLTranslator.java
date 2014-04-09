@@ -83,7 +83,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * An extension is already available for PgSphere: {@link PgSphereTranslator}.</b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.1 (11/2013)
+ * @version 1.2 (11/2013)
  * 
  * @see PgSphereTranslator
  */

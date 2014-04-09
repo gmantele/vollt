@@ -32,7 +32,7 @@ import adql.query.ADQLObject;
  * It could be either a table ({@link ADQLTable}) or a join ({@link ADQLJoin}).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.1 (11/2013)
+ * @version 1.2 (11/2013)
  */
 public interface FromContent extends ADQLObject {
 

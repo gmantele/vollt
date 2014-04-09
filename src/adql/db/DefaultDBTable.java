@@ -28,7 +28,7 @@ import java.util.Iterator;
  * Default implementation of {@link DBTable}.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.1 (11/2013)
+ * @version 1.2 (11/2013)
  */
 public class DefaultDBTable implements DBTable {
 

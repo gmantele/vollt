@@ -33,7 +33,7 @@ import adql.query.ADQLQuery;
  * in case of several JOINs.
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (11/2013)
+ * @version 1.2 (11/2013)
  */
 public class DBCommonColumn implements DBColumn {
 

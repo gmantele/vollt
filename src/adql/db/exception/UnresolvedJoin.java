@@ -27,7 +27,7 @@ import adql.query.TextPosition;
  * and particularly because of the join condition (i.e. column names not found, ...).
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (11/2013)
+ * @version 1.2 (11/2013)
  */
 public class UnresolvedJoin extends ParseException {
 	private static final long serialVersionUID = 1L;
