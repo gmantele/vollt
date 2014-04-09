@@ -16,7 +16,8 @@ package adql.search;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -35,8 +36,8 @@ import adql.query.ADQLQuery;
  * 	<li>The matching objects are simply collected in an ArrayList.</li>
  * </ul>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.2 (12/2013)
  * 
  * @see SearchColumnHandler
  */
@@ -119,10 +120,12 @@ public abstract class SimpleSearchHandler implements ISearchHandler {
 		this.firstMatch = firstMatch;
 	}
 
+	@Override
 	public final Iterator<ADQLObject> iterator(){
 		return results.iterator();
 	}
 
+	@Override
 	public final int getNbMatch(){
 		return results.size();
 	}
@@ -152,6 +155,8 @@ public abstract class SimpleSearchHandler implements ISearchHandler {
 	/**
 	 * Adds the given ADQL object as one result of the research.
 	 * 
+	 * <p><b><u>Warning:</u> the second parameter (<i>it</i>) may be <i>null</i> if the given match is the root search object itself.</b></p>
+	 * 
 	 * @param matchObj	An ADQL object which has matched to the research criteria.
 	 * @param it		The iterator from which the matched ADQL object has been extracted.
 	 */
@@ -167,14 +172,16 @@ public abstract class SimpleSearchHandler implements ISearchHandler {
 		results.clear();
 	}
 
+	@Override
 	public final void search(final ADQLObject startObj){
 		reset();
 
 		if (startObj == null)
 			return;
 
+		// Test the root search object:
 		if (match(startObj))
-			results.add(startObj);
+			addMatch(startObj, null);
 
 		Stack<ADQLIterator> stackIt = new Stack<ADQLIterator>();
 		ADQLObject obj = null;
