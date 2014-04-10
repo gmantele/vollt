@@ -100,6 +100,8 @@ public class ADQLExecutor< R > {
 			logger.info("JOB " + report.jobID + "\tLoading uploaded tables (" + tables.length + ")...");
 			long start = System.currentTimeMillis();
 			try{
+				/* TODO Problem with the DBConnection! One is created here for the Uploader (and dbConn is set) and closed by its uploadTables function (but dbConn is not set to null).
+				 * Ideally, the connection should not be close, or at least dbConn should be set to null just after. */
 				uploadSchema = service.getFactory().createUploader(getDBConnection()).upload(tables);
 			}finally{
 				TAPParameters.deleteUploadedTables(tables);
