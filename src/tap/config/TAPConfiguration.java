@@ -1,24 +1,5 @@
 package tap.config;
 
-/*
- * This file is part of TAPLibrary.
- * 
- * TAPLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * TAPLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2013 - Astronomisches Rechen Institute (ARI)
- */
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Enumeration;
@@ -29,11 +10,6 @@ import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import tap.backup.DefaultTAPBackupManager;
 
-/**
- * 
- * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (12/2013)
- */
 public final class TAPConfiguration {
 
 	/* FILE MANAGER KEYS */
@@ -85,6 +61,13 @@ public final class TAPConfiguration {
 	public final static String KEY_IS_AVAILABLE = "is_available";
 	public final static boolean DEFAULT_IS_AVAILABLE = true;
 	public final static String KEY_DISABILITY_REASON = "disability_reason";
+
+	/* UPLOAD KEYS */
+	public final static String KEY_UPLOAD_ENABLED = "upload_enabled";
+	public final static String KEY_DEFAULT_UPLOAD_LIMIT = "upload_default_db_limit";
+	public final static String KEY_MAX_UPLOAD_LIMIT = "upload_max_db_limit";
+	public final static String KEY_UPLOAD_MAX_FILE_SIZE = "upload_max_file_size";
+	public final static int DEFAULT_UPLOAD_MAX_FILE_SIZE = Integer.MAX_VALUE;
 
 	/* OUTPUT KEYS */
 	public final static String KEY_OUTPUT_FORMATS = "output_add_formats";

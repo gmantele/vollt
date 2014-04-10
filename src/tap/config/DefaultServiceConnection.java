@@ -1,32 +1,15 @@
 package tap.config;
 
-/*
- * This file is part of TAPLibrary.
- * 
- * TAPLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * TAPLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2013 - Astronomisches Rechen Institute (ARI)
- */
-
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
 import static tap.config.TAPConfiguration.DEFAULT_IS_AVAILABLE;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.KEY_DISABILITY_REASON;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
@@ -36,9 +19,12 @@ import static tap.config.TAPConfiguration.KEY_IS_AVAILABLE;
 import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.KEY_MAX_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
+import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
+import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
@@ -72,11 +58,6 @@ import tap.metadata.TAPMetadata;
 import uws.UWSException;
 import uws.service.UserIdentifier;
 
-/**
- * 
- * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (12/2013)
- */
 public final class DefaultServiceConnection implements ServiceConnection<ResultSet> {
 
 	private TAPFileManager fileManager;
@@ -88,7 +69,7 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 	private final String providerName;
 	private final String serviceDescription;
 
-	private boolean isAvailable = false;
+	private boolean isAvailable = false;	// the TAP service must be disabled until the end of its connection initialization 
 	private String availability = null;
 
 	private int[] executionDuration = new int[2];
@@ -96,8 +77,13 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 
 	private final ArrayList<OutputFormat<ResultSet>> outputFormats;
 
-	private int[] outputLimits = new int[2];
+	private int[] outputLimits = new int[]{-1,-1};
 	private LimitUnit[] outputLimitTypes = new LimitUnit[2];
+
+	private boolean isUploadEnabled = false;
+	private int[] uploadLimits = new int[]{-1,-1};
+	private LimitUnit[] uploadLimitTypes = new LimitUnit[2];
+	private int maxUploadSize = DEFAULT_UPLOAD_MAX_FILE_SIZE;
 
 	public DefaultServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
 		// 1. INITIALIZE THE FILE MANAGER:
@@ -125,7 +111,15 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 		// set output limits:
 		initOutputLimits(tapConfig);
 
-		// 5. MAKE THE SERVICE AVAILABLE (or not, depending on the property value):
+		// 6. CONFIGURE THE UPLOAD:
+		// is upload enabled ?
+		isUploadEnabled = Boolean.parseBoolean(getProperty(tapConfig, KEY_UPLOAD_ENABLED));
+		// set upload limits:
+		initUploadLimits(tapConfig);
+		// set the maximum upload file size:
+		initMaxUploadSize(tapConfig);
+
+		// 7. MAKE THE SERVICE AVAILABLE (or not, depending on the property value):
 		String propValue = getProperty(tapConfig, KEY_IS_AVAILABLE);
 		isAvailable = (propValue == null) ? DEFAULT_IS_AVAILABLE : Boolean.parseBoolean(propValue);
 	}
@@ -302,14 +296,44 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 
 	private void initOutputLimits(final Properties tapConfig) throws TAPException{
 		Object[] limit = parseLimit(getProperty(tapConfig, KEY_DEFAULT_OUTPUT_LIMIT), KEY_DEFAULT_OUTPUT_LIMIT, false);
-		outputLimitTypes[0] = (LimitUnit)limit[1];
+		outputLimitTypes[0] = (LimitUnit)limit[1];	// it should be "rows" since the parameter areBytesAllowed of parseLimit =false
 		setDefaultOutputLimit((int)limit[0]);
 
 		limit = parseLimit(getProperty(tapConfig, KEY_MAX_OUTPUT_LIMIT), KEY_DEFAULT_OUTPUT_LIMIT, false);
-		outputLimitTypes[1] = (LimitUnit)limit[1];
+		outputLimitTypes[1] = (LimitUnit)limit[1];	// it should be "rows" since the parameter areBytesAllowed of parseLimit =false
 
 		if (!setMaxOutputLimit((int)limit[0]))
 			throw new TAPException("The default output limit (here: " + outputLimits[0] + ") MUST be less or equal to the maximum output limit (here: " + limit[0] + ")!");
+	}
+
+	private void initUploadLimits(final Properties tapConfig) throws TAPException{
+		Object[] limit = parseLimit(getProperty(tapConfig, KEY_DEFAULT_UPLOAD_LIMIT), KEY_DEFAULT_UPLOAD_LIMIT, true);
+		uploadLimitTypes[0] = (LimitUnit)limit[1];
+		setDefaultUploadLimit((int)limit[0]);
+
+		limit = parseLimit(getProperty(tapConfig, KEY_MAX_UPLOAD_LIMIT), KEY_MAX_UPLOAD_LIMIT, true);
+		if (!((LimitUnit)limit[1]).isCompatibleWith(uploadLimitTypes[0]))
+			throw new TAPException("The default upload limit (in " + uploadLimitTypes[0] + ") and the maximum upload limit (in " + limit[1] + ") MUST be expressed in the same unit!");
+		else
+			uploadLimitTypes[1] = (LimitUnit)limit[1];
+
+		if (!setMaxUploadLimit((int)limit[0]))
+			throw new TAPException("The default upload limit (here: " + getProperty(tapConfig, KEY_DEFAULT_UPLOAD_LIMIT) + ") MUST be less or equal to the maximum upload limit (here: " + getProperty(tapConfig, KEY_MAX_UPLOAD_LIMIT) + ")!");
+	}
+
+	private void initMaxUploadSize(final Properties tapConfig) throws TAPException{
+		String propValue = getProperty(tapConfig, KEY_UPLOAD_MAX_FILE_SIZE);
+		// If a value is specified...
+		if (propValue != null){
+			// ...parse the value:
+			Object[] limit = parseLimit(propValue, KEY_UPLOAD_MAX_FILE_SIZE, true);
+			// ...check that the unit is correct (bytes): 
+			if (!LimitUnit.bytes.isCompatibleWith((LimitUnit)limit[1]))
+				throw new TAPException("The maximum upload file size " + KEY_UPLOAD_MAX_FILE_SIZE + " (here: " + propValue + ") can not be expressed in a unit different from bytes (B, kB, MB, GB)!");
+			// ...set the max file size:
+			int value = (int)((int)limit[0] * ((LimitUnit)limit[1]).bytesFactor());
+			setMaxUploadSize(value);
+		}
 	}
 
 	@Override
@@ -459,38 +483,76 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 	}
 
 	@Override
-	public UserIdentifier getUserIdentifier(){
-		// TODO Auto-generated method stub
-		return null;
+	public boolean uploadEnabled(){
+		return isUploadEnabled;
 	}
 
-	@Override
-	public boolean uploadEnabled(){
-		// TODO Auto-generated method stub
-		return false;
+	public void setUploadEnabled(final boolean enabled){
+		isUploadEnabled = enabled;
 	}
 
 	@Override
 	public int[] getUploadLimit(){
-		// TODO Auto-generated method stub
-		return null;
+		return uploadLimits;
 	}
 
 	@Override
 	public LimitUnit[] getUploadLimitType(){
-		// TODO Auto-generated method stub
-		return null;
+		return uploadLimitTypes;
+	}
+
+	public void setUploadLimitType(final LimitUnit type){
+		if (type != null)
+			uploadLimitTypes = new LimitUnit[]{type,type};
+	}
+
+	public boolean setDefaultUploadLimit(final int limit){
+		try{
+			if ((uploadLimits[1] <= 0) || (limit > 0 && LimitUnit.compare(limit, uploadLimitTypes[0], uploadLimits[1], uploadLimitTypes[1]) <= 0)){
+				uploadLimits[0] = limit;
+				return true;
+			}
+		}catch(TAPException e){}
+		return false;
+	}
+
+	public boolean setMaxUploadLimit(final int limit){
+		try{
+			if (limit > 0 && uploadLimits[0] > 0 && LimitUnit.compare(limit, uploadLimitTypes[1], uploadLimits[0], uploadLimitTypes[0]) < 0)
+				return false;
+			else{
+				uploadLimits[1] = limit;
+				return true;
+			}
+		}catch(TAPException e){
+			return false;
+		}
 	}
 
 	@Override
 	public int getMaxUploadSize(){
-		// TODO Auto-generated method stub
-		return 0;
+		return maxUploadSize;
+	}
+
+	public boolean setMaxUploadSize(final int maxSize){
+		// No "unlimited" value possible there:
+		if (maxSize <= 0)
+			return false;
+
+		// Otherwise, set the maximum upload file size:
+		maxUploadSize = maxSize;
+		return true;
+	}
+
+	@Override
+	public UserIdentifier getUserIdentifier(){
+		// TODO DefaultServiceConnection.getUserIdentifier
+		return null;
 	}
 
 	@Override
 	public TAPMetadata getTAPMetadata(){
-		// TODO Auto-generated method stub
+		// TODO DefaultServiceConnection.getTAPMetadata
 		return null;
 	}
 

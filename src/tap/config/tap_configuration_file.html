@@ -67,6 +67,10 @@
 		
 		<p>Here is an empty minimum TAP configuration file: <a href="tap_min.properties">tap_min.properties</a> and a complete one: <a href="tap_full.properties">tap_full.properties</a>.</p>
 		
+		
+		<p><b>Important note:</b> Any limit value is an integer and so can be at most: 2<sup>31</sup>-1 bytes/rows = 2147483647B/R (or also for the byte unit: = 2147483kB = 2147MB = 2GB).
+		Otherwise, you should use the null value 0 to raise the limit constraint.</p>
+		
 		<p><i><u>Legend:</u> <b>M</b> means that the property is mandatory. If nothing is written for the second column, the property is optional.</i>
 	
 		<table>
@@ -413,33 +417,34 @@
 			
 			<tr><td colspan="5">Upload</td></tr>
 			<tr>
-				<td class="todo">upload_enabled</td>
+				<td class="done">upload_enabled</td>
 				<td></td>
 				<td>boolean</td>
 				<td>
 					<p>Tells whether the Upload must be enabled. If enabled, files can be uploaded in the file_root_path, 
 					the corresponding tables can be added inside the UPLOAD_SCHEMA of the database, queried and then deleted.</p>
-					<p>By default, the Upload is disabled: upload_enabled=false.</p>
+					<p><i>By default, the Upload is disabled: upload_enabled=false.</i></p>
 				</td>
 				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
 			</tr>
 			<tr>
-				<td class="todo">upload_default_db_limit</td>
+				<td class="done">upload_default_db_limit</td>
 				<td></td>
 				<td>text</td>
 				<td>
 					<p>Default limit for the number of uploaded records that can be inserted inside the database. The prefix "default" means here that this value will be set if the client does not provide one.</p>
-					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
-					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
+					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case)
+					or by nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
 					Here, unit is case sensitive. No other storage unit is allowed.</p>
 					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
-					<p>Obviously this limit MUST be less or equal than upload_max_db_limit.</p>
-					<p><em>By default, there is no restriction: upload_default_db_limit=0</em></p>
+					<p><b>Warning!</b> Obviously this limit MUST be less or equal than upload_max_db_limit, and MUST be of the same type as it.
+					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
+					<p><i>By default, there is no restriction: upload_default_db_limit=0</i></p>
 				</td>
-				<td><ul><li>0 <em>(default)</em></li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
+				<td><ul><li>0 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
 			</tr>
 			<tr>
-				<td class="todo">upload_max_db_limit</td>
+				<td class="done">upload_max_db_limit</td>
 				<td></td>
 				<td>text</td>
 				<td>
@@ -448,24 +453,25 @@
 					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
 					Here, unit is case sensitive. No other storage unit is allowed.</p>
 					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
-					<p>Obviously this limit MUST be greater or equal than upload_default_db_limit.</p>
-					<p><em>By default, there is no restriction: upload_max_db_limit=0</em></p>
+					<p><b>Warning!</b> Obviously this limit MUST be greater or equal than upload_default_db_limit, and MUST be of the same type as it.
+					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
+					<p><i>By default, there is no restriction: upload_max_db_limit=0</i></p>
 				</td>
-				<td><ul><li>0 <em>(default)</em></li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
+				<td><ul><li>0 <em>(default)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
 			</tr>
 			<tr>
-				<td class="todo">upload_max_file_size</td>
+				<td class="done">upload_max_file_size</td>
 				<td></td>
 				<td>text</td>
 				<td>
 					<p>Maximum allowed size for the uploaded file.</p>
 					<p>This limit MUST be expressed in bytes. Thus, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
 					Here, unit is case sensitive. No other storage unit is allowed.</p>
-					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
-					<p>In function of the chosen upload_max_db_limit type, upload_max_file_size should be greater in order to figure out the metadata part.</p>
-					<p><em>By default, there is no restriction: upload_max_file_size=0</em></p>
+					<p><b>Warning!</b> When the upload is enabled, there must be a maximum file size. Here, no "unlimited" value is possible ; 0 and any negative value are not allowed.</p>
+					<p><b>Warning!</b> In function of the chosen upload_max_db_limit type, upload_max_file_size MUST be greater in order to figure out the file metadata part.</p>
+					<p><i>By default, the maximum size is set to its maximum possible value: upload_max_file_size=2147483647B (~2GB)</i></p>
 				</td>
-				<td><ul><li>0 <em>(default)</em></li><li>2MB</li></ul></td>
+				<td><ul><li>2147483647B <em>(default)</em></li><li>2MB</li></ul></td>
 			</tr>
 		</table>
 	</body>
