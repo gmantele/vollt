@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2014 - UDS/Centre de DonnM-CM-)es astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.2 (12/2013)
+*  Version: 1.2 (03/2014)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.2 (12/2013)
+* @version 1.2 (03/2014)
 */
 public class ADQLParser {
 	
@@ -825,9 +825,17 @@ void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condit
 
 void GroupBy(): {ClauseADQL<ColumnReference> groupBy = query.getGroupBy(); ColumnReference colRef = null;} {
 	<GROUP_BY> colRef=ColumnRef() { groupBy.add(colRef); }
-	( <COMMA> colRef=ColumnRef() { groupBy.add(colRef); } )*}void Having(): {ClauseConstraints having = query.getHaving();} {
-	<HAVING> ConditionsList(having)}void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder order = null;} {	<ORDER_BY> order=OrderItem() {orderBy.add(order);}
-	( <COMMA> order=OrderItem() {orderBy.add(order);} )*}
+	( <COMMA> colRef=ColumnRef() { groupBy.add(colRef); } )*
+}
+
+void Having(): {ClauseConstraints having = query.getHaving();} {
+	<HAVING> ConditionsList(having)
+}
+
+void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder order = null;} {
+	<ORDER_BY> order=OrderItem() {orderBy.add(order);}
+	( <COMMA> order=OrderItem() {orderBy.add(order);} )*
+}
 
 /* *************************** */
 /* COLUMN AND TABLE REFERENCES */
@@ -1020,11 +1028,14 @@ ADQLOperand ValueExpressionPrimary(): {String expr; ADQLColumn column; ADQLOpera
 	| (<LEFT_PAR> op=ValueExpression() <RIGHT_PAR>) {return op;})
 }
 
-ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {	(valueExpr=GeometryValueFunction()	| LOOKAHEAD(<PLUS> | <MINUS>) valueExpr=NumericExpression()
+ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {
+	(valueExpr=GeometryValueFunction()
+	| LOOKAHEAD(<PLUS> | <MINUS>) valueExpr=NumericExpression()
 	| LOOKAHEAD(<COORDSYS>) valueExpr=StringExpression()
 	| LOOKAHEAD(StringFactor() <CONCAT>) valueExpr=StringExpression()
 	| valueExpr=NumericExpression())
-	{return valueExpr;}}
+	{return valueExpr;}
+}
 
 ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
 	(leftOp=NumericTerm() ((sign=<PLUS> | sign=<MINUS>) rightOp=NumericExpression())?)
@@ -1075,7 +1086,8 @@ ADQLOperand Factor(): {boolean negative = false;; ADQLOperand op;} {
 	}
 }
 
-ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;} {	leftOp=StringFactor()
+ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;} {
+	leftOp=StringFactor()
 	(
 		<CONCAT>
 		rightOp=StringFactor()
@@ -1092,7 +1104,8 @@ ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;
 			((Concatenation)leftOp).add(rightOp);
 		}
 	)*
-	{ return leftOp; }}
+	{ return leftOp; }
+}
 
 ADQLOperand StringFactor(): {ADQLOperand op;} {
 	(op=ExtractCoordSys()
@@ -1232,7 +1245,8 @@ In InEnd(ADQLOperand leftOp): {Token not=null; ADQLQuery q = null; ADQLOperand i
 /* ************* */
 /* SQL FUNCTIONS */
 /* ************* */
-SQLFunction SqlFunction(): {Token fct, all=null, distinct=null; ADQLOperand op=null; SQLFunction funct = null;}{	try{
+SQLFunction SqlFunction(): {Token fct, all=null, distinct=null; ADQLOperand op=null; SQLFunction funct = null;}{
+	try{
 		(
 			(<COUNT> <LEFT_PAR> [distinct=<QUANTIFIER>] (all=<ASTERISK> | op=ValueExpression()) <RIGHT_PAR>
 			{ funct = queryFactory.createSQLFunction((all!=null)?SQLFunctionType.COUNT_ALL:SQLFunctionType.COUNT, op, distinct != null && distinct.image.equalsIgnoreCase("distinct")); })
@@ -1243,7 +1257,8 @@ SQLFunction SqlFunction(): {Token fct, all=null, distinct=null; ADQLOperand op=n
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
-	{ return funct; }}
+	{ return funct; }
+}
 
 
 /* ************** */
