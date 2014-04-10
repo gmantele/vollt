@@ -40,6 +40,7 @@ import adql.query.SelectItem;
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
 import adql.query.constraint.Comparison;
+import adql.query.constraint.ConstraintsGroup;
 import adql.query.constraint.Exists;
 import adql.query.constraint.In;
 import adql.query.constraint.IsNull;
@@ -83,7 +84,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * An extension is already available for PgSphere: {@link PgSphereTranslator}.</b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (11/2013)
+ * @version 1.2 (03/2014)
  * 
  * @see PgSphereTranslator
  */
@@ -277,7 +278,10 @@ public class PostgreSQLTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(ClauseConstraints clause) throws TranslationException{
-		return getDefaultADQLList(clause);
+		if (clause instanceof ConstraintsGroup)
+			return "(" + getDefaultADQLList(clause) + ")";
+		else
+			return getDefaultADQLList(clause);
 	}
 
 	@Override
