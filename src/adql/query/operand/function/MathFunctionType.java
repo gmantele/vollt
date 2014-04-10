@@ -22,25 +22,40 @@ package adql.query.operand.function;
 /**
  * All types of managed mathematical functions.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 11/2010
+ * @author Gr&eacute;gory Mantelet (CDS,ARI)
+ * @version 03/2014
  * 
  * @see MathFunction
  */
 public enum MathFunctionType{
 	ABS(1), CEILING(1), DEGREES(1), EXP(1), FLOOR(1), LOG(1),		// returns the natural logarithm (base e) of a double value.
 	LOG10(1),	// returns the base 10 logarithm of a double value.
-	MOD(2), PI(0), POWER(2), RADIANS(1), SQRT(1), RAND(1), ROUND(2), TRUNCATE(2),
+	MOD(2), PI(0), POWER(2), RADIANS(1), SQRT(1), RAND(0,1), ROUND(1,2), TRUNCATE(1,2),
 
 	ACOS(1), ASIN(1), ATAN(1), ATAN2(2), COS(1), COT(1), SIN(1), TAN(1);
 
-	private final int nbRequiredParameters;
+	/** @since 1.2 */
+	private final int nbMinRequiredParameters;
+	/** @since 1.2 */
+	private final int nbMaxRequiredParameters;
 
 	private MathFunctionType(int nbParams){
-		nbRequiredParameters = nbParams;
+		this(nbParams, nbParams);
 	}
 
-	public final int nbParams(){
-		return nbRequiredParameters;
+	/** @since 1.2 */
+	private MathFunctionType(int nbMinParams, int nbMaxParams){
+		nbMinRequiredParameters = nbMinParams;
+		nbMaxRequiredParameters = nbMaxParams;
+	}
+
+	/** @since 1.2 */
+	public final int nbMinParams(){
+		return nbMinRequiredParameters;
+	}
+
+	/** @since 1.2 */
+	public final int nbMaxParams(){
+		return nbMaxRequiredParameters;
 	}
 }

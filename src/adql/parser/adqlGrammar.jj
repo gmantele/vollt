@@ -1012,20 +1012,20 @@ String SignedInteger(): {Token sign=null, number;} {
 /* EXPRESSIONS */
 /* *********** */
 ADQLOperand ValueExpressionPrimary(): {String expr; ADQLColumn column; ADQLOperand op;} {
-	(
-		try{
-	// unsigned_value_specification
-			expr=UnsignedNumeric() {return queryFactory.createNumericConstant(expr);}
-	| 		expr=String() {return queryFactory.createStringConstant(expr);}
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	// column_reference
-	| column=Column() {return column;}
-	// set_function_specification
-	| op=SqlFunction() {return op;}
-	// LEFT_PAR value_expression RIGHT_PAR
-	| (<LEFT_PAR> op=ValueExpression() <RIGHT_PAR>) {return op;})
+	try{
+		(// unsigned_value_specification
+		  expr=UnsignedNumeric() {return queryFactory.createNumericConstant(expr);}
+		// string
+		| expr=String() {return queryFactory.createStringConstant(expr);}
+		// column_reference
+		| column=Column() {return column;}
+		// set_function_specification
+		| op=SqlFunction() {return op;}
+		// LEFT_PAR value_expression RIGHT_PAR
+		| (<LEFT_PAR> op=ValueExpression() <RIGHT_PAR>) {return queryFactory.createWrappedOperand(op);})
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
 }
 
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {
@@ -1414,9 +1414,9 @@ MathFunction MathFunction(): {Token fct=null; ADQLOperand param1=null, param2=nu
 		| (fct=<POWER> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
 		| (fct=<RADIANS> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
 		| (fct=<RAND> <LEFT_PAR> (param1=NumericExpression())? <RIGHT_PAR>)
-		| (fct=<ROUND> <LEFT_PAR> param1=NumericExpression() (<COMMA> integerValue=SignedInteger() {param2 = queryFactory.createOperation(queryFactory.createNumericConstant(integerValue), null, null);})? <RIGHT_PAR>)
+		| (fct=<ROUND> <LEFT_PAR> param1=NumericExpression() (<COMMA> integerValue=SignedInteger() {param2 = queryFactory.createNumericConstant(integerValue);})? <RIGHT_PAR>)
 		| (fct=<SQRT> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
-		| (fct=<TRUNCATE> <LEFT_PAR> param1=NumericExpression() (<COMMA> integerValue=SignedInteger() {param2 = queryFactory.createOperation(queryFactory.createNumericConstant(integerValue), null, null);})? <RIGHT_PAR>))
+		| (fct=<TRUNCATE> <LEFT_PAR> param1=NumericExpression() (<COMMA> integerValue=SignedInteger() {param2 = queryFactory.createNumericConstant(integerValue);})? <RIGHT_PAR>))
 		{
 			if (param1 != null)
 				return queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);

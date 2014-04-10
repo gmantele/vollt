@@ -16,18 +16,18 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import adql.query.ADQLObject;
-
 import adql.query.operand.ADQLOperand;
 
 /**
  * It represents any basic mathematical function.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.2 (03/2014)
  * 
  * @see MathFunctionType
  */
@@ -41,6 +41,10 @@ public class MathFunction extends ADQLFunction {
 
 	/** Second parameter of this function (may be null). */
 	private ADQLOperand param2 = null;
+
+	/** Number of given parameters.
+	 * @since 1.2*/
+	private int nbParams;
 
 	/**
 	 * Creates a mathematical function without parameter.
@@ -75,23 +79,29 @@ public class MathFunction extends ADQLFunction {
 	 * @throws Exception	If the given function parameters are incorrect.
 	 */
 	public MathFunction(MathFunctionType t, ADQLOperand parameter1, ADQLOperand parameter2) throws Exception{
+		// Set the function type:
 		type = t;
-		switch(type.nbParams()){
-			case 0:
-				if (parameter1 != null || parameter2 != null)
-					throw new Exception("The function " + type.name() + " must have no parameter !");
-				break;
-			case 1:
-				if (parameter1 == null || parameter2 != null)
-					throw new Exception("The function " + type.name() + " must have only one parameter !");
-				break;
-			case 2:
-				if (parameter1 == null || parameter2 == null)
-					throw new Exception("The function " + type.name() + " must have two parameters !");
-				break;
-			default:
-				throw new Exception("Impossible for MathFunction object to have " + type.nbParams() + " ! It is limited to 2 parameters !");
+		// Only two parameters can be managed inside this class.
+		if (type.nbMaxParams() > 2)
+			throw new Exception("Impossible for MathFunction object to have " + type.nbMaxParams() + " ! It is limited to 2 parameters !");
+		// Compute the number of given parameters:
+		nbParams = ((parameter1 != null) ? 1 : 0) + ((parameter2 != null) ? 1 : 0);
+		// Check it and throw immediately an exception if incorrect:
+		if (nbParams < type.nbMinParams() || nbParams > type.nbMaxParams()){
+			if (type.nbMinParams() == type.nbMaxParams())
+				throw new Exception("The function " + type.name() + " must have " + ((type.nbMaxParams() == 0) ? "no parameter!" : ("exactly " + type.nbMaxParams() + " parameters!")));
+			else{
+				switch(type.nbMaxParams()){
+					case 0:
+						throw new Exception("The function " + type.name() + " must have no parameter !");
+					case 1:
+						throw new Exception("The function " + type.name() + " must have only one parameter !");
+					case 2:
+						throw new Exception("The function " + type.name() + " must have two parameters !");
+				}
+			}
 		}
+		// Set the function parameters:
 		param1 = parameter1;
 		param2 = parameter2;
 	}
@@ -119,42 +129,47 @@ public class MathFunction extends ADQLFunction {
 		return type;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new MathFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return type.name();
 	}
 
+	@Override
 	public final boolean isNumeric(){
 		return true;
 	}
 
+	@Override
 	public final boolean isString(){
 		return false;
 	}
 
 	@Override
 	public ADQLOperand[] getParameters(){
-		if (param1 != null){
-			if (param2 != null)
-				return new ADQLOperand[]{param1,param2};
-			else
+		switch(getNbParameters()){
+			case 1:
 				return new ADQLOperand[]{param1};
-		}else
-			return new ADQLOperand[0];
+			case 2:
+				return new ADQLOperand[]{param1,param2};
+			default:
+				return new ADQLOperand[0];
+		}
 	}
 
 	@Override
 	public int getNbParameters(){
-		return type.nbParams();
+		return nbParams;
 	}
 
 	@Override
 	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
 		if (index < 0 || index >= getNbParameters())
-			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" (nb required params = " + type.nbParams() + ") !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" (nb required params = " + type.nbMaxParams() + ") !");
 
 		switch(index){
 			case 0:
@@ -169,7 +184,7 @@ public class MathFunction extends ADQLFunction {
 	@Override
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		if (index < 0 || index >= getNbParameters())
-			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" (nb required params = " + type.nbParams() + ") !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + type.name() + "\" (nb required params = " + type.nbMaxParams() + ") !");
 		else if (replacer == null)
 			throw new NullPointerException("Impossible to remove any parameter from a mathematical function ! All parameters are required !");
 		else{
