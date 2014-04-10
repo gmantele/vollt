@@ -1,10 +1,58 @@
 package tap.config;
 
-import static tap.config.TAPConfiguration.*;
+/*
+ * This file is part of TAPLibrary.
+ * 
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2013 - Astronomisches Rechen Institute (ARI)
+ */
+
+import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
+import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
+import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.DEFAULT_IS_AVAILABLE;
+import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
+import static tap.config.TAPConfiguration.KEY_DISABILITY_REASON;
+import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
+import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
+import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.KEY_IS_AVAILABLE;
+import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
+import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
+import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
+import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
+import static tap.config.TAPConfiguration.VALUE_CSV;
+import static tap.config.TAPConfiguration.VALUE_JSON;
+import static tap.config.TAPConfiguration.VALUE_LOCAL;
+import static tap.config.TAPConfiguration.VALUE_SV;
+import static tap.config.TAPConfiguration.VALUE_TSV;
+import static tap.config.TAPConfiguration.fetchClass;
+import static tap.config.TAPConfiguration.getProperty;
+import static tap.config.TAPConfiguration.isClassPath;
+import static tap.config.TAPConfiguration.parseLimit;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Properties;
@@ -15,12 +63,20 @@ import tap.TAPFactory;
 import tap.file.LocalTAPFileManager;
 import tap.file.TAPFileManager;
 import tap.formatter.OutputFormat;
+import tap.formatter.ResultSet2JsonFormatter;
+import tap.formatter.ResultSet2SVFormatter;
+import tap.formatter.ResultSet2VotableFormatter;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.UWSException;
 import uws.service.UserIdentifier;
 
+/**
+ * 
+ * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
+ * @version 1.1 (12/2013)
+ */
 public final class DefaultServiceConnection implements ServiceConnection<ResultSet> {
 
 	private TAPFileManager fileManager;
@@ -38,6 +94,11 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 	private int[] executionDuration = new int[2];
 	private int[] retentionPeriod = new int[2];
 
+	private final ArrayList<OutputFormat<ResultSet>> outputFormats;
+
+	private int[] outputLimits = new int[2];
+	private LimitUnit[] outputLimitTypes = new LimitUnit[2];
+
 	public DefaultServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
 		// 1. INITIALIZE THE FILE MANAGER:
 		initFileManager(tapConfig);
@@ -54,6 +115,15 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 		availability = getProperty(tapConfig, KEY_DISABILITY_REASON);
 		initRetentionPeriod(tapConfig);
 		initExecutionDuration(tapConfig);
+
+		// 5. CONFIGURE OUTPUT:
+		// default output format = VOTable:
+		outputFormats = new ArrayList<OutputFormat<ResultSet>>(1);
+		outputFormats.add(new ResultSet2VotableFormatter(this));
+		// set additional output formats:
+		addOutputFormats(tapConfig);
+		// set output limits:
+		initOutputLimits(tapConfig);
 
 		// 5. MAKE THE SERVICE AVAILABLE (or not, depending on the property value):
 		String propValue = getProperty(tapConfig, KEY_IS_AVAILABLE);
@@ -93,9 +163,9 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 		}
 		// CUSTOM file manager:
 		else{
-			Class<TAPFileManager> classObj = fetchClass(fileManagerType, KEY_FILE_MANAGER, TAPFileManager.class);
+			Class<? extends TAPFileManager> classObj = fetchClass(fileManagerType, KEY_FILE_MANAGER, TAPFileManager.class);
 			if (classObj == null)
-				throw new TAPException("Unknown value for the propertie \"" + KEY_FILE_MANAGER + "\": \"" + fileManagerType + "\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
+				throw new TAPException("Unknown value for the property \"" + KEY_FILE_MANAGER + "\": \"" + fileManagerType + "\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
 
 			try{
 				fileManager = classObj.getConstructor(Properties.class).newInstance(tapConfig);
@@ -153,6 +223,93 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 		// If not, the default duration is set (so decreased) to the maximum duration.
 		if (executionDuration[1] > 0 && executionDuration[1] < executionDuration[0])
 			executionDuration[0] = executionDuration[1];
+	}
+
+	@SuppressWarnings({"unchecked","rawtypes"})
+	private void addOutputFormats(final Properties tapConfig) throws TAPException{
+		// Fetch the value of the property for additional output formats:
+		String formats = TAPConfiguration.getProperty(tapConfig, KEY_OUTPUT_FORMATS);
+
+		// Since it is a comma separated list of output formats, a loop will parse this list comma by comma:
+		String f;
+		int indexSep;
+		while(formats != null && formats.length() > 0){
+			// Get a format item from the list:
+			indexSep = formats.indexOf(',');
+			// no comma => only one format
+			if (indexSep < 0){
+				f = formats;
+				formats = null;
+			}
+			// comma at the first position => empty list item => go to the next item
+			else if (indexSep == 0){
+				formats = formats.substring(1).trim();
+				continue;
+			}
+			// else => get the first format item, and then remove it from the list for the next iteration
+			else{
+				f = formats.substring(0, indexSep).trim();
+				formats = formats.substring(indexSep + 1).trim();
+			}
+
+			// Identify the format and append it to the output format list of the service:
+			// JSON
+			if (f.equalsIgnoreCase(VALUE_JSON))
+				outputFormats.add(new ResultSet2JsonFormatter(this));
+			// CSV
+			else if (f.equalsIgnoreCase(VALUE_CSV))
+				outputFormats.add(new ResultSet2SVFormatter(this, ",", true));
+			// TSV
+			else if (f.equalsIgnoreCase(VALUE_TSV))
+				outputFormats.add(new ResultSet2SVFormatter(this, "\t", true));
+			// any SV (separated value) format
+			else if (f.toLowerCase().startsWith(VALUE_SV)){
+				// get the separator:
+				int endSep = f.indexOf(')');
+				if (VALUE_SV.length() < f.length() && f.charAt(VALUE_SV.length()) == '(' && endSep > VALUE_SV.length() + 1){
+					String separator = f.substring(VALUE_SV.length() + 1, f.length() - 1);
+					// get the MIME type and its alias, if any of them is provided:
+					String mimeType = null, shortMimeType = null;
+					if (endSep + 1 < f.length() && f.charAt(endSep + 1) == ':'){
+						int endMime = f.indexOf(':', endSep + 2);
+						if (endMime < 0)
+							mimeType = f.substring(endSep + 2, f.length());
+						else if (endMime > 0){
+							mimeType = f.substring(endSep + 2, endMime);
+							shortMimeType = f.substring(endMime + 1);
+						}
+					}
+					// add the defined SV(...) format:
+					outputFormats.add(new ResultSet2SVFormatter(this, separator, true, mimeType, shortMimeType));
+				}else
+					throw new TAPException("Missing separator char/string for the SV output format: \"" + f + "\"!");
+			}
+			// custom OutputFormat
+			else if (isClassPath(f)){
+				Class<? extends OutputFormat> userOutputFormatClass = fetchClass(f, KEY_OUTPUT_FORMATS, OutputFormat.class);
+				try{
+					OutputFormat<ResultSet> userOutputFormat = userOutputFormatClass.getConstructor(ServiceConnection.class).newInstance(this);
+					outputFormats.add(userOutputFormat);
+				}catch(InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e){
+					throw new TAPException("Impossible to create an OutputFormat<ResultSet> instance with the constructor (ServiceConnection<ResultSet>) of \"" + userOutputFormatClass.getName() + "\" (see the property output_add_format) for the following reason: " + e.getMessage());
+				}
+			}
+			// unknown format
+			else
+				throw new TAPException("Unknown output format: " + f);
+		}
+	}
+
+	private void initOutputLimits(final Properties tapConfig) throws TAPException{
+		Object[] limit = parseLimit(getProperty(tapConfig, KEY_DEFAULT_OUTPUT_LIMIT), KEY_DEFAULT_OUTPUT_LIMIT, false);
+		outputLimitTypes[0] = (LimitUnit)limit[1];
+		setDefaultOutputLimit((int)limit[0]);
+
+		limit = parseLimit(getProperty(tapConfig, KEY_MAX_OUTPUT_LIMIT), KEY_DEFAULT_OUTPUT_LIMIT, false);
+		outputLimitTypes[1] = (LimitUnit)limit[1];
+
+		if (!setMaxOutputLimit((int)limit[0]))
+			throw new TAPException("The default output limit (here: " + outputLimits[0] + ") MUST be less or equal to the maximum output limit (here: " + limit[0] + ")!");
 	}
 
 	@Override
@@ -226,51 +383,59 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 	}
 
 	@Override
+	public Iterator<OutputFormat<ResultSet>> getOutputFormats(){
+		return outputFormats.iterator();
+	}
+
+	@Override
+	public OutputFormat<ResultSet> getOutputFormat(final String mimeOrAlias){
+		if (mimeOrAlias == null || mimeOrAlias.trim().isEmpty())
+			return null;
+
+		for(OutputFormat<ResultSet> f : outputFormats){
+			if ((f.getMimeType() != null && f.getMimeType().equalsIgnoreCase(mimeOrAlias)) || (f.getShortMimeType() != null && f.getShortMimeType().equalsIgnoreCase(mimeOrAlias)))
+				return f;
+		}
+		return null;
+	}
+
+	public void addOutputFormat(final OutputFormat<ResultSet> newOutputFormat){
+		outputFormats.add(newOutputFormat);
+	}
+
+	public boolean removeOutputFormat(final String mimeOrAlias){
+		OutputFormat<ResultSet> of = getOutputFormat(mimeOrAlias);
+		if (of != null)
+			return outputFormats.remove(of);
+		else
+			return false;
+	}
+
+	@Override
 	public int[] getOutputLimit(){
-		// TODO Auto-generated method stub
-		return null;
+		return outputLimits;
+	}
+
+	public boolean setDefaultOutputLimit(final int limit){
+		if ((outputLimits[1] <= 0) || (limit > 0 && limit <= outputLimits[1])){
+			outputLimits[0] = limit;
+			return true;
+		}else
+			return false;
+	}
+
+	public boolean setMaxOutputLimit(final int limit){
+		if (limit > 0 && outputLimits[0] > 0 && limit < outputLimits[0])
+			return false;
+		else{
+			outputLimits[1] = limit;
+			return true;
+		}
 	}
 
 	@Override
-	public tap.ServiceConnection.LimitUnit[] getOutputLimitType(){
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public UserIdentifier getUserIdentifier(){
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean uploadEnabled(){
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public int[] getUploadLimit(){
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public tap.ServiceConnection.LimitUnit[] getUploadLimitType(){
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int getMaxUploadSize(){
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public TAPMetadata getTAPMetadata(){
-		// TODO Auto-generated method stub
-		return null;
+	public final LimitUnit[] getOutputLimitType(){
+		return new LimitUnit[]{LimitUnit.rows,LimitUnit.rows};
 	}
 
 	@Override
@@ -294,13 +459,37 @@ public final class DefaultServiceConnection implements ServiceConnection<ResultS
 	}
 
 	@Override
-	public Iterator<OutputFormat<ResultSet>> getOutputFormats(){
+	public UserIdentifier getUserIdentifier(){
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OutputFormat<ResultSet> getOutputFormat(String mimeOrAlias){
+	public boolean uploadEnabled(){
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int[] getUploadLimit(){
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public LimitUnit[] getUploadLimitType(){
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getMaxUploadSize(){
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public TAPMetadata getTAPMetadata(){
 		// TODO Auto-generated method stub
 		return null;
 	}

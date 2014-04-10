@@ -1,82 +1,93 @@
 package tap.config;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
+import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
+import static tap.config.TAPConfiguration.VALUE_CSV;
+import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
-import static tap.config.TAPConfiguration.fetchClass;
-import static tap.config.TAPConfiguration.isClassPath;
+import static tap.config.TAPConfiguration.VALUE_SV;
+import static tap.config.TAPConfiguration.VALUE_TSV;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.Properties;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import tap.ServiceConnection;
+import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import tap.file.LocalTAPFileManager;
 import uws.UWSException;
 
 public class TestDefaultServiceConnection {
 
-	final String VALID_CONF_FILE = "bin/ext/test/tap_valid.properties";
-	final String NO_FM_CONF_FILE = "bin/ext/test/tap_no_fm.properties";
-	final String FM_CLASS_PATH_CONF_FILE = "bin/ext/test/tap_fm_clp.properties";
-	final String INCORRECT_FM_CONF_FILE = "bin/ext/test/tap_incorrect_fm.properties";
-
-	private Properties validProp, noFmProp, fmClassPathProp, incorrectFmProp;
+	private Properties validProp, noFmProp, fmClassPathProp, incorrectFmProp,
+			validFormatsProp, badSVFormat1Prop, badSVFormat2Prop,
+			unknownFormatProp, defaultOutputLimitProp, maxOutputLimitProp,
+			bothOutputLimitGoodProp, bothOutputLimitBadProp;
 
 	@Before
 	public void setUp() throws Exception{
 		// LOAD ALL PROPERTIES FILES NEEDED FOR ALL THE TESTS:
-		FileInputStream input = null;
-		try{
-			validProp = new Properties();
-			input = new FileInputStream(VALID_CONF_FILE);
-			validProp.load(input);
-			input.close();
-			input = null;
+		validProp = AllTests.getValidProperties();
 
-			noFmProp = new Properties();
-			input = new FileInputStream(NO_FM_CONF_FILE);
-			noFmProp.load(input);
-			input.close();
-			input = null;
+		noFmProp = (Properties)validProp.clone();
+		noFmProp.setProperty(KEY_FILE_MANAGER, "");
 
-			fmClassPathProp = new Properties();
-			input = new FileInputStream(FM_CLASS_PATH_CONF_FILE);
-			fmClassPathProp.load(input);
-			input.close();
-			input = null;
+		fmClassPathProp = (Properties)validProp.clone();
+		fmClassPathProp.setProperty(KEY_FILE_MANAGER, "{tap.config.TestDefaultServiceConnection$FileManagerTest}");
 
-			incorrectFmProp = new Properties();
-			input = new FileInputStream(INCORRECT_FM_CONF_FILE);
-			incorrectFmProp.load(input);
-			input.close();
-			input = null;
+		incorrectFmProp = (Properties)validProp.clone();
+		incorrectFmProp.setProperty(KEY_FILE_MANAGER, "foo");
 
-		}finally{
-			if (input != null)
-				input.close();
-		}
+		validFormatsProp = (Properties)validProp.clone();
+		validFormatsProp.setProperty(KEY_OUTPUT_FORMATS, VALUE_JSON + "," + VALUE_CSV + " , " + VALUE_TSV + ",, , " + VALUE_SV + "([])" + ", " + VALUE_SV + "(|):text/psv:psv" + ", " + VALUE_SV + "($)::test" + ", \t  " + VALUE_SV + "(@):text/arobase:");
+
+		badSVFormat1Prop = (Properties)validProp.clone();
+		badSVFormat1Prop.setProperty(KEY_OUTPUT_FORMATS, VALUE_SV);
+
+		badSVFormat2Prop = (Properties)validProp.clone();
+		badSVFormat2Prop.setProperty(KEY_OUTPUT_FORMATS, VALUE_SV + "()");
+
+		unknownFormatProp = (Properties)validProp.clone();
+		unknownFormatProp.setProperty(KEY_OUTPUT_FORMATS, "foo");
+
+		defaultOutputLimitProp = (Properties)validProp.clone();
+		defaultOutputLimitProp.setProperty(KEY_DEFAULT_OUTPUT_LIMIT, "100");
+
+		maxOutputLimitProp = (Properties)validProp.clone();
+		maxOutputLimitProp.setProperty(KEY_MAX_OUTPUT_LIMIT, "1000R");
+
+		bothOutputLimitGoodProp = (Properties)validProp.clone();
+		bothOutputLimitGoodProp.setProperty(KEY_DEFAULT_OUTPUT_LIMIT, "100R");
+		bothOutputLimitGoodProp.setProperty(KEY_MAX_OUTPUT_LIMIT, "1000");
+
+		bothOutputLimitBadProp = (Properties)validProp.clone();
+		bothOutputLimitBadProp.setProperty(KEY_DEFAULT_OUTPUT_LIMIT, "1000");
+		bothOutputLimitBadProp.setProperty(KEY_MAX_OUTPUT_LIMIT, "100");
 	}
 
 	/**
 	 * CONSTRUCTOR TESTS
 	 *  * In general:
-	 * 		- A valid configuration file builds successfully a fully functional 
+	 * 		- A valid configuration file builds successfully a fully functional ServiceConnection object.
 	 * 
 	 * 	* Over the file manager:
 	 * 		- If no TAPFileManager is provided, an exception must be thrown. 
 	 * 		- If a classpath toward a valid TAPFileManager is provided, a functional DefaultServiceConnection must be successfully built.
 	 * 		- An incorrect file manager value in the configuration file must generate an exception.
 	 * 
+	 *  * Over the output format:
+	 *  	- If a SV format is badly expressed (test with "sv" and "sv()"), an exception must be thrown.
+	 *  	- If an unknown output format is provided an exception must be thrown.
+	 *  
 	 * Note: the good configuration of the TAPFactory built by the DefaultServiceConnection is tested in {@link TestDefaultTAPFactory}.
 	 * 
 	 * @see DefaultServiceConnection#DefaultServiceConnection(Properties)
@@ -130,121 +141,103 @@ public class TestDefaultServiceConnection {
 			fail("This MUST have failed because an incorrect File Manager value has been provided!");
 		}catch(Exception e){
 			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Unknown value for the propertie \"" + KEY_FILE_MANAGER + "\": \"foo\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
-		}
-	}
-
-	/**
-	 * TEST isClassPath(String):
-	 * 	- null, "", "{}", "an incorrect syntax" 				=> FALSE must be returned
-	 * 	- "{ }", "{ 	}", "{class.path}", "{ class.path	}" 	=> TRUE must be returned
-	 * 
-	 * @see DefaultServiceConnection#isClassPath(String)
-	 */
-	@Test
-	public void testIsClassPath(){
-		// NULL and EMPTY:
-		assertFalse(isClassPath(null));
-		assertFalse(isClassPath(""));
-
-		// EMPTY CLASSPATH:
-		assertFalse(isClassPath("{}"));
-
-		// INCORRECT CLASSPATH:
-		assertFalse(isClassPath("incorrect class path ; missing {}"));
-
-		// VALID CLASSPATH:
-		assertTrue(isClassPath("{class.path}"));
-
-		// CLASSPATH VALID ONLY IN THE SYNTAX:
-		assertTrue(isClassPath("{ }"));
-		assertTrue(isClassPath("{		}"));
-
-		// NOT TRIM CLASSPATH:
-		assertTrue(isClassPath("{ class.path	}"));
-	}
-
-	/**
-	 * TEST getClass(String,String,String):
-	 * 	- null, "", "{}", "an incorrect syntax", "{ }", "{ 	}" 						=> NULL must be returned
-	 * 	- "{java.lang.String}", "{ java.lang.String	}"								=> a valid DefaultServiceConnection must be returned
-	 * 	- "{mypackage.foo}", "{java.util.ArrayList}" (while a String is expected)	=> a TAPException must be thrown
-	 */
-	@Test
-	public void testGetClassStringStringString(){
-		// NULL and EMPTY:
-		try{
-			assertNull(fetchClass(null, KEY_FILE_MANAGER, String.class));
-		}catch(TAPException e){
-			fail("If a NULL value is provided as classpath: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
-		}
-		try{
-			assertNull(fetchClass("", KEY_FILE_MANAGER, String.class));
-		}catch(TAPException e){
-			fail("If an EMPTY value is provided as classpath: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			assertEquals(e.getMessage(), "Unknown value for the property \"" + KEY_FILE_MANAGER + "\": \"foo\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
 		}
 
-		// EMPTY CLASSPATH:
+		// Valid output formats list:
 		try{
-			assertNull(fetchClass("{}", KEY_FILE_MANAGER, String.class));
-		}catch(TAPException e){
-			fail("If an EMPTY classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			ServiceConnection<?> connection = new DefaultServiceConnection(validFormatsProp);
+			assertNotNull(connection.getOutputFormat(VALUE_JSON));
+			assertNotNull(connection.getOutputFormat(VALUE_CSV));
+			assertNotNull(connection.getOutputFormat(VALUE_TSV));
+			assertNotNull(connection.getOutputFormat("psv"));
+			assertNotNull(connection.getOutputFormat("text/psv"));
+			assertNotNull(connection.getOutputFormat("text"));
+			assertNotNull(connection.getOutputFormat("text/plain"));
+			assertNotNull(connection.getOutputFormat("test"));
+			assertNotNull(connection.getOutputFormat("text/arobase"));
+		}catch(Exception e){
+			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// INCORRECT SYNTAX:
+		// Bad SV(...) format 1 = "sv":
 		try{
-			assertNull(fetchClass("incorrect class path ; missing {}", KEY_FILE_MANAGER, String.class));
-		}catch(TAPException e){
-			fail("If an incorrect classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
-		}
-
-		// VALID CLASSPATH:
-		try{
-			Class<String> classObject = fetchClass("{java.lang.String}", KEY_FILE_MANAGER, String.class);
-			assertNotNull(classObject);
-			assertEquals(classObject.getName(), "java.lang.String");
-		}catch(TAPException e){
-			fail("If a VALID classpath is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
-		}
-
-		// INCORRECT CLASSPATH:
-		try{
-			fetchClass("{mypackage.foo}", KEY_FILE_MANAGER, String.class);
-			fail("This MUST have failed because an incorrect classpath is provided!");
-		}catch(TAPException e){
+			new DefaultServiceConnection(badSVFormat1Prop);
+			fail("This MUST have failed because an incorrect SV output format value has been provided!");
+		}catch(Exception e){
 			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The class specified by the property " + KEY_FILE_MANAGER + " ({mypackage.foo}) can not be found.");
+			assertEquals(e.getMessage(), "Missing separator char/string for the SV output format: \"sv\"!");
 		}
 
-		// INCOMPATIBLE TYPES:
+		// Bad SV(...) format 2 = "sv()":
 		try{
-			@SuppressWarnings("unused")
-			Class<String> classObject = fetchClass("{java.util.ArrayList}", KEY_FILE_MANAGER, String.class);
-			fail("This MUST have failed because a class of a different type has been asked!");
-		}catch(TAPException e){
+			new DefaultServiceConnection(badSVFormat2Prop);
+			fail("This MUST have failed because an incorrect SV output format value has been provided!");
+		}catch(Exception e){
 			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The class specified by the property " + KEY_FILE_MANAGER + " ({java.util.ArrayList}) is not implementing " + String.class.getName() + ".");
+			assertEquals(e.getMessage(), "Missing separator char/string for the SV output format: \"sv()\"!");
 		}
 
-		// CLASSPATH VALID ONLY IN THE SYNTAX:
+		// Unknown output format:
 		try{
-			assertNull(fetchClass("{ }", KEY_FILE_MANAGER, String.class));
-		}catch(TAPException e){
-			fail("If an EMPTY classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
-		}
-		try{
-			assertNull(fetchClass("{		}", KEY_FILE_MANAGER, String.class));
-		}catch(TAPException e){
-			fail("If an EMPTY classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			new DefaultServiceConnection(unknownFormatProp);
+			fail("This MUST have failed because an incorrect output format value has been provided!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "Unknown output format: foo");
 		}
 
-		// NOT TRIM CLASSPATH:
+		// Test with no output limit specified:
 		try{
-			Class<?> classObject = fetchClass("{ java.lang.String	}", KEY_FILE_MANAGER, String.class);
-			assertNotNull(classObject);
-			assertEquals(classObject.getName(), "java.lang.String");
-		}catch(TAPException e){
-			fail("If a VALID classpath is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
+			ServiceConnection<?> connection = new DefaultServiceConnection(validProp);
+			assertEquals(connection.getOutputLimit()[0], -1);
+			assertEquals(connection.getOutputLimit()[1], -1);
+			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
+			assertEquals(connection.getOutputLimitType()[1], LimitUnit.rows);
+		}catch(Exception e){
+			fail("This MUST have succeeded because providing no output limit is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with only a set default output limit:
+		try{
+			ServiceConnection<?> connection = new DefaultServiceConnection(defaultOutputLimitProp);
+			assertEquals(connection.getOutputLimit()[0], 100);
+			assertEquals(connection.getOutputLimit()[1], -1);
+			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
+			assertEquals(connection.getOutputLimitType()[1], LimitUnit.rows);
+		}catch(Exception e){
+			fail("This MUST have succeeded because setting the default output limit is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with only a set maximum output limit:
+		try{
+			ServiceConnection<?> connection = new DefaultServiceConnection(maxOutputLimitProp);
+			assertEquals(connection.getOutputLimit()[0], -1);
+			assertEquals(connection.getOutputLimit()[1], 1000);
+			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
+			assertEquals(connection.getOutputLimitType()[1], LimitUnit.rows);
+		}catch(Exception e){
+			fail("This MUST have succeeded because setting only the maximum output limit is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with both a default and a maximum output limits where default <= max:
+		try{
+			ServiceConnection<?> connection = new DefaultServiceConnection(bothOutputLimitGoodProp);
+			assertEquals(connection.getOutputLimit()[0], 100);
+			assertEquals(connection.getOutputLimit()[1], 1000);
+			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
+			assertEquals(connection.getOutputLimitType()[1], LimitUnit.rows);
+		}catch(Exception e){
+			fail("This MUST have succeeded because the default output limit is less or equal the maximum one! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with both a default and a maximum output limits BUT where default > max:
+		try{
+			new DefaultServiceConnection(bothOutputLimitBadProp);
+			fail("This MUST have failed because the default output limit is greater than the maximum one!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "The default output limit (here: 1000) MUST be less or equal to the maximum output limit (here: 100)!");
 		}
 	}
 

@@ -1,14 +1,39 @@
 package tap.config;
 
+/*
+ * This file is part of TAPLibrary.
+ * 
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2013 - Astronomisches Rechen Institute (ARI)
+ */
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
 
+import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import tap.backup.DefaultTAPBackupManager;
 
+/**
+ * 
+ * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
+ * @version 1.1 (12/2013)
+ */
 public final class TAPConfiguration {
 
 	/* FILE MANAGER KEYS */
@@ -61,6 +86,15 @@ public final class TAPConfiguration {
 	public final static boolean DEFAULT_IS_AVAILABLE = true;
 	public final static String KEY_DISABILITY_REASON = "disability_reason";
 
+	/* OUTPUT KEYS */
+	public final static String KEY_OUTPUT_FORMATS = "output_add_formats";
+	public final static String VALUE_JSON = "json";
+	public final static String VALUE_CSV = "csv";
+	public final static String VALUE_TSV = "tsv";
+	public final static String VALUE_SV = "sv";
+	public final static String KEY_DEFAULT_OUTPUT_LIMIT = "output_default_limit";
+	public final static String KEY_MAX_OUTPUT_LIMIT = "output_max_limit";
+
 	/**
 	 * Read the asked property from the given Properties object.
 	 * 	- The returned property value is trimmed (no space at the beginning and at the end of the string).
@@ -112,7 +146,7 @@ public final class TAPConfiguration {
 	 * @see {@link #isClassPath(String)}
 	 */
 	@SuppressWarnings("unchecked")
-	public final static < C > Class<C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws TAPException{
+	public final static < C > Class<? extends C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws TAPException{
 		if (!isClassPath(value))
 			return null;
 
@@ -121,7 +155,7 @@ public final class TAPConfiguration {
 			return null;
 
 		try{
-			Class<C> classObject = (Class<C>)ClassLoader.getSystemClassLoader().loadClass(classPath);
+			Class<? extends C> classObject = (Class<? extends C>)ClassLoader.getSystemClassLoader().loadClass(classPath);
 			if (!expectedType.isAssignableFrom(classObject))
 				throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") is not implementing " + expectedType.getName() + ".");
 			else
@@ -131,6 +165,99 @@ public final class TAPConfiguration {
 		}catch(ClassCastException cce){
 			throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") is not implementing " + expectedType.getName() + ".");
 		}
+	}
+
+	/**
+	 * <p>Lets parsing a limit (for output, upload, ...) with its numeric value and its unit.</p>
+	 * <p>
+	 * 	Here is the expected syntax: num_val[unit].
+	 * 	Where unit is optional and should be one of the following values: r or R, B, kB, MB, GB.
+	 * 	If the unit is not specified, it is set by default to ROWS.
+	 * </p>
+	 * 
+	 * @param value				Property value (must follow the limit syntax: num_val[unit] ; ex: 20kB or 2000 (for 2000 rows)).
+	 * @param propertyName		Name of the property which specify the limit.
+	 * @param areBytesAllowed	Tells whether the unit BYTES is allowed. If not and a BYTES unit is encountered, then an exception is thrown.
+	 * 
+	 * @return	An array with always 2 items: [0]=numeric value (of type Integer), [1]=unit (of type {@link LimitUnit}).
+	 * 
+	 * @throws TAPException	If the syntax is incorrect or if a not allowed unit has been used.
+	 */
+	public final static Object[] parseLimit(String value, final String propertyName, final boolean areBytesAllowed) throws TAPException{
+		// Remove any whitespace inside or outside the numeric value and its unit:
+		if (value != null)
+			value = value.replaceAll("\\s", "");
+
+		// If empty value, return an infinite limit:
+		if (value == null || value.length() == 0)
+			return new Object[]{-1,LimitUnit.rows};
+
+		// A. Parse the string from the end in order to extract the unit part.
+		//    The final step of the loop is the extraction of the numeric value, when the first digit is encountered.
+		int numValue = -1;
+		LimitUnit unit;
+		StringBuffer buf = new StringBuffer();
+		for(int i = value.length() - 1; i >= 0; i--){
+			// if a digit, extract the numeric value:
+			if (value.charAt(i) >= '0' && value.charAt(i) <= '9'){
+				try{
+					numValue = Integer.parseInt(value.substring(0, i + 1));
+					break;
+				}catch(NumberFormatException nfe){
+					throw new TAPException("Numeric value expected for the property " + propertyName + " for the substring \"" + value.substring(0, i + 1) + "\" of the whole value: \"" + value + "\"!");
+				}
+			}
+			// if a character, store it for later processing:
+			else
+				buf.append(value.charAt(i));
+
+		}
+
+		// B. Parse the unit.
+		// if no unit, set ROWS by default:
+		if (buf.length() == 0)
+			unit = LimitUnit.rows;
+		// if the unit is too long, throw an exception:
+		else if (buf.length() > 2)
+			throw new TAPException("Unknown limit unit (" + buf.reverse().toString() + ") for the property " + propertyName + ": \"" + value + "\"!");
+		// try to identify the unit:
+		else{
+			// the base unit: bytes or rows
+			switch(buf.charAt(0)){
+				case 'B':
+					if (!areBytesAllowed)
+						throw new TAPException("BYTES unit is not allowed for the property " + propertyName + " (" + value + ")!");
+					unit = LimitUnit.bytes;
+					break;
+				case 'r':
+				case 'R':
+					unit = LimitUnit.rows;
+					break;
+				default:
+					throw new TAPException("Unknown limit unit (" + buf.reverse().toString() + ") for the property " + propertyName + ": \"" + value + "\"!");
+			}
+			// the 10-power of the base unit, if any:
+			if (buf.length() > 1){
+				if (unit == LimitUnit.bytes){
+					switch(buf.charAt(1)){
+						case 'k':
+							unit = LimitUnit.kilobytes;
+							break;
+						case 'M':
+							unit = LimitUnit.megabytes;
+							break;
+						case 'G':
+							unit = LimitUnit.gigabytes;
+							break;
+						default:
+							throw new TAPException("Unknown limit unit (" + buf.reverse().toString() + ") for the property " + propertyName + ": \"" + value + "\"!");
+					}
+				}else
+					throw new TAPException("Unknown limit unit (" + buf.reverse().toString() + ") for the property " + propertyName + ": \"" + value + "\"!");
+			}
+		}
+
+		return new Object[]{((numValue <= 0) ? -1 : numValue),unit};
 	}
 
 	public final static void main(final String[] args) throws Throwable{
