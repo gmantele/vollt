@@ -16,14 +16,22 @@ package tap.upload;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.oreilly.servlet.multipart.ExceededSizeException;
-
+import tap.ServiceConnection;
+import tap.ServiceConnection.LimitUnit;
+import tap.TAPException;
+import tap.db.DBConnection;
+import tap.db.DBException;
+import tap.metadata.TAPSchema;
+import tap.metadata.TAPTable;
+import tap.metadata.TAPTypes;
+import tap.metadata.VotType;
 import cds.savot.model.DataBinaryReader;
 import cds.savot.model.FieldSet;
 import cds.savot.model.SavotBinary;
@@ -32,21 +40,16 @@ import cds.savot.model.SavotResource;
 import cds.savot.model.SavotTR;
 import cds.savot.model.SavotTableData;
 import cds.savot.model.TRSet;
-
 import cds.savot.pull.SavotPullEngine;
 import cds.savot.pull.SavotPullParser;
 
-import tap.ServiceConnection;
-import tap.TAPException;
-import tap.ServiceConnection.LimitUnit;
-import tap.db.DBConnection;
-import tap.db.DBException;
+import com.oreilly.servlet.multipart.ExceededSizeException;
 
-import tap.metadata.TAPSchema;
-import tap.metadata.TAPTable;
-import tap.metadata.TAPTypes;
-import tap.metadata.VotType;
-
+/**
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
+ * @version 1.1 (03/2014)
+ */
 public class Uploader {
 
 	protected final ServiceConnection<?> service;
@@ -65,8 +68,6 @@ public class Uploader {
 		this.service = service;
 
 		this.dbConn = dbConn;
-		if (dbConn == null)
-			throw new NullPointerException("The given DBConnection is NULL !");
 
 		if (service.uploadEnabled()){
 			if (service.getUploadLimitType()[1] == LimitUnit.rows){
@@ -76,10 +77,8 @@ public class Uploader {
 				nbBytesLimit = ((service.getUploadLimit()[1] > 0) ? service.getUploadLimit()[1] : -1);
 				nbRowsLimit = -1;
 			}
-		}else{
-			nbRowsLimit = -1;
-			nbBytesLimit = -1;
-		}
+		}else
+			throw new TAPException("Upload aborted: this functionality is disabled in this TAP service!");
 	}
 
 	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
