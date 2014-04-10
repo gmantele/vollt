@@ -31,16 +31,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import java.lang.IllegalStateException;
 import javax.servlet.ServletOutputStream;
 
 import uws.UWSException;
 import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
-
 import uws.job.manager.ExecutionManager;
 import uws.job.parameters.UWSParameters;
-
 import uws.job.serializer.UWSSerializer;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
@@ -1648,7 +1645,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @return	The error which interrupts the thread or <i>null</i> if there was no error or if the job is still running.
 	 */
 	public final UWSException getWorkError(){
-		return (thread == null && !thread.isAlive()) ? null : thread.getError();
+		return (thread == null || !thread.isAlive()) ? null : thread.getError();
 	}
 
 	/* ************* */
