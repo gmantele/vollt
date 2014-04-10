@@ -16,7 +16,7 @@ package tap.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -30,12 +30,12 @@ import uws.job.parameters.InputParamController;
 /**
  * The logic of the output limit is set in this class. Here it is:
  * 
- *  - If no value is specified by the TAP client, the default one is specified.
- *  - If no default value is provided, the maximum one is used instead.
+ *  - If no value is specified by the TAP client, none is returned.
+ *  - If no default value is provided, no default limitation is set (={@link TAPJob#UNLIMITED_MAX_REC}).
  *  - If no maximum value is provided, there is no output limit (={@link TAPJob#UNLIMITED_MAX_REC}).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (12/2013)
+ * @version 1.1 (03/2014)
  */
 public class MaxRecController implements InputParamController {
 
@@ -56,8 +56,8 @@ public class MaxRecController implements InputParamController {
 			if (service.getOutputLimit()[0] > 0 && service.getOutputLimitType()[0] == LimitUnit.rows)
 				return service.getOutputLimit()[0];
 		}
-		// Otherwise, return the maximum limit:
-		return getMaxOutputLimit();
+		// Otherwise, return no limitation:
+		return TAPJob.UNLIMITED_MAX_REC;
 	}
 
 	public final int getMaxOutputLimit(){
@@ -72,9 +72,9 @@ public class MaxRecController implements InputParamController {
 
 	@Override
 	public Object check(Object value) throws UWSException{
-		// If no limit is provided by the TAP client, the default one is returned instead:
+		// If no limit is provided by the TAP client, none is returned:
 		if (value == null)
-			return getDefault();
+			return null;
 
 		// Parse the provided limit:
 		int maxOutputLimit = getMaxOutputLimit();
@@ -96,8 +96,8 @@ public class MaxRecController implements InputParamController {
 			maxRec = TAPJob.UNLIMITED_MAX_REC;
 
 		// If the limit is greater than the maximum one, an exception is thrown:
-		if (maxOutputLimit > TAPJob.UNLIMITED_MAX_REC && maxRec > maxOutputLimit)
-			throw new UWSException(UWSException.BAD_REQUEST, "The TAP limits the maxRec parameter (=output limit) to maximum " + maxOutputLimit + " rows !");
+		if (maxRec == TAPJob.UNLIMITED_MAX_REC || maxRec > maxOutputLimit)
+			maxRec = maxOutputLimit;
 
 		return maxRec;
 	}
