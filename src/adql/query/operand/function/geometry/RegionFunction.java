@@ -16,11 +16,11 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import adql.query.ADQLObject;
-
 import adql.query.operand.ADQLOperand;
 
 /**
@@ -37,8 +37,8 @@ import adql.query.operand.ADQLOperand;
  * <p><b><u>Warning:</u><br />
  * Inappropriate geometries for this construct SHOULD throw an error message, to be defined by the service making use of ADQL.</b></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.2 (02/2014)
  */
 public class RegionFunction extends GeometryFunction {
 
@@ -71,18 +71,22 @@ public class RegionFunction extends GeometryFunction {
 		parameter = (ADQLOperand)(toCopy.parameter.getCopy());
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new RegionFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return "REGION";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return false;
 	}
 
+	@Override
 	public boolean isString(){
 		return true;
 	}
@@ -112,7 +116,7 @@ public class RegionFunction extends GeometryFunction {
 				throw new NullPointerException("Impossible to remove the only required parameter of a " + getName() + " function !");
 			else if (replacer instanceof ADQLOperand){
 				ADQLOperand replaced = parameter;
-				parameter = replaced;
+				parameter = replacer;
 				return replaced;
 			}else
 				throw new Exception("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
