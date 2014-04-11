@@ -411,10 +411,11 @@ public class DBChecker implements QueryChecker {
 				else
 					return null;
 			}else
-				throw new ParseException("Column index out of bounds: " + index + " (must be between 1 and " + select.size() + ") !");
+				throw new ParseException("Column index out of bounds: " + index + " (must be between 1 and " + select.size() + ") !", colRef.getPosition());
 		}else{
 			ADQLColumn col = new ADQLColumn(colRef.getColumnName());
 			col.setCaseSensitive(colRef.isCaseSensitive());
+			col.setPosition(colRef.getPosition());
 
 			// search among the select_item aliases:
 			if (col.getTableName() == null){
