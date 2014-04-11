@@ -183,7 +183,7 @@ public class DBChecker implements QueryChecker {
 	 * 
 	 * @see #resolveTable(ADQLTable)
 	 * @see #generateDBTable(ADQLQuery, String)
-	 * @see #resolveColumn(ADQLColumn, SearchColumnList)
+	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
 	 * @see #checkColumnReference(ColumnReference, ClauseSelect, SearchColumnList)
 	 */
 	protected void check(final ADQLQuery query, Stack<SearchColumnList> fathersList) throws UnresolvedIdentifiersException{
@@ -400,7 +400,7 @@ public class DBChecker implements QueryChecker {
 	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
 	 * 
 	 * @see ClauseSelect#searchByAlias(String)
-	 * @see #resolveColumn(ADQLColumn, SearchColumnList, SearchColumnList)
+	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
 	 */
 	protected DBColumn checkColumnReference(final ColumnReference colRef, final ClauseSelect select, final SearchColumnList dbColumns) throws ParseException{
 		if (colRef.isIndex()){
