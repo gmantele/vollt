@@ -123,8 +123,7 @@ public class DBChecker implements QueryChecker {
 	 * 	Only the consistency with the published tables, columns and all the defined UDFs must be checked.
 	 * </i></p>
 	 * 
-	 * @param query			The query to check.
-	 * @param fatherColumns	List of all columns available in the father query.
+	 * @param query		The query to check.
 	 * 
 	 * @throws ParseException	An {@link UnresolvedIdentifiersException} if some tables or columns can not be resolved.
 	 * 
