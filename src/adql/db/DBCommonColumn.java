@@ -34,6 +34,7 @@ import adql.query.ADQLQuery;
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
  * @version 1.2 (11/2013)
+ * @since 1.2
  */
 public class DBCommonColumn implements DBColumn {
 
