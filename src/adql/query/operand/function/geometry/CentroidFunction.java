@@ -16,13 +16,13 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import adql.query.ADQLObject;
-
-import adql.query.operand.ADQLOperand;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
 
 /**
  * <p>It represents the CENTROID function of the ADQL language.</p>
@@ -35,8 +35,8 @@ import adql.query.operand.ADQLColumn;
  * in a position of (25.4,-20.0) degrees and defined according to the ICRS coordinate system with GEOCENTER reference position.
  * </i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (05/2014)
  */
 public class CentroidFunction extends GeometryFunction {
 
@@ -68,18 +68,22 @@ public class CentroidFunction extends GeometryFunction {
 		parameter = (GeometryValue<GeometryFunction>)(toCopy.parameter.getCopy());
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new CentroidFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return "CENTROID";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return true;
 	}
 
+	@Override
 	public boolean isString(){
 		return false;
 	}
@@ -117,6 +121,7 @@ public class CentroidFunction extends GeometryFunction {
 				parameter.setGeometry((GeometryFunction)replacer);
 			else
 				throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+			setPosition(null);
 			return replaced;
 		}else
 			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");

@@ -16,19 +16,21 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.util.NoSuchElementException;
 
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
+import adql.query.TextPosition;
 
 /**
  * It represents a simple numeric operation (sum, difference, multiplication and division).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 05/2014
  * 
  * @see OperationType
  */
@@ -45,6 +47,9 @@ public class Operation implements ADQLOperand {
 
 	/** Part of the operation at the right of the operator. */
 	private ADQLOperand rightOperand;
+
+	/** Position of the operation in the ADQL query string. */
+	private TextPosition position = null;
 
 	/**
 	 * Builds an operation.
@@ -68,6 +73,8 @@ public class Operation implements ADQLOperand {
 			operation = op;
 
 		setRightOperand(rightOp);
+
+		position = null;
 	}
 
 	/**
@@ -81,6 +88,7 @@ public class Operation implements ADQLOperand {
 		leftOperand = (ADQLOperand)toCopy.leftOperand.getCopy();
 		operation = toCopy.operation;
 		rightOperand = (ADQLOperand)toCopy.rightOperand.getCopy();
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/**
@@ -107,6 +115,8 @@ public class Operation implements ADQLOperand {
 			throw new UnsupportedOperationException("Impossible to update an Operation because the left operand is not numeric (" + newLeftOperand.toADQL() + ") !");
 
 		leftOperand = newLeftOperand;
+
+		position = null;
 	}
 
 	/**
@@ -155,11 +165,14 @@ public class Operation implements ADQLOperand {
 			throw new UnsupportedOperationException("Impossible to update an Operation because the right operand is not numeric (" + newRightOperand.toADQL() + ") !");
 
 		rightOperand = newRightOperand;
+
+		position = null;
 	}
 
 	/** Always returns <i>true</i>.
 	 * @see adql.query.operand.ADQLOperand#isNumeric()
 	 */
+	@Override
 	public final boolean isNumeric(){
 		return true;
 	}
@@ -167,24 +180,44 @@ public class Operation implements ADQLOperand {
 	/** Always returns <i>false</i>.
 	 * @see adql.query.operand.ADQLOperand#isString()
 	 */
+	@Override
 	public final boolean isString(){
 		return false;
 	}
 
+	@Override
+	public final TextPosition getPosition(){
+		return this.position;
+	}
+
+	/**
+	 * Sets the position at which this {@link WrappedOperand} has been found in the original ADQL query string.
+	 * 
+	 * @param pos	Position of this {@link WrappedOperand}.
+	 * @since 1.3
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
+	}
+
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new Operation(this);
 	}
 
+	@Override
 	public String getName(){
 		return operation.toString();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private int index = -1;
 			private ADQLOperand operand = null;
 
+			@Override
 			public ADQLObject next(){
 				index++;
 
@@ -197,10 +230,12 @@ public class Operation implements ADQLOperand {
 				return operand;
 			}
 
+			@Override
 			public boolean hasNext(){
 				return index + 1 < 2;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -213,11 +248,13 @@ public class Operation implements ADQLOperand {
 							leftOperand = (ADQLOperand)replacer;
 						else if (index == 1)
 							rightOperand = (ADQLOperand)replacer;
+						position = null;
 					}else
 						throw new UnsupportedOperationException("Impossible to replace the operand \"" + operand.toADQL() + "\" by \"" + replacer.toADQL() + "\" in the operation \"" + toADQL() + "\" because the replacer is not an ADQLOperand or is not numeric !");
 				}
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -227,6 +264,7 @@ public class Operation implements ADQLOperand {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		return leftOperand.toADQL() + operation.toADQL() + rightOperand.toADQL();
 	}

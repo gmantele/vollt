@@ -20,15 +20,16 @@ import adql.query.from.ADQLTable;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 /**
  * In ADQL it corresponds to the '*' and '{tableName}.*' items in the SELECT clause.
  * It means: 'select all columns'.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (05/2014)
  */
 public final class SelectAllColumns extends SelectItem {
 
@@ -87,6 +88,7 @@ public final class SelectAllColumns extends SelectItem {
 		if (query != null){
 			this.query = query;
 			adqlTable = null;
+			setPosition(null);
 		}
 	}
 
@@ -109,6 +111,7 @@ public final class SelectAllColumns extends SelectItem {
 		if (table == null){
 			adqlTable = table;
 			query = null;
+			setPosition(null);
 		}
 	}
 
@@ -128,6 +131,7 @@ public final class SelectAllColumns extends SelectItem {
 
 			private boolean tableGot = (adqlTable == null);
 
+			@Override
 			public ADQLObject next() throws NoSuchElementException{
 				if (tableGot)
 					throw new NoSuchElementException();
@@ -135,10 +139,12 @@ public final class SelectAllColumns extends SelectItem {
 				return adqlTable;
 			}
 
+			@Override
 			public boolean hasNext(){
 				return !tableGot;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (replacer == null)
 					remove();
@@ -146,10 +152,13 @@ public final class SelectAllColumns extends SelectItem {
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 				else if (!(replacer instanceof ADQLTable))
 					throw new IllegalStateException("Impossible to replace an ADQLTable by a " + replacer.getClass().getName() + " !");
-				else
+				else{
 					adqlTable = (ADQLTable)replacer;
+					setPosition(null);
+				}
 			}
 
+			@Override
 			public void remove(){
 				if (!tableGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");

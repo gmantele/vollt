@@ -35,13 +35,14 @@ import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ClauseConstraints;
 import adql.query.IdentifierField;
+import adql.query.TextPosition;
 import adql.query.operand.ADQLColumn;
 
 /**
  * Defines a join between two "tables".
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (11/2013)
+ * @version 1.3 (05/2014)
  */
 public abstract class ADQLJoin implements ADQLObject, FromContent {
 
@@ -59,6 +60,10 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 
 	/** List of columns on which the join must be done. */
 	protected ArrayList<ADQLColumn> lstColumns = null;
+
+	/** Position of this {@link ADQLJoin} in the given ADQL query string.
+	 * @since 1.3 */
+	private TextPosition position = null;
 
 	/* ************ */
 	/* CONSTRUCTORS */
@@ -92,6 +97,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			for(ADQLColumn col : toCopy.lstColumns)
 				lstColumns.add((ADQLColumn)col.getCopy());
 		}
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/* ***************** */
@@ -117,6 +123,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			condition = null;
 			lstColumns = null;
 		}
+		position = null;
 	}
 
 	/**
@@ -135,6 +142,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 */
 	public void setLeftTable(FromContent table){
 		leftTable = table;
+		position = null;
 	}
 
 	/**
@@ -153,6 +161,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	 */
 	public void setRightTable(FromContent table){
 		rightTable = table;
+		position = null;
 	}
 
 	/**
@@ -175,6 +184,17 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			natural = false;
 			lstColumns = null;
 		}
+		position = null;
+	}
+
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	@Override
+	public final void setPosition(final TextPosition position){
+		this.position = position;
 	}
 
 	/**
@@ -228,6 +248,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 
 			natural = false;
 			condition = null;
+			position = null;
 		}
 	}
 
@@ -299,6 +320,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 					else
 						throw new UnsupportedOperationException("Impossible to replace an ADQLColumn by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 				}
+				position = null;
 
 			}
 
@@ -315,6 +337,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 				else if (itCol != null){
 					itCol.remove();
 					index--;
+					position = null;
 				}
 			}
 		};

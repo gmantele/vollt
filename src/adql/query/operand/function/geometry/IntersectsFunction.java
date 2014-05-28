@@ -16,13 +16,13 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import adql.query.ADQLObject;
-
-import adql.query.operand.ADQLOperand;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
 
 /**
  * <p>It represents the INTERSECTS function of the ADQL language.</p>
@@ -42,8 +42,8 @@ import adql.query.operand.ADQLColumn;
  * If it can not do so, it SHOULD throw an error message, to be defined by the service making use of ADQL.</li></ul>
  * </b></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (05/2014)
  */
 public class IntersectsFunction extends GeometryFunction {
 
@@ -82,18 +82,22 @@ public class IntersectsFunction extends GeometryFunction {
 		rightParam = (GeometryValue<GeometryFunction>)(toCopy.rightParam.getCopy());
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new IntersectsFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return "INTERSECTS";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return true;
 	}
 
+	@Override
 	public boolean isString(){
 		return false;
 	}
@@ -109,8 +113,10 @@ public class IntersectsFunction extends GeometryFunction {
 	 * @param leftParam The leftParam to set.
 	 */
 	public final void setLeftParam(GeometryValue<GeometryFunction> leftParam){
-		if (leftParam != null)
+		if (leftParam != null){
 			this.leftParam = leftParam;
+			setPosition(null);
+		}
 	}
 
 	/**
@@ -124,8 +130,10 @@ public class IntersectsFunction extends GeometryFunction {
 	 * @param rightParam The rightParam to set.
 	 */
 	public final void setRightParam(GeometryValue<GeometryFunction> rightParam){
-		if (rightParam != null)
+		if (rightParam != null){
 			this.rightParam = rightParam;
+			setPosition(null);
+		}
 	}
 
 	@Override
@@ -175,6 +183,7 @@ public class IntersectsFunction extends GeometryFunction {
 				rightParam.setGeometry((GeometryFunction)replacer);
 		}else
 			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
+		setPosition(null);
 		return replaced;
 	}
 

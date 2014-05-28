@@ -21,13 +21,14 @@ package adql.query.operand.function;
  */
 
 import adql.query.ADQLObject;
+import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 
 /**
  * It represents any basic mathematical function.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (03/2014)
+ * @version 1.3 (05/2014)
  * 
  * @see MathFunctionType
  */
@@ -116,6 +117,7 @@ public class MathFunction extends ADQLFunction {
 		type = toCopy.type;
 		param1 = (ADQLOperand)toCopy.param1.getCopy();
 		param2 = (ADQLOperand)toCopy.param2.getCopy();
+		setPosition((toCopy.getPosition() == null) ? null : new TextPosition(toCopy.getPosition()));
 	}
 
 	/**
@@ -193,10 +195,12 @@ public class MathFunction extends ADQLFunction {
 				case 0:
 					replaced = param1;
 					param1 = replacer;
+					setPosition(null);
 					break;
 				case 1:
 					replaced = param2;
 					param2 = replacer;
+					setPosition(null);
 					break;
 			}
 			return replaced;

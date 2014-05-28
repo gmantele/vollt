@@ -16,13 +16,13 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import adql.query.ADQLObject;
-
-import adql.query.operand.ADQLOperand;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
 
 /**
  * <p>It represents the DISTANCE function of the ADQL language.</p>
@@ -34,8 +34,8 @@ import adql.query.operand.ADQLColumn;
  * In this example the function computes the distance between two points of coordinates (25, -19.5) and (25.4, -20) both expressed according to the ICRS
  * coordinate system with GEOCENTER reference position.</i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (05/2014)
  */
 public class DistanceFunction extends GeometryFunction {
 
@@ -79,18 +79,22 @@ public class DistanceFunction extends GeometryFunction {
 		throw new UnsupportedOperationException("A DISTANCE function is not associated to a coordinate system !");
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new DistanceFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return "DISTANCE";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return true;
 	}
 
+	@Override
 	public boolean isString(){
 		return false;
 	}
@@ -111,6 +115,7 @@ public class DistanceFunction extends GeometryFunction {
 	 */
 	public final void setP1(GeometryValue<PointFunction> p1){
 		this.p1 = p1;
+		setPosition(null);
 	}
 
 	/**
@@ -129,6 +134,7 @@ public class DistanceFunction extends GeometryFunction {
 	 */
 	public final void setP2(GeometryValue<PointFunction> p2){
 		this.p2 = p2;
+		setPosition(null);
 	}
 
 	@Override
@@ -188,6 +194,8 @@ public class DistanceFunction extends GeometryFunction {
 			else if (replacer instanceof PointFunction)
 				toUpdate.setGeometry((PointFunction)replacer);
 		}
+
+		setPosition(null);
 
 		return replaced;
 	}

@@ -16,7 +16,8 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.util.Collection;
@@ -30,26 +31,24 @@ import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectItem;
 import adql.query.TextPosition;
+import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
 import adql.query.constraint.Comparison;
-import adql.query.constraint.ADQLConstraint;
-import adql.query.constraint.ConstraintsGroup;
 import adql.query.constraint.ComparisonOperator;
+import adql.query.constraint.ConstraintsGroup;
 import adql.query.constraint.Exists;
 import adql.query.constraint.In;
 import adql.query.constraint.IsNull;
 import adql.query.constraint.NotConstraint;
-
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
-import adql.query.from.FromContent;
 import adql.query.from.CrossJoin;
+import adql.query.from.FromContent;
 import adql.query.from.InnerJoin;
 import adql.query.from.OuterJoin;
 import adql.query.from.OuterJoin.OuterType;
-
-import adql.query.operand.ADQLOperand;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
 import adql.query.operand.NegativeOperand;
 import adql.query.operand.NumericConstant;
@@ -57,14 +56,12 @@ import adql.query.operand.Operation;
 import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
-
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
 import adql.query.operand.function.UserDefinedFunction;
-import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -74,6 +71,7 @@ import adql.query.operand.function.geometry.DistanceFunction;
 import adql.query.operand.function.geometry.ExtractCoord;
 import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.GeometryFunction;
+import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
@@ -84,8 +82,8 @@ import adql.query.operand.function.geometry.RegionFunction;
  * 
  * <p>To customize the object representation you merely have to extends the appropriate functions of this class.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (05/2014)
  * 
  * @see ADQLParser
  */
@@ -121,9 +119,6 @@ public class ADQLQueryFactory {
 		if (alias != null)
 			caseSensitivity = IdentifierField.ALIAS.setCaseSensitive(caseSensitivity, alias.caseSensitivity);
 		t.setCaseSensitive(caseSensitivity);
-
-		// Set the position in the query:
-		t.setPosition(idItems.getPosition());
 
 		return t;
 	}
@@ -378,6 +373,18 @@ public class ADQLQueryFactory {
 		return new IntersectsFunction(left, right);
 	}
 
+	/**
+	 * Replace {@link #createOrder(int, boolean, TextPosition)}.
+	 * @since 1.3
+	 */
+	public ADQLOrder createOrder(final int ind, final boolean desc) throws Exception{
+		return new ADQLOrder(ind, desc);
+	}
+
+	/**
+	 * @deprecated since 1.3 ; Replaced by {@link #createOrder(int, boolean)}
+	 */
+	@Deprecated
 	public ADQLOrder createOrder(final int ind, final boolean desc, final TextPosition position) throws Exception{
 		ADQLOrder order = new ADQLOrder(ind, desc);
 		if (order != null)
@@ -387,10 +394,8 @@ public class ADQLQueryFactory {
 
 	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception{
 		ADQLOrder order = new ADQLOrder(idItems.join("."), desc);
-		if (order != null){
-			order.setPosition(idItems.getPosition());
+		if (order != null)
 			order.setCaseSensitive(idItems.getColumnCaseSensitivity());
-		}
 		return order;
 	}
 

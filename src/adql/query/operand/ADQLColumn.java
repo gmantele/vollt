@@ -20,7 +20,6 @@ package adql.query.operand;
  */
 
 import adql.db.DBColumn;
-
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.IdentifierField;
@@ -163,11 +162,7 @@ public class ADQLColumn implements ADQLOperand {
 	/* ***************** */
 	/* GETTERS & SETTERS */
 	/* ***************** */
-	/**
-	 * Gets the position in the original ADQL query string.
-	 * 
-	 * @return	The position of this {@link ADQLTable}.
-	 */
+	@Override
 	public final TextPosition getPosition(){
 		return position;
 	}
@@ -457,26 +452,32 @@ public class ADQLColumn implements ADQLOperand {
 	/* ***************** */
 	/* INHERITED METHODS */
 	/* ***************** */
+	@Override
 	public boolean isNumeric(){
 		return true;
 	}
 
+	@Override
 	public boolean isString(){
 		return true;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new ADQLColumn(this);
 	}
 
+	@Override
 	public String getName(){
 		return getColumnName();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new NullADQLIterator();
 	}
 
+	@Override
 	public String toADQL(){
 		return getFullColumnName();
 	}

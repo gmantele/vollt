@@ -22,13 +22,14 @@ package adql.query.operand.function;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ClauseADQL;
+import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 
 /**
  * It represents any function which is not managed by ADQL.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (04/2014)
+ * @version 1.3 (05/2014)
  */
 public final class DefaultUDF extends UserDefinedFunction {
 
@@ -60,6 +61,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	public DefaultUDF(DefaultUDF toCopy) throws Exception{
 		functionName = toCopy.functionName;
 		parameters = (ADQLList<ADQLOperand>)(toCopy.parameters.getCopy());
+		setPosition((toCopy.getPosition() == null) ? null : new TextPosition(toCopy.getPosition()));;
 	}
 
 	@Override
@@ -108,7 +110,9 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 */
 	@Override
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
-		return parameters.set(index, replacer);
+		ADQLOperand oldParam = parameters.set(index, replacer);
+		setPosition(null);
+		return oldParam;
 	}
 
 }

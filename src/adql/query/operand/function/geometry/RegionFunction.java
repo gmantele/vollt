@@ -38,7 +38,7 @@ import adql.query.operand.ADQLOperand;
  * Inappropriate geometries for this construct SHOULD throw an error message, to be defined by the service making use of ADQL.</b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (02/2014)
+ * @version 1.3 (05/2014)
  */
 public class RegionFunction extends GeometryFunction {
 
@@ -117,6 +117,7 @@ public class RegionFunction extends GeometryFunction {
 			else if (replacer instanceof ADQLOperand){
 				ADQLOperand replaced = parameter;
 				parameter = replacer;
+				setPosition(null);
 				return replaced;
 			}else
 				throw new Exception("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
