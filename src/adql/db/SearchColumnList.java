@@ -307,7 +307,6 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 
 					// if here, all prefixes are matching and so the column is a good match:
 					DBColumn goodMatch = matchTable.getColumn(match.getADQLName(), true);
-					System.out.println("Good match for \"" + catalog + "." + schema + "." + table + "." + column + "\" found: " + goodMatch);
 					result.add(goodMatch);
 				}
 			}
