@@ -24,13 +24,11 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 
 import uws.UWSException;
-
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
-
 import uws.service.UWS;
 import uws.service.UWSUrl;
 
@@ -151,7 +149,7 @@ public class XMLSerializer extends UWSSerializer {
 		for(JobList jobList : uws){
 			UWSUrl jlUrl = jobList.getUrl();
 			xml.append("\t\t<jobListRef name=\"").append(escapeXMLAttribute(jobList.getName())).append("\" href=\"");
-			if (jlUrl != null)
+			if (jlUrl != null && jlUrl.getRequestURL() != null)
 				xml.append(escapeURL(jlUrl.getRequestURL()));
 			xml.append("\" />\n");
 		}
