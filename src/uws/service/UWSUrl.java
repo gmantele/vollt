@@ -16,28 +16,26 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomishes Rechen Institute (ARI)
  */
 
 import java.io.Serializable;
-
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
 import uws.UWSException;
 import uws.UWSToolBox;
-
 import uws.job.UWSJob;
 
 /**
  * This class helps managing with UWS URLs and URIs.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 06/2014
  */
 public class UWSUrl implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -118,9 +116,6 @@ public class UWSUrl implements Serializable {
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "The extracted base UWS URI is NULL !");
 
 		baseURI = normalizeURI(uri);
-
-		if (baseURI.length() == 0)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "The extracted base UWS URI is empty !");
 	}
 
 	/**
