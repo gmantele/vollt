@@ -107,11 +107,9 @@ public class TAPSyncJob {
 		boolean timeout = false;
 
 		try{
-			System.out.println("Joining...");
 			thread.join(tapParams.getExecutionDuration());
 			if (thread.isAlive()){
 				timeout = true;
-				System.out.println("Aborting...");
 				thread.interrupt();
 				thread.join(waitForStop);
 			}
