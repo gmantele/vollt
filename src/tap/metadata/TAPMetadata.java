@@ -112,7 +112,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	public Iterator<TAPTable> getTables(){
-		return new TableIterator(this);
+		return new TAPTableIterator(this);
 	}
 
 	public boolean hasTable(String schemaName, String tableName){
@@ -155,11 +155,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		return nbTables;
 	}
 
-	public static class TableIterator implements Iterator<TAPTable> {
+	public static class TAPTableIterator implements Iterator<TAPTable> {
 		private Iterator<TAPSchema> it;
 		private Iterator<TAPTable> itTables;
 
-		public TableIterator(TAPMetadata tapSchema){
+		public TAPTableIterator(TAPMetadata tapSchema){
 			it = tapSchema.iterator();
 
 			if (it.hasNext())

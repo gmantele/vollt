@@ -27,9 +27,7 @@ import org.json.JSONException;
 import org.json.JSONWriter;
 
 import cds.savot.writer.SavotWriter;
-
 import adql.db.DBColumn;
-
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;

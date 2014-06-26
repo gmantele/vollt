@@ -24,14 +24,12 @@ import java.io.IOException;
 import tap.TAPExecutionReport;
 import tap.TAPJob;
 import tap.TAPException;
-
 import uws.job.Result;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
 import cds.savot.writer.SavotWriter;
-
 import tap.ServiceConnection;
 import tap.metadata.TAPColumn;
 import tap.metadata.VotType;

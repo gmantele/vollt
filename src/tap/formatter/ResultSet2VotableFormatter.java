@@ -26,7 +26,6 @@ import tap.TAPException;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
-
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -34,7 +33,6 @@ import java.sql.SQLException;
 import tap.ServiceConnection;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPTypes;
-
 import adql.db.DBColumn;
 
 /**

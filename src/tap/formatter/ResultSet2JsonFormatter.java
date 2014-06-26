@@ -20,7 +20,6 @@ package tap.formatter;
  */
 
 import java.io.IOException;
-
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -31,10 +30,8 @@ import org.json.JSONWriter;
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
-
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPTypes;
-
 import adql.db.DBColumn;
 
 public class ResultSet2JsonFormatter extends JSONFormat<ResultSet> implements ResultSetFormatter {
