@@ -22,6 +22,7 @@ package tap.metadata;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import tap.metadata.TAPType.TAPDatatype;
 import adql.db.DBColumn;
 import adql.db.DBTable;
 
@@ -41,11 +42,9 @@ public class TAPColumn implements DBColumn {
 
 	private String utype = null;
 
-	private String datatype = null;
+	private TAPType datatype = new TAPType(TAPDatatype.VARCHAR);
 
-	private int size = TAPTypes.NO_SIZE;
-
-	private VotType votType = null;
+	private VotType votType = datatype.toVotType();
 
 	private boolean principal = false;
 
@@ -67,21 +66,25 @@ public class TAPColumn implements DBColumn {
 		dbName = adqlName;
 		lstTargets = new ArrayList<TAPForeignKey>(1);
 		lstSources = new ArrayList<TAPForeignKey>(1);
-		setDefaultType();
 	}
 
-	public TAPColumn(String columnName, String description){
+	public TAPColumn(String columnName, TAPType type){
 		this(columnName);
+		setDatatype(type);
+	}
+
+	public TAPColumn(String columnName, TAPType type, String description){
+		this(columnName, type);
 		this.description = description;
 	}
 
-	public TAPColumn(String columnName, String description, String unit){
-		this(columnName, description);
+	public TAPColumn(String columnName, TAPType type, String description, String unit){
+		this(columnName, type, description);
 		this.unit = unit;
 	}
 
-	public TAPColumn(String columnName, String description, String unit, String ucd, String utype){
-		this(columnName, description, unit);
+	public TAPColumn(String columnName, TAPType type, String description, String unit, String ucd, String utype){
+		this(columnName, type, description, unit);
 		this.ucd = ucd;
 		this.utype = utype;
 	}
@@ -111,6 +114,7 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * @return The table.
 	 */
+	@Override
 	public final DBTable getTable(){
 		return table;
 	}
@@ -181,77 +185,23 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * @return The datatype.
 	 */
-	public final String getDatatype(){
+	public final TAPType getDatatype(){
 		return datatype;
 	}
 
 	/**
-	 * @return Array size (>0 or 2 special values: {@link TAPTypes#NO_SIZE} and {@link TAPTypes#STAR_SIZE}).
+	 * @param type	The new column datatype.
 	 */
-	public final int getArraySize(){
-		return size;
+	public final void setDatatype(final TAPType type){
+		datatype = type;
+		votType = datatype.toVotType();
 	}
 
 	/**
-	 * <p>Sets the DB datatype, the size and uses these information to set the corresponding VOTable type.</p>
-	 * <b>Important:</b>
-	 * <ul>
-	 * 	<li>If the given datatype is not known according to {@link TAPTypes#getDBType(String)}, the datatype of this column is set to its default value (see {@link #setDefaultType()}),</li>
-	 * 	<li>The VOTable type is set automatically thanks to {@link TAPTypes#getVotType(String, int)}.</li>
-	 * </ul>
-	 * 
-	 * @param datatype 	The datatype to set.
-	 * @param size		Array size (>0 or 2 special values: {@link TAPTypes#NO_SIZE} and {@link TAPTypes#STAR_SIZE}).
-	 * 
-	 * @see TAPTypes#getDBType(VotType)
-	 * @see TAPTypes#getVotType(String, int)
-	 * @see #setDefaultType()
-	 */
-	public final void setDatatype(String datatype, int size){
-		this.datatype = TAPTypes.getDBType(datatype);
-		this.size = (size <= 0 && size != TAPTypes.STAR_SIZE) ? TAPTypes.NO_SIZE : size;
-
-		if (this.datatype == null)
-			setDefaultType();
-		else
-			this.votType = TAPTypes.getVotType(this.datatype, this.size);
-	}
-
-	/**
-	 * @return The VOTable type to use.
+	 * @return The votType.
 	 */
 	public final VotType getVotType(){
 		return votType;
-	}
-
-	/**
-	 * <p>Sets the VOTable type and uses it to set the DB datatype and its size.</p>
-	 * <b>Important:</b>
-	 * <ul>
-	 * 	<li>If the given VOTable type is not known according to {@link TAPTypes#getDBType(VotType)}, the DB datatype of this column and its size are set to the default value (see {@link #setDefaultType()}).</li>
-	 * </ul>
-	 * 
-	 * @param type	A full VOTable type (that's to say: <code>datatype</code>, <code>arraysize</code> and <code>xtype</code>).
-	 * 
-	 * @see TAPTypes#getDBType(VotType)
-	 * @see #setDefaultType()
-	 */
-	public final void setVotType(final VotType type){
-		this.votType = type;
-		this.datatype = TAPTypes.getDBType(type);
-		this.size = type.arraysize;
-
-		if (this.datatype == null)
-			setDefaultType();
-	}
-
-	/**
-	 * Sets the default DB datatype (VARCHAR) and its corresponding VOTable type (char , *).
-	 */
-	protected final void setDefaultType(){
-		datatype = TAPTypes.VARCHAR;
-		size = TAPTypes.STAR_SIZE;
-		votType = TAPTypes.getVotType(datatype, size);
 	}
 
 	/**
@@ -346,12 +296,12 @@ public class TAPColumn implements DBColumn {
 		lstSources.clear();
 	}
 
+	@Override
 	public DBColumn copy(final String dbName, final String adqlName, final DBTable dbTable){
-		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, description, unit, ucd, utype);
+		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, datatype, description, unit, ucd, utype);
 		copy.setDBName((dbName == null) ? this.dbName : dbName);
 		copy.setTable(dbTable);
 
-		copy.setDatatype(datatype, size);
 		copy.setIndexed(indexed);
 		copy.setPrincipal(principal);
 		copy.setStd(std);
@@ -361,10 +311,9 @@ public class TAPColumn implements DBColumn {
 	}
 
 	public DBColumn copy(){
-		TAPColumn copy = new TAPColumn(adqlName, description, unit, ucd, utype);
+		TAPColumn copy = new TAPColumn(adqlName, datatype, description, unit, ucd, utype);
 		copy.setDBName(dbName);
 		copy.setTable(table);
-		copy.setDatatype(datatype, size);
 		copy.setIndexed(indexed);
 		copy.setPrincipal(principal);
 		copy.setStd(std);

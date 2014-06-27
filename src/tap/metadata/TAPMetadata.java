@@ -21,7 +21,6 @@ package tap.metadata;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,14 +29,13 @@ import java.util.NoSuchElementException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import adql.db.DBTable;
 import tap.resource.Capabilities;
 import tap.resource.TAPResource;
 import tap.resource.VOSIResource;
+import adql.db.DBTable;
 
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -314,13 +312,13 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		if (c.getDatatype() != null){
 			writer.print(prefix);
 			writer.print("<dataType xsi:type=\"vod:TAPType\"");
-			if (c.getArraySize() >= 0){
+			if (c.getDatatype().length > 0){
 				writer.print(" size=\"");
-				writer.print(c.getArraySize());
+				writer.print(c.getDatatype().length);
 				writer.print("\"");
 			}
 			writer.print('>');
-			writer.print(c.getDatatype().toUpperCase());
+			writer.print(c.getDatatype().type.toString().toUpperCase());
 			writer.println("</dataType>");
 		}
 

@@ -199,34 +199,20 @@ public class TAPTable implements DBTable {
 		return c;
 	}
 
-	public TAPColumn addColumn(String columnName, String description, String unit, String ucd, String utype){
+	public TAPColumn addColumn(String columnName, TAPType datatype, String description, String unit, String ucd, String utype){
 		if (columnName == null)
 			return null;
 
-		TAPColumn c = new TAPColumn(columnName, description, unit, ucd, utype);
+		TAPColumn c = new TAPColumn(columnName, datatype, description, unit, ucd, utype);
 		addColumn(c);
 		return c;
 	}
 
-	public TAPColumn addColumn(String columnName, String description, String unit, String ucd, String utype, String datatype, int size, boolean principal, boolean indexed, boolean std){
+	public TAPColumn addColumn(String columnName, TAPType datatype, String description, String unit, String ucd, String utype, boolean principal, boolean indexed, boolean std){
 		if (columnName == null)
 			return null;
 
-		TAPColumn c = new TAPColumn(columnName, description, unit, ucd, utype);
-		c.setDatatype(datatype, size);
-		c.setPrincipal(principal);
-		c.setIndexed(indexed);
-		c.setStd(std);
-		addColumn(c);
-		return c;
-	}
-
-	public TAPColumn addColumn(String columnName, String description, String unit, String ucd, String utype, VotType votType, boolean principal, boolean indexed, boolean std){
-		if (columnName == null)
-			return null;
-
-		TAPColumn c = new TAPColumn(columnName, description, unit, ucd, utype);
-		c.setVotType(votType);
+		TAPColumn c = new TAPColumn(columnName, datatype, description, unit, ucd, utype);
 		c.setPrincipal(principal);
 		c.setIndexed(indexed);
 		c.setStd(std);
@@ -482,6 +468,7 @@ public class TAPTable implements DBTable {
 		}
 	}
 
+	@Override
 	public DBTable copy(final String dbName, final String adqlName){
 		TAPTable copy = new TAPTable((adqlName == null) ? this.adqlName : adqlName);
 		copy.setDBName((dbName == null) ? this.dbName : dbName);
