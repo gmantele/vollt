@@ -24,10 +24,14 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
+import tap.db.JDBCTAPFactory;
+import tap.metadata.TAPColumn;
+import tap.metadata.TAPType;
+
 /**
  * <p>{@link TableIterator} which lets iterate over a SQL {@link ResultSet}.</p>
  * 
- * <p>{@link #getColType()} will return the type declared in the {@link ResultSetMetaData} object.</p>
+ * <p>{@link #getColType()} will return a TAP type base on the one declared in the {@link ResultSetMetaData} object.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
  * @version 2.0 (06/2014)
@@ -40,8 +44,8 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/** Number of columns to read. */
 	private final int nbColumns;
-	/** Type of all columns. */
-	private final String[] colTypes;
+	/** Metadata of all columns identified before the iteration. */
+	private final TAPColumn[] colMeta;
 
 	/** Indicate whether the row iteration has already started. */
 	private boolean iterationStarted = false;
@@ -82,12 +86,19 @@ public class ResultSetTableIterator implements TableIterator {
 			// count columns:
 			nbColumns = metadata.getColumnCount();
 			// determine their type:
-			colTypes = new String[nbColumns];
-			for(int i = 1; i <= nbColumns; i++)
-				colTypes[i - 1] = metadata.getColumnTypeName(i);
+			colMeta = new TAPColumn[nbColumns];
+			for(int i = 1; i <= nbColumns; i++){
+				TAPType datatype = JDBCTAPFactory.toTAPType(metadata.getColumnTypeName(i));
+				colMeta[i - 1] = new TAPColumn(metadata.getColumnLabel(i), datatype);
+			}
 		}catch(SQLException se){
 			throw new DataReadException("Can not get the column types of the given ResultSet!", se);
 		}
+	}
+
+	@Override
+	public TAPColumn[] getMetadata(){
+		return colMeta;
 	}
 
 	@Override
@@ -144,7 +155,7 @@ public class ResultSetTableIterator implements TableIterator {
 	}
 
 	@Override
-	public String getColType() throws IllegalStateException, DataReadException{
+	public TAPType getColType() throws IllegalStateException, DataReadException{
 		// Basically check the read state (for rows iteration):
 		checkReadState();
 
@@ -155,7 +166,7 @@ public class ResultSetTableIterator implements TableIterator {
 			throw new IllegalStateException("All columns have already been read!");
 
 		// Return the column type:
-		return colTypes[colIndex - 1];
+		return colMeta[colIndex - 1].getDatatype();
 	}
 
 }

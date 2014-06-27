@@ -1,0 +1,137 @@
+<?xml version='1.0'?>
+<VOTABLE version="1.2"
+ xmlns="http://www.ivoa.net/xml/VOTable/v1.2">
+<!--
+ !  VOTable written by STIL version 3.0-5+ (uk.ac.starlink.votable.VOTableWriter)
+ !  at 2014-06-27T15:28:54
+ !-->
+<RESOURCE>
+<TABLE name="sn" nrows="100">
+<PARAM arraysize="19" datatype="char" name="source" value="2012arXiv1202.0132R"/>
+<PARAM arraysize="9" datatype="char" name="CoordFlavor" utype="stc:AstroCoordSystem.SpaceFrame.CoordFlavor" value="SPHERICAL"/>
+<PARAM arraysize="1" datatype="char" name="coord_naxes" utype="stc:AstroCoordSystem.SpaceFrame.CoordFlavor.coord_naxes" value="3"/>
+<PARAM arraysize="4" datatype="char" name="CoordRefFrame" utype="stc:AstroCoordSystem.SpaceFrame.CoordRefFrame" value="ICRS"/>
+<PARAM arraysize="6" datatype="char" name="Epoch" utype="stc:AstroCoords.Position3D.Epoch" value="2010.0"/>
+<PARAM arraysize="1" datatype="char" name="yearDef" utype="stc:AstroCoords.Position3D.Epoch.yearDef" value="J"/>
+<PARAM arraysize="41" datatype="char" name="URI" utype="stc:DataModel.URI" value="http://www.ivoa.net/xml/STC/stc-v1.30.xsd"/>
+<PARAM arraysize="31" datatype="char" name="server" value="http://dc.zah.uni-heidelberg.de"/>
+<PARAM arraysize="58" datatype="char" name="query" value="SELECT sourceid, alpha, delta, magg FROM gums.sn LIMIT 100"/>
+<PARAM arraysize="36" datatype="char" name="src_res" value="Contains traces from resource gums/q">
+<DESCRIPTION>GUMS-10 is the 10th version of the Gaia Universe Model Snapshot, a
+simulation of the expected contents of the Gaia cataloge run at the
+MareNostrum supercomputer. The models used and the characteristics of
+GUMS-10 are described in: A.C. Robin et al, "Gaia Universe Model
+Snapshot. A statistical analysis of the expected contents of the Gaia
+catalogue", Astronomy &amp; Astrophysics (2012), in press. For more
+details see also http://gaia.am.ub.es/GUMS-10/</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="34" datatype="char" name="src_table" value="Contains traces from table gums.sn">
+<DESCRIPTION>Supernovae in the GUMS-10 simulated GAIA result set.</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="54" datatype="char" name="copyright" value="Content from gums/q has rights note (see INFO content)">
+<DESCRIPTION>If you use this data, please acknowledge that GUMS was created using
+the MareNostrum supercomputer.</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="2" datatype="char" name="QUERY_STATUS" value="OK">
+<DESCRIPTION>Query successful</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="8" datatype="char" name="QUERY_STATUS" value="OVERFLOW"/>
+<PARAM arraysize="11" datatype="char" name="Service short name" value="GAVO DC TAP">
+<DESCRIPTION>Short name for TAP service</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="28" datatype="char" name="Service title" value="GAVO Data Center TAP service">
+<DESCRIPTION>TAP service title</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="36" datatype="char" name="Identifier" value="ivo://org.gavo.dc/__system__/tap/run">
+<DESCRIPTION>Unique resource registry identifier</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="16" datatype="char" name="Service publisher" value="The GAVO DC team">
+<DESCRIPTION>Publisher for TAP service</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="55" datatype="char" name="Service reference URL" value="http://dc.zah.uni-heidelberg.de/__system__/tap/run/info">
+<DESCRIPTION>Descriptive URL for search resource</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="50" datatype="char" name="Contact person" value="GAVO Data Center Team &lt;gavo@ari.uni-heidelberg.de&gt;">
+<DESCRIPTION>Individual to contact about this service</DESCRIPTION>
+</PARAM>
+<FIELD ID="sourceid" datatype="long" name="sourceid" ucd="meta.id;meta.main">
+<DESCRIPTION>GUMS source identifier</DESCRIPTION>
+<VALUES null='-9223372036854775808'/>
+</FIELD>
+<FIELD ID="alpha" datatype="double" name="alpha" ucd="pos.eq.ra;meta.main" unit="deg">
+<DESCRIPTION>Right ascention of the barycenter at J2010 reference epoch in the ICRS frame</DESCRIPTION>
+</FIELD>
+<FIELD ID="delta" datatype="double" name="delta" ucd="pos.eq.dec;meta.main" unit="deg">
+<DESCRIPTION>Declination of the barycenter at J2010 reference epoch in the ICRS frame</DESCRIPTION>
+</FIELD>
+<FIELD ID="magg" datatype="float" name="magg" ucd="phot.mag;em.opt.V" unit="mag">
+<DESCRIPTION>GAIA G band apparent magnitude at reference epoch. The GAIA G-band has a wide bandpass between 350 and 150 nm. This is close to Johnson V for V-I between -0.4 and 1.4.</DESCRIPTION>
+</FIELD>
+<DATA>
+<BINARY>
+<STREAM encoding='base64'>
+SIyLN4AAAAFAc7Mj/8o8y0BB6tr0Qsk+AAAAAEiPfbKAAAABQHPCXeJtfdFAQlKD
+Uw57qQAAAABIj8oIgAAAAUBz5UrAhNRFQEKSREpxKyEAAAAASI9UIoAAAAFAc9Rw
+ldpT4UBChQnSTbl2AAAAAEiPdUaAAAABQHO4ommdD+NAQmqiXOafjAAAAABIjkQ6
+gAAAAUBzqMK92aFwQEKEDLhd9GEAAAAASI59e4AAAAFAc5g+FrafuEBCus89V3m8
+AAAAAEiPZ36AAAABQHOyV0AQPtFAQqb+at6XDAAAAABIj2Z/gAAAAUBzsjg3Fy80
+QEKybHyEPGwAAAAASI5SlYAAAAFAc7Guc3OOikBC5fxw5nUHAAAAAEiP4SyAAAAB
+QHPHIScjvaJAQuLgAUVnrQAAAABIjlV0gAAAAUBzozyo9hyMQELhj9Qt9T0AAAAA
+SI7LsYAAAAFAc57Uv9XVxUBDFYUkVD3nAAAAAEiOylGAAAABQHOeaZmcwx5AQyxk
+74XNFgAAAABIj/+JgAAAAUBz6jaKJV84QEK63jSuQhkAAAAASI/fJoAAAAFAc/17
+XaOZm0BC9L4zEkr6AAAAAEiP8Q2AAAABQHPdKHrRSiFAQt13Kl6inwAAAABIj5D0
+gAAAAUB0DZ48ww1/QEMI+0LNwlAAAAAASI3MOoAAAAFAdCrwCbsNmUBDXc3qHzTY
+AAAAAEiNUuWAAAABQHQI3LRHLQtAQ1boSikxgwAAAABIjVuEgAAAAUB0AZ7i9IAA
+QEOF6Ywo7I0AAAAASI1a5oAAAAFAdAkVIIHY6EBDoOK2iknGAAAAAEiPE/2AAAAB
+QHPIBOdGi79AQy1ZiQEM1gAAAABIjwZ/gAAAAUBz2HyIvOa4QEPJGwsjRrIAAAAA
+SI82E4AAAAFAc/IUTs8HyEBDcfdrgWSuAAAAAEiPDD+AAAABQHPlmklFhQhAQ6/e
+f8sHDgAAAABIjwxqgAAAAUBz57d3Gt2tQEO78KSmrdsAAAAASIKGhYAAAAFAc/6l
+MT8lDkBERhMw8ZudAAAAAEiGnoyAAAABQHNs8j+hTpJAQqYqHemlMAAAAABIhiHX
+gAAAAUBzYx/wZdkRQEMVis0kKdQAAAAASI74GoAAAAFAc6T6/wSsFkBDjn53MqXv
+AAAAAEiO226AAAABQHOcP3AGOYJAQ5m7CvfTmQAAAABIjttegAAAAUBznywMJVic
+QEOd+BYVS0kAAAAASI4UpYAAAAFAc3maexo0m0BDZDf3tf3UAAAAAEiGJbaAAAAB
+QHNTWFUMRDZAQzI2sIgOKQAAAABIhjUMgAAAAUBzRF75/zBkQENPzfQ5rKQAAAAA
+SI4xmIAAAAFAc3gTsvl41kBDowhvbZ9dAAAAAEiOC2eAAAABQHNg9j3uvDJAQ867
+WL+KOwAAAABIjgg/gAAAAUBzZkWINvzXQEPtqdArO+4AAAAASIE8iYAAAAFAc2Jw
+1qlE8UBES/KO0TfsAAAAAEiOm1+AAAABQHO0ES7dBzxARAbp4UiHzAAAAABIjo9g
+gAAAAUBzz/1Y4I3HQEQDhxlfdsgAAAAASIMBsoAAAAFAc+pPyKTmSUBEVsbc3ji0
+AAAAAEiDDaqAAAABQHPf3QjaEF5ARHvfCgUp9gAAAABIgy9qgAAAAUBzzeEKAC9F
+QETz8IJsJE4AAAAASIMvooAAAAFAc9E2603thEBE+tkEyajGAAAAAEiB7AKAAAAB
+QHOQiLsico5ARIsI9xvcWwAAAABIgdRJgAAAAUBzfyzjUgqcQESgZIRvTAUAAAAA
+SIMtnIAAAAFAc9FWPWf9kEBFEB6QQUIfAAAAAEiBzn+AAAABQHOhbTUFNLFARPxE
+G51jmAAAAABIgaLQgAAAAUBzpme3hTKcQEUnhd0EW+MAAAAASIGqloAAAAFAc5pU
+0120eUBFP6LF+cB/AAAAAEiDnaeAAAABQHOz56god2JARXQEgQX7JwAAAABIjfK3
+gAAAAUB0PyXi8S75QEN9Hhod//4AAAAASI3nM4AAAAFAdC9zwVFTHEBDvaY+HiBc
+AAAAAEiN5PqAAAABQHQoZO8vAA1AQ7IXeL9hEgAAAABIjeGdgAAAAUB0MWJpFTPL
+QEP6e+RNS08AAAAASI3jsoAAAAFAdDYQSetkLEBD/tj5u0R4AAAAAEiNO5GAAAAB
+QHRfKY2Wv7dAQ+5e0GBXfQAAAABIgg+qgAAAAUB0dKxaDIeEQEQ8nkkS/HQAAAAA
+SII5MYAAAAFAdGamr2WKJkBElXCupUF7AAAAAEiCmVuAAAABQHQdCIrnML5AREA4
+DzhWNwAAAABIgp5ogAAAAUB0J5g9lMdFQERk0ZbQ+JkAAAAASIK4vIAAAAFAdAvQ
+MT3suUBESBAj+O+DAAAAAEiCt9qAAAABQHQEA6lrahFARJTqt6D4rwAAAABIgquN
+gAAAAUB0HdERm1epQETJVZ7FZlcAAAAASILh54AAAAFAdFPwl2utL0BFFAq9oNuj
+AAAAAEiC/7uAAAABQHQ2WTtJwz5ARMtEl15oMAAAAABIgsVvgAAAAUB0KEjpjXHB
+QETpcQBXvSQAAAAASIJUv4AAAAFAdDHlWpg3wkBFMAEsXVVlAAAAAEiCbSyAAAAB
+QHROsJqSHMlARTAIPa/3EQAAAABIgmssgAAAAUB0R6fcWqTgQEU8HTOUdPQAAAAA
+SQEDPIAAAAFAdIgE4mX3D0BEW4ZBe2egAAAAAEkOCQCAAAABQHSNl94qbK9ARIjn
+9R+OmQAAAABJATjxgAAAAUB0jNDY3FRgQEUIgpDHPjYAAAAASIIRX4AAAAFAdGGf
+QDA9W0BE5zHmw5DEAAAAAEiCELuAAAABQHRnjSKkJW1ARQGdzUgQRgAAAABJASq8
+gAAAAUB0dvb2/SuwQEUzGdio3csAAAAASQEpI4AAAAFAdHMuu76m90BFX7lJFCRK
+AAAAAEkBM8SAAAABQHR+M6Lxz7lARU/T+ub0cgAAAABJAZ9IgAAAAUB0YS6FvCwB
+QEWtZQbF+p0AAAAASQHZ6oAAAAFAdGjueUnuSUBFtI8XIZo7AAAAAEkOJUyAAAAB
+QHSXyKlXFmxARVNo8ADXWAAAAABJARcTgAAAAUB0hR3dH0HFQEWVS7J+piwAAAAA
+SQ7Q84AAAAFAdJg+WmmQl0BF/sgTeRxcAAAAAEkOkBmAAAABQHSW97NxJoVARgm2
+NyBOGgAAAABJAWCygAAAAUB0kg5pS6dnQEYhd9zIv1oAAAAASIM7vIAAAAFAc/Hu
+hCq5r0BExuyYLDsmAAAAAEiCoOCAAAABQHQMq/19Xg5ARR1EemPT7wAAAABIg+AT
+gAAAAUB0DDKTBB+RQEU7gfPOQ48AAAAASILJ7IAAAAFAdCij9yYjlkBFHtEaTx+P
+AAAAAEiCcIGAAAABQHQ1VGHiLOxARUZVVLqfrgAAAABIglhKgAAAAUB0IQp/H5Kj
+QEWRIrqoX1MAAAAASIPdPoAAAAFAc8ZBFbhChEBFX8xJrzZyAAAAAEiDsE+AAAAB
+QHPHkHJCBSNARb/uBCKGegAAAABIg1QbgAAAAUBz+oXGaXH/QEW4brbMpY8AAAAA
+SIN5B4AAAAFAdAYz5U/wSUBF77ArlHB4AAAAAEiDRvyAAAABQHQfiJdAywtARiL2
+gXlBBwAAAABIgItYgAAAAUB0FnHQJSUkQEZF4UITfUoAAAAASIChgoAAAAFAc+6z
+W6obV0BGMMHa7mPtAAAAAA==
+</STREAM>
+</BINARY>
+</DATA>
+</TABLE>
+</RESOURCE>
+</VOTABLE>

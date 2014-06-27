@@ -1,0 +1,123 @@
+<?xml version='1.0'?>
+<VOTABLE version="1.2"
+ xmlns="http://www.ivoa.net/xml/VOTable/v1.2">
+<!--
+ !  VOTable written by STIL version 3.0-5+ (uk.ac.starlink.votable.VOTableWriter)
+ !  at 2014-06-27T15:46:42
+ !-->
+<RESOURCE>
+<TABLE name="sn" nrows="1">
+<PARAM arraysize="19" datatype="char" name="source" value="2012arXiv1202.0132R"/>
+<PARAM arraysize="9" datatype="char" name="CoordFlavor" utype="stc:AstroCoordSystem.SpaceFrame.CoordFlavor" value="SPHERICAL"/>
+<PARAM arraysize="1" datatype="char" name="coord_naxes" utype="stc:AstroCoordSystem.SpaceFrame.CoordFlavor.coord_naxes" value="3"/>
+<PARAM arraysize="4" datatype="char" name="CoordRefFrame" utype="stc:AstroCoordSystem.SpaceFrame.CoordRefFrame" value="ICRS"/>
+<PARAM arraysize="6" datatype="char" name="Epoch" utype="stc:AstroCoords.Position3D.Epoch" value="2010.0"/>
+<PARAM arraysize="1" datatype="char" name="yearDef" utype="stc:AstroCoords.Position3D.Epoch.yearDef" value="J"/>
+<PARAM arraysize="41" datatype="char" name="URI" utype="stc:DataModel.URI" value="http://www.ivoa.net/xml/STC/stc-v1.30.xsd"/>
+<PARAM arraysize="31" datatype="char" name="server" value="http://dc.zah.uni-heidelberg.de"/>
+<PARAM arraysize="69" datatype="char" name="query" value="SELECT * FROM gums.sn WHERE sourceid = 5227706337957249025 LIMIT 2000"/>
+<PARAM arraysize="36" datatype="char" name="src_res" value="Contains traces from resource gums/q">
+<DESCRIPTION>GUMS-10 is the 10th version of the Gaia Universe Model Snapshot, a
+simulation of the expected contents of the Gaia cataloge run at the
+MareNostrum supercomputer. The models used and the characteristics of
+GUMS-10 are described in: A.C. Robin et al, "Gaia Universe Model
+Snapshot. A statistical analysis of the expected contents of the Gaia
+catalogue", Astronomy &amp; Astrophysics (2012), in press. For more
+details see also http://gaia.am.ub.es/GUMS-10/</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="34" datatype="char" name="src_table" value="Contains traces from table gums.sn">
+<DESCRIPTION>Supernovae in the GUMS-10 simulated GAIA result set.</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="54" datatype="char" name="copyright" value="Content from gums/q has rights note (see INFO content)">
+<DESCRIPTION>If you use this data, please acknowledge that GUMS was created using
+the MareNostrum supercomputer.</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="2" datatype="char" name="QUERY_STATUS" value="OK">
+<DESCRIPTION>Query successful</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="11" datatype="char" name="Service short name" value="GAVO DC TAP">
+<DESCRIPTION>Short name for TAP service</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="28" datatype="char" name="Service title" value="GAVO Data Center TAP service">
+<DESCRIPTION>TAP service title</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="36" datatype="char" name="Identifier" value="ivo://org.gavo.dc/__system__/tap/run">
+<DESCRIPTION>Unique resource registry identifier</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="16" datatype="char" name="Service publisher" value="The GAVO DC team">
+<DESCRIPTION>Publisher for TAP service</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="55" datatype="char" name="Service reference URL" value="http://dc.zah.uni-heidelberg.de/__system__/tap/run/info">
+<DESCRIPTION>Descriptive URL for search resource</DESCRIPTION>
+</PARAM>
+<PARAM arraysize="50" datatype="char" name="Contact person" value="GAVO Data Center Team &lt;gavo@ari.uni-heidelberg.de&gt;">
+<DESCRIPTION>Individual to contact about this service</DESCRIPTION>
+</PARAM>
+<FIELD ID="v" datatype="float" name="v" unit="mag">
+<DESCRIPTION>Intrinsic apparent V magnitude</DESCRIPTION>
+</FIELD>
+<FIELD ID="colorvminusi" datatype="float" name="colorvminusi" ucd="phot.color;em.opt.V;em.opt.I" unit="mag">
+<DESCRIPTION>Intrinsic V-I color.</DESCRIPTION>
+</FIELD>
+<FIELD ID="meanabsolutev" datatype="float" name="meanabsolutev" ucd="phot.mag;em.opt.V" unit="mag">
+<DESCRIPTION>Mean absolute V magnitude.</DESCRIPTION>
+</FIELD>
+<FIELD ID="redshift" datatype="float" name="redshift" ucd="src.redshift">
+<DESCRIPTION>Object redshift.</DESCRIPTION>
+</FIELD>
+<FIELD ID="alpha" datatype="double" name="alpha" ucd="pos.eq.ra;meta.main" unit="deg">
+<DESCRIPTION>Right ascention of the barycenter at J2010 reference epoch in the ICRS frame</DESCRIPTION>
+</FIELD>
+<FIELD ID="delta" datatype="double" name="delta" ucd="pos.eq.dec;meta.main" unit="deg">
+<DESCRIPTION>Declination of the barycenter at J2010 reference epoch in the ICRS frame</DESCRIPTION>
+</FIELD>
+<FIELD ID="distance" datatype="float" name="distance" ucd="pos.distance;pos.heliocentric" unit="pc">
+<DESCRIPTION>Distance from the barycenter of the Solar System to the barycenter of the source at J2010 reference epoch</DESCRIPTION>
+</FIELD>
+<FIELD ID="mualpha" datatype="float" name="mualpha" ucd="pos.pm;pos.eq.ra" unit="mas/a">
+<DESCRIPTION>Proper motion along right ascention at J2010 reference epoch</DESCRIPTION>
+</FIELD>
+<FIELD ID="mudelta" datatype="float" name="mudelta" ucd="pos.pm;pos.eq.dec" unit="mas/a">
+<DESCRIPTION>Proper motion along declination at J2010 reference epoch</DESCRIPTION>
+</FIELD>
+<FIELD ID="radialvelocity" datatype="float" name="radialvelocity" ucd="spect.dopplerVeloc;pos.heliocentric" unit="km/s">
+<DESCRIPTION>Radial Velocity at J2010 reference epoch</DESCRIPTION>
+</FIELD>
+<FIELD ID="ag" datatype="float" name="ag" ucd="phys.absorption;em.opt" unit="mag">
+<DESCRIPTION>Interstellar absorption in the G band assuming the extinction law of 1989ApJ...345..245C.</DESCRIPTION>
+</FIELD>
+<FIELD ID="av" datatype="float" name="av" ucd="phys.absorption;em.opt.V" unit="mag">
+<DESCRIPTION>Interstellar absorption in the V-band assuming the extinction law of 1989ApJ...345..245C.</DESCRIPTION>
+</FIELD>
+<FIELD ID="rv" datatype="float" name="rv" ucd="arith.diff;phys.absorption;em.opt.B;em.opt.V" unit="mag">
+<DESCRIPTION>Extinction parameter according to 2003A&amp;A...409..205D.</DESCRIPTION>
+</FIELD>
+<FIELD ID="magg" datatype="float" name="magg" ucd="phot.mag;em.opt.V" unit="mag">
+<DESCRIPTION>GAIA G band apparent magnitude at reference epoch. The GAIA G-band has a wide bandpass between 350 and 150 nm. This is close to Johnson V for V-I between -0.4 and 1.4.</DESCRIPTION>
+</FIELD>
+<FIELD ID="maggbp" datatype="float" name="maggbp" ucd="phot.mag;em.opt.B" unit="mag">
+<DESCRIPTION>GAIA G_BP band apparent magnitude at reference epoch. The GAIA G_BP band has a bandpass between 350 and 770 nm.</DESCRIPTION>
+</FIELD>
+<FIELD ID="maggrp" datatype="float" name="maggrp" ucd="phot.mag;em.opt.R" unit="mag">
+<DESCRIPTION>GAIA G_RP band apparent magnitude at reference epoch. The GAIA G_RP band has a bandpass between 650 and 1050 nm.</DESCRIPTION>
+</FIELD>
+<FIELD ID="maggrvs" datatype="float" name="maggrvs" ucd="phot.mag;em.opt;em.opt.R" unit="mag">
+<DESCRIPTION>GAIA G_RVS band apparent magnitude at reference epoch. The GAIA G_RVS band has a narrow bandpass between 850 and 880 nm.</DESCRIPTION>
+</FIELD>
+<FIELD ID="type" arraysize="*" datatype="char" name="type">
+<DESCRIPTION>Supernova type (one of Ia, Ib/c, II-L, II-P)</DESCRIPTION>
+</FIELD>
+<FIELD ID="sourceid" datatype="long" name="sourceid" ucd="meta.id;meta.main">
+<DESCRIPTION>GUMS source identifier</DESCRIPTION>
+<VALUES null='-9223372036854775808'/>
+</FIELD>
+<FIELD ID="sourceextendedid" arraysize="*" datatype="char" name="sourceextendedid" ucd="meta.id">
+<DESCRIPTION>GUMS extended source identifier</DESCRIPTION>
+</FIELD>
+<DATA>
+<TABLEDATA>
+</TABLEDATA>
+</DATA>
+</TABLE>
+</RESOURCE>
+</VOTABLE>

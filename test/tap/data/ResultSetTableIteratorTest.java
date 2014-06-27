@@ -43,6 +43,8 @@ public class ResultSetTableIteratorTest {
 			ResultSet rs = DBTools.select(conn, "SELECT id, ra, deg, gmag FROM gums LIMIT 10;");
 
 			TableIterator it = new ResultSetTableIterator(rs);
+			// TEST there is column metadata before starting the iteration:
+			assertTrue(it.getMetadata() != null);
 			final int expectedNbLines = 10, expectedNbColumns = 4;
 			int countLines = 0, countColumns = 0;
 			while(it.nextRow()){
@@ -75,6 +77,8 @@ public class ResultSetTableIteratorTest {
 			ResultSet rs = DBTools.select(conn, "SELECT * FROM gums WHERE id = 'foo';");
 
 			TableIterator it = new ResultSetTableIterator(rs);
+			// TEST there is column metadata before starting the iteration:
+			assertTrue(it.getMetadata() != null);
 			int countLines = 0;
 			// count lines:
 			while(it.nextRow())

@@ -21,6 +21,9 @@ package tap.data;
 
 import java.util.NoSuchElementException;
 
+import tap.metadata.TAPColumn;
+import tap.metadata.TAPType;
+
 /**
  * <p>Let's iterate on each row and then on each column over a table dataset.</p>
  * 
@@ -48,6 +51,23 @@ import java.util.NoSuchElementException;
  * @since 2.0
  */
 public interface TableIterator {
+	/**
+	 * <p>Get all the metadata column that have been successfully extracted at the creation of this iterator.</p>
+	 * 
+	 * <p><b>Important:</b> This function should be callable at any moment from the creation of the iterator until the end of the table dataset has been reached.</p>
+	 * 
+	 * <p><i>Note: This function MAY BE NOT IMPLEMENTED or the metadata can not be fetched. In this case, NULL will be returned.</i></p>
+	 * 
+	 * <p><i><b>Warning:</b> If the metadata part of the original document is corrupted (i.e. false number of columns),
+	 * the column type information should be fetched thanks to {@link #getColType()} while iterating over rows and columns.</i></p>
+	 * 
+	 * @return	An array of {@link TAPColumn} objects (each for a column of any row),
+	 *          or NULL if this function is not implemented OR if it was not possible to get these metadata.
+	 * 
+	 * @see #getColType()
+	 */
+	public TAPColumn[] getMetadata();
+
 	/**
 	 * <p>Go to the next row if there is one.</p>
 	 * 
@@ -88,13 +108,19 @@ public interface TableIterator {
 	/**
 	 * <p>Get the type of the current column value.</p>
 	 * 
-	 * <p><i>Note: "Current column value" means here "the value last returned by {@link #nextCol()}".</i></p>
+	 * <p><i>Note 1: "Current column value" means here "the value last returned by {@link #nextCol()}".</i></p>
+	 * 
+	 * <p><i>Note 2: This function MAY BE NOT IMPLEMENTED or the type information can not be fetched. If this is the case, NULL will be returned.</i></p>
+	 * 
+	 * <p><i><b>Warning:</b> In some cases, the metadata part of the original document does not match with the data
+	 * it should have represented. In such case, the types returned here and by {@link #getMetadata()} would be different.
+	 * <b>In case of such mismatch, the type returned by {@link #getColType()} should be considered as more correct/accurate.</b></i></p>
 	 * 
 	 * @return	Type of the current column value,
 	 *          or NULL if this information is not available or if this function is not implemented. 
 	 * 
 	 * @throws IllegalStateException	If {@link #nextCol()} has not yet been called.
-	 * @throws DataReadException	If an error occurs while reading the table dataset.
+	 * @throws DataReadException		If an error occurs while reading the table dataset.
 	 */
-	public String getColType() throws IllegalStateException, DataReadException;
+	public TAPType getColType() throws IllegalStateException, DataReadException;
 }
