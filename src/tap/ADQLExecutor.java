@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -26,6 +26,7 @@ import java.sql.SQLException;
 
 import javax.servlet.http.HttpServletResponse;
 
+import tap.data.TableIterator;
 import tap.db.DBConnection;
 import tap.db.DBException;
 import tap.formatter.OutputFormat;
@@ -42,20 +43,17 @@ import adql.parser.ADQLQueryFactory;
 import adql.parser.ParseException;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
-import adql.translator.ADQLTranslator;
 import adql.translator.TranslationException;
 
 /**
  * 
  * 
- * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (12/2013)
- * 
- * @param <R>
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (07/2014)
  */
-public class ADQLExecutor< R > {
+public class ADQLExecutor {
 
-	protected final ServiceConnection<R> service;
+	protected final ServiceConnection service;
 	protected final TAPLog logger;
 
 	protected Thread thread;
@@ -63,10 +61,10 @@ public class ADQLExecutor< R > {
 	protected HttpServletResponse response;
 	protected TAPExecutionReport report;
 
-	private DBConnection<R> dbConn = null;
+	private DBConnection dbConn = null;
 	protected TAPSchema uploadSchema = null;
 
-	public ADQLExecutor(final ServiceConnection<R> service){
+	public ADQLExecutor(final ServiceConnection service){
 		this.service = service;
 		this.logger = service.getLogger();
 	}
@@ -79,76 +77,21 @@ public class ADQLExecutor< R > {
 		return report;
 	}
 
-	public boolean hasUploadedTables(){
-		return (uploadSchema != null) && (uploadSchema.getNbTables() > 0);
+	protected OutputFormat getFormatter() throws TAPException{
+		// Search for the corresponding formatter:
+		String format = tapParams.getFormat();
+		OutputFormat formatter = service.getOutputFormat((format == null) ? "votable" : format);
+		if (format != null && formatter == null)
+			formatter = service.getOutputFormat("votable");
+
+		// Format the result:
+		if (formatter == null)
+			throw new TAPException("Impossible to format the query result: no formatter has been found for the given MIME type \"" + format + "\" and for the default MIME type \"votable\" (short form) !");
+
+		return formatter;
 	}
 
-	protected final DBConnection<R> getDBConnection() throws TAPException{
-		return (dbConn != null) ? dbConn : (dbConn = service.getFactory().createDBConnection((report != null) ? report.jobID : null));
-	}
-
-	public final void closeDBConnection() throws TAPException{
-		if (dbConn != null){
-			dbConn.close();
-			dbConn = null;
-		}
-	}
-
-	private final void uploadTables() throws TAPException{
-		TableLoader[] tables = tapParams.getTableLoaders();
-		if (tables.length > 0){
-			logger.info("JOB " + report.jobID + "\tLoading uploaded tables (" + tables.length + ")...");
-			long start = System.currentTimeMillis();
-			try{
-				/* TODO Problem with the DBConnection! One is created here for the Uploader (and dbConn is set) and closed by its uploadTables function (but dbConn is not set to null).
-				 * Ideally, the connection should not be close, or at least dbConn should be set to null just after. */
-				uploadSchema = service.getFactory().createUploader(getDBConnection()).upload(tables);
-			}finally{
-				TAPParameters.deleteUploadedTables(tables);
-				report.setDuration(ExecutionProgression.UPLOADING, System.currentTimeMillis() - start);
-			}
-		}
-
-	}
-
-	private final R executeADQL() throws ParseException, InterruptedException, TranslationException, SQLException, TAPException, UWSException{
-		long start;
-
-		tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.PARSING);
-		start = System.currentTimeMillis();
-		ADQLQuery adql = parseADQL();
-		report.setDuration(ExecutionProgression.PARSING, System.currentTimeMillis() - start);
-
-		if (thread.isInterrupted())
-			throw new InterruptedException();
-
-		report.resultingColumns = adql.getResultingColumns();
-
-		final int limit = adql.getSelect().getLimit();
-		final Integer maxRec = tapParams.getMaxRec();
-		if (maxRec != null && maxRec > -1){
-			if (limit <= -1 || limit > maxRec)
-				adql.getSelect().setLimit(maxRec + 1);
-		}
-
-		tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.TRANSLATING);
-		start = System.currentTimeMillis();
-		String sqlQuery = translateADQL(adql);
-		report.setDuration(ExecutionProgression.TRANSLATING, System.currentTimeMillis() - start);
-		report.sqlTranslation = sqlQuery;
-
-		if (thread.isInterrupted())
-			throw new InterruptedException();
-
-		tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.EXECUTING_SQL);
-		start = System.currentTimeMillis();
-		R result = executeQuery(sqlQuery, adql);
-		report.setDuration(ExecutionProgression.EXECUTING_SQL, System.currentTimeMillis() - start);
-
-		return result;
-	}
-
-	public final TAPExecutionReport start(final AsyncThread<R> thread) throws TAPException, UWSException, InterruptedException, ParseException, TranslationException, SQLException{
+	public final TAPExecutionReport start(final AsyncThread thread) throws UWSException, InterruptedException{
 		if (this.thread != null || this.report != null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "This ADQLExecutor has already been executed !");
 
@@ -162,7 +105,7 @@ public class ADQLExecutor< R > {
 		return start();
 	}
 
-	public final TAPExecutionReport start(final Thread thread, final String jobId, final TAPParameters params, final HttpServletResponse response) throws TAPException, UWSException, InterruptedException, ParseException, TranslationException, SQLException{
+	public final TAPExecutionReport start(final Thread thread, final String jobId, final TAPParameters params, final HttpServletResponse response) throws TAPException, InterruptedException{
 		if (this.thread != null || this.report != null)
 			throw new TAPException("This ADQLExecutor has already been executed !");
 
@@ -177,7 +120,10 @@ public class ADQLExecutor< R > {
 	protected final TAPExecutionReport start() throws TAPException, UWSException, InterruptedException, ParseException, TranslationException, SQLException{
 		long start = System.currentTimeMillis();
 		try{
-			// Upload tables if needed:
+			// Get a "database" connection:
+			dbConn = service.getFactory().createDBConnection(report.jobID);
+
+			// 1. UPLOAD TABLES, if needed:
 			if (tapParams != null && tapParams.getTableLoaders() != null && tapParams.getTableLoaders().length > 0){
 				tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.UPLOADING);
 				uploadTables();
@@ -186,18 +132,24 @@ public class ADQLExecutor< R > {
 			if (thread.isInterrupted())
 				throw new InterruptedException();
 
-			// Parse, translate in SQL and execute the ADQL query:
-			R queryResult = executeADQL();
-			if (queryResult == null || thread.isInterrupted())
+			// 2. PARSE THE ADQL QUERY:
+			tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.PARSING);
+			ADQLQuery adqlQuery = parseADQL();
+
+			if (adqlQuery == null || thread.isInterrupted())
 				throw new InterruptedException();
 
-			// Write the result:
+			// 3. EXECUTE THE ADQL QUERY:
+			tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.EXECUTING_ADQL);
+			TableIterator queryResult = executeADQL(adqlQuery);
+
+			// 4. WRITE RESULT:
 			tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.WRITING_RESULT);
 			writeResult(queryResult);
 
+			// Report the COMPLETED status:
 			logger.info("JOB " + report.jobID + " COMPLETED");
 			tapParams.set(TAPJob.PARAM_PROGRESSION, ExecutionProgression.FINISHED);
-
 			report.success = true;
 
 			return report;
@@ -211,7 +163,10 @@ public class ADQLExecutor< R > {
 				logger.error("JOB " + report.jobID + "\tCan not drop uploaded tables !", e);
 			}
 			try{
-				closeDBConnection();
+				if (dbConn != null){
+					dbConn.close();
+					dbConn = null;
+				}
 			}catch(TAPException e){
 				logger.error("JOB " + report.jobID + "\tCan not close the DB connection !", e);
 			}
@@ -220,7 +175,27 @@ public class ADQLExecutor< R > {
 		}
 	}
 
+	private final void uploadTables() throws TAPException{
+		// Fetch the tables to upload:
+		TableLoader[] tables = tapParams.getTableLoaders();
+
+		// Upload them, if needed:
+		if (tables.length > 0){
+			logger.info("JOB " + report.jobID + "\tLoading uploaded tables (" + tables.length + ")...");
+			long start = System.currentTimeMillis();
+			try{
+				/* TODO Problem with the DBConnection! One is created here for the Uploader (and dbConn is set) and closed by its uploadTables function (but dbConn is not set to null).
+				 * Ideally, the connection should not be close, or at least dbConn should be set to null just after. */
+				uploadSchema = service.getFactory().createUploader(dbConn).upload(tables);
+			}finally{
+				TAPParameters.deleteUploadedTables(tables);
+				report.setDuration(ExecutionProgression.UPLOADING, System.currentTimeMillis() - start);
+			}
+		}
+	}
+
 	protected ADQLQuery parseADQL() throws ParseException, InterruptedException, TAPException{
+		long start = System.currentTimeMillis();
 		ADQLQueryFactory queryFactory = service.getFactory().createQueryFactory();
 		QueryChecker queryChecker = service.getFactory().createQueryChecker(uploadSchema);
 		ADQLParser parser;
@@ -230,22 +205,21 @@ public class ADQLExecutor< R > {
 			parser = new ADQLParser(queryChecker, queryFactory);
 		parser.setCoordinateSystems(service.getCoordinateSystems());
 		parser.setDebug(false);
-		//logger.info("Job "+report.jobID+" - 1/5 Parsing ADQL....");
-		return parser.parseQuery(tapParams.getQuery());
+		ADQLQuery query = parser.parseQuery(tapParams.getQuery());
+		final int limit = query.getSelect().getLimit();
+		final Integer maxRec = tapParams.getMaxRec();
+		if (maxRec != null && maxRec > -1){
+			if (limit <= -1 || limit > maxRec)
+				query.getSelect().setLimit(maxRec + 1);
+		}
+		report.setDuration(ExecutionProgression.PARSING, System.currentTimeMillis() - start);
+		report.resultingColumns = query.getResultingColumns();
+		return query;
 	}
 
-	protected String translateADQL(ADQLQuery query) throws TranslationException, InterruptedException, TAPException{
-		ADQLTranslator translator = service.getFactory().createADQLTranslator();
-		//logger.info("Job "+report.jobID+" - 2/5 Translating ADQL...");
-		return translator.translate(query);
-	}
-
-	protected R executeQuery(String sql, ADQLQuery adql) throws SQLException, InterruptedException, TAPException{
-		//logger.info("Job "+report.jobID+" - 3/5 Creating DBConnection....");
-		DBConnection<R> dbConn = getDBConnection();
-		//logger.info("Job "+report.jobID+" - 4/5 Executing query...\n"+sql);
+	protected TableIterator executeADQL(ADQLQuery adql) throws SQLException, InterruptedException, TAPException{
 		final long startTime = System.currentTimeMillis();
-		R result = dbConn.executeQuery(sql, adql);
+		TableIterator result = dbConn.executeQuery(adql);
 		if (result == null)
 			logger.info("JOB " + report.jobID + " - QUERY ABORTED AFTER " + (System.currentTimeMillis() - startTime) + " MS !");
 		else
@@ -253,22 +227,8 @@ public class ADQLExecutor< R > {
 		return result;
 	}
 
-	protected OutputFormat<R> getFormatter() throws TAPException{
-		// Search for the corresponding formatter:
-		String format = tapParams.getFormat();
-		OutputFormat<R> formatter = service.getOutputFormat((format == null) ? "votable" : format);
-		if (format != null && formatter == null)
-			formatter = service.getOutputFormat("votable");
-
-		// Format the result:
-		if (formatter == null)
-			throw new TAPException("Impossible to format the query result: no formatter has been found for the given MIME type \"" + format + "\" and for the default MIME type \"votable\" (short form) !");
-
-		return formatter;
-	}
-
-	protected final void writeResult(R queryResult) throws InterruptedException, TAPException, UWSException{
-		OutputFormat<R> formatter = getFormatter();
+	protected final void writeResult(TableIterator queryResult) throws InterruptedException, TAPException, UWSException{
+		OutputFormat formatter = getFormatter();
 
 		// Synchronous case:
 		if (response != null){
@@ -300,7 +260,7 @@ public class ADQLExecutor< R > {
 		}
 	}
 
-	protected void writeResult(R queryResult, OutputFormat<R> formatter, OutputStream output) throws InterruptedException, TAPException{
+	protected void writeResult(TableIterator queryResult, OutputFormat formatter, OutputStream output) throws InterruptedException, TAPException{
 		//logger.info("Job "+report.jobID+" - 5/5 Writing result file...");
 		formatter.writeResult(queryResult, output, report, thread);
 	}
@@ -308,15 +268,13 @@ public class ADQLExecutor< R > {
 	protected void dropUploadedTables() throws TAPException{
 		if (uploadSchema != null){
 			// Drop all uploaded tables:
-			DBConnection<R> dbConn = getDBConnection();
 			for(TAPTable t : uploadSchema){
 				try{
-					dbConn.dropTable(t);
+					dbConn.dropUploadedTable(t.getDBName());
 				}catch(DBException dbe){
 					logger.error("JOB " + report.jobID + "\tCan not drop the table \"" + t.getDBName() + "\" (in adql \"" + t.getADQLName() + "\") from the database !", dbe);
 				}
 			}
-			closeDBConnection();
 		}
 	}
 

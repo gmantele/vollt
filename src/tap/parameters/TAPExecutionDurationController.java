@@ -21,18 +21,16 @@ package tap.parameters;
 
 import tap.ServiceConnection;
 import tap.TAPJob;
-
 import uws.UWSException;
 import uws.UWSExceptionFactory;
-
 import uws.job.parameters.InputParamController;
 
 public class TAPExecutionDurationController implements InputParamController {
 
-	protected final ServiceConnection<?> service;
+	protected final ServiceConnection service;
 	protected boolean allowModification = true;
 
-	public TAPExecutionDurationController(final ServiceConnection<?> service){
+	public TAPExecutionDurationController(final ServiceConnection service){
 		this.service = service;
 	}
 

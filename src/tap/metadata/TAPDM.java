@@ -1,4 +1,4 @@
-package tap;
+package tap.metadata;
 
 /*
  * This file is part of TAPLibrary.
@@ -16,16 +16,37 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institut (ARI)
+ * Copyright 2014 - Astronomisches Rechen Institute (ARI)
  */
 
 /**
- * Let describe the current status of a job execution.
+ * Enumeration of all schemas and tables of the TAP datamodel (and particularly of TAP_SCHEMA).
  * 
- * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @author Gr&eacute;gory Mantelet (ARI)
  * @version 2.0 (07/2014)
+ * @since 2.0
  */
-public enum ExecutionProgression{
-	PENDING, UPLOADING, PARSING, EXECUTING_ADQL, WRITING_RESULT, FINISHED;
+public enum TAPDM{
+	TAPSCHEMA("TAP_SCHEMA"), SCHEMAS("schemas"), TABLES("tables"), COLUMNS("columns"), FOREIGN_KEYS("foreign_keys"), UPLOADSCHEMA("TAP_UPLOAD");
+
+	/** Real name of the schema/table. */
+	private final String label;
+
+	private TAPDM(final String name){
+		this.label = name;
+	}
+
+	/**
+	 * Get the real name of the schema/table of the TAP datamodel.
+	 * 
+	 * @return	Real name of the schema/table.
+	 */
+	public String getLabel(){
+		return label;
+	}
+
+	@Override
+	public String toString(){
+		return label;
+	}
 }

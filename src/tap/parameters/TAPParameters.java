@@ -21,7 +21,6 @@ package tap.parameters;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
@@ -30,20 +29,17 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.oreilly.servlet.MultipartRequest;
-import com.oreilly.servlet.multipart.FileRenamePolicy;
-
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPJob;
-
 import tap.upload.TableLoader;
-
 import uws.UWSException;
-
 import uws.job.parameters.InputParamController;
 import uws.job.parameters.StringParamController;
 import uws.job.parameters.UWSParameters;
+
+import com.oreilly.servlet.MultipartRequest;
+import com.oreilly.servlet.multipart.FileRenamePolicy;
 
 /**
  * This class describes all defined parameters of a TAP request.
@@ -65,21 +61,21 @@ public class TAPParameters extends UWSParameters {
 	protected TableLoader[] tablesToUpload = null;
 
 	@SuppressWarnings({"unchecked"})
-	public TAPParameters(final ServiceConnection<?> service){
+	public TAPParameters(final ServiceConnection service){
 		this(service, (Collection)null, null);
 	}
 
-	public TAPParameters(final ServiceConnection<?> service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers){
+	public TAPParameters(final ServiceConnection service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers){
 		super(expectedAdditionalParams, inputParamControllers);
 		initDefaultTAPControllers(service);
 	}
 
-	public TAPParameters(final HttpServletRequest request, final ServiceConnection<?> service) throws UWSException, TAPException{
+	public TAPParameters(final HttpServletRequest request, final ServiceConnection service) throws UWSException, TAPException{
 		this(request, service, null, null);
 	}
 
 	@SuppressWarnings("unchecked")
-	public TAPParameters(final HttpServletRequest request, final ServiceConnection<?> service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
+	public TAPParameters(final HttpServletRequest request, final ServiceConnection service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
 		this(service, expectedAdditionalParams, inputParamControllers);
 		MultipartRequest multipart = null;
 
@@ -128,11 +124,11 @@ public class TAPParameters extends UWSParameters {
 			tablesToUpload = buildLoaders(uploadParam, multipart);
 	}
 
-	public TAPParameters(final ServiceConnection<?> service, final Map<String,Object> params) throws UWSException, TAPException{
+	public TAPParameters(final ServiceConnection service, final Map<String,Object> params) throws UWSException, TAPException{
 		this(service, params, null, null);
 	}
 
-	public TAPParameters(final ServiceConnection<?> service, final Map<String,Object> params, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
+	public TAPParameters(final ServiceConnection service, final Map<String,Object> params, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
 		super(params, expectedAdditionalParams, inputParamControllers);
 		initDefaultTAPControllers(service);
 	}
@@ -142,7 +138,7 @@ public class TAPParameters extends UWSParameters {
 		return new HashMap<String,InputParamController>(10);
 	}
 
-	protected < R > void initDefaultTAPControllers(final ServiceConnection<R> service){
+	protected < R > void initDefaultTAPControllers(final ServiceConnection service){
 		if (!mapParamControllers.containsKey(TAPJob.PARAM_EXECUTION_DURATION))
 			mapParamControllers.put(TAPJob.PARAM_EXECUTION_DURATION, new TAPExecutionDurationController(service));
 
@@ -165,7 +161,7 @@ public class TAPParameters extends UWSParameters {
 			mapParamControllers.put(TAPJob.PARAM_UPLOAD, new StringParamController(TAPJob.PARAM_UPLOAD));
 
 		if (!mapParamControllers.containsKey(TAPJob.PARAM_FORMAT))
-			mapParamControllers.put(TAPJob.PARAM_FORMAT, new FormatController<R>(service));
+			mapParamControllers.put(TAPJob.PARAM_FORMAT, new FormatController(service));
 
 		if (!mapParamControllers.containsKey(TAPJob.PARAM_MAX_REC))
 			mapParamControllers.put(TAPJob.PARAM_MAX_REC, new MaxRecController(service));

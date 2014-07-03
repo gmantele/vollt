@@ -34,7 +34,7 @@ public class TAPSyncJob {
 
 	protected static String lastId = null;
 
-	protected final ServiceConnection<?> service;
+	protected final ServiceConnection service;
 
 	protected final String ID;
 	protected final TAPParameters tapParams;
@@ -45,7 +45,7 @@ public class TAPSyncJob {
 
 	private Date startedAt = null;
 
-	public TAPSyncJob(final ServiceConnection<?> service, final TAPParameters params) throws NullPointerException{
+	public TAPSyncJob(final ServiceConnection service, final TAPParameters params) throws NullPointerException{
 		if (params == null)
 			throw new NullPointerException("Missing TAP parameters ! => Impossible to create a synchronous TAP job.");
 		tapParams = params;
@@ -95,7 +95,7 @@ public class TAPSyncJob {
 		if (startedAt != null)
 			throw new IllegalStateException("Impossible to restart a synchronous TAP query !");
 
-		ADQLExecutor<?> executor;
+		ADQLExecutor executor;
 		try{
 			executor = service.getFactory().createADQLExecutor();
 		}catch(TAPException e){
@@ -141,14 +141,14 @@ public class TAPSyncJob {
 	public class SyncThread extends Thread {
 
 		private final String taskDescription;
-		public final ADQLExecutor<?> executor;
+		public final ADQLExecutor executor;
 		protected final HttpServletResponse response;
 		protected final String ID;
 		protected final TAPParameters tapParams;
 		protected Throwable exception = null;
 		protected TAPExecutionReport report = null;
 
-		public SyncThread(final ADQLExecutor<?> executor, final String ID, final TAPParameters tapParams, final HttpServletResponse response){
+		public SyncThread(final ADQLExecutor executor, final String ID, final TAPParameters tapParams, final HttpServletResponse response){
 			super(JobThread.tg, ID);
 			taskDescription = "Executing the synchronous TAP query " + ID;
 			this.executor = executor;

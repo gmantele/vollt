@@ -55,11 +55,11 @@ import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.error.ServiceErrorWriter;
 
-public class TAP< R > implements VOSIResource {
+public class TAP implements VOSIResource {
 
 	private static final long serialVersionUID = 1L;
 
-	protected final ServiceConnection<R> service;
+	protected final ServiceConnection service;
 
 	protected final Map<String,TAPResource> resources;
 
@@ -69,7 +69,7 @@ public class TAP< R > implements VOSIResource {
 
 	protected ServiceErrorWriter errorWriter;
 
-	public TAP(ServiceConnection<R> serviceConnection) throws UWSException, TAPException{
+	public TAP(ServiceConnection serviceConnection) throws UWSException, TAPException{
 		service = serviceConnection;
 		resources = new HashMap<String,TAPResource>();
 
@@ -89,11 +89,12 @@ public class TAP< R > implements VOSIResource {
 		getUWS().setErrorWriter(errorWriter);
 
 		if (service.uploadEnabled()){
-			DBConnection<?> dbConn = null;
+			DBConnection dbConn = null;
 			try{
 				dbConn = service.getFactory().createDBConnection("TAP(ServiceConnection)");
-				dbConn.dropSchema("TAP_UPLOAD");
-				dbConn.createSchema("TAP_UPLOAD");
+				// TODO CLEAN ACTION: DROP SCHEMA!
+				/*dbConn.dropSchema("TAP_UPLOAD");
+				dbConn.createSchema("TAP_UPLOAD");*/
 			}catch(TAPException e){
 				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Error while creating the schema TAP_UPLOAD !");
 			}finally{
@@ -178,8 +179,8 @@ public class TAP< R > implements VOSIResource {
 		xml.append("\t\t<description>ADQL 2.0</description>\n");
 		xml.append("\t</language>\n");
 
-		Iterator<OutputFormat<R>> itFormats = service.getOutputFormats();
-		OutputFormat<R> formatter;
+		Iterator<OutputFormat> itFormats = service.getOutputFormats();
+		OutputFormat formatter;
 		while(itFormats.hasNext()){
 			formatter = itFormats.next();
 			xml.append("\t<outputFormat>\n");

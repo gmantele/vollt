@@ -28,12 +28,12 @@ import uws.UWSException;
 import uws.UWSExceptionFactory;
 import uws.job.parameters.InputParamController;
 
-public class FormatController< R > implements InputParamController {
+public class FormatController implements InputParamController {
 
-	protected final ServiceConnection<R> service;
+	protected final ServiceConnection service;
 	protected boolean allowModification = true;
 
-	public FormatController(final ServiceConnection<R> service){
+	public FormatController(final ServiceConnection service){
 		this.service = service;
 	}
 
@@ -70,10 +70,10 @@ public class FormatController< R > implements InputParamController {
 	}
 
 	public final String getAllowedFormats(){
-		Iterator<OutputFormat<R>> itFormats = service.getOutputFormats();
+		Iterator<OutputFormat> itFormats = service.getOutputFormats();
 		StringBuffer allowedFormats = new StringBuffer();
 		int i = 0;
-		OutputFormat<R> formatter;
+		OutputFormat formatter;
 		while(itFormats.hasNext()){
 			formatter = itFormats.next();
 			allowedFormats.append((i == 0) ? "" : ", ").append(formatter.getMimeType());

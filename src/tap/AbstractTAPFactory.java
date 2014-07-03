@@ -32,33 +32,27 @@ import tap.metadata.TAPMetadata;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 import tap.parameters.TAPParameters;
-
 import tap.upload.Uploader;
-
 import uws.UWSException;
-
 import uws.job.ErrorSummary;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
-
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
-
 import uws.service.AbstractUWSFactory;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import adql.db.DBChecker;
 import adql.db.DBTable;
-
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
 
-public abstract class AbstractTAPFactory< R > extends AbstractUWSFactory implements TAPFactory<R> {
+public abstract class AbstractTAPFactory extends AbstractUWSFactory implements TAPFactory {
 
-	protected final ServiceConnection<R> service;
+	protected final ServiceConnection service;
 
-	protected AbstractTAPFactory(ServiceConnection<R> service) throws NullPointerException{
+	protected AbstractTAPFactory(ServiceConnection service) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("Can not create a TAPFactory without a ServiceConnection instance !");
 
@@ -102,14 +96,15 @@ public abstract class AbstractTAPFactory< R > extends AbstractUWSFactory impleme
 	@Override
 	public final JobThread createJobThread(final UWSJob job) throws UWSException{
 		try{
-			return new AsyncThread<R>((TAPJob)job, createADQLExecutor());
+			return new AsyncThread((TAPJob)job, createADQLExecutor());
 		}catch(TAPException te){
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, "Impossible to create an AsyncThread !");
 		}
 	}
 
-	public ADQLExecutor<R> createADQLExecutor() throws TAPException{
-		return new ADQLExecutor<R>(service);
+	@Override
+	public ADQLExecutor createADQLExecutor() throws TAPException{
+		return new ADQLExecutor(service);
 	}
 
 	/**
@@ -155,7 +150,8 @@ public abstract class AbstractTAPFactory< R > extends AbstractUWSFactory impleme
 		return new DBChecker(tables);
 	}
 
-	public Uploader createUploader(final DBConnection<R> dbConn) throws TAPException{
+	@Override
+	public Uploader createUploader(final DBConnection dbConn) throws TAPException{
 		return new Uploader(service, dbConn);
 	}
 

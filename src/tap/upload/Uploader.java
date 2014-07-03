@@ -26,113 +26,126 @@ import java.io.InputStream;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
+import tap.data.DataReadException;
+import tap.data.VOTableIterator;
 import tap.db.DBConnection;
-import tap.db.DBException;
+import tap.metadata.TAPColumn;
+import tap.metadata.TAPDM;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
-import tap.metadata.TAPTypes;
-import tap.metadata.VotType;
-import cds.savot.model.DataBinaryReader;
-import cds.savot.model.FieldSet;
-import cds.savot.model.SavotBinary;
-import cds.savot.model.SavotField;
-import cds.savot.model.SavotResource;
-import cds.savot.model.SavotTR;
-import cds.savot.model.SavotTableData;
-import cds.savot.model.TRSet;
-import cds.savot.pull.SavotPullEngine;
-import cds.savot.pull.SavotPullParser;
 
 import com.oreilly.servlet.multipart.ExceededSizeException;
 
 /**
+ * <p>Let upload properly given VOTable inputs.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (03/2014)
+ * <p>This class manages particularly the upload limit in rows
+ * (thanks to {@link VOTableIterator}) and in bytes (thanks to a {@link LimitedSizeInputStream}).</p>
+ * 
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (07/2014)
  */
 public class Uploader {
 
-	protected final ServiceConnection<?> service;
-	protected final DBConnection<?> dbConn;
+	/** Specification of the TAP service. */
+	protected final ServiceConnection service;
+	/** Connection to the "database" (which lets upload the content of any given VOTable). */
+	protected final DBConnection dbConn;
+	/** Limit on the number of rows allowed to be uploaded in once (whatever is the number of tables). */
 	protected final int nbRowsLimit;
+	/** Limit on the number of bytes allowed to be uploaded in once (whatever is the number of tables). */
 	protected final int nbBytesLimit;
 
+	/** Number of rows already loaded. */
 	protected int nbRows = 0;
 
-	public Uploader(final ServiceConnection<?> service, final DBConnection<?> dbConn) throws TAPException{
+	/**
+	 * Build an {@link Uploader} object.
+	 * 
+	 * @param service	Specification of the TAP service using this uploader.
+	 * @param dbConn	A valid (open) connection to the "database".
+	 * 
+	 * @throws TAPException	If any error occurs while building this {@link Uploader}.
+	 */
+	public Uploader(final ServiceConnection service, final DBConnection dbConn) throws TAPException{
+		// NULL tests:
 		if (service == null)
 			throw new NullPointerException("The given ServiceConnection is NULL !");
 		if (dbConn == null)
 			throw new NullPointerException("The given DBConnection is NULL !");
 
+		// Set the service and database connections:
 		this.service = service;
-
 		this.dbConn = dbConn;
 
-		if (service.uploadEnabled()){
-			if (service.getUploadLimitType()[1] == LimitUnit.rows){
-				nbRowsLimit = ((service.getUploadLimit()[1] > 0) ? service.getUploadLimit()[1] : -1);
+		// Ensure UPLOAD is allowed by the TAP service specification...
+		if (this.service.uploadEnabled()){
+			// ...and set the rows or bytes limit:
+			if (this.service.getUploadLimitType()[1] == LimitUnit.rows){
+				nbRowsLimit = ((this.service.getUploadLimit()[1] > 0) ? this.service.getUploadLimit()[1] : -1);
 				nbBytesLimit = -1;
 			}else{
-				nbBytesLimit = ((service.getUploadLimit()[1] > 0) ? service.getUploadLimit()[1] : -1);
+				nbBytesLimit = ((this.service.getUploadLimit()[1] > 0) ? this.service.getUploadLimit()[1] : -1);
 				nbRowsLimit = -1;
 			}
 		}else
 			throw new TAPException("Upload aborted: this functionality is disabled in this TAP service!");
 	}
 
+	/**
+	 * Upload all the given VOTable inputs.
+	 * 
+	 * @param loaders	Array of tables to upload.
+	 * 
+	 * @return	A {@link TAPSchema} containing the list and the description of all uploaded tables.
+	 * 
+	 * @throws TAPException	If any error occurs while reading the VOTable inputs or while uploading the table into the "database".
+	 * 
+	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
+	 */
 	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
-		// Begin a DB transaction:
-		dbConn.startTransaction();
-
-		TAPSchema uploadSchema = new TAPSchema("TAP_UPLOAD");
+		TAPSchema uploadSchema = new TAPSchema(TAPDM.UPLOADSCHEMA.getLabel());
 		InputStream votable = null;
 		String tableName = null;
-		nbRows = 0;
 		try{
 			for(TableLoader loader : loaders){
 				tableName = loader.tableName;
+
+				// Open a stream toward the VOTable:
 				votable = loader.openStream();
 
+				// Set a byte limit if one is required:
 				if (nbBytesLimit > 0)
 					votable = new LimitedSizeInputStream(votable, nbBytesLimit);
 
-				// start parsing the VOTable:
-				SavotPullParser parser = new SavotPullParser(votable, SavotPullEngine.SEQUENTIAL, null);
+				// Start reading the VOTable:
+				VOTableIterator dataIt = new VOTableIterator(votable);
 
-				SavotResource resource = parser.getNextResource();
-				if (resource == null)
-					throw new TAPException("Incorrect VOTable format !");
+				// Define the table to upload:
+				TAPColumn[] columns = dataIt.getMetadata();
+				TAPTable table = new TAPTable(tableName);
+				table.setDBName(tableName + "_" + System.currentTimeMillis());
+				for(TAPColumn col : columns)
+					table.addColumn(col);
 
-				FieldSet fields = resource.getFieldSet(0);
+				// Add the table to the TAP_UPLOAD schema:
+				uploadSchema.addTable(table);
 
-				// 1st STEP: Convert the VOTable metadata into DBTable:
-				TAPTable tapTable = fetchTableMeta(tableName, System.currentTimeMillis() + "", fields);
-				uploadSchema.addTable(tapTable);
+				// Create and fill the corresponding table in the database:
+				dbConn.addUploadedTable(table, dataIt, nbRowsLimit);
 
-				// 2nd STEP: Create the corresponding table in the database:
-				dbConn.createTable(tapTable);
-
-				// 3rd STEP: Load rows into this table:
-				SavotBinary binary = resource.getData(0).getBinary();
-				if (binary != null)
-					loadTable(tapTable, fields, binary);
-				else
-					loadTable(tapTable, fields, resource.getData(0).getTableData());
-
+				// Close the VOTable stream:
 				votable.close();
 			}
-		}catch(DBException dbe){
-			dbConn.cancelTransaction();	// ROLLBACK
-			throw dbe;
-		}catch(ExceededSizeException ese){
-			dbConn.cancelTransaction();	// ROLLBACK
-			throw new TAPException("Upload limit exceeded ! You can upload at most " + ((nbBytesLimit > 0) ? (nbBytesLimit + " bytes.") : (nbRowsLimit + " rows.")));
+		}catch(DataReadException dre){
+			if (dre.getCause() instanceof ExceededSizeException)
+				throw new TAPException("Upload limit exceeded ! You can upload at most " + ((nbBytesLimit > 0) ? (nbBytesLimit + " bytes.") : (nbRowsLimit + " rows.")));
+			else
+				throw new TAPException("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre);
 		}catch(IOException ioe){
-			dbConn.cancelTransaction(); // ROLLBACK
-			throw new TAPException("Error while reading the VOTable of \"" + tableName + "\" !", ioe);
+			throw new TAPException("Error while reading the VOTable of \"" + tableName + "\"!", ioe);
 		}catch(NullPointerException npe){
-			dbConn.cancelTransaction();	// ROLLBACK
 			if (votable != null && votable instanceof LimitedSizeInputStream)
 				throw new TAPException("Upload limit exceeded ! You can upload at most " + ((nbBytesLimit > 0) ? (nbBytesLimit + " bytes.") : (nbRowsLimit + " rows.")));
 			else
@@ -146,77 +159,8 @@ public class Uploader {
 			}
 		}
 
-		// Commit modifications:
-		try{
-			dbConn.endTransaction();
-		}finally{
-			dbConn.close();
-		}
-
+		// Return the TAP_UPLOAD schema (containing just the uploaded tables):
 		return uploadSchema;
-	}
-
-	private TAPTable fetchTableMeta(final String tableName, final String userId, final FieldSet fields){
-		TAPTable tapTable = new TAPTable(tableName);
-		tapTable.setDBName(tableName + "_" + userId);
-
-		for(int j = 0; j < fields.getItemCount(); j++){
-			SavotField field = (SavotField)fields.getItemAt(j);
-			int arraysize = TAPTypes.NO_SIZE;
-			if (field.getArraySize() == null || field.getArraySize().trim().isEmpty())
-				arraysize = 1;
-			else if (field.getArraySize().equalsIgnoreCase("*"))
-				arraysize = TAPTypes.STAR_SIZE;
-			else{
-				try{
-					arraysize = Integer.parseInt(field.getArraySize());
-				}catch(NumberFormatException nfe){
-					service.getLogger().warning("Invalid array-size in the uploaded table \"" + tableName + "\" for the field \"" + field.getName() + "\": \"" + field.getArraySize() + "\" ! It will be considered as \"*\" !");
-				}
-			}
-			tapTable.addColumn(field.getName(), field.getDescription(), field.getUnit(), field.getUcd(), field.getUtype(), new VotType(field.getDataType(), arraysize, field.getXtype()), false, false, false);
-		}
-
-		return tapTable;
-	}
-
-	private int loadTable(final TAPTable tapTable, final FieldSet fields, final SavotBinary binary) throws TAPException, ExceededSizeException{
-		// Read the raw binary data:
-		DataBinaryReader reader = null;
-		try{
-			reader = new DataBinaryReader(binary.getStream(), fields, false);
-			while(reader.next()){
-				if (nbRowsLimit > 0 && nbRows >= nbRowsLimit)
-					throw new ExceededSizeException();
-				dbConn.insertRow(reader.getTR(), tapTable);
-				nbRows++;
-			}
-		}catch(ExceededSizeException ese){
-			throw ese;
-		}catch(IOException se){
-			throw new TAPException("Error while reading the binary data of the VOTable of \"" + tapTable.getADQLName() + "\" !", se);
-		}finally{
-			try{
-				if (reader != null)
-					reader.close();
-			}catch(IOException ioe){
-				;
-			}
-		}
-
-		return nbRows;
-	}
-
-	private int loadTable(final TAPTable tapTable, final FieldSet fields, final SavotTableData data) throws TAPException, ExceededSizeException{
-		TRSet rows = data.getTRs();
-		for(int i = 0; i < rows.getItemCount(); i++){
-			if (nbRowsLimit > 0 && nbRows >= nbRowsLimit)
-				throw new ExceededSizeException();
-			dbConn.insertRow((SavotTR)rows.getItemAt(i), tapTable);
-			nbRows++;
-		}
-
-		return nbRows;
 	}
 
 }

@@ -39,12 +39,12 @@ import uws.job.parameters.InputParamController;
  */
 public class MaxRecController implements InputParamController {
 
-	protected final ServiceConnection<?> service;
+	protected final ServiceConnection service;
 
 	/** Indicates whether the output limit of jobs can be modified. */
 	protected boolean allowModification = true;
 
-	public MaxRecController(final ServiceConnection<?> service){
+	public MaxRecController(final ServiceConnection service){
 		this.service = service;
 		allowModification(allowModification);
 	}

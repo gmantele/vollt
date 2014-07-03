@@ -16,7 +16,8 @@ package tap.backup;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import org.json.JSONException;
@@ -30,20 +31,64 @@ import uws.job.UWSJob;
 import uws.service.UWS;
 import uws.service.backup.DefaultUWSBackupManager;
 
+/**
+ * <p>Let backup all TAP asynchronous jobs.</p>
+ * 
+ * <p><i>note: Basically the saved data are the same, but in addition some execution statistics are also added.</i></p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (07/2014)
+ * 
+ * @see DefaultUWSBackupManager
+ */
 public class DefaultTAPBackupManager extends DefaultUWSBackupManager {
 
+	/**
+	 * Build a default TAP jobs backup manager.
+	 * 
+	 * @param uws	The UWS containing all the jobs to backup.
+	 * 
+	 * @see DefaultUWSBackupManager#DefaultUWSBackupManager(UWS)
+	 */
 	public DefaultTAPBackupManager(UWS uws){
 		super(uws);
 	}
 
+	/**
+	 * Build a default TAP jobs backup manager.
+	 * 
+	 * @param uws		The UWS containing all the jobs to backup.
+	 * @param frequency	The backup frequency (in ms ; MUST BE positive and different from 0.
+	 *                  If negative or 0, the frequency will be automatically set to DEFAULT_FREQUENCY).
+	 * 
+	 * @see DefaultUWSBackupManager#DefaultUWSBackupManager(UWS, long)
+	 */
 	public DefaultTAPBackupManager(UWS uws, long frequency){
 		super(uws, frequency);
 	}
 
+	/**
+	 * Build a default TAP jobs backup manager.
+	 * 
+	 * @param uws		The UWS containing all the jobs to backup.
+	 * @param byUser	Backup mode.
+	 * 
+	 * @see DefaultUWSBackupManager#DefaultUWSBackupManager(UWS, boolean)
+	 */
 	public DefaultTAPBackupManager(UWS uws, boolean byUser) throws UWSException{
 		super(uws, byUser);
 	}
 
+	/**
+	 * Build a default TAP jobs backup manager.
+	 * 
+	 * @param uws		The UWS containing all the jobs to backup.
+	 * @param byUser	Backup mode.
+	 * @param frequency	The backup frequency (in ms ; MUST BE positive and different from 0.
+	 *                  If negative or 0, the frequency will be automatically set to DEFAULT_FREQUENCY).
+	 * 
+	 * @see DefaultUWSBackupManager#DefaultUWSBackupManager(UWS, boolean, long)
+	 */
 	public DefaultTAPBackupManager(UWS uws, boolean byUser, long frequency) throws UWSException{
 		super(uws, byUser, frequency);
 	}
@@ -57,10 +102,8 @@ public class DefaultTAPBackupManager extends DefaultUWSBackupManager {
 
 			JSONObject jsonExecReport = new JSONObject();
 			jsonExecReport.put("success", execReport.success);
-			jsonExecReport.put("sql", execReport.sqlTranslation);
 			jsonExecReport.put("uploadduration", execReport.getUploadDuration());
 			jsonExecReport.put("parsingduration", execReport.getParsingDuration());
-			jsonExecReport.put("translationduration", execReport.getTranslationDuration());
 			jsonExecReport.put("executionduration", execReport.getExecutionDuration());
 			jsonExecReport.put("formattingduration", execReport.getFormattingDuration());
 			jsonExecReport.put("totalduration", execReport.getTotalDuration());
@@ -90,16 +133,12 @@ public class DefaultTAPBackupManager extends DefaultUWSBackupManager {
 						try{
 							if (key.equalsIgnoreCase("success"))
 								execReport.success = jsonExecReport.getBoolean(key);
-							else if (key.equalsIgnoreCase("sql"))
-								execReport.sqlTranslation = jsonExecReport.getString(key);
 							else if (key.equalsIgnoreCase("uploadduration"))
 								execReport.setDuration(ExecutionProgression.UPLOADING, jsonExecReport.getLong(key));
 							else if (key.equalsIgnoreCase("parsingduration"))
 								execReport.setDuration(ExecutionProgression.PARSING, jsonExecReport.getLong(key));
-							else if (key.equalsIgnoreCase("translationduration"))
-								execReport.setDuration(ExecutionProgression.TRANSLATING, jsonExecReport.getLong(key));
 							else if (key.equalsIgnoreCase("executionduration"))
-								execReport.setDuration(ExecutionProgression.EXECUTING_SQL, jsonExecReport.getLong(key));
+								execReport.setDuration(ExecutionProgression.EXECUTING_ADQL, jsonExecReport.getLong(key));
 							else if (key.equalsIgnoreCase("formattingduration"))
 								execReport.setDuration(ExecutionProgression.WRITING_RESULT, jsonExecReport.getLong(key));
 							else if (key.equalsIgnoreCase("totalduration"))

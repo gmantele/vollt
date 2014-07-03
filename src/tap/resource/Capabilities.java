@@ -32,15 +32,16 @@ public class Capabilities implements TAPResource, VOSIResource {
 
 	public static final String RESOURCE_NAME = "capabilities";
 
-	private final TAP<?> tap;
+	private final TAP tap;
 	protected String accessURL = getName();
 
-	public Capabilities(TAP<?> tap){
+	public Capabilities(TAP tap){
 		this.tap = tap;
 	}
 
 	/**
 	 */
+	@Override
 	public final void setTAPBaseURL(String baseURL){
 		accessURL = ((baseURL == null) ? "" : (baseURL + "/")) + getName();
 	}

@@ -20,14 +20,15 @@ package tap.resource;
  */
 
 import java.io.IOException;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import tap.TAPJob;
 import tap.ServiceConnection;
 import tap.TAPException;
+import tap.TAPJob;
 import tap.TAPSyncJob;
 import tap.parameters.TAPParameters;
 import uws.UWSException;
@@ -38,11 +39,11 @@ public class Sync implements TAPResource {
 
 	protected String accessURL = null;
 
-	protected final ServiceConnection<?> service;
+	protected final ServiceConnection service;
 
 	protected final Capabilities capabilities;
 
-	public Sync(ServiceConnection<?> service, Capabilities capabilities){
+	public Sync(ServiceConnection service, Capabilities capabilities){
 		this.service = service;
 		this.capabilities = capabilities;
 	}

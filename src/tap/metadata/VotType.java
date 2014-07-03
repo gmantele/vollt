@@ -31,18 +31,18 @@ import cds.savot.writer.SavotWriter;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 06/2014
+ * @version 2.0 (07/2014)
  */
 public final class VotType {
 	/**
 	 * All possible values for a VOTable datatype (i.e. boolean, short, char, ...).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
-	 * @version 2.0 (06/2014)
+	 * @version 2.0 (07/2014)
 	 * @since 2.0
 	 */
 	public static enum VotDatatype{
-		BOOLEAN("boolean"), SHORT("short"), INT("int"), LONG("long"), FLOAT("float"), DOUBLE("double"), CHAR("char"), UNSIGNED_BYTE("unsignedByte");
+		BOOLEAN("boolean"), BIT("bit"), UNSIGNED_BYTE("unsignedByte"), SHORT("short"), INT("int"), LONG("long"), CHAR("char"), UNICODE_CHAR("unicodeChar"), FLOAT("float"), DOUBLE("double"), FLOAT_COMPLEX("floatComplex"), DOUBLE_COMPLEX("doubleComplex");
 
 		private final String strExpr;
 

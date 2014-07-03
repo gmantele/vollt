@@ -23,16 +23,12 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import tap.file.TAPFileManager;
-
 import tap.formatter.OutputFormat;
-
 import tap.log.TAPLog;
-
 import tap.metadata.TAPMetadata;
-
 import uws.service.UserIdentifier;
 
-public interface ServiceConnection< R > {
+public interface ServiceConnection {
 
 	public static enum LimitUnit{
 		rows, bytes;
@@ -70,12 +66,12 @@ public interface ServiceConnection< R > {
 
 	public TAPLog getLogger();
 
-	public TAPFactory<R> getFactory();
+	public TAPFactory getFactory();
 
 	public TAPFileManager getFileManager();
 
-	public Iterator<OutputFormat<R>> getOutputFormats();
+	public Iterator<OutputFormat> getOutputFormats();
 
-	public OutputFormat<R> getOutputFormat(final String mimeOrAlias);
+	public OutputFormat getOutputFormat(final String mimeOrAlias);
 
 }

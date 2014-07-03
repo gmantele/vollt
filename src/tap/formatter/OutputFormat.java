@@ -16,26 +16,24 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.OutputStream;
 
 import tap.TAPException;
 import tap.TAPExecutionReport;
+import tap.data.TableIterator;
 
 /**
  * Describes an output format and formats a given query result into this format.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- *
- * @param <R>	The type of raw query result (i.e. {@link java.sql.ResultSet}).
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * 
- * @version 06/2012
- * 
- * @see VOTableFormat
+ * @version 2.0 (07/2014)
  */
-public interface OutputFormat< R > {
+public interface OutputFormat {
 
 	/**
 	 * Gets the MIME type corresponding to this format.
@@ -68,25 +66,13 @@ public interface OutputFormat< R > {
 	/**
 	 * Formats the given query result and writes it in the given output stream.
 	 * 
-	 * @param queryResult		The raw result to format (i.e. a {@link java.sql.ResultSet}).
-	 * @param output			The output stream (a ServletOutputStream or a stream on a file) in which the formatted result must be written.
-	 * @param execReport		The report of the execution of the TAP query whose the result must be now written.
-	 * @param thread			The thread which has asked the result writting.
+	 * @param result		The raw (table) result to format.
+	 * @param output		The output stream (a ServletOutputStream or a stream on a file) in which the formatted result must be written.
+	 * @param execReport	The report of the execution of the TAP query whose the result must be now written.
+	 * @param thread		The thread which has asked the result writing.
 	 * 
 	 * @throws TAPException		If there is an error while formatting/writing the query result.
 	 */
-	public void writeResult(final R queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException;
-
-	/*
-	 * Formats the given query result and writes it in some way accessible through the returned {@link Result}.
-	 * 
-	 * @param queryResult		The raw result to format (i.e. a {@link java.sql.ResultSet}).
-	 * @param job				The job which processed the query.
-	 * 
-	 * @return					The {@link Result} which provides an access to the formatted query result.
-	 * 
-	 * @throws TAPException		If there is an error while formatting/writing the query result.
-	 *
-	public Result writeResult(final R queryResult, final TAPJob job) throws TAPException;*/
+	public void writeResult(final TableIterator result, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException;
 
 }

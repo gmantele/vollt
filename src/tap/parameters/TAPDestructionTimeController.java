@@ -25,20 +25,18 @@ import java.util.Date;
 
 import tap.ServiceConnection;
 import tap.TAPJob;
-
 import uws.UWSException;
 import uws.UWSExceptionFactory;
-
 import uws.job.UWSJob;
-import uws.job.parameters.InputParamController;
 import uws.job.parameters.DestructionTimeController.DateField;
+import uws.job.parameters.InputParamController;
 
 public class TAPDestructionTimeController implements InputParamController {
 
-	protected final ServiceConnection<?> service;
+	protected final ServiceConnection service;
 	protected boolean allowModification = true;
 
-	public TAPDestructionTimeController(final ServiceConnection<?> service){
+	public TAPDestructionTimeController(final ServiceConnection service){
 		this.service = service;
 	}
 

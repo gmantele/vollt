@@ -20,30 +20,23 @@ package tap;
  */
 
 import tap.db.DBConnection;
-
 import tap.metadata.TAPSchema;
-
 import tap.upload.Uploader;
-
 import uws.UWSException;
-
 import uws.service.UWSFactory;
 import uws.service.UWSService;
-
 import uws.service.backup.UWSBackupManager;
-
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
-
 import adql.translator.ADQLTranslator;
 
-public interface TAPFactory< R > extends UWSFactory {
+public interface TAPFactory extends UWSFactory {
 
 	public UWSService createUWS() throws TAPException, UWSException;
 
 	public UWSBackupManager createUWSBackupManager(final UWSService uws) throws TAPException, UWSException;
 
-	public ADQLExecutor<R> createADQLExecutor() throws TAPException;
+	public ADQLExecutor createADQLExecutor() throws TAPException;
 
 	public ADQLQueryFactory createQueryFactory() throws TAPException;
 
@@ -51,8 +44,8 @@ public interface TAPFactory< R > extends UWSFactory {
 
 	public ADQLTranslator createADQLTranslator() throws TAPException;
 
-	public DBConnection<R> createDBConnection(final String jobID) throws TAPException;
+	public DBConnection createDBConnection(final String jobID) throws TAPException;
 
-	public Uploader createUploader(final DBConnection<R> dbConn) throws TAPException;
+	public Uploader createUploader(final DBConnection dbConn) throws TAPException;
 
 }

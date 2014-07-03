@@ -1,4 +1,5 @@
 package testtools;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -118,6 +119,9 @@ public final class DBTools {
 				}catch(InterruptedException e){
 					System.err.println("WARNING: can't wait/sleep before testing the connection close status! [" + e.getMessage() + "]");
 				}
+				// TODO DEBUG MSG
+				if (conn.isClosed())
+					System.out.println("[DEBUG] Connection closed!");
 				return conn.isClosed();
 			}else
 				return true;

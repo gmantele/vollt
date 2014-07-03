@@ -19,17 +19,16 @@ package tap;
  * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
+import uws.UWSException;
+import uws.job.JobThread;
 import adql.parser.ParseException;
 import adql.translator.TranslationException;
-import uws.UWSException;
 
-import uws.job.JobThread;
+public class AsyncThread extends JobThread {
 
-public class AsyncThread< R > extends JobThread {
+	protected final ADQLExecutor executor;
 
-	protected final ADQLExecutor<R> executor;
-
-	public AsyncThread(TAPJob j, ADQLExecutor<R> executor) throws UWSException{
+	public AsyncThread(TAPJob j, ADQLExecutor executor) throws UWSException{
 		super(j, "Execute the ADQL query of the TAP request " + j.getJobId());
 		this.executor = executor;
 	}

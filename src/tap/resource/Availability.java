@@ -33,17 +33,18 @@ public class Availability implements TAPResource, VOSIResource {
 
 	public static final String RESOURCE_NAME = "availability";
 
-	private final ServiceConnection<?> service;
+	private final ServiceConnection service;
 	protected String accessURL = getName();
 
-	protected Availability(ServiceConnection<?> service){
+	protected Availability(ServiceConnection service){
 		this.service = service;
 	}
 
-	public ServiceConnection<?> getService(){
+	public ServiceConnection getService(){
 		return service;
 	}
 
+	@Override
 	public final void setTAPBaseURL(String baseURL){
 		accessURL = ((baseURL == null) ? "" : (baseURL + "/")) + getName();
 	}

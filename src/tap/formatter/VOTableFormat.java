@@ -16,58 +16,45 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
-
-import tap.TAPExecutionReport;
-import tap.TAPJob;
-import tap.TAPException;
-import uws.job.Result;
-
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
-import cds.savot.writer.SavotWriter;
 import tap.ServiceConnection;
+import tap.TAPException;
+import tap.TAPExecutionReport;
+import tap.TAPJob;
+import tap.data.TableIterator;
 import tap.metadata.TAPColumn;
+import tap.metadata.TAPType;
+import tap.metadata.TAPType.TAPDatatype;
 import tap.metadata.VotType;
+import tap.metadata.VotType.VotDatatype;
 import adql.db.DBColumn;
+import cds.savot.writer.SavotWriter;
 
 /**
- * <p>Formats the given type of query result in VOTable.</p>
- * <p>
- * 	This abstract class is only able to format the skeleton of the VOTable.
- * 	However, it also provides useful methods to format field metadata and field value (including NULL values).
- * </p>
+ * <p>Format any given query (table) result into VOTable.</p>
  * <p>
  * 	Attributes of the VOTable node are by default set by this class but can be overridden if necessary thanks to the corresponding class attributes:
  * 	{@link #votTableVersion}, {@link #xmlnsXsi}, {@link #xsiNoNamespaceSchemaLocation}, {@link #xsiSchemaLocation} and
  *  {@link #xmlns}.
  * </p>
- * <p>
- *	When overridding this class, you must implement {@link #writeMetadata(Object, PrintWriter, TAPJob)} and
- *	{@link #writeData(Object, DBColumn[], OutputStream, TAPJob)}.
- *	Both are called by {@link #writeResult(Object, OutputStream, TAPJob)}. Finally you will also have to implement
- *	{@link #writeResult(Object, TAPJob)}, which must format the given result into a VOTable saved in some way accessible
- *	through the returned {@link Result}.
- * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
- *
- * @param <R>	Type of the result to format in VOTable (i.e. {@link java.sql.ResultSet}).
- * 
- * @see ResultSet2VotableFormatter
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (07/2014)
  */
-public abstract class VOTableFormat< R > implements OutputFormat<R> {
+public class VOTableFormat implements OutputFormat {
 
 	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
 	private boolean logFormatReport;
 
 	/** The {@link ServiceConnection} to use (for the log and to have some information about the service (particularly: name, description). */
-	protected final ServiceConnection<R> service;
+	protected final ServiceConnection service;
 
 	protected String votTableVersion = "1.2";
 	protected String xmlnsXsi = "http://www.w3.org/2001/XMLSchema-instance";
@@ -84,7 +71,7 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	 * 
 	 * @see #VOTableFormat(ServiceConnection, boolean)
 	 */
-	public VOTableFormat(final ServiceConnection<R> service) throws NullPointerException{
+	public VOTableFormat(final ServiceConnection service) throws NullPointerException{
 		this(service, false);
 	}
 
@@ -96,25 +83,29 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public VOTableFormat(final ServiceConnection<R> service, final boolean logFormatReport) throws NullPointerException{
+	public VOTableFormat(final ServiceConnection service, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL !");
 		this.service = service;
 		this.logFormatReport = logFormatReport;
 	}
 
+	@Override
 	public final String getMimeType(){
 		return "text/xml";
 	}
 
+	@Override
 	public final String getShortMimeType(){
 		return "votable";
 	}
 
+	@Override
 	public String getDescription(){
 		return null;
 	}
 
+	@Override
 	public String getFileExtension(){
 		return "xml";
 	}
@@ -135,7 +126,8 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	 * 
 	 * @see tap.formatter.OutputFormat#writeResult(Object, OutputStream, TAPExecutionReport)
 	 */
-	public final void writeResult(final R queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException{
+	@Override
+	public final void writeResult(final TableIterator queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException{
 		try{
 			long start = System.currentTimeMillis();
 
@@ -205,10 +197,10 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	 * <p>Writes fields' metadata of the given query result in the given Writer.</p>
 	 * <p><b><u>Important:</u> To write write metadata of a given field you can use {@link #writeFieldMeta(TAPColumn, PrintWriter)}.</b></p>
 	 * 
-	 * @param queryResult	The query result from whose fields' metadata must be written.
+	 * @param result		The query result from whose fields' metadata must be written.
 	 * @param output		Writer in which fields' metadata must be written.
 	 * @param execReport	The report of the query execution.
-	 * @param thread		The thread which asked for the result writting.
+	 * @param thread		The thread which asked for the result writing.
 	 * 
 	 * @return				Extracted field's metadata.
 	 * 
@@ -216,7 +208,58 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	 * @throws TAPException				If there is any other error.
 	 * @throws InterruptedException		If the given thread has been interrupted.
 	 */
-	protected abstract DBColumn[] writeMetadata(final R queryResult, final PrintWriter output, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException;
+	protected DBColumn[] writeMetadata(final TableIterator result, final PrintWriter output, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException{
+		// Get the metadata extracted/guesses from the ADQL query:
+		DBColumn[] columnsFromQuery = execReport.resultingColumns;
+
+		// Get the metadata extracted from the result:
+		TAPColumn[] columnsFromResult = result.getMetadata();
+
+		int indField = 0;
+		if (columnsFromQuery != null){
+
+			// For each column:
+			for(DBColumn field : columnsFromQuery){
+
+				// Try to build/get appropriate metadata for this field/column:
+				TAPColumn colFromResult = (columnsFromResult != null && indField < columnsFromResult.length) ? columnsFromResult[indField] : null;
+				TAPColumn tapCol = getValidColMeta(field, colFromResult);
+
+				// Ensure these metadata are well returned at the end of this function:
+				columnsFromQuery[indField] = tapCol;
+
+				// Write the field/column metadata in the JSON output:
+				writeFieldMeta(tapCol, output);
+				indField++;
+
+				if (thread.isInterrupted())
+					throw new InterruptedException();
+			}
+		}else
+			output.println("<INFO name=\"WARNING\" value=\"MISSING_META\">Error while getting field(s) metadata</INFO>");
+
+		return columnsFromQuery;
+	}
+
+	/**
+	 * Try to get or otherwise to build appropriate metadata using those extracted from the ADQL query and those extracted from the result.
+	 * 
+	 * @param typeFromQuery		Metadata extracted/guessed from the ADQL query.
+	 * @param typeFromResult	Metadata extracted/guessed from the result.
+	 * 
+	 * @return	The most appropriate metadata.
+	 */
+	protected TAPColumn getValidColMeta(final DBColumn typeFromQuery, final TAPColumn typeFromResult){
+		if (typeFromQuery != null && typeFromQuery instanceof TAPColumn)
+			return (TAPColumn)typeFromQuery;
+		else if (typeFromResult != null){
+			if (typeFromQuery != null)
+				return (TAPColumn)typeFromResult.copy(typeFromQuery.getDBName(), typeFromQuery.getADQLName(), null);
+			else
+				return (TAPColumn)typeFromResult.copy();
+		}else
+			return new TAPColumn((typeFromQuery != null) ? typeFromQuery.getADQLName() : "?", new TAPType(TAPDatatype.VARCHAR), "?");
+	}
 
 	/**
 	 * <p>Formats in a VOTable field and writes the given {@link TAPColumn} in the given Writer.</p>
@@ -232,34 +275,49 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	protected void writeFieldMeta(TAPColumn col, PrintWriter out) throws IOException, TAPException{
 		StringBuffer fieldline = new StringBuffer("\t\t\t");
 
+		// <FIELD ID="..."
 		fieldline.append("<FIELD ID=").append('"').append(SavotWriter.encodeAttribute(col.getADQLName())).append('"');
+
+		// name="..."
 		fieldline.append(" name=").append('"').append(SavotWriter.encodeAttribute(col.getADQLName())).append('"');
 
+		// datatype="..."
 		VotType type = col.getVotType();
-		String nullVal = getNullValue(type.datatype), description = null;
-
+		String nullVal = getNullValue(type.datatype);
 		fieldline.append(' ').append(type.toString());
 
+		// ucd="..." (if any)
 		if (col.getUcd() != null && col.getUcd().length() > 0)
 			fieldline.append(" ucd=").append('"').append(SavotWriter.encodeAttribute(col.getUcd())).append('"');
 
+		// utype="..." (if any)
 		if (col.getUtype() != null && col.getUtype().length() > 0)
 			fieldline.append(" utype=").append('"').append(SavotWriter.encodeAttribute(col.getUtype())).append('"');
 
+		// unit="..." (if any)
 		if (col.getUnit() != null && col.getUnit().length() > 0)
 			fieldline.append(" unit=").append('"').append(SavotWriter.encodeAttribute(col.getUnit())).append('"');
 
+		// Get the description (or NULL if none is provided):
+		String description = null;
 		if (col.getDescription() != null && !col.getDescription().trim().isEmpty())
 			description = col.getDescription().trim();
 		else
 			description = null;
 
+		// Declares NULL values and write the description:
 		if (nullVal != null || description != null){
 			fieldline.append(">\n");
+
+			// <VALUES null="..." /> (if needed)
 			if (nullVal != null)
 				fieldline.append("<VALUES null=\"" + nullVal + "\" />\n");
+
+			// <DESCRIPTION>...</DESCRIPTION> (if any)
 			if (description != null)
 				fieldline.append("<DESCRIPTION>").append(SavotWriter.encodeElement(description)).append("</DESCRIPTION>\n");
+
+			// </FIELD>
 			fieldline.append("</FIELD>");
 			out.println(fieldline);
 		}else{
@@ -269,22 +327,57 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	}
 
 	/**
-	 * <p>Writes the data of the given query result in the given OutputStream.</p>
-	 * <p><b><u>Important:</u> To write a field value you can use {@link #writeFieldValue(Object, DBColumn, OutputStream)}.</b></p>
+	 * Write the whole data part (TABLEDATA) of the VOTable file.
 	 * 
-	 * @param queryResult		The query result which contains the data to write.
+	 * @param result			The query result which contains the data to write.
 	 * @param selectedColumns	The columns selected by the query.
 	 * @param output			The stream in which the data must be written.
-	 * @param execReport		The report of the query execution.
-	 * @param thread		The thread which asked for the result writting.
+	 * @param execReport		The report of the query execution (which contains the maximum allowed number of records to output).
+	 * @param thread			The thread which asked for the result writing.
 	 * 
-	 * @return					The number of written rows. (<i>note: if this number is greater than the value of MAXREC: OVERFLOW</i>)
+	 * @return	The number of written rows. (<i>note: if this number is greater than the value of MAXREC: OVERFLOW</i>)
 	 * 
 	 * @throws IOException				If there is an error while writing the data in the given stream.
-	 * @throws TAPException				If there is any other error.
 	 * @throws InterruptedException		If the given thread has been interrupted.
+	 * @throws TAPException				If there is any other error.
 	 */
-	protected abstract int writeData(final R queryResult, final DBColumn[] selectedColumns, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException;
+	protected int writeData(final TableIterator result, final DBColumn[] selectedColumns, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException{
+		// <TABLEDATA>
+		output.write("\t\t\t\t<TABLEDATA>\n".getBytes());
+
+		int nbRows = 0;
+		while(result.nextRow()){
+			// Deal with OVERFLOW, if needed:
+			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec())
+				break;
+
+			// <TR>
+			output.write("\t\t\t\t\t<TR>\n".getBytes());
+			int indCol = 0;
+			while(result.hasNextCol()){
+				// <TD>
+				output.write("\t\t\t\t\t\t<TD>".getBytes());
+				// ...
+				writeFieldValue(result.nextCol(), selectedColumns[indCol++], output);
+				// </TD>
+				output.write("</TD>\n".getBytes());
+
+				if (thread.isInterrupted())
+					throw new InterruptedException();
+			}
+
+			// </TR>
+			output.write("\t\t\t\t\t</TR>\n".getBytes());
+			nbRows++;
+
+			if (thread.isInterrupted())
+				throw new InterruptedException();
+		}
+
+		// </TABLEDATA>
+		output.write("\t\t\t\t</TABLEDATA>\n".getBytes());
+		return nbRows;
+	}
 
 	/**
 	 * <p>Writes the given field value in the given OutputStream.</p>
@@ -292,7 +385,8 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	 * <p>
 	 * 	The given value will be encoded as an XML element (see {@link SavotWriter#encodeElement(String)}.
 	 * 	Besides, if the given value is <code>null</code> and if the column datatype is <code>int</code>,
-	 * 	<code>short</code> or <code>long</code>, the NULL values declared in the field metadata will be written.</p>
+	 * 	<code>short</code> or <code>long</code>, the NULL values declared in the field metadata will be written.
+	 * </p>
 	 * 
 	 * @param value				The value to write.
 	 * @param column			The corresponding column metadata.
@@ -322,19 +416,19 @@ public abstract class VOTableFormat< R > implements OutputFormat<R> {
 	 * 
 	 * @return			The corresponding NULL value, or <code>null</code> if there is none.
 	 */
-	public static final String getNullValue(String datatype){
+	public static final String getNullValue(VotDatatype datatype){
 		if (datatype == null)
 			return null;
 
-		datatype = datatype.trim().toLowerCase();
-
-		if (datatype.equals("short"))
-			return "" + Short.MIN_VALUE;
-		else if (datatype.equals("int"))
-			return "" + Integer.MIN_VALUE;
-		else if (datatype.equals("long"))
-			return "" + Long.MIN_VALUE;
-		else
-			return null;
+		switch(datatype){
+			case SHORT:
+				return "" + Short.MIN_VALUE;
+			case INT:
+				return "" + Integer.MIN_VALUE;
+			case LONG:
+				return "" + Long.MIN_VALUE;
+			default:
+				return null;
+		}
 	}
 }

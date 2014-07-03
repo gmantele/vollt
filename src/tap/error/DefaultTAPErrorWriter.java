@@ -16,7 +16,8 @@ package tap.error;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -46,16 +47,16 @@ import uws.service.log.UWSLog;
  * write a given error in the best appropriate format. This format is chosen thanks to the "Accept" header of the HTTP request.
  * If no request is provided or if there is no known format, the HTML format is chosen by default.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (07/2014)
  * 
  * @see AbstractServiceErrorWriter
  */
 public class DefaultTAPErrorWriter extends AbstractServiceErrorWriter {
 
-	protected final ServiceConnection<?> service;
+	protected final ServiceConnection service;
 
-	public DefaultTAPErrorWriter(final ServiceConnection<?> service){
+	public DefaultTAPErrorWriter(final ServiceConnection service){
 		this.service = service;
 	}
 
