@@ -69,7 +69,7 @@ public class TextFormatTest {
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception{
 		DBTools.closeConnection(conn);
-		//textFile.delete();
+		textFile.delete();
 	}
 
 	@Test
