@@ -42,7 +42,7 @@ import cds.savot.model.TDSet;
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 1.1 (04/2014)
  */
-public class JDBCConnection implements DBConnection<ResultSet> {
+public class JDBCConnection implements DBConnection {
 
 	/** JDBC prefix of any database URL (for instance: jdbc:postgresql://127.0.0.1/myDB or jdbc:postgresql:myDB). */
 	public final static String JDBC_PREFIX = "jdbc";
