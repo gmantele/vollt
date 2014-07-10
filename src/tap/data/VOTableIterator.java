@@ -21,40 +21,45 @@ package tap.data;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import tap.TAPException;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPType;
 import tap.metadata.VotType;
 import tap.metadata.VotType.VotDatatype;
-import cds.savot.model.DataBinaryReader;
-import cds.savot.model.FieldSet;
-import cds.savot.model.SavotBinary;
-import cds.savot.model.SavotField;
-import cds.savot.model.SavotResource;
-import cds.savot.model.SavotTD;
-import cds.savot.model.SavotTR;
-import cds.savot.model.SavotTableData;
-import cds.savot.pull.SavotPullEngine;
-import cds.savot.pull.SavotPullParser;
+import uk.ac.starlink.table.ColumnInfo;
+import uk.ac.starlink.table.DescribedValue;
+import uk.ac.starlink.table.OnceRowPipe;
+import uk.ac.starlink.table.RowSequence;
+import uk.ac.starlink.table.StarTable;
+import uk.ac.starlink.table.StarTableFactory;
+import uk.ac.starlink.table.TableBuilder;
 
 /**
- * <p>{@link TableIterator} which lets iterate over a VOTable input stream using Savot ({@link SavotPullParser} more exactly).</p>
+ * <p>{@link TableIterator} which lets iterate over a VOTable input stream using STIL.</p>
  * 
  * <p>{@link #getColType()} will return TAP type based on the type declared in the VOTable metadata part.</p>
  * 
- * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 2.0 (06/2014)
+ * @author Gr&eacute;gory Mantelet (ARI)
+ * @version 2.0 (07/2014)
  * @since 2.0
  */
 public class VOTableIterator implements TableIterator {
 
 	/** Metadata of all columns identified before the iteration. */
 	private final TAPColumn[] colMeta;
-	/** Inner TableIterator. It lets iterate over a binary or a table data set in a transparent way. */
-	private final TableIterator it;
+	/** Number of columns to read. */
+	private final int nbColumns;
+	/** Sequence of rows over which we must iterate. */
+	private final RowSequence rowSeq;
+
+	/** Indicate whether the row iteration has already started. */
+	private boolean iterationStarted = false;
+	/** Indicate whether the last row has already been reached. */
+	private boolean endReached = false;
+	/** Index of the last read column (=0 just after {@link #nextRow()} and before {@link #nextCol()}, ={@link #nbColumns} after the last column has been read). */
+	private int colIndex;
 
 	/**
 	 * Build a TableIterator able to read rows and columns inside the given VOTable input stream.
@@ -70,51 +75,66 @@ public class VOTableIterator implements TableIterator {
 			throw new NullPointerException("Missing VOTable document input stream over which to iterate!");
 
 		try{
-			// Start parsing the VOTable:
-			SavotPullParser parser = new SavotPullParser(input, SavotPullEngine.SEQUENTIAL, null);
 
-			// Get the first resource:
-			SavotResource resource = parser.getNextResource();
-			if (resource == null)
-				throw new DataReadException("Incorrect VOTable format: missing resource node!");
+			// Set the VOTable builder/interpreter:
+			TableBuilder tb = (new StarTableFactory()).getTableBuilder("votable");
 
-			// Extract the metadata about all fields:
-			FieldSet fields = resource.getFieldSet(0);
-			colMeta = extractColMeta(fields);
+			// Set the TableSink to use in order to stream the data: 
+			OnceRowPipe rowPipe = new OnceRowPipe();
 
-			// Build the iterator over the data:
-			SavotBinary binary = resource.getData(0).getBinary();
-			if (binary != null)
-				it = new BinaryVOTableIterator(binary, fields, colMeta);
-			else
-				it = new DataVOTableIterator(resource.getData(0).getTableData(), colMeta);
+			// Initiate the stream process:
+			tb.streamStarTable(input, rowPipe, null);
+
+			// Start by reading just the metadata:
+			StarTable table = rowPipe.waitForStarTable();
+
+			// Convert columns' information into TAPColumn object:
+			colMeta = extractColMeta(table);
+			nbColumns = colMeta.length;
+
+			// Set the sequence of rows on which this iterator will iterate:
+			rowSeq = table.getRowSequence();
+
+		}catch(TAPException te){
+			throw new DataReadException("Unexpected field datatype: " + te.getMessage(), te);
 		}catch(Exception ex){
 			throw new DataReadException("Unable to parse/read the given VOTable input stream!", ex);
 		}
 	}
 
 	/**
-	 * Extract an array of {@link TAPColumn} objects. Each corresponds to one of the fields given in parameter,
+	 * Extract an array of {@link TAPColumn} objects. Each corresponds to one of the columns listed in the given table,
 	 * and so corresponds to the metadata of a column. 
 	 * 
-	 * @param fields	List of metadata fields provided in a VOTable.
+	 * @param table		{@link StarTable} which contains only the columns' information.
 	 * 
 	 * @return			The corresponding list of {@link TAPColumn} objects.
+	 * 
+	 * @throws TAPException	If there is a problem while resolving the field datatype (for instance: unknown datatype, a multi-dimensional array is provided, a bad number format for the arraysize).
 	 */
-	private static final TAPColumn[] extractColMeta(final FieldSet fields){
+	private static final TAPColumn[] extractColMeta(final StarTable table) throws TAPException{
 		// Count the number columns and initialize the array:
-		TAPColumn[] columns = new TAPColumn[fields.getItemCount()];
+		TAPColumn[] columns = new TAPColumn[table.getColumnCount()];
 
 		// Add all columns meta:
-		for(int i = 0; i < fields.getItemCount(); i++){
+		for(int i = 0; i < columns.length; i++){
 			// get the field:
-			SavotField field = (SavotField)fields.getItemAt(i);
+			ColumnInfo colInfo = table.getColumnInfo(i);
+
+			// get the datatype:
+			String datatype = getAuxDatumValue(colInfo, "Datatype");
+
+			// get the arraysize:
+			String arraysize = ColumnInfo.formatShape(colInfo.getShape());
+
+			// get the xtype:
+			String xtype = getAuxDatumValue(colInfo, "xtype");
 
 			// Resolve the field type:
-			TAPType type = resolveVotType(field.getDataType(), field.getArraySize(), field.getXtype()).toTAPType();
+			TAPType type = resolveVotType(datatype, arraysize, xtype).toTAPType();
 
 			// build the TAPColumn object:
-			TAPColumn col = new TAPColumn(field.getName(), type, field.getDescription(), field.getUnit(), field.getUcd(), field.getUtype());
+			TAPColumn col = new TAPColumn(colInfo.getName(), type, colInfo.getDescription(), colInfo.getUnitString(), colInfo.getUCD(), colInfo.getUtype());
 			col.setPrincipal(false);
 			col.setIndexed(false);
 			col.setStd(false);
@@ -127,6 +147,19 @@ public class VOTableIterator implements TableIterator {
 	}
 
 	/**
+	 * Extract the specified auxiliary datum value from the given {@link ColumnInfo}.
+	 * 
+	 * @param colInfo			{@link ColumnInfo} from which the auxiliary datum must be extracted.
+	 * @param auxDatumName		The name of the datum to extract.
+	 * 
+	 * @return	The extracted value as String.
+	 */
+	private static final String getAuxDatumValue(final ColumnInfo colInfo, final String auxDatumName){
+		DescribedValue value = colInfo.getAuxDatumByName(auxDatumName);
+		return (value != null) ? value.getValue().toString() : null;
+	}
+
+	/**
 	 * Resolve a VOTable field type by using the datatype, arraysize and xtype strings as specified in a VOTable document.
 	 * 
 	 * @param datatype		Attribute value of VOTable corresponding to the datatype.
@@ -134,53 +167,24 @@ public class VOTableIterator implements TableIterator {
 	 * @param xtype			Attribute value of VOTable corresponding to the xtype.
 	 * 
 	 * @return	The resolved VOTable field type, or a CHAR(*) type if the specified type can not be resolved.
+	 * 
+	 * @throws TAPException	If a field datatype is unknown.
 	 */
-	private static VotType resolveVotType(final String datatype, final String arraysize, final String xtype){
+	private static VotType resolveVotType(final String datatype, final String arraysize, final String xtype) throws TAPException{
 		// If no datatype is specified, return immediately a CHAR(*) type:
 		if (datatype == null || datatype.trim().length() == 0)
-			return new VotType(VotDatatype.CHAR, VotType.NO_SIZE, true);
-
-		// 1. IDENTIFY THE DATATYPE:
+			return new VotType(VotDatatype.CHAR, "*");
 
 		// Identify the specified datatype:
 		VotDatatype votdatatype;
 		try{
 			votdatatype = VotDatatype.valueOf(datatype.toUpperCase());
 		}catch(IllegalArgumentException iae){
-			// if it can't be identified, return immediately a CHAR(*) type:
-			return new VotType(VotDatatype.CHAR, VotType.NO_SIZE, true);
+			throw new TAPException("unknown field datatype: \"" + datatype + "\"");
 		}
 
-		// 2. DETERMINE ITS ARRAYSIZE:
-
-		int votarraysize = VotType.NO_SIZE;
-		boolean votunlimitedSize = false;
-
-		// If no arraysize is specified, let's set it to 1 (for an elementary value):
-		if (arraysize == null || arraysize.trim().isEmpty())
-			votarraysize = 1;
-
-		// Otherwise, get it:
-		else{
-			String str = arraysize.trim();
-
-			// Determine whether an "unlimited size" character is specified:
-			votunlimitedSize = str.endsWith("*");
-
-			// If one is specified, remove it from the arraysize string:
-			if (votunlimitedSize)
-				str = str.substring(0, str.length() - 1);
-
-			// If a size is really specified (more characters than "*"), get the arraysize value:
-			if (str.length() > 0){
-				try{
-					votarraysize = Integer.parseInt(str);
-				}catch(NumberFormatException nfe){}
-			}
-		}
-
-		// And finally build the VOTable type:
-		return new VotType(votdatatype, votarraysize, votunlimitedSize, xtype);
+		// Build the VOTable type:
+		return new VotType(votdatatype, arraysize, xtype);
 	}
 
 	/**
@@ -191,11 +195,11 @@ public class VOTableIterator implements TableIterator {
 	 * </ul>
 	 * @throws IllegalStateException
 	 */
-	private static void checkReadState(final boolean iterationStarted, final boolean endReached) throws IllegalStateException{
+	private void checkReadState() throws IllegalStateException{
 		if (!iterationStarted)
 			throw new IllegalStateException("No row has yet been read!");
 		else if (endReached)
-			throw new IllegalStateException("End of ResultSet already reached!");
+			throw new IllegalStateException("End of VOTable file already reached!");
 	}
 
 	@Override
@@ -205,263 +209,55 @@ public class VOTableIterator implements TableIterator {
 
 	@Override
 	public boolean nextRow() throws DataReadException{
-		return it.nextRow();
+		try{
+			// go to the next row:
+			boolean rowFetched = rowSeq.next();
+			endReached = !rowFetched;
+			// prepare the iteration over its columns:
+			colIndex = 0;
+			iterationStarted = true;
+			return rowFetched;
+		}catch(IOException e){
+			throw new DataReadException("Unable to read the next VOTable row!", e);
+		}
 	}
 
 	@Override
 	public boolean hasNextCol() throws IllegalStateException, DataReadException{
-		return it.hasNextCol();
+		// Check the read state:
+		checkReadState();
+
+		// Determine whether the last column has been reached or not:
+		return (colIndex < nbColumns);
 	}
 
 	@Override
 	public Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException{
-		return it.nextCol();
+		// Check the read state and ensure there is still at least one column to read:
+		if (!hasNextCol())
+			throw new NoSuchElementException("No more field to read!");
+
+		// Get the column value:
+		try{
+			return rowSeq.getCell(colIndex++);
+		}catch(IOException se){
+			throw new DataReadException("Can not read the value of the " + colIndex + "-th field!", se);
+		}
 	}
 
 	@Override
 	public TAPType getColType() throws IllegalStateException, DataReadException{
-		return it.getColType();
-	}
+		// Basically check the read state (for rows iteration):
+		checkReadState();
 
-	/**
-	 * <p>{@link TableIterator} which lets iterate over a VOTable binary data part.</p>
-	 * 
-	 * <p>This {@link TableIterator} is only usable by {@link VOTableIterator}.</p>
-	 * 
-	 * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
-	 * @version 2.0 (Jun 27, 2014)
-	 * @since 2.0
-	 */
-	private static class BinaryVOTableIterator implements TableIterator {
+		// Check deeper the read state (for columns iteration):
+		if (colIndex <= 0)
+			throw new IllegalStateException("No field has yet been read!");
+		else if (colIndex > nbColumns)
+			throw new IllegalStateException("All fields have already been read!");
 
-		/** Binary data reader which lets read rows and columns, and thus iterate over them. */
-		private final DataBinaryReader reader;
-		/** Metadata of all columns identified before the iteration. <i>(In this TableIterator, they are completely provided by {@link VOTableIterator}).</i> */
-		private final TAPColumn[] colMeta;
-
-		/** The last read row. Each item is a column value. */
-		private Object[] row;
-
-		/** Indicate whether the row iteration has already started. */
-		private boolean iterationStarted = false;
-		/** Indicate whether the last row has already been reached. */
-		private boolean endReached = false;
-		/** Index of the last read column (=0 just after {@link #nextRow()} and before {@link #nextCol()}). */
-		private int colIndex;
-
-		/**
-		 * Build a TableIterator on the given binary data part of a VOTable whose fields are also described in parameter.
-		 * 
-		 * @param binary		Binary data part of a VOTable document.
-		 * @param fields		Description of all the fields that should be read.
-		 * @param columnsMeta	Metadata information extracted from the VOTable metadata part.
-		 * 
-		 * @throws DataReadException	If there is an error while starting reading the given binary data.
-		 */
-		public BinaryVOTableIterator(final SavotBinary binary, final FieldSet fields, final TAPColumn[] columnsMeta) throws DataReadException{
-			try{
-				reader = new DataBinaryReader(binary.getStream(), fields, false);
-				colMeta = columnsMeta;
-			}catch(IOException ioe){
-				throw new DataReadException("Can not open a stream to decode the binary VOTable data!", ioe);
-			}
-		}
-
-		@Override
-		public TAPColumn[] getMetadata(){
-			return null;
-		}
-
-		@Override
-		public boolean nextRow() throws DataReadException{
-			try{
-				// Go to the next row:
-				boolean rowFetched = reader.next();
-				// prepare the iteration over its columns:
-				if (rowFetched){
-					row = reader.getRow();
-					colIndex = -1;
-					iterationStarted = true;
-				}else{
-					row = null;
-					colIndex = -1;
-					endReached = true;
-				}
-				return rowFetched;
-			}catch(IOException e){
-				throw new DataReadException("Unable to read a VOTable row!", e);
-			}
-		}
-
-		@Override
-		public boolean hasNextCol() throws IllegalStateException, DataReadException{
-			// Check the read state:
-			checkReadState(iterationStarted, endReached);
-
-			// Determine whether the last column has been reached or not:
-			return (colIndex + 1 < row.length);
-		}
-
-		@Override
-		public Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException{
-			// Check the read state and ensure there is still at least one column to read:
-			if (!hasNextCol())
-				throw new NoSuchElementException("No more column to read!");
-
-			// Get the column value:
-			return row[++colIndex];
-		}
-
-		@Override
-		public TAPType getColType() throws IllegalStateException, DataReadException{
-			// Basically check the read state (for rows iteration):
-			checkReadState(iterationStarted, endReached);
-
-			// Check deeper the read state (for columns iteration):
-			if (colIndex < 0)
-				throw new IllegalStateException("No column has yet been read!");
-			else if (colIndex >= colMeta.length)
-				return null;
-
-			// Get the column value:
-			return colMeta[colIndex].getDatatype();
-		}
-
-	}
-
-	/**
-	 * <p>{@link TableIterator} which lets iterate over a VOTable table data part.</p>
-	 * 
-	 * <p>This {@link TableIterator} is only usable by {@link VOTableIterator}.</p>
-	 * 
-	 * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
-	 * @version 2.0 (Jun 27, 2014)
-	 * @since 2.0
-	 */
-	private static class DataVOTableIterator implements TableIterator {
-
-		/** Iterator over the rows contained in the VOTable data part. */
-		private final Iterator<Object> data;
-		/** Metadata of all columns identified before the iteration. <i>(In this TableIterator, they are completely provided by {@link VOTableIterator}).</i> */
-		private final TAPColumn[] colMeta;
-
-		/** Iterator over the columns contained in the last read row. */
-		private Iterator<Object> colsIt;
-
-		/** Indicate whether the row iteration has already started. */
-		private boolean iterationStarted = false;
-		/** Indicate whether the last row has already been reached. */
-		private boolean endReached = false;
-		/** Index of the last read column (=0 just after {@link #nextRow()} and before {@link #nextCol()}). */
-		private int colIndex;
-
-		/**
-		 * Build a TableIterator on the given table data part of a VOTable.
-		 * 
-		 * @param dataset		Table data part of a VOTable document.
-		 * @param columnsMeta	Metadata information extracted from the VOTable metadata part.
-		 */
-		public DataVOTableIterator(final SavotTableData dataset, final TAPColumn[] columnsMeta){
-			Collection<Object> trset = dataset.getTRs().getItems();
-			if (trset == null){
-				data = new NullIterator();
-				colMeta = columnsMeta;
-				iterationStarted = true;
-				endReached = true;
-			}else{
-				data = trset.iterator();
-				colMeta = columnsMeta;
-			}
-		}
-
-		@Override
-		public TAPColumn[] getMetadata(){
-			return null;
-		}
-
-		@Override
-		public boolean nextRow() throws DataReadException{
-			if (data.hasNext()){
-				// Go to the next row:
-				SavotTR row = (SavotTR)data.next();
-
-				// Prepare the iteration over its columns:
-				Collection<Object> tdset = row.getTDSet().getItems();
-				if (tdset == null)
-					colsIt = new NullIterator();
-				else
-					colsIt = tdset.iterator();
-
-				colIndex = -1;
-				iterationStarted = true;
-
-				return true;
-			}else{
-				// No more row to read => end of VOTable reached:
-				endReached = true;
-				return false;
-			}
-		}
-
-		@Override
-		public boolean hasNextCol() throws IllegalStateException, DataReadException{
-			// Check the read state:
-			checkReadState(iterationStarted, endReached);
-
-			// Determine whether the last column has been reached or not:
-			return colsIt.hasNext();
-		}
-
-		@Override
-		public Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException{
-			// Check the read state and ensure there is still at least one column to read:
-			if (!hasNextCol())
-				throw new NoSuchElementException("No more column to read!");
-
-			// Get the column value:
-			Object value = ((SavotTD)colsIt.next()).getContent();
-			colIndex++;
-			return value;
-		}
-
-		@Override
-		public TAPType getColType() throws IllegalStateException, DataReadException{
-			// Basically check the read state (for rows iteration):
-			checkReadState(iterationStarted, endReached);
-
-			// Check deeper the read state (for columns iteration):
-			if (colIndex < 0)
-				throw new IllegalStateException("No column has yet been read!");
-			else if (colIndex >= colMeta.length)
-				return null;
-
-			// Get the column value:
-			return colMeta[colIndex].getDatatype();
-		}
-
-	}
-
-	/**
-	 * Iterator over nothing.
-	 * 
-	 * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
-	 * @version 2.0 (06/2014)
-	 * @version 2.0
-	 */
-	private final static class NullIterator implements Iterator<Object> {
-		@Override
-		public boolean hasNext(){
-			return false;
-		}
-
-		@Override
-		public Object next(){
-			return null;
-		}
-
-		@Override
-		public void remove(){}
-
+		// Return the column type:
+		return colMeta[colIndex - 1].getDatatype();
 	}
 
 }

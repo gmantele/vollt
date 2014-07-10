@@ -1,6 +1,6 @@
 package tap.formatter;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedOutputStream;
@@ -34,6 +34,7 @@ import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
 import tap.parameters.TAPParameters;
 import testtools.DBTools;
+import uk.ac.starlink.votable.DataFormat;
 import uws.service.UserIdentifier;
 
 /**
@@ -85,17 +86,17 @@ public class VOTableFormatTest {
 
 			TableIterator it = new ResultSetTableIterator(rs);
 
-			VOTableFormat formatter = new VOTableFormat(serviceConn);
+			VOTableFormat formatter = new VOTableFormat(serviceConn, DataFormat.FITS);
 			OutputStream output = new BufferedOutputStream(new FileOutputStream(votableFile));
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
 			// note: due to the pipe (|), we must call /bin/sh as a command whose the command to execute in is the "grep ... | wc -l":
 			String[] cmd = new String[]{"/bin/sh","-c","grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertTrue(executeCommand(cmd).trim().equals("10"));
+			assertEquals("10", executeCommand(cmd).trim());
 
-			cmd = new String[]{"/bin/sh","-c","grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\" />\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertTrue(executeCommand(cmd).trim().equals("0"));
+			cmd = new String[]{"/bin/sh","-c","grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
+			assertEquals("0", executeCommand(cmd).trim());
 
 		}catch(Exception t){
 			t.printStackTrace();
@@ -117,17 +118,17 @@ public class VOTableFormatTest {
 
 			TableIterator it = new ResultSetTableIterator(rs);
 
-			VOTableFormat formatter = new VOTableFormat(serviceConn);
+			VOTableFormat formatter = new VOTableFormat(serviceConn, DataFormat.FITS);
 			OutputStream output = new BufferedOutputStream(new FileOutputStream(votableFile));
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
 			// note: due to the pipe (|), we must call /bin/sh as a command whose the command to execute in is the "grep ... | wc -l":
 			String[] cmd = new String[]{"/bin/sh","-c","grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertTrue(executeCommand(cmd).trim().equals("5"));
+			assertEquals("5", executeCommand(cmd).trim());
 
-			cmd = new String[]{"/bin/sh","-c","grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\" />\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertTrue(executeCommand(cmd).trim().equals("1"));
+			cmd = new String[]{"/bin/sh","-c","grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
+			assertEquals("1", executeCommand(cmd).trim());
 
 		}catch(Exception t){
 			t.printStackTrace();

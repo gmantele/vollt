@@ -44,8 +44,6 @@ public class TAPColumn implements DBColumn {
 
 	private TAPType datatype = new TAPType(TAPDatatype.VARCHAR);
 
-	private VotType votType = datatype.toVotType();
-
 	private boolean principal = false;
 
 	private boolean indexed = false;
@@ -194,14 +192,6 @@ public class TAPColumn implements DBColumn {
 	 */
 	public final void setDatatype(final TAPType type){
 		datatype = type;
-		votType = datatype.toVotType();
-	}
-
-	/**
-	 * @return The votType.
-	 */
-	public final VotType getVotType(){
-		return votType;
 	}
 
 	/**

@@ -64,7 +64,9 @@ public interface OutputFormat {
 	public String getFileExtension();
 
 	/**
-	 * Formats the given query result and writes it in the given output stream.
+	 * <p>Formats the given query result and writes it in the given output stream.</p>
+	 * 
+	 * <p><i>Note: the given output stream should not be closed at the end of this function. It is up to the called to do it.</i></p>
 	 * 
 	 * @param result		The raw (table) result to format.
 	 * @param output		The output stream (a ServletOutputStream or a stream on a file) in which the formatted result must be written.

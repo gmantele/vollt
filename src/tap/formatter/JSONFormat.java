@@ -106,7 +106,7 @@ public class JSONFormat implements OutputFormat {
 			// {
 			out.object();
 
-			// "metadata": {...}
+			// "metadata": [...]
 			out.key("metadata");
 
 			// Write metadata part:
@@ -114,7 +114,7 @@ public class JSONFormat implements OutputFormat {
 
 			writer.flush();
 
-			// "data": {...}
+			// "data": [...]
 			out.key("data");
 
 			// Write the data part:
@@ -229,16 +229,11 @@ public class JSONFormat implements OutputFormat {
 			out.key("description").value(tapCol.getDescription());
 
 		// "datatype": "..."
-		VotType votType = tapCol.getVotType();
+		VotType votType = tapCol.getDatatype().toVotType();
 		out.key("datatype").value(votType.datatype);
 
 		// "arraysize": "..." (if any)
-		if (votType.unlimitedArraysize){
-			if (votType.arraysize > 0)
-				out.key("arraysize").value(votType.arraysize + "*");
-			else
-				out.key("arraysize").value("*");
-		}else if (votType.arraysize > 0)
+		if (votType.arraysize != null)
 			out.key("arraysize").value(votType.arraysize);
 
 		// "xtype": "..." (if any)
