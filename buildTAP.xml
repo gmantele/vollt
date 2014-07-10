@@ -5,17 +5,19 @@
 	<property name="version" value="1.1b" />
 
 	<property name="srcDir" value="src" />
+	<property name="libDir" value="lib" />
 	<property name="compileDir" value="antBuild" />
 	<property name="classesDir" value="${compileDir}"/>
 	<property name="javadocDir" value="javadoc/tap" />
 	
-	<property name="uploadUtilsJar" value="lib/uploadUtils.jar" />
+	<property name="cosJar" value="${libDir}/cos.jar" />
+	<property name="stilJar" value="${libDir}/stil3.0-5.jar" />
 		
 	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
 	<property name="jsonPath" value="org/json/**" />
-	<property name="uploadUtilsPath" value="com/oreilly/servlet/**,org/kxml2/**,org/xmlpull/**" />
+	<property name="extLibsPath" value="com/oreilly/servlet/**,nom/tam/**,org/apache/tools/bzip2/**,uk/ac/starlink/**" />
 	<property name="licensePath" value="COPYING.LESSER.txt" />
-	<property name="includesList" value="${tapPath},${jsonPath},${uploadUtilsPath},${licensePath}" />
+	<property name="includesList" value="${tapPath},${jsonPath},${extLibsPath},${licensePath}" />
 
 	<property name="jarDest" value="." />
 	<property name="libJarFile" value="${jarDest}/tap_${version}.jar" />
@@ -30,7 +32,8 @@
 	</fail>
 	
 	<path id="tap.classpath">
-		<pathelement location="${uploadUtilsJar}" />
+		<pathelement location="${cosJar}" />
+		<pathelement location="${stilJar}" />
 		<pathelement location="${CATALINA}" />
 		<pathelement location="${SERVLET-API}" />
 	</path>
@@ -62,14 +65,16 @@
 	<target name="buildLib" depends="compileLib" description="After 'clean', build the library JAR (only classes).">
 		<echo>Generate the library:</echo>
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
-			<zipfileset src="${uploadUtilsJar}" excludes="META-INF/*" />
+			<zipfileset src="${cosJar}" excludes="META-INF/*" />
+			<zipfileset src="${stilJar}" excludes="META-INF/*" />
 		</jar>
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>
 	
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
 		<jar compress="false" baseDir="${srcDir}" destfile="${srcJarFile}" includes="${includesList}">
-			<fileset file="${uploadUtilsJar}" />
+			<fileset file="${cosJar}" />
+			<fileset file="${stilJar}" />
 		</jar>
 	</target>
 	
