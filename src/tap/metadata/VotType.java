@@ -16,7 +16,8 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import cds.savot.writer.SavotWriter;
@@ -29,8 +30,8 @@ import cds.savot.writer.SavotWriter;
  * 	<li><code>xtype</code>.</li>
  * </ul>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 11/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 07/2014
  */
 public final class VotType {
 	public final String datatype;
@@ -48,7 +49,7 @@ public final class VotType {
 			throw new NullPointerException("Null VOTable datatype !");
 		this.datatype = datatype;
 		this.arraysize = arraysize;
-		this.xtype = xtype;
+		this.xtype = (xtype != null && xtype.trim().length() <= 0) ? null : xtype;
 	}
 
 	@Override
