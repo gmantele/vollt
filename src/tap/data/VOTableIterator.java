@@ -203,6 +203,15 @@ public class VOTableIterator implements TableIterator {
 	}
 
 	@Override
+	public void close() throws DataReadException{
+		try{
+			rowSeq.close();
+		}catch(IOException ioe){
+			throw new DataReadException("Can not close the iterated VOTable!", ioe);
+		}
+	}
+
+	@Override
 	public TAPColumn[] getMetadata(){
 		return colMeta;
 	}

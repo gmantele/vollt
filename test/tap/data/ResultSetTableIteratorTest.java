@@ -33,16 +33,18 @@ public class ResultSetTableIteratorTest {
 			new ResultSetTableIterator(null);
 			fail("The constructor should have failed, because: the given ResultSet is NULL.");
 		}catch(Exception ex){
-			assertEquals(ex.getClass().getName(), "java.lang.NullPointerException");
+			assertEquals("java.lang.NullPointerException", ex.getClass().getName());
+			assertEquals("Missing ResultSet object over which to iterate!", ex.getMessage());
 		}
 	}
 
 	@Test
 	public void testWithData(){
+		TableIterator it = null;
 		try{
 			ResultSet rs = DBTools.select(conn, "SELECT id, ra, deg, gmag FROM gums LIMIT 10;");
 
-			TableIterator it = new ResultSetTableIterator(rs);
+			it = new ResultSetTableIterator(rs);
 			// TEST there is column metadata before starting the iteration:
 			assertTrue(it.getMetadata() != null);
 			final int expectedNbLines = 10, expectedNbColumns = 4;
@@ -68,15 +70,22 @@ public class ResultSetTableIteratorTest {
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
 			fail("An exception occurs while reading a correct ResultSet (containing some valid rows).");
+		}finally{
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){}
+			}
 		}
 	}
 
 	@Test
 	public void testWithEmptySet(){
+		TableIterator it = null;
 		try{
 			ResultSet rs = DBTools.select(conn, "SELECT * FROM gums WHERE id = 'foo';");
 
-			TableIterator it = new ResultSetTableIterator(rs);
+			it = new ResultSetTableIterator(rs);
 			// TEST there is column metadata before starting the iteration:
 			assertTrue(it.getMetadata() != null);
 			int countLines = 0;
@@ -89,6 +98,12 @@ public class ResultSetTableIteratorTest {
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
 			fail("An exception occurs while reading a correct ResultSet (containing some valid rows).");
+		}finally{
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){}
+			}
 		}
 	}
 

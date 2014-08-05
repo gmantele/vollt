@@ -16,12 +16,12 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
-
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CircleFunction;
@@ -32,24 +32,19 @@ import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 
-import adql.translator.PostgreSQLTranslator;
-import adql.translator.TranslationException;
-
 /**
  * <p>Translates all ADQL objects into the SQL adaptation of Postgres+PgSphere.
  * Actually only the geometrical functions are translated in this class.
  * The other functions are managed by {@link PostgreSQLTranslator}.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
- * 
- * @see PostgreSQLTranslator
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (08/2014)
  */
 public class PgSphereTranslator extends PostgreSQLTranslator {
 
 	/**
-	 * Builds a PgSphereTranslator which takes into account the case sensitivity on column names.
-	 * It means that column names which have been written between double quotes, will be also translated between double quotes.
+	 * Builds a PgSphereTranslator which always translates in SQL all identifiers (schema, table and column) in a case sensitive manner ;
+	 * in other words, schema, table and column names will be surrounded by double quotes in the SQL translation.
 	 * 
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator()
 	 */
@@ -58,23 +53,24 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	/**
-	 * Builds a PgSphereTranslator.
+	 * Builds a PgSphereTranslator which always translates in SQL all identifiers (schema, table and column) in the specified case sensitivity ;
+	 * in other words, schema, table and column names will all be surrounded or not by double quotes in the SQL translation.
 	 * 
-	 * @param column	<i>true</i> to take into account the case sensitivity of column names, <i>false</i> otherwise.
+	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity. 
 	 * 
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean)
 	 */
-	public PgSphereTranslator(boolean column){
-		super(column);
+	public PgSphereTranslator(boolean allCaseSensitive){
+		super(allCaseSensitive);
 	}
 
 	/**
-	 * Builds a PgSphereTranslator.
+	 * Builds a PgSphereTranslator which will always translate in SQL identifiers with the defined case sensitivity.
 	 * 
-	 * @param catalog	<i>true</i> to take into account the case sensitivity of catalog names, <i>false</i> otherwise.
-	 * @param schema	<i>true</i> to take into account the case sensitivity of schema names, <i>false</i> otherwise.
-	 * @param table		<i>true</i> to take into account the case sensitivity of table names, <i>false</i> otherwise.
-	 * @param column	<i>true</i> to take into account the case sensitivity of column names, <i>false</i> otherwise.
+	 * @param catalog	<i>true</i> to translate catalog names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
+	 * @param schema	<i>true</i> to translate schema names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
+	 * @param table		<i>true</i> to translate table names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
+	 * @param column	<i>true</i> to translate column names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * 
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean, boolean, boolean, boolean)
 	 */

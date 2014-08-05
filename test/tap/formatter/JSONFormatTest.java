@@ -75,8 +75,9 @@ public class JSONFormatTest {
 
 	@Test
 	public void testWriteResult(){
+		ResultSet rs = null;
 		try{
-			ResultSet rs = DBTools.select(conn, "SELECT id, ra, deg, gmag FROM gums LIMIT 10;");
+			rs = DBTools.select(conn, "SELECT id, ra, deg, gmag FROM gums LIMIT 10;");
 
 			HashMap<String,Object> tapParams = new HashMap<String,Object>(1);
 			tapParams.put(TAPJob.PARAM_MAX_REC, "100");
@@ -98,6 +99,12 @@ public class JSONFormatTest {
 		}catch(Exception t){
 			t.printStackTrace();
 			fail("Unexpected exception!");
+		}finally{
+			if (rs != null){
+				try{
+					rs.close();
+				}catch(SQLException se){}
+			}
 		}
 	}
 

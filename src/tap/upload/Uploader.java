@@ -17,7 +17,7 @@ package tap.upload;
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institute (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ import tap.data.DataReadException;
 import tap.data.VOTableIterator;
 import tap.db.DBConnection;
 import tap.metadata.TAPColumn;
-import tap.metadata.TAPDM;
+import tap.metadata.TAPMetadata.STDSchema;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 
@@ -105,7 +105,7 @@ public class Uploader {
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
 	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
-		TAPSchema uploadSchema = new TAPSchema(TAPDM.UPLOADSCHEMA.getLabel());
+		TAPSchema uploadSchema = new TAPSchema(STDSchema.UPLOADSCHEMA.getLabel());
 		InputStream votable = null;
 		String tableName = null;
 		try{
@@ -137,6 +137,7 @@ public class Uploader {
 
 				// Close the VOTable stream:
 				votable.close();
+				votable = null;
 			}
 		}catch(DataReadException dre){
 			if (dre.getCause() instanceof ExceededSizeException)

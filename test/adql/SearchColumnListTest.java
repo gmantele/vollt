@@ -8,6 +8,7 @@ import java.util.Map;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
+import tap.metadata.TAPTable.TableType;
 import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
 import adql.db.DBColumn;
@@ -25,10 +26,10 @@ public class SearchColumnListTest {
 
 		/* SET THE TABLES AND COLUMNS NEEDED FOR THE TEST */
 		// Describe the available table:
-		TAPTable tableA = new TAPTable("A", "TABLE", "NATURAL JOIN Test table", null);
-		TAPTable tableB = new TAPTable("B", "TABLE", "NATURAL JOIN Test table", null);
-		TAPTable tableC = new TAPTable("C", "TABLE", "NATURAL JOIN Test table", null);
-		TAPTable tableD = new TAPTable("D", "TABLE", "NATURAL JOIN Test table", null);
+		TAPTable tableA = new TAPTable("A", TableType.table, "NATURAL JOIN Test table", null);
+		TAPTable tableB = new TAPTable("B", TableType.table, "NATURAL JOIN Test table", null);
+		TAPTable tableC = new TAPTable("C", TableType.table, "NATURAL JOIN Test table", null);
+		TAPTable tableD = new TAPTable("D", TableType.table, "NATURAL JOIN Test table", null);
 
 		// Describe its columns:
 		tableA.addColumn(new TAPColumn("id", new TAPType(TAPDatatype.VARCHAR), "Object ID"));

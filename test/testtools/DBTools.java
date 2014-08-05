@@ -96,7 +96,7 @@ public final class DBTools {
 		// 3. Establish the connection:
 		Connection connection = null;
 		try{
-			connection = DriverManager.getConnection("jdbc:" + dbms + "://" + server + ((port != null && port.trim().length() > 0) ? (":" + port) : "") + "/" + dbName, user, passwd);
+			connection = DriverManager.getConnection("jdbc:" + dbms + ":" + ((server != null && server.trim().length() > 0) ? "//" + server + ((port != null && port.trim().length() > 0) ? (":" + port) : "") + "/" : "") + dbName, user, passwd);
 		}catch(SQLException e){
 			throw new DBToolsException("Connection failed: " + e.getMessage(), e);
 		}

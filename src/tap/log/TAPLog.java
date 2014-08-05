@@ -43,6 +43,8 @@ public interface TAPLog extends UWSLog {
 
 	public void tapMetadataLoaded(final TAPMetadata metadata);
 
+	public void connectionOpened(final DBConnection connection);
+
 	public void connectionClosed(final DBConnection connection);
 
 	public void sqlQueryExecuting(final DBConnection connection, final String sql);

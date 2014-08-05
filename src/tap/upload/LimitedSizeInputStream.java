@@ -49,7 +49,7 @@ public final class LimitedSizeInputStream extends InputStream {
 			counter += nbReads;
 			if (counter > sizeLimit){
 				exceed = true;
-				throw new ExceededSizeException();
+				throw new ExceededSizeException("Data read overflow: the limit of " + sizeLimit + " bytes has been reached!");
 			}
 		}
 	}

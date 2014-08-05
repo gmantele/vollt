@@ -35,9 +35,10 @@ public class VOTableIteratorTest {
 	@Test
 	public void testWithData(){
 		InputStream input = null;
+		TableIterator it = null;
 		try{
 			input = new BufferedInputStream(new FileInputStream(dataVOTable));
-			TableIterator it = new VOTableIterator(input);
+			it = new VOTableIterator(input);
 			// TEST there is column metadata before starting the iteration:
 			assertTrue(it.getMetadata() != null);
 			final int expectedNbLines = 100, expectedNbColumns = 4;
@@ -69,6 +70,11 @@ public class VOTableIteratorTest {
 					input.close();
 			}catch(IOException e){
 				e.printStackTrace();
+			}
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){}
 			}
 		}
 	}
@@ -76,9 +82,10 @@ public class VOTableIteratorTest {
 	@Test
 	public void testWithBinary(){
 		InputStream input = null;
+		TableIterator it = null;
 		try{
 			input = new BufferedInputStream(new FileInputStream(binaryVOTable));
-			TableIterator it = new VOTableIterator(input);
+			it = new VOTableIterator(input);
 			// TEST there is column metadata before starting the iteration:
 			assertTrue(it.getMetadata() != null);
 			final int expectedNbLines = 100, expectedNbColumns = 4;
@@ -111,15 +118,21 @@ public class VOTableIteratorTest {
 			}catch(IOException e){
 				e.printStackTrace();
 			}
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){}
+			}
 		}
 	}
 
 	@Test
 	public void testWithEmptySet(){
 		InputStream input = null;
+		TableIterator it = null;
 		try{
 			input = new BufferedInputStream(new FileInputStream(emptyVOTable));
-			TableIterator it = new VOTableIterator(input);
+			it = new VOTableIterator(input);
 			// TEST there is column metadata before starting the iteration:
 			assertTrue(it.getMetadata() != null);
 			int countLines = 0;
@@ -139,15 +152,21 @@ public class VOTableIteratorTest {
 			}catch(IOException e){
 				e.printStackTrace();
 			}
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){}
+			}
 		}
 	}
 
 	@Test
 	public void testWithEmptyBinarySet(){
 		InputStream input = null;
+		TableIterator it = null;
 		try{
 			input = new BufferedInputStream(new FileInputStream(emptyBinaryVOTable));
-			TableIterator it = new VOTableIterator(input);
+			it = new VOTableIterator(input);
 			// TEST there is column metadata before starting the iteration:
 			assertTrue(it.getMetadata() != null);
 			int countLines = 0;
@@ -166,6 +185,11 @@ public class VOTableIteratorTest {
 					input.close();
 			}catch(IOException e){
 				e.printStackTrace();
+			}
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){}
 			}
 		}
 	}

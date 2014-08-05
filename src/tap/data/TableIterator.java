@@ -43,11 +43,15 @@ import tap.metadata.TAPType;
  * 		}
  * 	}catch(DataReadException dre){
  * 		...
+ * 	}finally{
+ * 		try{
+ * 			it.close();
+ * 		}catch(DataReadException dre){ ... }
  * 	}
  * </pre>
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 2.0 (06/2014)
+ * @version 2.0 (08/2014)
  * @since 2.0
  */
 public interface TableIterator {
@@ -123,4 +127,12 @@ public interface TableIterator {
 	 * @throws DataReadException		If an error occurs while reading the table dataset.
 	 */
 	public TAPType getColType() throws IllegalStateException, DataReadException;
+
+	/**
+	 * Close the stream or input over which this class iterates.
+	 * 
+	 * @throws DataReadException	If any error occurs while closing it.
+	 */
+	public void close() throws DataReadException;
+
 }

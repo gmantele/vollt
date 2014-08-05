@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VOTABLE version="1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.ivoa.net/xml/VOTable/v1.2"
+  xsi:schemaLocation="http://www.ivoa.net/xml/VOTable/v1.2 http://www.ivoa.net/xml/VOTable/v1.2">
+ <DESCRIPTION>
+   VizieR Astronomical Server vizier.u-strasbg.fr
+    Date: 2014-07-18T16:16:29 [V1.99+ (14-Oct-2013)]
+   Explanations and Statistics of UCDs:			See LINK below
+   In case of problem, please report to:	cds-question@unistra.fr
+   In this version, NULL integer columns are written as an empty string
+   &lt;TD&gt;&lt;/TD&gt;, explicitely possible from VOTable-1.3
+ </DESCRIPTION>
+<!-- VOTable description at http://www.ivoa.net/Documents/latest/VOT.html -->
+<INFO ID="VERSION" name="votable-version" value="1.99+ (14-Oct-2013)"/>
+<INFO ID="Ref" name="-ref" value="VIZ53c9485768a5"/>
+<RESOURCE ID="yCat_2220" name="II/220">
+  <DESCRIPTION>Polarisation of Be stars (McDavid, 1986-1999)</DESCRIPTION>
+  <COOSYS ID="J2000" system="eq_FK5" equinox="J2000"/>
+  <TABLE ID="II_220_stars" name="II/220/stars">
+    <DESCRIPTION>Standard and Program Be stars</DESCRIPTION>
+    <!-- Definitions of GROUPs and FIELDs -->
+    <FIELD name="_RAJ2000" ucd="pos.eq.ra" ref="J2000" datatype="double" width="8" precision="4" unit="deg"><!-- ucd="POS_EQ_RA" -->
+      <DESCRIPTION>Right ascension (FK5, Equinox=J2000.0) (computed by VizieR, not part of the original data)</DESCRIPTION>
+    </FIELD>
+    <FIELD name="_DEJ2000" ucd="pos.eq.dec" ref="J2000" datatype="double" width="8" precision="4" unit="deg"><!-- ucd="POS_EQ_DEC" -->
+      <DESCRIPTION>Declination (FK5, Equinox=J2000.0) (computed by VizieR, not part of the original data)</DESCRIPTION>
+    </FIELD>
+    <FIELD name="ps" ucd="meta.ref.url" datatype="char" arraysize="1"><!-- ucd="DATA_LINK" -->
+      <DESCRIPTION>[p/s] Program or Standard star</DESCRIPTION>
+    </FIELD>
+    <FIELD name="Name" ucd="meta.id;meta.main" datatype="char" arraysize="7"><!-- ucd="ID_MAIN" -->
+      <DESCRIPTION>Star name</DESCRIPTION>
+    </FIELD>
+    <FIELD name="HD" ucd="meta.id" datatype="int" width="6"><!-- ucd="ID_ALTERNATIVE" -->
+      <DESCRIPTION>HD (Cat. &lt;III/135&gt;) catalog number</DESCRIPTION>
+    </FIELD>
+    <FIELD name="HR" ucd="meta.id" datatype="short" width="4"><!-- ucd="ID_ALTERNATIVE" -->
+      <DESCRIPTION>BS (Cat. &lt;V/50&gt;) catalog number</DESCRIPTION>
+    </FIELD>
+    <FIELD name="Vmag" ucd="meta.ref;pos.frame" datatype="float" width="5" precision="2" unit="mag"><!-- ucd="?" -->
+      <DESCRIPTION>Visual magnitude (BSC4, See Cat. &lt;V/50&gt;)</DESCRIPTION>
+    </FIELD>
+    <FIELD name="RAJ2000" ucd="pos.eq.ra;meta.main" ref="J2000" datatype="char" arraysize="10" unit="&quot;h:m:s&quot;"><!-- ucd="?" -->
+      <DESCRIPTION>Right Ascension J2000</DESCRIPTION>
+    </FIELD>
+    <FIELD name="DEJ2000" ucd="pos.eq.dec;meta.main" ref="J2000" datatype="char" arraysize="9" unit="&quot;d:m:s&quot;"><!-- ucd="?" -->
+      <DESCRIPTION>Declination J2000</DESCRIPTION>
+    </FIELD>
+    <FIELD name="Sp" ucd="src.spType" datatype="char" arraysize="15"><!-- ucd="?" -->
+      <DESCRIPTION>MK Spectral type (1)</DESCRIPTION>
+    </FIELD>
+    <FIELD name="vsini" ucd="phys.veloc.rotat" datatype="short" width="3" unit="km/s"><!-- ucd="?" -->
+      <DESCRIPTION>? projected rotational velocity (1) [NULL integer written as an empty string]</DESCRIPTION>
+      <VALUES null="-32768" />
+    </FIELD>
+    <FIELD name="Simbad" ucd="meta.ref" datatype="char" arraysize="6"><!-- ucd="DATA_LINK" -->
+      <DESCRIPTION>ask the {\bf\fg{FireBrick}Simbad} data-base about this object</DESCRIPTION>
+    </FIELD>
+<DATA><TABLEDATA>
+<TR><TD>052.2671</TD><TD>+59.9403</TD><TD>s</TD><TD>2H  Cam</TD><TD>21291</TD><TD>1035</TD><TD>4.23</TD><TD>03 29 04.1</TD><TD>+59 56 25</TD><TD>B9Ia</TD><TD></TD><TD>Simbad</TD></TR>
+<TR><TD>245.1587</TD><TD>-24.1689</TD><TD>s</TD><TD>omi Sco</TD><TD>147084</TD><TD>6081</TD><TD>4.55</TD><TD>16 20 38.1</TD><TD>-24 10 08</TD><TD>A5II</TD><TD></TD><TD>Simbad</TD></TR>
+<TR><TD>014.1758</TD><TD>+60.7169</TD><TD>p</TD><TD>gam Cas</TD><TD>5394</TD><TD>264</TD><TD>2.47</TD><TD>00 56 42.2</TD><TD>+60 43 01</TD><TD>B0.5IVe</TD><TD>230</TD><TD>Simbad</TD></TR>
+<TR><TD>025.9142</TD><TD>+50.6889</TD><TD>p</TD><TD>phi Per</TD><TD>10516</TD><TD>496</TD><TD>4.07</TD><TD>01 43 39.4</TD><TD>+50 41 20</TD><TD>B1.5(V:)e-shell</TD><TD>400</TD><TD>Simbad</TD></TR>
+<TR><TD>062.1646</TD><TD>+47.7131</TD><TD>p</TD><TD>48  Per</TD><TD>25940</TD><TD>1273</TD><TD>4.04</TD><TD>04 08 39.5</TD><TD>+47 42 47</TD><TD>B4Ve</TD><TD>200</TD><TD>Simbad</TD></TR>
+<TR><TD>084.4108</TD><TD>+21.1428</TD><TD>p</TD><TD>zet Tau</TD><TD>37202</TD><TD>1910</TD><TD>3.00</TD><TD>05 37 38.6</TD><TD>+21 08 34</TD><TD>B1IVe-shell</TD><TD>220</TD><TD>Simbad</TD></TR>
+<TR><TD>239.5471</TD><TD>-14.2792</TD><TD>p</TD><TD>48  Lib</TD><TD>142983</TD><TD>5941</TD><TD>4.88</TD><TD>15 58 11.3</TD><TD>-14 16 45</TD><TD>B3:IV:e-shell</TD><TD>400</TD><TD>Simbad</TD></TR>
+<TR><TD>246.7554</TD><TD>-18.4558</TD><TD>p</TD><TD>chi Oph</TD><TD>148184</TD><TD>6118</TD><TD>4.42</TD><TD>16 27 01.3</TD><TD>-18 27 21</TD><TD>B1.5Ve</TD><TD>140</TD><TD>Simbad</TD></TR>
+<TR><TD>336.3187</TD><TD>+1.3772</TD><TD>p</TD><TD>pi  Aqr</TD><TD>212571</TD><TD>8539</TD><TD>4.66</TD><TD>22 25 16.5</TD><TD>+01 22 38</TD><TD>B1III-IVe</TD><TD>300</TD><TD>Simbad</TD></TR>
+<TR><TD>345.4796</TD><TD>+42.3261</TD><TD>p</TD><TD>omi And</TD><TD>217675</TD><TD>8762</TD><TD>3.62</TD><TD>23 01 55.1</TD><TD>+42 19 34</TD><TD>B6III</TD><TD>260</TD><TD>Simbad</TD></TR>
+</TABLEDATA></DATA>
+</TABLE>
+
+<INFO name="Warning" value="No center provided++++"/>
+</RESOURCE>
+</VOTABLE>
