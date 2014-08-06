@@ -590,8 +590,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writeAtt(prefix, "name", c.getADQLName(), writer);
 		writeAtt(prefix, "description", c.getDescription(), writer);
 		writeAtt(prefix, "unit", c.getUnit(), writer);
-		writeAtt(prefix, "utype", c.getUtype(), writer);
 		writeAtt(prefix, "ucd", c.getUcd(), writer);
+		writeAtt(prefix, "utype", c.getUtype(), writer);
 
 		if (c.getDatatype() != null){
 			writer.print(prefix);
