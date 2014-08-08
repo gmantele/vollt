@@ -64,6 +64,8 @@ public interface ServiceConnection {
 
 	public Collection<String> getCoordinateSystems();
 
+	public int getNbMaxAsyncJobs();
+
 	public TAPLog getLogger();
 
 	public TAPFactory getFactory();

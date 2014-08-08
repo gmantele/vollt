@@ -20,6 +20,7 @@ package tap.resource;
  */
 
 import java.io.IOException;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -27,10 +28,15 @@ import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
 import tap.TAPException;
+import tap.TAPFactory;
 import uws.UWSException;
 import uws.job.JobList;
+import uws.job.UWSJob;
+import uws.job.manager.AbstractQueuedExecutionManager;
+import uws.job.manager.QueuedExecutionManager;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
+import uws.service.log.UWSLog;
 
 public class ASync implements TAPResource {
 
@@ -39,6 +45,7 @@ public class ASync implements TAPResource {
 	@SuppressWarnings("unchecked")
 	protected final ServiceConnection service;
 	protected final UWSService uws;
+	protected final JobList jobList;
 
 	@SuppressWarnings("unchecked")
 	public ASync(ServiceConnection service) throws UWSException, TAPException{
@@ -49,8 +56,13 @@ public class ASync implements TAPResource {
 		if (uws.getUserIdentifier() == null)
 			uws.setUserIdentifier(service.getUserIdentifier());
 
-		if (uws.getJobList(getName()) == null)
-			uws.addJobList(new JobList(getName()));
+		if (uws.getJobList(getName()) == null){
+			jobList = new JobList(getName());
+			uws.addJobList(jobList);
+			if (service.getNbMaxAsyncJobs() > 0)
+				jobList.setExecutionManager(new AsyncExecutionManager(service.getFactory(), service.getLogger(), service.getNbMaxAsyncJobs()));
+		}else
+			jobList = uws.getJobList(getName());
 
 		if (uws.getBackupManager() == null)
 			uws.setBackupManager(service.getFactory().createUWSBackupManager(uws));
@@ -73,6 +85,16 @@ public class ASync implements TAPResource {
 				errorMsg += " => Backup disabled.";
 				service.getLogger().error(errorMsg);
 				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, errorMsg);
+			}
+		}
+	}
+
+	public void freeConnectionAvailable(){
+		if (jobList.getExecutionManager() != null){
+			try{
+				jobList.getExecutionManager().refresh();
+			}catch(UWSException e){
+				service.getLogger().warning("Can not refresh the ASYNC queue! (CAUSE: " + e.getMessage() + ")");
 			}
 		}
 	}
@@ -104,6 +126,29 @@ public class ASync implements TAPResource {
 	@Override
 	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, TAPException, UWSException{
 		return uws.executeRequest(request, response);
+	}
+
+	private class AsyncExecutionManager extends AbstractQueuedExecutionManager {
+
+		private final TAPFactory factory;
+
+		/** The maximum number of running jobs. */
+		protected int nbMaxRunningJobs = QueuedExecutionManager.NO_QUEUE;
+
+		public AsyncExecutionManager(final TAPFactory factory, UWSLog logger, int maxRunningJobs){
+			super(logger);
+			this.factory = factory;
+			nbMaxRunningJobs = (maxRunningJobs <= 0) ? QueuedExecutionManager.NO_QUEUE : maxRunningJobs;
+		}
+
+		@Override
+		public boolean isReadyForExecution(UWSJob jobToExecute){
+			if (!hasQueue())
+				return factory.countFreeConnections() >= 1;
+			else
+				return (runningJobs.size() < nbMaxRunningJobs) && (factory.countFreeConnections() >= 1);
+		}
+
 	}
 
 }

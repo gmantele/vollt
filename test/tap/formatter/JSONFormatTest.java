@@ -249,6 +249,11 @@ public class JSONFormatTest {
 			return null;
 		}
 
+		@Override
+		public int getNbMaxAsyncJobs(){
+			return -1;
+		}
+
 	}
 
 }

@@ -269,6 +269,11 @@ public class TextFormatTest {
 			return null;
 		}
 
+		@Override
+		public int getNbMaxAsyncJobs(){
+			return -1;
+		}
+
 	}
 
 }

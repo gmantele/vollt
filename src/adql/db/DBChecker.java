@@ -17,7 +17,7 @@ package adql.db;
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2011,2013-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                            Astronomishes Rechen Institute (ARI)
+ *                            Astronomishes Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (04/2014)
+ * @version 1.3 (08/2014)
  */
 public class DBChecker implements QueryChecker {
 
@@ -86,7 +86,7 @@ public class DBChecker implements QueryChecker {
 	 * 
 	 * @param tables	List of all available tables.
 	 */
-	public DBChecker(final Collection<DBTable> tables){
+	public DBChecker(final Collection<? extends DBTable> tables){
 		setTables(tables);
 	}
 
@@ -103,7 +103,7 @@ public class DBChecker implements QueryChecker {
 	 * 
 	 * @param tables	List of {@link DBTable}s.
 	 */
-	public final void setTables(final Collection<DBTable> tables){
+	public final void setTables(final Collection<? extends DBTable> tables){
 		if (tables == null)
 			lstTables = new SearchTableList();
 		else if (tables instanceof SearchTableList)

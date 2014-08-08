@@ -49,7 +49,7 @@ import adql.translator.TranslationException;
  * 
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (08/2014)
  */
 public class ADQLExecutor {
 
@@ -121,7 +121,7 @@ public class ADQLExecutor {
 		long start = System.currentTimeMillis();
 		try{
 			// Get a "database" connection:
-			dbConn = service.getFactory().createDBConnection(report.jobID);
+			dbConn = service.getFactory().getConnection(report.jobID);
 
 			// 1. UPLOAD TABLES, if needed:
 			if (tapParams != null && tapParams.getTableLoaders() != null && tapParams.getTableLoaders().length > 0){
@@ -157,19 +157,18 @@ public class ADQLExecutor {
 			npe.printStackTrace();
 			throw npe;
 		}finally{
+			// Drop all the uploaded tables (they are not supposed to exist after the query execution):
 			try{
 				dropUploadedTables();
 			}catch(TAPException e){
 				logger.error("JOB " + report.jobID + "\tCan not drop uploaded tables !", e);
 			}
-			try{
-				if (dbConn != null){
-					dbConn.close();
-					dbConn = null;
-				}
-			}catch(TAPException e){
-				logger.error("JOB " + report.jobID + "\tCan not close the DB connection !", e);
+			// Free the connection (so that giving it back to a pool, if any, otherwise, just free resources):
+			if (dbConn != null){
+				service.getFactory().freeConnection(dbConn);
+				dbConn = null;
 			}
+			// Set the total duration in the report:
 			report.setTotalDuration(System.currentTimeMillis() - start);
 			logger.queryFinished(report);
 		}

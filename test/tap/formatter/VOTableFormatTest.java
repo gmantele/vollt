@@ -278,6 +278,11 @@ public class VOTableFormatTest {
 			return null;
 		}
 
+		@Override
+		public int getNbMaxAsyncJobs(){
+			return -1;
+		}
+
 	}
 
 }

@@ -76,15 +76,26 @@ public class Sync implements TAPResource {
 		if (params.getRequest().equalsIgnoreCase(TAPJob.REQUEST_GET_CAPABILITIES))
 			return capabilities.executeResource(request, response);
 
+		// Ensure the service is currently available:
 		if (!service.isAvailable()){
 			response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, service.getAvailability());
 			return false;
 		}
 
-		TAPSyncJob syncJob = new TAPSyncJob(service, params);
-		syncJob.start(response);
+		/* Ensure that at least 1 DB connection is available for asynchronous queries.
+		 * If yes, just execute synchronously the given job:
+		 */
+		if (service.getFactory().countFreeConnections() > 1){
+			TAPSyncJob syncJob = new TAPSyncJob(service, params);
+			syncJob.start(response);
+			return true;
+		}
+		// Otherwise, send an error:
+		else{
+			response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "TAP service too busy! No connection available for the moment. You should try later or create an asynchronous query (which will be executed when enough resources will be available again).");
+			return false;
+		}
 
-		return true;
 	}
 
 }

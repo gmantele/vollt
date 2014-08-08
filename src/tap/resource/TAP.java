@@ -17,7 +17,7 @@ package tap.resource;
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institute (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -91,7 +91,7 @@ public class TAP implements VOSIResource {
 		if (service.uploadEnabled()){
 			DBConnection dbConn = null;
 			try{
-				dbConn = service.getFactory().createDBConnection("TAP(ServiceConnection)");
+				dbConn = service.getFactory().getConnection("TAP(ServiceConnection)");
 				// TODO CLEAN ACTION: DROP SCHEMA!
 				/*dbConn.dropSchema("TAP_UPLOAD");
 				dbConn.createSchema("TAP_UPLOAD");*/
@@ -99,7 +99,7 @@ public class TAP implements VOSIResource {
 				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Error while creating the schema TAP_UPLOAD !");
 			}finally{
 				if (dbConn != null)
-					dbConn.close();
+					service.getFactory().freeConnection(dbConn);
 			}
 		}
 
@@ -259,7 +259,7 @@ public class TAP implements VOSIResource {
 	}
 
 	public final UWSService getUWS(){
-		TAPResource res = resources.get("async");
+		TAPResource res = getASync();
 		if (res != null)
 			return ((ASync)res).getUWS();
 		else
@@ -331,6 +331,10 @@ public class TAP implements VOSIResource {
 			writeError(te, response);
 		}catch(Throwable t){
 			errorWriter.writeError(t, response, request, owner, (resourceName == null) ? "Writing the TAP home page" : ("Executing the TAP resource " + resourceName));
+		}finally{
+			// Notify the queue of the asynchronous jobs that a new connection is available:
+			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME) && service.getFactory().countFreeConnections() >= 1)
+				getASync().freeConnectionAvailable();
 		}
 	}
 

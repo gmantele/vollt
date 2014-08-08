@@ -222,7 +222,7 @@ public class JSONFormat implements OutputFormat {
 		out.object();
 
 		// "name": "..."
-		out.key("name").value(tapCol.getName());
+		out.key("name").value(tapCol.getADQLName());
 
 		// "description": "..." (if any)
 		if (tapCol.getDescription() != null && tapCol.getDescription().trim().length() > 0)
