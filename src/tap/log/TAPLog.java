@@ -23,13 +23,14 @@ package tap.log;
 import tap.TAPExecutionReport;
 import tap.db.DBConnection;
 import tap.metadata.TAPMetadata;
+import tap.metadata.TAPTable;
 import uws.service.log.UWSLog;
 
 /**
  * Lets logging any kind of message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (08/2014)
  */
 public interface TAPLog extends UWSLog {
 
@@ -43,9 +44,25 @@ public interface TAPLog extends UWSLog {
 
 	public void tapMetadataLoaded(final TAPMetadata metadata);
 
-	public void connectionOpened(final DBConnection connection);
+	public void connectionOpened(final DBConnection connection, final String dbName);
 
 	public void connectionClosed(final DBConnection connection);
+
+	public void transactionStarted(final DBConnection connection);
+
+	public void transactionCancelled(final DBConnection connection);
+
+	public void transactionEnded(final DBConnection connection);
+
+	public void schemaCreated(final DBConnection connection, final String schema);
+
+	public void schemaDropped(final DBConnection connection, final String schema);
+
+	public void tableCreated(final DBConnection connection, final TAPTable table);
+
+	public void tableDropped(final DBConnection connection, final TAPTable table);
+
+	public void rowsInserted(final DBConnection connection, final TAPTable table, final int nbInsertedRows);
 
 	public void sqlQueryExecuting(final DBConnection connection, final String sql);
 

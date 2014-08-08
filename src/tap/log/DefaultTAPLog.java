@@ -34,7 +34,7 @@ import uws.service.log.DefaultUWSLog;
  * Default implementation of the {@link TAPLog} interface which lets logging any message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (08/2014)
  * 
  * @see DefaultUWSLog
  */
@@ -95,12 +95,57 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	}
 
 	@Override
+	public void connectionOpened(DBConnection connection, String dbName){
+		dbActivity("A connection has been opened to the database \"" + dbName + "\" !");
+	}
+
+	@Override
 	public void connectionClosed(DBConnection connection){
-		//dbActivity("A database connection has been closed !");
+		dbActivity("A database connection has been closed !");
+	}
+
+	@Override
+	public void transactionStarted(final DBConnection connection){
+		dbActivity("A transaction has been started !");
+	}
+
+	@Override
+	public void transactionCancelled(final DBConnection connection){
+		dbActivity("A transaction has been cancelled !");
+	}
+
+	@Override
+	public void transactionEnded(final DBConnection connection){
+		dbActivity("A transaction has been ended/commited !");
+	}
+
+	@Override
+	public void schemaCreated(final DBConnection connection, String schema){
+		dbActivity("CREATE SCHEMA \"" + schema + "\"\t" + connection.getID());
+	}
+
+	@Override
+	public void schemaDropped(final DBConnection connection, String schema){
+		dbActivity("DROP SCHEMA \"" + schema + "\"\t" + connection.getID());
 	}
 
 	protected final String getFullDBName(final TAPTable table){
-		return (table.getSchema() != null) ? (table.getSchema().getDBName() + ".") : "";
+		return ((table.getSchema() != null) ? (table.getSchema().getDBName() + ".") : "") + table.getDBName();
+	}
+
+	@Override
+	public void tableCreated(final DBConnection connection, TAPTable table){
+		dbActivity("CREATE TABLE \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
+	}
+
+	@Override
+	public void tableDropped(final DBConnection connection, TAPTable table){
+		dbActivity("DROP TABLE \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
+	}
+
+	@Override
+	public void rowsInserted(final DBConnection connection, TAPTable table, int nbInsertedRows){
+		dbActivity("INSERT ROWS (" + ((nbInsertedRows > 0) ? nbInsertedRows : "???") + ") into \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
 	}
 
 	@Override
