@@ -17,7 +17,7 @@ package tap.parameters;
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institute (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import tap.ServiceConnection;

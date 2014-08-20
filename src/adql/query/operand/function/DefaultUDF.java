@@ -16,7 +16,7 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS), Astronomisches Rechen Institute (ARI)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS), Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLList;

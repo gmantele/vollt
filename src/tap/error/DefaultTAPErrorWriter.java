@@ -27,10 +27,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
 import uws.UWSException;
+import uws.job.ErrorType;
 import uws.job.user.JobOwner;
 import uws.service.error.AbstractServiceErrorWriter;
 import uws.service.error.ServiceErrorWriter;
-import uws.service.log.UWSLog;
 
 /**
  * <p>Default implementation of {@link ServiceErrorWriter} for a TAP service.</p>
@@ -52,17 +52,12 @@ import uws.service.log.UWSLog;
  * 
  * @see AbstractServiceErrorWriter
  */
-public class DefaultTAPErrorWriter extends AbstractServiceErrorWriter {
+public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 
 	protected final ServiceConnection service;
 
 	public DefaultTAPErrorWriter(final ServiceConnection service){
 		this.service = service;
-	}
-
-	@Override
-	protected final UWSLog getLogger(){
-		return service.getLogger();
 	}
 
 	@Override
@@ -73,8 +68,22 @@ public class DefaultTAPErrorWriter extends AbstractServiceErrorWriter {
 			if (ue.getHttpErrorCode() == UWSException.INTERNAL_SERVER_ERROR)
 				getLogger().error(ue);
 			getLogger().httpRequest(request, user, action, ue.getHttpErrorCode(), ue.getMessage(), ue);
-		}else
-			super.writeError(t, response, request, user, action);
+		}else{
+			if (t != null && response != null){
+				formatError(t, true, ErrorType.FATAL, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, action, user, response, (request != null) ? request.getHeader("Accept") : null);
+				getLogger().error(t);
+				String errorMsg = t.getMessage();
+				if (errorMsg == null || errorMsg.trim().isEmpty())
+					errorMsg = t.getClass().getName() + " (no error message)";
+				getLogger().httpRequest(request, user, action, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMsg, t);
+			}
+		}
+	}
+
+	@Override
+	public void writeError(String message, ErrorType type, int httpErrorCode, HttpServletResponse response, HttpServletRequest request, JobOwner user, String action) throws IOException{
+		// TODO ServiceErrorWriter.writeError
+
 	}
 
 }

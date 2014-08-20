@@ -42,12 +42,10 @@ public class ASync implements TAPResource {
 
 	public static final String RESOURCE_NAME = "async";
 
-	@SuppressWarnings("unchecked")
 	protected final ServiceConnection service;
 	protected final UWSService uws;
 	protected final JobList jobList;
 
-	@SuppressWarnings("unchecked")
 	public ASync(ServiceConnection service) throws UWSException, TAPException{
 		this.service = service;
 

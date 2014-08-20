@@ -25,12 +25,10 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import uws.UWSException;
-
 import uws.job.ErrorSummary;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
-
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
 

@@ -20,7 +20,6 @@ package uws.job.manager;
  */
 
 import uws.UWSException;
-
 import uws.job.UWSJob;
 import uws.service.log.UWSLog;
 

@@ -16,13 +16,14 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Collection;
-import adql.query.IdentifierField;
 
+import adql.query.IdentifierField;
 import adql.query.from.ADQLTable;
 import cds.utils.TextualSearchList;
 
@@ -34,8 +35,8 @@ import cds.utils.TextualSearchList;
  * 	These last information will be used only if the ADQL table name is ambiguous, otherwise all matching elements are returned.
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 09/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (08/2014)
  */
 public class SearchTableList extends TextualSearchList<DBTable> {
 	private static final long serialVersionUID = 1L;
@@ -58,7 +59,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @param collection	Collection of {@link DBTable} to copy.
 	 */
-	public SearchTableList(final Collection<DBTable> collection){
+	public SearchTableList(final Collection<? extends DBTable> collection){
 		super(collection, new DBTableKeyExtractor());
 	}
 
@@ -199,6 +200,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * @version 09/2011
 	 */
 	private static class DBTableKeyExtractor implements KeyExtractor<DBTable> {
+		@Override
 		public String getKey(DBTable obj){
 			return obj.getADQLName();
 		}

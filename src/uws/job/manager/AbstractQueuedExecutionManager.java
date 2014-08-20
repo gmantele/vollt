@@ -26,7 +26,6 @@ import java.util.Vector;
 
 import uws.UWSException;
 import uws.UWSToolBox;
-
 import uws.job.ErrorType;
 import uws.job.ExecutionPhase;
 import uws.job.UWSJob;
@@ -72,18 +71,22 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	/* ***************** */
 	/* GETTERS & SETTERS */
 	/* ***************** */
+	@Override
 	public final Iterator<UWSJob> getRunningJobs(){
 		return runningJobs.values().iterator();
 	}
 
+	@Override
 	public final int getNbRunningJobs(){
 		return runningJobs.size();
 	}
 
+	@Override
 	public final Iterator<UWSJob> getQueuedJobs(){
 		return queuedJobs.iterator();
 	}
 
+	@Override
 	public final int getNbQueuedJobs(){
 		return queuedJobs.size();
 	}
@@ -123,6 +126,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * 
 	 * @see uws.job.manager.ExecutionManager#refresh()
 	 */
+	@Override
 	public synchronized final void refresh() throws UWSException{
 		// Return immediately if no queue:
 		if (!hasQueue())
@@ -177,6 +181,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * 
 	 * @see uws.job.manager.ExecutionManager#execute(AbstractJob)
 	 */
+	@Override
 	public synchronized final ExecutionPhase execute(final UWSJob jobToExecute) throws UWSException{
 		if (jobToExecute == null)
 			return null;
@@ -216,6 +221,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * 
 	 * @see uws.job.manager.ExecutionManager#remove(uws.job.UWSJob)
 	 */
+	@Override
 	public final synchronized void remove(final UWSJob jobToRemove) throws UWSException{
 		if (jobToRemove != null){
 			runningJobs.remove(jobToRemove.getJobId());
