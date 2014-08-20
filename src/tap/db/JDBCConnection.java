@@ -55,7 +55,7 @@ import adql.translator.JDBCTranslator;
 import adql.translator.TranslationException;
 
 /**
- * <p>This {@link DBConnection} implementation is theoretically able to deal with any DBMS connection.</p>
+ * <p>This {@link DBConnection} implementation is theoretically able to deal with any DBMS JDBC connection.</p>
  * 
  * <p><i>Note:
  * 	"Theoretically", because its design has been done using information about Postgres, SQLite, Oracle, MySQL and Java DB (Derby).
@@ -112,7 +112,7 @@ import adql.translator.TranslationException;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (08/2014)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -208,13 +208,7 @@ public class JDBCConnection implements DBConnection {
 	}
 
 	/**
-	 * <p>Create a JDBC connection by wrapping the given connection.</p>
-	 * 
-	 * <p><i><b>Warning:</b>
-	 * 	Calling {@link #close()} will call the function close() of the given connection.
-	 * 	So, if this connection is coming from a pool, it is here supposed that a call to this function will not close the connection but gives it back to the pool.
-	 * 	If it's not the case, {@link #close()} must be overwritten in order to apply the good "close" behavior.
-	 * </i></p>
+	 * Create a JDBC connection by wrapping the given connection.
 	 * 
 	 * @param conn			Connection to wrap.
 	 * @param translator	{@link ADQLTranslator} to use in order to get SQL from an ADQL query and to get qualified DB table names.
@@ -312,15 +306,17 @@ public class JDBCConnection implements DBConnection {
 		return ID;
 	}
 
-	@Override
-	public void close() throws DBException{
-		try{
-			connection.close();
-			log(0, "Connection CLOSED.", null);
-		}catch(SQLException se){
-			log(1, "CLOSING connection impossible!", se);
-			throw new DBException("Impossible to close the database connection !", se);
-		}
+	/**
+	 * <p>Get the JDBC connection wrapped by this {@link JDBCConnection} object.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This is the best way to get the JDBC connection in order to properly close it. 
+	 * </i></p>
+	 * 
+	 * @return	The wrapped JDBC connection.
+	 */
+	public final Connection getInnerConnection(){
+		return connection;
 	}
 
 	/* ********************* */

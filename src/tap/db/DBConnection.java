@@ -20,6 +20,7 @@ package tap.db;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import tap.TAPFactory;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
 import tap.metadata.TAPColumn;
@@ -34,6 +35,13 @@ import adql.translator.ADQLTranslator;
  * 
  * <p>It lets executing ADQL queries and updating the TAP datamodel (with the list of schemas, tables and columns published in TAP,
  * or with uploaded tables).</p>
+ * 
+ * <p><b>IMPORTANT:</b>
+ * 	This connection aims only to provide a common and known interface for any kind of database connection.
+ * 	A connection MUST be opened/created and closed/freed ONLY by the {@link TAPFactory}, which will usually merely wrap
+ * 	the real database connection by a {@link DBConnection} object. That's why this interface does not provide anymore
+ * 	a close() function.
+ * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.0 (07/2014)
@@ -229,16 +237,5 @@ public interface DBConnection {
 	 * @since 2.0
 	 */
 	public TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException;
-
-	/**
-	 * <p>Close the connection (if needed).</p>
-	 * 
-	 * <p><i>note: This function is called at the end of a query/job execution, after the result
-	 * has been successfully (or not) fetched. When called, it means the connection is no longer needed
-	 * for the job and so, can be freed (or given back to a pool, for instance).</i></p>
-	 * 
-	 * @throws DBException	If any error occurs while closing the connection.
-	 */
-	public void close() throws DBException;
 
 }
