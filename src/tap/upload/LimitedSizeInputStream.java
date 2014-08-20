@@ -16,7 +16,8 @@ package tap.upload;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -25,15 +26,34 @@ import java.security.InvalidParameterException;
 
 import com.oreilly.servlet.multipart.ExceededSizeException;
 
+/**
+ * Let limit the number of bytes that can be read from a given input stream.
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (08/2014)
+ */
 public final class LimitedSizeInputStream extends InputStream {
 
+	/** Input stream whose the number of bytes that can be read must be limited. */
 	private final InputStream input;
+	/** Maximum number of bytes that can be read. */
 	private final long sizeLimit;
 
+	/** Number of bytes currently read. */
 	private long counter = 0;
 
+	/** Indicate whether the byte limit has already been reached. If <i>true</i> no more byte can be read ;
+	 * all read(...) function will throw an {@link ExceededSizeException}. */
 	private boolean exceed = false;
 
+	/**
+	 * Wrap the given input stream so that limiting the number of bytes that can be read.
+	 * 
+	 * @param stream	Stream to limit.
+	 * @param sizeLimit	Maximum number of bytes that can be read. <i>If <=0 an {@link InvalidParameterException} will be thrown.</i>
+	 * 
+	 * @throws NullPointerException	If the input stream is missing.
+	 */
 	public LimitedSizeInputStream(final InputStream stream, final long sizeLimit) throws NullPointerException{
 		if (stream == null)
 			throw new NullPointerException("The given input stream is NULL !");
@@ -44,6 +64,26 @@ public final class LimitedSizeInputStream extends InputStream {
 		this.sizeLimit = sizeLimit;
 	}
 
+	/**
+	 * Get the input stream wrapped by this instance of {@link LimitedSizeInputStream}.
+	 * 
+	 * @return	The wrapped input stream.
+	 * @since 2.0
+	 */
+	public final InputStream getInnerStream(){
+		return input;
+	}
+
+	/**
+	 * <p>Update the number of bytes currently read and them check whether the limit has been exceeded.
+	 * If the limit has been exceeded, an {@link ExceededSizeException} is thrown.</p>
+	 * 
+	 * <p>Besides, the flag {@link #exceed} is set to true in order to forbid the further reading of bytes.</p>
+	 * 
+	 * @param nbReads	Number of bytes read.
+	 * 
+	 * @throws ExceededSizeException	If, after update, the limit of bytes has been exceeded.
+	 */
 	private void updateCounter(final long nbReads) throws ExceededSizeException{
 		if (nbReads > 0){
 			counter += nbReads;
@@ -54,6 +94,15 @@ public final class LimitedSizeInputStream extends InputStream {
 		}
 	}
 
+	/**
+	 * <p>Tell whether the limit has already been exceeded or not.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If <i>true</i> is returned, no more read will be allowed, and any attempt to read a byte will throw an {@link ExceededSizeException}.
+	 * </i></p>
+	 * 
+	 * @return	<i>true</i> if the byte limit has been exceeded, <i>false</i> otherwise.
+	 */
 	public final boolean sizeExceeded(){
 		return exceed;
 	}
@@ -98,17 +147,17 @@ public final class LimitedSizeInputStream extends InputStream {
 
 	@Override
 	public synchronized void mark(int readlimit) throws UnsupportedOperationException{
-		throw new UnsupportedOperationException("mark() not supported in a LimitedSizeInputStream !");
+		input.mark(readlimit);
 	}
 
 	@Override
 	public boolean markSupported(){
-		return false;
+		return input.markSupported();
 	}
 
 	@Override
 	public synchronized void reset() throws IOException, UnsupportedOperationException{
-		throw new UnsupportedOperationException("mark() not supported in a LimitedSizeInputStream !");
+		input.reset();
 	}
 
 }

@@ -288,7 +288,7 @@ public class TAPParameters extends UWSParameters {
 		for(int i = 0; i < pairs.length; i++){
 			String[] table = pairs[i].split(",");
 			if (table.length != 2)
-				throw new TAPException("Bad syntax ! An UPLOAD parameter must contain a list of pairs separated by a ';'. Each pair is composed of 2 parts, a table name and a URI separated by a ','.");
+				throw new TAPException("UPLOAD parameter incorrect: bad syntax! An UPLOAD parameter must contain a list of pairs separated by a ';'. Each pair is composed of 2 parts, a table name and a URI separated by a ','.");
 			loaders[i] = new TableLoader(table[0], table[1], multipart);
 		}
 

@@ -27,6 +27,8 @@ import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import tap.data.DataReadException;
+import tap.data.LimitedTableIterator;
+import tap.data.TableIterator;
 import tap.data.VOTableIterator;
 import tap.db.DBConnection;
 import tap.metadata.TAPColumn;
@@ -37,25 +39,28 @@ import tap.metadata.TAPTable;
 import com.oreilly.servlet.multipart.ExceededSizeException;
 
 /**
- * <p>Let upload properly given VOTable inputs.</p>
+ * <p>Let create properly given VOTable inputs in the "database".</p>
  * 
- * <p>This class manages particularly the upload limit in rows
- * (thanks to {@link VOTableIterator}) and in bytes (thanks to a {@link LimitedSizeInputStream}).</p>
- * 
+ * <p>
+ * 	This class manages particularly the upload limit in rows and in bytes by creating a {@link LimitedTableIterator}
+ * 	with a {@link VOTableIterator}.
+ * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (08/2014)
+ * 
+ * @see LimitedTableIterator
+ * @see VOTableIterator
  */
 public class Uploader {
-
 	/** Specification of the TAP service. */
 	protected final ServiceConnection service;
 	/** Connection to the "database" (which lets upload the content of any given VOTable). */
 	protected final DBConnection dbConn;
-	/** Limit on the number of rows allowed to be uploaded in once (whatever is the number of tables). */
-	protected final int nbRowsLimit;
-	/** Limit on the number of bytes allowed to be uploaded in once (whatever is the number of tables). */
-	protected final int nbBytesLimit;
+	/** Type of limit to set: ROWS or BYTES. <i>MAY be NULL ; if NULL, no limit will be set.</i> */
+	protected final LimitUnit limitUnit;
+	/** Limit on the number of rows or bytes (depending of {@link #limitUnit}) allowed to be uploaded in once (whatever is the number of tables). */
+	protected final int limit;
 
 	/** Number of rows already loaded. */
 	protected int nbRows = 0;
@@ -82,12 +87,12 @@ public class Uploader {
 		// Ensure UPLOAD is allowed by the TAP service specification...
 		if (this.service.uploadEnabled()){
 			// ...and set the rows or bytes limit:
-			if (this.service.getUploadLimitType()[1] == LimitUnit.rows){
-				nbRowsLimit = ((this.service.getUploadLimit()[1] > 0) ? this.service.getUploadLimit()[1] : -1);
-				nbBytesLimit = -1;
+			if (this.service.getUploadLimitType()[1] != null && this.service.getUploadLimit()[1] > 0){
+				limit = this.service.getUploadLimit()[1];
+				limitUnit = this.service.getUploadLimitType()[1];
 			}else{
-				nbBytesLimit = ((this.service.getUploadLimit()[1] > 0) ? this.service.getUploadLimit()[1] : -1);
-				nbRowsLimit = -1;
+				limit = -1;
+				limitUnit = null;
 			}
 		}else
 			throw new TAPException("Upload aborted: this functionality is disabled in this TAP service!");
@@ -105,22 +110,19 @@ public class Uploader {
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
 	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
-		TAPSchema uploadSchema = new TAPSchema(STDSchema.UPLOADSCHEMA.getLabel());
+		TAPSchema uploadSchema = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
 		InputStream votable = null;
 		String tableName = null;
 		try{
+			// Iterate over the full list of uploaded tables:
 			for(TableLoader loader : loaders){
 				tableName = loader.tableName;
 
 				// Open a stream toward the VOTable:
 				votable = loader.openStream();
 
-				// Set a byte limit if one is required:
-				if (nbBytesLimit > 0)
-					votable = new LimitedSizeInputStream(votable, nbBytesLimit);
-
-				// Start reading the VOTable:
-				VOTableIterator dataIt = new VOTableIterator(votable);
+				// Start reading the VOTable (with the identified limit, if any):
+				TableIterator dataIt = new LimitedTableIterator(VOTableIterator.class, votable, limitUnit, limit);
 
 				// Define the table to upload:
 				TAPColumn[] columns = dataIt.getMetadata();
@@ -133,7 +135,7 @@ public class Uploader {
 				uploadSchema.addTable(table);
 
 				// Create and fill the corresponding table in the database:
-				dbConn.addUploadedTable(table, dataIt, nbRowsLimit);
+				dbConn.addUploadedTable(table, dataIt);
 
 				// Close the VOTable stream:
 				votable.close();
@@ -141,16 +143,11 @@ public class Uploader {
 			}
 		}catch(DataReadException dre){
 			if (dre.getCause() instanceof ExceededSizeException)
-				throw new TAPException("Upload limit exceeded ! You can upload at most " + ((nbBytesLimit > 0) ? (nbBytesLimit + " bytes.") : (nbRowsLimit + " rows.")));
+				throw dre;
 			else
 				throw new TAPException("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre);
 		}catch(IOException ioe){
 			throw new TAPException("Error while reading the VOTable of \"" + tableName + "\"!", ioe);
-		}catch(NullPointerException npe){
-			if (votable != null && votable instanceof LimitedSizeInputStream)
-				throw new TAPException("Upload limit exceeded ! You can upload at most " + ((nbBytesLimit > 0) ? (nbBytesLimit + " bytes.") : (nbRowsLimit + " rows.")));
-			else
-				throw new TAPException(npe);
 		}finally{
 			try{
 				if (votable != null)
@@ -160,7 +157,7 @@ public class Uploader {
 			}
 		}
 
-		// Return the TAP_UPLOAD schema (containing just the uploaded tables):
+		// Return the TAP_UPLOAD schema (containing just the description of the uploaded tables):
 		return uploadSchema;
 	}
 

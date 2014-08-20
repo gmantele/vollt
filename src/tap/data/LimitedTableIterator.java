@@ -55,7 +55,7 @@ import com.oreilly.servlet.multipart.ExceededSizeException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (08/2014)
  * @since 2.0
  */
 public class LimitedTableIterator implements TableIterator {
@@ -73,7 +73,7 @@ public class LimitedTableIterator implements TableIterator {
 	private boolean overflow = false;
 
 	/**
-	 * Wrap the given {@link TableIterator} so that limiting the number of rows to read to the given value.
+	 * Wrap the given {@link TableIterator} so that limiting the number of rows to read.
 	 * 
 	 * @param it		The iterator to wrap. <i>MUST NOT be NULL</i>
 	 * @param maxNbRows	Maximum number of rows that can be read. There is overflow if more than this number of rows is asked. <i>A negative value means "no limit".</i>
@@ -86,20 +86,45 @@ public class LimitedTableIterator implements TableIterator {
 	}
 
 	/**
-	 * Wrap the given {@link TableIterator} so that limiting the number of rows to read to the given value.
+	 * <p>Build the specified {@link TableIterator} instance and wrap it so that limiting the number of rows OR bytes to read.</p>
 	 * 
-	 * @param it		The iterator to wrap. <i>MUST NOT be NULL</i>
-	 * @param maxNbRows	Maximum number of rows that can be read. There is overflow if more than this number of rows is asked. <i>A negative value means "no limit".</i>
+	 * <p>
+	 * 	If the limit is on the <b>number of bytes</b>, the given input stream will be first wrapped inside a {@link LimitedSizeInputStream}.
+	 * 	Then, it will be given as only parameter of the constructor of the specified {@link TableIterator} instance.
+	 * </p>
+	 * 
+	 * <p>If the limit is on the <b>number of rows</b>, this {@link LimitedTableIterator} will count and limit itself the number of rows.</p>
+	 * 
+	 * <p><i><b>IMPORTANT:</b> The specified class must:</i></p>
+	 * <i><ul>
+	 * 	<li>extend {@link TableIterator},</li>
+	 * 	<li>be a concrete class,</li>
+	 * 	<li>have at least one constructor with only one parameter of type {@link InputStream}.</li>
+	 * </ul></i>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given limit type is NULL (or different from ROWS and BYTES), or the limit value is <=0, no limit will be set.
+	 * 	All rows and bytes will be read until the end of input is reached.
+	 * </i></p>
+	 * 
+	 * @param classIt	Class of the {@link TableIterator} implementation to create and whose the output must be limited.
+	 * @param input		Input stream toward the table to read.
+	 * @param type		Type of the limit: ROWS or BYTES. <i>MAY be NULL</i>
+	 * @param limit		Limit in rows or bytes, depending of the "type" parameter. <i>MAY BE <=0</i>
+	 * 
+	 * @throws DataReadException	If no instance of the given class can be created,
+	 *                          	or if the {@link TableIterator} instance can not be initialized,
+	 *                          	or if the limit (in rows or bytes) has been reached.
 	 */
 	public < T extends TableIterator > LimitedTableIterator(final Class<T> classIt, final InputStream input, final LimitUnit type, final int limit) throws DataReadException{
 		try{
 			Constructor<T> construct = classIt.getConstructor(InputStream.class);
-			if (type == LimitUnit.bytes){
+			if (type == LimitUnit.bytes && limit > 0){
 				maxNbRows = -1;
 				innerIt = construct.newInstance(new LimitedSizeInputStream(input, limit));
 			}else{
 				innerIt = construct.newInstance(input);
-				maxNbRows = (type == null) ? -1 : limit;
+				maxNbRows = (type == null || type != LimitUnit.rows) ? -1 : limit;
 			}
 		}catch(InvocationTargetException ite){
 			Throwable t = ite.getCause();
@@ -154,7 +179,7 @@ public class LimitedTableIterator implements TableIterator {
 	public boolean nextRow() throws DataReadException{
 		// Test the overflow flag and proceed only if not overflowed:
 		if (overflow)
-			throw new DataReadException("Data read overflow: the limit has been reached! No more data can be read.");
+			throw new DataReadException("Data read overflow: the limit has already been reached! No more data can be read.");
 
 		// Read the next row:
 		boolean nextRow;
@@ -206,7 +231,7 @@ public class LimitedTableIterator implements TableIterator {
 	 */
 	private void testOverflow() throws IllegalStateException{
 		if (overflow)
-			throw new IllegalStateException("Data read overflow: the limit has been reached! No more data can be read.");
+			throw new IllegalStateException("Data read overflow: the limit has already been reached! No more data can be read.");
 	}
 
 	/**

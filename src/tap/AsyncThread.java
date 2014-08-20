@@ -34,19 +34,6 @@ public class AsyncThread extends JobThread {
 	}
 
 	@Override
-	public void interrupt(){
-		if (isAlive()){
-			try{
-				executor.closeDBConnection();
-			}catch(TAPException e){
-				if (job != null && job.getLogger() != null)
-					job.getLogger().error("Can not close the DBConnection for the executing job \"" + job.getJobId() + "\" ! => the job will be probably not totally aborted.", e);
-			}
-		}
-		super.interrupt();
-	}
-
-	@Override
 	protected void jobWork() throws UWSException, InterruptedException{
 		try{
 			executor.start(this);
