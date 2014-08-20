@@ -20,13 +20,17 @@ package tap;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
 import tap.db.DBConnection;
+import tap.metadata.TAPMetadata;
+import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 import tap.parameters.TAPParameters;
 import tap.upload.Uploader;
@@ -39,18 +43,181 @@ import uws.service.backup.UWSBackupManager;
 import adql.db.DBChecker;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
+import adql.query.ADQLQuery;
 
+/**
+ * Default implementation of most of the {@link TAPFactory} function.
+ * Only the functions related with the database connection stay abstract.
+ * 
+ * @author Gr&eacute;gory Mantelet (ARI)
+ * @version 2.0 (08/2014)
+ */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
+	/**
+	 * Build a basic TAPFactory.
+	 * Nothing is done except setting the service connection.
+	 * 
+	 * @param service	Configuration of the TAP service. <i>MUST NOT be NULL</i>
+	 * 
+	 * @throws NullPointerException	If the given {@link ServiceConnection} is NULL.
+	 * 
+	 * @see {@link TAPFactory#TAPFactory(ServiceConnection)}
+	 */
 	protected AbstractTAPFactory(ServiceConnection service) throws NullPointerException{
 		super(service);
 	}
 
+	/* *************** */
+	/* ADQL MANAGEMENT */
+	/* *************** */
+
+	/**
+	 * <p><i>Note:
+	 * 	Unless the standard implementation - {@link ADQLExecutor} - does not fit exactly your needs,
+	 * 	it should not be necessary to extend this class and to extend this function (implemented here by default).
+	 * </i></p>
+	 * 
+	 * @see tap.TAPFactory#createADQLExecutor()
+	 */
+	@Override
+	public ADQLExecutor createADQLExecutor() throws TAPException{
+		return new ADQLExecutor(service);
+	}
+
+	/**
+	 * <p><i>Note:
+	 * 	This function should be extended if you have customized the creation of any
+	 * 	{@link ADQLQuery} part ; it could be the addition of one or several user defined function
+	 * 	or the modification of any ADQL function or clause specific to your implementation.
+	 * </i></p>
+	 * 
+	 * @see tap.TAPFactory#createQueryFactory()
+	 */
+	@Override
+	public ADQLQueryFactory createQueryFactory() throws TAPException{
+		return new ADQLQueryFactory();
+	}
+
+	/**
+	 * <p>This implementation gathers all tables published in this TAP service and those uploaded
+	 * by the user. Then it calls {@link #createQueryChecker(Collection)} with this list in order
+	 * to create a query checked.
+	 * </p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function can not be overrided, but {@link #createQueryChecker(Collection)} can be.
+	 * </i></p>
+	 * 
+	 * @see tap.TAPFactory#createQueryChecker(tap.metadata.TAPSchema)
+	 */
+	@Override
+	public final QueryChecker createQueryChecker(final TAPSchema uploadSchema) throws TAPException{
+		// Get all tables published in this TAP service:
+		TAPMetadata meta = service.getTAPMetadata();
+
+		// Build a list in order to gather all these with the uploaded ones:
+		ArrayList<TAPTable> tables = new ArrayList<TAPTable>(meta.getNbTables());
+
+		// Add all tables published in TAP:
+		Iterator<TAPTable> it = meta.getTables();
+		while(it.hasNext())
+			tables.add(it.next());
+
+		// Add all tables uploaded by the user:
+		if (uploadSchema != null){
+			for(TAPTable table : uploadSchema)
+				tables.add(table);
+		}
+
+		// Finally, create the query checker:
+		return createQueryChecker(tables);
+	}
+
+	/**
+	 * <p>Create an object able to check the consistency between the ADQL query and the database.
+	 * That's to say, it checks whether the tables and columns used in the query really exist
+	 * in the database.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This implementation just create a {@link DBChecker} instance with the list given in parameter.
+	 * </i></p>
+	 * 
+	 * @param tables	List of all available tables (and indirectly, columns).
+	 * 
+	 * @return	A new ADQL query checker.
+	 * 
+	 * @throws TAPException	If any error occurs while creating the query checker.
+	 * 
+	 * @see DBChecker
+	 */
+	protected QueryChecker createQueryChecker(final Collection<TAPTable> tables) throws TAPException{
+		return new DBChecker(tables);
+	}
+
+	/* ****** */
+	/* UPLOAD */
+	/* ****** */
+
+	/**
+	 * <p>This implementation just create an {@link Uploader} instance with the given database connection.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function should be overrided if the way user tables are interpreted and then created into the database
+	 * 	does not fit yours needs.
+	 * </i></p>
+	 * 
+	 * @see tap.TAPFactory#createUploader(tap.db.DBConnection)
+	 * 
+	 * @see Uploader
+	 */
+	@Override
+	public Uploader createUploader(final DBConnection dbConn) throws TAPException{
+		return new Uploader(service, dbConn);
+	}
+
+	/* ************** */
+	/* UWS MANAGEMENT */
+	/* ************** */
+
+	/**
+	 * <p>This implementation just create a {@link UWSService} instance.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This implementation is largely enough for a TAP service. It is not recommended to override
+	 * 	this function.
+	 * </i></p>
+	 * 
+	 * @see tap.TAPFactory#createUWS()
+	 */
+	@Override
+	public UWSService createUWS() throws TAPException{
+		return new UWSService(this, this.service.getFileManager(), this.service.getLogger());
+	}
+
+	/**
+	 * <p>This implementation does not provided a backup manager.
+	 * It means that no asynchronous job will be restored and backuped.</p>
+	 * 
+	 * <p>You must override this function if you want enable the backup feature.</p>
+	 * 
+	 * @see tap.TAPFactory#createUWSBackupManager(uws.service.UWSService)
+	 */
 	@Override
 	public UWSBackupManager createUWSBackupManager(final UWSService uws) throws TAPException{
 		return null;
 	}
 
+	/**
+	 * <p>This implementation provides a basic {@link TAPJob} instance.</p>
+	 * 
+	 * <p>
+	 * 	If you need to add or modify the behavior of some functions of a {@link TAPJob},
+	 * 	you must override this function and return your own extension of {@link TAPJob}.
+	 * </p>
+	 * 
+	 * @see tap.TAPFactory#createTAPJob(javax.servlet.http.HttpServletRequest, uws.job.user.JobOwner)
+	 */
 	@Override
 	protected TAPJob createTAPJob(final HttpServletRequest request, final JobOwner owner) throws UWSException{
 		try{
@@ -61,6 +228,16 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 		}
 	}
 
+	/**
+	 * <p>This implementation provides a basic {@link TAPJob} instance.</p>
+	 * 
+	 * <p>
+	 * 	If you need to add or modify the behavior of some functions of a {@link TAPJob},
+	 * 	you must override this function and return your own extension of {@link TAPJob}.
+	 * </p>
+	 * 
+	 * @see tap.TAPFactory#createTAPJob(javax.servlet.http.HttpServletRequest, uws.job.user.JobOwner)
+	 */
 	@Override
 	protected TAPJob createTAPJob(final String jobId, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
 		try{
@@ -70,11 +247,18 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 		}
 	}
 
-	@Override
-	public ADQLExecutor createADQLExecutor() throws TAPException{
-		return new ADQLExecutor(service);
-	}
-
+	/**
+	 * <p>This implementation extracts standard TAP parameters from the given request.</p>
+	 * 
+	 * <p>
+	 * 	Non-standard TAP parameters are added in a map inside the returned {@link TAPParameters} object
+	 * 	and are accessible with {@link TAPParameters#get(String)} and {@link TAPParameters#getAdditionalParameters()}.
+	 * 	However, if you want to manage them in another way, you must extend {@link TAPParameters} and override
+	 * 	this function in order to return an instance of your extension.
+	 * </p>
+	 * 
+	 * @see tap.TAPFactory#createTAPParameters(javax.servlet.http.HttpServletRequest)
+	 */
 	@Override
 	protected TAPParameters createTAPParameters(final HttpServletRequest request) throws UWSException{
 		try{
@@ -84,6 +268,18 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 		}
 	}
 
+	/**
+	 * <p>This implementation extracts standard TAP parameters from the given request.</p>
+	 * 
+	 * <p>
+	 * 	Non-standard TAP parameters are added in a map inside the returned {@link TAPParameters} object
+	 * 	and are accessible with {@link TAPParameters#get(String)} and {@link TAPParameters#getAdditionalParameters()}.
+	 * 	However, if you want to manage them in another way, you must extend {@link TAPParameters} and override
+	 * 	this function in order to return an instance of your extension.
+	 * </p>
+	 * 
+	 * @see tap.TAPFactory#createTAPParameters(javax.servlet.http.HttpServletRequest)
+	 */
 	@Override
 	protected TAPParameters createTAPParameters(final Map<String,Object> params) throws UWSException{
 		try{
@@ -91,21 +287,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 		}catch(TAPException te){
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te);
 		}
-	}
-
-	@Override
-	public ADQLQueryFactory createQueryFactory() throws TAPException{
-		return new ADQLQueryFactory();
-	}
-
-	@Override
-	protected QueryChecker createQueryChecker(final Collection<TAPTable> tables) throws TAPException{
-		return new DBChecker(tables);
-	}
-
-	@Override
-	public Uploader createUploader(final DBConnection dbConn) throws TAPException{
-		return new Uploader(service, dbConn);
 	}
 
 }
