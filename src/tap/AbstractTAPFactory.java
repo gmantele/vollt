@@ -49,7 +49,7 @@ import adql.query.ADQLQuery;
  * Default implementation of most of the {@link TAPFactory} function.
  * Only the functions related with the database connection stay abstract.
  * 
- * @author Gr&eacute;gory Mantelet (ARI)
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.0 (08/2014)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
