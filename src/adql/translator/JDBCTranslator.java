@@ -403,8 +403,10 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 		if (item.hasAlias()){
 			translation.append(" AS ");
 			appendIdentifier(translation, item.getAlias(), item.isCaseSensitive());
-		}else
-			translation.append(" AS ").append(item.getName());
+		}else{
+			translation.append(" AS ");
+			appendIdentifier(translation, item.getName(), true);
+		}
 
 		return translation.toString();
 	}
