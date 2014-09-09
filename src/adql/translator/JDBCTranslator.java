@@ -162,7 +162,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (09/2014)
  * @since 2.0
  * 
  * @see PostgreSQLTranslator
@@ -688,7 +688,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(Between comp) throws TranslationException{
-		return translate(comp.getLeftOperand()) + " BETWEEN " + translate(comp.getMinOperand()) + " AND " + translate(comp.getMaxOperand());
+		return translate(comp.getLeftOperand()) + " " + comp.getName() + " " + translate(comp.getMinOperand()) + " AND " + translate(comp.getMaxOperand());
 	}
 
 	@Override
@@ -703,7 +703,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(IsNull isNull) throws TranslationException{
-		return translate(isNull.getColumn()) + " IS " + (isNull.isNotNull() ? "NOT " : "") + "NULL";
+		return translate(isNull.getColumn()) + " " + isNull.getName();
 	}
 
 	@Override
