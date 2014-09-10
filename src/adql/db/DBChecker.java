@@ -207,7 +207,7 @@ public class DBChecker implements QueryChecker {
 				}else{
 					dbTable = resolveTable(table);
 					if (table.hasAlias())
-						dbTable = dbTable.copy(dbTable.getDBName(), table.getAlias());
+						dbTable = dbTable.copy(null, table.getAlias());
 				}
 
 				// link with the matched DBTable:

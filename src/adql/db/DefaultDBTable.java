@@ -28,7 +28,7 @@ import java.util.Iterator;
  * Default implementation of {@link DBTable}.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (11/2013)
+ * @version 1.3 (09/2014)
  */
 public class DefaultDBTable implements DBTable {
 
@@ -247,8 +247,52 @@ public class DefaultDBTable implements DBTable {
 		return splitRes;
 	}
 
+	/**
+	 * <p>Join the last 3 items of the given string array with a dot ('.').
+	 * These three parts should be: [0]=catalog name, [1]=schema name, [2]=table name.</p>
+	 * 
+	 * <p>
+	 * 	If the array contains less than 3 items, all the given items will be though joined.
+	 * 	However, if it contains more than 3 items, only the three last items will be.
+	 * </p>
+	 * 
+	 * <p>A null item will be written as an empty string (string of length 0 ; "").</p>
+	 * 
+	 * <p>
+	 * 	In the case the first and the third items are not null, but the second is null, the final string will contain in the middle two dots.
+	 * 	Example: if the array is {"cat", NULL, "table"}, then the joined string will be: "cat..table".
+	 * </p>
+	 * 
+	 * @param nameParts	String items to join.
+	 * 
+	 * @return	A string joining the 3 last string items of the given array,
+	 *        	or an empty string if the given array is NULL.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String joinTableName(final String[] nameParts){
+		if (nameParts == null)
+			return "";
+
+		StringBuffer str = new StringBuffer();
+		boolean empty = true;
+		for(int i = (nameParts.length <= 3) ? 0 : (nameParts.length - 3); i < nameParts.length; i++){
+			if (!empty)
+				str.append('.');
+
+			String part = (nameParts[i] == null) ? null : nameParts[i].trim();
+			if (part != null && part.length() > 0){
+				str.append(part);
+				empty = false;
+			}
+		}
+		return str.toString();
+	}
+
 	@Override
-	public DBTable copy(final String dbName, final String adqlName){
+	public DBTable copy(String dbName, String adqlName){
+		dbName = (dbName == null) ? joinTableName(new String[]{dbCatalogName,dbSchemaName,this.dbName}) : dbName;
+		adqlName = (adqlName == null) ? joinTableName(new String[]{adqlCatalogName,adqlSchemaName,this.adqlName}) : adqlName;
 		DefaultDBTable copy = new DefaultDBTable(dbName, adqlName);
 		for(DBColumn col : this){
 			if (col instanceof DBCommonColumn)
@@ -258,5 +302,4 @@ public class DefaultDBTable implements DBTable {
 		}
 		return copy;
 	}
-
 }
