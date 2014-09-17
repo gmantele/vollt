@@ -78,7 +78,7 @@ public class SetJobParam extends UWSAction {
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
-		return (urlInterpreter.hasJobList() && urlInterpreter.hasJob() && ((request.getMethod().equalsIgnoreCase("post") && (!urlInterpreter.hasAttribute() || urlInterpreter.getAttributes().length == 1) && request.getParameterMap().size() > 0) || (request.getMethod().equalsIgnoreCase("put") && urlInterpreter.getAttributes().length >= 2 && urlInterpreter.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS) && request.getParameter(urlInterpreter.getAttributes()[1]) != null)));
+		return (urlInterpreter.hasJobList() && urlInterpreter.hasJob() && ((request.getMethod().equalsIgnoreCase("post") && (!urlInterpreter.hasAttribute() || urlInterpreter.getAttributes().length == 1)) || (request.getMethod().equalsIgnoreCase("put") && urlInterpreter.getAttributes().length >= 2 && urlInterpreter.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS) && request.getParameter(urlInterpreter.getAttributes()[1]) != null)));
 	}
 
 	/**

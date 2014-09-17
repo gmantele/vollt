@@ -10,7 +10,7 @@
 	<property name="classesDir" value="${compileDir}"/>
 	<property name="javadocDir" value="javadoc/tap" />
 	
-	<property name="cosJar" value="${libDir}/cos.jar" />
+	<property name="cosJar" value="${libDir}/cos-1.5beta.jar" />
 	<property name="stilJar" value="${libDir}/stil3.0-5.jar" />
 		
 	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
