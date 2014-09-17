@@ -137,8 +137,8 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 	 * <p>This function is called particularly by the queue manager in order to determine whether a job can start.
 	 * It won't start if no connection is available.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the implementation of this factory creates connections on the fly, the value 1 (or bigger) must always be returned.
+	 * <p><i><b>Important note:</b>
+	 * 	If the implementation of this factory creates connections on the fly, the value 2 (or bigger) must always be returned.
 	 * 	However, if the connections are managed by a connection pool, the count value must be asked to it.
 	 * </i></p>
 	 * 

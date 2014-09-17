@@ -16,7 +16,8 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Collection;
@@ -28,6 +29,12 @@ import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
 
+/**
+ * TODO JAVADOC OF THE WHOLE CLASS!
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (09/2014)
+ */
 public interface ServiceConnection {
 
 	public static enum LimitUnit{
@@ -64,6 +71,15 @@ public interface ServiceConnection {
 
 	public Collection<String> getCoordinateSystems();
 
+	/**
+	 * <p>Get the maximum number of asynchronous jobs that can run in the same time.</p>
+	 * 
+	 * <p>A null or negative value means <b>no limit</b> on the number of running asynchronous jobs.</p> 
+	 * 
+	 * @return	Maximum number of running jobs (&le;0 => no limit).
+	 * 
+	 * @since 2.0
+	 */
 	public int getNbMaxAsyncJobs();
 
 	public TAPLog getLogger();
