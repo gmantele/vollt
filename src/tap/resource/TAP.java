@@ -415,7 +415,7 @@ public class TAP implements VOSIResource {
 
 		// TAP access:
 		xml.append("\t<interface role=\"std\" xsi:type=\"vs:ParamHTTP\">\n");
-		xml.append("\t\t<accessURL use=\"base\">").append(VOSerializer.formatText(getAccessURL())).append("</accessURL>\n");
+		xml.append("\t\t<accessURL use=\"base\">").append((getAccessURL() == null) ? "" : VOSerializer.formatText(getAccessURL())).append("</accessURL>\n");
 		xml.append("\t</interface>\n");
 
 		// Language description:
@@ -678,7 +678,7 @@ public class TAP implements VOSIResource {
 			// Write the error in the response and return the appropriate HTTP status code:
 			errorWriter.writeError(t, response, request, reqID, owner, resourceName);
 			// Log the error:
-			getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\", because: " + t.getMessage(), t);
+			getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
 		}finally{
 			// Notify the queue of the asynchronous jobs that a new connection is available:
 			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME) && service.getFactory().countFreeConnections() >= 1)

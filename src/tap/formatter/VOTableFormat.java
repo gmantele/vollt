@@ -220,7 +220,7 @@ public class VOTableFormat implements OutputFormat {
 		out.newLine();
 
 		// Indicate that the query has been successfully processed:	[REQUIRED]
-		out.write("<INFO name=\"QUERY_STATUS\" value=\"ERROR\">" + VOSerializer.formatText(message) + "</INFO>");
+		out.write("<INFO name=\"QUERY_STATUS\" value=\"ERROR\">" + (message == null ? "" : VOSerializer.formatText(message)) + "</INFO>");
 		out.newLine();
 
 		// Append the PROVIDER information (if any):	[OPTIONAL]

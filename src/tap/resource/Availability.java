@@ -123,7 +123,8 @@ public class Availability implements TAPResource, VOSIResource {
 
 		// reason/description of the (non-)availability:
 		pw.print("\t<note>");
-		pw.print(VOSerializer.formatText(service.getAvailability()));
+		if (service.getAvailability() != null)
+			pw.print(VOSerializer.formatText(service.getAvailability()));
 		pw.println("</note>");
 
 		pw.println("</availability>");
