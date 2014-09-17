@@ -27,6 +27,7 @@ import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.data.TableIterator;
+import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 import cds.util.AsciiTable;
 
@@ -35,7 +36,7 @@ import cds.util.AsciiTable;
  * (columns' width are adjusted so that all columns are well aligned and of the same width).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (09/2014)
  */
 public class TextFormat implements OutputFormat {
 
@@ -111,10 +112,10 @@ public class TextFormat implements OutputFormat {
 
 			// Report stats about the result writing:
 			if (logFormatReport)
-				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in text ; " + nbRows + " rows ; " + ((execReport != null && execReport.resultingColumns != null) ? "?" : execReport.resultingColumns.length) + " columns) in " + (System.currentTimeMillis() - startTime) + " ms !");
+				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in text ; " + nbRows + " rows ; " + ((execReport != null && execReport.resultingColumns != null) ? "?" : execReport.resultingColumns.length) + " columns) in " + (System.currentTimeMillis() - startTime) + "ms!", null);
 
 		}catch(Exception ex){
-			service.getLogger().error("While formatting in text/plain !", ex);
+			service.getLogger().logTAP(LogLevel.ERROR, execReport, "FORMAT", "Error while formatting in text/plain!", ex);
 		}
 	}
 

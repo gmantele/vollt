@@ -16,23 +16,21 @@ package uws.service.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-
 import java.util.Iterator;
 
 import uws.job.ErrorSummary;
-import uws.job.UWSJob;
 import uws.job.Result;
-
+import uws.job.UWSJob;
 import uws.job.user.JobOwner;
-
-import uws.service.log.UWSLogType;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Lets accessing any file managed by a UWS service.</p>
@@ -42,8 +40,8 @@ import uws.service.log.UWSLogType;
  * 	the results, log or backup file generated and read by a UWS.
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  * 
  * @see LocalUWSFileManager
  */
@@ -55,20 +53,28 @@ public interface UWSFileManager {
 
 	/**
 	 * Gets an input stream on the log file of this UWS.
-	 * @param logType		Type of the message to log.
+	 * 
+	 * @param level			Level of the message to log (DEBUG, INFO, WARNING, ERROR or FATAL).
+	 * @param context		Context of the message to log (UWS, HTTP, JOB, THREAD, ...).
+	 * 
 	 * @return				An input on the log file or <i>null</i> if there is no log file.
+	 * 
 	 * @throws IOException	If there is an error while opening an input stream on the log file.
 	 */
-	public InputStream getLogInput(final UWSLogType logType) throws IOException;
+	public InputStream getLogInput(final LogLevel level, final String context) throws IOException;
 
 	/**
 	 * <p>Gets an output stream on the log file of this UWS.</p>
 	 * <p><i><u>note:</u> The log file must be automatically created if needed.</i></p>
-	 * @param logType		Type of the message to log.
+	 * 
+	 * @param level			Level of the message to log (DEBUG, INFO, WARNING, ERROR or FATAL).
+	 * @param context		Context of the message to log (UWS, HTTP, JOB, THREAD, ...).
+	 * 
 	 * @return				An output on the log file.
+	 * 
 	 * @throws IOException	If there is an error while creating the log file or while opening an output stream on it.
 	 */
-	public PrintWriter getLogOutput(final UWSLogType logType) throws IOException;
+	public PrintWriter getLogOutput(final LogLevel level, final String context) throws IOException;
 
 	/* *********************** */
 	/* RESULT FILES MANAGEMENT */

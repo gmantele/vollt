@@ -4,10 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -33,6 +31,7 @@ import tap.metadata.TAPMetadata;
 import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
 import tap.parameters.TAPParameters;
+import testtools.CommandExecute;
 import testtools.DBTools;
 import uk.ac.starlink.votable.DataFormat;
 import uws.service.UserIdentifier;
@@ -43,7 +42,7 @@ import uws.service.UserIdentifier;
  * <p>2 test ares done: 1 with an overflow and another without.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (09/2014)
  */
 public class VOTableFormatTest {
 
@@ -93,11 +92,8 @@ public class VOTableFormatTest {
 			output.close();
 
 			// note: due to the pipe (|), we must call /bin/sh as a command whose the command to execute in is the "grep ... | wc -l":
-			String[] cmd = new String[]{"/bin/sh","-c","grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertEquals("10", executeCommand(cmd).trim());
-
-			cmd = new String[]{"/bin/sh","-c","grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertEquals("0", executeCommand(cmd).trim());
+			assertEquals("10", CommandExecute.execute("grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
+			assertEquals("0", CommandExecute.execute("grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
 
 		}catch(Exception t){
 			t.printStackTrace();
@@ -131,11 +127,8 @@ public class VOTableFormatTest {
 			output.close();
 
 			// note: due to the pipe (|), we must call /bin/sh as a command whose the command to execute in is the "grep ... | wc -l":
-			String[] cmd = new String[]{"/bin/sh","-c","grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertEquals("5", executeCommand(cmd).trim());
-
-			cmd = new String[]{"/bin/sh","-c","grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l"};
-			assertEquals("1", executeCommand(cmd).trim());
+			assertEquals("5", CommandExecute.execute("grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
+			assertEquals("1", CommandExecute.execute("grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
 
 		}catch(Exception t){
 			t.printStackTrace();
@@ -150,29 +143,6 @@ public class VOTableFormatTest {
 				}
 			}
 		}
-	}
-
-	private String executeCommand(String[] command){
-
-		StringBuffer output = new StringBuffer();
-
-		Process p;
-		try{
-			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-			String line = "";
-			while((line = reader.readLine()) != null){
-				output.append(line + "\n");
-			}
-
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-
-		return output.toString();
-
 	}
 
 	private static class ServiceConnectionTest implements ServiceConnection {
@@ -257,7 +227,6 @@ public class VOTableFormatTest {
 			return null;
 		}
 
-		@SuppressWarnings("rawtypes")
 		@Override
 		public TAPFactory getFactory(){
 			return null;

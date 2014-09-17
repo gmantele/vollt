@@ -24,143 +24,97 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 
 import tap.TAPExecutionReport;
+import tap.TAPSyncJob;
 import tap.db.DBConnection;
 import tap.file.TAPFileManager;
-import tap.metadata.TAPMetadata;
-import tap.metadata.TAPTable;
+import tap.parameters.TAPParameters;
 import uws.service.log.DefaultUWSLog;
 
 /**
  * Default implementation of the {@link TAPLog} interface which lets logging any message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (09/2014)
  * 
  * @see DefaultUWSLog
  */
 public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 
-	public DefaultTAPLog(TAPFileManager fm){
+	/**
+	 * <p>Builds a {@link TAPLog} which will use the given file
+	 * manager to get the log output (see {@link TAPFileManager#getLogOutput(LogLevel, String)}).</p>
+	 * 
+	 * <p><i><u>note 1</u>: This constructor is particularly useful if the way of managing log output may change in the given file manager.
+	 * Indeed, the output may change in function of the type of message to log ({@link LogLevel}).</i></p>
+	 * 
+	 * <p><i><u>note 2</u> If no output can be found in the file manager the standard error output ({@link System#err})
+	 * will be chosen automatically for all log messages.</i></p>
+	 * 
+	 * @param fm	A TAP file manager.
+	 * 
+	 * @see DefaultUWSLog#DefaultUWSLog(uws.service.file.UWSFileManager)
+	 */
+	public DefaultTAPLog(final TAPFileManager fm){
 		super(fm);
 	}
 
-	public DefaultTAPLog(OutputStream output){
+	/**
+	 * <p>Builds a {@link TAPLog} which will print all its
+	 * messages into the given stream.</p>
+	 * 
+	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link LogLevel}).</i></p>
+	 * 
+	 * @param output	An output stream.
+	 * 
+	 * @see DefaultUWSLog#DefaultUWSLog(OutputStream)
+	 */
+	public DefaultTAPLog(final OutputStream output){
 		super(output);
 	}
 
-	public DefaultTAPLog(PrintWriter writer){
+	/**
+	 * <p>Builds a {@link TAPLog} which will print all its
+	 * messages into the given stream.</p>
+	 * 
+	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link LogLevel}).</i></p>
+	 * 
+	 * @param writer	A print writer.
+	 * 
+	 * @see DefaultUWSLog#DefaultUWSLog(PrintWriter)
+	 */
+	public DefaultTAPLog(final PrintWriter writer){
 		super(writer);
 	}
 
 	@Override
-	public void queryFinished(final TAPExecutionReport report){
-		StringBuffer buffer = new StringBuffer("QUERY END FOR " + report.jobID + "");
-		buffer.append(" - success ? ").append(report.success);
-		buffer.append(" - synchronous ? ").append(report.synchronous);
-		buffer.append(" - total duration = ").append(report.getTotalDuration()).append("ms");
-		buffer.append(" => upload=").append(report.getUploadDuration()).append("ms");
-		buffer.append(", parsing=").append(report.getParsingDuration()).append("ms");
-		buffer.append(", execution=").append(report.getExecutionDuration()).append("ms");
-		buffer.append(", formatting[").append(report.parameters.getFormat()).append("]=").append(report.getFormattingDuration()).append("ms");
-		info(buffer.toString());
-	}
-
-	public void dbActivity(final String message){
-		dbActivity(message, null);
-	}
-
-	public void dbActivity(final String message, final Throwable t){
-		String msgType = (t == null) ? "[INFO] " : "[ERROR] ";
-		log(DBConnection.LOG_TYPE_DB_ACTIVITY, ((message == null) ? null : (msgType + message)), t);
+	public void logDB(final LogLevel level, final DBConnection connection, final String event, final String message, final Throwable error){
+		log(level, "DB", event, (connection != null ? connection.getID() : null), message, error);
 	}
 
 	@Override
-	public void dbInfo(final String message){
-		dbActivity(message);
-	}
+	public void logTAP(final LogLevel level, final Object obj, final String event, final String message, final Throwable error){
+		// Get more information (when known event and available object):
+		String jobId = null, msgAppend = null;
+		try{
+			if (event != null && obj != null){
+				if (event.equals("SYNC_INIT"))
+					msgAppend = "QUERY=" + ((TAPParameters)obj).getQuery().replaceAll("(\t|\r?\n)+", " ");
+				else if (event.equals("SYNC_START"))
+					jobId = ((TAPSyncJob)obj).getID();
+				else if (obj instanceof TAPExecutionReport){
+					TAPExecutionReport report = (TAPExecutionReport)obj;
+					jobId = report.jobID;
+					msgAppend = (report.synchronous ? "SYNC" : "ASYNC") + ",duration=" + report.getTotalDuration() + "ms (upload=" + report.getUploadDuration() + ",parse=" + report.getParsingDuration() + ",exec=" + report.getExecutionDuration() + ",format[" + report.parameters.getFormat() + "]=" + report.getFormattingDuration() + ")";
+				}
+			}
+			if (msgAppend != null)
+				msgAppend = "\t" + msgAppend;
+		}catch(Throwable t){
+			error("Error while preparing a log message in logTAP(...)! The message will be logger but without additional information such as the job ID.", t);
+		}
 
-	@Override
-	public void dbError(final String message, final Throwable t){
-		dbActivity(message, t);
-	}
-
-	@Override
-	public void tapMetadataFetched(TAPMetadata metadata){
-		dbActivity("TAP metadata fetched from the database !");
-	}
-
-	@Override
-	public void tapMetadataLoaded(TAPMetadata metadata){
-		dbActivity("TAP metadata loaded into the database !");
-	}
-
-	@Override
-	public void connectionOpened(DBConnection connection, String dbName){
-		dbActivity("A connection has been opened to the database \"" + dbName + "\" !");
-	}
-
-	@Override
-	public void connectionClosed(DBConnection connection){
-		dbActivity("A database connection has been closed !");
-	}
-
-	@Override
-	public void transactionStarted(final DBConnection connection){
-		dbActivity("A transaction has been started !");
-	}
-
-	@Override
-	public void transactionCancelled(final DBConnection connection){
-		dbActivity("A transaction has been cancelled !");
-	}
-
-	@Override
-	public void transactionEnded(final DBConnection connection){
-		dbActivity("A transaction has been ended/commited !");
-	}
-
-	@Override
-	public void schemaCreated(final DBConnection connection, String schema){
-		dbActivity("CREATE SCHEMA \"" + schema + "\"\t" + connection.getID());
-	}
-
-	@Override
-	public void schemaDropped(final DBConnection connection, String schema){
-		dbActivity("DROP SCHEMA \"" + schema + "\"\t" + connection.getID());
-	}
-
-	protected final String getFullDBName(final TAPTable table){
-		return ((table.getSchema() != null) ? (table.getSchema().getDBName() + ".") : "") + table.getDBName();
-	}
-
-	@Override
-	public void tableCreated(final DBConnection connection, TAPTable table){
-		dbActivity("CREATE TABLE \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
-	}
-
-	@Override
-	public void tableDropped(final DBConnection connection, TAPTable table){
-		dbActivity("DROP TABLE \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
-	}
-
-	@Override
-	public void rowsInserted(final DBConnection connection, TAPTable table, int nbInsertedRows){
-		dbActivity("INSERT ROWS (" + ((nbInsertedRows > 0) ? nbInsertedRows : "???") + ") into \"" + getFullDBName(table) + "\" (ADQL name: \"" + table.getFullName() + "\")\t" + connection.getID());
-	}
-
-	@Override
-	public void sqlQueryExecuting(final DBConnection connection, String sql){
-		dbActivity("EXECUTING SQL QUERY \t" + connection.getID() + "\n" + ((sql == null) ? "???" : sql.replaceAll("\n", " ").replaceAll("\t", " ").replaceAll("\r", "")));
-	}
-
-	@Override
-	public void sqlQueryError(final DBConnection connection, String sql, Throwable t){
-		dbActivity("EXECUTION ERROR\t" + connection.getID(), t);
-	}
-
-	@Override
-	public void sqlQueryExecuted(final DBConnection connection, String sql){
-		dbActivity("SUCCESSFULL END OF EXECUTION\t" + connection.getID());
+		// Log the message:
+		log(level, "TAP", event, jobId, message + msgAppend, error);
 	}
 
 }

@@ -16,34 +16,32 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
-
 import java.net.URL;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Vector;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import uws.AcceptHeader;
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 import uws.job.ExecutionPhase;
 import uws.job.JobList;
 import uws.job.UWSJob;
-
 import uws.job.manager.DefaultExecutionManager;
 import uws.job.serializer.JSONSerializer;
 import uws.job.serializer.UWSSerializer;
 import uws.job.serializer.XMLSerializer;
 import uws.job.user.JobOwner;
-
 import uws.service.actions.AddJob;
 import uws.service.actions.DestroyJob;
 import uws.service.actions.GetJobParam;
@@ -53,12 +51,12 @@ import uws.service.actions.SetJobParam;
 import uws.service.actions.ShowHomePage;
 import uws.service.actions.UWSAction;
 import uws.service.backup.UWSBackupManager;
-
 import uws.service.error.DefaultUWSErrorWriter;
 import uws.service.error.ServiceErrorWriter;
 import uws.service.file.UWSFileManager;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <h3>General description</h3>
@@ -182,11 +180,10 @@ import uws.service.log.UWSLog;
  * use the method {@link #setDefaultHomePage()} !</i></p>
  * 
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class UWSService implements UWS {
-	private static final long serialVersionUID = 1L;
 
 	/** Name of this UWS. */
 	protected String name = null;
@@ -239,26 +236,32 @@ public class UWSService implements UWS {
 	/** Lets writing/formatting any exception/throwable in a HttpServletResponse. */
 	protected ServiceErrorWriter errorWriter;
 
+	/** Last generated request ID. If the next generated request ID is equivalent to this one,
+	 * a new one will generate in order to ensure the unicity.
+	 * @since 4.1 */
+	protected static String lastRequestID = null;
+
 	/* ************ */
 	/* CONSTRUCTORS */
-	/* ************ *//**
-						* <p>Builds a UWS (the base URI will be extracted at the first request directly from the request itself).</p>
-						* 
-						* <p>
-						* 	By default, this UWS has 2 serialization formats: XML ({@link XMLSerializer}) and JSON ({@link JSONSerializer}).
-						* 	All the default actions of a UWS are also already implemented.
-						* 	However, you still have to create at least one job list !
-						* </p>
-						* 
-						* <p><i><u>note:</u> since no logger is provided, a default one is set automatically (see {@link DefaultUWSLog}).</i></p>
-						* 
-						* @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
-						* @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
-						* 
-						* @throws NullPointerException	If at least one of the parameters is <i>null</i>.
-						* 
-						* @see #UWSService(UWSFactory, UWSFileManager, UWSLog)
-						*/
+	/* ************ */
+	/**
+	 * <p>Builds a UWS (the base URI will be extracted at the first request directly from the request itself).</p>
+	 * 
+	 * <p>
+	 * 	By default, this UWS has 2 serialization formats: XML ({@link XMLSerializer}) and JSON ({@link JSONSerializer}).
+	 * 	All the default actions of a UWS are also already implemented.
+	 * 	However, you still have to create at least one job list !
+	 * </p>
+	 * 
+	 * <p><i><u>note:</u> since no logger is provided, a default one is set automatically (see {@link DefaultUWSLog}).</i></p>
+	 * 
+	 * @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
+	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
+	 * 
+	 * @throws NullPointerException	If at least one of the parameters is <i>null</i>.
+	 * 
+	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog)
+	 */
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager){
 		this(jobFactory, fileManager, (UWSLog)null);
 	}
@@ -280,15 +283,15 @@ public class UWSService implements UWS {
 	 */
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger){
 		if (jobFactory == null)
-			throw new NullPointerException("Missing UWS factory ! Can not create a UWSService.");
+			throw new NullPointerException("Missing UWS factory! Can not create a UWSService.");
 		factory = jobFactory;
 
 		if (fileManager == null)
-			throw new NullPointerException("Missing UWS file manager ! Can not create a UWSService.");
+			throw new NullPointerException("Missing UWS file manager! Can not create a UWSService.");
 		this.fileManager = fileManager;
 
 		this.logger = (logger == null) ? new DefaultUWSLog(this) : logger;
-		errorWriter = new DefaultUWSErrorWriter(this);
+		errorWriter = new DefaultUWSErrorWriter(this.logger);
 
 		// Initialize the list of jobs:
 		mapJobLists = new LinkedHashMap<String,JobList>();
@@ -345,11 +348,22 @@ public class UWSService implements UWS {
 
 		// Extract the name of the UWS:
 		try{
+			// Set the URL interpreter:
 			urlInterpreter = new UWSUrl(baseURI);
+
+			// ...and the name of this service:
 			name = urlInterpreter.getUWSName();
-			getLogger().uwsInitialized(this);
-		}catch(UWSException ex){
-			throw new UWSException(UWSException.BAD_REQUEST, ex, "Invalid base UWS URI (" + baseURI + ") !");
+
+			// Log the successful initialization:
+			logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized!", null);
+
+		}catch(NullPointerException ex){
+			// Log the exception:
+			// (since the first constructor has already been called successfully, the logger is now NOT NULL):
+			logger.logUWS(LogLevel.FATAL, null, "INIT", "Invalid base UWS URI: " + baseURI + "! You should check the configuration of the service.", ex);
+
+			// Throw a new UWSException with a more understandable message:
+			throw new UWSException(UWSException.BAD_REQUEST, ex, "Invalid base UWS URI (" + baseURI + ")!");
 		}
 	}
 
@@ -380,12 +394,13 @@ public class UWSService implements UWS {
 		this(jobFactory, fileManager, logger);
 		setUrlInterpreter(urlInterpreter);
 		if (this.urlInterpreter != null)
-			getLogger().uwsInitialized(this);
+			logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized.", null);
 	}
 
 	/* ************** */
 	/* LOG MANAGEMENT */
 	/* ************** */
+	@Override
 	public UWSLog getLogger(){
 		return logger;
 	}
@@ -414,6 +429,7 @@ public class UWSService implements UWS {
 	/* ***************** */
 	/* GETTERS & SETTERS */
 	/* ***************** */
+	@Override
 	public final String getName(){
 		return name;
 	}
@@ -427,6 +443,7 @@ public class UWSService implements UWS {
 		this.name = name;
 	}
 
+	@Override
 	public final String getDescription(){
 		return description;
 	}
@@ -451,6 +468,7 @@ public class UWSService implements UWS {
 		return (urlInterpreter == null) ? null : urlInterpreter.getBaseURI();
 	}
 
+	@Override
 	public final UWSUrl getUrlInterpreter(){
 		return urlInterpreter;
 	}
@@ -472,6 +490,7 @@ public class UWSService implements UWS {
 	 * 
 	 * @return	The used UserIdentifier (MAY BE NULL).
 	 */
+	@Override
 	public final UserIdentifier getUserIdentifier(){
 		return userIdentifier;
 	}
@@ -485,14 +504,17 @@ public class UWSService implements UWS {
 		userIdentifier = identifier;
 	}
 
+	@Override
 	public final UWSFactory getFactory(){
 		return factory;
 	}
 
+	@Override
 	public final UWSFileManager getFileManager(){
 		return fileManager;
 	}
 
+	@Override
 	public final UWSBackupManager getBackupManager(){
 		return backupManager;
 	}
@@ -596,7 +618,7 @@ public class UWSService implements UWS {
 		if (serializers.containsKey(mimeType))
 			defaultSerializer = mimeType;
 		else
-			throw UWSExceptionFactory.missingSerializer(mimeType, "Impossible to set the default serializer.");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing UWS serializer for the MIME types: " + mimeType + "! The default serializer won't be set.");
 	}
 
 	/**
@@ -646,6 +668,7 @@ public class UWSService implements UWS {
 		return serializers.values().iterator();
 	}
 
+	@Override
 	public final UWSSerializer getSerializer(String mimeTypes) throws UWSException{
 		choosenSerializer = null;
 
@@ -725,14 +748,17 @@ public class UWSService implements UWS {
 	 * 
 	 * @see java.lang.Iterable#iterator()
 	 */
+	@Override
 	public final Iterator<JobList> iterator(){
 		return mapJobLists.values().iterator();
 	}
 
+	@Override
 	public final JobList getJobList(String name){
 		return mapJobLists.get(name);
 	}
 
+	@Override
 	public final int getNbJobList(){
 		return mapJobLists.size();
 	}
@@ -749,6 +775,7 @@ public class UWSService implements UWS {
 	 * @see JobList#setUWS(AbstractUWS)
 	 * @see UWS#addJobList(JobList)
 	 */
+	@Override
 	public final boolean addJobList(JobList jl){
 		if (jl == null)
 			return false;
@@ -759,44 +786,14 @@ public class UWSService implements UWS {
 			jl.setUWS(this);
 			mapJobLists.put(jl.getName(), jl);
 		}catch(IllegalStateException ise){
-			logger.error("The jobs list \"" + jl.getName() + "\" can not be added into the UWS " + getName() + " !", ise);
+			logger.logUWS(LogLevel.ERROR, jl, "ADD_JOB_LIST", "The jobs list \"" + jl.getName() + "\" can not be added into the UWS " + getName() + ": it may already be associated with one!", ise);
 			return false;
 		}
 
 		return true;
 	}
 
-	/*public final JobList removeJobList(String name){
-		JobList jl = mapJobLists.get(name);
-		if (jl != null){
-			if (removeJobList(jl))
-				return jl;
-		}
-		return null;
-	}*/
-
-	/*
-	 * Removes the given jobs list from this UWS.
-	 * 
-	 * @param jl	The jobs list to remove.
-	 * 
-	 * @return		<i>true</i> if the jobs list has been successfully removed, <i>false</i> otherwise.
-	 * 
-	 * @see JobList#removeAll()
-	 * @see JobList#setUWS(UWSService)
-	 *
-	public boolean removeJobList(JobList jl){
-		if (jl == null)
-			return false;
-
-		jl = mapJobLists.remove(jl.getName());
-		if (jl != null){
-			jl.removeAll();
-			jl.setUWS(null);
-		}
-		return jl != null;
-	}*/
-
+	@Override
 	public final boolean destroyJobList(String name){
 		return destroyJobList(mapJobLists.get(name));
 	}
@@ -821,22 +818,11 @@ public class UWSService implements UWS {
 				jl.clear();
 				jl.setUWS(null);
 			}catch(IllegalStateException ise){
-				getLogger().warning("Impossible to erase completely the association between the jobs list \"" + jl.getName() + "\" and the UWS \"" + getName() + "\", because: " + ise.getMessage());
+				logger.logUWS(LogLevel.WARNING, jl, "DESTROY_JOB_LIST", "Impossible to erase completely the association between the jobs list \"" + jl.getName() + "\" and the UWS \"" + getName() + "\"!", ise);
 			}
 		}
 		return jl != null;
 	}
-
-	/*
-	 * Removes all managed jobs lists.
-	 * 
-	 * @see #removeJobList(String)
-	 *
-	public final void removeAllJobLists(){
-		ArrayList<String> jlNames = new ArrayList<String>(mapJobLists.keySet());
-		for(String jlName : jlNames)
-			removeJobList(jlName);
-	}*/
 
 	/**
 	 * Destroys all managed jobs lists.
@@ -1000,6 +986,27 @@ public class UWSService implements UWS {
 	/* ********************** */
 	/* UWS MANAGEMENT METHODS */
 	/* ********************** */
+
+	/**
+	 * <p>Generate a unique ID for the given request.</p>
+	 * 
+	 * <p>By default, a timestamp is returned.</p>
+	 * 
+	 * @param request	Request whose an ID is asked.
+	 * 
+	 * @return	The ID of the given request.
+	 * 
+	 * @since 4.1
+	 */
+	protected synchronized String generateRequestID(final HttpServletRequest request){
+		String id;
+		do{
+			id = System.currentTimeMillis() + "";
+		}while(lastRequestID != null && lastRequestID.startsWith(id));
+		lastRequestID = id;
+		return id;
+	}
+
 	/**
 	 * <p>Executes the given request according to the <a href="http://www.ivoa.net/Documents/UWS/20100210/">IVOA Proposed Recommendation of 2010-02-10</a>.
 	 * The result is returned in the given response.</p>
@@ -1030,16 +1037,26 @@ public class UWSService implements UWS {
 		if (request == null || response == null)
 			return false;
 
+		// Generate a unique ID for this request execution (for log purpose only):
+		final String reqID = generateRequestID(request);
+
+		// Log the reception of the request:
+		logger.logHttp(LogLevel.INFO, request, reqID, null, null);
+
 		boolean actionApplied = false;
 		UWSAction action = null;
 		JobOwner user = null;
 
 		try{
-			// Update the UWS URL interpreter:
 			if (urlInterpreter == null){
+				// Initialize the URL interpreter if not already done:
 				setUrlInterpreter(new UWSUrl(request));
-				getLogger().uwsInitialized(this);
+
+				// Log the successful initialization:
+				logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized.", null);
 			}
+
+			// Update the UWS URL interpreter:
 			urlInterpreter.load(request);
 
 			// Identify the user:
@@ -1056,17 +1073,20 @@ public class UWSService implements UWS {
 
 			// If no corresponding action has been found, throw an error:
 			if (action == null)
-				throw new UWSException(UWSException.NOT_IMPLEMENTED, "Unknown UWS action ! This HTTP request can not be interpreted by this UWS service !");
+				throw new UWSException(UWSException.NOT_IMPLEMENTED, "Unknown UWS action!");
 
 			response.flushBuffer();
-			logger.httpRequest(request, user, (action != null) ? action.getName() : null, HttpServletResponse.SC_OK, "[OK]", null);
+
+			// Log the successful execution of the action:
+			logger.logHttp(LogLevel.INFO, response, reqID, user, "HTTP " + UWSException.OK + " - Action \"" + ((action != null) ? action.getName() : null) + "\" successfully executed.", null);
 
 		}catch(UWSException ex){
+			// If redirection, flag the action as executed with success:
 			if (ex.getHttpErrorCode() == UWSException.SEE_OTHER)
 				actionApplied = true;
-			sendError(ex, request, user, (action != null) ? action.getName() : null, response);
+			sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
 		}catch(Exception ex){
-			sendError(ex, request, user, (action != null) ? action.getName() : null, response);
+			sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
 		}finally{
 			executedAction = action;
 		}
@@ -1091,7 +1111,6 @@ public class UWSService implements UWS {
 		response.setContentType(request.getContentType());
 		response.setHeader("Location", url);
 		response.flushBuffer();
-		logger.httpRequest(request, user, uwsAction, HttpServletResponse.SC_SEE_OTHER, "[Redirection toward " + url + "]", null);
 	}
 
 	/**
@@ -1103,6 +1122,7 @@ public class UWSService implements UWS {
 	 * 
 	 * @param error			The error to send/display.
 	 * @param request		The request which has caused the given error <i>(not used by default)</i>.
+	 * @param reqID			ID of the request.
 	 * @param user			The user which executes the given request.
 	 * @param uwsAction	The UWS action corresponding to the given request.
 	 * @param response		The response in which the error must be published.
@@ -1113,16 +1133,14 @@ public class UWSService implements UWS {
 	 * @see #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * @see {@link ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, JobOwner, String)}
 	 */
-	public final void sendError(UWSException error, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException, UWSException{
-		if (error.getHttpErrorCode() == UWSException.SEE_OTHER)
+	public final void sendError(UWSException error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException, UWSException{
+		if (error.getHttpErrorCode() == UWSException.SEE_OTHER){
+			// Log the redirection, if any:
+			logger.logHttp(LogLevel.INFO, response, reqID, user, "HTTP " + UWSException.SEE_OTHER + " [Redirection toward " + error.getMessage() + "] - Action \"" + uwsAction + "\" successfully executed.", null);
+			// Apply the redirection:
 			redirect(error.getMessage(), request, user, uwsAction, response);
-		else{
-			errorWriter.writeError(error, response, request, user, uwsAction);
-			/*if (error.getHttpErrorCode() == UWSException.INTERNAL_SERVER_ERROR)
-				logger.error(error);
-			response.sendError(error.getHttpErrorCode(), error.getMessage());
-			logger.httpRequest(request, user, uwsAction, error.getHttpErrorCode(), error.getMessage(), error);*/
-		}
+		}else
+			sendError(error, request, reqID, user, uwsAction, response);
 	}
 
 	/**
@@ -1136,20 +1154,20 @@ public class UWSService implements UWS {
 	 * 
 	 * @param error			The error to send/display.
 	 * @param request		The request which has caused the given error <i>(not used by default)</i>.
+	 * @param reqID			ID of the request.
 	 * @param user			The user which executes the given request.
 	 * @param uwsAction	The UWS action corresponding to the given request.
 	 * @param response		The response in which the error must be published.
 	 * 
 	 * @throws IOException	If there is an error when calling {@link HttpServletResponse#sendError(int, String)}.
-	 * @throws UWSException
 	 * 
-	 * @see {@link ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, JobOwner, String)}
+	 * @see {@link ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, String, JobOwner, String)}
 	 */
-	public final void sendError(Exception error, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException, UWSException{
-		errorWriter.writeError(error, response, request, user, uwsAction);
-		/*logger.error(error);
-		response.sendError(UWSException.INTERNAL_SERVER_ERROR, error.getMessage());
-		logger.httpRequest(request, user, uwsAction, UWSException.INTERNAL_SERVER_ERROR, error.getMessage(), error);*/
+	public final void sendError(Exception error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException{
+		// Write the error in the response and return the appropriate HTTP status code:
+		errorWriter.writeError(error, response, request, reqID, user, uwsAction);
+		// Log the error:
+		logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the UWS action \"" + uwsAction + "\", because: " + error.getMessage(), error);
 	}
 
 }

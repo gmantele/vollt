@@ -58,7 +58,7 @@ import adql.query.ADQLQuery;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (09/2014)
  */
 public abstract class TAPFactory extends AbstractUWSFactory {
 
@@ -373,7 +373,14 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 	 */
 	@Override
 	public final UWSParameters createUWSParameters(HttpServletRequest request) throws UWSException{
-		return createTAPParameters(request);
+		try{
+			return createTAPParameters(request);
+		}catch(TAPException te){
+			if (te.getCause() != null && te.getCause() instanceof UWSException && te.getMessage().equals(te.getCause().getMessage()))
+				throw (UWSException)te.getCause();
+			else
+				throw new UWSException(te.getHttpErrorCode(), te);
+		}
 	}
 
 	/**
@@ -387,9 +394,9 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 	 * 
 	 * @return	An object gathering all successfully extracted TAP parameters.
 	 * 
-	 * @throws UWSException	If any error occurs while extracting the parameters.
+	 * @throws TAPException	If any error occurs while extracting the parameters. 
 	 */
-	protected abstract TAPParameters createTAPParameters(final HttpServletRequest request) throws UWSException;
+	public abstract TAPParameters createTAPParameters(final HttpServletRequest request) throws TAPException;
 
 	/**
 	 * <p>Identify and gather all identified parameters of the given map inside a {@link TAPParameters} object.</p>
@@ -404,7 +411,14 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 	 */
 	@Override
 	public final UWSParameters createUWSParameters(Map<String,Object> params) throws UWSException{
-		return createTAPParameters(params);
+		try{
+			return createTAPParameters(params);
+		}catch(TAPException te){
+			if (te.getCause() != null && te.getCause() instanceof UWSException && te.getMessage().equals(te.getCause().getMessage()))
+				throw (UWSException)te.getCause();
+			else
+				throw new UWSException(te.getHttpErrorCode(), te);
+		}
 	}
 
 	/**
@@ -417,9 +431,9 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 	 * @param params	Map containing all parameters.
 	 * 
 	 * @return	An object gathering all successfully identified TAP parameters.
-	 * 
-	 * @throws UWSException	If any error occurs while creating the {@link TAPParameters} object.
+	 *
+	 * @throws TAPException	If any error occurs while creating the {@link TAPParameters} object.
 	 */
-	protected abstract TAPParameters createTAPParameters(final Map<String,Object> params) throws UWSException;
+	public abstract TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException;
 
 }

@@ -21,6 +21,12 @@ package tap;
 
 import uws.UWSException;
 
+/**
+ * TODO JAVADOC OF THE WHOLE CLASS TO WRITE!!!
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (09/2014)
+ */
 public class TAPException extends Exception {
 
 	private static final long serialVersionUID = 1L;
@@ -60,7 +66,7 @@ public class TAPException extends Exception {
 	}
 
 	public TAPException(UWSException ue){
-		this(ue.getMessage(), ue.getCause(), ue.getHttpErrorCode());
+		this(ue.getMessage(), (ue.getCause() == null ? ue : ue.getCause()), ue.getHttpErrorCode());
 	}
 
 	public TAPException(UWSException cause, int httpErrorCode){

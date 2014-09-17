@@ -16,7 +16,8 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -26,6 +27,8 @@ import java.util.Date;
 import uws.UWSException;
 import uws.UWSToolBox;
 import uws.service.file.UWSFileManager;
+import uws.service.log.UWSLog;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <P>An instance of this class is a thread dedicated to a job execution.</P>
@@ -55,8 +58,8 @@ import uws.service.file.UWSFileManager;
  * 	<li>an {@link InterruptedException}: the method {@link UWSJob#abort()} is called.</li>
  * </ul>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  * 
  * @see UWSJob#start()
  * @see UWSJob#abort()
@@ -104,8 +107,6 @@ public abstract class JobThread extends Thread {
 	 */
 	public JobThread(UWSJob j, String task) throws UWSException{
 		super(tg, j.getJobId());
-		if (j == null)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing job instance ! => impossible to build a JobThread instance.");
 
 		job = j;
 		taskDescription = task;
@@ -225,7 +226,7 @@ public abstract class JobThread extends Thread {
 			setError(error);
 
 		}catch(IOException ioe){
-			job.getLogger().error("The stack trace of a UWSException (job ID: " + job.getJobId() + " ; error message: \"" + ue.getMessage() + "\") had not been written !", ioe);
+			job.getLogger().logThread(LogLevel.ERROR, this, "SET_ERROR", "The stack trace of a UWSException had not been written !", ioe);
 			setError(new ErrorSummary(ue.getMessage(), ue.getUWSErrorType()));
 		}
 	}
@@ -361,8 +362,10 @@ public abstract class JobThread extends Thread {
 			finished = false;
 		}
 
+		UWSLog logger = job.getLogger();
+
 		// Log the start of this thread:
-		job.getLogger().threadStarted(this, taskDescription);
+		logger.logThread(LogLevel.INFO, this, "START", "Thread \"" + getId() + "\" started.", null);
 
 		try{
 			try{
@@ -378,7 +381,7 @@ public abstract class JobThread extends Thread {
 				if (!job.stopping)
 					job.abort();
 				// Log the abortion:
-				job.getLogger().threadInterrupted(this, taskDescription, ex);
+				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getId() + "\" cancelled.", null);
 			}
 			return;
 
@@ -399,25 +402,22 @@ public abstract class JobThread extends Thread {
 			// Publish the error if any has occurred:
 			if (lastError != null){
 				// Log the error:
-				job.getLogger().threadInterrupted(this, taskDescription, lastError);
+				logger.logThread(LogLevel.ERROR, this, "END", "Thread \"" + getId() + "\" ended with an error.", lastError);
 				// Set the error into the job:
 				try{
 					setError(lastError);
 				}catch(UWSException ue){
 					try{
-						job.getLogger().error("[JobThread] LEVEL 1 -> Problem in JobThread.setError(UWSException), while setting the execution error of the job " + job.getJobId(), ue);
+						logger.logThread(LogLevel.ERROR, this, "SET_ERROR", "[1st Attempt] Problem in JobThread.setError(UWSException), while setting the execution error of the job " + job.getJobId() + ". A last attempt will be done.", ue);
 						setError(new ErrorSummary((lastError.getCause() != null) ? lastError.getCause().getMessage() : lastError.getMessage(), lastError.getUWSErrorType()));
 					}catch(UWSException ue2){
-						job.getLogger().error("[JobThread] LEVEL 2 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId(), ue2);
-						try{
-							setError(new ErrorSummary(lastError.getMessage(), ErrorType.FATAL));
-						}catch(UWSException ue3){
-							job.getLogger().error("[JobThread] LEVEL 3 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId(), ue3);
-						}
+						logger.logThread(LogLevel.ERROR, this, "SET_ERROR", "[2nd and last Attempt] Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId() + ". This error can not be reported to the user, but it will be reported in the log in the JOB context.", ue2);
+						// Note: no need of a level 3: if the second attempt fails, it means the job is in a wrong phase and no error summary can never be set ; further attempt won't change anything!
+						logger.logJob(LogLevel.ERROR, job, "EXECUTING", "An error has interrupted the execution of the job \"" + job.getJobId() + "\". Here is its summary: " + lastError.getMessage(), lastError);
 					}
 				}
 			}else
-				job.getLogger().threadFinished(this, taskDescription);
+				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getId() + "\" successfully ended.", null);
 		}
 	}
 }

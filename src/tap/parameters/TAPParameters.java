@@ -60,9 +60,8 @@ public class TAPParameters extends UWSParameters {
 	/** All the tables to upload. If NULL, there is no tables to upload. */
 	protected TableLoader[] tablesToUpload = null;
 
-	@SuppressWarnings({"unchecked"})
 	public TAPParameters(final ServiceConnection service){
-		this(service, (Collection)null, null);
+		this(service, null, null);
 	}
 
 	public TAPParameters(final ServiceConnection service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers){

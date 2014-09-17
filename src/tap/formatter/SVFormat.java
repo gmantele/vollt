@@ -28,13 +28,14 @@ import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.data.TableIterator;
+import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 
 /**
  * Format any given query (table) result into CSV or TSV (or with custom separator).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (09/2014)
  */
 public class SVFormat implements OutputFormat {
 
@@ -178,10 +179,10 @@ public class SVFormat implements OutputFormat {
 
 			// Report stats about the result writing:
 			if (logFormatReport)
-				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in SV[" + delimitStr + "] ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - startTime) + " ms !");
+				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in SV[" + delimitStr + "] ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - startTime) + "ms!", null);
 
 		}catch(Exception ex){
-			service.getLogger().error("While formatting in (T/C)SV !", ex);
+			service.getLogger().logTAP(LogLevel.ERROR, execReport, "FORMAT", "Error while formatting in (T/C)SV (delimiter: " + delimitStr + ")!", ex);
 		}
 	}
 

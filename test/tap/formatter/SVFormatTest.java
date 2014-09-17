@@ -4,10 +4,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -33,6 +31,7 @@ import tap.metadata.TAPMetadata;
 import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
 import tap.parameters.TAPParameters;
+import testtools.CommandExecute;
 import testtools.DBTools;
 import uws.service.UserIdentifier;
 
@@ -42,7 +41,7 @@ import uws.service.UserIdentifier;
  * <p>2 test ares done: 1 with an overflow and another without.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (09/2014)
  */
 public class SVFormatTest {
 
@@ -91,8 +90,7 @@ public class SVFormatTest {
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
-			String[] cmd = new String[]{"/bin/sh","-c","wc -l < \"" + svFile.getAbsolutePath() + "\""};
-			assertTrue(executeCommand(cmd).trim().equals("11"));
+			assertTrue(CommandExecute.execute("wc -l < \"" + svFile.getAbsolutePath() + "\"").trim().equals("11"));
 
 		}catch(Exception t){
 			t.printStackTrace();
@@ -125,8 +123,7 @@ public class SVFormatTest {
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
-			String[] cmd = new String[]{"/bin/sh","-c","wc -l < \"" + svFile.getAbsolutePath() + "\""};
-			assertTrue(executeCommand(cmd).trim().equals("6"));
+			assertTrue(CommandExecute.execute("wc -l < \"" + svFile.getAbsolutePath() + "\"").trim().equals("6"));
 
 		}catch(Exception t){
 			t.printStackTrace();
@@ -141,29 +138,6 @@ public class SVFormatTest {
 				}
 			}
 		}
-	}
-
-	private String executeCommand(String[] command){
-
-		StringBuffer output = new StringBuffer();
-
-		Process p;
-		try{
-			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-			String line = "";
-			while((line = reader.readLine()) != null){
-				output.append(line + "\n");
-			}
-
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-
-		return output.toString();
-
 	}
 
 	private static class ServiceConnectionTest implements ServiceConnection {
@@ -248,7 +222,6 @@ public class SVFormatTest {
 			return null;
 		}
 
-		@SuppressWarnings("rawtypes")
 		@Override
 		public TAPFactory getFactory(){
 			return null;

@@ -35,6 +35,7 @@ import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata.STDSchema;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
+import uws.UWSException;
 
 import com.oreilly.servlet.multipart.ExceededSizeException;
 
@@ -47,7 +48,7 @@ import com.oreilly.servlet.multipart.ExceededSizeException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (09/2014)
  * 
  * @see LimitedTableIterator
  * @see VOTableIterator
@@ -99,7 +100,13 @@ public class Uploader {
 	}
 
 	/**
-	 * Upload all the given VOTable inputs.
+	 * <p>Upload all the given VOTable inputs.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The {@link TAPTable} objects representing the uploaded tables will be associated with the TAP_UPLOAD schema defined in the TAP metadata.
+	 * 	If no such schema is defined, a default one (whose DB name will be equals to the ADQL name, that's to say {@link STDSchema#UPLOADSCHEMA})
+	 * 	is created and added into the TAP metadata. The corresponding schema should be then created in the database automatically by the {@link DBConnection}.
+	 * </i></p>
 	 * 
 	 * @param loaders	Array of tables to upload.
 	 * 
@@ -110,7 +117,15 @@ public class Uploader {
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
 	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
-		TAPSchema uploadSchema = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
+		// Get the TAP_UPLOAD schema as defined in the TAP metadata:
+		TAPSchema uploadSchema = service.getTAPMetadata().getUploadSchema();
+
+		// If no TAP_UPLOAD schema is defined, create a default one and update the TAP metadata with it:
+		if (uploadSchema == null){
+			uploadSchema = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
+			service.getTAPMetadata().setUploadSchema(uploadSchema);
+		}
+
 		InputStream votable = null;
 		String tableName = null;
 		try{
@@ -145,9 +160,9 @@ public class Uploader {
 			if (dre.getCause() instanceof ExceededSizeException)
 				throw dre;
 			else
-				throw new TAPException("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre);
+				throw new TAPException("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
 		}catch(IOException ioe){
-			throw new TAPException("Error while reading the VOTable of \"" + tableName + "\"!", ioe);
+			throw new TAPException("IO error while reading the VOTable of \"" + tableName + "\"!", ioe);
 		}finally{
 			try{
 				if (votable != null)

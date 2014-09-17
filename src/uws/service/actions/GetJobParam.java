@@ -16,31 +16,27 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.servlet.ServletOutputStream;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
-
 import uws.job.ErrorSummary;
 import uws.job.Result;
 import uws.job.UWSJob;
-
 import uws.job.serializer.UWSSerializer;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>The "Get Job Parameter" action of a UWS.</p>
@@ -52,8 +48,8 @@ import uws.service.UWSUrl;
  * whereas it is a complex type (i.e. results, parameters, ...) the value is the serialization of the job attribute itself.
  * The serializer is choosen in function of the HTTP Accept header.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public class GetJobParam extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -116,7 +112,7 @@ public class GetJobParam extends UWSAction {
 		if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_RESULTS) && attributes.length > 1){
 			Result result = job.getResult(attributes[1]);
 			if (result == null)
-				throw UWSExceptionFactory.incorrectJobResult(job.getJobId(), attributes[1]);
+				throw new UWSException(UWSException.NOT_FOUND, "No result identified with \"" + attributes[1] + "\" in the job \"" + job.getJobId() + "\"!");
 			else if (result.isRedirectionRequired())
 				uws.redirect(result.getHref(), request, user, getName(), response);
 			else{
@@ -125,6 +121,7 @@ public class GetJobParam extends UWSAction {
 					input = uws.getFileManager().getResultInput(result, job);
 					UWSToolBox.write(input, result.getMimeType(), result.getSize(), response);
 				}catch(IOException ioe){
+					getLogger().logUWS(LogLevel.ERROR, result, "GET_RESULT", "Can not read the content of the result \"" + result.getId() + "\" of the job \"" + job.getJobId() + "\"!", ioe);
 					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the result " + result.getId() + " (job ID: " + job.getJobId() + ").");
 				}finally{
 					if (input != null)
@@ -135,13 +132,14 @@ public class GetJobParam extends UWSAction {
 		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) && attributes.length > 1 && attributes[1].equalsIgnoreCase("details")){
 			ErrorSummary error = job.getErrorSummary();
 			if (error == null)
-				throw UWSExceptionFactory.noErrorSummary(job.getJobId());
+				throw new UWSException(UWSException.NOT_FOUND, "No error summary for the job \"" + job.getJobId() + "\"!");
 			else{
 				InputStream input = null;
 				try{
 					input = uws.getFileManager().getErrorInput(error, job);
 					UWSToolBox.write(input, "text/plain", uws.getFileManager().getErrorSize(error, job), response);
 				}catch(IOException ioe){
+					getLogger().logUWS(LogLevel.ERROR, error, "GET_ERROR", "Can not read the details of the error summary of the job \"" + job.getJobId() + "\"!", ioe);
 					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the error details (job ID: " + job.getJobId() + ").");
 				}finally{
 					if (input != null)
@@ -154,11 +152,22 @@ public class GetJobParam extends UWSAction {
 			// Write the value/content of the selected attribute:
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 			String uwsField = attributes[0];
-			if (uwsField == null || uwsField.trim().isEmpty() || (attributes.length <= 1 && (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) || uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS) || uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS))))
+			boolean jobSerialization = false;
+			if (uwsField == null || uwsField.trim().isEmpty() || (attributes.length <= 1 && (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) || uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS) || uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)))){
 				response.setContentType(serializer.getMimeType());
-			else
+				jobSerialization = true;
+			}else
 				response.setContentType("text/plain");
-			job.serialize(response.getOutputStream(), attributes, serializer);
+			try{
+				job.serialize(response.getOutputStream(), attributes, serializer);
+			}catch(Exception e){
+				if (!(e instanceof UWSException)){
+					String errorMsgPart = (jobSerialization ? "the job \"" + job.getJobId() + "\"" : "the parameter " + uwsField + " of the job \"" + job.getJobId() + "\"");
+					getLogger().logUWS(LogLevel.ERROR, urlInterpreter, "SERIALIZE", "Can not serialize " + errorMsgPart + "!", e);
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Can not format properly " + errorMsgPart + "!");
+				}else
+					throw (UWSException)e;
+			}
 		}
 
 		return true;

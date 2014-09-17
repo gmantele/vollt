@@ -30,6 +30,7 @@ import uws.UWSException;
 import uws.job.UWSJob;
 import uws.service.UWS;
 import uws.service.backup.DefaultUWSBackupManager;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Let backup all TAP asynchronous jobs.</p>
@@ -144,14 +145,14 @@ public class DefaultTAPBackupManager extends DefaultUWSBackupManager {
 							else if (key.equalsIgnoreCase("totalduration"))
 								execReport.setTotalDuration(jsonExecReport.getLong(key));
 							else
-								getLogger().warning("The execution report attribute '" + key + "' of the job \"" + job.getJobId() + "\" has been ignored because unknown !");
+								getLogger().logUWS(LogLevel.WARNING, obj, "RESTORATION", "The execution report attribute '" + key + "' of the job \"" + job.getJobId() + "\" has been ignored because unknown!", null);
 						}catch(JSONException je){
-							getLogger().error("[restoration] Incorrect JSON format for the execution report serialization of the job \"" + job.getJobId() + "\" (attribute: \"" + key + "\") !", je);
+							getLogger().logUWS(LogLevel.ERROR, obj, "RESTORATION", "Incorrect JSON format for the execution report serialization of the job \"" + job.getJobId() + "\" (attribute: \"" + key + "\")!", je);
 						}
 					}
 					tapJob.setExecReport(execReport);
 				}else if (!(obj instanceof JSONObject))
-					getLogger().warning("[restoration] Impossible to restore the execution report of the job \"" + job.getJobId() + "\" because the stored object is not a JSONObject !");
+					getLogger().logUWS(LogLevel.WARNING, obj, "RESTORATION", "Impossible to restore the execution report of the job \"" + job.getJobId() + "\" because the stored object is not a JSONObject!", null);
 			}
 		}
 	}

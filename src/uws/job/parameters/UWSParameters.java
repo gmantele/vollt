@@ -16,30 +16,28 @@ package uws.job.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.text.ParseException;
 import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Date;
-import java.util.Set;
-import java.util.Map;
+import java.util.Enumeration;
 import java.util.HashMap;
-
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
 import uws.UWSException;
-
 import uws.job.UWSJob;
-
 import uws.service.UWS;
 
 /**
- * <p>Lets extracting all UWS standard and non-standard parameters from a map or a {@link HttpServletRequest}.</p>
+ * <p>Let extracting all UWS standard and non-standard parameters from a map or a {@link HttpServletRequest}.</p>
  * 
  * <h3>Input parameter check</h3>
  * <p>It is possible to check the value of some or all parameters by calling the function {@link InputParamController#check(Object)}
@@ -92,8 +90,8 @@ import uws.service.UWS;
  * <p><i><u>note:</u> All parameters stored under the parameter {@link UWSJob#PARAM_PARAMETERS} (that's to say, additional parameters)
  * are also considered as READ/WRITE parameters !</i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class UWSParameters implements Iterable<Entry<String,Object>> {
 
@@ -295,6 +293,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 		return mapParamControllers.entrySet().iterator();
 	}
 
+	@Override
 	public final Iterator<Entry<String,Object>> iterator(){
 		return params.entrySet().iterator();
 	}
@@ -364,7 +363,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 					// Test whether this parameter is allowed to be modified after its initialization:
 					InputParamController controller = getController(entry.getKey());
 					if (controller != null && !controller.allowModification())
-						throw new UWSException("The parameter \"" + entry.getKey() + "\" can not be modified after initialization !");
+						throw new UWSException(UWSException.NOT_ALLOWED, "The parameter \"" + entry.getKey() + "\" can not be modified after initialization!");
 					// If the value is NULL, removes this parameter:
 					if (entry.getValue() == null)
 						params.remove(entry.getKey());

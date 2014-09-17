@@ -16,37 +16,31 @@ package uws.service.log;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.Date;
 import java.util.Enumeration;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import uws.UWSException;
-
-import uws.job.JobList;
 import uws.job.UWSJob;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWS;
-
 import uws.service.file.UWSFileManager;
 
 /**
  * <p>Default implementation of {@link UWSLog} interface which lets logging any message about a UWS.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class DefaultUWSLog implements UWSLog {
 
@@ -56,12 +50,6 @@ public class DefaultUWSLog implements UWSLog {
 	protected final UWS uws;
 	protected final UWSFileManager fileManager;
 	protected final PrintWriter defaultOutput;
-
-	/**
-	 * <p>The minimum value of the HTTP status code required to print the stack trace of a HTTP error.</p>
-	 * <p><i><u>note:</u> This value is used only by the function {@link #httpRequest(HttpServletRequest, JobOwner, String, int, String, Throwable)}. </i></p>
-	 */
-	protected int minResponseCodeForStackTrace = 500;
 
 	/**
 	 * <p>Builds a {@link UWSLog} which will use the file manager
@@ -85,6 +73,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * 
 	 * <p><i><u>note 1</u>: This constructor is particularly useful if the way of managing log output may change in the given file manager.
 	 * Indeed, the output may change in function of the type of message to log ({@link UWSLogType}).</i></p>
+	 * 
 	 * <p><i><u>note 2</u> If no output can be found in the file manager the standard error output ({@link System#err})
 	 * will be chosen automatically for all log messages.</i></p>
 	 * 
@@ -142,43 +131,23 @@ public class DefaultUWSLog implements UWSLog {
 	}
 
 	/**
-	 * <p>Gets the minimum value of the HTTP status code required to print the stack trace of a HTTP error.</p>
-	 * 
-	 * <p><i><u>note:</u> This value is used only by the function {@link #httpRequest(HttpServletRequest, JobOwner, String, int, String, Throwable)}. </i></p>
-	 * 
-	 * @return	A HTTP response status code.
-	 */
-	public int getMinResponseCodeForStackTrace(){
-		return minResponseCodeForStackTrace;
-	}
-
-	/**
-	 * <p>Sets the minimum value of the HTTP status code required to print the stack trace of a HTTP error.</p>
-	 * 
-	 * <p><i><u>note:</u> This value is used only by the function {@link #httpRequest(HttpServletRequest, JobOwner, String, int, String, Throwable)}. </i></p>
-	 * 
-	 * @param httpCode	A HTTP response status code.
-	 */
-	public void setMinResponseCodeForStackTrace(final int httpCode){
-		minResponseCodeForStackTrace = httpCode;
-	}
-
-	/**
 	 * <p>Gets an output for the given type of message to print.</p>
 	 * 
 	 * <p>The {@link System#err} output is used if none can be found in the {@link UWS} or the {@link UWSFileManager}
 	 * given at the creation, or if the given output stream or writer is NULL.</p>
 	 * 
-	 * @param logType	Type of the message to print;
+	 * @param level		Level of the message to print (DEBUG, INFO, WARNING, ERROR or FATAL).
+	 * @param context	Context of the message to print (UWS, HTTP, JOB, THREAD).
+	 * 
 	 * @return			A writer.
 	 */
-	protected PrintWriter getOutput(final UWSLogType logType){
+	protected PrintWriter getOutput(final LogLevel level, final String context){
 		try{
 			if (uws != null){
 				if (uws.getFileManager() != null)
-					return uws.getFileManager().getLogOutput(logType);
+					return uws.getFileManager().getLogOutput(level, context);
 			}else if (fileManager != null)
-				return fileManager.getLogOutput(logType);
+				return fileManager.getLogOutput(level, context);
 			else if (defaultOutput != null)
 				return defaultOutput;
 		}catch(IOException ioe){
@@ -191,194 +160,136 @@ public class DefaultUWSLog implements UWSLog {
 	/* GENERAL LOGGING METHODS */
 	/* *********************** */
 
-	/**
-	 * Logs the given message (and exception, if any).
-	 * 
-	 * @param type	Type of the message to print. <i><u>note:</u> (If NULL, it will be ERROR if an exception is given, INFO otherwise.)</i>
-	 * @param msg	Message to print. (may be NULL)
-	 * @param t		Exception to print. (may be NULL)
-	 */
-	public void log(UWSLogType type, final String msg, final Throwable t){
-		// If the type is missing:
-		if (type == null)
-			type = (t != null) ? UWSLogType.ERROR : UWSLogType.INFO;
+	@Override
+	public void log(LogLevel level, final String context, final String message, final Throwable error){
+		log(level, context, null, null, message, error);
+	}
 
-		PrintWriter out = getOutput(type);
+	/**
+	 * <p>Logs a full message and/or error.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If no message and error is provided, nothing will be written.
+	 * </i></p>
+	 * 
+	 * @param level		Level of the error (DEBUG, INFO, WARNING, ERROR, FATAL).	<i>SHOULD NOT be NULL</i>
+	 * @param context	Context of the error (UWS, HTTP, THREAD, JOB). <i>MAY be NULL</i>
+	 * @param event		Context event during which this log is emitted. <i>MAY be NULL</i>
+	 * @param ID		ID of the job or HTTP request (it may also be an ID of anything else). <i>MAY BE NULL</i>
+	 * @param message	Message of the error. <i>MAY be NULL</i>
+	 * @param error		Error at the origin of the log error/warning/fatal. <i>MAY be NULL</i>
+	 * 
+	 * @since 4.1
+	 */
+	protected final void log(LogLevel level, final String context, final String event, final String ID, final String message, final Throwable error){
+		// If no message and no error is provided, nothing to log, so nothing to write:
+		if ((message == null || message.length() <= 0) && error == null)
+			return;
+
+		// If the type is missing:
+		if (level == null)
+			level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+		StringBuffer buf = new StringBuffer();
 		// Print the date/time:
-		out.print(dateFormat.format(new Date()));
-		out.print('\t');
-		out.print(String.format("%1$-13s", type.toString()));
-		out.print('\t');
+		buf.append(dateFormat.format(new Date())).append('\t');
+		// Print the level of error (debug, info, warning, error, fatal):
+		buf.append(level.toString()).append('\t');
+		// Print the context of the error (uws, thread, job, http):
+		buf.append((context == null) ? "" : context).append('\t');
+		// Print the context event:
+		buf.append((event == null) ? "" : event).append('\t');
+		// Print an ID (jobID, requestID):
+		buf.append((ID == null) ? "" : ID).append('\t');
 		// Print the message:
-		if (msg != null)
-			out.println(msg);
-		else if (t != null && t instanceof UWSException){
-			UWSException uwsEx = (UWSException)t;
-			out.println("EXCEPTION " + uwsEx.getClass().getName() + "\t" + uwsEx.getUWSErrorType() + "\tHTTP-" + uwsEx.getHttpErrorCode() + "\t" + uwsEx.getMessage());
-		}else
-			out.println();
+		if (message != null)
+			buf.append(message);
+		else if (error != null)
+			buf.append("[EXCEPTION ").append(error.getClass().getName()).append("] ").append(error.getMessage());
+
+		// Write the whole log line:
+		PrintWriter out = getOutput(level, context);
+		out.println(buf.toString());
+
 		// Print the stack trace, if any:
-		if (t != null)
-			t.printStackTrace(out);
+		if (error != null)
+			error.printStackTrace(out);
+
 		out.flush();
 	}
 
 	@Override
 	public void debug(String msg){
-		log(UWSLogType.DEBUG, msg, null);
+		log(LogLevel.DEBUG, null, msg, null);
 	}
 
 	@Override
 	public void debug(Throwable t){
-		log(UWSLogType.DEBUG, null, t);
+		log(LogLevel.DEBUG, null, null, t);
 	}
 
 	@Override
 	public void debug(String msg, Throwable t){
-		log(UWSLogType.DEBUG, msg, t);
+		log(LogLevel.DEBUG, null, msg, t);
 	}
 
 	@Override
 	public void info(String msg){
-		log(UWSLogType.INFO, msg, null);
+		log(LogLevel.INFO, null, msg, null);
 	}
 
 	@Override
 	public void warning(String msg){
-		log(UWSLogType.WARNING, msg, null);
+		log(LogLevel.WARNING, null, msg, null);
 	}
 
 	@Override
 	public void error(String msg){
-		log(UWSLogType.ERROR, msg, null);
+		log(LogLevel.ERROR, null, msg, null);
 	}
 
 	@Override
 	public void error(Throwable t){
-		log(UWSLogType.ERROR, null, t);
+		log(LogLevel.ERROR, null, null, t);
 	}
 
 	@Override
 	public void error(String msg, Throwable t){
-		log(UWSLogType.ERROR, msg, t);
-	}
-
-	/* **************************** */
-	/* METHODS ABOUT THE UWS STATUS */
-	/* **************************** */
-
-	/**
-	 * Gets the name of the UWS, if any.
-	 * 
-	 * @param uws	UWS whose the name must be returned.
-	 * 
-	 * @return		Name of the given UWS (followed by a space: " ") or an empty string ("").
-	 */
-	protected final static String getUWSName(final UWS uws){
-		return ((uws != null && uws.getName() != null && !uws.getName().trim().isEmpty()) ? (uws.getName() + " ") : "");
-	}
-
-	@Override
-	public void uwsInitialized(UWS uws){
-		if (uws != null){
-			String msg = "UWS " + getUWSName(uws) + "INITIALIZED !";
-			info(msg);
-			log(UWSLogType.HTTP_ACTIVITY, msg, null);
-		}
-	}
-
-	@Override
-	public void ownerJobsSaved(JobOwner owner, int[] report){
-		if (owner != null){
-			String strReport = (report == null || report.length != 2) ? "???" : (report[0] + "/" + report[1]);
-			String ownerPseudo = (owner.getPseudo() != null && !owner.getPseudo().trim().isEmpty() && !owner.getID().equals(owner.getPseudo())) ? (" (alias " + owner.getPseudo() + ")") : "";
-			info(strReport + " saved jobs for the user " + owner.getID() + ownerPseudo + " !");
-		}
-	}
-
-	@Override
-	public void uwsRestored(UWS uws, int[] report){
-		if (uws != null){
-			String strReport = (report == null || report.length != 4) ? "[Unknown report format !]" : (report[0] + "/" + report[1] + " restored jobs and " + report[2] + "/" + report[3] + " restored users");
-			info("UWS " + getUWSName(uws) + "RESTORED => " + strReport);
-		}
-	}
-
-	@Override
-	public void uwsSaved(UWS uws, int[] report){
-		if (uws != null){
-			String strReport = (report == null || report.length != 4) ? "[Unknown report format !]" : (report[0] + "/" + report[1] + " saved jobs and " + report[2] + "/" + report[3] + " saved users");
-			info("UWS " + getUWSName(uws) + "SAVED => " + strReport);
-		}
-	}
-
-	@Override
-	public void jobCreated(UWSJob job){
-		if (job != null){
-			String jlName = (job.getJobList() != null) ? job.getJobList().getName() : null;
-			info("JOB " + job.getJobId() + " CREATED" + ((jlName != null) ? (" and added into " + jlName) : "") + " !");
-		}
-	}
-
-	@Override
-	public void jobDestroyed(UWSJob job, JobList jl){
-		if (job != null){
-			String jlName = (jl != null) ? jl.getName() : null;
-			info("JOB " + job.getJobId() + " DESTROYED" + ((jlName != null) ? (" and removed from " + jlName) : "") + " !");
-		}
-	}
-
-	@Override
-	public void jobStarted(UWSJob job){
-		if (job != null){
-			info("JOB " + job.getJobId() + " STARTED !");
-		}
-	}
-
-	@Override
-	public void jobFinished(UWSJob job){
-		if (job != null){
-			long endTime = (job.getEndTime() == null) ? -1 : job.getEndTime().getTime();
-			long startTime = (job.getStartTime() == null) ? -1 : job.getStartTime().getTime();
-			long duration = (endTime > 0 && startTime > 0) ? (endTime - startTime) : -1;
-			info("JOB " + job.getJobId() + " FINISHED with the phase " + job.getPhase() + ((duration > 0) ? " after an execution of " + duration + "ms" : "") + " !");
-		}
+		log(LogLevel.ERROR, null, msg, t);
 	}
 
 	/* ************* */
 	/* HTTP ACTIVITY */
 	/* ************* */
 
-	@SuppressWarnings("unchecked")
-	public void httpRequest(final HttpServletRequest request, final JobOwner user, final String uwsAction, final int responseStatusCode, final String responseMsg, final Throwable responseError){
+	/**
+	 * <p>A message/error logged with this function will have the following format:</p>
+	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	REQUEST_RECEIVED	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	&lt;HTTP_METHOD&gt; at &lt;URL&gt; from &lt;IP_ADDR&gt; using &lt;USER_AGENT&gt; with parameters (&lt;PARAM1&gt;=&lt;VAL1&gt;&...)</pre>
+	 * 
+	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletRequest, java.lang.String, java.lang.String, java.lang.Throwable)
+	 */
+	@Override
+	public void logHttp(final LogLevel level, final HttpServletRequest request, final String requestId, final String message, final Throwable error){
+		// IF A REQUEST IS PROVIDED, write its details after the message in a new column:
 		if (request != null){
 			StringBuffer str = new StringBuffer();
 
-			// Write the executed UWS action:
-			if (uwsAction == null || uwsAction.trim().isEmpty())
-				str.append("???");
-			else
-				str.append(uwsAction);
-			str.append('\t');
-
-			// Write the response status code:
-			if (responseStatusCode > 0)
-				str.append("HTTP-").append(responseStatusCode);
-			else
-				str.append("HTTP-???");
-			str.append('\t');
-
-			// Write the "response" message:
-			if (responseMsg != null)
-				str.append('[').append(responseMsg).append(']');
-			else
-				str.append("[]");
+			// Write the message (if any):
+			if (message != null)
+				str.append(message);
 			str.append('\t');
 
 			// Write the request type and the URL:
-			str.append("[HTTP-").append(request.getMethod()).append("] ").append(request.getRequestURL()).append('\t');
+			str.append(request.getMethod()).append(" at ").append(request.getRequestURL());
+
+			// Write the IP address:
+			str.append(" from ").append(request.getRemoteAddr());
+
+			// Write the user agent:
+			str.append(" using ").append(request.getHeader("User-Agent"));
 
 			// Write the posted parameters:
+			str.append(" with parameters (");
 			Enumeration<String> paramNames = request.getParameterNames();
 			while(paramNames.hasMoreElements()){
 				String param = paramNames.nextElement();
@@ -391,24 +302,74 @@ public class DefaultUWSLog implements UWSLog {
 				if (paramNames.hasMoreElements())
 					str.append('&');
 			}
-			str.append('\t');
-
-			// Write the IP address and the corresponding user:
-			str.append(request.getRemoteAddr()).append('[');
-			if (user != null){
-				str.append("id:").append(user.getID());
-				if (user.getPseudo() != null)
-					str.append(";pseudo:").append(user.getPseudo());
-			}else
-				str.append("???");
-			str.append("]\t");
-
-			// Write the user agent:
-			str.append(request.getHeader("User-Agent"));
+			str.append(')');
 
 			// Send the log message to the log file:
-			log(UWSLogType.HTTP_ACTIVITY, str.toString(), (responseStatusCode >= minResponseCodeForStackTrace) ? responseError : null);
+			log(level, "HTTP", "REQUEST_RECEIVED", requestId, str.toString(), error);
 		}
+		// OTHERWISE, just write the given message:
+		else
+			log(level, "HTTP", "REQUEST_RECEIVED", requestId, message, error);
+	}
+
+	/**
+	 * <p>A message/error logged with this function will have the following format:</p>
+	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	RESPONSE_SENT	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	HTTP-&lt;STATUS_CODE&gt; to the user &lt;USER&gt; as &lt;CONTENT_TYPE&gt;</pre>
+	 * <p>,where &lt;USER&gt; may be either "(id:&lt;USER_ID&gt;;pseudo:&lt;USER_PSEUDO&gt;)" or "ANONYMOUS".</p>
+	 * 
+	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletResponse, java.lang.String, uws.job.user.JobOwner, java.lang.String, java.lang.Throwable)
+	 */
+	@Override
+	public void logHttp(LogLevel level, HttpServletResponse response, String requestId, JobOwner user, String message, Throwable error){
+		if (response != null){
+			StringBuffer str = new StringBuffer();
+
+			// Write the message (if any):
+			if (message != null)
+				str.append(message);
+			str.append('\t');
+
+			// Write the response status code:
+			str.append("HTTP-").append(response.getStatus());
+
+			// Write the user to whom the response is sent:
+			str.append(" to the user ");
+			if (user != null){
+				str.append("(id:").append(user.getID());
+				if (user.getPseudo() != null)
+					str.append(";pseudo:").append(user.getPseudo());
+				str.append(')');
+			}else
+				str.append("ANONYMOUS");
+
+			// Write the response's MIME type:
+			if (response.getContentType() != null)
+				str.append(" as ").append(response.getContentType());
+
+			// Send the log message to the log file:
+			log(level, "HTTP", "RESPONSE_SENT", requestId, str.toString(), error);
+		}
+		// OTHERWISE, just write the given message:
+		else
+			log(level, "HTTP", "RESPONSE_SENT", requestId, message, error);
+	}
+
+	/* ************ */
+	/* UWS ACTIVITY */
+	/* ************ */
+
+	@Override
+	public void logUWS(LogLevel level, Object obj, String event, String message, Throwable error){
+		log(level, "UWS", event, null, message, error);
+	}
+
+	/* ************ */
+	/* JOB ACTIVITY */
+	/* ************ */
+
+	@Override
+	public void logJob(LogLevel level, UWSJob job, String event, String message, Throwable error){
+		log(level, "JOB", event, (job == null) ? null : job.getJobId(), message, error);
 	}
 
 	/* ********************** */
@@ -416,25 +377,31 @@ public class DefaultUWSLog implements UWSLog {
 	/* ********************** */
 
 	@Override
-	public void threadStarted(Thread t, String task){
-		if (t != null)
-			info("THREAD " + t.getId() + " STARTED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads");
-	}
+	public void logThread(LogLevel level, Thread thread, String event, String message, Throwable error){
+		if (thread != null){
+			StringBuffer str = new StringBuffer();
 
-	@Override
-	public void threadFinished(Thread t, String task){
-		if (t != null)
-			info("THREAD " + t.getId() + " ENDED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads");
-	}
+			// Write the message (if any):
+			if (message != null)
+				str.append(message);
+			str.append('\t');
 
-	@Override
-	public void threadInterrupted(Thread t, String task, Throwable error){
-		if (t != null){
-			if (error == null || error instanceof InterruptedException)
-				info("THREAD " + t.getId() + " CANCELLED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads");
-			else
-				error("THREAD " + t.getId() + " INTERRUPTED\t" + t.getName() + "\t" + t.getState() + "\t" + t.getThreadGroup().activeCount() + " active threads", error);
-		}
+			// Write the thread name and ID:
+			str.append(thread.getName()).append(" (thread ID: ").append(thread.getId()).append(")");
+
+			// Write the thread state:
+			str.append(" is ").append(thread.getState());
+
+			// Write its thread group name:
+			str.append(" in the group " + thread.getThreadGroup().getName());
+
+			// Write the number of active threads:
+			str.append(" where ").append(thread.getThreadGroup().activeCount()).append(" threads are active");
+
+			log(level, "THREAD", event, thread.getName(), str.toString(), error);
+
+		}else
+			log(level, "THREAD", event, null, message, error);
 	}
 
 }

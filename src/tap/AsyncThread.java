@@ -21,8 +21,6 @@ package tap;
 
 import uws.UWSException;
 import uws.job.JobThread;
-import adql.parser.ParseException;
-import adql.translator.TranslationException;
 
 public class AsyncThread extends JobThread {
 
@@ -41,12 +39,6 @@ public class AsyncThread extends JobThread {
 			throw ie;
 		}catch(UWSException ue){
 			throw ue;
-		}catch(TAPException te){
-			throw new UWSException(te.getHttpErrorCode(), te, te.getMessage());
-		}catch(ParseException pe){
-			throw new UWSException(UWSException.BAD_REQUEST, pe, pe.getMessage());
-		}catch(TranslationException te){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, te.getMessage());
 		}catch(Exception ex){
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ex, "Error while processing the ADQL query of the job " + job.getJobId() + " !");
 		}finally{

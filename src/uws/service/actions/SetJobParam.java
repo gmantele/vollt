@@ -16,7 +16,8 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -25,14 +26,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
-
 import uws.job.UWSJob;
-
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>The "Set Job Parameter" action of a UWS.</p>
@@ -42,8 +41,8 @@ import uws.service.UWSUrl;
  * <p>This action sets the value of the specified job attribute.
  * The response of this action is a redirection to the job summary.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class SetJobParam extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -99,7 +98,13 @@ public class SetJobParam extends UWSAction {
 		// Get the job:
 		UWSJob job = getJob(urlInterpreter);
 
-		UWSParameters params = uws.getFactory().createUWSParameters(request);
+		UWSParameters params;
+		try{
+			params = uws.getFactory().createUWSParameters(request);
+		}catch(UWSException ue){
+			getLogger().logUWS(LogLevel.ERROR, request, "SET_PARAM", "Can not parse the sent UWS parameters!", ue);
+			throw ue;
+		}
 
 		// Update the job parameters:
 		boolean updated = job.addOrUpdateParameters(params, user);

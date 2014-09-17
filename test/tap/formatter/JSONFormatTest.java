@@ -228,7 +228,6 @@ public class JSONFormatTest {
 			return null;
 		}
 
-		@SuppressWarnings("rawtypes")
 		@Override
 		public TAPFactory getFactory(){
 			return null;

@@ -16,22 +16,21 @@ package uws.job.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.Serializable;
-
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
-import uws.UWSException;
-import uws.UWSExceptionFactory;
 
+import uws.UWSException;
 import uws.job.UWSJob;
 
 /**
  * <p>
- * 	Let's controlling the destruction time of all jobs managed by a UWS. Thus it is possible to set a default and a maximum value.
+ * 	Let controlling the destruction time of all jobs managed by a UWS. Thus it is possible to set a default and a maximum value.
  * 	Moreover you can indicate whether the destruction time of jobs can be modified by the user or not.
  * </p>
  * 
@@ -46,8 +45,8 @@ import uws.job.UWSJob;
  * 	</i>
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public class DestructionTimeController implements InputParamController, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -107,10 +106,10 @@ public class DestructionTimeController implements InputParamController, Serializ
 			try{
 				date = UWSJob.dateFormat.parse(strValue);
 			}catch(ParseException pe){
-				throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_DESTRUCTION_TIME, strValue, null, "A date not yet expired.");
+				throw new UWSException(UWSException.BAD_REQUEST, pe, "Wrong date format for the destruction time parameter: \"" + strValue + "\"! The format to respect is: " + UWSJob.DEFAULT_DATE_FORMAT);
 			}
 		}else
-			throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_DESTRUCTION_TIME, value.toString(), value.getClass().getName(), "A date not yet expired.");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the destruction time parameter: class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date with the format \"" + UWSJob.DEFAULT_DATE_FORMAT + "\".");
 
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))
@@ -317,6 +316,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * 
 	 * @return <i>true</i> if the destruction time can be modified, <i>false</i> otherwise.
 	 */
+	@Override
 	public final boolean allowModification(){
 		return allowModification;
 	}

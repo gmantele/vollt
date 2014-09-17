@@ -16,7 +16,8 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -26,15 +27,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
-
 import uws.job.JobList;
 import uws.job.UWSJob;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
+import uws.service.log.UWSLog;
 
 /**
  * <p>Action of a UWS (i.e. "List Jobs", "Get Job", etc...). An instance of a UWSAction can be added to a given UWS thanks to the method
@@ -43,8 +41,8 @@ import uws.service.UWSUrl;
  * <p><b><u>WARNING:</u> The action of a UWS have, each one, a different name. So be careful about the name of your UWS action !
  * By default the name of a UWS action is the full java name of the class !</b></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  * 
  * @see UWSService
  */
@@ -94,6 +92,17 @@ public abstract class UWSAction implements Serializable {
 	}
 
 	/**
+	 * Get the logger associated with this UWS service.
+	 * 
+	 * @return	UWS logger.
+	 * 
+	 * @since 4.1
+	 */
+	public final UWSLog getLogger(){
+		return uws.getLogger();
+	}
+
+	/**
 	 * <p>Gets the name of this UWS action. <b>MUST BE UNIQUE !</b></p>
 	 * 
 	 * <p><i><u>Note:</u> By default the name of the class is returned ({@link Class#getName()}).</i></p>
@@ -139,9 +148,9 @@ public abstract class UWSAction implements Serializable {
 		if (jlName != null){
 			jobsList = uws.getJobList(jlName);
 			if (jobsList == null)
-				throw UWSExceptionFactory.incorrectJobListName(jlName);
+				throw new UWSException(UWSException.NOT_FOUND, "Incorrect job list name! The jobs list " + jlName + " does not exist.");
 		}else
-			throw UWSExceptionFactory.missingJobListName();
+			throw new UWSException(UWSException.BAD_REQUEST, "Missing job list name!");
 
 		return jobsList;
 	}
@@ -193,9 +202,9 @@ public abstract class UWSAction implements Serializable {
 			JobList jobsList = getJobsList(urlInterpreter);
 			job = jobsList.getJob(jobId, user);
 			if (job == null)
-				throw UWSExceptionFactory.incorrectJobID(jobsList.getName(), jobId);
+				throw new UWSException(UWSException.NOT_FOUND, "Incorrect job ID! The job \"" + jobId + "\" does not exist in the jobs list \"" + jobsList.getName() + "\".");
 		}else
-			throw UWSExceptionFactory.missingJobID();
+			throw new UWSException(UWSException.BAD_REQUEST, "Missing job ID!");
 
 		return job;
 	}
@@ -245,12 +254,12 @@ public abstract class UWSAction implements Serializable {
 
 		if (jobId != null){
 			if (jobsList == null)
-				throw UWSExceptionFactory.missingJobListName();
+				throw new UWSException(UWSException.BAD_REQUEST, "Missing job list name!");
 			job = jobsList.getJob(jobId, user);
 			if (job == null)
-				throw UWSExceptionFactory.incorrectJobID(jobsList.getName(), jobId);
+				throw new UWSException(UWSException.NOT_FOUND, "Incorrect job ID! The job \"" + jobId + "\" does not exist in the jobs list \"" + jobsList.getName() + "\".");
 		}else
-			throw UWSExceptionFactory.missingJobID();
+			throw new UWSException(UWSException.BAD_REQUEST, "Missing job ID!");
 
 		return job;
 	}

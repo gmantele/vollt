@@ -16,7 +16,8 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -25,14 +26,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
-
 import uws.job.JobList;
 import uws.job.UWSJob;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>The "Destroy Job" action of a UWS.</p>
@@ -42,8 +41,8 @@ import uws.service.UWSUrl;
  * <p>This action destroys the job specified in the UWS URL.
  * The response of this action is a redirection to the jobs list.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public class DestroyJob extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -100,7 +99,13 @@ public class DestroyJob extends UWSAction {
 		JobList jobsList = getJobsList(urlInterpreter);
 
 		// Destroy the job:
-		boolean destroyed = jobsList.destroyJob(urlInterpreter.getJobId(), user);
+		boolean destroyed;
+		try{
+			destroyed = jobsList.destroyJob(urlInterpreter.getJobId(), user);
+		}catch(UWSException ue){
+			getLogger().logUWS(LogLevel.ERROR, urlInterpreter, "DESTROY_JOB", "Can not destroy the job \"" + urlInterpreter.getJobId() + "\"!", ue);
+			throw ue;
+		}
 
 		// Make a redirection to the jobs list:
 		uws.redirect(urlInterpreter.listJobs(jobsList.getName()).getRequestURL(), request, user, getName(), response);

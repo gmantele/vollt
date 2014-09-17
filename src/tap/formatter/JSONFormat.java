@@ -35,13 +35,14 @@ import tap.metadata.TAPColumn;
 import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
 import tap.metadata.VotType;
+import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 
 /**
  * Format any given query (table) result into JSON.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (09/2014)
  */
 public class JSONFormat implements OutputFormat {
 
@@ -126,7 +127,7 @@ public class JSONFormat implements OutputFormat {
 
 			// Report stats about the result writing:
 			if (logFormatReport)
-				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in JSON ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - start) + " ms !");
+				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in JSON ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - start) + "ms!", null);
 
 		}catch(JSONException je){
 			throw new TAPException("Error while writing a query result in JSON !", je);

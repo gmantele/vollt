@@ -16,22 +16,20 @@ package uws.job.serializer;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.Serializable;
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
-
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
-
-import uws.service.UWSService;
 import uws.service.UWS;
+import uws.service.UWSService;
 import uws.service.UWSUrl;
 
 /**
@@ -42,8 +40,8 @@ import uws.service.UWSUrl;
  * 	<li>JSON by the class {@link JSONSerializer}</li>
  * </ul>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  * 
  * @see XMLSerializer
  * @see JSONSerializer
@@ -72,9 +70,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * @return				The serialization of the given attribute
 	 * 						or the serialization of the whole job if the given attributes array is empty or <i>null</i>.
 	 * 
-	 * @throws UWSException If the specified attribute/parameter/result does not exist.
+	 * @throws Exception	If an error occurs while serializing the specified job/attribute/parameter/result.
 	 */
-	public String getJob(final UWSJob job, final String[] attributes, final boolean root) throws UWSException{
+	public String getJob(final UWSJob job, final String[] attributes, final boolean root) throws Exception{
 		if (attributes == null || attributes.length <= 0)
 			return getJob(job, root);
 
@@ -118,7 +116,7 @@ public abstract class UWSSerializer implements Serializable {
 				if (value != null)
 					return value.toString();
 				else
-					throw UWSExceptionFactory.incorrectJobParameter(job.getJobId(), secondAttribute);
+					throw new UWSException(UWSException.NOT_FOUND, "No parameter named \"" + secondAttribute + "\" in the job \"" + job.getJobId() + "\"!");
 			}
 			// RESULTS LIST:
 		}else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_RESULTS)){
@@ -131,7 +129,7 @@ public abstract class UWSSerializer implements Serializable {
 				if (r != null)
 					return getResult(r, root);
 				else
-					throw UWSExceptionFactory.incorrectJobResult(job.getJobId(), secondAttribute);
+					throw new UWSException(UWSException.NOT_FOUND, "No result named \"" + secondAttribute + "\" in the job \"" + job.getJobId() + "\"!");
 			}
 			// ERROR DETAILS or ERROR SUMMARY:
 		}else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY))
@@ -141,7 +139,7 @@ public abstract class UWSSerializer implements Serializable {
 				return getErrorSummary(job.getErrorSummary(), root);
 		// OTHERS:
 		else
-			throw UWSExceptionFactory.incorrectJobParameter(job.getJobId(), firstAttribute);
+			throw new UWSException(UWSException.NOT_FOUND, "No job attribute named \"" + firstAttribute + "\" in the job \"" + job.getJobId() + "\"!");
 	}
 
 	@Override
@@ -160,12 +158,14 @@ public abstract class UWSSerializer implements Serializable {
 	 * Serializes the given UWS.
 	 * 
 	 * @param uws			The UWS to serialize.
+	 * 
 	 * @return				The serialization of the given UWS.
-	 * @throws UWSException	If there is an error during the serialization.
+	 * 
+	 * @throws Exception	If there is an error during the serialization.
 	 * 
 	 * @see UWSSerializer#getUWS(UWSService, String)
 	 */
-	public String getUWS(final UWS uws) throws UWSException{
+	public String getUWS(final UWS uws) throws Exception{
 		return getUWS(uws, null);
 	}
 
@@ -176,9 +176,10 @@ public abstract class UWSSerializer implements Serializable {
 	 * @param user			The user which has asked the serialization of the given UWS.
 	 * 
 	 * @return				The serialization of the UWS.
-	 * @throws UWSException	If there is an error during the serialization.
+	 * 
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getUWS(final UWS uws, final JobOwner user) throws UWSException;
+	public abstract String getUWS(final UWS uws, final JobOwner user) throws Exception;
 
 	/**
 	 * Serializes the given jobs list.
@@ -188,9 +189,10 @@ public abstract class UWSSerializer implements Serializable {
 	 * 						in a top level serialization (for a jobs list: uws), <i>true</i> otherwise.
 	 * 
 	 * @return				The serialization of the given jobs list.
-	 * @throws UWSException If there is an error during the serialization.
+	 * 
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public String getJobList(final JobList jobsList, final boolean root) throws UWSException{
+	public String getJobList(final JobList jobsList, final boolean root) throws Exception{
 		return getJobList(jobsList, null, root);
 	}
 
@@ -203,10 +205,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 						in a top level serialization (for a jobs list: uws), <i>true</i> otherwise.
 	 * @return				The serialization of the given jobs list.
 	 * 
-	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getJobList(final JobList jobsList, JobOwner owner, final boolean root) throws UWSException;
+	public abstract String getJobList(final JobList jobsList, JobOwner owner, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the whole given job.
@@ -217,9 +218,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the given job.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getJob(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getJob(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes just a reference on the given job.
@@ -229,11 +230,11 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of a reference on the given job.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 * 
 	 * @since 3.1
 	 */
-	public abstract String getJobRef(final UWSJob job, final UWSUrl jobsListUrl) throws UWSException;
+	public abstract String getJobRef(final UWSJob job, final UWSUrl jobsListUrl) throws Exception;
 
 	/**
 	 * Serializes the ID of the given job.
@@ -244,9 +245,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the job ID.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getJobID(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getJobID(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the run ID of the given job.
@@ -257,9 +258,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the run ID.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getRunID(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getRunID(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the owner ID of the given job.
@@ -270,9 +271,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the owner ID.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getOwnerID(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getOwnerID(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the phase of the given job.
@@ -283,9 +284,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the phase.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getPhase(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getPhase(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the quote of the given job.
@@ -296,9 +297,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the quote.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getQuote(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getQuote(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the start time of the given job.
@@ -309,9 +310,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the start time.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getStartTime(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getStartTime(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the end time of the given job.
@@ -322,9 +323,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the end time.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getEndTime(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getEndTime(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the execution duration of the given job.
@@ -335,9 +336,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the execution duration.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getExecutionDuration(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getExecutionDuration(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the destruction time of the given job.
@@ -348,9 +349,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the destruction time.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getDestructionTime(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getDestructionTime(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the given error summary.
@@ -361,9 +362,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the error summary.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getErrorSummary(final ErrorSummary error, final boolean root) throws UWSException;
+	public abstract String getErrorSummary(final ErrorSummary error, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the results of the given job.
@@ -374,9 +375,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the results.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getResults(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getResults(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the given result.
@@ -387,9 +388,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the result.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getResult(final Result result, final boolean root) throws UWSException;
+	public abstract String getResult(final Result result, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the parameters of the given job.
@@ -400,9 +401,9 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the parameters.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getAdditionalParameters(final UWSJob job, final boolean root) throws UWSException;
+	public abstract String getAdditionalParameters(final UWSJob job, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the specified parameter.
@@ -414,7 +415,7 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @return				The serialization of the parameter.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an error during the serialization.
 	 */
-	public abstract String getAdditionalParameter(final String paramName, final Object paramValue, final boolean root) throws UWSException;
+	public abstract String getAdditionalParameter(final String paramName, final Object paramValue, final boolean root) throws Exception;
 }

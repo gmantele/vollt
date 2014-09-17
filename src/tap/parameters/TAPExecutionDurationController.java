@@ -16,20 +16,40 @@ package tap.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import tap.ServiceConnection;
 import tap.TAPJob;
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 import uws.job.parameters.InputParamController;
 
+/**
+ * <p>Let controlling the execution duration of all jobs managed by a TAP service.
+ * The maximum and default values are provided by the service connection.</p>
+ * 
+ * <p><i>Note:
+ * 	By default, the execution duration can be modified by anyone without any limitation.
+ * 	The default value is {@link TAPJob#UNLIMITED_DURATION}.
+ * </i></p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (09/2014)
+ */
 public class TAPExecutionDurationController implements InputParamController {
 
+	/** Connection to the service which knows the maximum and default value of this parameter. */
 	protected final ServiceConnection service;
+
+	/** Indicate whether the execution duration of jobs can be modified. */
 	protected boolean allowModification = true;
 
+	/**
+	 * Build a controller for the ExecutionDuration parameter.
+	 * 
+	 * @param service	Connection to the TAP service.
+	 */
 	public TAPExecutionDurationController(final ServiceConnection service){
 		this.service = service;
 	}
@@ -39,6 +59,11 @@ public class TAPExecutionDurationController implements InputParamController {
 		return allowModification;
 	}
 
+	/**
+	 * Let indicate whether the execution duration of any managed job can be modified.
+	 * 
+	 * @param allowModification <i>true</i> if the execution duration can be modified, <i>false</i> otherwise.
+	 */
 	public final void allowModification(final boolean allowModif){
 		allowModification = allowModif;
 	}
@@ -52,6 +77,11 @@ public class TAPExecutionDurationController implements InputParamController {
 		return TAPJob.UNLIMITED_DURATION;
 	}
 
+	/**
+	 * Gets the maximum execution duration.
+	 * 
+	 * @return The maximum execution duration <i>(0 or less mean an unlimited duration)</i>.
+	 */
 	public final long getMaxDuration(){
 		if (service.getExecutionDuration() != null && service.getExecutionDuration().length >= 2){
 			if (service.getExecutionDuration()[1] > 0)
@@ -74,10 +104,10 @@ public class TAPExecutionDurationController implements InputParamController {
 			try{
 				duration = Long.parseLong((String)value);
 			}catch(NumberFormatException nfe){
-				throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_EXECUTION_DURATION, value.toString(), null, "A long value between " + TAPJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
+				throw new UWSException(UWSException.BAD_REQUEST, "Wrong format for the maximum duration parameter: \"" + value.toString() + "\"! It should be a long numeric value between " + TAPJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
 			}
 		}else
-			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_EXECUTION_DURATION, null, value.getClass().getName(), "A long value between " + TAPJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the maximum duration parameter: class \"" + value.getClass().getName() + "\"! It should be long or a string containing only a long value.");
 
 		if (duration < TAPJob.UNLIMITED_DURATION)
 			duration = TAPJob.UNLIMITED_DURATION;

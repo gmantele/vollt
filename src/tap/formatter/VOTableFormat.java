@@ -25,12 +25,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.Map;
 
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
+import tap.error.DefaultTAPErrorWriter;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
@@ -45,6 +48,7 @@ import uk.ac.starlink.table.StarTable;
 import uk.ac.starlink.votable.DataFormat;
 import uk.ac.starlink.votable.VOSerializer;
 import uk.ac.starlink.votable.VOTableVersion;
+import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 
 /**
@@ -63,8 +67,14 @@ import adql.db.DBColumn;
  * 	<li>QUERY = the ADQL query at the origin of this result.</li>
  * </ul>
  * 
+ * <p>
+ * 	Furthermore, this formatter provides a function to format an error in VOTable: {@link #writeError(String, Map, PrintWriter)}.
+ * 	This is useful for TAP which requires to return in VOTable any error that occurs while any operation.
+ * 	<i>See {@link DefaultTAPErrorWriter} for more details.</i>
+ * </p>
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (09/2014)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -168,6 +178,78 @@ public class VOTableFormat implements OutputFormat {
 		return "xml";
 	}
 
+	/**
+	 * <p>Write the given error message as VOTable document.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	In the TAP protocol, all errors must be returned as VOTable. The class {@link DefaultTAPErrorWriter} is in charge of the management
+	 * 	and reporting of all errors. It is calling this function while the error message to display to the user is ready and
+	 * 	must be written in the HTTP response.
+	 * </i></p>
+	 * 
+	 * <p>Here is the XML format of this VOTable error:</p>
+	 * <pre>
+	 * 	&lt;VOTABLE version="..." xmlns="..." &gt;
+	 * 		&lt;RESOURCE type="results"&gt;
+	 * 			&lt;INFO name="QUERY_STATUS" value="ERROR&gt;
+	 * 				...
+	 * 			&lt;/INFO&gt;
+	 * 			&lt;INFO name="PROVIDER" value="..."&gt;...&lt;/INFO&gt;
+	 * 			&lt;!-- other optional INFOs (e.g. request parameters) --&gt;
+	 * 		&lt;/RESOURCE&gt;
+	 * 	&lt;/VOTABLE&gt;
+	 * </pre>
+	 * 
+	 * @param message	Error message to display to the user.
+	 * @param otherInfo	List of other additional information to display. <i>optional</i>
+	 * @param out		Stream in which the VOTable error must be written.
+	 * 
+	 * @throws IOException	If any error occurs while writing in the given output.
+	 * 
+	 * @since 2.0
+	 */
+	public void writeError(final String message, final Map<String,String> otherInfo, final PrintWriter writer) throws IOException{
+		BufferedWriter out = new BufferedWriter(writer);
+
+		// Set the root VOTABLE node:
+		out.write("<VOTABLE" + VOSerializer.formatAttribute("version", votVersion.getVersionNumber()) + VOSerializer.formatAttribute("xmlns", votVersion.getXmlNamespace()) + ">");
+		out.newLine();
+
+		// The RESOURCE note MUST have a type "results":	[REQUIRED]
+		out.write("<RESOURCE type=\"results\">");
+		out.newLine();
+
+		// Indicate that the query has been successfully processed:	[REQUIRED]
+		out.write("<INFO name=\"QUERY_STATUS\" value=\"ERROR\">" + VOSerializer.formatText(message) + "</INFO>");
+		out.newLine();
+
+		// Append the PROVIDER information (if any):	[OPTIONAL]
+		if (service.getProviderName() != null){
+			out.write("<INFO name=\"PROVIDER\"" + VOSerializer.formatAttribute("value", service.getProviderName()) + ">" + ((service.getProviderDescription() == null) ? "" : VOSerializer.formatText(service.getProviderDescription())) + "</INFO>");
+			out.newLine();
+		}
+
+		// Append the ADQL query at the origin of this result:	[OPTIONAL]
+		if (otherInfo != null){
+			Iterator<Map.Entry<String,String>> it = otherInfo.entrySet().iterator();
+			while(it.hasNext()){
+				Map.Entry<String,String> entry = it.next();
+				out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + ">" + VOSerializer.formatText(entry.getValue()) + "</INFO>");
+				out.newLine();
+			}
+		}
+
+		out.flush();
+
+		/* Write footer. */
+		out.write("</RESOURCE>");
+		out.newLine();
+		out.write("</VOTABLE>");
+		out.newLine();
+
+		out.flush();
+	}
+
 	@Override
 	public final void writeResult(final TableIterator queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException{
 		try{
@@ -204,7 +286,7 @@ public class VOTableFormat implements OutputFormat {
 			out.flush();
 
 			if (logFormatReport)
-				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in VOTable ; " + table.getNbReadRows() + " rows ; " + table.getColumnCount() + " columns) in " + (System.currentTimeMillis() - start) + " ms !");
+				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in VOTable ; " + table.getNbReadRows() + " rows ; " + table.getColumnCount() + " columns) in " + (System.currentTimeMillis() - start) + "ms!", null);
 		}catch(IOException ioe){
 			throw new TAPException("Error while writing a query result in VOTable !", ioe);
 		}

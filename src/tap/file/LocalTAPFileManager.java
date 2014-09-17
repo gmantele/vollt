@@ -16,14 +16,13 @@ package tap.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.File;
 
-import tap.db.DBConnection;
 import uws.UWSException;
-
 import uws.service.file.DefaultOwnerGroupIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.OwnerGroupIdentifier;
@@ -37,8 +36,8 @@ import uws.service.file.OwnerGroupIdentifier;
  * 	All files are written in the local machine, into the given directory.
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (09/2014)
  * 
  * @see LocalUWSFileManager
  */
@@ -46,9 +45,6 @@ public class LocalTAPFileManager extends LocalUWSFileManager implements TAPFileM
 
 	/** Default name of the upload directory. */
 	public final static String DEFAULT_UPLOAD_DIRECTORY_NAME = "Upload";
-
-	/** Default name of the DB activity log file. */
-	public final static String DEFAULT_DB_ACTIVITY_LOG_FILE_NAME = "service_db_activity.log";
 
 	/** Local directory in which all uploaded files will be kept until they are read or ignored (in this case, they will be deleted). */
 	private final File uploadDirectory;
@@ -116,14 +112,6 @@ public class LocalTAPFileManager extends LocalUWSFileManager implements TAPFileM
 	public LocalTAPFileManager(File root, boolean oneDirectoryForEachUser, boolean groupUserDirectories, OwnerGroupIdentifier ownerGroupIdentifier) throws UWSException{
 		super(root, oneDirectoryForEachUser, groupUserDirectories, ownerGroupIdentifier);
 		uploadDirectory = new File(rootDirectory, getUploadDirectoryName());
-	}
-
-	@Override
-	protected String getLogFileName(final String logTypeGroup){
-		if (logTypeGroup != null && logTypeGroup.equals(DBConnection.LOG_TYPE_DB_ACTIVITY.getCustomType()))
-			return DEFAULT_DB_ACTIVITY_LOG_FILE_NAME;
-		else
-			return super.getLogFileName(logTypeGroup);
 	}
 
 	/**

@@ -22,7 +22,6 @@ package tap;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.SQLException;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -40,12 +39,12 @@ import tap.upload.Uploader;
 import uws.UWSException;
 import uws.job.JobThread;
 import uws.job.Result;
+import uws.service.log.UWSLog.LogLevel;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.ParseException;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
-import adql.translator.TranslationException;
 
 /**
  * <p>Let process completely an ADQL query.</p>
@@ -101,11 +100,11 @@ import adql.translator.TranslationException;
  * <p>
  * 	There is no way in this executor to customize the upload. However, it does not mean it can not be customized.
  * 	Indeed you can do it easily by extending {@link Uploader} and by providing the new class inside your {@link TAPFactory} implementation
- * 	(see {@link TAPFactory#createUploader(DBConnection)}).
+ * (see {@link TAPFactory#createUploader(DBConnection)}).
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (09/2014)
  */
 public class ADQLExecutor {
 
@@ -206,8 +205,8 @@ public class ADQLExecutor {
 	 * 
 	 * @return	The resulting execution report.
 	 * 
-	 * @throws UWSException
-	 * @throws InterruptedException
+	 * @throws UWSException			If any error occurs while executing the ADQL query.
+	 * @throws InterruptedException	If the job has been interrupted (by the user or a time-out).
 	 * 
 	 * @see #start()
 	 */
@@ -222,7 +221,11 @@ public class ADQLExecutor {
 		this.report = new TAPExecutionReport(tapJob.getJobId(), false, tapParams);
 		this.response = null;
 
-		return start();
+		try{
+			return start();
+		}catch(TAPException te){
+			throw new UWSException(te.getHttpErrorCode(), te);
+		}
 	}
 
 	/**
@@ -237,8 +240,8 @@ public class ADQLExecutor {
 	 * 
 	 * @return	The resulting execution report.
 	 * 
-	 * @throws TAPException
-	 * @throws InterruptedException
+	 * @throws TAPException			If any error occurs while executing the ADQL query.
+	 * @throws InterruptedException	If the job has been interrupted (by the user or a time-out).
 	 * 
 	 * @see #start()
 	 */
@@ -251,7 +254,11 @@ public class ADQLExecutor {
 		this.report = new TAPExecutionReport(jobId, true, tapParams);
 		this.response = response;
 
-		return start();
+		try{
+			return start();
+		}catch(UWSException ue){
+			throw new TAPException(ue, ue.getHttpErrorCode());
+		}
 	}
 
 	/**
@@ -277,14 +284,11 @@ public class ADQLExecutor {
 	 * 
 	 * @return	The updated execution report.
 	 * 
-	 * @throws TAPException
-	 * @throws UWSException
-	 * @throws InterruptedException
-	 * @throws ParseException
-	 * @throws TranslationException
-	 * @throws SQLException
+	 * @throws TAPException			If any error occurs while executing the ADQL query.
+	 * @throws UWSException			If any error occurs while executing the ADQL query.
+	 * @throws InterruptedException	If the job has been interrupted (by the user or a time-out).
 	 */
-	protected final TAPExecutionReport start() throws TAPException, UWSException, InterruptedException, ParseException, TranslationException, SQLException{
+	protected final TAPExecutionReport start() throws TAPException, UWSException, InterruptedException{
 		// Save the start time (for reporting usage):
 		long start = System.currentTimeMillis();
 
@@ -307,7 +311,15 @@ public class ADQLExecutor {
 			// 2. PARSE THE ADQL QUERY:
 			startStep(ExecutionProgression.PARSING);
 			// Parse the query:
-			ADQLQuery adqlQuery = parseADQL();
+			ADQLQuery adqlQuery = null;
+			try{
+				adqlQuery = parseADQL();
+			}catch(ParseException pe){
+				if (report.synchronous)
+					throw new TAPException("Incorrect ADQL query: " + pe.getMessage(), pe, UWSException.BAD_REQUEST, tapParams.getQuery(), progression);
+				else
+					throw new UWSException(UWSException.BAD_REQUEST, pe, "Incorrect ADQL query: " + pe.getMessage());
+			}
 			// List all resulting columns (it will be useful later to format the result):
 			report.resultingColumns = adqlQuery.getResultingColumns();
 			endStep();
@@ -329,7 +341,6 @@ public class ADQLExecutor {
 			endStep();
 
 			// Report the COMPLETED status:
-			logger.info("JOB " + report.jobID + " COMPLETED");
 			tapParams.remove(TAPJob.PARAM_PROGRESSION);
 			report.success = true;
 
@@ -340,7 +351,7 @@ public class ADQLExecutor {
 				try{
 					queryResult.close();
 				}catch(DataReadException dre){
-					logger.error("JOB " + report.jobID + "\tCan not close the database query result!", dre);
+					logger.logTAP(LogLevel.ERROR, report, "END_EXEC", "Can not close the database query result!", dre);
 				}
 			}
 
@@ -348,7 +359,7 @@ public class ADQLExecutor {
 			try{
 				dropUploadedTables();
 			}catch(TAPException e){
-				logger.error("JOB " + report.jobID + "\tCan not drop the uploaded tables from the database!", e);
+				logger.logTAP(LogLevel.ERROR, report, "END_EXEC", "Can not drop the uploaded tables from the database!", e);
 			}
 
 			// Free the connection (so that giving it back to a pool, if any, otherwise, just free resources):
@@ -359,7 +370,6 @@ public class ADQLExecutor {
 
 			// Set the total duration in the report:
 			report.setTotalDuration(System.currentTimeMillis() - start);
-			logger.queryFinished(report);
 		}
 	}
 
@@ -389,7 +399,8 @@ public class ADQLExecutor {
 		try{
 			tapParams.set(TAPJob.PARAM_PROGRESSION, this.progression);
 		}catch(UWSException ue){
-			logger.warning("Can not set/update the informative job parameter \"" + TAPJob.PARAM_PROGRESSION + "\" (this parameter would be just for notification purpose about the execution progression)! CAUSE: " + ue.getClass().getName() + " - " + ue.getMessage());
+			// should not happen, but just in case...
+			logger.logTAP(LogLevel.WARNING, report, "START_STEP", "Can not set/update the informative job parameter \"" + TAPJob.PARAM_PROGRESSION + "\" (this parameter would be just for notification purpose about the execution progression)!", ue);
 		}
 	}
 
@@ -434,7 +445,7 @@ public class ADQLExecutor {
 
 		// Upload them, if needed:
 		if (tables.length > 0){
-			logger.info("JOB " + report.jobID + "\tLoading uploaded tables (" + tables.length + ")...");
+			logger.logTAP(LogLevel.INFO, report, "UPLOAD", "Loading uploaded tables (" + tables.length + ")...", null);
 			try{
 				uploadSchema = service.getFactory().createUploader(dbConn).upload(tables);
 			}finally{
@@ -509,18 +520,17 @@ public class ADQLExecutor {
 	 * @return	The result of the query,
 	 *        	or NULL if the query execution has failed.
 	 * 
-	 * @throws SQLException			If the query execution has failed ; the database is not able to execute this query.
 	 * @throws InterruptedException	If the thread has been interrupted.
 	 * @throws TAPException			If the {@link DBConnection} has failed to deal with the given ADQL query.
 	 * 
 	 * @see {@link DBConnection#executeQuery(ADQLQuery)}
 	 */
-	protected TableIterator executeADQL(final ADQLQuery adql) throws SQLException, InterruptedException, TAPException{
+	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, TAPException{
 		TableIterator result = dbConn.executeQuery(adql);
 		if (result == null)
-			logger.info("JOB " + report.jobID + " - QUERY ABORTED AFTER " + (System.currentTimeMillis() - startStep) + " MS !");
+			logger.logTAP(LogLevel.INFO, report, "END_QUERY", "Query execution aborted after " + (System.currentTimeMillis() - startStep) + "ms!", null);
 		else
-			logger.info("JOB " + report.jobID + " - QUERY SUCCESFULLY EXECUTED IN " + (System.currentTimeMillis() - startStep) + " MS !");
+			logger.logTAP(LogLevel.INFO, report, "END_QUERY", "Query successfully executed in " + (System.currentTimeMillis() - startStep) + "ms!", null);
 		return result;
 	}
 
@@ -555,7 +565,7 @@ public class ADQLExecutor {
 				writeResult(queryResult, formatter, response.getOutputStream());
 
 			}catch(IOException ioe){
-				throw new TAPException("Impossible to get the output stream of the HTTP request to write the result of the job " + report.jobID + " !", ioe);
+				throw new TAPException("Impossible to get the HTTP response, so the result of the job " + report.jobID + " can not be written!", ioe, UWSException.INTERNAL_SERVER_ERROR);
 			}
 		}
 		// CASE ASYNCHRONOUS:
@@ -579,7 +589,7 @@ public class ADQLExecutor {
 				jobThread.publishResult(result);
 
 			}catch(IOException ioe){
-				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to get the output stream of the result file to write the result of the job " + report.jobID + " !");
+				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to access the file into the result of the job " + report.jobID + " must be written!");
 			}
 		}
 	}
@@ -621,7 +631,7 @@ public class ADQLExecutor {
 				try{
 					dbConn.dropUploadedTable(t);
 				}catch(DBException dbe){
-					logger.error("JOB " + report.jobID + "\tCan not drop the uploaded table \"" + t.getDBName() + "\" (in adql \"" + t.getADQLName() + "\") from the database!", dbe);
+					logger.logTAP(LogLevel.ERROR, report, "DROP_UPLOAD", "Can not drop the uploaded table \"" + t.getDBName() + "\" (in adql \"" + t.getADQLName() + "\") from the database!", dbe);
 				}
 			}
 		}

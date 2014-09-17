@@ -26,7 +26,6 @@ import tap.data.TableIterator;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPTable;
-import uws.service.log.UWSLogType;
 import adql.query.ADQLQuery;
 import adql.translator.ADQLTranslator;
 
@@ -44,13 +43,9 @@ import adql.translator.ADQLTranslator;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (09/2014)
  */
 public interface DBConnection {
-
-	/** Log type specific to the database activity.
-	 * @see UWSLogType#createCustomLogType(String) */
-	public final static UWSLogType LOG_TYPE_DB_ACTIVITY = UWSLogType.createCustomLogType("DBActivity");
 
 	/**
 	 * <p>Get any identifier for this connection.</p>
@@ -185,9 +180,11 @@ public interface DBConnection {
 	/**
 	 * Add the defined and given table inside the TAP_UPLOAD schema.
 	 * 
+	 * <p>If the TAP_UPLOAD schema does not already exist, it will be created.</p>
+	 * 
 	 * <p><i>note: A table of TAP_UPLOAD MUST be transient and persistent only for the lifetime of the query.
 	 * So, this function should always be used with {@link #dropUploadedTable(String)}, which is called at
-	 * the end of each query execution.</i></p> 
+	 * the end of each query execution.</i></p>
 	 * 
 	 * @param tableDef	Definition of the table to upload (list of all columns and of their type).
 	 * @param data		Rows and columns of the table to upload.

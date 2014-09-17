@@ -23,7 +23,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Iterator;
 
-import uws.UWSException;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
@@ -161,7 +160,7 @@ public class XMLSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root) throws UWSException{
+	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root){
 		String name = jobsList.getName();
 		StringBuffer xml = new StringBuffer(getHeader());
 

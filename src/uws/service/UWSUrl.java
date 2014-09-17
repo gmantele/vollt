@@ -27,7 +27,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import uws.UWSException;
 import uws.UWSToolBox;
 import uws.job.UWSJob;
 
@@ -35,7 +34,7 @@ import uws.job.UWSJob;
  * This class helps managing with UWS URLs and URIs.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 06/2014
+ * @version 4.1 (09/2014)
  */
 public class UWSUrl implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -89,16 +88,16 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @param baseURI			The baseURI to consider in all URL or request parsing.
 	 * 
-	 * @throws UWSException		If the given baseURI is <i>null</i> or is an empty string.
+	 * @throws NullPointerException		If the given baseURI is <i>null</i> or is an empty string.
 	 */
-	public UWSUrl(String baseURI) throws UWSException{
+	public UWSUrl(String baseURI) throws NullPointerException{
 		if (baseURI == null)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "The given base UWS URI is NULL !");
+			throw new NullPointerException("The given base UWS URI is NULL!");
 
 		this.baseURI = normalizeURI(baseURI);
 
 		if (baseURI.length() == 0)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "The given base UWS URI is empty !");
+			throw new NullPointerException("The given base UWS URI is empty!");
 	}
 
 	/**
@@ -106,14 +105,14 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @param request		The request to parse to get the baseURI.
 	 * 
-	 * @throws UWSException	If the given request is <i>null</i> or if the extracted baseURI is <i>null</i> or is an empty string.
+	 * @throws NullPointerException	If the given request is <i>null</i> or if the extracted baseURI is <i>null</i> or is an empty string.
 	 * 
 	 * @see #extractBaseURI(HttpServletRequest)
 	 */
-	public UWSUrl(HttpServletRequest request) throws UWSException{
+	public UWSUrl(HttpServletRequest request) throws NullPointerException{
 		String uri = extractBaseURI(request);
 		if (uri == null)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "The extracted base UWS URI is NULL !");
+			throw new NullPointerException("The extracted base UWS URI is NULL!");
 
 		baseURI = normalizeURI(uri);
 	}

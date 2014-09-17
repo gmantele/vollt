@@ -16,19 +16,18 @@ package uws.job.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.Serializable;
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
-
 import uws.job.UWSJob;
 
 /**
  * <p>
- * 	Lets controlling the execution duration of all jobs managed by a UWS. Thus it is possible to set a default and a maximum value.
+ * 	Let controlling the execution duration of all jobs managed by a UWS. Thus it is possible to set a default and a maximum value.
  * 	Moreover you can indicate whether the execution duration of jobs can be modified by the user or not.
  * </p>
  * 
@@ -39,8 +38,8 @@ import uws.job.UWSJob;
  * 	</i>
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class ExecutionDurationController implements InputParamController, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -82,10 +81,10 @@ public class ExecutionDurationController implements InputParamController, Serial
 			try{
 				duration = Long.parseLong(strValue);
 			}catch(NumberFormatException nfe){
-				throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_EXECUTION_DURATION, strValue, null, "A long value between " + UWSJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
+				throw new UWSException(UWSException.BAD_REQUEST, "Wrong format for the maximum duration parameter: \"" + strValue + "\"! It should be a long numeric value between " + UWSJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
 			}
 		}else
-			throw UWSExceptionFactory.badFormat(null, UWSJob.PARAM_EXECUTION_DURATION, null, value.getClass().getName(), "A long value between " + UWSJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the maximum duration parameter: class \"" + value.getClass().getName() + "\"! It should be long or a string containing only a long value.");
 
 		if (duration < UWSJob.UNLIMITED_DURATION)
 			duration = UWSJob.UNLIMITED_DURATION;
@@ -148,6 +147,7 @@ public class ExecutionDurationController implements InputParamController, Serial
 	 * 
 	 * @return <i>true</i> if the execution duration can be modified, <i>false</i> otherwise.
 	 */
+	@Override
 	public final boolean allowModification(){
 		return allowModification;
 	}

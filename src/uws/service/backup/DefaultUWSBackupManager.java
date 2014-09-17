@@ -16,14 +16,14 @@ package uws.service.backup;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,24 +42,19 @@ import org.json.JSONWriter;
 import org.json.Json4Uws;
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
-
 import uws.job.ErrorSummary;
 import uws.job.ErrorType;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
-
 import uws.job.parameters.UWSParameters;
 import uws.job.serializer.JSONSerializer;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWS;
 import uws.service.file.UWSFileManager;
-
 import uws.service.log.UWSLog;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Default implementation of the interface {@link UWSBackupManager}.</p>
@@ -80,8 +75,8 @@ import uws.service.log.UWSLog;
  * </ul>
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -181,7 +176,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		this.backupFreq = frequency;
 
 		if (byUser && uws.getUserIdentifier() == null)
-			throw new UWSException("Impossible to save/restore a UWS by user, if the user identification is disabled (no UserIdentifier is set to the UWS) !");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Impossible to save/restore a UWS by user if the user identification is disabled (no UserIdentifier is set to the UWS)!");
 
 		if (backupFreq == AT_USER_ACTION && !byUser)
 			backupFreq = MANUAL;
@@ -206,6 +201,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		return enabled;
 	}
 
+	@Override
 	public final void setEnabled(boolean enabled){
 		this.enabled = enabled;
 		if (backupFreq > 0){
@@ -310,6 +306,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	/* SAVE METHODS */
 	/* ************ */
 
+	@Override
 	public int[] saveAll(){
 		if (!enabled)
 			return null;
@@ -362,7 +359,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						out.value(getJSONUser(user));
 						nbSavedOwners++;
 					}catch(JSONException je){
-						getLogger().error("Unexpected JSON error while saving the user '" + user.getID() + "' !", je);
+						getLogger().logUWS(LogLevel.ERROR, user, "BACKUP", "Unexpected JSON error while saving the user '" + user.getID() + "'!", je);
 					}
 				}
 				out.endArray();
@@ -378,9 +375,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 							nbSavedJobs++;
 							writer.flush();
 						}catch(UWSException ue){
-							getLogger().error("Unexpected UWS error while saving the job '" + job.getJobId() + "' !", ue);
+							getLogger().logUWS(LogLevel.ERROR, job, "BACKUP", "Unexpected UWS error while saving the job '" + job.getJobId() + "'!", ue);
 						}catch(JSONException je){
-							getLogger().error("Unexpected JSON error while saving the job '" + job.getJobId() + "' !", je);
+							getLogger().logUWS(LogLevel.ERROR, job, "BACKUP", "Unexpected JSON error while saving the job '" + job.getJobId() + "'!", je);
 						}
 					}
 				}
@@ -390,9 +387,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				out.endObject();
 
 			}catch(JSONException je){
-				getLogger().error("Unexpected JSON error while saving the whole UWS !", je);
+				getLogger().logUWS(LogLevel.ERROR, null, "BACKUP", "Unexpected JSON error while saving the whole UWS !", je);
 			}catch(IOException ie){
-				getLogger().error("Unexpected IO error while saving the whole UWS !", ie);
+				getLogger().logUWS(LogLevel.ERROR, null, "BACKUP", "Unexpected IO error while saving the whole UWS !", ie);
 			}finally{
 				// Close the writer:
 				if (writer != null)
@@ -402,13 +399,14 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		// Build the report and log it:
 		int[] report = new int[]{nbSavedJobs,nbJobs,nbSavedOwners,nbOwners};
-		getLogger().uwsSaved(uws, report);
+		getLogger().logUWS(LogLevel.INFO, report, "BACKUPED", "UWS backuped! (" + nbSavedJobs + "/" + nbJobs + " jobs backuped ; " + nbSavedOwners + "/" + nbOwners + " users backuped)", null);
 
 		lastBackup = new Date();
 
 		return report;
 	}
 
+	@Override
 	public int[] saveOwner(JobOwner user){
 		if (!enabled)
 			return null;
@@ -453,9 +451,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						saveReport[0]++;
 						writer.flush();
 					}catch(JSONException je){
-						getLogger().error("Unexpected JSON error while saving the " + saveReport[1] + "-th job of the job list '" + jl.getName() + "' owned by the user '" + user.getID() + "'  !", je);
+						getLogger().logUWS(LogLevel.ERROR, null, "BACKUP", "Unexpected JSON error while saving the " + saveReport[1] + "-th job of the job list '" + jl.getName() + "' owned by the user '" + user.getID() + "'!", je);
 					}catch(UWSException ue){
-						getLogger().error("Unexpected UWS error while saving the " + saveReport[1] + "-th job of the job list '" + jl.getName() + "' owned by the user '" + user.getID() + "'  !", ue);
+						getLogger().logUWS(LogLevel.ERROR, null, "BACKUP", "Unexpected UWS error while saving the " + saveReport[1] + "-th job of the job list '" + jl.getName() + "' owned by the user '" + user.getID() + "'!", ue);
 					}
 				}
 			}
@@ -465,16 +463,16 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			out.endObject();
 
 			// Log the "save" report:
-			getLogger().ownerJobsSaved(user, saveReport);
+			getLogger().logUWS(LogLevel.INFO, saveReport, "BACKUPED", "UWS backuped! (" + saveReport[0] + "/" + saveReport[1] + " users backuped)", null);
 
 			lastBackup = new Date();
 
 			return saveReport;
 
 		}catch(IOException ie){
-			getLogger().error("Unexpected IO error while saving the jobs of user '" + user.getID() + "'  !", ie);
+			getLogger().logUWS(LogLevel.ERROR, null, "BACKUP", "Unexpected IO error while saving the jobs of user '" + user.getID() + "'!", ie);
 		}catch(JSONException je){
-			getLogger().error("Unexpected JSON error while saving the jobs of user '" + user.getID() + "'  !", je);
+			getLogger().logUWS(LogLevel.ERROR, null, "BACKUP", "Unexpected JSON error while saving the jobs of user '" + user.getID() + "'!", je);
 		}finally{
 			// Close the writer:
 			if (writer != null)
@@ -548,6 +546,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	/* RESTORATION METHODS */
 	/* ******************* */
 
+	@Override
 	public int[] restoreAll(){
 		// Removes all current jobs from the UWS before restoring it from files:
 		for(JobList jl : uws)
@@ -564,7 +563,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		// Get the list of the input streams (on all the backup files to read):
 		if (byUser){
 			if (!userIdentificationEnabled){
-				getLogger().error("[restoration] Impossible to restore a UWS by user if the user identification is disabled (that's to say, the UWS has no UserIdentifier) !");
+				getLogger().logUWS(LogLevel.ERROR, null, "RESTORATION", "Impossible to restore a UWS by user if the user identification is disabled (that's to say, the UWS has no UserIdentifier)!", null);
 				return null;
 			}else
 				itInput = fileManager.getAllUserBackupInputs();
@@ -572,7 +571,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			try{
 				itInput = new SingleInputIterator(fileManager.getBackupInput());
 			}catch(IOException ioe){
-				getLogger().error("[restoration] Restoration of the UWS " + uws.getName() + " failed because an unexpected IO error has occured.", ioe);
+				getLogger().logUWS(LogLevel.ERROR, null, "RESTORATION", "Restoration of the UWS " + uws.getName() + " failed because an unexpected IO error has occured.", ioe);
 				return null;
 			}
 		}
@@ -588,7 +587,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 			HashMap<String,JobOwner> users = new HashMap<String,JobOwner>();
 			String key;
-			JSONObject object;
+			JSONObject object = null;
 
 			try{
 				// Reads progressively the general structure (which is theoretically a JSON object):
@@ -623,7 +622,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 								}
 							}
 						}catch(UWSException ue){
-							getLogger().error("[restoration] A job owner can not be restored !", ue);
+							getLogger().logUWS(LogLevel.ERROR, object, "RESTORATION", "A job owner can not be restored!", ue);
 							//break;	// Because, the key "user" is found ONLY in the backup file of a user. If the user can not be restored, its jobs won't be !
 						}
 
@@ -649,7 +648,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 									}
 								}
 							}catch(UWSException ue){
-								getLogger().error("[restoration] The " + nbUsers + "-th user can not be restored !", ue);
+								getLogger().logUWS(LogLevel.ERROR, object, "RESTORATION", "The " + nbUsers + "-th user can not be restored!", ue);
 							}
 						}
 
@@ -670,26 +669,26 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 								if (restoreJob(object, users))
 									nbRestoredJobs++;
 							}catch(UWSException ue){
-								getLogger().error("[restoration] The " + nbJobs + "-th job can not be restored !", ue);
+								getLogger().logUWS(LogLevel.ERROR, object, "RESTORATION", "The " + nbJobs + "-th job can not be restored!", ue);
 							}
 						}
 
 					}// any other key is ignore but with a warning message:
 					else
-						getLogger().warning("[restoration] Key '" + key + "' ignored because unknown ! The UWS may be not completely restored !");
+						getLogger().logUWS(LogLevel.WARNING, null, "RESTORATION", "Key '" + key + "' ignored because unknown! The UWS may be not completely restored.", null);
 				}
 			}catch(JSONException je){
-				getLogger().error("[restoration] Incorrect JSON format for a UWS backup file !", je);
+				getLogger().logUWS(LogLevel.ERROR, null, "RESTORATION", "Incorrect JSON format for a UWS backup file!", je);
 				return null;
 			}catch(Exception e){
-				getLogger().error("[restoration] Unexpected error while restoring the UWS !", e);
+				getLogger().logUWS(LogLevel.ERROR, null, "RESTORATION", "Unexpected error while restoring the UWS!", e);
 				return null;
 			}finally{
 				// Close the reader:
 				try{
 					inputStream.close();
 				}catch(IOException ioe){
-					getLogger().error("[restoration] Can not close the input stream opened on a user backup file !", ioe);
+					getLogger().logUWS(LogLevel.ERROR, null, "RESTORATION", "Can not close the input stream opened on a user backup file!", ioe);
 				}
 				// Set the last restoration date:
 				lastRestoration = new Date();
@@ -697,11 +696,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		}
 
 		if (!userIdentificationEnabled && nbUsers > 0)
-			getLogger().warning("[restoration] " + nbUsers + " job owners have not been restored because the user identification is disabled in this UWS ! => Jobs of these users have not been restored !");
+			getLogger().logUWS(LogLevel.WARNING, null, "RESTORATION", nbUsers + " job owners have not been restored because the user identification is disabled in this UWS! => Jobs of these users have not been restored.", null);
 
 		// Build the restoration report and log it:
 		int[] report = new int[]{nbRestoredJobs,nbJobs,nbRestoredUsers,nbUsers};
-		getLogger().uwsRestored(uws, report);
+		getLogger().logUWS(LogLevel.INFO, report, "RESTORED", "UWS restored! (" + nbRestoredJobs + "/" + nbJobs + " jobs restored ; " + nbRestoredUsers + "/" + nbUsers + " users restored)", null);
 
 		return report;
 	}
@@ -734,13 +733,13 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else
 					userData.put(key, json.getString(key));
 			}catch(JSONException je){
-				getLogger().error("[restoration] Incorrect JSON format for the serialization of the user " + ID + " !", je);
+				getLogger().logUWS(LogLevel.WARNING, null, "RESTORATION", "Incorrect JSON format for the serialization of the user \"" + ID + "\"! The restoration of this job may be incomplete.", je);
 			}
 		}
 
 		// Check that the ID exists:
 		if (ID == null || ID.trim().isEmpty())
-			throw UWSExceptionFactory.restoreUserImpossible("Missing user ID !");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, null, "Impossible to restore a user from the backup file(s): no ID has been found!");
 
 		return uws.getUserIdentifier().restoreUser(ID, pseudo, userData);
 	}
@@ -808,7 +807,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						tmp = json.getString(key);
 						inputParams.put(UWSJob.PARAM_DESTRUCTION_TIME, UWSJob.dateFormat.parse(tmp));
 					}catch(ParseException pe){
-						getLogger().error("[restoration] Incorrect date format for the '" + key + "' parameter !", pe);
+						getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect date format for the '" + key + "' parameter!", pe);
 					}
 
 				}// key=START_TIME:
@@ -818,7 +817,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						Date d = UWSJob.dateFormat.parse(tmp);
 						startTime = d.getTime();
 					}catch(ParseException pe){
-						getLogger().error("[restoration] Incorrect date format for the '" + key + "' parameter !", pe);
+						getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect date format for the '" + key + "' parameter!", pe);
 					}
 
 				}// key=END_TIME:
@@ -828,7 +827,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 						Date d = UWSJob.dateFormat.parse(tmp);
 						endTime = d.getTime();
 					}catch(ParseException pe){
-						getLogger().error("[restoration] Incorrect date format for the '" + key + "' parameter !", pe);
+						getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect date format for the '" + key + "' parameter!", pe);
 					}
 
 				}// key=PARAMETERS:
@@ -845,24 +844,24 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 				}// Ignore any other key but with a warning message:
 				else
-					getLogger().warning("[restoration] The job attribute '" + key + "' has been ignored because unknown ! A job may be not completely restored !");
+					getLogger().logUWS(LogLevel.WARNING, json, "RESTORATION", "The job attribute '" + key + "' has been ignored because unknown! A job may be not completely restored!", null);
 
 			}catch(JSONException je){
-				getLogger().error("[restoration] Incorrect JSON format for a job serialization (attribute: \"" + key + "\") !", je);
+				getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect JSON format for a job serialization (attribute: \"" + key + "\")!", je);
 			}
 		}
 
 		// The job list name is REQUIRED:
 		if (jobListName == null || jobListName.isEmpty())
-			getLogger().error("[restoration] Missing job list name ! => Can not restore the job " + jobId + " !");
+			getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Missing job list name! => Can not restore the job " + jobId + "!", null);
 
 		// The job list name MUST correspond to an existing job list:
 		else if (uws.getJobList(jobListName) == null)
-			getLogger().error("[restoration] No job list named " + jobListName + " ! => Can not restore the job " + jobId + " !");
+			getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "No job list named " + jobListName + "! => Can not restore the job " + jobId + "!", null);
 
 		// The job ID is REQUIRED:
 		else if (jobId == null || jobId.isEmpty())
-			getLogger().error("[restoration] Missing job ID ! => Can not restore a job !");
+			getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Missing job ID! => Can not restore a job!", null);
 
 		// Otherwise: the job can be created and restored:
 		else{
@@ -871,7 +870,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 			// If the specified user is unknown, display a warning and create the job without owner:
 			if (ownerID != null && !ownerID.isEmpty() && owner == null){
-				getLogger().error("[restoration] Unknown job owner: " + ownerID + " ! => Can not restore the job " + jobId + " !");
+				getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Unknown job owner: " + ownerID + "! => Can not restore the job " + jobId + "!", null);
 				return false;
 			}
 
@@ -880,7 +879,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			try{
 				uwsParams = uws.getFactory().createUWSParameters(inputParams);
 			}catch(UWSException ue){
-				getLogger().error("[restoration] Error with at least one of the UWS parameters to restore !", ue);
+				getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Error with at least one of the UWS parameters to restore!", ue);
 				return false;
 			}
 
@@ -936,7 +935,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			try{
 				params.put(n, obj.get(n));
 			}catch(JSONException je){
-				getLogger().error("Incorrect JSON format for the serialization of the parameter '" + n + "' !", je);
+				getLogger().logUWS(LogLevel.ERROR, obj, "RESTORATION", "Incorrect JSON format for the serialization of the parameter '" + n + "'!", je);
 			}
 		}
 		return params;
@@ -965,7 +964,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				if (r != null)
 					results.add(r);
 			}catch(JSONException je){
-				getLogger().error("Incorrect JSON format for the serialization of the " + (i + 1) + "-th result !", je);
+				getLogger().logUWS(LogLevel.ERROR, array, "RESTORATION", "Incorrect JSON format for the serialization of the " + (i + 1) + "-th result!", je);
 			}
 		}
 
@@ -1004,11 +1003,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			else if (n.equalsIgnoreCase("size"))
 				size = obj.getLong(n);
 			else
-				getLogger().warning("[restoration] The result parameter '" + n + "' has been ignored because unknown ! A result may be not completely restored !");
+				getLogger().logUWS(LogLevel.WARNING, obj, "RESTORATION", "The result parameter '" + n + "' has been ignored because unknown! A result may be not completely restored!", null);
 		}
 
 		if (id == null){
-			getLogger().error("[restoration] Missing result ID ! => A result can not be restored !");
+			getLogger().logUWS(LogLevel.ERROR, obj, "RESTORATION", "Missing result ID! => A result can not be restored!", null);
 			return null;
 		}else{
 			Result r = new Result(id, type, href, redirection);
@@ -1044,9 +1043,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (n.equalsIgnoreCase("message"))
 					message = obj.getString(n);
 				else
-					getLogger().warning("[restoration] The error attribute '" + n + "' has been ignored because unknown ! => An error summary may be not completely restored !");
+					getLogger().logUWS(LogLevel.WARNING, obj, "RESTORATION", "The error attribute '" + n + "' has been ignored because unknown! => An error summary may be not completely restored!", null);
 			}catch(JSONException je){
-				getLogger().error("Incorrect JSON format for an error serialization !", je);
+				getLogger().logUWS(LogLevel.ERROR, obj, "RESTORATION", "Incorrect JSON format for an error serialization!", je);
 			}
 		}
 		if (message != null)
@@ -1199,7 +1198,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				readNext();
 				return nextKey;
 			}catch(JSONException je){
-				logger.error("Incorrect JSON format in an object !", je);
+				logger.logUWS(LogLevel.ERROR, null, "RESTORATION", "Incorrect JSON format in an object!", je);
 				endReached = true;
 				return null;
 			}
@@ -1296,7 +1295,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			try{
 				readNext();
 			}catch(JSONException je){
-				logger.error("Incorrect JSON format in an Array !", je);
+				logger.logUWS(LogLevel.ERROR, null, "RESTORATION", "Incorrect JSON format in an Array!", je);
 				endReached = true;
 				nextObj = null;
 			}

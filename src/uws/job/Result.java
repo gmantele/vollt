@@ -16,21 +16,20 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import uws.UWSException;
-
 import uws.job.serializer.UWSSerializer;
 import uws.job.user.JobOwner;
-
 import uws.service.UWSUrl;
 
 /**
  * This class gives a short description (mainly an ID and a URL) of a job result.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public class Result extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -257,7 +256,7 @@ public class Result extends SerializableUWSObject {
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException{
+	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException, Exception{
 		return serializer.getResult(this, true);
 	}
 

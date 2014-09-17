@@ -16,7 +16,8 @@ package uws.job.manager;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
@@ -26,10 +27,10 @@ import java.util.Vector;
 
 import uws.UWSException;
 import uws.UWSToolBox;
-import uws.job.ErrorType;
 import uws.job.ExecutionPhase;
 import uws.job.UWSJob;
 import uws.service.log.UWSLog;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Abstract implementation of the interface {@link ExecutionManager} which lets managing an execution queue.</p>
@@ -38,15 +39,14 @@ import uws.service.log.UWSLog;
  * 	to {@link ExecutionPhase#QUEUED}). A call to {@link #refresh()}, reads this list and tries to execute the first job of the list.
  * 	The function {@link #isReadyForExecution(UWSJob)} decides whether the first job of the queue can be executed NOW or not.
  * </p>
- * </p>
- * 	NOTE: The order of queued jobs is preserved: it is implemented by a FIFO queue.
- * </p>
+ * <p><i>Note:
+ * 	The order of queued jobs is preserved: it is implemented by a FIFO queue.
+ * </i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public abstract class AbstractQueuedExecutionManager implements ExecutionManager {
-	private static final long serialVersionUID = 1L;
 
 	/** List of running jobs. */
 	protected Map<String,UWSJob> runningJobs;
@@ -105,6 +105,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * of the result of this function, the given job will be put in the queue or it will be executed.
 	 * 
 	 * @param 	jobToExecute
+	 * 
 	 * @return	<i>true</i> if the given job can be executed NOW (=&gt; it will be executed), <i>false</i> otherwise (=&gt; it will be put in the queue).
 	 */
 	public abstract boolean isReadyForExecution(UWSJob jobToExecute);
@@ -116,9 +117,13 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * <p>Removes the first queued job(s) from the queue and executes it (them)
 	 * <b>ONLY IF</b> it (they) can be executed (see {@link #isReadyForExecution(AbstractJob)}).</p>
 	 * 
-	 * <p><i><u>Note:</u> Nothing is done if there is no queue.</i></p>
+	 * <p><i>Note:
+	 * 	Nothing is done if there is no queue.
+	 * </i></p>
 	 * 
-	 * @throws UWSException	If there is an error during the phase transition of one or more jobs.
+	 * <p><i>Note:
+	 * 	If any error occurs while refreshing this manager, it SHOULD be logged using the service logger.
+	 * </i></p>
 	 * 
 	 * @see #hasQueue()
 	 * @see #isReadyForExecution(UWSJob)
@@ -127,25 +132,21 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * @see uws.job.manager.ExecutionManager#refresh()
 	 */
 	@Override
-	public synchronized final void refresh() throws UWSException{
+	public synchronized final void refresh(){
 		// Return immediately if no queue:
 		if (!hasQueue())
 			return;
 
-		String allMsg = null;	// the concatenation of all errors which may occur
-
 		// Start the first job of the queue while it can be executed:
+		UWSJob jobToStart;
 		while(!queuedJobs.isEmpty() && isReadyForExecution(queuedJobs.firstElement())){
+			jobToStart = queuedJobs.remove(0);
 			try{
-				startJob(queuedJobs.remove(0));
+				startJob(jobToStart);
 			}catch(UWSException ue){
-				allMsg = ((allMsg == null) ? "ERRORS THAT OCCURED WHILE REFRESHING THE EXECUTION MANAGER:" : allMsg) + "\n\t- " + ue.getMessage();
+				logger.logJob(LogLevel.ERROR, jobToStart, "START", "Can not start the job \"" + jobToStart.getJobId() + "\"! This job is not any more part of its execution manager.", ue);
 			}
 		}
-
-		// Throw one error for all jobs that can not have been executed:
-		if (allMsg != null)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, allMsg, ErrorType.TRANSIENT);
 	}
 
 	/**
@@ -169,10 +170,13 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	/**
 	 * <p>Refreshes this manager and then put the given job into the queue (if it is not already into it).</p>
 	 * 
-	 * @param jobToExecute	The job to execute.
-	 * @return				The resulting execution phase of the given job ({@link ExecutionPhase#EXECUTING EXECUTING} or {@link ExecutionPhase#QUEUED QUEUED} or <i>null</i> if the given job is <i>null</i>).
+	 * <p><i>Note:
+	 * 	If any error occurs while executing the given job, it SHOULD be logged using the service logger.
+	 * </i></p>
 	 * 
-	 * @throws UWSException	If there is an error while changing the execution phase of the given job or if the job is already finished.
+	 * @param jobToExecute	The job to execute.
+	 * 
+	 * @return				The resulting execution phase of the given job ({@link ExecutionPhase#EXECUTING EXECUTING} or {@link ExecutionPhase#QUEUED QUEUED} or <i>null</i> if the given job is <i>null</i>).
 	 * 
 	 * @see #refresh()
 	 * @see AbstractJob#isRunning()
@@ -182,16 +186,12 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * @see uws.job.manager.ExecutionManager#execute(AbstractJob)
 	 */
 	@Override
-	public synchronized final ExecutionPhase execute(final UWSJob jobToExecute) throws UWSException{
+	public synchronized final ExecutionPhase execute(final UWSJob jobToExecute){
 		if (jobToExecute == null)
 			return null;
 
 		// Refresh the list of running jobs before all:
-		try{
-			refresh();
-		}catch(UWSException ue){
-			logger.error("Impossible to refresh the execution manager !", ue);
-		}
+		refresh();
 
 		// If the job is already running, ensure it is in the list of running jobs:
 		if (jobToExecute.isRunning())
@@ -204,12 +204,16 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 
 		}// Otherwise, change the phase to QUEUED, put it into the queue and then refresh the queue:
 		else{
-			if (jobToExecute.getPhase() != ExecutionPhase.QUEUED)
-				jobToExecute.setPhase(ExecutionPhase.QUEUED);
+			try{
+				if (jobToExecute.getPhase() != ExecutionPhase.QUEUED)
+					jobToExecute.setPhase(ExecutionPhase.QUEUED);
 
-			if (!queuedJobs.contains(jobToExecute)){
-				queuedJobs.add(jobToExecute);
-				refresh();
+				if (!queuedJobs.contains(jobToExecute)){
+					queuedJobs.add(jobToExecute);
+					refresh();
+				}
+			}catch(UWSException ue){
+				logger.logJob(LogLevel.ERROR, jobToExecute, "QUEUE", "Can not set the job \"" + jobToExecute.getJobId() + "\" in the QUEUED phase!", ue);
 			}
 		}
 
@@ -217,12 +221,16 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	}
 
 	/**
-	 * Removes the given job from the lists of queued and running jobs and then refreshes the manager.
+	 * <p>Removes the given job from the lists of queued and running jobs and then refreshes the manager.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If any error occurs while removing a job from this manager, it SHOULD be logged using the service logger.
+	 * </i></p>
 	 * 
 	 * @see uws.job.manager.ExecutionManager#remove(uws.job.UWSJob)
 	 */
 	@Override
-	public final synchronized void remove(final UWSJob jobToRemove) throws UWSException{
+	public final synchronized void remove(final UWSJob jobToRemove){
 		if (jobToRemove != null){
 			runningJobs.remove(jobToRemove.getJobId());
 			queuedJobs.remove(jobToRemove);

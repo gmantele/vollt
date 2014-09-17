@@ -23,13 +23,10 @@ import java.util.List;
 
 import tap.parameters.TAPParameters;
 import tap.upload.TableLoader;
-
 import uws.UWSException;
-
 import uws.job.ErrorSummary;
 import uws.job.Result;
 import uws.job.UWSJob;
-
 import uws.job.user.JobOwner;
 
 public class TAPJob extends UWSJob {
@@ -62,7 +59,7 @@ public class TAPJob extends UWSJob {
 
 	protected final TAPParameters tapParams;
 
-	public TAPJob(final JobOwner owner, final TAPParameters tapParams) throws UWSException, TAPException{
+	public TAPJob(final JobOwner owner, final TAPParameters tapParams) throws TAPException{
 		super(owner, tapParams);
 		this.tapParams = tapParams;
 		tapParams.check();
@@ -70,7 +67,7 @@ public class TAPJob extends UWSJob {
 		//loadTAPParams(tapParams);
 	}
 
-	public TAPJob(final String jobID, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException, TAPException{
+	public TAPJob(final String jobID, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws TAPException{
 		super(jobID, owner, params, quote, startTime, endTime, results, error);
 		this.tapParams = params;
 		this.tapParams.check();

@@ -260,11 +260,11 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * @see tap.TAPFactory#createTAPParameters(javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	protected TAPParameters createTAPParameters(final HttpServletRequest request) throws UWSException{
+	public TAPParameters createTAPParameters(final HttpServletRequest request) throws TAPException{
 		try{
 			return new TAPParameters(request, service, getExpectedAdditionalParameters(), getInputParamControllers());
-		}catch(TAPException te){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te);
+		}catch(UWSException ue){
+			throw new TAPException(ue);
 		}
 	}
 
@@ -281,11 +281,11 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * @see tap.TAPFactory#createTAPParameters(javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
-	protected TAPParameters createTAPParameters(final Map<String,Object> params) throws UWSException{
+	public TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException{
 		try{
 			return new TAPParameters(service, params, getExpectedAdditionalParameters(), getInputParamControllers());
-		}catch(TAPException te){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te);
+		}catch(UWSException ue){
+			throw new TAPException(ue);
 		}
 	}
 

@@ -16,28 +16,25 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-
 import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
-
 import uws.job.serializer.UWSSerializer;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>The "Show UWS Home Page" action of a UWS.</p>
@@ -46,8 +43,8 @@ import uws.service.UWSUrl;
  * 
  * <p>This action displays the UWS home page.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public class ShowHomePage extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -99,16 +96,29 @@ public class ShowHomePage extends UWSAction {
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
+
 		if (uws.isDefaultHomePage()){
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 			response.setContentType(serializer.getMimeType());
-			String serialization = serializer.getUWS(uws);
+			// Get a short and simple serialization of this UWS:
+			String serialization;
+			try{
+				serialization = serializer.getUWS(uws);
+			}catch(Exception e){
+				if (!(e instanceof UWSException)){
+					getLogger().logUWS(LogLevel.WARNING, urlInterpreter, "SERIALIZE", "Can't display the default home page, due to a serialization error!", e);
+					throw new UWSException(UWSException.NO_CONTENT, e, "No home page available for this UWS service!");
+				}else
+					throw (UWSException)e;
+			}
+			// Write the simple UWS serialization in the given response:
 			if (serialization != null){
 				PrintWriter output = response.getWriter();
 				output.print(serialization);
 				output.flush();
 			}else
-				throw UWSExceptionFactory.incorrectSerialization(serialization, "the UWS " + uws.getName());
+				throw new UWSException(UWSException.NO_CONTENT, "No home page available for this UWS service.");
+
 		}else{
 			if (uws.isHomePageRedirection())
 				uws.redirect(uws.getHomePage(), request, user, getName(), response);

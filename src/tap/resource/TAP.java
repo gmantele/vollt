@@ -27,9 +27,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,33 +39,61 @@ import javax.servlet.http.HttpServletResponse;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
-import tap.db.DBConnection;
 import tap.error.DefaultTAPErrorWriter;
 import tap.formatter.OutputFormat;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
+import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
-import uws.job.ErrorType;
-import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.error.ServiceErrorWriter;
+import uws.service.log.UWSLog.LogLevel;
 
+/**
+ * <p>Root/Home of the TAP service. It is also the resource (HOME) which gathers all the others of the same TAP service.</p>
+ * 
+ * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (09/2014)
+ */
 public class TAP implements VOSIResource {
 
-	private static final long serialVersionUID = 1L;
-
+	/** Description of the TAP service owning this resource. */
 	protected final ServiceConnection service;
 
+	/** List of all the other TAP resources of the service. */
 	protected final Map<String,TAPResource> resources;
 
+	/** Base URL of the TAP service. It is also the URL of this resource (HOME). */
 	protected String tapBaseURL = null;
 
+	/** URI of the page or path of the file to display when this resource is requested. */
 	protected String homePageURI = null;
 
+	/** MIME type of the custom home page. By default, it is "text/html". */
+	protected String homePageMimeType = "text/html";
+
+	/** Object to use when an error occurs or comes until this resource from the others.
+	 * This object fills the HTTP response in the most appropriate way in function of the error. */
 	protected ServiceErrorWriter errorWriter;
 
+	/** Last generated request ID. If the next generated request ID is equivalent to this one,
+	 * a new one will generate in order to ensure the uniqueness.
+	 * @since 2.0 */
+	protected static String lastRequestID = null;
+
+	/**
+	 * Build a HOME resource of a TAP service whose the description is given in parameter.
+	 * All the other TAP resources will be created and configured here thanks to the given {@link ServiceConnection}. 
+	 * 
+	 * @param serviceConnection	Description of the TAP service.
+	 * 
+	 * @throws UWSException	If an error occurs while creating the /async resource.
+	 * @throws TAPException	If any other error occurs.
+	 */
 	public TAP(ServiceConnection serviceConnection) throws UWSException, TAPException{
 		service = serviceConnection;
 		resources = new HashMap<String,TAPResource>();
@@ -88,67 +113,283 @@ public class TAP implements VOSIResource {
 		resources.put(res.getName(), res);
 		getUWS().setErrorWriter(errorWriter);
 
-		if (service.uploadEnabled()){
-			DBConnection dbConn = null;
-			try{
-				dbConn = service.getFactory().getConnection("TAP(ServiceConnection)");
-				// TODO CLEAN ACTION: DROP SCHEMA!
-				/*dbConn.dropSchema("TAP_UPLOAD");
-				dbConn.createSchema("TAP_UPLOAD");*/
-			}catch(TAPException e){
-				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Error while creating the schema TAP_UPLOAD !");
-			}finally{
-				if (dbConn != null)
-					service.getFactory().freeConnection(dbConn);
-			}
-		}
-
-		updateTAPMetadata();
+		TAPMetadata metadata = service.getTAPMetadata();
+		if (metadata != null)
+			resources.put(metadata.getName(), metadata);
 	}
 
+	/**
+	 * Get the logger used by this resource and all the other resources managed by it.
+	 * 
+	 * @return	The used logger.
+	 */
 	public final TAPLog getLogger(){
 		return service.getLogger();
 	}
 
-	public void setTAPBaseURL(String baseURL){
+	/**
+	 * <p>Let initialize this resource and all the other managed resources.</p>
+	 * 
+	 * <p>This function is called by the library just once: when the servlet is initialized.</p>
+	 * 
+	 * @param config	Configuration of the servlet.
+	 * 
+	 * @throws ServletException	If any error occurs while reading the given configuration.
+	 * 
+	 * @see TAPResource#init(ServletConfig)
+	 */
+	public void init(final ServletConfig config) throws ServletException{
+		for(TAPResource res : resources.values())
+			res.init(config);
+	}
+
+	/**
+	 * <p>Free all the resources used by this resource and the other managed resources.</p>
+	 * 
+	 * <p>This function is called by the library just once: when the servlet is destroyed.</p>
+	 * 
+	 * @see TAPResource#destroy()
+	 */
+	public void destroy(){
+		for(TAPResource res : resources.values())
+			res.destroy();
+	}
+
+	/**
+	 * <p>Set the base URL of this TAP service.</p>
+	 * 
+	 * <p>
+	 * 	This URL must be the same as the one of this resource ; it corresponds to the
+	 * 	URL of the root (or home) of the TAP service.
+	 * </p>
+	 * 
+	 * <p>The given URL will be propagated to the other TAP resources automatically.</p>
+	 * 
+	 * @param baseURL	URL of this resource.
+	 * 
+	 * @see TAPResource#setTAPBaseURL(String)
+	 */
+	public void setTAPBaseURL(final String baseURL){
 		tapBaseURL = baseURL;
 		for(TAPResource res : resources.values())
 			res.setTAPBaseURL(tapBaseURL);
 	}
 
-	public void setTAPBaseURL(HttpServletRequest request){
+	/**
+	 * <p>Build the base URL from the given HTTP request, and use it to set the base URL of this TAP service.</p>
+	 * 
+	 * <p>The given URL will be propagated to the other TAP resources automatically.</p>
+	 * 
+	 * @param request	HTTP request from which a TAP service's base URL will be extracted.
+	 * 
+	 * @see #setTAPBaseURL(String)
+	 */
+	public void setTAPBaseURL(final HttpServletRequest request){
 		setTAPBaseURL(request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath() + request.getServletPath());
 	}
 
+	/* ******************** */
+	/* RESOURCES MANAGEMENT */
+	/* ******************** */
+
+	/**
+	 * Get the /availability resource of this TAP service.
+	 * 
+	 * @return	The /availability resource.
+	 */
 	public final Availability getAvailability(){
 		return (Availability)resources.get(Availability.RESOURCE_NAME);
 	}
 
+	/**
+	 * Get the /capabilities resource of this TAP service.
+	 * 
+	 * @return	The /capabilities resource.
+	 */
 	public final Capabilities getCapabilities(){
 		return (Capabilities)resources.get(Capabilities.RESOURCE_NAME);
 	}
 
+	/**
+	 * Get the /sync resource of this TAP service.
+	 * 
+	 * @return	The /sync resource.
+	 */
 	public final Sync getSync(){
 		return (Sync)resources.get(Sync.RESOURCE_NAME);
 	}
 
+	/**
+	 * Get the /async resource of this TAP service.
+	 * 
+	 * @return	The /async resource.
+	 */
 	public final ASync getASync(){
 		return (ASync)resources.get(ASync.RESOURCE_NAME);
 	}
 
+	/**
+	 * Get the UWS service used for the /async service.
+	 * 
+	 * @return	The used UWS service.
+	 */
+	public final UWSService getUWS(){
+		TAPResource res = getASync();
+		if (res != null)
+			return ((ASync)res).getUWS();
+		else
+			return null;
+	}
+
+	/**
+	 * <p>Get the object managing all the metadata (information about the published columns and tables)
+	 * of this TAP service.</p>
+	 * 
+	 * <p>This object is also to the /tables resource.</p>
+	 * 
+	 * @return	List of all metadata of this TAP service.
+	 */
 	public final TAPMetadata getTAPMetadata(){
 		return (TAPMetadata)resources.get(TAPMetadata.RESOURCE_NAME);
 	}
 
+	/**
+	 * <p>Add the given resource in this TAP service.</p>
+	 * 
+	 * <p>The ID of this resource (which is also its URI) will be its name (given by {@link TAPResource#getName()}).</p>
+	 * 
+	 * <p><b>WARNING:
+	 * 	If another resource with an ID strictly identical (case sensitively) to the name of the given resource, it will be overwritten!
+	 * 	You should check (thanks to {@link #hasResource(String)}) before calling this function that no resource is associated with the same URI.
+	 * 	If it is the case, you should then use the function {@link #addResource(String, TAPResource)} with a different ID/URI.
+	 * </b></p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function is equivalent to {@link #addResource(String, TAPResource)} with {@link TAPResource#getName()} in first parameter.
+	 * </i></p>
+	 * 
+	 * @param newResource	Resource to add in the service.
+	 * 
+	 * @return	<i>true</i> if the given resource has been successfully added,
+	 *        	<i>false</i> otherwise (and particularly if the given resource is NULL).
+	 * 
+	 * @see #addResource(String, TAPResource)
+	 */
+	public final boolean addResource(final TAPResource newResource){
+		return addResource(newResource.getName(), newResource);
+	}
+
+	/**
+	 * <p>Add the given resource in this TAP service with the given ID (which will be also the URI to access this resource).</p>
+	 * 
+	 * <p><b>WARNING:
+	 * 	If another resource with an ID strictly identical (case sensitively) to the name of the given resource, it will be overwritten!
+	 * 	You should check (thanks to {@link #hasResource(String)}) before calling this function that no resource is associated with the same URI.
+	 * 	If it is the case, you should then use the function {@link #addResource(String, TAPResource)} with a different ID/URI.
+	 * </b></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ID is NULL, the name of the resource will be used.
+	 * </i></p>
+	 * 
+	 * @param resourceId	ID/URI of the resource to add.
+	 * @param newResource	Resource to add.
+	 * 
+	 * @return	<i>true</i> if the given resource has been successfully added to this service with the given ID/URI,
+	 *        	<i>false</I> otherwise (and particularly if the given resource is NULL).
+	 */
+	public final boolean addResource(final String resourceId, final TAPResource newResource){
+		if (newResource == null)
+			return false;
+		resources.put((resourceId == null) ? newResource.getName() : resourceId, newResource);
+		return true;
+	}
+
+	/**
+	 * Get the number of all resources managed by this TAP service (this resource - HOME - excluded).
+	 * 
+	 * @return	Number of managed resources.
+	 */
+	public final int getNbResources(){
+		return resources.size();
+	}
+
+	/**
+	 * <p>Get the specified resource.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The research is case sensitive.
+	 * </i></p>
+	 * 
+	 * @param resourceId	Exact ID/URI of the resource to get.
+	 * 
+	 * @return	The corresponding resource,
+	 *        	or NULL if no match can be found.
+	 */
+	public final TAPResource getResource(final String resourceId){
+		return resources.get(resourceId);
+	}
+
+	/**
+	 * Let iterate over the full list of the TAP resources managed by this TAP service.
+	 * 
+	 * @return	Iterator over the available TAP resources.
+	 */
 	public final Iterator<TAPResource> getTAPResources(){
 		return resources.values().iterator();
 	}
 
+	/**
+	 * <p>Tell whether a resource is already associated with the given ID/URI.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The research is case sensitive.
+	 * </i></p>
+	 * 
+	 * @param resourceId	Exact ID/URI of the resource to find.
+	 * 
+	 * @return	<i>true</i> if a resource is already associated with the given ID/URI,
+	 *        	<i>false</i> otherwise.
+	 */
+	public final boolean hasResource(final String resourceId){
+		return resources.containsKey(resourceId);
+	}
+
+	/**
+	 * <p>Remove the resource associated with the given ID/URI.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The research is case sensitive.
+	 * </i></p>
+	 * 
+	 * @param resourceId	Exact ID/URI of the resource to remove.
+	 * 
+	 * @return	The removed resource, if associated with the given ID/URI,
+	 *        	otherwise, NULL is returned.
+	 */
+	public final TAPResource removeResource(final String resourceId){
+		return resources.remove(resourceId);
+	}
+
+	/* **************** */
+	/* ERROR MANAGEMENT */
+	/* **************** */
+
+	/**
+	 * Get the object to use in order to report errors to the user in replacement of the expected result.
+	 * 
+	 * @return	Used error writer.
+	 */
 	public final ServiceErrorWriter getErrorWriter(){
 		return errorWriter;
 	}
 
-	public final void setErrorWriter(ServiceErrorWriter errorWriter){
+	/**
+	 * Set the object to use in order to report errors to the user in replacement of the expected result.
+	 * 
+	 * @param errorWriter	Error writer to use. (if NULL, nothing will be done)
+	 */
+	public final void setErrorWriter(final ServiceErrorWriter errorWriter){
 		if (errorWriter != null){
 			this.errorWriter = errorWriter;
 			getUWS().setErrorWriter(errorWriter);
@@ -169,29 +410,36 @@ public class TAP implements VOSIResource {
 	public String getCapability(){
 		StringBuffer xml = new StringBuffer();
 
-		xml.append("<capability standardID=\"").append(getStandardID()).append("\" xsi:type=\"tr:TableAccess\">\n");
+		// Header:
+		xml.append("<capability ").append(VOSerializer.formatAttribute("standardID", getStandardID())).append(" xsi:type=\"tr:TableAccess\">\n");
+
+		// TAP access:
 		xml.append("\t<interface role=\"std\" xsi:type=\"vs:ParamHTTP\">\n");
-		xml.append("\t\t<accessURL use=\"base\">").append(getAccessURL()).append("</accessURL>\n");
+		xml.append("\t\t<accessURL use=\"base\">").append(VOSerializer.formatText(getAccessURL())).append("</accessURL>\n");
 		xml.append("\t</interface>\n");
+
+		// Language description:
 		xml.append("\t<language>\n");
 		xml.append("\t\t<name>ADQL</name>\n");
 		xml.append("\t\t<version>2.0</version>\n");
 		xml.append("\t\t<description>ADQL 2.0</description>\n");
 		xml.append("\t</language>\n");
 
+		// Available output formats:
 		Iterator<OutputFormat> itFormats = service.getOutputFormats();
 		OutputFormat formatter;
 		while(itFormats.hasNext()){
 			formatter = itFormats.next();
 			xml.append("\t<outputFormat>\n");
-			xml.append("\t\t<mime>").append(formatter.getMimeType()).append("</mime>\n");
+			xml.append("\t\t<mime>").append(VOSerializer.formatText(formatter.getMimeType())).append("</mime>\n");
 			if (formatter.getShortMimeType() != null)
-				xml.append("\t\t<alias>").append(formatter.getShortMimeType()).append("</alias>\n");
+				xml.append("\t\t<alias>").append(VOSerializer.formatText(formatter.getShortMimeType())).append("</alias>\n");
 			if (formatter.getDescription() != null)
-				xml.append("\t\t<description>").append(formatter.getDescription()).append("</description>\n");
+				xml.append("\t\t<description>").append(VOSerializer.formatText(formatter.getDescription())).append("</description>\n");
 			xml.append("\t</outputFormat>\n");
 		}
 
+		// Retention period (for asynchronous jobs):
 		int[] retentionPeriod = service.getRetentionPeriod();
 		if (retentionPeriod != null && retentionPeriod.length >= 2){
 			if (retentionPeriod[0] > -1 || retentionPeriod[1] > -1){
@@ -204,6 +452,7 @@ public class TAP implements VOSIResource {
 			}
 		}
 
+		// Execution duration (still for asynchronous jobs):
 		int[] executionDuration = service.getExecutionDuration();
 		if (executionDuration != null && executionDuration.length >= 2){
 			if (executionDuration[0] > -1 || executionDuration[1] > -1){
@@ -216,19 +465,21 @@ public class TAP implements VOSIResource {
 			}
 		}
 
+		// Output/Result limit:
 		int[] outputLimit = service.getOutputLimit();
 		LimitUnit[] outputLimitType = service.getOutputLimitType();
 		if (outputLimit != null && outputLimit.length >= 2 && outputLimitType != null && outputLimitType.length >= 2){
 			if (outputLimit[0] > -1 || outputLimit[1] > -1){
 				xml.append("\t<outputLimit>\n");
 				if (outputLimit[0] > -1)
-					xml.append("\t\t<default unit=\"").append(outputLimitType[0]).append("\">").append(outputLimit[0]).append("</default>\n");
+					xml.append("\t\t<default ").append(VOSerializer.formatAttribute("unit", outputLimitType[0].toString())).append(">").append(outputLimit[0]).append("</default>\n");
 				if (outputLimit[1] > -1)
-					xml.append("\t\t<hard unit=\"").append(outputLimitType[1]).append("\">").append(outputLimit[1]).append("</hard>\n");
+					xml.append("\t\t<hard ").append(VOSerializer.formatAttribute("unit", outputLimitType[1].toString())).append(">").append(outputLimit[1]).append("</hard>\n");
 				xml.append("\t</outputLimit>\n");
 			}
 		}
 
+		// Upload capabilities and limits:
 		if (service.uploadEnabled()){
 			// Write upload methods: INLINE, HTTP, FTP:
 			xml.append("<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#inline\" />");
@@ -245,92 +496,189 @@ public class TAP implements VOSIResource {
 				if (uploadLimit[0] > -1 || uploadLimit[1] > -1){
 					xml.append("\t<uploadLimit>\n");
 					if (uploadLimit[0] > -1)
-						xml.append("\t\t<default unit=\"").append(uploadLimitType[0]).append("\">").append(uploadLimit[0]).append("</default>\n");
+						xml.append("\t\t<default ").append(VOSerializer.formatAttribute("unit", uploadLimitType[0].toString())).append(">").append(uploadLimit[0]).append("</default>\n");
 					if (uploadLimit[1] > -1)
-						xml.append("\t\t<hard unit=\"").append(uploadLimitType[1]).append("\">").append(uploadLimit[1]).append("</hard>\n");
+						xml.append("\t\t<hard ").append(VOSerializer.formatAttribute("unit", uploadLimitType[1].toString())).append(">").append(uploadLimit[1]).append("</hard>\n");
 					xml.append("\t</uploadLimit>\n");
 				}
 			}
 		}
 
+		// Footer:
 		xml.append("\t</capability>");
 
 		return xml.toString();
 	}
 
-	public final UWSService getUWS(){
-		TAPResource res = getASync();
-		if (res != null)
-			return ((ASync)res).getUWS();
-		else
-			return null;
-	}
+	/* ************************************* */
+	/* MANAGEMENT OF THIS RESOURCE'S CONTENT */
+	/* ************************************* */
 
 	/**
-	 * @return The homePageURI.
+	 * <p>Get the URL or the file path of a custom home page.</p>
+	 * 
+	 * <p>The home page will be displayed when this resource is directly requested.</p>
+	 * 
+	 * @return	URL or file path of the file to display as home page,
+	 *        	or NULL if no custom home page has been specified.
 	 */
 	public final String getHomePageURI(){
 		return homePageURI;
 	}
 
-	public final void setHomePageURI(String uri){
+	/**
+	 * <p>Set the URL or the file path of a custom home page.</p>
+	 * 
+	 * <p>The home page will be displayed when this resource is directly requested.</p>
+	 * 
+	 * @param uri	URL or file path of the file to display as home page, or NULL to display the default home page.
+	 */
+	public final void setHomePageURI(final String uri){
 		homePageURI = (uri != null) ? uri.trim() : uri;
 		if (homePageURI != null && homePageURI.length() == 0)
 			homePageURI = null;
 	}
 
-	public void init(ServletConfig config) throws ServletException{
-		for(TAPResource res : resources.values())
-			res.init(config);
+	/**
+	 * <p>Get the MIME type of the custom home page.</p>
+	 * 
+	 * <p>
+	 * 	By default, it is the same as the default home page: "text/html".
+	 * </p>
+	 * 
+	 * @return	MIME type of the custom home page.
+	 */
+	public final String getHomePageMimeType(){
+		return homePageMimeType;
 	}
 
-	public void destroy(){
-		for(TAPResource res : resources.values())
-			res.destroy();
+	/**
+	 * <p>Set the MIME type of the custom home page.</p>
+	 * 
+	 * <p>A NULL value will be considered as "text/html".</p>
+	 * 
+	 * @param mime	MIME type of the custom home page.
+	 */
+	public final void setHomePageMimeType(final String mime){
+		homePageMimeType = (mime == null || mime.trim().length() == 0) ? "text/html" : mime.trim();
 	}
 
-	public void executeRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
-		response.setContentType("text/plain");
+	/**
+	 * <p>Generate a unique ID for the given request.</p>
+	 * 
+	 * <p>By default, a timestamp is returned.</p>
+	 * 
+	 * @param request	Request whose an ID is asked.
+	 * 
+	 * @return	The ID of the given request.
+	 * 
+	 * @since 2.0
+	 */
+	protected synchronized String generateRequestID(final HttpServletRequest request){
+		String id;
+		do{
+			id = System.currentTimeMillis() + "";
+		}while(lastRequestID != null && lastRequestID.startsWith(id));
+		lastRequestID = id;
+		return id;
+	}
 
-		if (tapBaseURL == null)
+	/**
+	 * <p>Execute the given request in the TAP service by forwarding it to the appropriate resource.</p>
+	 * 
+	 * <h3>Home page</h3>
+	 * <p>
+	 * 	If the appropriate resource is the home page, the request is not propagated and
+	 * 	this class/resource displays directly the home page in the given response by calling {@link #writeHomePage(HttpServletResponse, JobOwner)}.
+	 * 	The default implementation of this function takes 2 cases into account:
+	 * </p>
+	 * <ol>
+	 * 	<li><b>A custom home page has been specified</b> using {@link #setHomePageURI(String)}. In this case, the content of the URL or file path will
+	 * 	                                                 be directly copied into the HTTP response. The content type of the response must be specified by
+	 * 	                                                 {@link #setHomePageMimeType(String)} ; by default, it is "text/html".</li>
+	 * 	<li><b>Default home page.</b> When no custom home page has been specified, a default content is displayed. It is an HTML document which merely
+	 * 	                              lists all resources available in this TAP service.</li>
+	 * </ol>
+	 * 
+	 * <h3>Error/Exception management</h3>
+	 * <p>
+	 * 	Only this resource (the root) should write any errors in the response. For that, it catches any {@link Throwable} and
+	 * 	write an appropriate message in the HTTP response. The format and the content of this message is designed by the {@link ServiceErrorWriter}
+	 * 	set in this class. By changing it, it is then possible to change, for instance, the format of the error responses.
+	 * </p>
+	 * 
+	 * <h3>Request ID &amp; Log</h3>
+	 * <p>
+	 * 	Each request is identified by a unique identifier (see {@link #generateRequestID(HttpServletRequest)}).
+	 * 	This ID is used only for logging purpose. Request and jobs/threads can then be associated more easily in the logs.
+	 * 	Besides, every requests and their response are logged as INFO with this ID.
+	 * </p>
+	 * 
+	 * @param request	Request of the user to execute in this TAP service.
+	 * @param response	Object in which the result of the request must be written.
+	 * 
+	 * @throws ServletException	If any grave/fatal error occurs.
+	 * @throws IOException		If any error occurs while reading or writing from or into a stream (and particularly the given request or response).
+	 */
+	public void executeRequest(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException{
+		if (request == null || response == null)
+			return;
+
+		// Generate a unique ID for this request execution (for log purpose only):
+		final String reqID = generateRequestID(request);
+
+		// Retrieve the resource path parts:
+		String[] resourcePath = (request.getPathInfo() == null) ? null : request.getPathInfo().split("/");
+		final String resourceName = (resourcePath == null || resourcePath.length < 1) ? "homePage" : resourcePath[1].trim().toLowerCase();
+
+		// Log the reception of the request, only if the asked resource is not UWS (because UWS is already logging the received request):
+		if (!resourceName.equalsIgnoreCase(ASync.RESOURCE_NAME))
+			getLogger().logHttp(LogLevel.INFO, request, reqID, null, null);
+
+		// Initialize the base URL of this TAP service by guessing it from the received request:
+		if (tapBaseURL == null){
+			// initialize the base URL:
 			setTAPBaseURL(request);
+			// log the successful initialization:
+			getLogger().logUWS(LogLevel.INFO, this, "INIT", "TAP successfully initialized.", null);
+		}
 
 		JobOwner owner = null;
-		String resourceName = null;
-
 		try{
 			// Identify the user:
-			if (service.getUserIdentifier() != null)
-				owner = service.getUserIdentifier().extractUserId(new UWSUrl(request), request);
-
-			String[] resourcePath = (request.getPathInfo() == null) ? null : request.getPathInfo().split("/");
-			// Display the TAP Main Page:
-			if (resourcePath == null || resourcePath.length < 1){
-				resourceName = "homePage";
-				response.setContentType("text/html");
-				writeHomePage(response.getWriter(), owner);
+			try{
+				if (service.getUserIdentifier() != null)
+					owner = service.getUserIdentifier().extractUserId(new UWSUrl(request), request);
+			}catch(UWSException ue){
+				throw new TAPException(ue);
 			}
+
+			// Display the TAP Main Page:
+			if (resourceName.equals("homePage"))
+				writeHomePage(response, owner);
 			// or Display/Execute the selected TAP Resource:
 			else{
-				resourceName = resourcePath[1].trim().toLowerCase();
+				// search for the corresponding resource:
 				TAPResource res = resources.get(resourceName);
+				// if one is found, execute it:
 				if (res != null)
 					res.executeResource(request, response);
+				// otherwise, throw an error:
 				else
-					errorWriter.writeError("This TAP service does not have a resource named \"" + resourceName + "\" !", ErrorType.TRANSIENT, HttpServletResponse.SC_NOT_FOUND, response, request, null, "Get a TAP resource");
+					throw new TAPException("Unknown TAP resource: \"" + resourceName + "\"!", UWSException.NOT_IMPLEMENTED);
 			}
 
-			service.getLogger().httpRequest(request, owner, resourceName, HttpServletResponse.SC_OK, "[OK]", null);
-
 			response.flushBuffer();
-		}catch(IOException ioe){
-			errorWriter.writeError(ioe, response, request, owner, (resourceName == null) ? "Writing the TAP home page" : ("Executing the TAP resource " + resourceName));
-		}catch(UWSException ue){
-			errorWriter.writeError(ue, response, request, owner, (resourceName == null) ? "Writing the TAP home page" : ("Executing the TAP resource " + resourceName));
-		}catch(TAPException te){
-			writeError(te, response);
+
+			// Log the successful execution of the action, only if the asked resource is not UWS (because UWS is already logging the received request):
+			if (!resourceName.equalsIgnoreCase(ASync.RESOURCE_NAME))
+				getLogger().logHttp(LogLevel.INFO, response, reqID, owner, "HTTP " + UWSException.OK + " - Action \"" + resourceName + "\" successfully executed.", null);
+
 		}catch(Throwable t){
-			errorWriter.writeError(t, response, request, owner, (resourceName == null) ? "Writing the TAP home page" : ("Executing the TAP resource " + resourceName));
+			// Write the error in the response and return the appropriate HTTP status code:
+			errorWriter.writeError(t, response, request, reqID, owner, resourceName);
+			// Log the error:
+			getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\", because: " + t.getMessage(), t);
 		}finally{
 			// Notify the queue of the asynchronous jobs that a new connection is available:
 			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME) && service.getFactory().countFreeConnections() >= 1)
@@ -338,9 +686,35 @@ public class TAP implements VOSIResource {
 		}
 	}
 
-	public void writeHomePage(final PrintWriter writer, final JobOwner owner) throws IOException{
+	/**
+	 * <p>Write the content of the home page in the given writer.</p>
+	 * 
+	 * <p>This content can be:</p>
+	 * <ul>
+	 * 	<li><b>a distance document</b> if a URL has been provided to this class using {@link #setHomePageURI(String)}.
+	 * 	                               In this case, the content of the distant document is copied in the given writer.
+	 * 	                               No redirection is done.</li>
+	 * 	<li><b>a local file</b> if a file path has been provided to this class using {@link #setHomePageURI(String)}.
+	 * 	                        In this case, the content of the local file is copied in the given writer.</li>
+	 * 	<li><b>a default content</b> if no custom home page has been specified using {@link #setHomePageURI(String)}.
+	 * 	                             This default home page is hard-coded in this function and displays just an HTML list of
+	 * 	                             links. There is one link for each resources of this TAP service.</li>
+	 * </ul>
+	 * 
+	 * @param response	{@link HttpServletResponse} in which the home page must be written.
+	 * @param owner		The identified user who asked this home page.
+	 * 
+	 * @throws IOException	If any error occurs while writing the home page in the given HTTP response.
+	 */
+	public void writeHomePage(final HttpServletResponse response, final JobOwner owner) throws IOException{
+		PrintWriter writer = response.getWriter();
+
 		// By default, list all available resources:
 		if (homePageURI == null){
+			// Set the content type: HTML document
+			response.setContentType("text/html");
+
+			// Write the home page:
 			writer.println("<html><head><title>TAP HOME PAGE</title></head><body><h1 style=\"text-align: center\">TAP HOME PAGE</h1><h2>Available resources:</h2><ul>");
 			for(TAPResource res : resources.values())
 				writer.println("<li><a href=\"" + tapBaseURL + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
@@ -348,110 +722,24 @@ public class TAP implements VOSIResource {
 		}
 		// or Display the specified home page:
 		else{
+			response.setContentType(homePageMimeType);
+
+			// Get an input toward the custom home page:
 			BufferedInputStream input = null;
 			try{
+				// CASE: URL => distant document
 				input = new BufferedInputStream((new URL(homePageURI)).openStream());
 			}catch(MalformedURLException mue){
+				// CASE: file path => local file
 				input = new BufferedInputStream(new FileInputStream(new File(homePageURI)));
 			}
-			if (input == null)
-				throw new IOException("Incorrect TAP home page URI !");
+
+			// Copy the content of the input into the given writer:
 			byte[] buffer = new byte[255];
 			int nbReads = 0;
 			while((nbReads = input.read(buffer)) > 0)
 				writer.print(new String(buffer, 0, nbReads));
 		}
-	}
-
-	public void writeError(TAPException ex, HttpServletResponse response) throws ServletException, IOException{
-		service.getLogger().error(ex);
-		response.reset();
-		response.setStatus(ex.getHttpErrorCode());
-		response.setContentType("text/xml");
-		writeError(ex, response.getWriter());
-	}
-
-	protected void writeError(TAPException ex, PrintWriter output) throws ServletException, IOException{
-		output.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-		output.println("<VOTABLE xmlns=\"http://www.ivoa.net/xml/VOTable/v1.2\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VOTable/v1.2\" version=\"1.2\">");
-		output.println("\t<RESOURCE type=\"results\">");
-
-		// Print the error:
-		output.println("\t\t<INFO name=\"QUERY_STATUS\" value=\"ERROR\">");
-		output.print("\t\t\t<![CDATA[ ");
-		if (ex.getExecutionStatus() != null)
-			output.print("[WHILE " + ex.getExecutionStatus() + "] ");
-		output.print(ex.getMessage().replace('«', '\"').replace('»', '\"'));
-		output.println("]]>\t\t</INFO>");
-
-		// Print the current date:
-		DateFormat dateFormat = new SimpleDateFormat(UWSJob.DEFAULT_DATE_FORMAT);
-		output.print("\t\t<INFO name=\"DATE\" value=\"");
-		output.print(dateFormat.format(new Date()));
-		output.println("\" />");
-
-		// Print the provider (if any):
-		if (service.getProviderName() != null){
-			output.print("\t\t<INFO name=\"PROVIDER\" value=\"");
-			output.print(service.getProviderName());
-			if (service.getProviderDescription() != null){
-				output.print("\">\n\t\t\t<![CDATA[");
-				output.print(service.getProviderDescription());
-				output.println("]]>\n\t\t</INFO>");
-			}else
-				output.println("\" />");
-		}
-
-		// Print the query (if any):
-		if (ex.getQuery() != null){
-			output.print("\t\t<INFO name=\"QUERY\">\n\t\t\t<![CDATA[");
-			output.println(ex.getQuery());
-			output.println("]]>\t\t</INFO>");
-		}
-
-		output.println("\t</RESOURCE>");
-		output.println("</VOTABLE>");
-
-		output.flush();
-	}
-
-	public final boolean addResource(TAPResource newResource){
-		if (newResource == null)
-			return false;
-		resources.put(newResource.getName(), newResource);
-		return true;
-	}
-
-	public final boolean addResource(String resourceId, TAPResource newResource){
-		if (newResource == null)
-			return false;
-		resources.put((resourceId == null) ? newResource.getName() : resourceId, newResource);
-		return true;
-	}
-
-	public final int getNbResources(){
-		return resources.size();
-	}
-
-	public final TAPResource getResource(String resourceId){
-		return resources.get(resourceId);
-	}
-
-	public final boolean hasResource(String resourceId){
-		return resources.containsKey(resourceId);
-	}
-
-	public final TAPResource removeResource(String resourceId){
-		return resources.remove(resourceId);
-	}
-
-	public boolean updateTAPMetadata(){
-		TAPMetadata metadata = service.getTAPMetadata();
-		if (metadata != null){
-			resources.put(metadata.getName(), metadata);
-			return true;
-		}
-		return false;
 	}
 
 }
