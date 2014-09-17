@@ -66,7 +66,7 @@ import adql.db.DBTable;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (09/2014)
  */
 public class TAPColumn implements DBColumn {
 
@@ -131,7 +131,7 @@ public class TAPColumn implements DBColumn {
 	protected final ArrayList<TAPForeignKey> lstSources;
 
 	/**
-	 * <p>Build a {@link TAPColumn} instance with the given ADQL name.</p>
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name.</p>
 	 * 
 	 * <p><i>Note:
 	 * 	The DB name is set by default with the ADQL name. To set the DB name,
@@ -185,6 +185,26 @@ public class TAPColumn implements DBColumn {
 	}
 
 	/**
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name and description.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 */
+	public TAPColumn(String columnName, String description){
+		this(columnName, (TAPType)null, description);
+	}
+
+	/**
 	 * <p>Build a {@link TAPColumn} instance with the given ADQL name, datatype and description.</p>
 	 * 
 	 * <p><i>Note:
@@ -212,7 +232,28 @@ public class TAPColumn implements DBColumn {
 	}
 
 	/**
-	 * <p>Build a {@link TAPColumn} instance with the given field.</p>
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name, description and unit.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 */
+	public TAPColumn(String columnName, String description, String unit){
+		this(columnName, null, description, unit);
+	}
+
+	/**
+	 * <p>Build a {@link TAPColumn} instance with the given ADQL name, type, description and unit.</p>
 	 * 
 	 * <p><i>Note:
 	 * 	The DB name is set by default with the ADQL name. To set the DB name,
@@ -240,7 +281,35 @@ public class TAPColumn implements DBColumn {
 	}
 
 	/**
-	 * <p>Build a {@link TAPColumn} instance with the given field.</p>
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given fields.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 *	The datatype is set by calling the function {@link #setDatatype(TAPType)} which does do
+	 *	anything if the given datatype is NULL.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 * @param ucd			UCD describing the scientific content of this column.
+	 * @param utype			UType associating this column with a data-model.
+	 */
+	public TAPColumn(String columnName, String description, String unit, String ucd, String utype){
+		this(columnName, null, description, unit, ucd, utype);
+	}
+
+	/**
+	 * <p>Build a {@link TAPColumn} instance with the given fields.</p>
 	 * 
 	 * <p><i>Note:
 	 * 	The DB name is set by default with the ADQL name. To set the DB name,
