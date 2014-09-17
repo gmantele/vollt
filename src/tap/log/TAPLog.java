@@ -79,7 +79,10 @@ public interface TAPLog extends UWSLog {
 	 * 	<li>SYNC_INIT (with "obj" as an instance of {@link TAPParameters})</li>
 	 * 	<li>ASYNC_INIT (with a NULL "obj")</li>
 	 * 	<li>SYNC_START (with "obj" as an instance of {@link TAPSyncJob})</li>
-	 * 	<li>UPLOAD (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>UPLOADING (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>PARSING (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>EXECUTING (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>WRITING_RESULT (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>FORMAT (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>START_STEP (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>END_EXEC (with "obj" as an instance of {@link TAPExecutionReport})</li>

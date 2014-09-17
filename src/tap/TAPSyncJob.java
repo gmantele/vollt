@@ -229,16 +229,19 @@ public class TAPSyncJob {
 			// TAP EXCEPTION:
 			else if (error instanceof TAPException){
 				// log the error:
-				service.getLogger().logTAP(LogLevel.ERROR, this, "SYNC_END", "An error occured while executing the query of the synchronous job " + ID + ": " + error.getMessage(), error);
+				service.getLogger().logTAP(LogLevel.ERROR, this, "SYNC_END", "An error occured while executing the query of the synchronous job " + ID + ".", error);
 				// report the error to the user:
 				throw (TAPException)error;
 			}
 			// ANY OTHER EXCEPTION:
 			else{
 				// log the error:
-				service.getLogger().logTAP(LogLevel.FATAL, this, "SYNC_END", "An unexpected error has stopped the execution of the synchronous job " + ID + ": " + error.getMessage(), error);
+				service.getLogger().logTAP(LogLevel.FATAL, this, "SYNC_END", "An unexpected error has stopped the execution of the synchronous job " + ID + ".", error);
 				// report the error to the user:
-				throw new TAPException(error);
+				if (error instanceof Error)
+					throw (Error)error;
+				else
+					throw new TAPException(error);
 			}
 		}else
 			service.getLogger().logTAP(LogLevel.INFO, this, "SYNC_END", "The synchronous job " + ID + " successfully ended.", null);
@@ -340,10 +343,13 @@ public class TAPSyncJob {
 				// Log the end of the job:
 				if (e instanceof InterruptedException)
 					// Abortion:
-					executor.getLogger().logThread(LogLevel.INFO, this, "END", "Synchronous thread \"" + getId() + "\" cancelled.", null);
+					executor.getLogger().logThread(LogLevel.INFO, this, "END", "Synchronous thread \"" + ID + "\" cancelled.", null);
+				else if (e instanceof Error)
+					// GRAVE error:
+					executor.getLogger().logThread(LogLevel.FATAL, this, "END", "Synchronous thread \"" + ID + "\" ended with a FATAL error.", exception);
 				else
 					// Error:
-					executor.getLogger().logThread(LogLevel.ERROR, this, "END", "Synchronous thread \"" + getId() + "\" ended with an error.", exception);
+					executor.getLogger().logThread(LogLevel.ERROR, this, "END", "Synchronous thread \"" + ID + "\" ended with an error.", exception);
 			}
 		}
 

@@ -36,7 +36,6 @@ import uws.job.ErrorType;
 import uws.job.user.JobOwner;
 import uws.service.error.DefaultUWSErrorWriter;
 import uws.service.error.ServiceErrorWriter;
-import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Default implementation of {@link ServiceErrorWriter} for a TAP service.</p>
@@ -109,12 +108,9 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 			writeError(t.getMessage(), type, httpErrorCode, response, request, reqID, user, action);
 		}
 		// Otherwise, log it and write a message to the user:
-		else{
-			// log the error as GRAVE/FATAL (because unexpected/unmanaged):
-			logger.logTAP(LogLevel.FATAL, null, null, "[REQUEST N°" + reqID + "] " + t.getMessage(), t);
+		else
 			// write a message to the user:
-			writeError("INTERNAL SERVER ERROR! Sorry, this error is unexpected and no explaination can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following REQ_ID).", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
-		}
+			writeError("INTERNAL SERVER ERROR! Sorry, this error is grave and unexpected. No explaination can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following REQ_ID).", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
 	}
 
 	@Override

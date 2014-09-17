@@ -1481,9 +1481,10 @@ public class JDBCConnection implements DBConnection {
 			DatabaseMetaData dbMeta = connection.getMetaData();
 
 			// 1. Create the upload schema, if it does not already exist:
-			if (!isSchemaExisting(tableDef.getDBSchemaName(), dbMeta))
+			if (!isSchemaExisting(tableDef.getDBSchemaName(), dbMeta)){
 				stmt.executeUpdate("CREATE SCHEMA " + translator.getQualifiedSchemaName(tableDef) + ";");
-
+				logger.logDB(LogLevel.INFO, this, "SCHEMA_CREATED", "Schema \"" + tableDef.getADQLSchemaName() + "\" (in DB: " + translator.getQualifiedSchemaName(tableDef) + ") created.", null);
+			}
 			// 1bis. Ensure the table does not already exist and if it is the case, throw an understandable exception:
 			else if (isTableExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), dbMeta)){
 				DBException de = new DBException("Impossible to create the user uploaded table in the database: " + translator.getQualifiedTableName(tableDef) + "! This table already exists.");
@@ -1515,6 +1516,9 @@ public class JDBCConnection implements DBConnection {
 
 			// Commit the transaction:
 			commit();
+
+			// Log the end:
+			logger.logDB(LogLevel.INFO, this, "TABLE_CREATED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") created.", null);
 
 			return true;
 
@@ -1632,6 +1636,12 @@ public class JDBCConnection implements DBConnection {
 			// Execute the update:
 			stmt = connection.createStatement();
 			int cnt = stmt.executeUpdate("DROP TABLE " + translator.getQualifiedTableName(tableDef) + ";");
+
+			// Log the end:
+			if (cnt == 0)
+				logger.logDB(LogLevel.INFO, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") dropped.", null);
+			else
+				logger.logDB(LogLevel.ERROR, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") NOT dropped.", null);
 
 			// Ensure the update is successful:
 			return (cnt == 0);

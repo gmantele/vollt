@@ -445,7 +445,7 @@ public class ADQLExecutor {
 
 		// Upload them, if needed:
 		if (tables.length > 0){
-			logger.logTAP(LogLevel.INFO, report, "UPLOAD", "Loading uploaded tables (" + tables.length + ")...", null);
+			logger.logTAP(LogLevel.INFO, report, "UPLOADING", "Loading uploaded tables (" + tables.length + ")", null);
 			try{
 				uploadSchema = service.getFactory().createUploader(dbConn).upload(tables);
 			}finally{
@@ -478,6 +478,9 @@ public class ADQLExecutor {
 	 * @throws TAPException				If the TAP factory is unable to create the ADQL factory or the query checker.
 	 */
 	protected ADQLQuery parseADQL() throws ParseException, InterruptedException, TAPException{
+		// Log the start of the parsing:
+		logger.logTAP(LogLevel.INFO, report, "PARSING", "Parsing ADQL: " + tapParams.getQuery().replaceAll("(\t|\r?\n)+", " "), null);
+
 		// Get the ADQL factory:
 		ADQLQueryFactory queryFactory = service.getFactory().createQueryFactory();
 
@@ -526,7 +529,13 @@ public class ADQLExecutor {
 	 * @see {@link DBConnection#executeQuery(ADQLQuery)}
 	 */
 	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, TAPException{
+		// Log the start of execution:
+		logger.logTAP(LogLevel.INFO, report, "EXECUTING", "Executing ADQL: " + adql.toString().replaceAll("(\t|\r?\n)+", " "), null);
+
+		// Execute the ADQL query:
 		TableIterator result = dbConn.executeQuery(adql);
+
+		// Log the success or failure:
 		if (result == null)
 			logger.logTAP(LogLevel.INFO, report, "END_QUERY", "Query execution aborted after " + (System.currentTimeMillis() - startStep) + "ms!", null);
 		else
@@ -552,6 +561,9 @@ public class ADQLExecutor {
 	 * @see #writeResult(TableIterator, OutputFormat, OutputStream)
 	 */
 	protected final void writeResult(final TableIterator queryResult) throws InterruptedException, TAPException, UWSException{
+		// Log the start of the writing:
+		logger.logTAP(LogLevel.INFO, report, "WRITING_RESULT", "Writing the query result", null);
+
 		// Get the appropriate result formatter:
 		OutputFormat formatter = getFormatter();
 

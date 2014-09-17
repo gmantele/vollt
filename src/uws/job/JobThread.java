@@ -391,7 +391,9 @@ public abstract class JobThread extends Thread {
 
 		}catch(Throwable t){
 			// Build the error:
-			if (t.getMessage() == null || t.getMessage().trim().isEmpty())
+			if (t instanceof Error)
+				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, "A FATAL DEEP ERROR OCCURED WHILE EXECUTING THIS QUERY! This error is reported in the service logs.", ErrorType.FATAL);
+			else if (t.getMessage() == null || t.getMessage().trim().isEmpty())
 				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t.getClass().getName(), ErrorType.FATAL);
 			else
 				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, ErrorType.FATAL);
@@ -402,18 +404,19 @@ public abstract class JobThread extends Thread {
 			// Publish the error if any has occurred:
 			if (lastError != null){
 				// Log the error:
-				logger.logThread(LogLevel.ERROR, this, "END", "Thread \"" + getId() + "\" ended with an error.", lastError);
+				LogLevel logLevel = (lastError.getCause() != null && lastError.getCause() instanceof Error) ? LogLevel.FATAL : LogLevel.ERROR;
+				logger.logThread(logLevel, this, "END", "Thread \"" + getId() + "\" ended with an error.", lastError);
 				// Set the error into the job:
 				try{
 					setError(lastError);
 				}catch(UWSException ue){
 					try{
-						logger.logThread(LogLevel.ERROR, this, "SET_ERROR", "[1st Attempt] Problem in JobThread.setError(UWSException), while setting the execution error of the job " + job.getJobId() + ". A last attempt will be done.", ue);
+						logger.logThread(logLevel, this, "SET_ERROR", "[1st Attempt] Problem in JobThread.setError(UWSException), while setting the execution error of the job " + job.getJobId() + ". A last attempt will be done.", ue);
 						setError(new ErrorSummary((lastError.getCause() != null) ? lastError.getCause().getMessage() : lastError.getMessage(), lastError.getUWSErrorType()));
 					}catch(UWSException ue2){
-						logger.logThread(LogLevel.ERROR, this, "SET_ERROR", "[2nd and last Attempt] Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId() + ". This error can not be reported to the user, but it will be reported in the log in the JOB context.", ue2);
+						logger.logThread(logLevel, this, "SET_ERROR", "[2nd and last Attempt] Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId() + ". This error can not be reported to the user, but it will be reported in the log in the JOB context.", ue2);
 						// Note: no need of a level 3: if the second attempt fails, it means the job is in a wrong phase and no error summary can never be set ; further attempt won't change anything!
-						logger.logJob(LogLevel.ERROR, job, "EXECUTING", "An error has interrupted the execution of the job \"" + job.getJobId() + "\". Here is its summary: " + lastError.getMessage(), lastError);
+						logger.logJob(logLevel, job, "EXECUTING", "An error has interrupted the execution of the job \"" + job.getJobId() + "\". Here is its summary: " + lastError.getMessage(), lastError);
 					}
 				}
 			}else

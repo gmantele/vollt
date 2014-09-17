@@ -115,7 +115,7 @@ public class Sync implements TAPResource {
 				return true;
 			}catch(TAPException te){
 				throw te;
-			}catch(Throwable t){
+			}catch(Exception t){
 				service.getLogger().logTAP(LogLevel.FATAL, params, "SYNC_INIT", "Unexpected error while executing the given ADQL query!", t);
 				throw new TAPException("Unexpected error while executing the given ADQL query!");
 			}
