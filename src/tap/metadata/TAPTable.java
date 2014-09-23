@@ -872,7 +872,7 @@ public class TAPTable implements DBTable {
 		copy.setSchema(schema);
 		Collection<TAPColumn> collColumns = columns.values();
 		for(TAPColumn col : collColumns)
-			copy.addColumn((TAPColumn)col.copy());
+			copy.addColumn((TAPColumn)col.copy(col.getDBName(), col.getADQLName(), null));
 		copy.setDescription(description);
 		copy.setOtherData(otherData);
 		copy.setType(type);
