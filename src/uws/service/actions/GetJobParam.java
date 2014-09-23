@@ -49,7 +49,7 @@ import uws.service.log.UWSLog.LogLevel;
  * The serializer is choosen in function of the HTTP Accept header.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (09/2014)
  */
 public class GetJobParam extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -137,7 +137,7 @@ public class GetJobParam extends UWSAction {
 				InputStream input = null;
 				try{
 					input = uws.getFileManager().getErrorInput(error, job);
-					UWSToolBox.write(input, "text/plain", uws.getFileManager().getErrorSize(error, job), response);
+					UWSToolBox.write(input, getUWS().getErrorWriter().getErrorDetailsMIMEType(), uws.getFileManager().getErrorSize(error, job), response);
 				}catch(IOException ioe){
 					getLogger().logUWS(LogLevel.ERROR, error, "GET_ERROR", "Can not read the details of the error summary of the job \"" + job.getJobId() + "\"!", ioe);
 					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the error details (job ID: " + job.getJobId() + ").");

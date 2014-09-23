@@ -111,7 +111,6 @@ public class TAP implements VOSIResource {
 
 		res = new ASync(service);
 		resources.put(res.getName(), res);
-		getUWS().setErrorWriter(errorWriter);
 
 		TAPMetadata metadata = service.getTAPMetadata();
 		if (metadata != null)

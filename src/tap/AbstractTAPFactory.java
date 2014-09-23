@@ -29,6 +29,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import tap.db.DBConnection;
+import tap.error.DefaultTAPErrorWriter;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
@@ -40,6 +41,7 @@ import uws.job.Result;
 import uws.job.user.JobOwner;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
+import uws.service.error.ServiceErrorWriter;
 import adql.db.DBChecker;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
@@ -50,9 +52,11 @@ import adql.query.ADQLQuery;
  * Only the functions related with the database connection stay abstract.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (09/2014)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
+
+	protected final ServiceErrorWriter errorWriter;
 
 	/**
 	 * Build a basic TAPFactory.
@@ -62,10 +66,33 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 
 	 * @throws NullPointerException	If the given {@link ServiceConnection} is NULL.
 	 * 
-	 * @see {@link TAPFactory#TAPFactory(ServiceConnection)}
+	 * @see AbstractTAPFactory#AbstractTAPFactory(ServiceConnection, ServiceErrorWriter)
 	 */
 	protected AbstractTAPFactory(ServiceConnection service) throws NullPointerException{
+		this(service, new DefaultTAPErrorWriter(service));
+	}
+
+	/**
+	 * <p>Build a basic TAPFactory.
+	 * Nothing is done except setting the service connection and the given error writer.</p>
+	 * 
+	 * <p>Then the error writer will be used when creating a UWS service and a job thread.</p>
+	 * 
+	 * @param service		Configuration of the TAP service. <i>MUST NOT be NULL</i>
+	 * @param errorWriter	Object to use to format and write the errors for the user.
+	 * 
+	 * @throws NullPointerException	If the given {@link ServiceConnection} is NULL.
+	 * 
+	 * @see {@link TAPFactory#TAPFactory(ServiceConnection)}
+	 */
+	protected AbstractTAPFactory(final ServiceConnection service, final ServiceErrorWriter errorWriter) throws NullPointerException{
 		super(service);
+		this.errorWriter = errorWriter;
+	}
+
+	@Override
+	public final ServiceErrorWriter getErrorWriter(){
+		return errorWriter;
 	}
 
 	/* *************** */
@@ -192,7 +219,9 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 */
 	@Override
 	public UWSService createUWS() throws TAPException{
-		return new UWSService(this, this.service.getFileManager(), this.service.getLogger());
+		UWSService uws = new UWSService(this, this.service.getFileManager(), this.service.getLogger());
+		uws.setErrorWriter(errorWriter);
+		return uws;
 	}
 
 	/**

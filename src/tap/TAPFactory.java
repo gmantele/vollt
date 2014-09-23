@@ -40,6 +40,7 @@ import uws.job.user.JobOwner;
 import uws.service.AbstractUWSFactory;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
+import uws.service.error.ServiceErrorWriter;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
@@ -79,6 +80,17 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 
 		this.service = service;
 	}
+
+	/**
+	 * <p>Get the object to use when an error must be formatted and written to the user.</p>
+	 * 
+	 * <p>This formatted error will be either written in an HTTP response or in a job error summary.</p>
+	 * 
+	 * @return	The error writer to use.
+	 * 
+	 * @since 4.1
+	 */
+	public abstract ServiceErrorWriter getErrorWriter();
 
 	/* ******************* */
 	/* DATABASE CONNECTION */
@@ -343,7 +355,7 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 	 * <p>Create the thread which will execute the task described by the given UWSJob instance.</p>
 	 * 
 	 * <p>
-	 * 	This function is definitely implemented here and can not be overrided. The processing of
+	 * 	This function is definitely implemented here and can not be overridden. The processing of
 	 * 	an ADQL query must always be the same in a TAP service ; it is completely done by {@link AsyncThread}.
 	 * </p>
 	 * 
@@ -353,7 +365,7 @@ public abstract class TAPFactory extends AbstractUWSFactory {
 	@Override
 	public final JobThread createJobThread(final UWSJob job) throws UWSException{
 		try{
-			return new AsyncThread((TAPJob)job, createADQLExecutor());
+			return new AsyncThread((TAPJob)job, createADQLExecutor(), getErrorWriter());
 		}catch(TAPException te){
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, "Impossible to create an AsyncThread !");
 		}

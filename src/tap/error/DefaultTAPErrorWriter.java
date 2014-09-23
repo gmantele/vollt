@@ -21,6 +21,8 @@ package tap.error;
  */
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +34,9 @@ import tap.formatter.VOTableFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import uws.UWSException;
+import uws.job.ErrorSummary;
 import uws.job.ErrorType;
+import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 import uws.service.error.DefaultUWSErrorWriter;
 import uws.service.error.ServiceErrorWriter;
@@ -125,7 +129,7 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 		response.setStatus((httpErrorCode <= 0) ? 500 : httpErrorCode);
 
 		// Set the MIME type of the answer (XML for a VOTable document):
-		response.setContentType("text/xml");
+		response.setContentType("application/xml");
 
 		// List any additional information useful to report to the user:
 		HashMap<String,String> addInfos = new HashMap<String,String>();
@@ -140,6 +144,37 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 
 		// Format the error in VOTable and write the document in the given HTTP response:
 		formatter.writeError(message, addInfos, response.getWriter());
+	}
+
+	@Override
+	public void writeError(Throwable t, ErrorSummary error, UWSJob job, OutputStream output) throws IOException{
+		// Get the error message:
+		String message;
+		if (error != null && error.getMessage() != null)
+			message = error.getMessage();
+		else if (t != null)
+			message = (t.getMessage() == null) ? t.getClass().getName() : t.getMessage();
+		else
+			message = "{NO MESSAGE}";
+
+		// List any additional information useful to report to the user:
+		HashMap<String,String> addInfos = new HashMap<String,String>();
+		if (job != null){
+			addInfos.put("JOB_ID", job.getJobId());
+			if (job.getOwner() != null)
+				addInfos.put("USER", job.getOwner().getID() + ((job.getOwner().getPseudo() == null) ? "" : " (" + job.getOwner().getPseudo() + ")"));
+		}
+		if (error != null && error.getType() != null)
+			addInfos.put("ERROR_TYPE", error.getType().toString());
+		addInfos.put("ACTION", "EXECUTING");
+
+		// Format the error in VOTable and write the document in the given HTTP response:
+		formatter.writeError(message, addInfos, new PrintWriter(output));
+	}
+
+	@Override
+	public String getErrorDetailsMIMEType(){
+		return "application/xml";
 	}
 
 }

@@ -16,18 +16,36 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import uws.UWSException;
 import uws.job.JobThread;
+import uws.service.error.ServiceErrorWriter;
 
+/**
+ * Thread in charge of a TAP job execution.
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (09/2014)
+ */
 public class AsyncThread extends JobThread {
 
+	/** The only object which knows how to execute an ADQL query. */
 	protected final ADQLExecutor executor;
 
-	public AsyncThread(TAPJob j, ADQLExecutor executor) throws UWSException{
-		super(j, "Execute the ADQL query of the TAP request " + j.getJobId());
+	/**
+	 * Build a TAP asynchronous job execution.
+	 * 
+	 * @param j				Description of the job to execute.
+	 * @param executor		The object to use for the ADQL execution itself.
+	 * @param errorWriter	The object to use to format and to write an execution error for the user.
+	 * 
+	 * @throws NullPointerException	If the job parameter is missing.
+	 */
+	public AsyncThread(final TAPJob j, final ADQLExecutor executor, final ServiceErrorWriter errorWriter) throws NullPointerException{
+		super(j, "Execute the ADQL query of the TAP request " + j.getJobId(), errorWriter);
 		this.executor = executor;
 	}
 
@@ -46,6 +64,11 @@ public class AsyncThread extends JobThread {
 		}
 	}
 
+	/**
+	 * Get the description of the job that this thread is executing.
+	 * 
+	 * @return	The executed job.
+	 */
 	public final TAPJob getTAPJob(){
 		return (TAPJob)job;
 	}

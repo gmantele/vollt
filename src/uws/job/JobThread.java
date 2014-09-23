@@ -26,6 +26,7 @@ import java.util.Date;
 
 import uws.UWSException;
 import uws.UWSToolBox;
+import uws.service.error.ServiceErrorWriter;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
@@ -59,7 +60,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (09/2014)
  * 
  * @see UWSJob#start()
  * @see UWSJob#abort()
@@ -80,36 +81,80 @@ public abstract class JobThread extends Thread {
 	/** Description of what is done by this thread. */
 	protected final String taskDescription;
 
+	/**
+	 * Object to use in order to write the content of an error/exception in any output stream.
+	 * If NULL, the content will be written by {@link UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)}
+	 * (in text/plain with stack-trace).
+	 * Otherwise the content and the MIME type are determined by the error writer.
+	 * @since 4.1
+	 */
+	protected final ServiceErrorWriter errorWriter;
+
+	/** Group of threads in which this job thread will run. */
 	public final static ThreadGroup tg = new ThreadGroup("UWS_GROUP");
 
 	/**
 	 * Builds the JobThread instance which will be used by the given job to execute its task.
 	 * 
 	 * @param j				The associated job.
-	 * @param fileManager	An object to get access to UWS files (particularly: error and results file).
 	 * 
-	 * @throws UWSException	If the given job or the given file manager is null.
+	 * @throws NullPointerException	If the given job or the given file manager is null.
 	 * 
 	 * @see #getDefaultTaskDescription(UWSJob)
 	 */
-	public JobThread(UWSJob j) throws UWSException{
-		this(j, getDefaultTaskDescription(j));
+	public JobThread(final UWSJob j) throws NullPointerException{
+		this(j, getDefaultTaskDescription(j), null);
 	}
 
 	/**
 	 * Builds the JobThread instance which will be used by the given job to execute its task.
 	 * 
 	 * @param j				The associated job.
-	 * @param fileManager	An object to get access to UWS files (particularly: error and results file).
+	 * @param errorWriter	Object to use in case of error in order to format the details of the error for the .../error/details parameter.
+	 * 
+	 * @throws NullPointerException	If the given job is null.
+	 * 
+	 * @see #getDefaultTaskDescription(UWSJob)
+	 * 
+	 * @since 4.1
+	 */
+	public JobThread(final UWSJob j, final ServiceErrorWriter errorWriter) throws NullPointerException{
+		this(j, getDefaultTaskDescription(j), errorWriter);
+	}
+
+	/**
+	 * Builds the JobThread instance which will be used by the given job to execute its task.
+	 * 
+	 * @param j				The associated job.
 	 * @param task			Description of the task executed by this thread.
 	 * 
-	 * @throws UWSException	If the given job or the given file manager is null.
+	 * @throws NullPointerException	If the given job is null.
 	 */
-	public JobThread(UWSJob j, String task) throws UWSException{
+	public JobThread(final UWSJob j, final String task) throws NullPointerException{
 		super(tg, j.getJobId());
 
 		job = j;
 		taskDescription = task;
+		errorWriter = null;
+	}
+
+	/**
+	 * Builds the JobThread instance which will be used by the given job to execute its task.
+	 * 
+	 * @param j				The associated job.
+	 * @param task			Description of the task executed by this thread.
+	 * @param errorWriter	Object to use in case of error in order to format the details of the error for the .../error/details parameter.
+	 * 
+	 * @throws NullPointerException	If the given job is null.
+	 * 
+	 * @since 4.1
+	 */
+	public JobThread(final UWSJob j, final String task, final ServiceErrorWriter errorWriter) throws NullPointerException{
+		super(tg, j.getJobId());
+
+		job = j;
+		taskDescription = task;
+		this.errorWriter = errorWriter;
 	}
 
 	/**
@@ -211,6 +256,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @throws UWSException		If there is an error while publishing the given exception.
 	 * 
+	 * {@link ServiceErrorWriter#writeError(UWSJob, Throwable, String, ErrorType, OutputStream)}
 	 * {@link UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)}
 	 */
 	public void setError(final UWSException ue) throws UWSException{
@@ -218,11 +264,21 @@ public abstract class JobThread extends Thread {
 			return;
 
 		try{
+			// Set the error summary:
 			ErrorSummary error = new ErrorSummary(ue, ue.getUWSErrorType(), job.getUrl() + "/" + UWSJob.PARAM_ERROR_SUMMARY + "/details");
+
+			// Prepare the output stream:
 			OutputStream output = getFileManager().getErrorOutput(error, job);
 
-			UWSToolBox.writeErrorFile(ue, error, job, output);
+			// Format and write the error...
+			// ...using the error writer, if any:
+			if (errorWriter != null)
+				errorWriter.writeError(ue, error, job, output);
+			// ...or write a default output:
+			else
+				UWSToolBox.writeErrorFile(ue, error, job, output);
 
+			// Set the error summary inside the job:
 			setError(error);
 
 		}catch(IOException ioe){
@@ -365,7 +421,7 @@ public abstract class JobThread extends Thread {
 		UWSLog logger = job.getLogger();
 
 		// Log the start of this thread:
-		logger.logThread(LogLevel.INFO, this, "START", "Thread \"" + getId() + "\" started.", null);
+		logger.logThread(LogLevel.INFO, this, "START", "Thread \"" + getName() + "\" started.", null);
 
 		try{
 			try{
@@ -381,7 +437,7 @@ public abstract class JobThread extends Thread {
 				if (!job.stopping)
 					job.abort();
 				// Log the abortion:
-				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getId() + "\" cancelled.", null);
+				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" cancelled.", null);
 			}
 			return;
 
@@ -405,7 +461,7 @@ public abstract class JobThread extends Thread {
 			if (lastError != null){
 				// Log the error:
 				LogLevel logLevel = (lastError.getCause() != null && lastError.getCause() instanceof Error) ? LogLevel.FATAL : LogLevel.ERROR;
-				logger.logThread(logLevel, this, "END", "Thread \"" + getId() + "\" ended with an error.", lastError);
+				logger.logThread(logLevel, this, "END", "Thread \"" + getName() + "\" ended with an error.", lastError);
 				// Set the error into the job:
 				try{
 					setError(lastError);
@@ -420,7 +476,7 @@ public abstract class JobThread extends Thread {
 					}
 				}
 			}else
-				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getId() + "\" successfully ended.", null);
+				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" successfully ended.", null);
 		}
 	}
 }

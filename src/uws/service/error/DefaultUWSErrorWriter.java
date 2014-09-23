@@ -21,6 +21,7 @@ package uws.service.error;
  */
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
@@ -33,7 +34,10 @@ import org.json.JSONWriter;
 import tap.TAPException;
 import uws.AcceptHeader;
 import uws.UWSException;
+import uws.UWSToolBox;
+import uws.job.ErrorSummary;
 import uws.job.ErrorType;
+import uws.job.UWSJob;
 import uws.job.serializer.UWSSerializer;
 import uws.job.user.JobOwner;
 import uws.service.log.UWSLog;
@@ -111,6 +115,16 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 
 		// Just format and write the error message:
 		formatError(message, type, httpErrorCode, reqID, action, user, response, (request != null) ? request.getHeader("Accept") : null);
+	}
+
+	@Override
+	public void writeError(Throwable t, ErrorSummary error, UWSJob job, OutputStream output) throws IOException{
+		UWSToolBox.writeErrorFile((t instanceof Exception) ? (Exception)t : new UWSException(t), error, job, output);
+	}
+
+	@Override
+	public String getErrorDetailsMIMEType(){
+		return "text/plain";
 	}
 
 	/**
