@@ -421,7 +421,7 @@ public class TAP implements VOSIResource {
 		// Language description:
 		xml.append("\t<language>\n");
 		xml.append("\t\t<name>ADQL</name>\n");
-		xml.append("\t\t<version>2.0</version>\n");
+		xml.append("\t\t<version ivo-id=\"ivo://ivoa.net/std/ADQL#v2.0\">2.0</version>\n");
 		xml.append("\t\t<description>ADQL 2.0</description>\n");
 		xml.append("\t</language>\n");
 
