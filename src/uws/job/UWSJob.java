@@ -575,7 +575,7 @@ public class UWSJob extends SerializableUWSObject {
 			ExecutionPhase oldPhase = phase.getPhase();
 			phase.setPhase(p, force);
 
-			getLogger().logJob(LogLevel.INFO, this, "CHANGE_PHASE", "The job \"\" goes from " + oldPhase + " to " + p, null);
+			getLogger().logJob(LogLevel.INFO, this, "CHANGE_PHASE", "The job \"" + getJobId() + "\" goes from " + oldPhase + " to " + p, null);
 
 			// Notify the execution manager:
 			if (phase.isFinished() && getJobList() != null)

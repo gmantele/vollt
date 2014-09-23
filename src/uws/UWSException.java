@@ -139,7 +139,7 @@ public class UWSException extends Exception {
 	 * @param t			The thrown (and so caught) exception.
 	 */
 	public UWSException(int httpError, Throwable t){
-		this(httpError, t, null, null);
+		this(httpError, t, (t != null) ? t.getMessage() : null, null);
 	}
 
 	/**
@@ -151,7 +151,7 @@ public class UWSException extends Exception {
 	 * @param type		Type of the error (FATAL or TRANSIENT). <i>Note: If NULL, it will be considered as FATAL.</i>
 	 */
 	public UWSException(int httpError, Throwable t, ErrorType type){
-		this(httpError, t, null, type);
+		this(httpError, t, (t != null) ? t.getMessage() : null, type);
 	}
 
 	/**

@@ -530,7 +530,7 @@ public class ADQLExecutor {
 	 */
 	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, TAPException{
 		// Log the start of execution:
-		logger.logTAP(LogLevel.INFO, report, "EXECUTING", "Executing ADQL: " + adql.toString().replaceAll("(\t|\r?\n)+", " "), null);
+		logger.logTAP(LogLevel.INFO, report, "EXECUTING", "Executing ADQL: " + adql.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 
 		// Execute the ADQL query:
 		TableIterator result = dbConn.executeQuery(adql);

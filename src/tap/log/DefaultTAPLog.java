@@ -22,6 +22,7 @@ package tap.log;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 
 import tap.TAPExecutionReport;
 import tap.TAPSyncJob;
@@ -88,7 +89,18 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 
 	@Override
 	public void logDB(final LogLevel level, final DBConnection connection, final String event, final String message, final Throwable error){
+		// log the main given error:
 		log(level, "DB", event, (connection != null ? connection.getID() : null), message, error);
+
+		/* Some SQL exceptions (like BatchUpdateException) have a next exception which provides more information.
+		 * Here, the stack trace of the next exception is also logged:
+		 */
+		if (error != null && error instanceof SQLException && ((SQLException)error).getNextException() != null){
+			PrintWriter out = getOutput(level, "DB");
+			out.println("[NEXT EXCEPTION]");
+			((SQLException)error).getNextException().printStackTrace(out);
+			out.flush();
+		}
 	}
 
 	@Override
