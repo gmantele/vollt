@@ -1140,7 +1140,7 @@ public class UWSService implements UWS {
 			// Apply the redirection:
 			redirect(error.getMessage(), request, user, uwsAction, response);
 		}else
-			sendError(error, request, reqID, user, uwsAction, response);
+			sendError((Exception)error, request, reqID, user, uwsAction, response);
 	}
 
 	/**

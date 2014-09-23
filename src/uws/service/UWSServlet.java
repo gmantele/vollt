@@ -501,7 +501,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 				InputStream input = null;
 				try{
 					input = getFileManager().getErrorInput(error, job);
-					UWSToolBox.write(input, "text/plain", getFileManager().getErrorSize(error, job), resp);
+					UWSToolBox.write(input, errorWriter.getErrorDetailsMIMEType(), getFileManager().getErrorSize(error, job), resp);
 				}catch(IOException ioe){
 					getLogger().logUWS(LogLevel.ERROR, error, "GET_ERROR", "Can not read the details of the error summary of the job \"" + job.getJobId() + "\"!", ioe);
 					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the error details (job ID: " + job.getJobId() + ").");
@@ -649,7 +649,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 				throw new ServletException("Can not redirect the response! You should notify the administrator of the service (FATAL-" + reqID + "). However, while waiting a correction of this problem, you can manually go toward " + error.getMessage() + ".");
 			}
 		}else
-			sendError(error, request, reqID, user, uwsAction, response);
+			sendError((Exception)error, request, reqID, user, uwsAction, response);
 	}
 
 	/**
