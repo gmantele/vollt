@@ -160,7 +160,7 @@ public class VOTableFormat implements OutputFormat {
 
 	@Override
 	public final String getMimeType(){
-		return "text/xml";
+		return "application/xml";
 	}
 
 	@Override
@@ -599,7 +599,7 @@ public class VOTableFormat implements OutputFormat {
 				public boolean next() throws IOException{
 					irow++;
 					try{
-						if (maxrec <= 0 || irow < maxrec){
+						if (maxrec < 0 || irow < maxrec){
 							boolean hasNext = tableIt.nextRow();
 							if (hasNext){
 								for(int i = 0; i < nbCol && tableIt.hasNextCol(); i++)
