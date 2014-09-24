@@ -38,7 +38,16 @@ import uws.service.UserIdentifier;
 public interface ServiceConnection {
 
 	public static enum LimitUnit{
-		rows, bytes;
+		rows("row"),
+		bytes("byte");
+		
+		private final String str;
+		private LimitUnit(final String str){
+			this.str = str;
+		}
+		public String toString(){
+			return str;
+		}
 	}
 
 	public String getProviderName();
