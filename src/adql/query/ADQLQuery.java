@@ -38,7 +38,7 @@ import adql.search.ISearchHandler;
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (11/2013)
+ * @version 1.2 (09/2014)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -262,7 +262,12 @@ public class ADQLQuery implements ADQLObject {
 			ADQLOperand operand = item.getOperand();
 			if (item instanceof SelectAllColumns){
 				try{
-					columns.addAll(from.getDBColumns());
+					// If "{table}.*", add all columns of the specified table:
+					if (((SelectAllColumns)item).getAdqlTable() != null)
+						columns.addAll(((SelectAllColumns)item).getAdqlTable().getDBColumns());
+					// Otherwise ("*"), add all columns of all selected tables:
+					else
+						columns.addAll(from.getDBColumns());
 				}catch(ParseException pe){
 					// Here, this error should not occur any more, since it must have been caught by the DBChecker!
 				}

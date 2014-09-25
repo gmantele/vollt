@@ -20,15 +20,16 @@ import adql.query.from.ADQLTable;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 /**
  * In ADQL it corresponds to the '*' and '{tableName}.*' items in the SELECT clause.
  * It means: 'select all columns'.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.2 (09/2014)
  */
 public final class SelectAllColumns extends SelectItem {
 
@@ -106,7 +107,7 @@ public final class SelectAllColumns extends SelectItem {
 	 * @param table	An {@link ADQLTable} (MUST NOT BE NULL).
 	 */
 	public final void setAdqlTable(final ADQLTable table){
-		if (table == null){
+		if (table != null){
 			adqlTable = table;
 			query = null;
 		}
@@ -128,6 +129,7 @@ public final class SelectAllColumns extends SelectItem {
 
 			private boolean tableGot = (adqlTable == null);
 
+			@Override
 			public ADQLObject next() throws NoSuchElementException{
 				if (tableGot)
 					throw new NoSuchElementException();
@@ -135,10 +137,12 @@ public final class SelectAllColumns extends SelectItem {
 				return adqlTable;
 			}
 
+			@Override
 			public boolean hasNext(){
 				return !tableGot;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (replacer == null)
 					remove();
@@ -150,6 +154,7 @@ public final class SelectAllColumns extends SelectItem {
 					adqlTable = (ADQLTable)replacer;
 			}
 
+			@Override
 			public void remove(){
 				if (!tableGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
