@@ -118,11 +118,11 @@ public class Capabilities implements TAPResource, VOSIResource {
 		// Write the XML document header:
 		out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		out.print("<vosi:capabilities xmlns:vosi=\"http://www.ivoa.net/xml/VOSICapabilities/v1.0\"");
-		out.print(" xmlns:tr=\"http://www.ivoa.net/xml/TAP/v0.1\"");
+		out.print(" xmlns:tr=\"http://www.ivoa.net/xml/TAPRegExt/v1.0\"");
 		out.print(" xmlns:vr=\"http://www.ivoa.net/xml/VOResource/v1.0\"");
 		out.print(" xmlns:vs=\"http://www.ivoa.net/xml/VODataService/v1.0\"");
 		out.print(" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-		out.println(" xsi:schemaLocation=\"http://www.ivoa.net/xml/TAP/v0.1 http://www.ivoa.net/xml/TAP/v0.1\">");
+		out.println(" xsi:schemaLocation=\"http://www.ivoa.net/xml/VOSICapabilities/v1.0 http://www.ivoa.net/xml/VOSICapabilities/v1.0 http://www.ivoa.net/xml/TAPRegExt/v1.0 http://www.ivoa.net/xml/TAPRegExt/v1.0 http://www.ivoa.net/xml/VOResource/v1.0 http://www.ivoa.net/xml/VOResource/v1.0 http://www.ivoa.net/xml/VODataService/v1.0 http://www.ivoa.net/xml/VODataService/v1.0\">");
 
 		// Write the full list of this TAP capabilities:
 		out.print(tap.getCapability());

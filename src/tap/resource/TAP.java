@@ -438,6 +438,16 @@ public class TAP implements VOSIResource {
 			xml.append("\t</outputFormat>\n");
 		}
 
+		// Write upload methods: INLINE, HTTP, FTP:
+		if (service.uploadEnabled()){
+			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#inline\" />\n");
+			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#http\" />\n");
+			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#ftp\" />\n");
+			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-inline\" />\n");
+			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-http\" />\n");
+			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-ftp\" />\n");
+		}
+
 		// Retention period (for asynchronous jobs):
 		int[] retentionPeriod = service.getRetentionPeriod();
 		if (retentionPeriod != null && retentionPeriod.length >= 2){
@@ -478,16 +488,8 @@ public class TAP implements VOSIResource {
 			}
 		}
 
-		// Upload capabilities and limits:
+		// Upload limits
 		if (service.uploadEnabled()){
-			// Write upload methods: INLINE, HTTP, FTP:
-			xml.append("<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#inline\" />");
-			xml.append("<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#http\" />");
-			xml.append("<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#ftp\" />");
-			xml.append("<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-inline\" />");
-			xml.append("<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-http\" />");
-			xml.append("<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-ftp\" />");
-
 			// Write upload limits:
 			int[] uploadLimit = service.getUploadLimit();
 			LimitUnit[] uploadLimitType = service.getUploadLimitType();
