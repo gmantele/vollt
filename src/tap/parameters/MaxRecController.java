@@ -103,10 +103,10 @@ public class MaxRecController implements InputParamController {
 			try{
 				maxRec = Integer.parseInt(strValue);
 			}catch(NumberFormatException nfe){
-				throw new UWSException(UWSException.BAD_REQUEST, "Wrong format for the MaxRec parameter: \"" + strValue + "\"! It should be a integer value between " + TAPJob.UNLIMITED_MAX_REC + " and " + maxOutputLimit + " (Default value: " + defaultOutputLimit + ").");
+				throw new UWSException(UWSException.BAD_REQUEST, "Wrong format for the parameter \"maxrec\": \"" + strValue + "\"! It should be a integer value between " + TAPJob.UNLIMITED_MAX_REC + " and " + maxOutputLimit + " (Default value: " + defaultOutputLimit + ").");
 			}
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the MaxRec parameter: class \"" + value.getClass().getName() + "\"! It should be an integer or a string containing only an integer value.");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"maxrec\": class \"" + value.getClass().getName() + "\"! It should be an integer or a string containing only an integer value.");
 
 		// A negative output limit is considered as an unlimited output limit:
 		if (maxRec < TAPJob.UNLIMITED_MAX_REC)

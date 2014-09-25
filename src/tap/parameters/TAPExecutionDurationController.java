@@ -104,10 +104,10 @@ public class TAPExecutionDurationController implements InputParamController {
 			try{
 				duration = Long.parseLong((String)value);
 			}catch(NumberFormatException nfe){
-				throw new UWSException(UWSException.BAD_REQUEST, "Wrong format for the maximum duration parameter: \"" + value.toString() + "\"! It should be a long numeric value between " + TAPJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
+				throw new UWSException(UWSException.BAD_REQUEST, "Wrong format for the parameter \"executionduration\": \"" + value.toString() + "\"! It should be a long numeric value between " + TAPJob.UNLIMITED_DURATION + " and " + maxDuration + " (Default value: " + defaultDuration + ").");
 			}
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the maximum duration parameter: class \"" + value.getClass().getName() + "\"! It should be long or a string containing only a long value.");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"executionduration\": class \"" + value.getClass().getName() + "\"! It should be long or a string containing only a long value.");
 
 		if (duration < TAPJob.UNLIMITED_DURATION)
 			duration = TAPJob.UNLIMITED_DURATION;

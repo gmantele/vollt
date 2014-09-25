@@ -148,14 +148,14 @@ public class TAPDestructionTimeController implements InputParamController {
 			try{
 				date = UWSJob.dateFormat.parse(strValue);
 			}catch(ParseException pe){
-				throw new UWSException(UWSException.BAD_REQUEST, pe, "Wrong date format for the destruction time parameter: \"" + strValue + "\"! The format to respect is: " + UWSJob.DEFAULT_DATE_FORMAT);
+				throw new UWSException(UWSException.BAD_REQUEST, pe, "Wrong date format for the parameter \"destruction\": \"" + strValue + "\"! The format to respect is: " + UWSJob.DEFAULT_DATE_FORMAT);
 			}
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the destruction time parameter: class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date with the format \"" + UWSJob.DEFAULT_DATE_FORMAT + "\".");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"destruction\": class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date with the format \"" + UWSJob.DEFAULT_DATE_FORMAT + "\".");
 
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))
-			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the DESTRUCTION INTERVAL (since now) to " + getMaxRetentionPeriod() + " s !");
+			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the destruction interval (since now) to " + getMaxRetentionPeriod() + " s !");
 
 		return date;
 	}

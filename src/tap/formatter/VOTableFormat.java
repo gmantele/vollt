@@ -212,7 +212,9 @@ public class VOTableFormat implements OutputFormat {
 		BufferedWriter out = new BufferedWriter(writer);
 
 		// Set the root VOTABLE node:
-		out.write("<VOTABLE" + VOSerializer.formatAttribute("version", votVersion.getVersionNumber()) + VOSerializer.formatAttribute("xmlns", votVersion.getXmlNamespace()) + ">");
+		out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+		out.newLine();
+		out.write("<VOTABLE" + VOSerializer.formatAttribute("version", votVersion.getVersionNumber()) + VOSerializer.formatAttribute("xmlns", votVersion.getXmlNamespace()) + VOSerializer.formatAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance") + VOSerializer.formatAttribute("xsi:schemaLocation", votVersion.getXmlNamespace() + " " + votVersion.getSchemaLocation()) + ">");
 		out.newLine();
 
 		// The RESOURCE note MUST have a type "results":	[REQUIRED]
@@ -234,7 +236,7 @@ public class VOTableFormat implements OutputFormat {
 			Iterator<Map.Entry<String,String>> it = otherInfo.entrySet().iterator();
 			while(it.hasNext()){
 				Map.Entry<String,String> entry = it.next();
-				out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + ">" + VOSerializer.formatText(entry.getValue()) + "</INFO>");
+				out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + VOSerializer.formatAttribute("value", entry.getValue()) + "/>");
 				out.newLine();
 			}
 		}
@@ -304,7 +306,9 @@ public class VOTableFormat implements OutputFormat {
 	 */
 	protected void writeHeader(final VOTableVersion votVersion, final TAPExecutionReport execReport, final BufferedWriter out) throws IOException, TAPException{
 		// Set the root VOTABLE node:
-		out.write("<VOTABLE" + VOSerializer.formatAttribute("version", votVersion.getVersionNumber()) + VOSerializer.formatAttribute("xmlns", votVersion.getXmlNamespace()) + ">");
+		out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+		out.newLine();
+		out.write("<VOTABLE" + VOSerializer.formatAttribute("version", votVersion.getVersionNumber()) + VOSerializer.formatAttribute("xmlns", votVersion.getXmlNamespace()) + VOSerializer.formatAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance") + VOSerializer.formatAttribute("xsi:schemaLocation", votVersion.getXmlNamespace() + " " + votVersion.getSchemaLocation()) + ">");
 		out.newLine();
 
 		// The RESOURCE note MUST have a type "results":	[REQUIRED]
@@ -324,7 +328,7 @@ public class VOTableFormat implements OutputFormat {
 		// Append the ADQL query at the origin of this result:	[OPTIONAL]
 		String adqlQuery = execReport.parameters.getQuery();
 		if (adqlQuery != null){
-			out.write("<INFO name=\"QUERY\">" + VOSerializer.formatText(adqlQuery) + "</INFO>");
+			out.write("<INFO name=\"QUERY\"" + VOSerializer.formatAttribute("value", adqlQuery) + "/>");
 			out.newLine();
 		}
 

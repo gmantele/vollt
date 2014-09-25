@@ -133,11 +133,11 @@ public class StringParamController implements InputParamController {
 					if (strValue.equalsIgnoreCase(v))
 						return v;
 				}
-				throw new UWSException(UWSException.BAD_REQUEST, "Unknown value for the job parameter " + paramName + ": \"" + strValue + "\". It should be " + getExpectedFormat());
+				throw new UWSException(UWSException.BAD_REQUEST, "Unknown value for the parameter \"" + paramName + "\": \"" + strValue + "\". It should be " + getExpectedFormat());
 			}else
 				return strValue;
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter " + paramName + ": \"" + value.getClass().getName() + "\"! It should be a String.");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"" + paramName + "\": \"" + value.getClass().getName() + "\"! It should be a String.");
 	}
 
 	/**
@@ -146,7 +146,7 @@ public class StringParamController implements InputParamController {
 	 * @return	A string which describes the format expected by this controller.
 	 */
 	protected final String getExpectedFormat(){
-		if (possibleValues == null || possibleValues.length == 0){
+		if (possibleValues != null && possibleValues.length > 0){
 			StringBuffer buffer = new StringBuffer("a String value among: ");
 			for(int i = 0; i < possibleValues.length; i++)
 				buffer.append((i == 0) ? "" : ", ").append(possibleValues[i]);

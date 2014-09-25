@@ -81,7 +81,7 @@ public class TAPParameters extends UWSParameters {
 		// Multipart HTTP parameters:
 		if (isMultipartContent(request)){
 			if (!service.uploadEnabled())
-				throw new TAPException("Request error ! This TAP service has no Upload capability !");
+				throw new TAPException("Request error ! This TAP service has no Upload capability !", UWSException.BAD_REQUEST);
 
 			File uploadDir = service.getFileManager().getUploadDirectory();
 			try{
@@ -287,7 +287,7 @@ public class TAPParameters extends UWSParameters {
 		for(int i = 0; i < pairs.length; i++){
 			String[] table = pairs[i].split(",");
 			if (table.length != 2)
-				throw new TAPException("UPLOAD parameter incorrect: bad syntax! An UPLOAD parameter must contain a list of pairs separated by a ';'. Each pair is composed of 2 parts, a table name and a URI separated by a ','.");
+				throw new TAPException("UPLOAD parameter incorrect: bad syntax! An UPLOAD parameter must contain a list of pairs separated by a ';'. Each pair is composed of 2 parts, a table name and a URI separated by a ','.", UWSException.BAD_REQUEST);
 			loaders[i] = new TableLoader(table[0], table[1], multipart);
 		}
 
@@ -298,13 +298,13 @@ public class TAPParameters extends UWSParameters {
 		// Check that required parameters are not NON-NULL:
 		String requestParam = getRequest();
 		if (requestParam == null)
-			throw new TAPException("The parameter \"" + TAPJob.PARAM_REQUEST + "\" must be provided and its value must be equal to \"" + TAPJob.REQUEST_DO_QUERY + "\" or \"" + TAPJob.REQUEST_GET_CAPABILITIES + "\" !");
+			throw new TAPException("The parameter \"" + TAPJob.PARAM_REQUEST + "\" must be provided and its value must be equal to \"" + TAPJob.REQUEST_DO_QUERY + "\" or \"" + TAPJob.REQUEST_GET_CAPABILITIES + "\" !", UWSException.BAD_REQUEST);
 
 		if (requestParam.equals(TAPJob.REQUEST_DO_QUERY)){
 			if (get(TAPJob.PARAM_LANGUAGE) == null)
-				throw new TAPException("The parameter \"" + TAPJob.PARAM_LANGUAGE + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !");
+				throw new TAPException("The parameter \"" + TAPJob.PARAM_LANGUAGE + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !", UWSException.BAD_REQUEST);
 			else if (get(TAPJob.PARAM_QUERY) == null)
-				throw new TAPException("The parameter \"" + TAPJob.PARAM_QUERY + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !");
+				throw new TAPException("The parameter \"" + TAPJob.PARAM_QUERY + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !", UWSException.BAD_REQUEST);
 		}
 
 		// Check the version if needed:

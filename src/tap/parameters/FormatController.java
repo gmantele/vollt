@@ -86,11 +86,11 @@ public class FormatController implements InputParamController {
 				return getDefault();
 
 			if (service.getOutputFormat(strFormat) == null)
-				throw new UWSException(UWSException.BAD_REQUEST, "Unknown value for the job parameter format: \"" + strFormat + "\". It should be " + getAllowedFormats());
+				throw new UWSException(UWSException.BAD_REQUEST, "Unknown value for the parameter \"format\": \"" + strFormat + "\". It should be " + getAllowedFormats());
 			else
 				return strFormat;
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the format parameter: class \"" + format.getClass().getName() + "\"! It should be a String.");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"format\": class \"" + format.getClass().getName() + "\"! It should be a String.");
 	}
 
 	/**
