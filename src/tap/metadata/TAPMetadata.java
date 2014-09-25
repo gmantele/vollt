@@ -457,14 +457,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 		writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
-		// TODO Change the xsi:schemaLocation attribute with a CDS URL !
-		//writer.println("<vosi:tableset xmlns:vosi=\"http://www.ivoa.net/xml/VOSITables/v1.0\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VOSITables/v1.0 http://vo.ari.uni-heidelberg.de/docs/schemata/VODataService-v1.1.xsd\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:vod=\"http://www.ivoa.net/xml/VODataService/v1.1\">");
-		writer.println("<tableset xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:vod=\"http://www.ivoa.net/xml/VODataService/v1.1\" xsi:type=\"vod:TableSet\">");
+		/* Note: the XSD schema at http://www.ivoa.net/xml/VOSITables/v1.0 contains an incorrect targetNamespace ("http://www.ivoa.net/xml/VOSICapabilities/v1.0").
+		 *       In order to make this XML document valid, a custom location toward a correct XSD schema is used: http://vo.ari.uni-heidelberg.de/docs/schemata/VOSITables-v1.0.xsd */
+		writer.println("<vosi:tableset xmlns:vosi=\"http://www.ivoa.net/xml/VOSITables/v1.0\" xmlns:vod=\"http://www.ivoa.net/xml/VODataService/v1.1\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VODataService/v1.1 http://www.ivoa.net/xml/VODataService/v1.1 http://www.ivoa.net/xml/VOSITables/v1.0 http://vo.ari.uni-heidelberg.de/docs/schemata/VOSITables-v1.0.xsd\">");
 
 		for(TAPSchema s : schemas.values())
 			writeSchema(s, writer);
 
-		writer.println("</tableset>");
+		writer.println("</vosi:tableset>");
 
 		writer.flush();
 
