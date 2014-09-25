@@ -56,6 +56,7 @@ import adql.query.ADQLQuery;
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
+	/** The error writer to use when any error occurs while executing a resource or to format an error occurring while executing an asynchronous job. */
 	protected final ServiceErrorWriter errorWriter;
 
 	/**
@@ -104,8 +105,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	Unless the standard implementation - {@link ADQLExecutor} - does not fit exactly your needs,
 	 * 	it should not be necessary to extend this class and to extend this function (implemented here by default).
 	 * </i></p>
-	 * 
-	 * @see tap.TAPFactory#createADQLExecutor()
 	 */
 	@Override
 	public ADQLExecutor createADQLExecutor() throws TAPException{
@@ -118,8 +117,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	{@link ADQLQuery} part ; it could be the addition of one or several user defined function
 	 * 	or the modification of any ADQL function or clause specific to your implementation.
 	 * </i></p>
-	 * 
-	 * @see tap.TAPFactory#createQueryFactory()
 	 */
 	@Override
 	public ADQLQueryFactory createQueryFactory() throws TAPException{
@@ -135,8 +132,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * <p><i>Note:
 	 * 	This function can not be overrided, but {@link #createQueryChecker(Collection)} can be.
 	 * </i></p>
-	 * 
-	 * @see tap.TAPFactory#createQueryChecker(tap.metadata.TAPSchema)
 	 */
 	@Override
 	public final QueryChecker createQueryChecker(final TAPSchema uploadSchema) throws TAPException{
@@ -175,8 +170,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * @return	A new ADQL query checker.
 	 * 
 	 * @throws TAPException	If any error occurs while creating the query checker.
-	 * 
-	 * @see DBChecker
 	 */
 	protected QueryChecker createQueryChecker(final Collection<TAPTable> tables) throws TAPException{
 		return new DBChecker(tables);
@@ -190,13 +183,11 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * <p>This implementation just create an {@link Uploader} instance with the given database connection.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	This function should be overrided if the way user tables are interpreted and then created into the database
-	 * 	does not fit yours needs.
+	 * 	This function should be overrided if you need to change the DB name of the TAP_UPLOAD schema.
+	 * 	Indeed, by overriding this function you can specify a given TAPSchema to use as TAP_UPLOAD schema
+	 * 	in the constructor of {@link Uploader}. But do not forget that this {@link TAPSchema} instance MUST have
+	 * 	an ADQL name equals to "TAP_UPLOAD", otherwise, a TAPException will be thrown.
 	 * </i></p>
-	 * 
-	 * @see tap.TAPFactory#createUploader(tap.db.DBConnection)
-	 * 
-	 * @see Uploader
 	 */
 	@Override
 	public Uploader createUploader(final DBConnection dbConn) throws TAPException{
@@ -214,8 +205,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	This implementation is largely enough for a TAP service. It is not recommended to override
 	 * 	this function.
 	 * </i></p>
-	 * 
-	 * @see tap.TAPFactory#createUWS()
 	 */
 	@Override
 	public UWSService createUWS() throws TAPException{
@@ -229,8 +218,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * It means that no asynchronous job will be restored and backuped.</p>
 	 * 
 	 * <p>You must override this function if you want enable the backup feature.</p>
-	 * 
-	 * @see tap.TAPFactory#createUWSBackupManager(uws.service.UWSService)
 	 */
 	@Override
 	public UWSBackupManager createUWSBackupManager(final UWSService uws) throws TAPException{
@@ -244,8 +231,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	If you need to add or modify the behavior of some functions of a {@link TAPJob},
 	 * 	you must override this function and return your own extension of {@link TAPJob}.
 	 * </p>
-	 * 
-	 * @see tap.TAPFactory#createTAPJob(javax.servlet.http.HttpServletRequest, uws.job.user.JobOwner)
 	 */
 	@Override
 	protected TAPJob createTAPJob(final HttpServletRequest request, final JobOwner owner) throws UWSException{
@@ -264,8 +249,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	If you need to add or modify the behavior of some functions of a {@link TAPJob},
 	 * 	you must override this function and return your own extension of {@link TAPJob}.
 	 * </p>
-	 * 
-	 * @see tap.TAPFactory#createTAPJob(javax.servlet.http.HttpServletRequest, uws.job.user.JobOwner)
 	 */
 	@Override
 	protected TAPJob createTAPJob(final String jobId, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
@@ -285,8 +268,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	However, if you want to manage them in another way, you must extend {@link TAPParameters} and override
 	 * 	this function in order to return an instance of your extension.
 	 * </p>
-	 * 
-	 * @see tap.TAPFactory#createTAPParameters(javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
 	public TAPParameters createTAPParameters(final HttpServletRequest request) throws TAPException{
@@ -306,8 +287,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	However, if you want to manage them in another way, you must extend {@link TAPParameters} and override
 	 * 	this function in order to return an instance of your extension.
 	 * </p>
-	 * 
-	 * @see tap.TAPFactory#createTAPParameters(javax.servlet.http.HttpServletRequest)
 	 */
 	@Override
 	public TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException{

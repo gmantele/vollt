@@ -205,64 +205,6 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	/**
-	 * <p>Get the TAPSchema describing the TAP_UPLOAD schema.</p>
-	 * 
-	 * <p><i>Note:
-	 * 	This function is equivalent to {@link #getSchema(String)} with {@link STDSchema#UPLOADSCHEMA} in parameter.
-	 * 	It should be reminded that the research done with {@link #getSchema(String)} is case sensitive.
-	 * </i></p>
-	 * 
-	 * @return	The description of the TAP_UPLOAD schema,
-	 *        	or NULL if none is defined here.
-	 * 
-	 * @since 2.0
-	 */
-	public final TAPSchema getUploadSchema(){
-		return getSchema(STDSchema.UPLOADSCHEMA.label);
-	}
-
-	/**
-	 * <p>Add/Update the description of the TAP_UPLOAD schema.</p>
-	 * 
-	 * <p><i><b>Important note:<b>
-	 * 	The addition/update won't be effective if the ADQL name of the given {@link TAPSchema} is not exactly equals to {@link STDSchema#UPLOADSCHEMA}.
-	 * </i></p>
-	 * 
-	 * <p><i>Note:
-	 * 	This function is equivalent to {@link #addSchema(TAPSchema)} with the given {@link TAPSchema} object in parameter.
-	 * </i></p>
-	 * 
-	 * @param uploadSchema	{@link TAPSchema} object describing the TAP_UPLOAD schema.
-	 * 
-	 * @return	<i>true</i> if the TAP_UPLOAD schema has been successfully added/updated,
-	 *        	<i>false</i> otherwise (and particularly if the given {@link TAPSchema} is NULL).
-	 * 
-	 * @since 2.0
-	 */
-	public final boolean setUploadSchema(final TAPSchema uploadSchema){
-		if (uploadSchema != null && uploadSchema.getADQLName().equals(STDSchema.UPLOADSCHEMA.label)){
-			addSchema(uploadSchema);
-			return true;
-		}else
-			return false;
-	}
-
-	/**
-	 * <p>Add a default definition of the TAP_UPLOAD schema, and return it.</p>
-	 * 
-	 * <p>The ADQL name and the DB name will be the same, that's to say: {@link STDSchema#UPLOADSCHEMA} (TAP_UPLOAD).</p>
-	 * 
-	 * @return	The default upload schema added to this {@link TAPMetadata} object.
-	 * 
-	 * @since 2.0
-	 */
-	public TAPSchema setDefaultUploadSchema(){
-		TAPSchema uploadSchema = new TAPSchema(STDSchema.UPLOADSCHEMA.label, "Schema for tables uploaded by users.");
-		addSchema(uploadSchema);
-		return uploadSchema;
-	}
-
-	/**
 	 * Get the number of schemas contained in this TAP metadata set.
 	 * 
 	 * @return	Number of all schemas.

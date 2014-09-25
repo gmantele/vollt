@@ -32,6 +32,7 @@ import tap.data.TableIterator;
 import tap.data.VOTableIterator;
 import tap.db.DBConnection;
 import tap.metadata.TAPColumn;
+import tap.metadata.TAPMetadata;
 import tap.metadata.TAPMetadata.STDSchema;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
@@ -58,6 +59,9 @@ public class Uploader {
 	protected final ServiceConnection service;
 	/** Connection to the "database" (which lets upload the content of any given VOTable). */
 	protected final DBConnection dbConn;
+	/** Description of the TAP_UPLOAD schema to use.
+	 * @since 2.0 */
+	protected final TAPSchema uploadSchema;
 	/** Type of limit to set: ROWS or BYTES. <i>MAY be NULL ; if NULL, no limit will be set.</i> */
 	protected final LimitUnit limitUnit;
 	/** Limit on the number of rows or bytes (depending of {@link #limitUnit}) allowed to be uploaded in once (whatever is the number of tables). */
@@ -75,6 +79,20 @@ public class Uploader {
 	 * @throws TAPException	If any error occurs while building this {@link Uploader}.
 	 */
 	public Uploader(final ServiceConnection service, final DBConnection dbConn) throws TAPException{
+		this(service, dbConn, null);
+	}
+
+	/**
+	 * Build an {@link Uploader} object.
+	 * 
+	 * @param service	Specification of the TAP service using this uploader.
+	 * @param dbConn	A valid (open) connection to the "database".
+	 * 
+	 * @throws TAPException	If any error occurs while building this {@link Uploader}.
+	 * 
+	 * @since 2.0
+	 */
+	public Uploader(final ServiceConnection service, final DBConnection dbConn, final TAPSchema uplSchema) throws TAPException{
 		// NULL tests:
 		if (service == null)
 			throw new NullPointerException("The given ServiceConnection is NULL !");
@@ -84,6 +102,17 @@ public class Uploader {
 		// Set the service and database connections:
 		this.service = service;
 		this.dbConn = dbConn;
+
+		// Set the given upload schema:
+		if (uplSchema != null){
+			if (!uplSchema.getADQLName().equalsIgnoreCase(TAPMetadata.STDSchema.UPLOADSCHEMA.label))
+				throw new TAPException("Incorrect upload schema! Its ADQL name MUST be \"" + TAPMetadata.STDSchema.UPLOADSCHEMA.label + "\" ; here is is \"" + uplSchema.getADQLName() + "\".", UWSException.INTERNAL_SERVER_ERROR);
+			else
+				this.uploadSchema = uplSchema;
+		}
+		// ...or the default one:
+		else
+			this.uploadSchema = new TAPSchema(TAPMetadata.STDSchema.UPLOADSCHEMA.label, "Schema for tables uploaded by users.");
 
 		// Ensure UPLOAD is allowed by the TAP service specification...
 		if (this.service.uploadEnabled()){
@@ -103,9 +132,9 @@ public class Uploader {
 	 * <p>Upload all the given VOTable inputs.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	The {@link TAPTable} objects representing the uploaded tables will be associated with the TAP_UPLOAD schema defined in the TAP metadata.
-	 * 	If no such schema is defined, a default one (whose DB name will be equals to the ADQL name, that's to say {@link STDSchema#UPLOADSCHEMA})
-	 * 	is created and added into the TAP metadata. The corresponding schema should be then created in the database automatically by the {@link DBConnection}.
+	 * 	The {@link TAPTable} objects representing the uploaded tables will be associated with the TAP_UPLOAD schema specified at the creation of this {@link Uploader}.
+	 * 	If no such schema was specified, a default one (whose DB name will be equals to the ADQL name, that's to say {@link STDSchema#UPLOADSCHEMA})
+	 * 	is created, will be associated with the uploaded tables and will be returned by this function.
 	 * </i></p>
 	 * 
 	 * @param loaders	Array of tables to upload.
@@ -117,15 +146,6 @@ public class Uploader {
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
 	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
-		// Get the TAP_UPLOAD schema as defined in the TAP metadata:
-		TAPSchema uploadSchema = service.getTAPMetadata().getUploadSchema();
-
-		// If no TAP_UPLOAD schema is defined, create a default one and update the TAP metadata with it:
-		if (uploadSchema == null){
-			uploadSchema = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
-			service.getTAPMetadata().setUploadSchema(uploadSchema);
-		}
-
 		InputStream votable = null;
 		String tableName = null;
 		try{
