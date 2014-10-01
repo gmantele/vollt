@@ -27,6 +27,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,6 +49,7 @@ import tap.metadata.TAPTable;
 import tap.metadata.TAPTable.TableType;
 import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
+import uws.ISO8601Format;
 import uws.service.log.UWSLog.LogLevel;
 import adql.query.ADQLQuery;
 import adql.query.IdentifierField;
@@ -1584,8 +1587,20 @@ public class JDBCConnection implements DBConnection {
 			while(data.nextRow()){
 				nbRows++;
 				int c = 1;
-				while(data.hasNextCol())
-					stmt.setObject(c++, data.nextCol());
+				while(data.hasNextCol()){
+					Object val = data.nextCol();
+					/* If the value is supposed to be a Timestamp, parse it
+					 * and build an appropriate SQL object: */
+					if (val != null && cols[c - 1].getDatatype().type == TAPDatatype.TIMESTAMP){
+						try{
+							val = new Timestamp(ISO8601Format.parse(val.toString()));
+						}catch(ParseException pe){
+							logger.logDB(LogLevel.ERROR, this, "UPLOAD", "Unexpected date format for the " + c + "-th column (" + val + ")! A date formatted in ISO8601 was expected.", pe);
+							throw new DBException("Unexpected date format for the " + c + "-th column (" + val + ")! A date formatted in ISO8601 was expected.", pe);
+						}
+					}
+					stmt.setObject(c++, val);
+				}
 				executeUpdate(stmt, nbRows);
 			}
 			executeBatchUpdates(stmt, nbRows);

@@ -41,6 +41,7 @@ import org.json.JSONTokener;
 import org.json.JSONWriter;
 import org.json.Json4Uws;
 
+import uws.ISO8601Format;
 import uws.UWSException;
 import uws.UWSToolBox;
 import uws.job.ErrorSummary;
@@ -434,7 +435,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			out.object();
 
 			// Write the backup date:
-			out.key("date").value(UWSJob.dateFormat.format(new Date()));
+			out.key("date").value(ISO8601Format.format(new Date()));
 
 			// Write the description of the user:
 			out.key("user").value(getJSONUser(user));
@@ -805,7 +806,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_DESTRUCTION_TIME)){
 					try{
 						tmp = json.getString(key);
-						inputParams.put(UWSJob.PARAM_DESTRUCTION_TIME, UWSJob.dateFormat.parse(tmp));
+						inputParams.put(UWSJob.PARAM_DESTRUCTION_TIME, ISO8601Format.parseToDate(tmp));
 					}catch(ParseException pe){
 						getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect date format for the '" + key + "' parameter!", pe);
 					}
@@ -814,7 +815,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_START_TIME)){
 					tmp = json.getString(key);
 					try{
-						Date d = UWSJob.dateFormat.parse(tmp);
+						Date d = ISO8601Format.parseToDate(tmp);
 						startTime = d.getTime();
 					}catch(ParseException pe){
 						getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect date format for the '" + key + "' parameter!", pe);
@@ -824,7 +825,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_END_TIME)){
 					tmp = json.getString(key);
 					try{
-						Date d = UWSJob.dateFormat.parse(tmp);
+						Date d = ISO8601Format.parseToDate(tmp);
 						endTime = d.getTime();
 					}catch(ParseException pe){
 						getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect date format for the '" + key + "' parameter!", pe);

@@ -22,11 +22,13 @@ package tap.data;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPType;
 import tap.metadata.TAPType.TAPDatatype;
+import uws.ISO8601Format;
 import adql.db.DBColumn;
 
 /**
@@ -271,7 +273,11 @@ public class ResultSetTableIterator implements TableIterator {
 
 		// Get the column value:
 		try{
-			return data.getObject(++colIndex);
+			Object o = data.getObject(++colIndex);
+			// if the column value is a Timestamp object, format it in ISO8601:
+			if (o != null && o instanceof Timestamp)
+				o = ISO8601Format.format(((Timestamp)o).getTime());
+			return o;
 		}catch(SQLException se){
 			throw new DataReadException("Can not read the value of the " + colIndex + "-th column!", se);
 		}

@@ -22,6 +22,9 @@ package uws.job;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.FieldPosition;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -33,6 +36,7 @@ import java.util.Vector;
 
 import javax.servlet.ServletOutputStream;
 
+import uws.ISO8601Format;
 import uws.UWSException;
 import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
@@ -177,7 +181,9 @@ public class UWSJob extends SerializableUWSObject {
 	/** Default value of {@link #owner} if no ID are given at the job creation. */
 	public final static String ANONYMOUS_OWNER = "anonymous";
 
-	/** Default date format pattern.  */
+	/** Default date format pattern.
+	 * @deprecated Replaced by {@link ISO8601Format}.*/
+	@Deprecated
 	public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
 	/** The quote value that indicates the quote of this job is not known. */
@@ -222,7 +228,9 @@ public class UWSJob extends SerializableUWSObject {
 	 */
 	private JobPhase phase;
 
-	/** The used date formatter. */
+	/** The used date formatter.
+	 * @deprecated Replaced by {@link ISO8601Format}. */
+	@Deprecated
 	public static final DateFormat dateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
 	/**

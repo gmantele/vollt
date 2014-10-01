@@ -16,13 +16,15 @@ package uws.job.serializer;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI) 
  */
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Iterator;
 
+import uws.ISO8601Format;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
@@ -34,8 +36,8 @@ import uws.service.UWSUrl;
 /**
  * Lets serializing any UWS resource in XML.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -282,7 +284,7 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getStartTime() == null)
 			xml.append(" xsi:nil=\"true\" />");
 		else
-			xml.append(">").append(UWSJob.dateFormat.format(job.getStartTime())).append("</uws:startTime>");
+			xml.append(">").append(ISO8601Format.format(job.getStartTime())).append("</uws:startTime>");
 		return xml.toString();
 	}
 
@@ -293,7 +295,7 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getEndTime() == null)
 			xml.append(" xsi:nil=\"true\" />");
 		else
-			xml.append(">").append(UWSJob.dateFormat.format(job.getEndTime())).append("</uws:endTime>");
+			xml.append(">").append(ISO8601Format.format(job.getEndTime())).append("</uws:endTime>");
 		return xml.toString();
 	}
 
@@ -304,7 +306,7 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getDestructionTime() == null)
 			xml.append(" xsi:nil=\"true\" />");
 		else
-			xml.append(">").append(UWSJob.dateFormat.format(job.getDestructionTime())).append("</uws:destruction>");
+			xml.append(">").append(ISO8601Format.format(job.getDestructionTime())).append("</uws:destruction>");
 		return xml.toString();
 	}
 

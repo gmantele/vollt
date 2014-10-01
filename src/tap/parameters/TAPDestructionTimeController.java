@@ -25,6 +25,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import tap.ServiceConnection;
+import uws.ISO8601Format;
 import uws.UWSException;
 import uws.job.UWSJob;
 import uws.job.parameters.DestructionTimeController.DateField;
@@ -146,12 +147,12 @@ public class TAPDestructionTimeController implements InputParamController {
 		else if (value instanceof String){
 			String strValue = (String)value;
 			try{
-				date = UWSJob.dateFormat.parse(strValue);
+				date = ISO8601Format.parseToDate(strValue);
 			}catch(ParseException pe){
-				throw new UWSException(UWSException.BAD_REQUEST, pe, "Wrong date format for the parameter \"destruction\": \"" + strValue + "\"! The format to respect is: " + UWSJob.DEFAULT_DATE_FORMAT);
+				throw new UWSException(UWSException.BAD_REQUEST, pe, "Wrong date format for the parameter \"destruction\": \"" + strValue + "\"! A date must be formatted in the ISO8601 format (\"yyyy-MM-dd'T'hh:mm:ss[.sss]['Z'|[+|-]hh:mm]\", fields inside brackets are optional).");
 			}
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"destruction\": class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date with the format \"" + UWSJob.DEFAULT_DATE_FORMAT + "\".");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"destruction\": class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date formatted in ISO8601 (\"yyyy-MM-dd'T'hh:mm:ss[.sss]['Z'|[+|-]hh:mm]\", fields inside brackets are optional).");
 
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))

@@ -32,6 +32,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import uws.ISO8601Format;
 import uws.UWSException;
 import uws.job.UWSJob;
 import uws.service.UWS;
@@ -588,7 +589,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 				return (Date)value;
 			else if (value instanceof String){
 				try{
-					Date destruction = UWSJob.dateFormat.parse((String)value);
+					Date destruction = ISO8601Format.parseToDate((String)value);
 					synchronized(params){
 						params.put(UWSJob.PARAM_DESTRUCTION_TIME, destruction);
 					}

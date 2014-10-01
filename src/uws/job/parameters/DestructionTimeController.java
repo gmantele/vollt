@@ -25,8 +25,8 @@ import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 
+import uws.ISO8601Format;
 import uws.UWSException;
-import uws.job.UWSJob;
 
 /**
  * <p>
@@ -46,7 +46,7 @@ import uws.job.UWSJob;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (09/2014)
  */
 public class DestructionTimeController implements InputParamController, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -104,12 +104,12 @@ public class DestructionTimeController implements InputParamController, Serializ
 		else if (value instanceof String){
 			String strValue = (String)value;
 			try{
-				date = UWSJob.dateFormat.parse(strValue);
+				date = ISO8601Format.parseToDate(strValue);
 			}catch(ParseException pe){
-				throw new UWSException(UWSException.BAD_REQUEST, pe, "Wrong date format for the destruction time parameter: \"" + strValue + "\"! The format to respect is: " + UWSJob.DEFAULT_DATE_FORMAT);
+				throw new UWSException(UWSException.BAD_REQUEST, pe, "Wrong date format for the destruction time parameter: \"" + strValue + "\"! Dates must be formatted in ISO8601 (\"yyyy-MM-dd'T'hh:mm:ss[.sss]['Z'|[+|-]hh:mm]\", fields inside brackets are optional).");
 			}
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the destruction time parameter: class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date with the format \"" + UWSJob.DEFAULT_DATE_FORMAT + "\".");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the destruction time parameter: class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date formatted in IS8601 (\"yyyy-MM-dd'T'hh:mm:ss[.sss]['Z'|[+|-]hh:mm]\", fields inside brackets are optional).");
 
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))

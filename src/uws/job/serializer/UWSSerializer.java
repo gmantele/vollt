@@ -22,6 +22,7 @@ package uws.job.serializer;
 
 import java.io.Serializable;
 
+import uws.ISO8601Format;
 import uws.UWSException;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
@@ -41,7 +42,7 @@ import uws.service.UWSUrl;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (09/2014)
  * 
  * @see XMLSerializer
  * @see JSONSerializer
@@ -50,7 +51,7 @@ public abstract class UWSSerializer implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** MIME type for XML: application/xml */
-	public static final String MIME_TYPE_XML = "application/xml";
+	public static final String MIME_TYPE_XML = "text/xml";
 	/** MIME type for JSON: application/json */
 	public static final String MIME_TYPE_JSON = "application/json";
 	/** MIME type for TEXT: text/plain */
@@ -95,16 +96,16 @@ public abstract class UWSSerializer implements Serializable {
 			return job.getQuote() + "";
 		// START TIME:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_START_TIME))
-			return (job.getStartTime() == null) ? "" : UWSJob.dateFormat.format(job.getStartTime());
+			return (job.getStartTime() == null) ? "" : ISO8601Format.format(job.getStartTime());
 		// END TIME:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_END_TIME))
-			return (job.getEndTime() == null) ? "" : UWSJob.dateFormat.format(job.getEndTime());
+			return (job.getEndTime() == null) ? "" : ISO8601Format.format(job.getEndTime());
 		// EXECUTION DURATION:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_EXECUTION_DURATION))
 			return job.getExecutionDuration() + "";
 		// DESTRUCTION TIME:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_DESTRUCTION_TIME))
-			return (job.getDestructionTime() == null) ? "" : UWSJob.dateFormat.format(job.getDestructionTime());
+			return (job.getDestructionTime() == null) ? "" : ISO8601Format.format(job.getDestructionTime());
 		// PARAMETERS LIST:
 		else if (firstAttribute.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)){
 			if (attributes.length <= 1)

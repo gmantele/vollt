@@ -23,6 +23,7 @@ package uws.job.serializer;
 import org.json.JSONException;
 import org.json.Json4Uws;
 
+import uws.ISO8601Format;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
@@ -35,7 +36,7 @@ import uws.service.UWSUrl;
  * Lets serializing any UWS resource in JSON.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (09/2014)
  * 
  * @see Json4Uws
  */
@@ -103,7 +104,7 @@ public class JSONSerializer extends UWSSerializer {
 	@Override
 	public String getDestructionTime(final UWSJob job, final boolean root) throws JSONException{
 		if (job.getDestructionTime() != null){
-			return Json4Uws.getJson(UWSJob.PARAM_DESTRUCTION_TIME, UWSJob.dateFormat.format(job.getDestructionTime())).toString();
+			return Json4Uws.getJson(UWSJob.PARAM_DESTRUCTION_TIME, ISO8601Format.format(job.getDestructionTime())).toString();
 		}else
 			return "{}";
 	}
@@ -111,7 +112,7 @@ public class JSONSerializer extends UWSSerializer {
 	@Override
 	public String getStartTime(final UWSJob job, final boolean root) throws JSONException{
 		if (job.getDestructionTime() != null)
-			return Json4Uws.getJson(UWSJob.PARAM_START_TIME, UWSJob.dateFormat.format(job.getDestructionTime())).toString();
+			return Json4Uws.getJson(UWSJob.PARAM_START_TIME, ISO8601Format.format(job.getDestructionTime())).toString();
 		else
 			return "{}";
 	}
@@ -119,7 +120,7 @@ public class JSONSerializer extends UWSSerializer {
 	@Override
 	public String getEndTime(final UWSJob job, final boolean root) throws JSONException{
 		if (job.getDestructionTime() != null)
-			return Json4Uws.getJson(UWSJob.PARAM_END_TIME, UWSJob.dateFormat.format(job.getDestructionTime())).toString();
+			return Json4Uws.getJson(UWSJob.PARAM_END_TIME, ISO8601Format.format(job.getDestructionTime())).toString();
 		else
 			return "{}";
 	}

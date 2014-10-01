@@ -16,26 +16,26 @@ package org.json;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
 
+import uws.ISO8601Format;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWS;
 import uws.service.UWSUrl;
 
 /**
  * Useful conversion functions from UWS to JSON.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public final class Json4Uws {
 
@@ -130,11 +130,11 @@ public final class Json4Uws {
 					json.put(UWSJob.PARAM_OWNER, job.getOwner().getPseudo());
 				json.put(UWSJob.PARAM_QUOTE, job.getQuote());
 				if (job.getStartTime() != null)
-					json.put(UWSJob.PARAM_START_TIME, UWSJob.dateFormat.format(job.getStartTime()));
+					json.put(UWSJob.PARAM_START_TIME, ISO8601Format.format(job.getStartTime()));
 				if (job.getEndTime() != null)
-					json.put(UWSJob.PARAM_END_TIME, UWSJob.dateFormat.format(job.getEndTime()));
+					json.put(UWSJob.PARAM_END_TIME, ISO8601Format.format(job.getEndTime()));
 				if (job.getDestructionTime() != null)
-					json.put(UWSJob.PARAM_DESTRUCTION_TIME, UWSJob.dateFormat.format(job.getDestructionTime()));
+					json.put(UWSJob.PARAM_DESTRUCTION_TIME, ISO8601Format.format(job.getDestructionTime()));
 				json.put(UWSJob.PARAM_EXECUTION_DURATION, job.getExecutionDuration());
 				json.put(UWSJob.PARAM_PARAMETERS, getJobParamsJson(job));
 				json.put(UWSJob.PARAM_RESULTS, getJobResultsJson(job));
