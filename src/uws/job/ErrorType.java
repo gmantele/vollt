@@ -16,7 +16,8 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 /**
@@ -24,9 +25,14 @@ package uws.job;
  * 
  * @see	ErrorSummary
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 09/2010
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public enum ErrorType{
-	FATAL, TRANSIENT
+	FATAL, TRANSIENT;
+
+	@Override
+	public String toString(){
+		return super.toString().toLowerCase();
+	}
 }
