@@ -440,9 +440,6 @@ public class TAP implements VOSIResource {
 
 		// Write upload methods: INLINE, HTTP, FTP:
 		if (service.uploadEnabled()){
-			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#inline\" />\n");
-			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#http\" />\n");
-			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.org/tap/uploadmethods#ftp\" />\n");
 			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-inline\" />\n");
 			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-http\" />\n");
 			xml.append("\t<uploadMethod ivo-id=\"ivo://ivoa.net/std/TAPRegExt#upload-ftp\" />\n");
