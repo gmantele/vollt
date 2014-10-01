@@ -3,13 +3,7 @@
 package adql.parser;
 
 /** Token Manager Error. */
-/**
- * TODO Javadoc of TokenMgrError !
- * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2011
- * 
- */
+
 @SuppressWarnings("all")
 public class TokenMgrError extends Error {
 
@@ -129,6 +123,7 @@ public class TokenMgrError extends Error {
 	 *
 	 * from this method for such cases in the release version of your parser.
 	 */
+	@Override
 	public String getMessage(){
 		return super.getMessage();
 	}
