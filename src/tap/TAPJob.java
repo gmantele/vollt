@@ -16,7 +16,8 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.List;
@@ -29,6 +30,12 @@ import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 
+/**
+ * TODO JAVADOC OF THE WHOLE CLASS!
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (10/2014)
+ */
 public class TAPJob extends UWSJob {
 
 	private static final long serialVersionUID = 1L;
@@ -63,8 +70,6 @@ public class TAPJob extends UWSJob {
 		super(owner, tapParams);
 		this.tapParams = tapParams;
 		tapParams.check();
-		//progression = ExecutionProgression.PENDING;
-		//loadTAPParams(tapParams);
 	}
 
 	public TAPJob(final String jobID, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws TAPException{
@@ -72,21 +77,6 @@ public class TAPJob extends UWSJob {
 		this.tapParams = params;
 		this.tapParams.check();
 	}
-
-	/*protected void loadTAPParams(TAPParameters params) {
-		adqlQuery = params.query;
-		additionalParameters.put(TAPParameters.PARAM_QUERY, adqlQuery);
-
-		format = (params.format == null)?"application/x-votable+xml":params.format;
-		additionalParameters.put(TAPParameters.PARAM_FORMAT, format);
-
-		maxRec = params.maxrec;
-		additionalParameters.put(TAPParameters.PARAM_MAX_REC, maxRec+"");
-
-		upload = params.upload;
-		tablesToUpload = params.tablesToUpload;
-		additionalParameters.put(TAPParameters.PARAM_UPLOAD, upload);
-	}*/
 
 	/**
 	 * @return The tapParams.
@@ -141,57 +131,6 @@ public class TAPJob extends UWSJob {
 		if (getRestorationDate() == null && !isRunning())
 			throw new UWSException("Impossible to set an execution report if the job is not in the EXECUTING phase ! Here, the job \"" + jobId + "\" is in the phase " + getPhase());
 		this.execReport = execReport;
-	}
-
-	/*
-	 * <p>Starts in an asynchronous manner this ADQLExecutor.</p>
-	 * <p>The execution will stop after the duration specified in the given {@link TAPJob}
-	 * (see {@link TAPJob#getExecutionDuration()}).</p>
-	 * 
-	 * @param output
-	 * @return
-	 * @throws IllegalStateException
-	 * @throws InterruptedException
-	 *
-	public synchronized final boolean startSync(final OutputStream output) throws IllegalStateException, InterruptedException, UWSException {
-		// TODO Set the output stream so that the result is written directly in the given output !
-		start();
-		System.out.println("Joining...");
-		thread.join(getExecutionDuration());
-		System.out.println("Aborting...");
-		thread.interrupt();
-		thread.join(getTimeToWaitForEnd());
-		return thread.isInterrupted();
-	}*/
-
-	@Override
-	protected void stop(){
-		if (!isStopped()){
-			//try {
-			stopping = true;
-			// TODO closeDBConnection();
-			super.stop();
-			/*} catch (TAPException e) {
-				getLogger().error("Impossible to cancel the query execution !", e);
-				return;
-			}*/
-		}
-	}
-
-	/*protected boolean deleteResultFiles(){
-		try{
-			// TODO service.deleteResults(this);
-			return true;
-		}catch(TAPException ex){
-			service.log(LogType.ERROR, "Job "+getJobId()+" - Can't delete results files: "+ex.getMessage());
-			return false;
-		}
-	}*/
-
-	@Override
-	public void clearResources(){
-		super.clearResources();
-		// TODO deleteResultFiles();
 	}
 
 }
