@@ -444,7 +444,7 @@ public class VOTableFormat implements OutputFormat {
 	 * @throws TAPException				If there is any other error.
 	 * @throws InterruptedException		If the given thread has been interrupted.
 	 */
-	protected ColumnInfo[] toColumnInfos(final TableIterator result, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException{
+	public static final ColumnInfo[] toColumnInfos(final TableIterator result, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException{
 		// Get the metadata extracted/guesses from the ADQL query:
 		DBColumn[] columnsFromQuery = execReport.resultingColumns;
 
@@ -486,7 +486,7 @@ public class VOTableFormat implements OutputFormat {
 	 * 
 	 * @return	The most appropriate metadata.
 	 */
-	protected final TAPColumn getValidColMeta(final DBColumn typeFromQuery, final TAPColumn typeFromResult){
+	protected static final TAPColumn getValidColMeta(final DBColumn typeFromQuery, final TAPColumn typeFromResult){
 		if (typeFromQuery != null && typeFromQuery instanceof TAPColumn)
 			return (TAPColumn)typeFromQuery;
 		else if (typeFromResult != null){
@@ -505,7 +505,7 @@ public class VOTableFormat implements OutputFormat {
 	 * 
 	 * @return	The corresponding {@link ColumnInfo}.
 	 */
-	protected ColumnInfo getColumnInfo(final TAPColumn tapCol){
+	protected static final ColumnInfo getColumnInfo(final TAPColumn tapCol){
 		// Get the VOTable type:
 		VotType votType = tapCol.getDatatype().toVotType();
 
@@ -613,7 +613,7 @@ public class VOTableFormat implements OutputFormat {
 	 * @version 2.0 (10/2014)
 	 * @since 2.0
 	 */
-	private static class LimitedStarTable extends AbstractStarTable {
+	public static class LimitedStarTable extends AbstractStarTable {
 
 		/** Number of columns to read. */
 		private final int nbCol;
