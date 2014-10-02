@@ -61,6 +61,16 @@ import adql.db.DBColumn;
  * 	The versions are: 1.0, 1.1, 1.2 and 1.3.
  * </p>
  * 
+ * <p>Note: The MIME type is automatically set in function of the given VOTable serialization:</p>
+ * <ul>
+ * 	<li><b>none or unknown</b>: equivalent to BINARY</li>
+ * 	<li><b>BINARY</b>:          "application/x-votable+xml" = "votable"</li>
+ * 	<li><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</li>
+ * 	<li><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</li>
+ * 	<li><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</li>
+ * </ul>
+ * <p>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</p>
+ * 
  * <p>In addition of the INFO elements for QUERY_STATUS="OK" and QUERY_STATUS="OVERFLOW", two additional INFO elements are written:</p>
  * <ul>
  * 	<li>PROVIDER = {@link ServiceConnection#getProviderName()} and {@link ServiceConnection#getProviderDescription()}</li>
@@ -74,7 +84,7 @@ import adql.db.DBColumn;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (10/2014)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -90,8 +100,19 @@ public class VOTableFormat implements OutputFormat {
 	/** VOTable version in which table data must be formatted. By default, it is set to v13. */
 	protected final VOTableVersion votVersion;
 
+	/** MIME type associated with this format. */
+	protected String mimeType;
+
+	/** Short form of the MIME type associated with this format. */
+	protected String shortMimeType;
+
 	/**
-	 * Creates a VOTable formatter without format report.
+	 * <p>Creates a VOTable formatter without format report.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The MIME type is automatically set to "application/x-votable+xml" = "votable".
+	 * 	It is however possible to change this default value thanks to {@link #setMimeType(String, String)}.
+	 * </i></p>
 	 * 
 	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
 	 * 
@@ -102,10 +123,20 @@ public class VOTableFormat implements OutputFormat {
 	}
 
 	/**
-	 * Creates a VOTable formatter.
+	 * <p>Creates a VOTable formatter.</p>
+	 * 
+	 * <i>Note: The MIME type is automatically set in function of the given VOTable serialization:</i>
+	 * <ul>
+	 * 	<li><i><b>none or unknown</b>: equivalent to BINARY</i></li>
+	 * 	<li><i><b>BINARY</b>:          "application/x-votable+xml" = "votable"</i></li>
+	 * 	<li><i><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</i></li>
+	 * 	<li><i><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</i></li>
+	 * 	<li><i><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</i></li>
+	 * </ul>
+	 * <p><i>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</i></p>
 	 * 
 	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
-	 * @param votFormat				Format of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
+	 * @param votFormat				Serialization of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
@@ -114,10 +145,20 @@ public class VOTableFormat implements OutputFormat {
 	}
 
 	/**
-	 * Creates a VOTable formatter.
+	 * <p>Creates a VOTable formatter.</p>
+	 * 
+	 * <i>Note: The MIME type is automatically set in function of the given VOTable serialization:</i>
+	 * <ul>
+	 * 	<li><i><b>none or unknown</b>: equivalent to BINARY</i></li>
+	 * 	<li><i><b>BINARY</b>:          "application/x-votable+xml" = "votable"</i></li>
+	 * 	<li><i><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</i></li>
+	 * 	<li><i><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</i></li>
+	 * 	<li><i><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</i></li>
+	 * </ul>
+	 * <p><i>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</i></p>
 	 * 
 	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
-	 * @param votFormat				Format of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
+	 * @param votFormat				Serialization of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
 	 * @param votVersion			Version of the resulting VOTable.
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
@@ -127,7 +168,12 @@ public class VOTableFormat implements OutputFormat {
 	}
 
 	/**
-	 * Creates a VOTable formatter.
+	 * <p>Creates a VOTable formatter.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The MIME type is automatically set to "application/x-votable+xml" = "votable".
+	 * 	It is however possible to change this default value thanks to {@link #setMimeType(String, String)}.
+	 * </i></p>
 	 * 
 	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
 	 * @param logFormatReport		<code>true</code> to append a format report (start and end date/time) in the log output, <code>false</code> otherwise.
@@ -139,10 +185,20 @@ public class VOTableFormat implements OutputFormat {
 	}
 
 	/**
-	 * Creates a VOTable formatter.
+	 * <p>Creates a VOTable formatter.</p>
+	 * 
+	 * <i>Note: The MIME type is automatically set in function of the given VOTable serialization:</i>
+	 * <ul>
+	 * 	<li><i><b>none or unknown</b>: equivalent to BINARY</i></li>
+	 * 	<li><i><b>BINARY</b>:          "application/x-votable+xml" = "votable"</i></li>
+	 * 	<li><i><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</i></li>
+	 * 	<li><i><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</i></li>
+	 * 	<li><i><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</i></li>
+	 * </ul>
+	 * <p><i>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</i></p> 
 	 * 
 	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
-	 * @param votFormat				Format of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
+	 * @param votFormat				Serialization of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
 	 * @param votVersion			Version of the resulting VOTable.
 	 * @param logFormatReport		<code>true</code> to append a format report (start and end date/time) in the log output, <code>false</code> otherwise.
 	 * 
@@ -154,18 +210,56 @@ public class VOTableFormat implements OutputFormat {
 
 		this.service = service;
 		this.logFormatReport = logFormatReport;
+
+		// Set the VOTable serialization and version:
 		this.votFormat = (votFormat == null) ? DataFormat.BINARY : votFormat;
 		this.votVersion = (votVersion == null) ? VOTableVersion.V13 : votVersion;
+
+		// Deduce automatically the MIME type and its short expression:
+		if (this.votFormat.equals(DataFormat.BINARY)){
+			this.mimeType = "application/x-votable+xml";
+			this.shortMimeType = "votable";
+		}else if (this.votFormat.equals(DataFormat.BINARY2)){
+			this.mimeType = "application/x-votable+xml;serialization=BINARY2";
+			this.shortMimeType = "votable/b2";
+		}else if (this.votFormat.equals(DataFormat.TABLEDATA)){
+			this.mimeType = "application/x-votable+xml;serialization=TABLEDATA";
+			this.shortMimeType = "votable/td";
+		}else if (this.votFormat.equals(DataFormat.FITS)){
+			this.mimeType = "application/x-votable+xml;serialization=FITS";
+			this.shortMimeType = "votable/fits";
+		}else{
+			this.mimeType = "application/x-votable+xml";
+			this.shortMimeType = "votable";
+		}
 	}
 
 	@Override
 	public final String getMimeType(){
-		return "application/xml";
+		return mimeType;
 	}
 
 	@Override
 	public final String getShortMimeType(){
-		return "votable";
+		return shortMimeType;
+	}
+
+	/**
+	 * <p>Set the MIME type associated with this format.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	Nothing will be done if the given MIME type is NULL.
+	 * 	But the short form may be NULL.
+	 * </i></p>
+	 * 
+	 * @param mimeType	Full MIME type of this VOTable format.	<i>note: if NULL, this function does nothing</i>
+	 * @param shortForm	Short form of this MIME type. <i>note: MAY be NULL</i>
+	 */
+	public final void setMimeType(final String mimeType, final String shortForm){
+		if (mimeType != null){
+			this.mimeType = mimeType;
+			this.shortMimeType = shortForm;
+		}
 	}
 
 	@Override
