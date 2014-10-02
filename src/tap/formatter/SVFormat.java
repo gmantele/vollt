@@ -35,7 +35,7 @@ import adql.db.DBColumn;
  * Format any given query (table) result into CSV or TSV (or with custom separator).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (10/2014)
  */
 public class SVFormat implements OutputFormat {
 
@@ -124,7 +124,7 @@ public class SVFormat implements OutputFormat {
 			case SEMI_COLON_SEPARATOR:
 				return "text/csv";
 			case TAB_SEPARATOR:
-				return "text/tsv";
+				return "text/tab-separated-values";
 			default:
 				return "text/plain";
 		}
