@@ -370,6 +370,9 @@ public class ADQLExecutor {
 
 			// Set the total duration in the report:
 			report.setTotalDuration(System.currentTimeMillis() - start);
+
+			// Log and report the end of this execution:
+			logger.logTAP(LogLevel.INFO, report, "END_EXEC", "ADQL query execution finished.", null);
 		}
 	}
 

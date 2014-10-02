@@ -42,7 +42,7 @@ import adql.db.DBColumn;
  * Format any given query (table) result into JSON.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (10/2014)
  */
 public class JSONFormat implements OutputFormat {
 
@@ -59,9 +59,11 @@ public class JSONFormat implements OutputFormat {
 	 * However if you want this behavior you must you {@link #JSONFormat(ServiceConnection, boolean)}.</i></p>
 	 * 
 	 * @param service	Description of the TAP service.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public JSONFormat(final ServiceConnection service){
-		this(service, false);
+	public JSONFormat(final ServiceConnection service) throws NullPointerException{
+		this(service, true);
 	}
 
 	/**
@@ -69,8 +71,13 @@ public class JSONFormat implements OutputFormat {
 	 * 
 	 * @param service			Description of the TAP service.
 	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public JSONFormat(final ServiceConnection service, final boolean logFormatReport){
+	public JSONFormat(final ServiceConnection service, final boolean logFormatReport) throws NullPointerException{
+		if (service == null)
+			throw new NullPointerException("The given service connection is NULL!");
+
 		this.service = service;
 		this.logFormatReport = logFormatReport;
 	}
@@ -130,9 +137,9 @@ public class JSONFormat implements OutputFormat {
 				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in JSON ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - start) + "ms!", null);
 
 		}catch(JSONException je){
-			throw new TAPException("Error while writing a query result in JSON !", je);
+			throw new TAPException("Error while writing a query result in JSON!", je);
 		}catch(IOException ioe){
-			throw new TAPException("Error while writing a query result in JSON !", ioe);
+			throw new TAPException("Error while writing a query result in JSON!", ioe);
 		}
 	}
 

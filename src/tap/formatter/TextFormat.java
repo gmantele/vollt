@@ -36,7 +36,7 @@ import cds.util.AsciiTable;
  * (columns' width are adjusted so that all columns are well aligned and of the same width).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (10/2014)
  */
 public class TextFormat implements OutputFormat {
 
@@ -50,9 +50,11 @@ public class TextFormat implements OutputFormat {
 	 * Build a {@link TextFormat}.
 	 * 
 	 * @param service	Description of the TAP service.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public TextFormat(final ServiceConnection service){
-		this(service, false);
+	public TextFormat(final ServiceConnection service) throws NullPointerException{
+		this(service, true);
 	}
 
 	/**
@@ -60,8 +62,13 @@ public class TextFormat implements OutputFormat {
 	 * 
 	 * @param service			Description of the TAP service.
 	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public TextFormat(final ServiceConnection service, final boolean logFormatReport){
+	public TextFormat(final ServiceConnection service, final boolean logFormatReport) throws NullPointerException{
+		if (service == null)
+			throw new NullPointerException("The given service connection is NULL!");
+
 		this.service = service;
 		this.logFormatReport = logFormatReport;
 	}
@@ -108,6 +115,11 @@ public class TextFormat implements OutputFormat {
 				output.write(l.getBytes());
 				output.write('\n');
 			}
+
+			// Add a line in case of an OVERFLOW:
+			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec())
+				output.write("\nOVERFLOW (more rows were available but have been truncated by the TAP service)".getBytes());
+
 			output.flush();
 
 			// Report stats about the result writing:

@@ -63,8 +63,10 @@ public class SVFormat implements OutputFormat {
 	 * 
 	 * @param service		Description of the TAP service.
 	 * @param colSeparator	Column separator to use.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public SVFormat(final ServiceConnection service, char colSeparator){
+	public SVFormat(final ServiceConnection service, char colSeparator) throws NullPointerException{
 		this(service, colSeparator, true);
 	}
 
@@ -74,9 +76,11 @@ public class SVFormat implements OutputFormat {
 	 * @param service			Description of the TAP service.
 	 * @param colSeparator		Column separator to use.
 	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings){
-		this(service, colSeparator, delimitStrings, false);
+	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings) throws NullPointerException{
+		this(service, colSeparator, delimitStrings, true);
 	}
 
 	/**
@@ -86,8 +90,10 @@ public class SVFormat implements OutputFormat {
 	 * @param colSeparator		Column separator to use.
 	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
 	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings, final boolean logFormatReport){
+	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings, final boolean logFormatReport) throws NullPointerException{
 		separator = "" + colSeparator;
 		delimitStr = delimitStrings;
 		this.service = service;
@@ -99,8 +105,10 @@ public class SVFormat implements OutputFormat {
 	 * 
 	 * @param service		Description of the TAP service.
 	 * @param colSeparator	Column separator to use.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public SVFormat(final ServiceConnection service, String colSeparator){
+	public SVFormat(final ServiceConnection service, String colSeparator) throws NullPointerException{
 		this(service, colSeparator, true);
 	}
 
@@ -110,8 +118,13 @@ public class SVFormat implements OutputFormat {
 	 * @param service			Description of the TAP service.
 	 * @param colSeparator		Column separator to use.
 	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings){
+	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings) throws NullPointerException{
+		if (service == null)
+			throw new NullPointerException("The given service connection is NULL!");
+
 		separator = (colSeparator == null) ? ("" + COMMA_SEPARATOR) : colSeparator;
 		delimitStr = delimitStrings;
 		this.service = service;

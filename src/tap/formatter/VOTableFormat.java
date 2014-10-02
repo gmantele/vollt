@@ -107,7 +107,7 @@ public class VOTableFormat implements OutputFormat {
 	protected String shortMimeType;
 
 	/**
-	 * <p>Creates a VOTable formatter without format report.</p>
+	 * <p>Creates a VOTable formatter.</p>
 	 * 
 	 * <p><i>Note:
 	 * 	The MIME type is automatically set to "application/x-votable+xml" = "votable".
@@ -119,7 +119,7 @@ public class VOTableFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public VOTableFormat(final ServiceConnection service) throws NullPointerException{
-		this(service, false);
+		this(service, true);
 	}
 
 	/**
@@ -141,7 +141,7 @@ public class VOTableFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat) throws NullPointerException{
-		this(service, votFormat, null, false);
+		this(service, votFormat, null, true);
 	}
 
 	/**
@@ -164,7 +164,7 @@ public class VOTableFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat, final VOTableVersion votVersion) throws NullPointerException{
-		this(service, votFormat, votVersion, false);
+		this(service, votFormat, votVersion, true);
 	}
 
 	/**
@@ -206,7 +206,7 @@ public class VOTableFormat implements OutputFormat {
 	 */
 	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat, final VOTableVersion votVersion, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
-			throw new NullPointerException("The given service connection is NULL !");
+			throw new NullPointerException("The given service connection is NULL!");
 
 		this.service = service;
 		this.logFormatReport = logFormatReport;
@@ -384,7 +384,7 @@ public class VOTableFormat implements OutputFormat {
 			if (logFormatReport)
 				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in VOTable ; " + table.getNbReadRows() + " rows ; " + table.getColumnCount() + " columns) in " + (System.currentTimeMillis() - start) + "ms!", null);
 		}catch(IOException ioe){
-			throw new TAPException("Error while writing a query result in VOTable !", ioe);
+			throw new TAPException("Error while writing a query result in VOTable!", ioe);
 		}
 	}
 
@@ -610,7 +610,7 @@ public class VOTableFormat implements OutputFormat {
 	 * </p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (07/2014)
+	 * @version 2.0 (10/2014)
 	 * @since 2.0
 	 */
 	private static class LimitedStarTable extends AbstractStarTable {
@@ -702,6 +702,7 @@ public class VOTableFormat implements OutputFormat {
 							if (hasNext){
 								for(int i = 0; i < nbCol && tableIt.hasNextCol(); i++)
 									row[i] = tableIt.nextCol();
+								nbRows++;
 							}else
 								row = null;
 							return hasNext;
