@@ -45,7 +45,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 1.3 (08/2014)
  * 
  * @see PgSphereTranslator
  */
