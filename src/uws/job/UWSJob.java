@@ -22,9 +22,6 @@ package uws.job;
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.FieldPosition;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -122,7 +119,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.1 (08/2014)
+ * @version	4.1 (10/2014)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -394,13 +391,15 @@ public class UWSJob extends SerializableUWSObject {
 	 * @return	A unique job identifier.
 	 */
 	protected String generateJobId(){
-		String generatedId = System.currentTimeMillis() + "A";
-		if (lastId != null){
-			while(lastId.equals(generatedId))
-				generatedId = generatedId.substring(0, generatedId.length() - 1) + (char)(generatedId.charAt(generatedId.length() - 1) + 1);
+		synchronized(lastId){
+			String generatedId = System.currentTimeMillis() + "A";
+			if (lastId != null){
+				while(lastId.equals(generatedId))
+					generatedId = generatedId.substring(0, generatedId.length() - 1) + (char)(generatedId.charAt(generatedId.length() - 1) + 1);
+			}
+			lastId = generatedId;
+			return generatedId;
 		}
-		lastId = generatedId;
-		return generatedId;
 	}
 
 	/**
