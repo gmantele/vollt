@@ -110,7 +110,7 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 
 	@Override
 	public void writeError(String message, ErrorType type, int httpErrorCode, HttpServletResponse response, HttpServletRequest request, String reqID, JobOwner user, String action) throws IOException{
-		if (message != null || response != null)
+		if (message == null || response == null)
 			return;
 
 		// Just format and write the error message:
