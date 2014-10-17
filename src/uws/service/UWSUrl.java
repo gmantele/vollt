@@ -17,7 +17,7 @@ package uws.service;
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institut (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.Serializable;
@@ -110,11 +110,15 @@ public class UWSUrl implements Serializable {
 	 * @see #extractBaseURI(HttpServletRequest)
 	 */
 	public UWSUrl(HttpServletRequest request) throws NullPointerException{
+		// Extract the base URI:
 		String uri = extractBaseURI(request);
 		if (uri == null)
 			throw new NullPointerException("The extracted base UWS URI is NULL!");
+		else
+			baseURI = normalizeURI(uri);
 
-		baseURI = normalizeURI(uri);
+		// Load the rest of the request:
+		load(request);
 	}
 
 	/**
@@ -503,9 +507,9 @@ public class UWSUrl implements Serializable {
 	public final void setUwsURI(String uwsURI){
 		if (uwsURI == null || uwsURI.trim().length() == 0)
 			this.uwsURI = null;
-		else{
+		else
 			this.uwsURI = uwsURI.trim();
-		}
+
 		loadUwsURI();
 		updateRequestURL();
 	}

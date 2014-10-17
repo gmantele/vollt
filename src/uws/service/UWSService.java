@@ -482,6 +482,8 @@ public class UWSService implements UWS {
 		this.urlInterpreter = urlInterpreter;
 		if (name == null && urlInterpreter != null)
 			name = urlInterpreter.getUWSName();
+		if (this.urlInterpreter != null)
+			this.urlInterpreter.setUwsURI(null);
 	}
 
 	/**
@@ -1048,7 +1050,7 @@ public class UWSService implements UWS {
 		JobOwner user = null;
 
 		try{
-			if (urlInterpreter == null){
+			if (this.urlInterpreter == null){
 				// Initialize the URL interpreter if not already done:
 				setUrlInterpreter(new UWSUrl(request));
 
@@ -1057,6 +1059,7 @@ public class UWSService implements UWS {
 			}
 
 			// Update the UWS URL interpreter:
+			UWSUrl urlInterpreter = new UWSUrl(this.urlInterpreter);
 			urlInterpreter.load(request);
 
 			// Identify the user:
