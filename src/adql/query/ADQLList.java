@@ -16,7 +16,8 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
@@ -27,8 +28,8 @@ import java.util.Vector;
  * 
  * <p>Since it is a list, it is possible to add, remove, modify and iterate on a such object.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.2 (10/2014)
  * 
  * @see ClauseADQL
  * @see ClauseConstraints
@@ -164,23 +165,30 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 		return list.isEmpty();
 	}
 
+	@Override
 	public String getName(){
 		return name;
 	}
 
+	@Override
 	public String toADQL(){
-		String adql = (getName() == null) ? "" : (getName() + " ");
+		StringBuffer adql = new StringBuffer((getName() == null) ? "" : (getName() + " "));
 
-		for(int i = 0; i < size(); i++)
-			adql += ((i == 0) ? "" : (" " + getSeparator(i) + " ")) + get(i).toADQL();
+		for(int i = 0; i < size(); i++){
+			if (i > 0)
+				adql.append(" " + getSeparator(i) + " ");
+			adql.append(get(i).toADQL());
+		}
 
-		return adql;
+		return adql.toString();
 	}
 
+	@Override
 	public Iterator<T> iterator(){
 		return list.iterator();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLListIterator(this);
 	}
@@ -201,6 +209,7 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	 */
 	public abstract String getSeparator(int index) throws ArrayIndexOutOfBoundsException;
 
+	@Override
 	public abstract ADQLObject getCopy() throws Exception;
 
 	/**
@@ -219,15 +228,18 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 			list = (ADQLList<ADQLObject>)lst;
 		}
 
+		@Override
 		public boolean hasNext(){
 			return index + 1 < list.size();
 		}
 
+		@Override
 		public ADQLObject next(){
 			removed = false;
 			return list.get(++index);
 		}
 
+		@Override
 		public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 			if (index <= -1)
 				throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -241,6 +253,7 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 				list.set(index, replacer);
 		}
 
+		@Override
 		public void remove(){
 			if (index <= -1)
 				throw new IllegalStateException("remove() impossible: next() has not yet been called !");

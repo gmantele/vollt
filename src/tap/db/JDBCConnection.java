@@ -17,7 +17,7 @@ package tap.db;
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institut (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.sql.Connection;
@@ -47,10 +47,10 @@ import tap.metadata.TAPMetadata.STDTable;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 import tap.metadata.TAPTable.TableType;
-import tap.metadata.TAPType;
-import tap.metadata.TAPType.TAPDatatype;
 import uws.ISO8601Format;
 import uws.service.log.UWSLog.LogLevel;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import adql.query.ADQLQuery;
 import adql.query.IdentifierField;
 import adql.translator.ADQLTranslator;
@@ -97,7 +97,7 @@ import adql.translator.TranslationException;
  * 
  * <h3>Datatypes</h3>
  * 
- * <p>Column types are converted from DBMS to TAP types with {@link #getTAPType(String)} and from TAP to DBMS types with {@link #getDBMSDatatype(TAPType)}.</p>
+ * <p>Column types are converted from DBMS to TAP types with {@link #getTAPType(String)} and from TAP to DBMS types with {@link #getDBMSDatatype(DBType)}.</p>
  * 
  * <p>
  * 	All typical DBMS datatypes are taken into account, <b>EXCEPT the geometrical types</b> (POINT and REGION). For these types, the only object having this
@@ -635,19 +635,19 @@ public class JDBCConnection implements DBConnection {
 				}
 
 				// resolve the column type (if any) ; by default, it will be "VARCHAR" if unknown or missing:
-				TAPDatatype tapDatatype = null;
+				DBDatatype tapDatatype = null;
 				// ...try to resolve the datatype in function of all datatypes declared by the TAP standard.
 				if (datatype != null){
 					try{
-						tapDatatype = TAPDatatype.valueOf(datatype.toUpperCase());
+						tapDatatype = DBDatatype.valueOf(datatype.toUpperCase());
 					}catch(IllegalArgumentException iae){}
 				}
 				// ...build the column type:
-				TAPType type;
+				DBType type;
 				if (tapDatatype == null)
-					type = new TAPType(TAPDatatype.VARCHAR);
+					type = new DBType(DBDatatype.VARCHAR);
 				else
-					type = new TAPType(tapDatatype, size);
+					type = new DBType(tapDatatype, size);
 
 				// create the new column:
 				TAPColumn newColumn = new TAPColumn(columnName, type, nullifyIfNeeded(description), nullifyIfNeeded(unit), nullifyIfNeeded(ucd), nullifyIfNeeded(utype));
@@ -1591,7 +1591,7 @@ public class JDBCConnection implements DBConnection {
 					Object val = data.nextCol();
 					/* If the value is supposed to be a Timestamp, parse it
 					 * and build an appropriate SQL object: */
-					if (val != null && cols[c - 1].getDatatype().type == TAPDatatype.TIMESTAMP){
+					if (val != null && cols[c - 1].getDatatype().type == DBDatatype.TIMESTAMP){
 						try{
 							val = new Timestamp(ISO8601Format.parse(val.toString()));
 						}catch(ParseException pe){
@@ -1728,9 +1728,9 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @return	The corresponding DB type, or NULL if the given type is not managed or is NULL.
 	 */
-	protected String getDBMSDatatype(TAPType datatype){
+	protected String getDBMSDatatype(DBType datatype){
 		if (datatype == null)
-			datatype = new TAPType(TAPDatatype.VARCHAR);
+			datatype = new DBType(DBDatatype.VARCHAR);
 
 		switch(datatype.type){
 

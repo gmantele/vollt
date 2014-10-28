@@ -25,9 +25,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
-import tap.metadata.TAPType.TAPDatatype;
 import adql.db.DBColumn;
 import adql.db.DBTable;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
 /**
  * <p>Represent a column as described by the IVOA standard in the TAP protocol definition.</p>
@@ -101,7 +102,7 @@ public class TAPColumn implements DBColumn {
 
 	/** Type of this column.
 	 * <i>Note: Standard TAP column field ; CAN'T be NULL.</i> */
-	private TAPType datatype = new TAPType(TAPDatatype.VARCHAR);
+	private DBType datatype = new DBType(DBDatatype.VARCHAR);
 
 	/** Flag indicating whether this column is one of those that should be returned by default.
 	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
@@ -170,16 +171,16 @@ public class TAPColumn implements DBColumn {
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(TAPType)} which does not do
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does not do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
 	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
 	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
 	 * 
-	 * @see #setDatatype(TAPType)
+	 * @see #setDatatype(DBType)
 	 */
-	public TAPColumn(String columnName, TAPType type){
+	public TAPColumn(String columnName, DBType type){
 		this(columnName);
 		setDatatype(type);
 	}
@@ -201,7 +202,7 @@ public class TAPColumn implements DBColumn {
 	 * @param description	Description of the column's content. <i>May be NULL</i>
 	 */
 	public TAPColumn(String columnName, String description){
-		this(columnName, (TAPType)null, description);
+		this(columnName, (DBType)null, description);
 	}
 
 	/**
@@ -218,7 +219,7 @@ public class TAPColumn implements DBColumn {
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(TAPType)} which does do
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
@@ -226,7 +227,7 @@ public class TAPColumn implements DBColumn {
 	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
 	 * @param description	Description of the column's content. <i>May be NULL</i>
 	 */
-	public TAPColumn(String columnName, TAPType type, String description){
+	public TAPColumn(String columnName, DBType type, String description){
 		this(columnName, type);
 		this.description = description;
 	}
@@ -266,7 +267,7 @@ public class TAPColumn implements DBColumn {
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(TAPType)} which does do
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
@@ -275,7 +276,7 @@ public class TAPColumn implements DBColumn {
 	 * @param description	Description of the column's content. <i>May be NULL</i>
 	 * @param unit			Unit of the column's values. <i>May be NULL</i>
 	 */
-	public TAPColumn(String columnName, TAPType type, String description, String unit){
+	public TAPColumn(String columnName, DBType type, String description, String unit){
 		this(columnName, type, description);
 		this.unit = unit;
 	}
@@ -294,7 +295,7 @@ public class TAPColumn implements DBColumn {
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(TAPType)} which does do
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
@@ -322,7 +323,7 @@ public class TAPColumn implements DBColumn {
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(TAPType)} which does do
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
@@ -333,7 +334,7 @@ public class TAPColumn implements DBColumn {
 	 * @param ucd			UCD describing the scientific content of this column.
 	 * @param utype			UType associating this column with a data-model.
 	 */
-	public TAPColumn(String columnName, TAPType type, String description, String unit, String ucd, String utype){
+	public TAPColumn(String columnName, DBType type, String description, String unit, String ucd, String utype){
 		this(columnName, type, description, unit);
 		this.ucd = ucd;
 		this.utype = utype;
@@ -479,7 +480,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * @return	Its datatype. <i>CAN'T be NULL</i>
 	 */
-	public final TAPType getDatatype(){
+	public final DBType getDatatype(){
 		return datatype;
 	}
 
@@ -492,7 +493,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * @param type	Its new datatype.
 	 */
-	public final void setDatatype(final TAPType type){
+	public final void setDatatype(final DBType type){
 		if (type != null)
 			datatype = type;
 	}

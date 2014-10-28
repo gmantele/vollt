@@ -32,12 +32,12 @@ import tap.metadata.TAPMetadata.STDSchema;
 import tap.metadata.TAPMetadata.STDTable;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
-import tap.metadata.TAPType;
-import tap.metadata.TAPType.TAPDatatype;
 import testtools.DBTools;
 import adql.db.DBChecker;
 import adql.db.DBColumn;
 import adql.db.DBTable;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.query.ADQLQuery;
@@ -179,8 +179,8 @@ public class JDBCConnectionTest {
 		assertEquals("VARCHAR", pgJDBCConnection.getDBMSDatatype(null));
 		assertEquals("TEXT", sqliteJDBCConnection.getDBMSDatatype(null));
 
-		assertEquals("bytea", pgJDBCConnection.getDBMSDatatype(new TAPType(TAPDatatype.VARBINARY)));
-		assertEquals("BLOB", sqliteJDBCConnection.getDBMSDatatype(new TAPType(TAPDatatype.VARBINARY)));
+		assertEquals("bytea", pgJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
+		assertEquals("BLOB", sqliteJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
 	}
 
 	@Test
@@ -854,7 +854,7 @@ public class JDBCConnectionTest {
 		return true;
 	}
 
-	private static boolean equals(final TAPType type1, final TAPType type2){
+	private static boolean equals(final DBType type1, final DBType type2){
 		return type1 != null && type2 != null && type1.type == type2.type && type1.length == type2.length;
 	}
 
@@ -862,7 +862,7 @@ public class JDBCConnectionTest {
 		TAPMetadata tapMeta = new TAPMetadata();
 		TAPSchema tapSchema = new TAPSchema(STDSchema.TAPSCHEMA.toString());
 		TAPTable customColumns = (TAPTable)TAPMetadata.getStdTable(STDTable.COLUMNS).copy("Columns", STDTable.COLUMNS.label);
-		customColumns.addColumn("TestNewColumn", new TAPType(TAPDatatype.VARCHAR), "This is a fake column, just for test purpose.", null, null, null);
+		customColumns.addColumn("TestNewColumn", new DBType(DBDatatype.VARCHAR), "This is a fake column, just for test purpose.", null, null, null);
 		tapSchema.addTable(customColumns);
 		TAPTable addTable = new TAPTable("AdditionalTable");
 		addTable.addColumn("Blabla");

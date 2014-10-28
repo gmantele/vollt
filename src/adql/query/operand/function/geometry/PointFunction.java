@@ -16,11 +16,11 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLObject;
-
 import adql.query.operand.ADQLOperand;
 
 /**
@@ -34,8 +34,8 @@ import adql.query.operand.ADQLOperand;
  * In this example the function expresses a point with right ascension of 25 degrees and declination of  -19.5 degrees according
  * to the ICRS coordinate system with GEOCENTER reference position.</i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public class PointFunction extends GeometryFunction {
 
@@ -59,7 +59,7 @@ public class PointFunction extends GeometryFunction {
 		super(coordinateSystem);
 
 		if (firstCoord == null || secondCoord == null)
-			throw new NullPointerException("The POINT function must have non-null coordinates !");
+			throw new NullPointerException("The POINT function must have non-null coordinates!");
 
 		coord1 = firstCoord;
 		coord2 = secondCoord;
@@ -127,19 +127,28 @@ public class PointFunction extends GeometryFunction {
 			this.coord2 = coord2;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new PointFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return "POINT";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return false;
 	}
 
+	@Override
 	public boolean isString(){
+		return false;
+	}
+
+	@Override
+	public boolean isGeometry(){
 		return true;
 	}
 

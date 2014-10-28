@@ -16,13 +16,13 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLObject;
-
-import adql.query.operand.ADQLOperand;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
 
 /**
  * <p>It represents the AREA function of ADQL.</p>
@@ -33,8 +33,8 @@ import adql.query.operand.ADQLColumn;
  * 
  * <p>Inappropriate geometries for this construct (e.g. POINT) SHOULD either return zero or throw an error message. <b>This choice must be done in an extended class of {@link AreaFunction}</b>.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public class AreaFunction extends GeometryFunction {
 
@@ -47,7 +47,6 @@ public class AreaFunction extends GeometryFunction {
 	 * @param param					Parameter of AREA.
 	 * @throws NullPointerException	If the given operand is <i>null</i> or if it's not a {@link GeometryFunction}.
 	 */
-	@SuppressWarnings("unchecked")
 	public AreaFunction(GeometryValue<GeometryFunction> param) throws NullPointerException{
 		super();
 		if (param == null)
@@ -88,19 +87,28 @@ public class AreaFunction extends GeometryFunction {
 		this.parameter = parameter;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new AreaFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return "AREA";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return true;
 	}
 
+	@Override
 	public boolean isString(){
+		return false;
+	}
+
+	@Override
+	public boolean isGeometry(){
 		return false;
 	}
 

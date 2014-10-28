@@ -17,11 +17,12 @@ package tap.metadata;
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institut (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import tap.TAPException;
-import tap.metadata.TAPType.TAPDatatype;
 import uk.ac.starlink.votable.VOSerializer;
 
 /**
@@ -120,11 +121,11 @@ public final class VotType {
 	}
 
 	/**
-	 * Build a {@link VotType} object by converting the given {@link TAPType}.
+	 * Build a {@link VotType} object by converting the given {@link DBType}.
 	 * 
-	 * @param tapType	{@link TAPType} to convert.
+	 * @param tapType	{@link DBType} to convert.
 	 */
-	public VotType(final TAPType tapType){
+	public VotType(final DBType tapType){
 		switch(tapType.type){
 			case SMALLINT:
 				this.datatype = VotDatatype.SHORT;
@@ -250,11 +251,11 @@ public final class VotType {
 	/**
 	 * Convert this VOTable type definition into a TAPColumn type.
 	 * 
-	 * @return	The corresponding {@link TAPType}.
+	 * @return	The corresponding {@link DBType}.
 	 * 
 	 * @throws TAPException	If the conversion is impossible (particularly if the array-size refers to a multi-dimensional array ; only 1D arrays are allowed). 
 	 */
-	public TAPType toTAPType() throws TAPException{
+	public DBType toTAPType() throws TAPException{
 
 		/* Stop immediately if the arraysize refers to a multi-dimensional array:
 		 * (Note: 'x' is the dimension separator of the VOTable attribute 'arraysize') */
@@ -266,29 +267,29 @@ public final class VotType {
 		/* NUMERIC TYPES */
 			case SHORT:
 			case BOOLEAN:
-				return convertNumericType(TAPDatatype.SMALLINT);
+				return convertNumericType(DBDatatype.SMALLINT);
 
 			case INT:
-				return convertNumericType(TAPDatatype.INTEGER);
+				return convertNumericType(DBDatatype.INTEGER);
 
 			case LONG:
-				return convertNumericType(TAPDatatype.BIGINT);
+				return convertNumericType(DBDatatype.BIGINT);
 
 			case FLOAT:
-				return convertNumericType(TAPDatatype.REAL);
+				return convertNumericType(DBDatatype.REAL);
 
 			case DOUBLE:
-				return convertNumericType(TAPDatatype.DOUBLE);
+				return convertNumericType(DBDatatype.DOUBLE);
 
 				/* BINARY TYPES */
 			case UNSIGNED_BYTE:
 				// BLOB exception:
 				if (xtype != null && xtype.equalsIgnoreCase(XTYPE_BLOB))
-					return new TAPType(TAPDatatype.BLOB);
+					return new DBType(DBDatatype.BLOB);
 
 				// Or else, just (var)binary:
 				else
-					return convertVariableLengthType(TAPDatatype.VARBINARY, TAPDatatype.BINARY);
+					return convertVariableLengthType(DBDatatype.VARBINARY, DBDatatype.BINARY);
 
 				/* CHARACTER TYPES */
 			case CHAR:
@@ -296,47 +297,47 @@ public final class VotType {
 				/* Special type cases: */
 				if (xtype != null){
 					if (xtype.equalsIgnoreCase(VotType.XTYPE_CLOB))
-						return new TAPType(TAPDatatype.CLOB);
+						return new DBType(DBDatatype.CLOB);
 					else if (xtype.equalsIgnoreCase(VotType.XTYPE_TIMESTAMP))
-						return new TAPType(TAPDatatype.TIMESTAMP);
+						return new DBType(DBDatatype.TIMESTAMP);
 					else if (xtype.equalsIgnoreCase(VotType.XTYPE_POINT))
-						return new TAPType(TAPDatatype.POINT);
+						return new DBType(DBDatatype.POINT);
 					else if (xtype.equalsIgnoreCase(VotType.XTYPE_REGION))
-						return new TAPType(TAPDatatype.REGION);
+						return new DBType(DBDatatype.REGION);
 				}
 
 				// Or if not known or missing, just a (var)char:
-				return convertVariableLengthType(TAPDatatype.VARCHAR, TAPDatatype.CHAR);
+				return convertVariableLengthType(DBDatatype.VARCHAR, DBDatatype.CHAR);
 		}
 	}
 
 	/**
-	 * <p>Convert this numeric {@link VotType} object into a corresponding {@link TAPType} whose the datatype is provided in parameter.</p>
+	 * <p>Convert this numeric {@link VotType} object into a corresponding {@link DBType} whose the datatype is provided in parameter.</p>
 	 * 
 	 * <p>
 	 * 	Thus, just the arraysize must be managed here. If there is no arraysize or if equals to '1', the given datatype will be used.
-	 * 	Otherwise, it is ignored and a {@link TAPType} with VARBINARY is returned.
+	 * 	Otherwise, it is ignored and a {@link DBType} with VARBINARY is returned.
 	 * </p>
 	 * 
 	 * @param tapDatatype	TAP datatype corresponding to this {@link VotType} (only when arraysize != '*' and 'n').
 	 * 
-	 * @return	The corresponding {@link TAPType}.
+	 * @return	The corresponding {@link DBType}.
 	 */
-	protected TAPType convertNumericType(final TAPDatatype tapDatatype){
+	protected DBType convertNumericType(final DBDatatype tapDatatype){
 		// If no arraysize:
 		if (arraysize == null || arraysize.equals("1"))
-			return new TAPType(tapDatatype);
+			return new DBType(tapDatatype);
 
 		// If only one dimension:
 		else
-			return new TAPType(TAPDatatype.VARBINARY);
+			return new DBType(DBDatatype.VARBINARY);
 
 		/* Note: The test of multi-dimensional array should have been already done at the beginning of #toTAPType(). */
 	}
 
 	/**
 	 * <p>
-	 * 	Convert this variable length {@link VotType} (unsignedByte and char) object into a corresponding {@link TAPType}
+	 * 	Convert this variable length {@link VotType} (unsignedByte and char) object into a corresponding {@link DBType}
 	 * 	whose the variable length and fixed length versions are given in parameters.
 	 * </p>
 	 * 
@@ -350,23 +351,23 @@ public final class VotType {
 	 * @param varType		Variable length type (i.e. VARCHAR, VARBINARY).
 	 * @param fixedType		Fixed length type (i.e. CHAR, BINARY).
 	 * 
-	 * @return	The corresponding {@link TAPType}.
+	 * @return	The corresponding {@link DBType}.
 	 * 
 	 * @throws TAPException	If the arraysize is not valid (that's to say, different from the following syntaxes: NULL, '*', 'n' or 'n*' (where n is a positive and not-null integer)).
 	 */
-	protected TAPType convertVariableLengthType(final TAPDatatype varType, final TAPDatatype fixedType) throws TAPException{
+	protected DBType convertVariableLengthType(final DBDatatype varType, final DBDatatype fixedType) throws TAPException{
 		try{
 			// no arraysize or '*' => VARCHAR or VARBINARY
 			if (arraysize == null || arraysize.equals("*"))
-				return new TAPType(varType);
+				return new DBType(varType);
 
 			// 'n*' => VARCHAR(n) or VARBINARY(n)
 			else if (arraysize.charAt(arraysize.length() - 1) == '*')
-				return new TAPType(varType, Integer.parseInt(arraysize.substring(0, arraysize.length() - 1)));
+				return new DBType(varType, Integer.parseInt(arraysize.substring(0, arraysize.length() - 1)));
 
 			// 'n' => CHAR(n) or BINARY(n)
 			else
-				return new TAPType(fixedType, Integer.parseInt(arraysize));
+				return new DBType(fixedType, Integer.parseInt(arraysize));
 
 		}catch(NumberFormatException nfe){
 			throw new TAPException("failed conversion of a VOTable datatype: non-numeric arraysize (" + arraysize + ")!");

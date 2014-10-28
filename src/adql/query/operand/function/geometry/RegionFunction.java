@@ -38,7 +38,7 @@ import adql.query.operand.ADQLOperand;
  * Inappropriate geometries for this construct SHOULD throw an error message, to be defined by the service making use of ADQL.</b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (02/2014)
+ * @version 1.3 (10/2014)
  */
 public class RegionFunction extends GeometryFunction {
 
@@ -88,6 +88,11 @@ public class RegionFunction extends GeometryFunction {
 
 	@Override
 	public boolean isString(){
+		return false;
+	}
+
+	@Override
+	public boolean isGeometry(){
 		return true;
 	}
 

@@ -2,6 +2,7 @@ package uws.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
@@ -406,39 +407,53 @@ public class UWSUrlTest {
 		// CASE 1: http://localhost:8080/tapTest/path with url-pattern = /path/*
 		try{
 			UWSUrl uu = new UWSUrl(requestFromPath2root);
-			assertEquals(uu.getBaseURI(), "/path");
-		}catch(NullPointerException e){
+			assertEquals("/path", uu.getBaseURI());
+			assertEquals("", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/path/", uu.toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromPath2root.getRequestURL());
 		}
 
 		// CASE 2: http://localhost:8080/tapTest/path/async with url-pattern = /path/*
 		try{
 			UWSUrl uu = new UWSUrl(requestFromPath2async);
-			assertEquals(uu.getBaseURI(), "/path");
-		}catch(NullPointerException e){
+			assertEquals("/path", uu.getBaseURI());
+			assertEquals("/async", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/path/async", uu.toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromPath2async.getRequestURL());
 		}
 
-		// CASE 3: http://localhost:8080/tapTest/async with url-pattern = /*
+		// CASE 3: http://localhost:8080/tapTest with url-pattern = /*
 		try{
 			UWSUrl uu = new UWSUrl(requestFromRoot2root);
-			assertEquals(uu.getBaseURI(), "");
-		}catch(NullPointerException e){
+			assertEquals("", uu.getBaseURI());
+			assertEquals("", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/", uu.toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromRoot2root.getRequestURL());
 		}
 
 		// CASE 4: http://localhost:8080/tapTest/async with url-pattern = /*
 		try{
 			UWSUrl uu = new UWSUrl(requestFromRoot2async);
-			assertEquals(uu.getBaseURI(), "");
-		}catch(NullPointerException e){
+			assertEquals("", uu.getBaseURI());
+			assertEquals("/async", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/async", uu.toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromRoot2async.getRequestURL());
 		}
 
 		// CASE 5: http://localhost:8080/tapTest/path/async with url-pattern = /path/*
 		try{
 			new UWSUrl(requestWithServletPathNull);
-		}catch(NullPointerException e){
+			fail("RequestURL with no servlet path: this test should have failed!");
+		}catch(Exception e){
+			assertTrue(e instanceof NullPointerException);
 			assertEquals(e.getMessage(), "The extracted base UWS URI is NULL!");
 		}
 	}
@@ -449,18 +464,20 @@ public class UWSUrlTest {
 		try{
 			UWSUrl uu = new UWSUrl(requestFromPath2root);
 			uu.load(requestFromPath2root);
-			assertEquals(uu.getUwsURI(), "");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/path/async/123456A");
-		}catch(NullPointerException e){
+			assertEquals("", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/path/async/123456A", uu.jobSummary("async", "123456A").toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromPath2root.getRequestURL());
 		}
 		// CASE 1b: Idem while loading http://localhost:8080/tapTest/path/async
 		try{
 			UWSUrl uu = new UWSUrl(requestFromPath2root);
 			uu.load(requestFromPath2async);
-			assertEquals(uu.getUwsURI(), "/async");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/path/async/123456A");
-		}catch(NullPointerException e){
+			assertEquals("/async", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/path/async/123456A", uu.jobSummary("async", "123456A").toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromPath2async.getRequestURL());
 		}
 
@@ -468,9 +485,10 @@ public class UWSUrlTest {
 		try{
 			UWSUrl uu = new UWSUrl(requestFromPath2async);
 			uu.load(requestFromPath2async);
-			assertEquals(uu.getUwsURI(), "/async");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/path/async/123456A");
-		}catch(NullPointerException e){
+			assertEquals("/async", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/path/async/123456A", uu.jobSummary("async", "123456A").toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromPath2async.getRequestURL());
 		}
 
@@ -478,9 +496,10 @@ public class UWSUrlTest {
 		try{
 			UWSUrl uu = new UWSUrl(requestFromPath2async);
 			uu.load(requestFromPath2root);
-			assertEquals(uu.getUwsURI(), "");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/path/async/123456A");
-		}catch(NullPointerException e){
+			assertEquals("", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/path/async/123456A", uu.jobSummary("async", "123456A").toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromPath2root.getRequestURL());
 		}
 
@@ -488,8 +507,8 @@ public class UWSUrlTest {
 		try{
 			UWSUrl uu = new UWSUrl(requestFromRoot2root);
 			uu.load(requestFromRoot2root);
-			assertEquals(uu.getUwsURI(), "");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/async/123456A");
+			assertEquals("", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/async/123456A", uu.jobSummary("async", "123456A").toString());
 		}catch(NullPointerException e){
 			fail("This HTTP request is perfectly correct: " + requestFromRoot2root.getRequestURL());
 		}
@@ -498,9 +517,10 @@ public class UWSUrlTest {
 		try{
 			UWSUrl uu = new UWSUrl(requestFromRoot2root);
 			uu.load(requestFromRoot2async);
-			assertEquals(uu.getUwsURI(), "/async");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/async/123456A");
-		}catch(NullPointerException e){
+			assertEquals("/async", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/async/123456A", uu.jobSummary("async", "123456A").toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromRoot2async.getRequestURL());
 		}
 
@@ -508,9 +528,10 @@ public class UWSUrlTest {
 		try{
 			UWSUrl uu = new UWSUrl(requestFromRoot2async);
 			uu.load(requestFromRoot2async);
-			assertEquals(uu.getUwsURI(), "/async");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/async/123456A");
-		}catch(NullPointerException e){
+			assertEquals("/async", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/async/123456A", uu.jobSummary("async", "123456A").toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromRoot2async.getRequestURL());
 		}
 
@@ -518,9 +539,10 @@ public class UWSUrlTest {
 		try{
 			UWSUrl uu = new UWSUrl(requestFromRoot2async);
 			uu.load(requestFromRoot2root);
-			assertEquals(uu.getUwsURI(), "");
-			assertEquals(uu.jobSummary("async", "123456A").toString(), "http://localhost:8080/tapTest/async/123456A");
-		}catch(NullPointerException e){
+			assertEquals("", uu.getUwsURI());
+			assertEquals("http://localhost:8080/tapTest/async/123456A", uu.jobSummary("async", "123456A").toString());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromRoot2root.getRequestURL());
 		}
 
@@ -529,7 +551,8 @@ public class UWSUrlTest {
 			UWSUrl uu = new UWSUrl(requestFromRoot2async);
 			uu.load(requestFromPath2async);
 			assertFalse(uu.getUwsURI().equals(""));
-		}catch(NullPointerException e){
+		}catch(Exception e){
+			e.printStackTrace(System.err);
 			fail("This HTTP request is perfectly correct: " + requestFromRoot2root.getRequestURL());
 		}
 	}

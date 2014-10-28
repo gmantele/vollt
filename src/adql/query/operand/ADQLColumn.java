@@ -16,11 +16,11 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.db.DBColumn;
-
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.IdentifierField;
@@ -31,10 +31,10 @@ import adql.query.from.ADQLTable;
 /**
  * Represents the complete (literal) reference to a column ({schema(s)}.{table}.{column}).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 07/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
-public class ADQLColumn implements ADQLOperand {
+public class ADQLColumn implements ADQLOperand, UnknownType {
 
 	/** Position in the original ADQL query string. */
 	private TextPosition position = null;
@@ -59,6 +59,10 @@ public class ADQLColumn implements ADQLOperand {
 
 	/** The {@link ADQLTable} which is supposed to contain this column. By default, this field is automatically filled by {@link adql.db.DBChecker}. */
 	private ADQLTable adqlTable = null;
+
+	/** Type expected by the parser.
+	 * @since 1.3 */
+	private char expectedType = '?';
 
 	/* ************ */
 	/* CONSTRUCTORS */
@@ -457,26 +461,47 @@ public class ADQLColumn implements ADQLOperand {
 	/* ***************** */
 	/* INHERITED METHODS */
 	/* ***************** */
+	@Override
+	public char getExpectedType(){
+		return expectedType;
+	}
+
+	@Override
+	public void setExpectedType(final char c){
+		expectedType = c;
+	}
+
+	@Override
 	public boolean isNumeric(){
-		return true;
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isNumeric());
 	}
 
+	@Override
 	public boolean isString(){
-		return true;
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isString());
 	}
 
+	@Override
+	public boolean isGeometry(){
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isGeometry());
+	}
+
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new ADQLColumn(this);
 	}
 
+	@Override
 	public String getName(){
 		return getColumnName();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new NullADQLIterator();
 	}
 
+	@Override
 	public String toADQL(){
 		return getFullColumnName();
 	}

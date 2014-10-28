@@ -28,12 +28,13 @@ import tap.file.TAPFileManager;
 import tap.log.TAPLog;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata;
-import tap.metadata.TAPType;
-import tap.metadata.TAPType.TAPDatatype;
 import tap.parameters.TAPParameters;
 import testtools.CommandExecute;
 import testtools.DBTools;
 import uws.service.UserIdentifier;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
+import adql.db.FunctionDef;
 
 /**
  * <p>Test the SVFormat function {@link SVFormat#writeResult(TableIterator, OutputStream, TAPExecutionReport, Thread)}.</p>
@@ -56,10 +57,10 @@ public class SVFormatTest {
 		serviceConn = new ServiceConnectionTest();
 
 		resultingColumns = new TAPColumn[4];
-		resultingColumns[0] = new TAPColumn("ID", new TAPType(TAPDatatype.VARCHAR));
-		resultingColumns[1] = new TAPColumn("ra", new TAPType(TAPDatatype.DOUBLE), "Right ascension", "deg", "pos.eq.ra", null);
-		resultingColumns[2] = new TAPColumn("deg", new TAPType(TAPDatatype.DOUBLE), "Declination", "deg", "pos.eq.dec", null);
-		resultingColumns[3] = new TAPColumn("gmag", new TAPType(TAPDatatype.DOUBLE), "G magnitude", "mag", "phot.mag;em.opt.B", null);
+		resultingColumns[0] = new TAPColumn("ID", new DBType(DBDatatype.VARCHAR));
+		resultingColumns[1] = new TAPColumn("ra", new DBType(DBDatatype.DOUBLE), "Right ascension", "deg", "pos.eq.ra", null);
+		resultingColumns[2] = new TAPColumn("deg", new DBType(DBDatatype.DOUBLE), "Declination", "deg", "pos.eq.dec", null);
+		resultingColumns[3] = new TAPColumn("gmag", new DBType(DBDatatype.DOUBLE), "G magnitude", "mag", "phot.mag;em.opt.B", null);
 
 		if (!svFile.exists())
 			svFile.createNewFile();
@@ -214,6 +215,16 @@ public class SVFormatTest {
 
 		@Override
 		public Collection<String> getCoordinateSystems(){
+			return null;
+		}
+
+		@Override
+		public Collection<String> getGeometries(){
+			return null;
+		}
+
+		@Override
+		public Collection<FunctionDef> getUDFs(){
 			return null;
 		}
 

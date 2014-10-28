@@ -104,7 +104,7 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 			// log the error as GRAVE/FATAL (because unexpected/unmanaged):
 			logger.logUWS(LogLevel.FATAL, null, null, "[REQUEST N°" + reqID + "] " + t.getMessage(), t);
 			// write a message to the user:
-			writeError("INTERNAL SERVER ERROR! Sorry, this error is unexpected and no explaination can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following 'Request ID').", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
+			writeError("INTERNAL SERVER ERROR! Sorry, this error is unexpected and no explanation can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following 'Request ID').", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
 		}
 	}
 

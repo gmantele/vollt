@@ -44,6 +44,7 @@ import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
 import adql.db.DBChecker;
 import adql.parser.ADQLQueryFactory;
+import adql.parser.ParseException;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
 
@@ -52,7 +53,7 @@ import adql.query.ADQLQuery;
  * Only the functions related with the database connection stay abstract.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (10/2014)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
@@ -130,7 +131,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </p>
 	 * 
 	 * <p><i>Note:
-	 * 	This function can not be overrided, but {@link #createQueryChecker(Collection)} can be.
+	 * 	This function can not be overridded, but {@link #createQueryChecker(Collection)} can be.
 	 * </i></p>
 	 */
 	@Override
@@ -172,7 +173,11 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * @throws TAPException	If any error occurs while creating the query checker.
 	 */
 	protected QueryChecker createQueryChecker(final Collection<TAPTable> tables) throws TAPException{
-		return new DBChecker(tables);
+		try{
+			return new DBChecker(tables, service.getUDFs(), service.getGeometries(), service.getCoordinateSystems());
+		}catch(ParseException e){
+			throw new TAPException("Unable to build a DBChecker instance! " + e.getMessage(), e, UWSException.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	/* ****** */

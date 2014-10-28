@@ -16,11 +16,11 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLObject;
-
 import adql.query.operand.ADQLOperand;
 
 /**
@@ -38,9 +38,8 @@ import adql.query.operand.ADQLOperand;
  * In this second example the coordinates of the center position are extracted from a coordinate's column reference.
  * </i></p>
  * 
- * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public class BoxFunction extends GeometryFunction {
 
@@ -93,19 +92,28 @@ public class BoxFunction extends GeometryFunction {
 		height = (ADQLOperand)(toCopy.height.getCopy());
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new BoxFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return "BOX";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return false;
 	}
 
+	@Override
 	public boolean isString(){
+		return false;
+	}
+
+	@Override
+	public boolean isGeometry(){
 		return true;
 	}
 

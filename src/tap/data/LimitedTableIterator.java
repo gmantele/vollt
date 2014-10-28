@@ -27,8 +27,8 @@ import java.util.NoSuchElementException;
 
 import tap.ServiceConnection.LimitUnit;
 import tap.metadata.TAPColumn;
-import tap.metadata.TAPType;
 import tap.upload.LimitedSizeInputStream;
+import adql.db.DBType;
 
 import com.oreilly.servlet.multipart.ExceededSizeException;
 
@@ -219,7 +219,7 @@ public class LimitedTableIterator implements TableIterator {
 	}
 
 	@Override
-	public TAPType getColType() throws IllegalStateException, DataReadException{
+	public DBType getColType() throws IllegalStateException, DataReadException{
 		testOverflow();
 		return innerIt.getColType();
 	}
