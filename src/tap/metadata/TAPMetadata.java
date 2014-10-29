@@ -37,6 +37,7 @@ import tap.metadata.TAPTable.TableType;
 import tap.resource.Capabilities;
 import tap.resource.TAPResource;
 import tap.resource.VOSIResource;
+import uk.ac.starlink.votable.VOSerializer;
 import adql.db.DBTable;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
@@ -61,7 +62,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (10/2014)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -458,7 +459,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 		writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
-		/* Note: the XSD schema at http://www.ivoa.net/xml/VOSITables/v1.0 contains an incorrect targetNamespace ("http://www.ivoa.net/xml/VOSICapabilities/v1.0").
+		/* TODO The XSD schema for VOSITables should be fixed soon! This schema should be changed here before the library is released!
+		 * Note: the XSD schema at http://www.ivoa.net/xml/VOSITables/v1.0 contains an incorrect targetNamespace ("http://www.ivoa.net/xml/VOSICapabilities/v1.0").
 		 *       In order to make this XML document valid, a custom location toward a correct XSD schema is used: http://vo.ari.uni-heidelberg.de/docs/schemata/VOSITables-v1.0.xsd */
 		writer.println("<vosi:tableset xmlns:vosi=\"http://www.ivoa.net/xml/VOSITables/v1.0\" xmlns:vod=\"http://www.ivoa.net/xml/VODataService/v1.1\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VODataService/v1.1 http://www.ivoa.net/xml/VODataService/v1.1 http://www.ivoa.net/xml/VOSITables/v1.0 http://vo.ari.uni-heidelberg.de/docs/schemata/VOSITables-v1.0.xsd\">");
 
@@ -500,9 +502,9 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		final String prefix = "\t\t";
 		writer.println("\t<schema>");
 
-		writeAtt(prefix, "name", s.getADQLName(), writer);
-		writeAtt(prefix, "description", s.getDescription(), writer);
-		writeAtt(prefix, "utype", s.getUtype(), writer);
+		writeAtt(prefix, "name", s.getADQLName(), false, writer);
+		writeAtt(prefix, "description", s.getDescription(), true, writer);
+		writeAtt(prefix, "utype", s.getUtype(), true, writer);
 
 		for(TAPTable t : s)
 			writeTable(t, writer);
@@ -536,13 +538,13 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	private void writeTable(TAPTable t, PrintWriter writer) throws IOException{
 		final String prefix = "\t\t\t";
 
-		writer.print("\t\t<table type=\"");
-		writer.print(t.getType().toString());
-		writer.println("\">");
+		writer.print("\t\t<table");
+		writer.print(VOSerializer.formatAttribute("type", t.getType().toString()));
+		writer.println(">");
 
-		writeAtt(prefix, "name", t.getFullName(), writer);
-		writeAtt(prefix, "description", t.getDescription(), writer);
-		writeAtt(prefix, "utype", t.getUtype(), writer);
+		writeAtt(prefix, "name", t.getADQLName(), false, writer);
+		writeAtt(prefix, "description", t.getDescription(), true, writer);
+		writeAtt(prefix, "utype", t.getUtype(), true, writer);
 
 		Iterator<TAPColumn> itCols = t.getColumns();
 		while(itCols.hasNext())
@@ -588,11 +590,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writer.print(c.isStd());
 		writer.println("\">");
 
-		writeAtt(prefix, "name", c.getADQLName(), writer);
-		writeAtt(prefix, "description", c.getDescription(), writer);
-		writeAtt(prefix, "unit", c.getUnit(), writer);
-		writeAtt(prefix, "ucd", c.getUcd(), writer);
-		writeAtt(prefix, "utype", c.getUtype(), writer);
+		writeAtt(prefix, "name", c.getADQLName(), false, writer);
+		writeAtt(prefix, "description", c.getDescription(), true, writer);
+		writeAtt(prefix, "unit", c.getUnit(), true, writer);
+		writeAtt(prefix, "ucd", c.getUcd(), true, writer);
+		writeAtt(prefix, "utype", c.getUtype(), true, writer);
 
 		if (c.getDatatype() != null){
 			writer.print(prefix);
@@ -603,14 +605,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				writer.print("\"");
 			}
 			writer.print('>');
-			writer.print(c.getDatatype().type.toString().toUpperCase());
+			writer.print(VOSerializer.formatText(c.getDatatype().type.toString().toUpperCase()));
 			writer.println("</dataType>");
 		}
 
 		if (c.isIndexed())
-			writeAtt(prefix, "flag", "indexed", writer);
+			writeAtt(prefix, "flag", "indexed", true, writer);
 		if (c.isPrincipal())
-			writeAtt(prefix, "flag", "primary", writer);
+			writeAtt(prefix, "flag", "primary", true, writer);
 
 		writer.println("\t\t\t</column>");
 	}
@@ -646,16 +648,16 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 		writer.println("\t\t\t<foreignKey>");
 
-		writeAtt(prefix, "targetTable", fk.getTargetTable().getFullName(), writer);
-		writeAtt(prefix, "description", fk.getDescription(), writer);
-		writeAtt(prefix, "utype", fk.getUtype(), writer);
+		writeAtt(prefix, "targetTable", fk.getTargetTable().getFullName(), false, writer);
+		writeAtt(prefix, "description", fk.getDescription(), true, writer);
+		writeAtt(prefix, "utype", fk.getUtype(), true, writer);
 
 		final String prefix2 = prefix + "\t";
 		for(Map.Entry<String,String> entry : fk){
 			writer.print(prefix);
 			writer.println("<fkColumn>");
-			writeAtt(prefix2, "fromColumn", entry.getKey(), writer);
-			writeAtt(prefix2, "targetColumn", entry.getValue(), writer);
+			writeAtt(prefix2, "fromColumn", entry.getKey(), false, writer);
+			writeAtt(prefix2, "targetColumn", entry.getValue(), false, writer);
 			writer.print(prefix);
 			writer.println("</fkColumn>");
 		}
@@ -669,16 +671,19 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * @param prefix			Prefix of the XML node. (generally, space characters)
 	 * @param attributeName		Name of the metadata attribute to write (= Name of the XML node).
 	 * @param attributeValue	Value of the metadata attribute (= Value of the XML node).
+	 * @param isOptionalAttr	<i>true</i> if the attribute to write is optional (in this case, if the value is NULL or an empty string, the whole attribute item won't be written), 
+	 *                      	<i>false</i> otherwise (here, if the value is NULL or an empty string, the XML item will be written with an empty string as value). 
 	 * @param writer			Output in which the XML node must be written.
 	 * 
 	 * @throws IOException	If there is a problem while writing the XML node inside the given writer.
 	 */
-	private void writeAtt(String prefix, String attributeName, String attributeValue, PrintWriter writer) throws IOException{
-		if (attributeValue != null){
+	private void writeAtt(String prefix, String attributeName, String attributeValue, boolean isOptionalAttr, PrintWriter writer) throws IOException{
+		if (attributeValue != null && attributeValue.trim().length() > 0){
 			StringBuffer xml = new StringBuffer(prefix);
-			xml.append('<').append(attributeName).append('>').append(attributeValue).append("</").append(attributeName).append('>');
+			xml.append('<').append(attributeName).append('>').append(VOSerializer.formatText(attributeValue)).append("</").append(attributeName).append('>');
 			writer.println(xml.toString());
-		}
+		}else if (!isOptionalAttr)
+			writer.println("<" + attributeName + "></" + attributeName + ">");
 	}
 
 	/**
