@@ -21,6 +21,7 @@ package adql.translator;
  */
 
 import adql.query.IdentifierField;
+import adql.query.operand.StringConstant;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -45,7 +46,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (08/2014)
+ * @version 1.3 (10/2014)
  * 
  * @see PgSphereTranslator
  */
@@ -96,6 +97,19 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	@Override
 	public boolean isCaseSensitive(final IdentifierField field){
 		return field == null ? false : field.isCaseSensitive(caseSensitivity);
+	}
+
+	@Override
+	public String translate(StringConstant strConst) throws TranslationException{
+		// Deal with the special escaping syntax of Postgres:
+		/* A string containing characters to escape must be prefixed by an E.
+		 * Without this prefix, Potsgres does not escape the concerned characters and
+		 * consider backslashes as normal characters.
+		 * For instance: E'foo\tfoo2'. */
+		if (strConst.getValue() != null && strConst.getValue().contains("\\"))
+			return "E'" + strConst.getValue() + "'";
+		else
+			return super.translate(strConst);
 	}
 
 	@Override
