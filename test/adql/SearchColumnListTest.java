@@ -9,12 +9,12 @@ import tap.metadata.TAPColumn;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 import tap.metadata.TAPTable.TableType;
-import tap.metadata.TAPType;
-import tap.metadata.TAPType.TAPDatatype;
 import adql.db.DBColumn;
 import adql.db.DBCommonColumn;
 import adql.db.DBTable;
+import adql.db.DBType;
 import adql.db.SearchColumnList;
+import adql.db.DBType.DBDatatype;
 import adql.db.exception.UnresolvedJoin;
 import adql.parser.ParseException;
 import adql.query.IdentifierField;
@@ -32,16 +32,16 @@ public class SearchColumnListTest {
 		TAPTable tableD = new TAPTable("D", TableType.table, "NATURAL JOIN Test table", null);
 
 		// Describe its columns:
-		tableA.addColumn(new TAPColumn("id", new TAPType(TAPDatatype.VARCHAR), "Object ID"));
-		tableA.addColumn(new TAPColumn("txta", new TAPType(TAPDatatype.VARCHAR), "Text of table A"));
-		tableB.addColumn(new TAPColumn("id", new TAPType(TAPDatatype.VARCHAR), "Object ID"));
-		tableB.addColumn(new TAPColumn("txtb", new TAPType(TAPDatatype.VARCHAR), "Text of table B"));
-		tableC.addColumn(new TAPColumn("Id", new TAPType(TAPDatatype.VARCHAR), "Object ID"));
-		tableC.addColumn(new TAPColumn("txta", new TAPType(TAPDatatype.VARCHAR), "Text of table A"));
-		tableC.addColumn(new TAPColumn("txtc", new TAPType(TAPDatatype.VARCHAR), "Text of table C"));
-		tableD.addColumn(new TAPColumn("id", new TAPType(TAPDatatype.VARCHAR), "Object ID"));
-		tableD.addColumn(new TAPColumn("txta", new TAPType(TAPDatatype.VARCHAR), "Text of table A"));
-		tableD.addColumn(new TAPColumn("txtd", new TAPType(TAPDatatype.VARCHAR), "Text of table D"));
+		tableA.addColumn(new TAPColumn("id", new DBType(DBDatatype.VARCHAR), "Object ID"));
+		tableA.addColumn(new TAPColumn("txta", new DBType(DBDatatype.VARCHAR), "Text of table A"));
+		tableB.addColumn(new TAPColumn("id", new DBType(DBDatatype.VARCHAR), "Object ID"));
+		tableB.addColumn(new TAPColumn("txtb", new DBType(DBDatatype.VARCHAR), "Text of table B"));
+		tableC.addColumn(new TAPColumn("Id", new DBType(DBDatatype.VARCHAR), "Object ID"));
+		tableC.addColumn(new TAPColumn("txta", new DBType(DBDatatype.VARCHAR), "Text of table A"));
+		tableC.addColumn(new TAPColumn("txtc", new DBType(DBDatatype.VARCHAR), "Text of table C"));
+		tableD.addColumn(new TAPColumn("id", new DBType(DBDatatype.VARCHAR), "Object ID"));
+		tableD.addColumn(new TAPColumn("txta", new DBType(DBDatatype.VARCHAR), "Text of table A"));
+		tableD.addColumn(new TAPColumn("txtd", new DBType(DBDatatype.VARCHAR), "Text of table D"));
 
 		// List all available tables:
 		TAPSchema schema = new TAPSchema("public");

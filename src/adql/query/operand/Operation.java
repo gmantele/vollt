@@ -16,7 +16,8 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.NoSuchElementException;
@@ -27,8 +28,8 @@ import adql.query.ADQLObject;
 /**
  * It represents a simple numeric operation (sum, difference, multiplication and division).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  * 
  * @see OperationType
  */
@@ -160,6 +161,7 @@ public class Operation implements ADQLOperand {
 	/** Always returns <i>true</i>.
 	 * @see adql.query.operand.ADQLOperand#isNumeric()
 	 */
+	@Override
 	public final boolean isNumeric(){
 		return true;
 	}
@@ -167,24 +169,37 @@ public class Operation implements ADQLOperand {
 	/** Always returns <i>false</i>.
 	 * @see adql.query.operand.ADQLOperand#isString()
 	 */
+	@Override
 	public final boolean isString(){
 		return false;
 	}
 
+	/** Always returns <i>false</i>.
+	 * @see adql.query.operand.ADQLOperand#isGeometry()
+	 */
+	@Override
+	public final boolean isGeometry(){
+		return false;
+	}
+
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new Operation(this);
 	}
 
+	@Override
 	public String getName(){
 		return operation.toString();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private int index = -1;
 			private ADQLOperand operand = null;
 
+			@Override
 			public ADQLObject next(){
 				index++;
 
@@ -197,10 +212,12 @@ public class Operation implements ADQLOperand {
 				return operand;
 			}
 
+			@Override
 			public boolean hasNext(){
 				return index + 1 < 2;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -218,6 +235,7 @@ public class Operation implements ADQLOperand {
 				}
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -227,6 +245,7 @@ public class Operation implements ADQLOperand {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		return leftOperand.toADQL() + operation.toADQL() + rightOperand.toADQL();
 	}

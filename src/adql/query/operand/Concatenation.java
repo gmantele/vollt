@@ -16,7 +16,8 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLList;
@@ -25,8 +26,8 @@ import adql.query.ADQLObject;
 /**
  * Represents a concatenation in ADQL (ex: <i>"_s_ra" || ':' || "_s_dec"</i>).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 11/2010
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public final class Concatenation extends ADQLList<ADQLOperand> implements ADQLOperand {
 
@@ -65,12 +66,19 @@ public final class Concatenation extends ADQLList<ADQLOperand> implements ADQLOp
 		return "||";
 	}
 
+	@Override
 	public final boolean isNumeric(){
 		return false;
 	}
 
+	@Override
 	public final boolean isString(){
 		return true;
+	}
+
+	@Override
+	public final boolean isGeometry(){
+		return false;
 	}
 
 }

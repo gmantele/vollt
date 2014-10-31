@@ -16,7 +16,7 @@ package adql.db.exception;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2013-2014 - Astronomishes Rechen Institut (ARI)
+ * Copyright 2013-2014 - Astronomisches Rechen Institut (ARI)
  */
 
 import adql.parser.ParseException;

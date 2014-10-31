@@ -35,8 +35,6 @@ import tap.data.DataReadException;
 import tap.data.TableIterator;
 import tap.error.DefaultTAPErrorWriter;
 import tap.metadata.TAPColumn;
-import tap.metadata.TAPType;
-import tap.metadata.TAPType.TAPDatatype;
 import tap.metadata.VotType;
 import tap.metadata.VotType.VotDatatype;
 import uk.ac.starlink.table.AbstractStarTable;
@@ -50,6 +48,8 @@ import uk.ac.starlink.votable.VOSerializer;
 import uk.ac.starlink.votable.VOTableVersion;
 import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
 /**
  * <p>Format any given query (table) result into VOTable.</p>
@@ -426,6 +426,12 @@ public class VOTableFormat implements OutputFormat {
 			out.newLine();
 		}
 
+		/* TODO Add somewhere in the table header the different Coordinate Systems used in this result!
+		 * 2 ways to do so:
+		 * 	1/ COOSYS (deprecated from VOTable 1.2, but soon un-deprecated)
+		 * 	2/ a GROUP item with the STC expression of the coordinate system. 
+		 */
+
 		out.flush();
 	}
 
@@ -495,7 +501,7 @@ public class VOTableFormat implements OutputFormat {
 			else
 				return (TAPColumn)typeFromResult.copy();
 		}else
-			return new TAPColumn((typeFromQuery != null) ? typeFromQuery.getADQLName() : "?", new TAPType(TAPDatatype.VARCHAR), "?");
+			return new TAPColumn((typeFromQuery != null) ? typeFromQuery.getADQLName() : "?", new DBType(DBDatatype.VARCHAR), "?");
 	}
 
 	/**
@@ -507,7 +513,7 @@ public class VOTableFormat implements OutputFormat {
 	 */
 	protected static final ColumnInfo getColumnInfo(final TAPColumn tapCol){
 		// Get the VOTable type:
-		VotType votType = tapCol.getDatatype().toVotType();
+		VotType votType = new VotType(tapCol.getDatatype());
 
 		// Build a ColumnInfo with the name, type and description:
 		ColumnInfo colInfo = new ColumnInfo(tapCol.getADQLName(), getDatatypeClass(votType.datatype, votType.arraysize), tapCol.getDescription());

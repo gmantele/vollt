@@ -16,7 +16,8 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLIterator;
@@ -26,8 +27,8 @@ import adql.query.NullADQLIterator;
 /**
  * A numeric (integer, double, ...) constant.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public final class NumericConstant implements ADQLOperand {
 
@@ -149,6 +150,7 @@ public final class NumericConstant implements ADQLOperand {
 	/** Always returns <i>true</i>.
 	 * @see adql.query.operand.ADQLOperand#isNumeric()
 	 */
+	@Override
 	public final boolean isNumeric(){
 		return true;
 	}
@@ -156,22 +158,35 @@ public final class NumericConstant implements ADQLOperand {
 	/** Always returns <i>false</i>.
 	 * @see adql.query.operand.ADQLOperand#isString()
 	 */
+	@Override
 	public final boolean isString(){
 		return false;
 	}
 
+	/** Always returns <i>false</i>.
+	 * @see adql.query.operand.ADQLOperand#isGeometry()
+	 */
+	@Override
+	public final boolean isGeometry(){
+		return false;
+	}
+
+	@Override
 	public ADQLObject getCopy(){
 		return new NumericConstant(this);
 	}
 
+	@Override
 	public String getName(){
 		return value;
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new NullADQLIterator();
 	}
 
+	@Override
 	public String toADQL(){
 		return value;
 	}

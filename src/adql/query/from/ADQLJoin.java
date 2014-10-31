@@ -17,7 +17,7 @@ package adql.query.from;
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institut (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;

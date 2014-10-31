@@ -193,7 +193,7 @@ public class UWSJob extends SerializableUWSObject {
 	/* VARIABLES */
 	/* ********* */
 	/** The last generated job ID. <b>It SHOULD be used ONLY by the function {@link #generateJobId()} !</b> */
-	protected static String lastId = null;
+	protected static String lastId = System.currentTimeMillis() + "A";
 
 	/** The identifier of the job (it MUST be different from any other job).<BR />
 	 * <i><u>Note:</u> It is assigned automatically at the job creation in any job constructor

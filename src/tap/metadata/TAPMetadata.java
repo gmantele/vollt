@@ -34,11 +34,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import tap.metadata.TAPTable.TableType;
-import tap.metadata.TAPType.TAPDatatype;
 import tap.resource.Capabilities;
 import tap.resource.TAPResource;
 import tap.resource.VOSIResource;
 import adql.db.DBTable;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
 /**
  * <p>Let listing all schemas, tables and columns available in a TAP service.
@@ -730,49 +731,49 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 			case SCHEMAS:
 				TAPTable schemas = new TAPTable(STDTable.SCHEMAS.toString(), TableType.table, "List of schemas published in this TAP service.", null);
-				schemas.addColumn("schema_name", new TAPType(TAPDatatype.VARCHAR), "schema name, possibly qualified", null, null, null, true, true, true);
-				schemas.addColumn("description", new TAPType(TAPDatatype.VARCHAR), "brief description of schema", null, null, null, false, false, true);
-				schemas.addColumn("utype", new TAPType(TAPDatatype.VARCHAR), "UTYPE if schema corresponds to a data model", null, null, null, false, false, true);
+				schemas.addColumn("schema_name", new DBType(DBDatatype.VARCHAR), "schema name, possibly qualified", null, null, null, true, true, true);
+				schemas.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of schema", null, null, null, false, false, true);
+				schemas.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE if schema corresponds to a data model", null, null, null, false, false, true);
 				return schemas;
 
 			case TABLES:
 				TAPTable tables = new TAPTable(STDTable.TABLES.toString(), TableType.table, "List of tables published in this TAP service.", null);
-				tables.addColumn("schema_name", new TAPType(TAPDatatype.VARCHAR), "the schema name from TAP_SCHEMA.schemas", null, null, null, true, true, true);
-				tables.addColumn("table_name", new TAPType(TAPDatatype.VARCHAR), "table name as it should be used in queries", null, null, null, true, true, true);
-				tables.addColumn("table_type", new TAPType(TAPDatatype.VARCHAR), "one of: table, view", null, null, null, false, false, true);
-				tables.addColumn("description", new TAPType(TAPDatatype.VARCHAR), "brief description of table", null, null, null, false, false, true);
-				tables.addColumn("utype", new TAPType(TAPDatatype.VARCHAR), "UTYPE if table corresponds to a data model", null, null, null, false, false, true);
+				tables.addColumn("schema_name", new DBType(DBDatatype.VARCHAR), "the schema name from TAP_SCHEMA.schemas", null, null, null, true, true, true);
+				tables.addColumn("table_name", new DBType(DBDatatype.VARCHAR), "table name as it should be used in queries", null, null, null, true, true, true);
+				tables.addColumn("table_type", new DBType(DBDatatype.VARCHAR), "one of: table, view", null, null, null, false, false, true);
+				tables.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of table", null, null, null, false, false, true);
+				tables.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE if table corresponds to a data model", null, null, null, false, false, true);
 				return tables;
 
 			case COLUMNS:
 				TAPTable columns = new TAPTable(STDTable.COLUMNS.toString(), TableType.table, "List of columns of all tables listed in TAP_SCHEMA.TABLES and published in this TAP service.", null);
-				columns.addColumn("table_name", new TAPType(TAPDatatype.VARCHAR), "table name from TAP_SCHEMA.tables", null, null, null, true, true, true);
-				columns.addColumn("column_name", new TAPType(TAPDatatype.VARCHAR), "column name", null, null, null, true, true, true);
-				columns.addColumn("description", new TAPType(TAPDatatype.VARCHAR), "brief description of column", null, null, null, false, false, true);
-				columns.addColumn("unit", new TAPType(TAPDatatype.VARCHAR), "unit in VO standard format", null, null, null, false, false, true);
-				columns.addColumn("ucd", new TAPType(TAPDatatype.VARCHAR), "UCD of column if any", null, null, null, false, false, true);
-				columns.addColumn("utype", new TAPType(TAPDatatype.VARCHAR), "UTYPE of column if any", null, null, null, false, false, true);
-				columns.addColumn("datatype", new TAPType(TAPDatatype.VARCHAR), "ADQL datatype as in section 2.5", null, null, null, false, false, true);
-				columns.addColumn("size", new TAPType(TAPDatatype.INTEGER), "length of variable length datatypes", null, null, null, false, false, true);
-				columns.addColumn("principal", new TAPType(TAPDatatype.INTEGER), "a principal column; 1 means true, 0 means false", null, null, null, false, false, true);
-				columns.addColumn("indexed", new TAPType(TAPDatatype.INTEGER), "an indexed column; 1 means true, 0 means false", null, null, null, false, false, true);
-				columns.addColumn("std", new TAPType(TAPDatatype.INTEGER), "a standard column; 1 means true, 0 means false", null, null, null, false, false, true);
+				columns.addColumn("table_name", new DBType(DBDatatype.VARCHAR), "table name from TAP_SCHEMA.tables", null, null, null, true, true, true);
+				columns.addColumn("column_name", new DBType(DBDatatype.VARCHAR), "column name", null, null, null, true, true, true);
+				columns.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of column", null, null, null, false, false, true);
+				columns.addColumn("unit", new DBType(DBDatatype.VARCHAR), "unit in VO standard format", null, null, null, false, false, true);
+				columns.addColumn("ucd", new DBType(DBDatatype.VARCHAR), "UCD of column if any", null, null, null, false, false, true);
+				columns.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE of column if any", null, null, null, false, false, true);
+				columns.addColumn("datatype", new DBType(DBDatatype.VARCHAR), "ADQL datatype as in section 2.5", null, null, null, false, false, true);
+				columns.addColumn("size", new DBType(DBDatatype.INTEGER), "length of variable length datatypes", null, null, null, false, false, true);
+				columns.addColumn("principal", new DBType(DBDatatype.INTEGER), "a principal column; 1 means true, 0 means false", null, null, null, false, false, true);
+				columns.addColumn("indexed", new DBType(DBDatatype.INTEGER), "an indexed column; 1 means true, 0 means false", null, null, null, false, false, true);
+				columns.addColumn("std", new DBType(DBDatatype.INTEGER), "a standard column; 1 means true, 0 means false", null, null, null, false, false, true);
 				return columns;
 
 			case KEYS:
 				TAPTable keys = new TAPTable(STDTable.KEYS.toString(), TableType.table, "List all foreign keys but provides just the tables linked by the foreign key. To know which columns of these tables are linked, see in TAP_SCHEMA.key_columns using the key_id.", null);
-				keys.addColumn("key_id", new TAPType(TAPDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
-				keys.addColumn("from_table", new TAPType(TAPDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
-				keys.addColumn("target_table", new TAPType(TAPDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
-				keys.addColumn("description", new TAPType(TAPDatatype.VARCHAR), "description of this key", null, null, null, false, false, true);
-				keys.addColumn("utype", new TAPType(TAPDatatype.VARCHAR), "utype of this key", null, null, null, false, false, true);
+				keys.addColumn("key_id", new DBType(DBDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
+				keys.addColumn("from_table", new DBType(DBDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
+				keys.addColumn("target_table", new DBType(DBDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
+				keys.addColumn("description", new DBType(DBDatatype.VARCHAR), "description of this key", null, null, null, false, false, true);
+				keys.addColumn("utype", new DBType(DBDatatype.VARCHAR), "utype of this key", null, null, null, false, false, true);
 				return keys;
 
 			case KEY_COLUMNS:
 				TAPTable key_columns = new TAPTable(STDTable.KEY_COLUMNS.toString(), TableType.table, "List all foreign keys but provides just the columns linked by the foreign key. To know the table of these columns, see in TAP_SCHEMA.keys using the key_id.", null);
-				key_columns.addColumn("key_id", new TAPType(TAPDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
-				key_columns.addColumn("from_column", new TAPType(TAPDatatype.VARCHAR), "key column name in the from_table", null, null, null, false, false, true);
-				key_columns.addColumn("target_column", new TAPType(TAPDatatype.VARCHAR), "key column name in the target_table", null, null, null, false, false, true);
+				key_columns.addColumn("key_id", new DBType(DBDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
+				key_columns.addColumn("from_column", new DBType(DBDatatype.VARCHAR), "key column name in the from_table", null, null, null, false, false, true);
+				key_columns.addColumn("target_column", new DBType(DBDatatype.VARCHAR), "key column name in the target_table", null, null, null, false, false, true);
 				return key_columns;
 
 			default:

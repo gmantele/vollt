@@ -496,8 +496,6 @@ public class ADQLExecutor {
 			parser = new ADQLParser(queryChecker);
 		else
 			parser = new ADQLParser(queryChecker, queryFactory);
-		parser.setCoordinateSystems(service.getCoordinateSystems());
-		parser.setDebug(false);
 		ADQLQuery query = parser.parseQuery(tapParams.getQuery());
 
 		// Set or check the row limit:

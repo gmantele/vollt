@@ -16,9 +16,11 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS), Astronomisches Rechen Institut (ARI)
+ * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
+import adql.db.FunctionDef;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ClauseADQL;
@@ -28,13 +30,18 @@ import adql.query.operand.ADQLOperand;
  * It represents any function which is not managed by ADQL.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (04/2014)
+ * @version 1.3 (10/2014)
  */
 public final class DefaultUDF extends UserDefinedFunction {
 
-	/** Its parameters. */
+	/** Define/Describe this user defined function.
+	 * This object gives the return type and the number and type of all parameters. */
+	protected FunctionDef definition = null;
+
+	/** Its parsed parameters. */
 	protected final ADQLList<ADQLOperand> parameters;
 
+	/** Parsed name of this UDF. */
 	protected final String functionName;
 
 	/**
@@ -62,19 +69,56 @@ public final class DefaultUDF extends UserDefinedFunction {
 		parameters = (ADQLList<ADQLOperand>)(toCopy.parameters.getCopy());
 	}
 
+	/**
+	 * Get the signature/definition/description of this user defined function.
+	 * The returned object provides information on the return type and the number and type of parameters. 
+	 * 
+	 * @return	Definition of this function. (MAY be NULL)
+	 */
+	public final FunctionDef getDefinition(){
+		return definition;
+	}
+
+	/**
+	 * <p>Let set the signature/definition/description of this user defined function.</p>
+	 * 
+	 * <p><i><b>IMPORTANT:</b>
+	 * 	No particular checks are done here except on the function name which MUST
+	 * 	be the same (case insensitive) as the name of the given definition.
+	 * 	Advanced checks must have been done before calling this setter.
+	 * </i></p>
+	 * 
+	 * @param def	The definition applying to this parsed UDF, or NULL if none has been found.
+	 * 
+	 * @throws IllegalArgumentException	If the name in the given definition does not match the name of this parsed function.
+	 */
+	public final void setDefinition(final FunctionDef def) throws IllegalArgumentException{
+		if (def != null && (def.name == null || !functionName.equalsIgnoreCase(def.name)))
+			throw new IllegalArgumentException("The parsed function name (" + functionName + ") does not match to the name of the given UDF definition (" + def.name + ").");
+
+		this.definition = def;
+	}
+
 	@Override
 	public final boolean isNumeric(){
-		return true;
+		return (definition == null || definition.isNumeric());
 	}
 
 	@Override
 	public final boolean isString(){
-		return true;
+		return (definition == null || definition.isString());
+	}
+
+	@Override
+	public final boolean isGeometry(){
+		return (definition == null || definition.isGeometry());
 	}
 
 	@Override
 	public ADQLObject getCopy() throws Exception{
-		return new DefaultUDF(this);
+		DefaultUDF copy = new DefaultUDF(this);
+		copy.setDefinition(definition);
+		return copy;
 	}
 
 	@Override

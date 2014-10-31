@@ -21,8 +21,8 @@ package tap.data;
 
 import java.util.NoSuchElementException;
 
+import adql.db.DBType;
 import tap.metadata.TAPColumn;
-import tap.metadata.TAPType;
 
 /**
  * <p>Let's iterate on each row and then on each column over a table dataset.</p>
@@ -126,7 +126,7 @@ public interface TableIterator {
 	 * @throws IllegalStateException	If {@link #nextCol()} has not yet been called.
 	 * @throws DataReadException		If an error occurs while reading the table dataset.
 	 */
-	public TAPType getColType() throws IllegalStateException, DataReadException;
+	public DBType getColType() throws IllegalStateException, DataReadException;
 
 	/**
 	 * Close the stream or input over which this class iterates.

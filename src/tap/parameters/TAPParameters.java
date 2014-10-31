@@ -81,7 +81,7 @@ public class TAPParameters extends UWSParameters {
 		// Multipart HTTP parameters:
 		if (isMultipartContent(request)){
 			if (!service.uploadEnabled())
-				throw new TAPException("Request error ! This TAP service has no Upload capability !", UWSException.BAD_REQUEST);
+				throw new TAPException("Request error! This TAP service has no Upload capability!", UWSException.BAD_REQUEST);
 
 			File uploadDir = service.getFileManager().getUploadDirectory();
 			try{
@@ -97,14 +97,14 @@ public class TAPParameters extends UWSParameters {
 					set(param, multipart.getParameter(param));
 				}
 			}catch(IOException ioe){
-				throw new TAPException("Error while reading the Multipart content !", ioe);
+				throw new TAPException("Error while reading the Multipart content!", ioe);
 			}catch(IllegalArgumentException iae){
 				String confError = iae.getMessage();
 				if (service.getMaxUploadSize() <= 0)
-					confError = "The maximum upload size (see ServiceConnection.getMaxUploadSize() must be positive !";
+					confError = "The maximum upload size (see ServiceConnection.getMaxUploadSize() must be positive!";
 				else if (uploadDir == null)
-					confError = "Missing upload directory (see TAPFileManager.getUploadDirectory()) !";
-				throw new TAPException("Incorrect Upload capability configuration ! " + confError, iae);
+					confError = "Missing upload directory (see TAPFileManager.getUploadDirectory())!";
+				throw new TAPException("Incorrect Upload capability configuration! " + confError, iae);
 			}
 
 		}// Classic HTTP parameters (GET or POST):

@@ -50,6 +50,7 @@ import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.error.ServiceErrorWriter;
 import uws.service.log.UWSLog.LogLevel;
+import adql.db.FunctionDef;
 
 /**
  * <p>Root/Home of the TAP service. It is also the resource (HOME) which gathers all the others of the same TAP service.</p>
@@ -57,7 +58,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (10/2014)
  */
 public class TAP implements VOSIResource {
 
@@ -113,8 +114,7 @@ public class TAP implements VOSIResource {
 		resources.put(res.getName(), res);
 
 		TAPMetadata metadata = service.getTAPMetadata();
-		if (metadata != null)
-			resources.put(metadata.getName(), metadata);
+		resources.put(metadata.getName(), metadata);
 	}
 
 	/**
@@ -422,6 +422,35 @@ public class TAP implements VOSIResource {
 		xml.append("\t\t<name>ADQL</name>\n");
 		xml.append("\t\t<version ivo-id=\"ivo://ivoa.net/std/ADQL#v2.0\">2.0</version>\n");
 		xml.append("\t\t<description>ADQL 2.0</description>\n");
+
+		// Geometrical functions:
+		if (service.getGeometries() != null && service.getGeometries().size() > 0){
+			xml.append("\t\t<languageFeatures type=\"ivo://ivoa.net/std/TAPRegExt#features-adqlgeo\">");
+			for(String geom : service.getGeometries()){
+				if (geom != null){
+					xml.append("\t\t\t<feature>");
+					xml.append("\t\t\t\t<form>").append(VOSerializer.formatText(geom.toUpperCase())).append("</form>");
+					xml.append("\t\t\t</feature>");
+				}
+			}
+			xml.append("\t\t</languageFeatures>");
+		}
+
+		// User Defined Functions (UDFs):
+		if (service.getUDFs() != null && service.getUDFs().size() > 0){
+			xml.append("\t\t<languageFeatures type=\"ivo://ivoa.net/std/TAPRegExt#features-udf\">");
+			for(FunctionDef udf : service.getUDFs()){
+				if (udf != null){
+					xml.append("\t\t\t<feature>");
+					xml.append("\t\t\t\t<form>").append(VOSerializer.formatText(udf.toString())).append("</form>");
+					if (udf.description != null && udf.description.length() > 0)
+						xml.append("\t\t\t\t<description>").append(VOSerializer.formatText(udf.description)).append("</description>");
+					xml.append("\t\t\t</feature>");
+				}
+			}
+			xml.append("\t\t</languageFeatures>");
+		}
+
 		xml.append("\t</language>\n");
 
 		// Available output formats:

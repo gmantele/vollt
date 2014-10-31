@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.NoSuchElementException;
 
+import adql.db.DBType;
 import tap.TAPException;
 import tap.metadata.TAPColumn;
-import tap.metadata.TAPType;
 import tap.metadata.VotType;
 import tap.metadata.VotType.VotDatatype;
 import uk.ac.starlink.table.ColumnInfo;
@@ -131,7 +131,7 @@ public class VOTableIterator implements TableIterator {
 			String xtype = getAuxDatumValue(colInfo, "xtype");
 
 			// Resolve the field type:
-			TAPType type = resolveVotType(datatype, arraysize, xtype).toTAPType();
+			DBType type = resolveVotType(datatype, arraysize, xtype).toTAPType();
 
 			// build the TAPColumn object:
 			TAPColumn col = new TAPColumn(colInfo.getName(), type, colInfo.getDescription(), colInfo.getUnitString(), colInfo.getUCD(), colInfo.getUtype());
@@ -255,7 +255,7 @@ public class VOTableIterator implements TableIterator {
 	}
 
 	@Override
-	public TAPType getColType() throws IllegalStateException, DataReadException{
+	public DBType getColType() throws IllegalStateException, DataReadException{
 		// Basically check the read state (for rows iteration):
 		checkReadState();
 

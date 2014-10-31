@@ -16,13 +16,13 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLObject;
-
-import adql.query.operand.ADQLOperand;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
 
 /**
  * <p>It represents the COORDSYS function the ADQL language.</p>
@@ -35,8 +35,8 @@ import adql.query.operand.ADQLColumn;
  * system with GEOCENTER reference position.
  * </i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public class ExtractCoordSys extends GeometryFunction {
 
@@ -65,20 +65,29 @@ public class ExtractCoordSys extends GeometryFunction {
 		geomExpr = (GeometryValue<GeometryFunction>)(toCopy.geomExpr.getCopy());
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new ExtractCoordSys(this);
 	}
 
+	@Override
 	public String getName(){
 		return "COORDSYS";
 	}
 
+	@Override
 	public boolean isNumeric(){
 		return false;
 	}
 
+	@Override
 	public boolean isString(){
 		return true;
+	}
+
+	@Override
+	public boolean isGeometry(){
+		return false;
 	}
 
 	@Override

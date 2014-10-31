@@ -27,7 +27,7 @@ import adql.query.operand.ADQLOperand;
  * It represents any basic mathematical function.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (03/2014)
+ * @version 1.3 (10/2014)
  * 
  * @see MathFunctionType
  */
@@ -146,6 +146,11 @@ public class MathFunction extends ADQLFunction {
 
 	@Override
 	public final boolean isString(){
+		return false;
+	}
+
+	@Override
+	public final boolean isGeometry(){
 		return false;
 	}
 

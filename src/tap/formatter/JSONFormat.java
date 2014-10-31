@@ -32,11 +32,11 @@ import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.data.TableIterator;
 import tap.metadata.TAPColumn;
-import tap.metadata.TAPType;
-import tap.metadata.TAPType.TAPDatatype;
 import tap.metadata.VotType;
 import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
 /**
  * Format any given query (table) result into JSON.
@@ -212,7 +212,7 @@ public class JSONFormat implements OutputFormat {
 			else
 				return (TAPColumn)typeFromResult.copy();
 		}else
-			return new TAPColumn((typeFromQuery != null) ? typeFromQuery.getADQLName() : "?", new TAPType(TAPDatatype.VARCHAR), "?");
+			return new TAPColumn((typeFromQuery != null) ? typeFromQuery.getADQLName() : "?", new DBType(DBDatatype.VARCHAR), "?");
 	}
 
 	/**
@@ -237,7 +237,7 @@ public class JSONFormat implements OutputFormat {
 			out.key("description").value(tapCol.getDescription());
 
 		// "datatype": "..."
-		VotType votType = tapCol.getDatatype().toVotType();
+		VotType votType = new VotType(tapCol.getDatatype());
 		out.key("datatype").value(votType.datatype);
 
 		// "arraysize": "..." (if any)

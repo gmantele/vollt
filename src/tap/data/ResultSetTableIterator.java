@@ -26,10 +26,10 @@ import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 
 import tap.metadata.TAPColumn;
-import tap.metadata.TAPType;
-import tap.metadata.TAPType.TAPDatatype;
 import uws.ISO8601Format;
 import adql.db.DBColumn;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
 /**
  * <p>{@link TableIterator} which lets iterate over a SQL {@link ResultSet}.</p>
@@ -198,11 +198,11 @@ public class ResultSetTableIterator implements TableIterator {
 					try{
 						colMeta[i - 1] = (TAPColumn)resultMeta[i - 1];
 					}catch(ClassCastException cce){
-						TAPType datatype = convertType(metadata.getColumnTypeName(i), dbms);
+						DBType datatype = convertType(metadata.getColumnTypeName(i), dbms);
 						colMeta[i - 1] = new TAPColumn(resultMeta[i - 1].getADQLName(), datatype);
 					}
 				}else{
-					TAPType datatype = convertType(metadata.getColumnTypeName(i), dbms);
+					DBType datatype = convertType(metadata.getColumnTypeName(i), dbms);
 					colMeta[i - 1] = new TAPColumn(metadata.getColumnLabel(i), datatype);
 				}
 			}
@@ -284,7 +284,7 @@ public class ResultSetTableIterator implements TableIterator {
 	}
 
 	@Override
-	public TAPType getColType() throws IllegalStateException, DataReadException{
+	public DBType getColType() throws IllegalStateException, DataReadException{
 		// Basically check the read state (for rows iteration):
 		checkReadState();
 
@@ -299,7 +299,7 @@ public class ResultSetTableIterator implements TableIterator {
 	}
 
 	/**
-	 * <p>Convert the given DBMS type into the better matching {@link TAPType} instance.
+	 * <p>Convert the given DBMS type into the better matching {@link DBType} instance.
 	 * This function is used to guess the TAP type of a column when it is not provided in the constructor.
 	 * It aims not to be exhaustive, but just to provide a type when the given TAP metadata are incomplete.</p>
 	 * 
@@ -328,12 +328,12 @@ public class ResultSetTableIterator implements TableIterator {
 	 * @param dbmsType	DBMS column datatype name.
 	 * @param dbms		Lower-case string which indicates which DBMS the ResultSet is coming from. <i>note: MAY be NULL.</i>
 	 * 
-	 * @return	The best suited {@link TAPType} object.
+	 * @return	The best suited {@link DBType} object.
 	 */
-	protected TAPType convertType(String dbmsType, final String dbms){
+	protected DBType convertType(String dbmsType, final String dbms){
 		// If no type is provided return VARCHAR:
 		if (dbmsType == null || dbmsType.trim().length() == 0)
-			return new TAPType(TAPDatatype.VARCHAR, TAPType.NO_LENGTH);
+			return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
 
 		// Extract the type prefix and lower-case it:
 		dbmsType = dbmsType.toLowerCase();
@@ -345,61 +345,61 @@ public class ResultSetTableIterator implements TableIterator {
 		if (dbms != null && dbms.equals("sqlite")){
 			// INTEGER -> SMALLINT, INTEGER, BIGINT
 			if (dbmsTypePrefix.equals("integer"))
-				return new TAPType(TAPDatatype.BIGINT);
+				return new DBType(DBDatatype.BIGINT);
 			// REAL -> REAL, DOUBLE
 			else if (dbmsTypePrefix.equals("real"))
-				return new TAPType(TAPDatatype.DOUBLE);
+				return new DBType(DBDatatype.DOUBLE);
 			// TEXT -> CHAR, VARCHAR, CLOB, TIMESTAMP
 			else if (dbmsTypePrefix.equals("text"))
-				return new TAPType(TAPDatatype.VARCHAR);
+				return new DBType(DBDatatype.VARCHAR);
 			// BLOB -> BINARY, VARBINARY, BLOB
 			else if (dbmsTypePrefix.equals("blob"))
-				return new TAPType(TAPDatatype.BLOB);
+				return new DBType(DBDatatype.BLOB);
 			// Default:
 			else
-				return new TAPType(TAPDatatype.VARCHAR, TAPType.NO_LENGTH);
+				return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
 		}
 		// CASE: OTHER DBMS
 		else{
 			// SMALLINT
 			if (dbmsTypePrefix.equals("smallint") || dbmsTypePrefix.equals("int2"))
-				return new TAPType(TAPDatatype.SMALLINT);
+				return new DBType(DBDatatype.SMALLINT);
 			// INTEGER
 			else if (dbmsTypePrefix.equals("integer") || dbmsTypePrefix.equals("int") || dbmsTypePrefix.equals("int4"))
-				return new TAPType(TAPDatatype.INTEGER);
+				return new DBType(DBDatatype.INTEGER);
 			// BIGINT
-			else if (dbmsTypePrefix.equals("bigint") || dbmsTypePrefix.equals("int8") || dbmsTypePrefix.equals("int4") || dbmsTypePrefix.equals("number"))
-				return new TAPType(TAPDatatype.BIGINT);
+			else if (dbmsTypePrefix.equals("bigint") || dbmsTypePrefix.equals("int8") || dbmsTypePrefix.equals("number"))
+				return new DBType(DBDatatype.BIGINT);
 			// REAL
 			else if (dbmsTypePrefix.equals("float4") || (dbmsTypePrefix.equals("float") && firstParam <= 63))
-				return new TAPType(TAPDatatype.REAL);
+				return new DBType(DBDatatype.REAL);
 			// DOUBLE
 			else if (dbmsTypePrefix.equals("double") || dbmsTypePrefix.equals("double precision") || dbmsTypePrefix.equals("float8") || (dbmsTypePrefix.equals("float") && firstParam > 63))
-				return new TAPType(TAPDatatype.DOUBLE);
+				return new DBType(DBDatatype.DOUBLE);
 			// BINARY
 			else if (dbmsTypePrefix.equals("binary") || dbmsTypePrefix.equals("raw") || ((dbmsTypePrefix.equals("char") || dbmsTypePrefix.equals("character")) && dbmsType.endsWith(" for bit data")))
-				return new TAPType(TAPDatatype.BINARY, firstParam);
+				return new DBType(DBDatatype.BINARY, firstParam);
 			// VARBINARY
 			else if (dbmsTypePrefix.equals("varbinary") || dbmsTypePrefix.equals("long raw") || ((dbmsTypePrefix.equals("varchar") || dbmsTypePrefix.equals("character varying")) && dbmsType.endsWith(" for bit data")))
-				return new TAPType(TAPDatatype.VARBINARY, firstParam);
+				return new DBType(DBDatatype.VARBINARY, firstParam);
 			// CHAR
 			else if (dbmsTypePrefix.equals("char") || dbmsTypePrefix.equals("character"))
-				return new TAPType(TAPDatatype.CHAR, firstParam);
+				return new DBType(DBDatatype.CHAR, firstParam);
 			// VARCHAR
 			else if (dbmsTypePrefix.equals("varchar") || dbmsTypePrefix.equals("varchar2") || dbmsTypePrefix.equals("character varying"))
-				return new TAPType(TAPDatatype.VARBINARY, firstParam);
+				return new DBType(DBDatatype.VARBINARY, firstParam);
 			// BLOB
 			else if (dbmsTypePrefix.equals("bytea") || dbmsTypePrefix.equals("blob") || dbmsTypePrefix.equals("binary large object"))
-				return new TAPType(TAPDatatype.BLOB);
+				return new DBType(DBDatatype.BLOB);
 			// CLOB
 			else if (dbmsTypePrefix.equals("text") || dbmsTypePrefix.equals("clob") || dbmsTypePrefix.equals("character large object"))
-				return new TAPType(TAPDatatype.CLOB);
+				return new DBType(DBDatatype.CLOB);
 			// TIMESTAMP
 			else if (dbmsTypePrefix.equals("timestamp"))
-				return new TAPType(TAPDatatype.TIMESTAMP);
+				return new DBType(DBDatatype.TIMESTAMP);
 			// Default:
 			else
-				return new TAPType(TAPDatatype.VARCHAR, TAPType.NO_LENGTH);
+				return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
 		}
 	}
 
@@ -409,22 +409,22 @@ public class ResultSetTableIterator implements TableIterator {
 	 * <p>
 	 * 	If the given type string does not contain any parameter
 	 * 	OR if the first parameter can not be casted into an integer,
-	 * 	{@link TAPType#NO_LENGTH} will be returned.
+	 * 	{@link DBType#NO_LENGTH} will be returned.
 	 * </p>
 	 * 
 	 * @param dbmsType		DBMS type string (containing the datatype and the 'length' parameter).
 	 * @param paramIndex	Index of the open bracket.
 	 * 
-	 * @return	The 'length' parameter value if found, {@link TAPType#NO_LENGTH} otherwise.
+	 * @return	The 'length' parameter value if found, {@link DBType#NO_LENGTH} otherwise.
 	 */
 	protected final int getLengthParam(final String dbmsType, final int paramIndex){
 		// If no parameter has been previously detected, no length parameter:
 		if (paramIndex <= 0)
-			return TAPType.NO_LENGTH;
+			return DBType.NO_LENGTH;
 
 		// If there is one and that at least ONE parameter is provided....
 		else{
-			int lengthParam = TAPType.NO_LENGTH;
+			int lengthParam = DBType.NO_LENGTH;
 			String paramsStr = dbmsType.substring(paramIndex + 1);
 
 			// ...extract the 'length' parameter:

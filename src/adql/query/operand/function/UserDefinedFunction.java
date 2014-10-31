@@ -1,5 +1,7 @@
 package adql.query.operand.function;
 
+import adql.query.operand.UnknownType;
+
 /*
  * This file is part of ADQLLibrary.
  * 
@@ -16,17 +18,32 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 /**
  * Function defined by the user (i.e. PSQL functions).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  * 
  * @see DefaultUDF
  */
-public abstract class UserDefinedFunction extends ADQLFunction {
+public abstract class UserDefinedFunction extends ADQLFunction implements UnknownType {
+
+	/** Type expected by the parser.
+	 * @since 1.3 */
+	private char expectedType = '?';
+
+	@Override
+	public char getExpectedType(){
+		return expectedType;
+	}
+
+	@Override
+	public void setExpectedType(final char c){
+		expectedType = c;
+	}
 
 }

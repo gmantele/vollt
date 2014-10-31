@@ -16,18 +16,18 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLObject;
-
 import adql.query.operand.ADQLOperand;
 
 /**
  * It represents any SQL function (COUNT, MAX, MIN, AVG, SUM, etc...).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  * 
  * @see SQLFunctionType
  */
@@ -116,19 +116,28 @@ public class SQLFunction extends ADQLFunction {
 		return type;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new SQLFunction(this);
 	}
 
+	@Override
 	public String getName(){
 		return type.name();
 	}
 
+	@Override
 	public final boolean isNumeric(){
 		return true;
 	}
 
+	@Override
 	public final boolean isString(){
+		return false;
+	}
+
+	@Override
+	public final boolean isGeometry(){
 		return false;
 	}
 

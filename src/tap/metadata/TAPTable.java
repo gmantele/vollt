@@ -30,6 +30,7 @@ import java.util.Map;
 import tap.TAPException;
 import adql.db.DBColumn;
 import adql.db.DBTable;
+import adql.db.DBType;
 
 /**
  * <p>Represent a table as described by the IVOA standard in the TAP protocol definition.</p>
@@ -433,10 +434,10 @@ public class TAPTable implements DBTable {
 	 * @return	The created and added {@link TAPColumn} object,
 	 *        	or NULL if the given name is NULL or an empty string.
 	 * 
-	 * @see TAPColumn#TAPColumn(String, TAPType, String, String, String, String)
+	 * @see TAPColumn#TAPColumn(String, DBType, String, String, String, String)
 	 * @see #addColumn(TAPColumn)
 	 */
-	public TAPColumn addColumn(String columnName, TAPType datatype, String description, String unit, String ucd, String utype){
+	public TAPColumn addColumn(String columnName, DBType datatype, String description, String unit, String ucd, String utype){
 		if (columnName == null || columnName.trim().length() <= 0)
 			return null;
 
@@ -466,13 +467,13 @@ public class TAPTable implements DBTable {
 	 * @return	The created and added {@link TAPColumn} object,
 	 *        	or NULL if the given name is NULL or an empty string.
 	 * 
-	 * @see TAPColumn#TAPColumn(String, TAPType, String, String, String, String)
+	 * @see TAPColumn#TAPColumn(String, DBType, String, String, String, String)
 	 * @see TAPColumn#setPrincipal(boolean)
 	 * @see TAPColumn#setIndexed(boolean)
 	 * @see TAPColumn#setStd(boolean)
 	 * @see #addColumn(TAPColumn)
 	 */
-	public TAPColumn addColumn(String columnName, TAPType datatype, String description, String unit, String ucd, String utype, boolean principal, boolean indexed, boolean std){
+	public TAPColumn addColumn(String columnName, DBType datatype, String description, String unit, String ucd, String utype, boolean principal, boolean indexed, boolean std){
 		if (columnName == null || columnName.trim().length() <= 0)
 			return null;
 
