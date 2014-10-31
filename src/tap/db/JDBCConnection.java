@@ -331,29 +331,29 @@ public class JDBCConnection implements DBConnection {
 		ResultSet result = null;
 		try{
 			// 1. Translate the ADQL query into SQL:
-			logger.logDB(LogLevel.INFO, this, "TRANSLATE", "Translating ADQL: " + adqlQuery.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "TRANSLATE", "Translating ADQL: " + adqlQuery.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 			sql = translator.translate(adqlQuery);
 
 			// 2. Execute the SQL query:
 			Statement stmt = connection.createStatement();
-			logger.logDB(LogLevel.INFO, this, "EXECUTE", "Executing translated query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "EXECUTE", "Executing translated query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
 			result = stmt.executeQuery(sql);
 
 			// 3. Return the result through a TableIterator object:
-			logger.logDB(LogLevel.INFO, this, "RESULT", "Returning result", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "RESULT", "Returning result", null);
 			return new ResultSetTableIterator(result, dbms, adqlQuery.getResultingColumns());
 
 		}catch(SQLException se){
 			close(result);
-			logger.logDB(LogLevel.ERROR, this, "EXECUTE", "Unexpected error while EXECUTING SQL query!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "EXECUTE", "Unexpected error while EXECUTING SQL query!", se);
 			throw new DBException("Unexpected error while executing a SQL query: " + se.getMessage(), se);
 		}catch(TranslationException te){
 			close(result);
-			logger.logDB(LogLevel.ERROR, this, "TRANSLATE", "Unexpected error while TRANSLATING ADQL into SQL!", te);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "TRANSLATE", "Unexpected error while TRANSLATING ADQL into SQL!", te);
 			throw new DBException("Unexpected error while translating ADQL into SQL: " + te.getMessage(), te);
 		}catch(DataReadException dre){
 			close(result);
-			logger.logDB(LogLevel.ERROR, this, "RESULT", "Unexpected error while reading the query result!", dre);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "RESULT", "Unexpected error while reading the query result!", dre);
 			throw new DBException("Impossible to read the query result, because: " + dre.getMessage(), dre);
 		}
 	}
@@ -434,23 +434,23 @@ public class JDBCConnection implements DBConnection {
 			stmt = connection.createStatement();
 
 			// load all schemas from TAP_SCHEMA.schemas:
-			logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.schemas.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.schemas.", null);
 			loadSchemas(tap_schema.getTable(STDTable.SCHEMAS.label), metadata, stmt);
 
 			// load all tables from TAP_SCHEMA.tables:
-			logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.tables.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.tables.", null);
 			List<TAPTable> lstTables = loadTables(tap_schema.getTable(STDTable.TABLES.label), metadata, stmt);
 
 			// load all columns from TAP_SCHEMA.columns:
-			logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.columns.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.columns.", null);
 			loadColumns(tap_schema.getTable(STDTable.COLUMNS.label), lstTables, stmt);
 
 			// load all foreign keys from TAP_SCHEMA.keys and TAP_SCHEMA.key_columns:
-			logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.keys and TAP_SCHEMA.key_columns.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.keys and TAP_SCHEMA.key_columns.", null);
 			loadKeys(tap_schema.getTable(STDTable.KEYS.label), tap_schema.getTable(STDTable.KEY_COLUMNS.label), lstTables, stmt);
 
 		}catch(SQLException se){
-			logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create a Statement!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create a Statement!", se);
 			throw new DBException("Can not create a Statement!", se);
 		}finally{
 			close(stmt);
@@ -500,7 +500,7 @@ public class JDBCConnection implements DBConnection {
 				metadata.addSchema(newSchema);
 			}
 		}catch(SQLException se){
-			logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load schemas from TAP_SCHEMA.schemas!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load schemas from TAP_SCHEMA.schemas!", se);
 			throw new DBException("Impossible to load schemas from TAP_SCHEMA.schemas!", se);
 		}finally{
 			close(rs);
@@ -553,7 +553,8 @@ public class JDBCConnection implements DBConnection {
 				// get the schema:
 				TAPSchema schema = metadata.getSchema(schemaName);
 				if (schema == null){
-					logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the schema of the table \"" + tableName + "\": \"" + schemaName + "\"!", null);
+					if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the schema of the table \"" + tableName + "\": \"" + schemaName + "\"!", null);
+					rs.close();
 					throw new DBException("Impossible to find the schema of the table \"" + tableName + "\": \"" + schemaName + "\"!");
 				}
 
@@ -579,7 +580,7 @@ public class JDBCConnection implements DBConnection {
 
 			return lstTables;
 		}catch(SQLException se){
-			logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load tables from TAP_SCHEMA.tables!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load tables from TAP_SCHEMA.tables!", se);
 			throw new DBException("Impossible to load tables from TAP_SCHEMA.tables!", se);
 		}finally{
 			close(rs);
@@ -630,7 +631,8 @@ public class JDBCConnection implements DBConnection {
 				// get the table:
 				TAPTable table = searchTable(tableName, lstTables.iterator());
 				if (table == null){
-					logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the table of the column \"" + columnName + "\": \"" + tableName + "\"!", null);
+					if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the table of the column \"" + columnName + "\": \"" + tableName + "\"!", null);
+					rs.close();
 					throw new DBException("Impossible to find the table of the column \"" + columnName + "\": \"" + tableName + "\"!");
 				}
 
@@ -659,7 +661,7 @@ public class JDBCConnection implements DBConnection {
 				table.addColumn(newColumn);
 			}
 		}catch(SQLException se){
-			logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
 			throw new DBException("Impossible to load columns from TAP_SCHEMA.columns!", se);
 		}finally{
 			close(rs);
@@ -713,12 +715,14 @@ public class JDBCConnection implements DBConnection {
 				// get the two tables (source and target):
 				TAPTable sourceTable = searchTable(from_table, lstTables.iterator());
 				if (sourceTable == null){
-					logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the source table of the foreign key \"" + key_id + "\": \"" + from_table + "\"!", null);
+					if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the source table of the foreign key \"" + key_id + "\": \"" + from_table + "\"!", null);
+					rs.close();
 					throw new DBException("Impossible to find the source table of the foreign key \"" + key_id + "\": \"" + from_table + "\"!");
 				}
 				TAPTable targetTable = searchTable(target_table, lstTables.iterator());
 				if (targetTable == null){
-					logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the target table of the foreign key \"" + key_id + "\": \"" + target_table + "\"!", null);
+					if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the target table of the foreign key \"" + key_id + "\": \"" + target_table + "\"!", null);
+					rs.close();
 					throw new DBException("Impossible to find the target table of the foreign key \"" + key_id + "\": \"" + target_table + "\"!");
 				}
 
@@ -731,7 +735,7 @@ public class JDBCConnection implements DBConnection {
 					while(rsKeyCols.next())
 						columns.put(rsKeyCols.getString(1), rsKeyCols.getString(2));
 				}catch(SQLException se){
-					logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load key columns from TAP_SCHEMA.key_columns for the foreign key: \"" + key_id + "\"!", se);
+					if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load key columns from TAP_SCHEMA.key_columns for the foreign key: \"" + key_id + "\"!", se);
 					throw new DBException("Impossible to load key columns from TAP_SCHEMA.key_columns for the foreign key: \"" + key_id + "\"!", se);
 				}finally{
 					close(rsKeyCols);
@@ -741,12 +745,12 @@ public class JDBCConnection implements DBConnection {
 				try{
 					sourceTable.addForeignKey(key_id, targetTable, columns, nullifyIfNeeded(description), nullifyIfNeeded(utype));
 				}catch(Exception ex){
-					logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create the foreign key \"" + key_id + "\" because: " + ex.getMessage(), ex);
+					if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create the foreign key \"" + key_id + "\" because: " + ex.getMessage(), ex);
 					throw new DBException("Impossible to create the foreign key \"" + key_id + "\" because: " + ex.getMessage(), ex);
 				}
 			}
 		}catch(SQLException se){
-			logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
 			throw new DBException("Impossible to load columns from TAP_SCHEMA.columns!", se);
 		}finally{
 			close(rs);
@@ -792,26 +796,26 @@ public class JDBCConnection implements DBConnection {
 			stmt = connection.createStatement();
 
 			// 1. Ensure TAP_SCHEMA exists and drop all its standard TAP tables:
-			logger.logDB(LogLevel.INFO, this, "CLEAN_TAP_SCHEMA", "Cleaning TAP_SCHEMA.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "CLEAN_TAP_SCHEMA", "Cleaning TAP_SCHEMA.", null);
 			resetTAPSchema(stmt, stdTables);
 
 			// 2. Create all standard TAP tables:
-			logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Creating TAP_SCHEMA tables.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Creating TAP_SCHEMA tables.", null);
 			for(TAPTable table : stdTables)
 				createTAPSchemaTable(table, stmt);
 
 			// C. FILL THE NEW TABLE USING THE GIVEN DATA ITERATOR:
-			logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Filling TAP_SCHEMA tables.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Filling TAP_SCHEMA tables.", null);
 			fillTAPSchema(metadata);
 
 			// D. CREATE THE INDEXES OF ALL STANDARD TAP TABLES:
-			logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Creating TAP_SCHEMA tables' indexes.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Creating TAP_SCHEMA tables' indexes.", null);
 			for(TAPTable table : stdTables)
 				createTAPTableIndexes(table, stmt);
 
 			commit();
 		}catch(SQLException se){
-			logger.logDB(LogLevel.ERROR, this, "CREATE_TAP_SCHEMA", "Impossible to SET TAP_SCHEMA in DB!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "CREATE_TAP_SCHEMA", "Impossible to SET TAP_SCHEMA in DB!", se);
 			rollback();
 			throw new DBException("Impossible to SET TAP_SCHEMA in DB!", se);
 		}finally{
@@ -1486,12 +1490,12 @@ public class JDBCConnection implements DBConnection {
 			// 1. Create the upload schema, if it does not already exist:
 			if (!isSchemaExisting(tableDef.getDBSchemaName(), dbMeta)){
 				stmt.executeUpdate("CREATE SCHEMA " + translator.getQualifiedSchemaName(tableDef) + ";");
-				logger.logDB(LogLevel.INFO, this, "SCHEMA_CREATED", "Schema \"" + tableDef.getADQLSchemaName() + "\" (in DB: " + translator.getQualifiedSchemaName(tableDef) + ") created.", null);
+				if (logger != null) logger.logDB(LogLevel.INFO, this, "SCHEMA_CREATED", "Schema \"" + tableDef.getADQLSchemaName() + "\" (in DB: " + translator.getQualifiedSchemaName(tableDef) + ") created.", null);
 			}
 			// 1bis. Ensure the table does not already exist and if it is the case, throw an understandable exception:
 			else if (isTableExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), dbMeta)){
 				DBException de = new DBException("Impossible to create the user uploaded table in the database: " + translator.getQualifiedTableName(tableDef) + "! This table already exists.");
-				logger.logDB(LogLevel.ERROR, this, "ADD_UPLOAD_TABLE", de.getMessage(), de);
+				if (logger != null) logger.logDB(LogLevel.ERROR, this, "ADD_UPLOAD_TABLE", de.getMessage(), de);
 				throw de;
 			}
 
@@ -1521,13 +1525,13 @@ public class JDBCConnection implements DBConnection {
 			commit();
 
 			// Log the end:
-			logger.logDB(LogLevel.INFO, this, "TABLE_CREATED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") created.", null);
+			if (logger != null) logger.logDB(LogLevel.INFO, this, "TABLE_CREATED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") created.", null);
 
 			return true;
 
 		}catch(SQLException se){
 			rollback();
-			logger.logDB(LogLevel.WARNING, this, "ADD_UPLOAD_TABLE", "Impossible to create the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
+			if (logger != null) logger.logDB(LogLevel.WARNING, this, "ADD_UPLOAD_TABLE", "Impossible to create the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
 			throw new DBException("Impossible to create the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
 		}catch(DBException de){
 			rollback();
@@ -1595,7 +1599,7 @@ public class JDBCConnection implements DBConnection {
 						try{
 							val = new Timestamp(ISO8601Format.parse(val.toString()));
 						}catch(ParseException pe){
-							logger.logDB(LogLevel.ERROR, this, "UPLOAD", "Unexpected date format for the " + c + "-th column (" + val + ")! A date formatted in ISO8601 was expected.", pe);
+							if (logger != null) logger.logDB(LogLevel.ERROR, this, "UPLOAD", "Unexpected date format for the " + c + "-th column (" + val + ")! A date formatted in ISO8601 was expected.", pe);
 							throw new DBException("Unexpected date format for the " + c + "-th column (" + val + ")! A date formatted in ISO8601 was expected.", pe);
 						}
 					}
@@ -1654,15 +1658,15 @@ public class JDBCConnection implements DBConnection {
 
 			// Log the end:
 			if (cnt == 0)
-				logger.logDB(LogLevel.INFO, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") dropped.", null);
+				if (logger != null) logger.logDB(LogLevel.INFO, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") dropped.", null);
 			else
-				logger.logDB(LogLevel.ERROR, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") NOT dropped.", null);
+				if (logger != null) logger.logDB(LogLevel.ERROR, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") NOT dropped.", null);
 
 			// Ensure the update is successful:
 			return (cnt == 0);
 
 		}catch(SQLException se){
-			logger.logDB(LogLevel.WARNING, this, "DROP_UPLOAD_TABLE", "Impossible to drop the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
+			if (logger != null) logger.logDB(LogLevel.WARNING, this, "DROP_UPLOAD_TABLE", "Impossible to drop the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
 			throw new DBException("Impossible to drop the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
 		}finally{
 			close(stmt);
@@ -1838,11 +1842,11 @@ public class JDBCConnection implements DBConnection {
 		try{
 			if (supportsTransaction){
 				connection.setAutoCommit(false);
-				logger.logDB(LogLevel.INFO, this, "START_TRANSACTION", "Transaction STARTED.", null);
+				if (logger != null) logger.logDB(LogLevel.INFO, this, "START_TRANSACTION", "Transaction STARTED.", null);
 			}
 		}catch(SQLException se){
 			supportsTransaction = false;
-			logger.logDB(LogLevel.ERROR, this, "START_TRANSACTION", "Transaction STARTing impossible!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "START_TRANSACTION", "Transaction STARTing impossible!", se);
 			throw new DBException("Transaction STARTing impossible!", se);
 		}
 	}
@@ -1869,11 +1873,11 @@ public class JDBCConnection implements DBConnection {
 		try{
 			if (supportsTransaction){
 				connection.commit();
-				logger.logDB(LogLevel.INFO, this, "COMMIT", "Transaction COMMITED.", null);
+				if (logger != null) logger.logDB(LogLevel.INFO, this, "COMMIT", "Transaction COMMITED.", null);
 			}
 		}catch(SQLException se){
 			supportsTransaction = false;
-			logger.logDB(LogLevel.ERROR, this, "COMMIT", "Transaction COMMIT impossible!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "COMMIT", "Transaction COMMIT impossible!", se);
 			throw new DBException("Transaction COMMIT impossible!", se);
 		}
 	}
@@ -1900,11 +1904,11 @@ public class JDBCConnection implements DBConnection {
 		try{
 			if (supportsTransaction){
 				connection.rollback();
-				logger.logDB(LogLevel.INFO, this, "ROLLBACK", "Transaction ROLLBACKED.", null);
+				if (logger != null) logger.logDB(LogLevel.INFO, this, "ROLLBACK", "Transaction ROLLBACKED.", null);
 			}
 		}catch(SQLException se){
 			supportsTransaction = false;
-			logger.logDB(LogLevel.ERROR, this, "ROLLBACK", "Transaction ROLLBACK impossible!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "ROLLBACK", "Transaction ROLLBACK impossible!", se);
 		}
 	}
 
@@ -1929,11 +1933,11 @@ public class JDBCConnection implements DBConnection {
 		try{
 			if (supportsTransaction){
 				connection.setAutoCommit(true);
-				logger.logDB(LogLevel.INFO, this, "END_TRANSACTION", "Transaction ENDED.", null);
+				if (logger != null) logger.logDB(LogLevel.INFO, this, "END_TRANSACTION", "Transaction ENDED.", null);
 			}
 		}catch(SQLException se){
 			supportsTransaction = false;
-			logger.logDB(LogLevel.ERROR, this, "END_TRANSACTION", "Transaction ENDing impossible!", se);
+			if (logger != null) logger.logDB(LogLevel.ERROR, this, "END_TRANSACTION", "Transaction ENDing impossible!", se);
 		}
 	}
 
@@ -1954,7 +1958,7 @@ public class JDBCConnection implements DBConnection {
 			if (rs != null)
 				rs.close();
 		}catch(SQLException se){
-			logger.logDB(LogLevel.WARNING, this, "CLOSE", "Can not close a ResultSet!", null);
+			if (logger != null) logger.logDB(LogLevel.WARNING, this, "CLOSE", "Can not close a ResultSet!", null);
 		}
 	}
 
@@ -1975,7 +1979,7 @@ public class JDBCConnection implements DBConnection {
 			if (stmt != null)
 				stmt.close();
 		}catch(SQLException se){
-			logger.logDB(LogLevel.WARNING, this, "CLOSE", "Can not close a Statement!", null);
+			if (logger != null) logger.logDB(LogLevel.WARNING, this, "CLOSE", "Can not close a Statement!", null);
 		}
 	}
 
@@ -2180,7 +2184,7 @@ public class JDBCConnection implements DBConnection {
 			}
 
 			if (cnt > 1){
-				logger.logDB(LogLevel.ERROR, this, "TABLE_EXIST", "More than one table match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + "))!", null);
+				if (logger != null) logger.logDB(LogLevel.ERROR, this, "TABLE_EXIST", "More than one table match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + "))!", null);
 				throw new DBException("More than one table match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + "))!");
 			}
 
@@ -2292,9 +2296,9 @@ public class JDBCConnection implements DBConnection {
 				 * and must stop the whole TAP_SCHEMA initialization.
 				 */
 				if (indRow == 1)
-					logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "BATCH query impossible => TRYING AGAIN IN A NORMAL EXECUTION (executeUpdate())!", se);
+					if (logger != null) logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "BATCH query impossible => TRYING AGAIN IN A NORMAL EXECUTION (executeUpdate())!", se);
 				else{
-					logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH query impossible!", se);
+					if (logger != null) logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH query impossible!", se);
 					throw new DBException("BATCH query impossible!", se);
 				}
 			}
@@ -2308,7 +2312,7 @@ public class JDBCConnection implements DBConnection {
 
 			// Check the row has been inserted with success:
 			if (nbRowsWritten != 1){
-				logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "ROW " + indRow + " not inserted!", null);
+				if (logger != null) logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "ROW " + indRow + " not inserted!", null);
 				throw new DBException("ROW " + indRow + " not inserted!");
 			}
 		}
@@ -2346,7 +2350,7 @@ public class JDBCConnection implements DBConnection {
 				rows = stmt.executeBatch();
 			}catch(SQLException se){
 				supportsBatchUpdates = false;
-				logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH execution impossible!", se);
+				if (logger != null) logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH execution impossible!", se);
 				throw new DBException("BATCH execution impossible!", se);
 			}
 
@@ -2354,7 +2358,7 @@ public class JDBCConnection implements DBConnection {
 			try{
 				stmt.clearBatch();
 			}catch(SQLException se){
-				logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "CLEAR BATCH impossible!", se);
+				if (logger != null) logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "CLEAR BATCH impossible!", se);
 			}
 
 			// Count the updated rows:
@@ -2364,7 +2368,7 @@ public class JDBCConnection implements DBConnection {
 
 			// Check all given rows have been inserted with success:
 			if (nbRowsUpdated != nbRows){
-				logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "ROWS not all update (" + nbRows + " to update ; " + nbRowsUpdated + " updated)!", null);
+				if (logger != null) logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "ROWS not all update (" + nbRows + " to update ; " + nbRowsUpdated + " updated)!", null);
 				throw new DBException("ROWS not all updated (" + nbRows + " to update ; " + nbRowsUpdated + " updated)!");
 			}
 		}
