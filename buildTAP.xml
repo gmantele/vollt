@@ -19,10 +19,13 @@
 	<property name="licensePath" value="COPYING.LESSER.txt" />
 	<property name="includesList" value="${tapPath},${jsonPath},${extLibsPath},${licensePath}" />
 
-	<property name="jarDest" value="." />
+	<property name="jarDest" value="dist" />
 	<property name="libJarFile" value="${jarDest}/tap_${version}.jar" />
 	<property name="srcJarFile" value="${jarDest}/tap_src_${version}.jar" />
 	<property name="javadocJarFile" value="${jarDest}/tap_javadoc_${version}.jar" />
+
+	<property name="CATALINA" value="${libDir}/catalina.jar" />
+	<property name="SERVLET-API" value="${libDir}/servlet-api.jar" />
 	
 	<fail message="Missing property: CATALINA ! It provides the path toward a directory or a JAR which contains the following class: org.apache.catalina.connector.ClientAbortException.">
 		<condition><not><isset property="CATALINA"/></not></condition>
