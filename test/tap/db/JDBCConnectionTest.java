@@ -55,6 +55,9 @@ public class JDBCConnectionTest {
 	private static JDBCConnection sensSqliteJDBCConnection;
 
 	private static String uploadExamplePath;
+	
+	private static boolean testSQLite = true;
+	private static boolean testPostgreSQL = false;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception{
@@ -64,26 +67,38 @@ public class JDBCConnectionTest {
 
 		final String sqliteDbFile = projectDir + "/test/tap/db/TestTAPDb.db";
 
-		pgConnection = DBTools.createConnection("postgresql", "127.0.0.1", null, "gmantele", "gmantele", "pwd");
-		pgJDBCConnection = new JDBCConnection(pgConnection, new PostgreSQLTranslator(false), "POSTGRES", null);
-		sensPgJDBCConnection = new JDBCConnection(pgConnection, new PostgreSQLTranslator(true, true, true, true), "SensitivePSQL", null);
-
-		sqliteConnection = DBTools.createConnection("sqlite", null, null, sqliteDbFile, null, null);
-		sqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(false), "SQLITE", null);
-		sensSqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(true), "SensitiveSQLite", null);
-
+		if (testPostgreSQL) {
+			pgConnection = DBTools.createConnection("postgresql", "127.0.0.1", null, "gmantele", "gmantele", "pwd");
+			pgJDBCConnection = new JDBCConnection(pgConnection, new PostgreSQLTranslator(false), "POSTGRES", null);
+			sensPgJDBCConnection = new JDBCConnection(pgConnection, new PostgreSQLTranslator(true, true, true, true), "SensitivePSQL", null);
+		}
+		if (testSQLite) {
+			sqliteConnection = DBTools.createConnection("sqlite", null, null, sqliteDbFile, null, null);
+			sqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(false), "SQLITE", null);
+			sensSqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(true), "SensitiveSQLite", null);
+		}
 	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception{
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			dropSchema(STDSchema.TAPSCHEMA.label, conn);
 			dropSchema(STDSchema.UPLOADSCHEMA.label, conn);
 		}
-		pgConnection.close();
-		sqliteConnection.close();
+		if (testPostgreSQL)
+			pgConnection.close();
+		if (testSQLite)
+			sqliteConnection.close();
 	}
 
 	/* ***** */
@@ -93,7 +108,16 @@ public class JDBCConnectionTest {
 	@Test
 	public void testGetTAPSchemaTablesDef(){
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			TAPMetadata meta = createCustomSchema();
 			TAPTable customColumns = meta.getTable(STDSchema.TAPSCHEMA.toString(), STDTable.COLUMNS.toString());
@@ -114,8 +138,15 @@ public class JDBCConnectionTest {
 
 	@Test
 	public void testSetTAPSchema(){
-		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			short cnt = -1;
 			while(cnt < 1){
@@ -163,7 +194,15 @@ public class JDBCConnectionTest {
 	@Test
 	public void testGetCreationOrder(){
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			assertEquals(-1, conn.getCreationOrder(null));
 			assertEquals(0, conn.getCreationOrder(STDTable.SCHEMAS));
@@ -176,17 +215,28 @@ public class JDBCConnectionTest {
 
 	@Test
 	public void testGetDBMSDatatype(){
-		assertEquals("VARCHAR", pgJDBCConnection.getDBMSDatatype(null));
-		assertEquals("TEXT", sqliteJDBCConnection.getDBMSDatatype(null));
-
-		assertEquals("bytea", pgJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
-		assertEquals("BLOB", sqliteJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
+		if (testPostgreSQL) {
+			assertEquals("VARCHAR", pgJDBCConnection.getDBMSDatatype(null));
+			assertEquals("bytea", pgJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
+		}
+		if (testSQLite) {
+			assertEquals("TEXT", sqliteJDBCConnection.getDBMSDatatype(null));
+			assertEquals("BLOB", sqliteJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
+		}
 	}
 
 	@Test
 	public void testMergeTAPSchemaDefs(){
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 
 			// TEST WITH NO METADATA OBJECT:
@@ -235,7 +285,15 @@ public class JDBCConnectionTest {
 	@Test
 	public void testEquals(){
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			// NULL tests:
 			assertFalse(conn.equals("tap_schema", null, false));
@@ -304,7 +362,15 @@ public class JDBCConnectionTest {
 	@Test
 	public void testGetTAPSchema(){
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			try{
 				// Prepare the test:
@@ -331,7 +397,15 @@ public class JDBCConnectionTest {
 	@Test
 	public void testIsTableExisting(){
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			try{
 				// Get the database metadata:
@@ -366,7 +440,17 @@ public class JDBCConnectionTest {
 	@Test
 	public void testAddUploadedTable(){
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
+		// create a fake schema otherwise this will fail everywhere
+		TAPSchema tapUpload = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
 		TAPTable tableDef = null;
 		for(JDBCConnection conn : connections){
 			InputStream io = null;
@@ -376,6 +460,7 @@ public class JDBCConnectionTest {
 
 				TAPColumn[] cols = it.getMetadata();
 				tableDef = new TAPTable("UploadExample");
+				tapUpload.addTable(tableDef);
 				for(TAPColumn c : cols)
 					tableDef.addColumn(c);
 
@@ -408,7 +493,7 @@ public class JDBCConnectionTest {
 				it = new VOTableIterator(io);
 
 				// Prepare the test: the TAP_UPLOAD schema and the table TAP_UPLOAD.UploadExample BOTH exist:
-				;
+				dropTable(tableDef.getDBSchemaName(), tableDef.getDBName(), conn);
 				// Test:
 				try{
 					assertFalse(conn.addUploadedTable(tableDef, it));
@@ -437,7 +522,15 @@ public class JDBCConnectionTest {
 		uploadSchema.addTable(tableDef);
 
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			try{
 				// 1st TEST CASE: the schema TAP_UPLOAD does not exist -> no error should be raised!
@@ -476,7 +569,15 @@ public class JDBCConnectionTest {
 		parser.setDebug(false);
 
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
-		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		ArrayList<JDBCConnection> connections = new ArrayList<JDBCConnection>();
+		if (testPostgreSQL) {
+			connections.add(pgJDBCConnection);
+			connections.add(sensPgJDBCConnection);
+		}
+		if (testSQLite) {
+			connections.add(sqliteJDBCConnection);
+			connections.add(sensSqliteJDBCConnection);
+		}
 		for(JDBCConnection conn : connections){
 			if (conn.ID.equalsIgnoreCase("SQLITE")){
 				for(DBTable t : tables){
@@ -553,7 +654,8 @@ public class JDBCConnectionTest {
 	/* ************** */
 
 	public final static void main(final String[] args) throws Throwable{
-		JDBCConnection conn = new JDBCConnection(DBTools.createConnection("postgresql", "127.0.0.1", null, "gmantele", "gmantele", "pwd"), new PostgreSQLTranslator(), "TEST_POSTGRES", null);
+		// JDBCConnection conn = new JDBCConnection(DBTools.createConnection("postgresql", "127.0.0.1", null, "gmantele", "gmantele", "pwd"), new PostgreSQLTranslator(), "TEST_POSTGRES", null);
+		JDBCConnection conn = new JDBCConnection(DBTools.createConnection("sqlite", null, null, "test.db", null, null), new PostgreSQLTranslator(), "TEST_POSTGRES", null);
 		JDBCConnectionTest.createTAPSchema(conn);
 		JDBCConnectionTest.dropSchema(STDSchema.TAPSCHEMA.label, conn);
 	}
@@ -900,7 +1002,9 @@ public class JDBCConnectionTest {
 			while(itTables.hasNext()){
 				TAPTable table = itTables.next();
 				if (isTapSchema && TAPMetadata.resolveStdTable(table.getADQLName()) != null){
-					int ind = pgJDBCConnection.getCreationOrder(TAPMetadata.resolveStdTable(table.getADQLName()));
+					int ind = 0;
+					if (testPostgreSQL) ind = pgJDBCConnection.getCreationOrder(TAPMetadata.resolveStdTable(table.getADQLName()));
+					else if (testSQLite) ind = sqliteJDBCConnection.getCreationOrder(TAPMetadata.resolveStdTable(table.getADQLName()));
 					counts[2] -= stdColCounts[ind];
 				}else
 					counts[1]++;

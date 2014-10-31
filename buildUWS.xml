@@ -14,10 +14,13 @@
 	<property name="licensePath" value="COPYING.LESSER.txt" />
 	<property name="includesList" value="${uwsPath},${jsonPath},${licensePath}" />
 
-	<property name="jarDest" value="." />
+	<property name="jarDest" value="dist" />
 	<property name="libJarFile" value="${jarDest}/uws_${version}.jar" />
 	<property name="srcJarFile" value="${jarDest}/uws_src_${version}.jar" />
 	<property name="javadocJarFile" value="${jarDest}/uws_javadoc_${version}.jar" />
+
+	<property name="CATALINA" value="lib/catalina.jar" />
+	<property name="SERVLET-API" value="lib/servlet-api.jar" />
 	
 	<fail message="Missing property: CATALINA ! It provides the path toward a directory or a JAR which contains the following class: org.apache.catalina.connector.ClientAbortException.">
 		<condition><not><isset property="CATALINA"/></not></condition>

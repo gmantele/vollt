@@ -14,7 +14,7 @@
 	<property name="licensePath" value="COPYING.LESSER.txt" />
 	<property name="includesList" value="${adqlPath},${utilsPath},${licensePath}" />
 
-	<property name="jarDest" value="." />
+	<property name="jarDest" value="dist" />
 	<property name="libJarFile" value="${jarDest}/adql_${version}.jar" />
 	<property name="adqlParserJarFile" value="${jarDest}/adqlParser_${version}.jar" />
 	<property name="srcJarFile" value="${jarDest}/adql_src_${version}.jar" />
