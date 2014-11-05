@@ -176,11 +176,11 @@ public class JDBCConnectionTest {
 
 	@Test
 	public void testGetDBMSDatatype(){
-		assertEquals("VARCHAR", pgJDBCConnection.getDBMSDatatype(null));
-		assertEquals("TEXT", sqliteJDBCConnection.getDBMSDatatype(null));
+		assertEquals("VARCHAR", pgJDBCConnection.defaultTypeConversion(null));
+		assertEquals("TEXT", sqliteJDBCConnection.defaultTypeConversion(null));
 
-		assertEquals("bytea", pgJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
-		assertEquals("BLOB", sqliteJDBCConnection.getDBMSDatatype(new DBType(DBDatatype.VARBINARY)));
+		assertEquals("bytea", pgJDBCConnection.defaultTypeConversion(new DBType(DBDatatype.VARBINARY)));
+		assertEquals("BLOB", sqliteJDBCConnection.defaultTypeConversion(new DBType(DBDatatype.VARBINARY)));
 	}
 
 	@Test
@@ -378,6 +378,19 @@ public class JDBCConnectionTest {
 				tableDef = new TAPTable("UploadExample");
 				for(TAPColumn c : cols)
 					tableDef.addColumn(c);
+
+				// Test with no schema set:
+				try{
+					conn.addUploadedTable(tableDef, it);
+					fail("The table is not inside a TAPSchema, so this test should have failed!");
+				}catch(Exception ex){
+					assertTrue(ex instanceof DBException);
+					assertEquals("Missing upload schema! An uploaded table must be inside a schema whose the ADQL name is strictly equals to \"" + STDSchema.UPLOADSCHEMA.label + "\" (but the DB name may be different).", ex.getMessage());
+				}
+
+				// Specify the UPLOAD schema for the table to upload:
+				TAPSchema schema = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
+				schema.addTable(tableDef);
 
 				// Prepare the test: no TAP_UPLOAD schema and no table TAP_UPLOAD.UploadExample:
 				dropSchema(STDSchema.UPLOADSCHEMA.label, conn);

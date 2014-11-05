@@ -384,7 +384,10 @@ public class VOTableFormat implements OutputFormat {
 			if (logFormatReport)
 				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in VOTable ; " + table.getNbReadRows() + " rows ; " + table.getColumnCount() + " columns) in " + (System.currentTimeMillis() - start) + "ms!", null);
 		}catch(IOException ioe){
-			throw new TAPException("Error while writing a query result in VOTable!", ioe);
+			if (ioe.getCause() != null && ioe.getCause() instanceof DataReadException)
+				throw (DataReadException)ioe.getCause();
+			else
+				throw new TAPException("Error while writing a query result in VOTable!", ioe);
 		}
 	}
 
@@ -432,7 +435,7 @@ public class VOTableFormat implements OutputFormat {
 		 * 	2/ a GROUP item with the STC expression of the coordinate system. 
 		 */
 
-		out.flush();
+		//out.flush();  // TODO DEBUG flush() => commit
 	}
 
 	/**

@@ -1236,7 +1236,7 @@ public final class STCS {
 	 * Let parse any STC-S expression.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.3 (10/2014)
+	 * @version 1.3 (11/2014)
 	 * @since 1.3
 	 */
 	private static class STCSParser {
@@ -1318,7 +1318,7 @@ public final class STCS {
 		 * @param newStcs	New STC-S expression to parse from now.
 		 */
 		private void init(final String newStcs){
-			stcs = (newStcs == null) ? "" : newStcs.replaceAll("\\s", " ");
+			stcs = (newStcs == null) ? "" : newStcs;
 			token = null;
 			buffer = new StringBuffer();
 			pos = 0;
@@ -1351,7 +1351,7 @@ public final class STCS {
 		 * Tool function which skip all next space characters until the next meaningful characters. 
 		 */
 		private void skipSpaces(){
-			while(pos < stcs.length() && stcs.charAt(pos) == ' ')
+			while(pos < stcs.length() && Character.isWhitespace(stcs.charAt(pos)))
 				pos++;
 		}
 
@@ -1371,7 +1371,7 @@ public final class STCS {
 			skipSpaces();
 
 			// Fetch all characters until word separator (a space or a open/close parenthesis):
-			while(pos < stcs.length() && stcs.charAt(pos) != ' ' && stcs.charAt(pos) != '(' && stcs.charAt(pos) != ')')
+			while(pos < stcs.length() && !Character.isWhitespace(stcs.charAt(pos)) && stcs.charAt(pos) != '(' && stcs.charAt(pos) != ')')
 				buffer.append(stcs.charAt(pos++));
 
 			// If no character has been fetched while at least one was expected, throw an exception:

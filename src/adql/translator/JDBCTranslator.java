@@ -23,9 +23,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import tap.data.DataReadException;
 import adql.db.DBColumn;
 import adql.db.DBTable;
+import adql.db.DBType;
+import adql.db.STCS.Region;
 import adql.db.exception.UnresolvedJoin;
+import adql.parser.ParseException;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
@@ -93,8 +97,9 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <h3>PostgreSQLTranslator and PgSphereTranslator</h3>
  * 
  * <p>
- * 	{@link PgSphereTranslator} extends {@link PostgreSQLTranslator} and is just translating geometrical
- * 	functions according to the syntax given by PgSphere.
+ * 	{@link PgSphereTranslator} extends {@link PostgreSQLTranslator} and is able to translate geometrical
+ * 	functions according to the syntax given by PgSphere. But it can also convert geometrical types
+ * 	(from and toward the database), translate PgSphere regions into STC expression and vice-versa.
  * </p>
  * 
  * <p>
@@ -150,8 +155,8 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * <p><i>Note:
- * 	Geometrical function have not been translated here. They stay abstract because it is obviously impossible to have a generic
- * 	translation ; it totally depends from the database system.
+ * 	Geometrical regions and types have not been managed here. They stay abstract because it is obviously impossible to have a generic
+ * 	translation and conversion ; it totally depends from the database system.
  * </i></p>
  * 
  * <h3>Translation of "FROM" with JOINs</h3>
@@ -162,8 +167,8 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (09/2014)
- * @since 2.0
+ * @version 1.3 (11/2014)
+ * @since 1.3
  * 
  * @see PostgreSQLTranslator
  * @see PgSphereTranslator
@@ -801,5 +806,78 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	public String translate(GeometryValue<? extends GeometryFunction> geomValue) throws TranslationException{
 		return translate(geomValue.getValue());
 	}
+
+	/**
+	 * Convert any type provided by a JDBC driver into a type understandable by the ADQL/TAP library.
+	 * 
+	 * @param dbmsType			Type returned by a JDBC driver. <i>Note: this value is returned by ResultSetMetadata.getColumnType(int) and correspond to a type of java.sql.Types</i>
+	 * @param rawDbmsTypeName	Full name of the type returned by a JDBC driver. <i>Note: this name is returned by ResultSetMetadata.getColumnTypeName(int) ; this name may contain parameters</i>
+	 * @param dbmsTypeName		Name of type, without the eventual parameters. <i>Note: this name is extracted from rawDbmsTypeName.</i>
+	 * @param typeParams		The eventual type parameters (e.g. char string length). <i>Note: these parameters are extracted from rawDbmsTypeName.</i>
+	 * 
+	 * @return	The corresponding ADQL/TAP type or NULL if the specified type is unknown.
+	 */
+	public abstract DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, final String dbmsTypeName, final String[] typeParams);
+
+	/**
+	 * <p>Convert any type provided by the ADQL/TAP library into a type understandable by a JDBC driver.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The returned DBMS type may contain some parameters between brackets.
+	 * </i></p>
+	 * 
+	 * @param type	The ADQL/TAP library's type to convert.
+	 * 
+	 * @return	The corresponding DBMS type or NULL if the specified type is unknown.
+	 */
+	public abstract String convertTypeToDB(final DBType type);
+
+	/**
+	 * <p>Parse the given JDBC column value as a geometry object and convert it into a {@link Region}.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	Generally the returned object will be used to get its STC-S expression.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given column value is NULL, NULL will be returned.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Important note:</b>
+	 * 	This function is called ONLY for value of columns flagged as geometries by
+	 * 	{@link #convertTypeFromDB(int, String, String, String[])}. So the value should always
+	 * 	be of the expected type and format. However, if it turns out that the type is wrong
+	 * 	and that the conversion is finally impossible, this function SHOULD throw a
+	 * 	{@link DataReadException}.
+	 * </i></p>
+	 * 
+	 * @param jdbcColValue	A JDBC column value (returned by ResultSet.getObject(int)).
+	 * 
+	 * @return	The corresponding {@link Region} if the given value is a geometry.
+	 * 
+	 * @throws ParseException	If the given object is not a geometrical object
+	 *                       	or can not be transformed into a {@link Region} object.
+	 */
+	public abstract Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException;
+
+	/**
+	 * <p>Convert the given STC region into a DB column value.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function is used only by the UPLOAD feature, to import geometries provided as STC-S expression in
+	 * 	a VOTable document inside a DB column.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given region is NULL, NULL will be returned.
+	 * </i></p>
+	 * 
+	 * @param stcs	The region to store in the DB.
+	 * 
+	 * @return	The corresponding DB column object.
+	 * 
+	 * @throws ParseException	If the given STC Region can not be converted into a DB object.
+	 */
+	public abstract Object translateGeometryToDB(final Region region) throws ParseException;
 
 }

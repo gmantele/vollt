@@ -30,6 +30,9 @@ import uws.ISO8601Format;
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
+import adql.db.STCS.Region;
+import adql.parser.ParseException;
+import adql.translator.JDBCTranslator;
 
 /**
  * <p>{@link TableIterator} which lets iterate over a SQL {@link ResultSet}.</p>
@@ -39,13 +42,18 @@ import adql.db.DBType.DBDatatype;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (11/2014)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
 
 	/** ResultSet/Dataset to read. */
 	private final ResultSet data;
+
+	/** Object which has the knowledge of the specific JDBC column types
+	 * and which knows how to deal with geometrical values between the
+	 * library and the database. */
+	private final JDBCTranslator translator;
 
 	/** Number of columns to read. */
 	private final int nbColumns;
@@ -71,17 +79,10 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(String, String)}
-	 * 	which deals with all standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	which deals with the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	This conversion is therefore not as precise as the one expected by a translator. That's why it is recommended
+	 * 	to use one of the constructor having a {@link JDBCTranslator} in parameter.
 	 * </p>
-	 * 
-	 * <p><i><b>Important</b>:
-	 * 	To guess the TAP type from a DBMS type, {@link #convertType(String, String)} may not need to know the DBMS,
-	 * 	except for SQLite. Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know
-	 * 	it is the DBMS from which the ResultSet is coming. Without this information, type guessing will be unpredictable!
-	 * 
-	 * 	<b>So, if your ResultSet is coming from a SQLite connection, you SHOULD really use one of the 2 other constructors</b>
-	 * 	and provide "sqlite" as value for the second parameter. 
-	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * 
@@ -92,7 +93,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * @see ResultSetTableIterator#ResultSetTableIterator(ResultSet, String, DBColumn[])
 	 */
 	public ResultSetTableIterator(final ResultSet dataSet) throws NullPointerException, DataReadException{
-		this(dataSet, null, null);
+		this(dataSet, null, null, null);
 	}
 
 	/**
@@ -107,14 +108,16 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(String, String)}
-	 * 	which deals with all standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	which deals with the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	This conversion is therefore not as precise as the one expected by a translator. That's why it is recommended
+	 * 	to use one of the constructor having a {@link JDBCTranslator} in parameter.
 	 * </p>
 	 * 
 	 * <p><i><b>Important</b>:
 	 * 	The second parameter of this constructor is given as second parameter of {@link #convertType(String, String)}.
-	 * 	<b>This parameter is really used ONLY when the DBMS is SQLite ("sqlite").</b> Indeed, SQLite has so many datatype
-	 * 	restrictions that it is absolutely needed to know it is the DBMS from which the ResultSet is coming. Without this
-	 * 	information, type guessing will be unpredictable! 
+	 * 	<b>This parameter is really used ONLY when the DBMS is SQLite ("sqlite").</b>
+	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
@@ -124,10 +127,82 @@ public class ResultSetTableIterator implements TableIterator {
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
 	 * 
 	 * @see #convertType(String, String)
-	 * @see ResultSetTableIterator#ResultSetTableIterator(ResultSet, String)
+	 * @see ResultSetTableIterator#ResultSetTableIterator(ResultSet, JDBCTranslator, String, DBColumn[])
 	 */
 	public ResultSetTableIterator(final ResultSet dataSet, final String dbms) throws NullPointerException, DataReadException{
-		this(dataSet, dbms, null);
+		this(dataSet, null, dbms, null);
+	}
+
+	/**
+	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
+	 * 
+	 * <p>
+	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
+	 * 	from the DBMS column datatype (using {@link #convertType(String, String)}).
+	 * </p>
+	 * 
+	 * <h3>Type guessing</h3>
+	 * 
+	 * <p>
+	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(String, String)}
+	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
+	 * 	if not NULL. However if no translator is provided, this function will proceed to a default conversion
+	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	This conversion is therefore not as precise as the one expected by the translator.
+	 * </p>
+	 * 
+	 * @param dataSet		Dataset over which this iterator must iterate.
+	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 * 
+	 * @throws NullPointerException	If NULL is given in parameter.
+	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
+	 * 
+	 * @see #convertType(String, String)
+	 * @see ResultSetTableIterator#ResultSetTableIterator(ResultSet, JDBCTranslator, String, DBColumn[])
+	 */
+	public ResultSetTableIterator(final ResultSet dataSet, final JDBCTranslator translator) throws NullPointerException, DataReadException{
+		this(dataSet, translator, null, null);
+	}
+
+	/**
+	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
+	 * 
+	 * <p>
+	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
+	 * 	from the DBMS column datatype (using {@link #convertType(String, String)}).
+	 * </p>
+	 * 
+	 * <h3>Type guessing</h3>
+	 * 
+	 * <p>
+	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(String, String)}
+	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
+	 * 	if not NULL. However if no translator is provided, this function will proceed to a default conversion
+	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	This conversion is therefore not as precise as the one expected by the translator.
+	 * </p>
+	 * 
+	 * <p><i><b>Important</b>:
+	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(String, String)}.
+	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
+	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
+	 * </i></p>
+	 * 
+	 * @param dataSet		Dataset over which this iterator must iterate.
+	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
+	 * 
+	 * @throws NullPointerException	If NULL is given in parameter.
+	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
+	 * 
+	 * @see #convertType(String, String)
+	 * @see ResultSetTableIterator#ResultSetTableIterator(ResultSet, JDBCTranslator, String, DBColumn[])
+	 */
+	public ResultSetTableIterator(final ResultSet dataSet, final JDBCTranslator translator, final String dbms) throws NullPointerException, DataReadException{
+		this(dataSet, translator, dbms, null);
 	}
 
 	/**
@@ -158,17 +233,22 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(String, String)}
-	 * 	which deals with all standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
+	 * 	if not NULL. However if no translator is provided, this function will proceed to a default conversion
+	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
+	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
 	 * 
 	 * <p><i><b>Important</b>:
-	 * 	The second parameter of this constructor is given as second parameter of {@link #convertType(String, String)}.
-	 * 	<b>This parameter is really used ONLY when the DBMS is SQLite ("sqlite").</b> Indeed, SQLite has so many datatype
-	 * 	restrictions that it is absolutely needed to know it is the DBMS from which the ResultSet is coming. Without this
-	 * 	information, type guessing will be unpredictable! 
+	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(String, String)}.
+	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
+	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
+	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
 	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
 	 * 
@@ -177,13 +257,16 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 
 	 * @see #convertType(String, String)
 	 */
-	public ResultSetTableIterator(final ResultSet dataSet, final String dbms, final DBColumn[] resultMeta) throws NullPointerException, DataReadException{
+	public ResultSetTableIterator(final ResultSet dataSet, final JDBCTranslator translator, final String dbms, final DBColumn[] resultMeta) throws NullPointerException, DataReadException{
 		// A dataset MUST BE provided:
 		if (dataSet == null)
 			throw new NullPointerException("Missing ResultSet object over which to iterate!");
 
 		// Keep a reference to the ResultSet:
 		data = dataSet;
+
+		// Set the translator to use (if needed):
+		this.translator = translator;
 
 		// Count columns and determine their type:
 		try{
@@ -198,11 +281,11 @@ public class ResultSetTableIterator implements TableIterator {
 					try{
 						colMeta[i - 1] = (TAPColumn)resultMeta[i - 1];
 					}catch(ClassCastException cce){
-						DBType datatype = convertType(metadata.getColumnTypeName(i), dbms);
+						DBType datatype = convertType(metadata.getColumnType(i), metadata.getColumnTypeName(i), dbms);
 						colMeta[i - 1] = new TAPColumn(resultMeta[i - 1].getADQLName(), datatype);
 					}
 				}else{
-					DBType datatype = convertType(metadata.getColumnTypeName(i), dbms);
+					DBType datatype = convertType(metadata.getColumnType(i), metadata.getColumnTypeName(i), dbms);
 					colMeta[i - 1] = new TAPColumn(metadata.getColumnLabel(i), datatype);
 				}
 			}
@@ -274,12 +357,23 @@ public class ResultSetTableIterator implements TableIterator {
 		// Get the column value:
 		try{
 			Object o = data.getObject(++colIndex);
-			// if the column value is a Timestamp object, format it in ISO8601:
-			if (o != null && o instanceof Timestamp)
-				o = ISO8601Format.format(((Timestamp)o).getTime());
+			if (o != null){
+				DBType colType = getColType();
+				// if the column value is a Timestamp object, format it in ISO8601:
+				if (o instanceof Timestamp)
+					o = ISO8601Format.format(((Timestamp)o).getTime());
+				// if the column value is a geometrical object, it must be serialized in STC-S:
+				else if (translator != null && colType.isGeometry()){
+					Region region = translator.translateGeometryFromDB(o);
+					if (region != null)
+						o = region.toSTCS();
+				}
+			}
 			return o;
 		}catch(SQLException se){
 			throw new DataReadException("Can not read the value of the " + colIndex + "-th column!", se);
+		}catch(ParseException pe){
+			throw new DataReadException(pe.getMessage());
 		}
 	}
 
@@ -299,61 +393,105 @@ public class ResultSetTableIterator implements TableIterator {
 	}
 
 	/**
+	 * <p>Convert the given DBMS type into the corresponding {@link DBType} instance.</p>
+	 * 
+	 * <p>
+	 *	This function first tries the conversion using the translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])}).
+	 * 	If the translator fails, a default conversion is done.
+	 * </p>
+	 * 
+	 * <p><b>Warning:
+	 * 	It is not recommended to rely on the default conversion.
+	 * 	This conversion is just a matter of guessing the better matching {@link DBType}
+	 * 	considering the types of the following DBMS: PostgreSQL, SQLite, MySQL, Oracle and Java/DB/Derby.
+	 * </b></p>
+	 * 
+	 * @param dbmsType	DBMS column data-type name.
+	 * @param dbms		Lower-case string which indicates which DBMS the ResultSet is coming from. <i>note: MAY be NULL.</i>
+	 * 
+	 * @return	The best suited {@link DBType} object.
+	 * 
+	 * @see JDBCTranslator#convertTypeFromDB(int, String, String, String[])
+	 * @see #defaultTypeConversion(String, String[], String)
+	 */
+	protected DBType convertType(final int dbmsType, String dbmsTypeName, final String dbms) throws DataReadException{
+		// If no type is provided return VARCHAR:
+		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
+			return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
+
+		// Extract the type prefix and lower-case it:
+		int startParamIndex = dbmsTypeName.indexOf('('), endParamIndex = dbmsTypeName.indexOf(')');
+		String dbmsTypePrefix = (startParamIndex <= 0) ? dbmsTypeName : dbmsTypeName.substring(0, endParamIndex);
+		dbmsTypePrefix = dbmsTypePrefix.trim().toLowerCase();
+		String[] typeParams = (startParamIndex <= 0) ? null : dbmsTypeName.substring(startParamIndex + 1, endParamIndex).split(",");
+
+		// Ask first to the translator:
+		DBType dbType = null;
+		if (translator != null)
+			dbType = translator.convertTypeFromDB(dbmsType, dbmsTypeName, dbmsTypePrefix, typeParams);
+
+		// And if unsuccessful, apply a default conversion:
+		if (dbType == null)
+			dbType = defaultTypeConversion(dbmsTypePrefix, typeParams, dbms);
+
+		return dbType;
+	}
+
+	/**
 	 * <p>Convert the given DBMS type into the better matching {@link DBType} instance.
-	 * This function is used to guess the TAP type of a column when it is not provided in the constructor.
+	 * This function is used to <b>guess</b> the TAP type of a column when it is not provided in the constructor.
 	 * It aims not to be exhaustive, but just to provide a type when the given TAP metadata are incomplete.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	Any unknown DBMS datatype will be considered and translated as a VARCHAR.
-	 * 	The same type will be returned if the given parameter is an empty string or NULL.
+	 * 	Any unknown DBMS data-type will be considered and translated as a VARCHAR.
+	 * 	This latter will be also returned if the given parameter is an empty string or NULL.
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
-	 * 	This type conversion function has been designed to work with all standard datatypes of the following DBMS:
+	 * 	This type conversion function has been designed to work with all standard data-types of the following DBMS:
 	 * 	PostgreSQL, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * </i></p>
 	 * 
 	 * <p><i><b>Important</b>:
-	 * 	<b>The second parameter is REALLY NEEDED when the DBMS is SQLite ("sqlite")!</b>
-	 * 	Indeed, SQLite has a so restrictive list of datatypes that this function can reliably convert its types
+	 * 	<b>The third parameter is REALLY NEEDED when the DBMS is SQLite ("sqlite")!</b>
+	 * 	Indeed, SQLite has a so restrictive list of data-types that this function can reliably convert
 	 * 	only if it knows the DBMS is SQLite. Otherwise, the conversion result would be unpredictable.
 	 * 	</i>In this default implementation of this function, all other DBMS values are ignored.<i>
 	 * </i></p>
 	 * 
 	 * <p><b>Warning</b>:
-	 * 	This function is not translating the geometrical datatypes. If a such datatype is encountered,
+	 * 	This function is not translating the geometrical data-types. If a such data-type is encountered,
 	 * 	it will considered as unknown and so, a VARCHAR TAP type will be returned.
 	 * </p>
 	 * 
-	 * @param dbmsType	DBMS column datatype name.
-	 * @param dbms		Lower-case string which indicates which DBMS the ResultSet is coming from. <i>note: MAY be NULL.</i>
+	 * @param dbmsTypeName	Name of type, without the eventual parameters.
+	 * @param params		The eventual type parameters (e.g. char string length).
+	 * @param dbms			The targeted DBMS.
 	 * 
-	 * @return	The best suited {@link DBType} object.
+	 * @return	The corresponding ADQL/TAP type. <i>NEVER NULL</i>
 	 */
-	protected DBType convertType(String dbmsType, final String dbms){
-		// If no type is provided return VARCHAR:
-		if (dbmsType == null || dbmsType.trim().length() == 0)
-			return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
-
-		// Extract the type prefix and lower-case it:
-		dbmsType = dbmsType.toLowerCase();
-		int paramIndex = dbmsType.indexOf('(');
-		String dbmsTypePrefix = (paramIndex <= 0) ? dbmsType : dbmsType.substring(0, paramIndex);
-		int firstParam = getLengthParam(dbmsTypePrefix, paramIndex);
+	protected final DBType defaultTypeConversion(final String dbmsTypeName, final String[] params, final String dbms){
+		// Get the length parameter (always in first position):
+		int lengthParam = DBType.NO_LENGTH;
+		if (params != null && params.length > 0){
+			try{
+				lengthParam = Integer.parseInt(params[0]);
+			}catch(NumberFormatException nfe){}
+		}
 
 		// CASE: SQLITE
 		if (dbms != null && dbms.equals("sqlite")){
 			// INTEGER -> SMALLINT, INTEGER, BIGINT
-			if (dbmsTypePrefix.equals("integer"))
+			if (dbmsTypeName.equals("integer"))
 				return new DBType(DBDatatype.BIGINT);
 			// REAL -> REAL, DOUBLE
-			else if (dbmsTypePrefix.equals("real"))
+			else if (dbmsTypeName.equals("real"))
 				return new DBType(DBDatatype.DOUBLE);
 			// TEXT -> CHAR, VARCHAR, CLOB, TIMESTAMP
-			else if (dbmsTypePrefix.equals("text"))
+			else if (dbmsTypeName.equals("text"))
 				return new DBType(DBDatatype.VARCHAR);
 			// BLOB -> BINARY, VARBINARY, BLOB
-			else if (dbmsTypePrefix.equals("blob"))
+			else if (dbmsTypeName.equals("blob"))
 				return new DBType(DBDatatype.BLOB);
 			// Default:
 			else
@@ -362,86 +500,44 @@ public class ResultSetTableIterator implements TableIterator {
 		// CASE: OTHER DBMS
 		else{
 			// SMALLINT
-			if (dbmsTypePrefix.equals("smallint") || dbmsTypePrefix.equals("int2"))
+			if (dbmsTypeName.equals("smallint") || dbmsTypeName.equals("int2") || dbmsTypeName.equals("smallserial") || dbmsTypeName.equals("serial2") || dbmsTypeName.equals("boolean") || dbmsTypeName.equals("bool"))
 				return new DBType(DBDatatype.SMALLINT);
 			// INTEGER
-			else if (dbmsTypePrefix.equals("integer") || dbmsTypePrefix.equals("int") || dbmsTypePrefix.equals("int4"))
+			else if (dbmsTypeName.equals("integer") || dbmsTypeName.equals("int") || dbmsTypeName.equals("int4") || dbmsTypeName.equals("serial") || dbmsTypeName.equals("serial4"))
 				return new DBType(DBDatatype.INTEGER);
 			// BIGINT
-			else if (dbmsTypePrefix.equals("bigint") || dbmsTypePrefix.equals("int8") || dbmsTypePrefix.equals("number"))
+			else if (dbmsTypeName.equals("bigint") || dbmsTypeName.equals("int8") || dbmsTypeName.equals("bigserial") || dbmsTypeName.equals("bigserial8") || dbmsTypeName.equals("number"))
 				return new DBType(DBDatatype.BIGINT);
 			// REAL
-			else if (dbmsTypePrefix.equals("float4") || (dbmsTypePrefix.equals("float") && firstParam <= 63))
+			else if (dbmsTypeName.equals("real") || dbmsTypeName.equals("float4") || (dbmsTypeName.equals("float") && lengthParam <= 63))
 				return new DBType(DBDatatype.REAL);
 			// DOUBLE
-			else if (dbmsTypePrefix.equals("double") || dbmsTypePrefix.equals("double precision") || dbmsTypePrefix.equals("float8") || (dbmsTypePrefix.equals("float") && firstParam > 63))
+			else if (dbmsTypeName.equals("double") || dbmsTypeName.equals("double precision") || dbmsTypeName.equals("float8") || (dbmsTypeName.equals("float") && lengthParam > 63))
 				return new DBType(DBDatatype.DOUBLE);
 			// BINARY
-			else if (dbmsTypePrefix.equals("binary") || dbmsTypePrefix.equals("raw") || ((dbmsTypePrefix.equals("char") || dbmsTypePrefix.equals("character")) && dbmsType.endsWith(" for bit data")))
-				return new DBType(DBDatatype.BINARY, firstParam);
+			else if (dbmsTypeName.equals("bit") || dbmsTypeName.equals("binary") || dbmsTypeName.equals("raw") || ((dbmsTypeName.equals("char") || dbmsTypeName.equals("character")) && dbmsTypeName.endsWith(" for bit data")))
+				return new DBType(DBDatatype.BINARY, lengthParam);
 			// VARBINARY
-			else if (dbmsTypePrefix.equals("varbinary") || dbmsTypePrefix.equals("long raw") || ((dbmsTypePrefix.equals("varchar") || dbmsTypePrefix.equals("character varying")) && dbmsType.endsWith(" for bit data")))
-				return new DBType(DBDatatype.VARBINARY, firstParam);
+			else if (dbmsTypeName.equals("bit varying") || dbmsTypeName.equals("varbit") || dbmsTypeName.equals("varbinary") || dbmsTypeName.equals("long raw") || ((dbmsTypeName.equals("varchar") || dbmsTypeName.equals("character varying")) && dbmsTypeName.endsWith(" for bit data")))
+				return new DBType(DBDatatype.VARBINARY, lengthParam);
 			// CHAR
-			else if (dbmsTypePrefix.equals("char") || dbmsTypePrefix.equals("character"))
-				return new DBType(DBDatatype.CHAR, firstParam);
+			else if (dbmsTypeName.equals("char") || dbmsTypeName.equals("character"))
+				return new DBType(DBDatatype.CHAR, lengthParam);
 			// VARCHAR
-			else if (dbmsTypePrefix.equals("varchar") || dbmsTypePrefix.equals("varchar2") || dbmsTypePrefix.equals("character varying"))
-				return new DBType(DBDatatype.VARBINARY, firstParam);
+			else if (dbmsTypeName.equals("varchar") || dbmsTypeName.equals("varchar2") || dbmsTypeName.equals("character varying"))
+				return new DBType(DBDatatype.VARCHAR, lengthParam);
 			// BLOB
-			else if (dbmsTypePrefix.equals("bytea") || dbmsTypePrefix.equals("blob") || dbmsTypePrefix.equals("binary large object"))
+			else if (dbmsTypeName.equals("bytea") || dbmsTypeName.equals("blob") || dbmsTypeName.equals("binary large object"))
 				return new DBType(DBDatatype.BLOB);
 			// CLOB
-			else if (dbmsTypePrefix.equals("text") || dbmsTypePrefix.equals("clob") || dbmsTypePrefix.equals("character large object"))
+			else if (dbmsTypeName.equals("text") || dbmsTypeName.equals("clob") || dbmsTypeName.equals("character large object"))
 				return new DBType(DBDatatype.CLOB);
 			// TIMESTAMP
-			else if (dbmsTypePrefix.equals("timestamp"))
+			else if (dbmsTypeName.equals("timestamp") || dbmsTypeName.equals("timestamptz") || dbmsTypeName.equals("time") || dbmsTypeName.equals("timetz") || dbmsTypeName.equals("date"))
 				return new DBType(DBDatatype.TIMESTAMP);
 			// Default:
 			else
 				return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
-		}
-	}
-
-	/**
-	 * <p>Extract the 'length' parameter of a DBMS type string.</p>
-	 * 
-	 * <p>
-	 * 	If the given type string does not contain any parameter
-	 * 	OR if the first parameter can not be casted into an integer,
-	 * 	{@link DBType#NO_LENGTH} will be returned.
-	 * </p>
-	 * 
-	 * @param dbmsType		DBMS type string (containing the datatype and the 'length' parameter).
-	 * @param paramIndex	Index of the open bracket.
-	 * 
-	 * @return	The 'length' parameter value if found, {@link DBType#NO_LENGTH} otherwise.
-	 */
-	protected final int getLengthParam(final String dbmsType, final int paramIndex){
-		// If no parameter has been previously detected, no length parameter:
-		if (paramIndex <= 0)
-			return DBType.NO_LENGTH;
-
-		// If there is one and that at least ONE parameter is provided....
-		else{
-			int lengthParam = DBType.NO_LENGTH;
-			String paramsStr = dbmsType.substring(paramIndex + 1);
-
-			// ...extract the 'length' parameter:
-			/* note: we suppose here that no other parameter is possible ;
-			 *       but if there are, they are ignored and we try to consider the first parameter
-			 *       as the length */
-			int paramEndIndex = paramsStr.indexOf(',');
-			if (paramEndIndex <= 0)
-				paramEndIndex = paramsStr.indexOf(')');
-
-			// ...cast it into an integer:
-			try{
-				lengthParam = Integer.parseInt(paramsStr.substring(0, paramEndIndex));
-			}catch(Exception ex){}
-
-			// ...and finally return it:
-			return lengthParam;
 		}
 	}
 

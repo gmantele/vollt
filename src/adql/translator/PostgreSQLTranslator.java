@@ -20,6 +20,10 @@ package adql.translator;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
+import adql.db.STCS.Region;
+import adql.parser.ParseException;
 import adql.query.IdentifierField;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.MathFunction;
@@ -46,7 +50,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.3 (11/2014)
  * 
  * @see PgSphereTranslator
  */
@@ -186,6 +190,110 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	@Override
 	public String translate(RegionFunction region) throws TranslationException{
 		return getDefaultADQLFunction(region);
+	}
+
+	@Override
+	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
+		// If no type is provided return VARCHAR:
+		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
+			return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
+
+		// Put the dbmsTypeName in lower case for the following comparisons:
+		dbmsTypeName = dbmsTypeName.toLowerCase();
+
+		// Extract the length parameter (always the first one):
+		int lengthParam = DBType.NO_LENGTH;
+		if (params != null && params.length > 0){
+			try{
+				lengthParam = Integer.parseInt(params[0]);
+			}catch(NumberFormatException nfe){}
+		}
+
+		// SMALLINT
+		if (dbmsTypeName.equals("smallint") || dbmsTypeName.equals("int2") || dbmsTypeName.equals("smallserial") || dbmsTypeName.equals("serial2") || dbmsTypeName.equals("boolean") || dbmsTypeName.equals("bool"))
+			return new DBType(DBDatatype.SMALLINT);
+		// INTEGER
+		else if (dbmsTypeName.equals("integer") || dbmsTypeName.equals("int") || dbmsTypeName.equals("int4") || dbmsTypeName.equals("serial") || dbmsTypeName.equals("serial4"))
+			return new DBType(DBDatatype.INTEGER);
+		// BIGINT
+		else if (dbmsTypeName.equals("bigint") || dbmsTypeName.equals("int8") || dbmsTypeName.equals("bigserial") || dbmsTypeName.equals("bigserial8"))
+			return new DBType(DBDatatype.BIGINT);
+		// REAL
+		else if (dbmsTypeName.equals("real") || dbmsTypeName.equals("float4"))
+			return new DBType(DBDatatype.REAL);
+		// DOUBLE
+		else if (dbmsTypeName.equals("double precision") || dbmsTypeName.equals("float8"))
+			return new DBType(DBDatatype.DOUBLE);
+		// BINARY
+		else if (dbmsTypeName.equals("bit"))
+			return new DBType(DBDatatype.BINARY, lengthParam);
+		// VARBINARY
+		else if (dbmsTypeName.equals("bit varying") || dbmsTypeName.equals("varbit"))
+			return new DBType(DBDatatype.VARBINARY, lengthParam);
+		// CHAR
+		else if (dbmsTypeName.equals("char") || dbmsTypeName.equals("character"))
+			return new DBType(DBDatatype.CHAR, lengthParam);
+		// VARCHAR
+		else if (dbmsTypeName.equals("varchar") || dbmsTypeName.equals("character varying"))
+			return new DBType(DBDatatype.VARCHAR, lengthParam);
+		// BLOB
+		else if (dbmsTypeName.equals("bytea"))
+			return new DBType(DBDatatype.BLOB);
+		// CLOB
+		else if (dbmsTypeName.equals("text"))
+			return new DBType(DBDatatype.CLOB);
+		// TIMESTAMP
+		else if (dbmsTypeName.equals("timestamp") || dbmsTypeName.equals("timestamptz") || dbmsTypeName.equals("time") || dbmsTypeName.equals("timetz") || dbmsTypeName.equals("date"))
+			return new DBType(DBDatatype.TIMESTAMP);
+		// Default:
+		else
+			return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
+	}
+
+	@Override
+	public String convertTypeToDB(final DBType type){
+		if (type == null)
+			return "VARCHAR";
+
+		switch(type.type){
+
+			case SMALLINT:
+			case INTEGER:
+			case REAL:
+			case BIGINT:
+			case CHAR:
+			case VARCHAR:
+			case TIMESTAMP:
+				return type.type.toString();
+
+			case DOUBLE:
+				return "DOUBLE PRECISION";
+
+			case BINARY:
+			case VARBINARY:
+				return "bytea";
+
+			case BLOB:
+				return "bytea";
+
+			case CLOB:
+				return "TEXT";
+
+			case POINT:
+			case REGION:
+			default:
+				return "VARCHAR";
+		}
+	}
+
+	@Override
+	public Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException{
+		throw new ParseException("Unsupported geometrical value! The value \"" + jdbcColValue + "\" can not be parsed as a region.");
+	}
+
+	@Override
+	public Object translateGeometryToDB(final Region region) throws ParseException{
+		throw new ParseException("Geometries can not be uploaded in the database in this implementation!");
 	}
 
 }
