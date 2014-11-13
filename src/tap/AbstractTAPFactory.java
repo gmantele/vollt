@@ -53,7 +53,7 @@ import adql.query.ADQLQuery;
  * Only the functions related with the database connection stay abstract.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (11/2014)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
@@ -277,7 +277,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	@Override
 	public TAPParameters createTAPParameters(final HttpServletRequest request) throws TAPException{
 		try{
-			return new TAPParameters(request, service, getExpectedAdditionalParameters(), getInputParamControllers());
+			return new TAPParameters(request, service);
 		}catch(UWSException ue){
 			throw new TAPException(ue);
 		}
@@ -296,7 +296,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	@Override
 	public TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException{
 		try{
-			return new TAPParameters(service, params, getExpectedAdditionalParameters(), getInputParamControllers());
+			return new TAPParameters(service, params);
 		}catch(UWSException ue){
 			throw new TAPException(ue);
 		}

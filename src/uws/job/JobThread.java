@@ -282,7 +282,7 @@ public abstract class JobThread extends Thread {
 			setError(error);
 
 		}catch(IOException ioe){
-			job.getLogger().logThread(LogLevel.ERROR, this, "SET_ERROR", "The stack trace of a UWSException had not been written !", ioe);
+			job.getLogger().logThread(LogLevel.ERROR, this, "SET_ERROR", "The stack trace of a UWSException had not been written!", ioe);
 			setError(new ErrorSummary(ue.getMessage(), ue.getUWSErrorType()));
 		}
 	}

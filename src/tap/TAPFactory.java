@@ -37,7 +37,7 @@ import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
-import uws.service.AbstractUWSFactory;
+import uws.service.UWSFactory;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
@@ -59,9 +59,9 @@ import adql.query.ADQLQuery;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (11/2014)
  */
-public abstract class TAPFactory extends AbstractUWSFactory {
+public abstract class TAPFactory implements UWSFactory {
 
 	/** Connection to the TAP service ; it provides all important service configuration information. */
 	protected final ServiceConnection service;

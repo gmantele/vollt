@@ -34,19 +34,24 @@ import uws.UWSException;
  * 	Moreover you can indicate whether the destruction time of jobs can be modified by the user or not.
  * </p>
  * 
- * <p>
- * 	<i><u>Notes:</u>
- * 		<ul>
- * 			<li>By default, the destruction time can be modified by anyone without any limitation.
- * 				There is no default value (that means jobs may stay forever).</li>
- * 			<li>You can specify a destruction time (default or maximum value) in two ways:
- * 				by an exact date-time or by an interval of time from the initialization (expressed in the second, minutes, hours, days, months or years).</li>
- * 		</ul>
- * 	</i>
- * </p>
+ * <p><i><u>Notes:</u>
+ * 	<ul>
+ * 		<li>By default, the destruction time can be modified by anyone without any limitation.
+ * 			There is no default value (that means jobs may stay forever).</li>
+ * 		<li>You can specify a destruction time (default or maximum value) in two ways:
+ * 			by an exact date-time or by an interval of time from the initialization (expressed in the second, minutes, hours, days, months or years).</li>
+ * 	</ul>
+ * </i></p>
+ * 
+ * <p>The logic of the destruction time is set in this class. Here it is:</p>
+ * <ul>
+ * 	<li>If no value is specified by the UWS client, the default value is returned.</li>
+ *  <li>If no default value is provided, the maximum destruction date is returned.</li>
+ *  <li>If no maximum value is provided, there is no destruction.</li>
+ * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (11/2014)
  */
 public class DestructionTimeController implements InputParamController, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -55,7 +60,7 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * Represents a date/time field.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS)
-	 * @version 02/2011
+	 * @version 4.0 (02/2011)
 	 * 
 	 * @see Calendar
 	 */
@@ -94,10 +99,12 @@ public class DestructionTimeController implements InputParamController, Serializ
 	protected boolean allowModification = true;
 
 	@Override
-	public Object check(Object value) throws UWSException{
+	public Object check(final Object value) throws UWSException{
+		// If no value, return the default one:
 		if (value == null)
-			return null;
+			return getDefault();
 
+		// Otherwise, parse the date:
 		Date date = null;
 		if (value instanceof Date)
 			date = (Date)value;
@@ -111,16 +118,19 @@ public class DestructionTimeController implements InputParamController, Serializ
 		}else
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the destruction time parameter: class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date formatted in IS8601 (\"yyyy-MM-dd'T'hh:mm:ss[.sss]['Z'|[+|-]hh:mm]\", fields inside brackets are optional).");
 
+		// Compare it to the maximum destruction time: if after, set the date to the maximum allowed date:
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))
-			throw new UWSException(UWSException.BAD_REQUEST, "The UWS limits " + ((defaultInterval > NO_INTERVAL) ? ("the DESTRUCTION INTERVAL (since now) to " + maxInterval + " " + maxIntervalField.name().toLowerCase() + "s") : ("the DESTRUCTION TIME to " + maxDate)) + " !");
+			date = maxDate;
 
+		// Return the parsed date:
 		return date;
 	}
 
 	@Override
 	public Object getDefault(){
-		return getDefaultDestructionTime();
+		Date defaultDate = getDefaultDestructionTime();
+		return (defaultDate == null) ? getMaxDestructionTime() : defaultDate;
 	}
 
 	/* ***************** */
@@ -306,9 +316,15 @@ public class DestructionTimeController implements InputParamController, Serializ
 	 * @param timeField						The unit of the interval (<i>null</i> means the job may stay forever).
 	 */
 	public final void setMaxDestructionInterval(int maxDestructionInterval, DateField timeField){
-		this.maxInterval = maxDestructionInterval;
-		maxIntervalField = timeField;
-		maxTime = null;
+		if (maxDestructionInterval <= 0 || timeField == null){
+			this.maxInterval = NO_INTERVAL;
+			maxIntervalField = null;
+			maxTime = null;
+		}else{
+			this.maxInterval = maxDestructionInterval;
+			maxIntervalField = timeField;
+			maxTime = null;
+		}
 	}
 
 	/**

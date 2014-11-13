@@ -78,7 +78,7 @@ public class FormatController implements InputParamController {
 	@Override
 	public Object check(Object format) throws UWSException{
 		if (format == null)
-			return null;
+			return getDefault();
 
 		if (format instanceof String){
 			String strFormat = ((String)format).trim();

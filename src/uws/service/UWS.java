@@ -20,14 +20,10 @@ package uws.service;
  */
 
 import uws.UWSException;
-
 import uws.job.JobList;
-
 import uws.job.serializer.UWSSerializer;
-
 import uws.service.backup.UWSBackupManager;
 import uws.service.file.UWSFileManager;
-
 import uws.service.log.UWSLog;
 
 /**
@@ -183,7 +179,7 @@ public interface UWS extends Iterable<JobList> {
 	/* ******************* */
 
 	/**
-	 * 
+	 * TODO JAVADOC TO WRITE!
 	 * @return
 	 */
 	public UserIdentifier getUserIdentifier();

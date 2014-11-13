@@ -32,17 +32,24 @@ import uws.job.parameters.InputParamController;
  * 
  * <p><i>Note:
  * 	By default, this parameter can be modified by anyone without any limitation.
+ * 	The default and maximum value is set by default to {@link TAPJob#UNLIMITED_MAX_REC}.
+ * </i></p>
+ * 
+ * <p><i>Note:
+ * 	The special value 0 means that just the metadata of the result must be returned.
+ * 	Considering the meaning of this value, it will not be considered as an {@link TAPJob#UNLIMITED_MAX_REC},
+ * 	but like a valid value. The maximum value can then be also 0.
  * </i></p>
  * 
  * <p>The logic of the output limit is set in this class. Here it is:</p>
  * <ul>
- * 	<li>If no value is specified by the TAP client, none is returned.</li>
- *  <li>If no default value is provided, no default limitation is set (={@link TAPJob#UNLIMITED_MAX_REC}).</li>
- *  <li>If no maximum value is provided, there is no output limit (={@link TAPJob#UNLIMITED_MAX_REC}).</li>
+ * 	<li>If no value is specified by the TAP client, the default value is returned.</li>
+ *  <li>If no default value is provided, the maximum output limit is returned.</li>
+ *  <li>If no maximum value is provided, there is no limit (={@link TAPJob#UNLIMITED_MAX_REC}).</li>
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (11/2014)
  */
 public class MaxRecController implements InputParamController {
 
@@ -63,13 +70,18 @@ public class MaxRecController implements InputParamController {
 
 	@Override
 	public final Object getDefault(){
-		// If a default output limit is set by the TAP service connection, return it:
+		// Get the default output limit:
+		int defaultLimit = TAPJob.UNLIMITED_MAX_REC;
 		if (service.getOutputLimit() != null && service.getOutputLimit().length >= 2 && service.getOutputLimitType() != null && service.getOutputLimitType().length == service.getOutputLimit().length){
 			if (service.getOutputLimit()[0] > 0 && service.getOutputLimitType()[0] == LimitUnit.rows)
-				return service.getOutputLimit()[0];
+				defaultLimit = service.getOutputLimit()[0];
 		}
-		// Otherwise, return no limitation:
-		return TAPJob.UNLIMITED_MAX_REC;
+
+		// Get the maximum output limit, for comparison:
+		int maxLimit = getMaxOutputLimit();
+
+		// Ensure the default limit is less or equal the maximum limit:
+		return (defaultLimit < 0 || (maxLimit >= 0 && defaultLimit > maxLimit)) ? maxLimit : defaultLimit;
 	}
 
 	/**
@@ -91,7 +103,7 @@ public class MaxRecController implements InputParamController {
 	public Object check(Object value) throws UWSException{
 		// If no limit is provided by the TAP client, none is returned:
 		if (value == null)
-			return null;
+			return getDefault();
 
 		// Parse the provided limit:
 		int maxOutputLimit = getMaxOutputLimit();
@@ -109,11 +121,11 @@ public class MaxRecController implements InputParamController {
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"maxrec\": class \"" + value.getClass().getName() + "\"! It should be an integer or a string containing only an integer value.");
 
 		// A negative output limit is considered as an unlimited output limit:
-		if (maxRec < TAPJob.UNLIMITED_MAX_REC)
+		if (maxRec < 0)
 			maxRec = TAPJob.UNLIMITED_MAX_REC;
 
 		// If the limit is greater than the maximum one, an exception is thrown:
-		if (maxRec == TAPJob.UNLIMITED_MAX_REC || maxRec > maxOutputLimit)
+		if (maxRec < 0 || (maxOutputLimit >= 0 && maxRec > maxOutputLimit))
 			maxRec = maxOutputLimit;
 
 		return maxRec;

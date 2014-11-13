@@ -27,7 +27,6 @@ import java.util.Date;
 import tap.ServiceConnection;
 import uws.ISO8601Format;
 import uws.UWSException;
-import uws.job.UWSJob;
 import uws.job.parameters.DestructionTimeController.DateField;
 import uws.job.parameters.InputParamController;
 
@@ -40,8 +39,15 @@ import uws.job.parameters.InputParamController;
  * 	There is no default value (that means jobs may stay forever).
  * </i></p>
  * 
+ * <p>The logic of the destruction time is set in this class. Here it is:</p>
+ * <ul>
+ * 	<li>If no value is specified by the UWS client, the default value is returned.</li>
+ *  <li>If no default value is provided, the maximum destruction date is returned.</li>
+ *  <li>If no maximum value is provided, there is no destruction.</li>
+ * </ul>
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (11/2014)
  */
 public class TAPDestructionTimeController implements InputParamController {
 
@@ -90,17 +96,23 @@ public class TAPDestructionTimeController implements InputParamController {
 
 	@Override
 	public final Object getDefault(){
+		// Get the default period and ensure it is always less or equal the maximum period, if any:
 		int defaultPeriod = getDefaultRetentionPeriod();
+		int maxPeriod = getMaxRetentionPeriod();
+		if (defaultPeriod <= 0 || (maxPeriod > 0 && defaultPeriod > maxPeriod))
+			defaultPeriod = maxPeriod;
+
+		// Build and return the date:
 		if (defaultPeriod > 0){
 			Calendar date = Calendar.getInstance();
 			try{
 				date.add(DateField.SECOND.getFieldIndex(), defaultPeriod);
 				return date.getTime();
-			}catch(ArrayIndexOutOfBoundsException ex){
-				return null;
-			}
-		}else
-			return null;
+			}catch(ArrayIndexOutOfBoundsException ex){}
+		}
+
+		// If no default period is specified or if an exception occurs, the maximum destruction time must be returned:
+		return getMaxDestructionTime();
 	}
 
 	/**
@@ -123,24 +135,29 @@ public class TAPDestructionTimeController implements InputParamController {
 	 * @return The maximum destruction time (<i>null</i> means that jobs may stay forever).
 	 */
 	public final Date getMaxDestructionTime(){
+		// Get the maximum period:
 		int maxPeriod = getMaxRetentionPeriod();
+
+		// Build and return the maximum destruction date:
 		if (maxPeriod > 0){
 			Calendar date = Calendar.getInstance();
 			try{
 				date.add(DateField.SECOND.getFieldIndex(), maxPeriod);
 				return date.getTime();
-			}catch(ArrayIndexOutOfBoundsException ex){
-				return null;
-			}
-		}else
-			return null;
+			}catch(ArrayIndexOutOfBoundsException ex){}
+		}
+
+		// If no maximum period is specified or if an exception occurs, NULL must be returned:
+		return null;
 	}
 
 	@Override
 	public Object check(Object value) throws UWSException{
+		// If NULL value, return the default value:
 		if (value == null)
-			return null;
+			return getDefault();
 
+		// Parse the given date:
 		Date date = null;
 		if (value instanceof Date)
 			date = (Date)value;
@@ -154,10 +171,12 @@ public class TAPDestructionTimeController implements InputParamController {
 		}else
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"destruction\": class \"" + value.getClass().getName() + "\"! It should be a Date or a string containing a date formatted in ISO8601 (\"yyyy-MM-dd'T'hh:mm:ss[.sss]['Z'|[+|-]hh:mm]\", fields inside brackets are optional).");
 
+		// Ensure the date is before the maximum destruction time (from now):
 		Date maxDate = getMaxDestructionTime();
 		if (maxDate != null && date.after(maxDate))
-			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the destruction interval (since now) to " + getMaxRetentionPeriod() + " s !");
+			date = maxDate;
 
+		// Return the parsed date
 		return date;
 	}
 

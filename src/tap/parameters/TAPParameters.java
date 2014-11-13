@@ -16,15 +16,17 @@ package tap.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,15 +46,13 @@ import com.oreilly.servlet.multipart.FileRenamePolicy;
 /**
  * This class describes all defined parameters of a TAP request.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (11/2014)
  */
 public class TAPParameters extends UWSParameters {
 
-	/**
-	 * All the TAP parameters.
-	 */
-	protected static final String[] TAP_PARAMETERS = new String[]{TAPJob.PARAM_REQUEST,TAPJob.PARAM_LANGUAGE,TAPJob.PARAM_VERSION,TAPJob.PARAM_FORMAT,TAPJob.PARAM_QUERY,TAPJob.PARAM_MAX_REC,TAPJob.PARAM_UPLOAD};
+	/** All the TAP parameters. */
+	protected static final List<String> TAP_PARAMETERS = Arrays.asList(new String[]{TAPJob.PARAM_REQUEST,TAPJob.PARAM_LANGUAGE,TAPJob.PARAM_VERSION,TAPJob.PARAM_FORMAT,TAPJob.PARAM_QUERY,TAPJob.PARAM_MAX_REC,TAPJob.PARAM_UPLOAD});
 
 	/** Part of HTTP content type header. */
 	public static final String MULTIPART = "multipart/";
@@ -61,21 +61,13 @@ public class TAPParameters extends UWSParameters {
 	protected TableLoader[] tablesToUpload = null;
 
 	public TAPParameters(final ServiceConnection service){
-		this(service, null, null);
-	}
-
-	public TAPParameters(final ServiceConnection service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers){
-		super(expectedAdditionalParams, inputParamControllers);
+		super(TAP_PARAMETERS, null);
 		initDefaultTAPControllers(service);
 	}
 
 	public TAPParameters(final HttpServletRequest request, final ServiceConnection service) throws UWSException, TAPException{
-		this(request, service, null, null);
-	}
+		this(service);
 
-	@SuppressWarnings("unchecked")
-	public TAPParameters(final HttpServletRequest request, final ServiceConnection service, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
-		this(service, expectedAdditionalParams, inputParamControllers);
 		MultipartRequest multipart = null;
 
 		// Multipart HTTP parameters:
@@ -91,6 +83,7 @@ public class TAPParameters extends UWSParameters {
 						return new File(file.getParentFile(), (new Date()).toString() + "_" + file.getName());
 					}
 				});
+				@SuppressWarnings("unchecked")
 				Enumeration<String> e = multipart.getParameterNames();
 				while(e.hasMoreElements()){
 					String param = e.nextElement();
@@ -124,11 +117,7 @@ public class TAPParameters extends UWSParameters {
 	}
 
 	public TAPParameters(final ServiceConnection service, final Map<String,Object> params) throws UWSException, TAPException{
-		this(service, params, null, null);
-	}
-
-	public TAPParameters(final ServiceConnection service, final Map<String,Object> params, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException, TAPException{
-		super(params, expectedAdditionalParams, inputParamControllers);
+		super(params, TAP_PARAMETERS, null);
 		initDefaultTAPControllers(service);
 	}
 
@@ -137,44 +126,16 @@ public class TAPParameters extends UWSParameters {
 		return new HashMap<String,InputParamController>(10);
 	}
 
-	protected < R > void initDefaultTAPControllers(final ServiceConnection service){
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_EXECUTION_DURATION))
-			mapParamControllers.put(TAPJob.PARAM_EXECUTION_DURATION, new TAPExecutionDurationController(service));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_DESTRUCTION_TIME))
-			mapParamControllers.put(TAPJob.PARAM_DESTRUCTION_TIME, new TAPDestructionTimeController(service));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_REQUEST))
-			mapParamControllers.put(TAPJob.PARAM_REQUEST, new StringParamController(TAPJob.PARAM_REQUEST, null, new String[]{TAPJob.REQUEST_DO_QUERY,TAPJob.REQUEST_GET_CAPABILITIES}, true));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_LANGUAGE))
-			mapParamControllers.put(TAPJob.PARAM_LANGUAGE, new StringParamController(TAPJob.PARAM_LANGUAGE, TAPJob.LANG_ADQL, null, true));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_VERSION))
-			mapParamControllers.put(TAPJob.PARAM_VERSION, new StringParamController(TAPJob.PARAM_VERSION, TAPJob.VERSION_1_0, new String[]{TAPJob.VERSION_1_0}, true));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_QUERY))
-			mapParamControllers.put(TAPJob.PARAM_QUERY, new StringParamController(TAPJob.PARAM_QUERY));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_UPLOAD))
-			mapParamControllers.put(TAPJob.PARAM_UPLOAD, new StringParamController(TAPJob.PARAM_UPLOAD));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_FORMAT))
-			mapParamControllers.put(TAPJob.PARAM_FORMAT, new FormatController(service));
-
-		if (!mapParamControllers.containsKey(TAPJob.PARAM_MAX_REC))
-			mapParamControllers.put(TAPJob.PARAM_MAX_REC, new MaxRecController(service));
-	}
-
-	@Override
-	protected String normalizeParamName(String name){
-		if (name != null && !name.trim().isEmpty()){
-			for(String tapParam : TAP_PARAMETERS){
-				if (name.equalsIgnoreCase(tapParam))
-					return tapParam;
-			}
-		}
-		return super.normalizeParamName(name);
+	protected void initDefaultTAPControllers(final ServiceConnection service){
+		mapParamControllers.put(TAPJob.PARAM_EXECUTION_DURATION, new TAPExecutionDurationController(service));
+		mapParamControllers.put(TAPJob.PARAM_DESTRUCTION_TIME, new TAPDestructionTimeController(service));
+		mapParamControllers.put(TAPJob.PARAM_REQUEST, new StringParamController(TAPJob.PARAM_REQUEST, null, new String[]{TAPJob.REQUEST_DO_QUERY,TAPJob.REQUEST_GET_CAPABILITIES}, true));
+		mapParamControllers.put(TAPJob.PARAM_LANGUAGE, new StringParamController(TAPJob.PARAM_LANGUAGE, TAPJob.LANG_ADQL, null, true));
+		mapParamControllers.put(TAPJob.PARAM_VERSION, new StringParamController(TAPJob.PARAM_VERSION, TAPJob.VERSION_1_0, new String[]{TAPJob.VERSION_1_0}, true));
+		mapParamControllers.put(TAPJob.PARAM_QUERY, new StringParamController(TAPJob.PARAM_QUERY));
+		mapParamControllers.put(TAPJob.PARAM_UPLOAD, new StringParamController(TAPJob.PARAM_UPLOAD));
+		mapParamControllers.put(TAPJob.PARAM_FORMAT, new FormatController(service));
+		mapParamControllers.put(TAPJob.PARAM_MAX_REC, new MaxRecController(service));
 	}
 
 	@Override

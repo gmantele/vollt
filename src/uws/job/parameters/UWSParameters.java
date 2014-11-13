@@ -193,7 +193,6 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	 * 
 	 * @see #UWSParameters(Collection, Map)
 	 */
-	@SuppressWarnings("unchecked")
 	public UWSParameters(final HttpServletRequest request, final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers) throws UWSException{
 		this(expectedAdditionalParams, inputParamControllers);
 

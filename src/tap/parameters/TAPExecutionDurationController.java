@@ -34,8 +34,15 @@ import uws.job.parameters.InputParamController;
  * 	The default value is {@link TAPJob#UNLIMITED_DURATION}.
  * </i></p>
  * 
+ * <p>The logic of the execution duration is set in this class. Here it is:</p>
+ * <ul>
+ * 	<li>If no value is specified by the TAP client, the default value is returned.</li>
+ *  <li>If no default value is provided, the maximum duration is returned.</li>
+ *  <li>If no maximum value is provided, there is no limit (={@link TAPJob#UNLIMITED_DURATION}).</li>
+ * </ul>
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (11/2014)
  */
 public class TAPExecutionDurationController implements InputParamController {
 
@@ -70,11 +77,14 @@ public class TAPExecutionDurationController implements InputParamController {
 
 	@Override
 	public final Object getDefault(){
-		if (service.getExecutionDuration() != null && service.getExecutionDuration().length >= 2){
-			if (service.getExecutionDuration()[0] > 0)
-				return service.getExecutionDuration()[0];
-		}
-		return TAPJob.UNLIMITED_DURATION;
+		// Get the default value from the service connection:
+		long defaultVal = TAPJob.UNLIMITED_DURATION;
+		if (service.getExecutionDuration() != null && service.getExecutionDuration().length >= 2)
+			defaultVal = service.getExecutionDuration()[0];
+
+		// The default value is also limited by the maximum value if any:
+		long maxVal = getMaxDuration();
+		return (defaultVal <= 0 || (maxVal > 0 && defaultVal > maxVal)) ? maxVal : defaultVal;
 	}
 
 	/**
@@ -91,15 +101,20 @@ public class TAPExecutionDurationController implements InputParamController {
 	}
 
 	@Override
-	public Object check(Object value) throws UWSException{
+	public Object check(final Object value) throws UWSException{
+		// If no value, return the default one:
 		if (value == null)
-			return null;
+			return getDefault();
 
-		long defaultDuration = ((Long)getDefault()).longValue(), maxDuration = getMaxDuration();
+		// Get the default and maximum durations for comparison:
+		long defaultDuration = (Long)getDefault(), maxDuration = getMaxDuration();
+
+		// Parse the given duration:		
 		Long duration;
-
 		if (value instanceof Long)
 			duration = (Long)value;
+		else if (value instanceof Integer)
+			duration = (long)(Integer)value;
 		else if (value instanceof String){
 			try{
 				duration = Long.parseLong((String)value);
@@ -109,10 +124,13 @@ public class TAPExecutionDurationController implements InputParamController {
 		}else
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"executionduration\": class \"" + value.getClass().getName() + "\"! It should be long or a string containing only a long value.");
 
-		if (duration < TAPJob.UNLIMITED_DURATION)
+		// A negative value must be considered as an unlimited duration:
+		if (duration <= 0)
 			duration = TAPJob.UNLIMITED_DURATION;
-		else if (maxDuration > TAPJob.UNLIMITED_DURATION && duration > maxDuration)
-			throw new UWSException(UWSException.BAD_REQUEST, "The TAP service limits the execution duration to maximum " + maxDuration + " seconds !");
+
+		// Ensure the given value is less than the maximum duration:
+		if (maxDuration > 0 && (duration > maxDuration || duration <= 0))
+			duration = maxDuration;
 
 		return duration;
 	}
