@@ -119,7 +119,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.1 (11/2014)
+ * @version	4.1 (10/2014)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -1151,14 +1151,9 @@ public class UWSJob extends SerializableUWSObject {
 		}// Otherwise start directly the execution:
 		else{
 			// Create its corresponding thread:
-			try{
-				thread = getFactory().createJobThread(this);
-				if (thread == null)
-					throw new NullPointerException("Missing job work ! The thread created by the factory is NULL => The job can't be executed !");
-			}catch(UWSException ue){
-				setPhase(ExecutionPhase.ERROR);
-				throw ue;
-			}
+			thread = getFactory().createJobThread(this);
+			if (thread == null)
+				throw new NullPointerException("Missing job work ! The thread created by the factory is NULL => The job can't be executed !");
 
 			// Change the job phase:
 			setPhase(ExecutionPhase.EXECUTING);
