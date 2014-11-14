@@ -35,7 +35,7 @@ import uws.service.log.DefaultUWSLog;
  * Default implementation of the {@link TAPLog} interface which lets logging any message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (11/2014)
  * 
  * @see DefaultUWSLog
  */
@@ -126,7 +126,7 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 		}
 
 		// Log the message:
-		log(level, "TAP", event, jobId, message + msgAppend, error);
+		log(level, "TAP", event, jobId, message + (msgAppend != null ? msgAppend : ""), error);
 	}
 
 }

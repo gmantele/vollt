@@ -47,7 +47,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (11/2014)
  */
 public class TAPSyncJob {
 
@@ -190,7 +190,7 @@ public class TAPSyncJob {
 		boolean timeout = false;
 		try{
 			// wait the end:
-			thread.join(tapParams.getExecutionDuration());
+			thread.join(tapParams.getExecutionDuration() * 1000);
 			// if still alive after this duration, interrupt it:
 			if (thread.isAlive()){
 				timeout = true;
@@ -198,7 +198,7 @@ public class TAPSyncJob {
 				thread.join(waitForStop);
 			}
 		}catch(InterruptedException ie){
-			/* Having a such exception here, is not surprising, because we may have interrupt the thread! */
+			/* Having a such exception here, is not surprising, because we may have interrupted the thread! */
 		}finally{
 			// Whatever the way the execution stops (normal, cancel or error), an execution report must be fulfilled:
 			execReport = thread.getExecutionReport();
