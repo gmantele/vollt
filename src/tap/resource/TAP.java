@@ -58,7 +58,7 @@ import adql.db.FunctionDef;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (12/2014)
  */
 public class TAP implements VOSIResource {
 
@@ -95,11 +95,14 @@ public class TAP implements VOSIResource {
 	 * @throws UWSException	If an error occurs while creating the /async resource.
 	 * @throws TAPException	If any other error occurs.
 	 */
-	public TAP(ServiceConnection serviceConnection) throws UWSException, TAPException{
+	public TAP(final ServiceConnection serviceConnection) throws UWSException, TAPException{
 		service = serviceConnection;
 		resources = new HashMap<String,TAPResource>();
 
-		errorWriter = new DefaultTAPErrorWriter(service);
+		// Get the error writer to use, or create a default instance if none are provided by the factory:
+		errorWriter = serviceConnection.getFactory().getErrorWriter();
+		if (errorWriter == null)
+			errorWriter = new DefaultTAPErrorWriter(service);
 
 		TAPResource res = new Availability(service);
 		resources.put(res.getName(), res);

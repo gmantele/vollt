@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
 import tap.TAPException;
+import tap.formatter.OutputFormat;
 import tap.formatter.VOTableFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
@@ -38,7 +39,6 @@ import uws.job.ErrorSummary;
 import uws.job.ErrorType;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
-import uws.service.error.DefaultUWSErrorWriter;
 import uws.service.error.ServiceErrorWriter;
 
 /**
@@ -48,6 +48,12 @@ import uws.service.error.ServiceErrorWriter;
  * 	On the contrary to the UWS standard, all errors must be formatted in VOTable.
  * 	So, all errors given to this {@link ServiceErrorWriter} are formatted in VOTable using the structure defined by the IVOA.
  * 	To do that, this class will use the function {@link VOTableFormat#writeError(String, java.util.Map, java.io.PrintWriter)}.
+ * </p>
+ * 
+ * <p>
+ * 	The {@link VOTableFormat} will be got from the {@link ServiceConnection} using {@link ServiceConnection#getOutputFormat(String)}
+ * 	with "votable" as parameter. If the returned formatter is not a direct instance or an extension of {@link VOTableFormat},
+ * 	a default instance of this class will be always used.
  * </p>
  * 
  * <p>
@@ -63,17 +69,20 @@ import uws.service.error.ServiceErrorWriter;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
- * 
- * @see DefaultUWSErrorWriter
+ * @version 2.0 (12/2014)
  */
 public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 
-	/** Logger to use to report any unexpected error. */
-	protected final TAPLog logger;
+	/** Description of the TAP service using this {@link ServiceErrorWriter}. */
+	protected final ServiceConnection service;
 
-	/** Object to use to format an error message in VOTable. */
-	protected final VOTableFormat formatter;
+	/** Logger to use to report any unexpected error.
+	 * <b>This attribute MUST NEVER be used directly, but only with its getter {@link #getLogger()}.</b> */
+	protected TAPLog logger = null;
+
+	/** Object to use to format an error message into VOTable.
+	 * <b>This attribute MUST NEVER be used directly, but only with its getter {@link #getFormatter()}.</b> */
+	protected VOTableFormat formatter = null;
 
 	/**
 	 * <p>Build an error writer for TAP.</p>
@@ -92,9 +101,53 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 	public DefaultTAPErrorWriter(final ServiceConnection service) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("Missing description of this TAP service! Can not build a ServiceErrorWriter.");
+		this.service = service;
+	}
 
-		this.logger = (service.getLogger() == null) ? new DefaultTAPLog(System.err) : service.getLogger();
-		this.formatter = new VOTableFormat(service);
+	/**
+	 * <p>Get the {@link VOTableFormat} to use in order to format errors.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If not yet set, the formatter of this {@link ServiceErrorWriter} is set to the formatter of VOTable results returned by the {@link ServiceConnection}.
+	 * 	However this formatter should be a {@link VOTableFormat} instance or an extension (because the function {@link VOTableFormat#writeError(String, java.util.Map, PrintWriter)} is needed).
+	 * 	Otherwise a default {@link VOTableFormat} instance will be created and always used by this {@link ServiceErrorWriter}.
+	 * </i></p>
+	 * 
+	 * @return	A VOTable formatter.
+	 * 
+	 * @since 2.0
+	 */
+	protected VOTableFormat getFormatter(){
+		if (formatter == null){
+			OutputFormat fmt = service.getOutputFormat("votable");
+			if (fmt == null || !(fmt instanceof VOTableFormat))
+				formatter = new VOTableFormat(service);
+			else
+				formatter = (VOTableFormat)fmt;
+		}
+		return formatter;
+	}
+
+	/**
+	 * <p>Get the logger to use inside this {@link ServiceErrorWriter}.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If not yet set, the logger of this {@link ServiceErrorWriter} is set to the logger used by the {@link ServiceConnection}.
+	 * 	If none is returned by the {@link ServiceConnection}, a default {@link TAPLog} instance writing logs in System.err
+	 * 	will be created and always used by this {@link ServiceErrorWriter}.
+	 * </i></p>
+	 * 
+	 * @return	A logger.
+	 * 
+	 * @since 2.0
+	 */
+	protected TAPLog getLogger(){
+		if (logger == null){
+			logger = service.getLogger();
+			if (logger == null)
+				logger = new DefaultTAPLog(System.err);
+		}
+		return logger;
 	}
 
 	@Override
@@ -143,7 +196,7 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 			addInfos.put("ACTION", action);
 
 		// Format the error in VOTable and write the document in the given HTTP response:
-		formatter.writeError(message, addInfos, response.getWriter());
+		getFormatter().writeError(message, addInfos, response.getWriter());
 	}
 
 	@Override
@@ -169,7 +222,7 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 		addInfos.put("ACTION", "EXECUTING");
 
 		// Format the error in VOTable and write the document in the given HTTP response:
-		formatter.writeError(message, addInfos, new PrintWriter(output));
+		getFormatter().writeError(message, addInfos, new PrintWriter(output));
 	}
 
 	@Override
