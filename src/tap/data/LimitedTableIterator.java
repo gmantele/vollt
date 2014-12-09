@@ -55,7 +55,7 @@ import com.oreilly.servlet.multipart.ExceededSizeException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (12/2014)
  * @since 2.0
  */
 public class LimitedTableIterator implements TableIterator {
@@ -171,7 +171,7 @@ public class LimitedTableIterator implements TableIterator {
 	}
 
 	@Override
-	public TAPColumn[] getMetadata(){
+	public TAPColumn[] getMetadata() throws DataReadException{
 		return innerIt.getMetadata();
 	}
 
