@@ -37,6 +37,7 @@ import uws.job.user.JobOwner;
 import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.log.UWSLog.LogLevel;
+import uws.service.request.UploadFile;
 
 /**
  * <p>The "Get Job Parameter" action of a UWS.</p>
@@ -146,8 +147,25 @@ public class GetJobParam extends UWSAction {
 						input.close();
 				}
 			}
-		}
-		// DEFAULT CASE: Display the serialization of the selected UWS object:
+		}// REFERENCE FILE: Display the content of the uploaded file or redirect to the URL (if it is a URL):
+		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS) && attributes.length > 1 && job.getAdditionalParameterValue(attributes[1]) != null && job.getAdditionalParameterValue(attributes[1]) instanceof UploadFile){
+			UploadFile upl = (UploadFile)job.getAdditionalParameterValue(attributes[1]);
+			if (upl.getLocation().matches("^http(s)?://"))
+				uws.redirect(upl.getLocation(), request, user, getName(), response);
+			else{
+				InputStream input = null;
+				try{
+					input = uws.getFileManager().getUploadInput(upl);
+					UWSToolBox.write(input, upl.mimeType, upl.length, response);
+				}catch(IOException ioe){
+					getLogger().logUWS(LogLevel.ERROR, upl, "GET_PARAMETER", "Can not read the content of the uploaded file \"" + upl.paramName + "\" of the job \"" + job.getJobId() + "\"!", ioe);
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the uploaded file " + upl.paramName + " (job ID: " + job.getJobId() + ").");
+				}finally{
+					if (input != null)
+						input.close();
+				}
+			}
+		}// DEFAULT CASE: Display the serialization of the selected UWS object:
 		else{
 			// Write the value/content of the selected attribute:
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));

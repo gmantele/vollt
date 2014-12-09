@@ -16,7 +16,8 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.List;
@@ -31,12 +32,14 @@ import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
+import uws.service.file.UWSFileManager;
+import uws.service.request.RequestParser;
 
 /**
  * Let's creating UWS jobs, their threads and extracting their parameters from {@link HttpServletRequest}.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (11/2014)
  * 
  * @see UWS#getFactory()
  */
@@ -111,5 +114,19 @@ public interface UWSFactory {
 	 * @throws UWSException	If an error occurs while extracting parameters.
 	 */
 	public UWSParameters createUWSParameters(final Map<String,Object> params) throws UWSException;
+
+	/**
+	 * Create a parser of HTTP requests. This object is able to deal with the different formats
+	 * in which parameters are provided in an HTTP request.
+	 * 
+	 * @param manager	File manager to use if files are uploaded in an HTTP request.
+	 * 
+	 * @return			The request parser to use.
+	 * 
+	 * @throws UWSException	If an error occurs while creating the parser.
+	 * 
+	 * @since 4.1
+	 */
+	public RequestParser createRequestParser(final UWSFileManager manager) throws UWSException;
 
 }

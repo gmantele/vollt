@@ -33,8 +33,8 @@ import tap.formatter.OutputFormat;
 import tap.log.TAPLog;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
+import tap.parameters.DALIUpload;
 import tap.parameters.TAPParameters;
-import tap.upload.TableLoader;
 import tap.upload.Uploader;
 import uws.UWSException;
 import uws.job.JobThread;
@@ -104,7 +104,7 @@ import adql.query.ADQLQuery;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (12/2014)
  */
 public class ADQLExecutor {
 
@@ -299,7 +299,7 @@ public class ADQLExecutor {
 			dbConn = service.getFactory().getConnection(report.jobID);
 
 			// 1. UPLOAD TABLES, if there is any:
-			if (tapParams.getTableLoaders() != null && tapParams.getTableLoaders().length > 0){
+			if (tapParams.getUploadedTables() != null && tapParams.getUploadedTables().length > 0){
 				startStep(ExecutionProgression.UPLOADING);
 				uploadTables();
 				endStep();
@@ -444,16 +444,12 @@ public class ADQLExecutor {
 	 */
 	private final void uploadTables() throws TAPException{
 		// Fetch the tables to upload:
-		TableLoader[] tables = tapParams.getTableLoaders();
+		DALIUpload[] tables = tapParams.getUploadedTables();
 
 		// Upload them, if needed:
 		if (tables.length > 0){
 			logger.logTAP(LogLevel.INFO, report, "UPLOADING", "Loading uploaded tables (" + tables.length + ")", null);
-			try{
-				uploadSchema = service.getFactory().createUploader(dbConn).upload(tables);
-			}finally{
-				TAPParameters.deleteUploadedTables(tables);
-			}
+			uploadSchema = service.getFactory().createUploader(dbConn).upload(tables);
 		}
 	}
 

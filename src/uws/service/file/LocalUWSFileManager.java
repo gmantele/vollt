@@ -20,6 +20,8 @@ package uws.service.file;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -29,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,6 +47,7 @@ import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 import uws.service.log.UWSLog.LogLevel;
+import uws.service.request.UploadFile;
 
 /**
  * <p>All UWS files are stored in the local machine into the specified directory.</p>
@@ -64,7 +69,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public class LocalUWSFileManager implements UWSFileManager {
 
@@ -401,6 +406,120 @@ public class LocalUWSFileManager implements UWSFileManager {
 		out.println(separator);
 
 		out.flush();
+	}
+
+	/* ************************* */
+	/* UPLOADED FILES MANAGEMENT */
+	/* ************************* */
+
+	/**
+	 * Create a File instance from the given upload file description.
+	 * This function is able to deal with location as URI and as file path. 
+	 * 
+	 * @param upload	Description of an uploaded file.
+	 * 
+	 * @return	The corresponding File object.
+	 * 
+	 * @since 4.1
+	 */
+	protected final File getFile(final UploadFile upload){
+		if (upload.getLocation().startsWith("file:")){
+			try{
+				return new File(new URI(upload.getLocation()));
+			}catch(URISyntaxException use){
+				return new File(upload.getLocation());
+			}
+		}else
+			return new File(upload.getLocation());
+	}
+
+	@Override
+	public InputStream getUploadInput(final UploadFile upload) throws IOException{
+		// Check the source file:
+		File source = getFile(upload);
+		if (!source.exists())
+			throw new FileNotFoundException("The uploaded file submitted with the parameter \"" + upload.paramName + "\" can not be found any more on the server!");
+		// Return the stream:
+		return new FileInputStream(source);
+	}
+
+	@Override
+	public InputStream openURI(final URI uri) throws UnsupportedURIProtocolException, IOException{
+		String scheme = uri.getScheme();
+		if (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("ftp"))
+			return uri.toURL().openStream();
+		else
+			throw new UnsupportedURIProtocolException(uri);
+	}
+
+	@Override
+	public void deleteUpload(final UploadFile upload) throws IOException{
+		File f = getFile(upload);
+		if (!f.exists())
+			return;
+		else if (f.isDirectory())
+			throw new IOException("Incorrect location! An uploaded file must be a regular file, not a directory. (file location: \"" + f.getPath() + "\")");
+		else{
+			try{
+				if (!f.delete())
+					throw new IOException("Can not delete the file!");
+			}catch(SecurityException se){
+				throw new IOException("Unexpected permission restriction on the uploaded file \"" + f.getPath() + "\" => can not delete it!");
+			}
+		}
+	}
+
+	@Override
+	public String moveUpload(final UploadFile upload, final UWSJob destination) throws IOException{
+		// Check the source file:
+		File source = getFile(upload);
+		if (!source.exists())
+			throw new FileNotFoundException("The uploaded file submitted with the parameter \"" + upload.paramName + "\" can not be found any more on the server!");
+
+		// Build the final location (in the owner directory, under the name "UPLOAD_{job-id}_{param-name}":
+		File ownerDir = getOwnerDirectory(destination.getOwner());
+		File copy = new File(ownerDir, "UPLOAD_" + destination.getJobId() + "_" + upload.paramName);
+
+		OutputStream output = null;
+		InputStream input = null;
+		boolean done = false;
+		try{
+			// open the input and output:
+			input = new BufferedInputStream(getUploadInput(upload));
+			output = new BufferedOutputStream(new FileOutputStream(copy));
+			// proceed to the copy:
+			byte[] buffer = new byte[2048];
+			int len;
+			while((len = input.read(buffer)) > 0)
+				output.write(buffer, 0, len);
+			output.flush();
+			output.close();
+			output = null;
+			// close the input and delete the source file:
+			input.close();
+			input = null;
+			source.delete();
+			// return the new location:
+			done = true;
+			return copy.toURI().toString();
+		}finally{
+			if (output != null){
+				try{
+					output.close();
+				}catch(IOException ioe){}
+			}
+			if (input != null){
+				try{
+					input.close();
+				}catch(IOException ioe){}
+			}
+			// In case of problem, the copy must be deleted:
+			if (!done && copy.exists()){
+				try{
+					copy.delete();
+				}catch(SecurityException ioe){}
+			}
+		}
 	}
 
 	/* *********************** */

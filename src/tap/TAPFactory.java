@@ -41,6 +41,8 @@ import uws.service.UWSFactory;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
+import uws.service.file.UWSFileManager;
+import uws.service.request.RequestParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
@@ -447,5 +449,10 @@ public abstract class TAPFactory implements UWSFactory {
 	 * @throws TAPException	If any error occurs while creating the {@link TAPParameters} object.
 	 */
 	public abstract TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException;
+
+	@Override
+	public RequestParser createRequestParser(final UWSFileManager fileManager) throws UWSException{
+		return new TAPRequestParser(fileManager);
+	}
 
 }

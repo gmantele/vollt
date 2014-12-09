@@ -23,13 +23,13 @@ package tap;
 import java.util.Collection;
 import java.util.Iterator;
 
-import tap.file.LocalTAPFileManager;
-import tap.file.TAPFileManager;
 import tap.formatter.OutputFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
+import uws.service.file.LocalUWSFileManager;
+import uws.service.file.UWSFileManager;
 import adql.db.FunctionDef;
 
 /**
@@ -42,7 +42,7 @@ import adql.db.FunctionDef;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (12/2014)
  */
 public interface ServiceConnection {
 
@@ -494,13 +494,13 @@ public interface ServiceConnection {
 	 * </b></p>
 	 * 
 	 * <p><i>Piece of advice:
-	 * 	The library provides a default implementation of the interface {@link TAPFileManager}:
-	 * 	{@link LocalTAPFileManager}, which stores all files on the local file-system.
+	 * 	The library provides a default implementation of the interface {@link UWSFileManager}:
+	 * 	{@link LocalUWSFileManager}, which stores all files on the local file-system.
 	 * </i></p>
 	 * 
-	 * @return	An instance of {@link TAPFileManager}.
+	 * @return	An instance of {@link UWSFileManager}.
 	 */
-	public TAPFileManager getFileManager();
+	public UWSFileManager getFileManager();
 
 	/**
 	 * <i><b>[MANDATORY]</b></i>

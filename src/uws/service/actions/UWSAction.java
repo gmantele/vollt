@@ -42,7 +42,7 @@ import uws.service.log.UWSLog;
  * By default the name of a UWS action is the full java name of the class !</b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (11/2014)
  * 
  * @see UWSService
  */
@@ -53,6 +53,9 @@ public abstract class UWSAction implements Serializable {
 	public final static String LIST_JOBS = "List Jobs";
 	/** Name of the UWS action {@link AddJob}. */
 	public final static String ADD_JOB = "Add Job";
+	/** Name of the UWS action {@link SetUWSParameter}.
+	 * @since 4.1 */
+	public final static String SET_UWS_PARAMETER = "Set UWS Parameter";
 	/** Name of the UWS action {@link DestroyJob}. */
 	public final static String DESTROY_JOB = "Destroy Job";
 	/** Name of the UWS action {@link JobSummary}. */

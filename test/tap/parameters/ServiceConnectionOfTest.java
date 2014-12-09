@@ -8,7 +8,6 @@ import java.util.List;
 import tap.ServiceConnection;
 import tap.TAPFactory;
 import tap.TAPJob;
-import tap.file.TAPFileManager;
 import tap.formatter.FITSFormat;
 import tap.formatter.OutputFormat;
 import tap.formatter.SVFormat;
@@ -16,6 +15,7 @@ import tap.formatter.VOTableFormat;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
+import uws.service.file.UWSFileManager;
 import adql.db.FunctionDef;
 
 public class ServiceConnectionOfTest implements ServiceConnection {
@@ -141,7 +141,7 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	}
 
 	@Override
-	public TAPFileManager getFileManager(){
+	public UWSFileManager getFileManager(){
 		return null;
 	}
 

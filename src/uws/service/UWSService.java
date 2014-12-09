@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import uws.AcceptHeader;
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.ExecutionPhase;
 import uws.job.JobList;
 import uws.job.UWSJob;
@@ -48,6 +49,7 @@ import uws.service.actions.GetJobParam;
 import uws.service.actions.JobSummary;
 import uws.service.actions.ListJobs;
 import uws.service.actions.SetJobParam;
+import uws.service.actions.SetUWSParameter;
 import uws.service.actions.ShowHomePage;
 import uws.service.actions.UWSAction;
 import uws.service.backup.UWSBackupManager;
@@ -57,6 +59,7 @@ import uws.service.file.UWSFileManager;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
+import uws.service.request.RequestParser;
 
 /**
  * <h3>General description</h3>
@@ -233,6 +236,10 @@ public class UWSService implements UWS {
 	/** Lets logging info/debug/warnings/errors about this UWS. */
 	protected UWSLog logger;
 
+	/** Lets extract all parameters from an HTTP request, whatever is its content-type.
+	 * @since 4.1*/
+	protected final RequestParser requestParser;
+
 	/** Lets writing/formatting any exception/throwable in a HttpServletResponse. */
 	protected ServiceErrorWriter errorWriter;
 
@@ -259,10 +266,11 @@ public class UWSService implements UWS {
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * 
 	 * @throws NullPointerException	If at least one of the parameters is <i>null</i>.
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 * 
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog)
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager) throws UWSException{
 		this(jobFactory, fileManager, (UWSLog)null);
 	}
 
@@ -280,8 +288,9 @@ public class UWSService implements UWS {
 	 * @param logger		Object which lets printing any message (error, info, debug, warning).
 	 * 
 	 * @throws NullPointerException	If at least one of the parameters is <i>null</i>.
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger) throws UWSException{
 		if (jobFactory == null)
 			throw new NullPointerException("Missing UWS factory! Can not create a UWSService.");
 		factory = jobFactory;
@@ -291,6 +300,9 @@ public class UWSService implements UWS {
 		this.fileManager = fileManager;
 
 		this.logger = (logger == null) ? new DefaultUWSLog(this) : logger;
+
+		requestParser = jobFactory.createRequestParser(fileManager);
+
 		errorWriter = new DefaultUWSErrorWriter(this.logger);
 
 		// Initialize the list of jobs:
@@ -308,6 +320,7 @@ public class UWSService implements UWS {
 		uwsActions.add(new ShowHomePage(this));
 		uwsActions.add(new ListJobs(this));
 		uwsActions.add(new AddJob(this));
+		uwsActions.add(new SetUWSParameter(this));
 		uwsActions.add(new DestroyJob(this));
 		uwsActions.add(new JobSummary(this));
 		uwsActions.add(new GetJobParam(this));
@@ -376,9 +389,11 @@ public class UWSService implements UWS {
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param urlInterpreter	The UWS URL interpreter to use in this UWS.
 	 * 
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
+	 * 
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog, UWSUrl)
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSUrl urlInterpreter){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSUrl urlInterpreter) throws UWSException{
 		this(jobFactory, fileManager, null, urlInterpreter);
 	}
 
@@ -389,8 +404,10 @@ public class UWSService implements UWS {
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param logger		Object which lets printing any message (error, info, debug, warning).
 	 * @param urlInterpreter	The UWS URL interpreter to use in this UWS.
+	 * 
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger, final UWSUrl urlInterpreter){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger, final UWSUrl urlInterpreter) throws UWSException{
 		this(jobFactory, fileManager, logger);
 		setUrlInterpreter(urlInterpreter);
 		if (this.urlInterpreter != null)
@@ -1041,6 +1058,7 @@ public class UWSService implements UWS {
 
 		// Generate a unique ID for this request execution (for log purpose only):
 		final String reqID = generateRequestID(request);
+		request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
 		// Log the reception of the request:
 		logger.logHttp(LogLevel.INFO, request, reqID, null, null);
@@ -1061,6 +1079,9 @@ public class UWSService implements UWS {
 			// Update the UWS URL interpreter:
 			UWSUrl urlInterpreter = new UWSUrl(this.urlInterpreter);
 			urlInterpreter.load(request);
+
+			// Extract all parameters:
+			request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
 
 			// Identify the user:
 			user = (userIdentifier == null) ? null : userIdentifier.extractUserId(urlInterpreter, request);
@@ -1092,6 +1113,8 @@ public class UWSService implements UWS {
 			sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
 		}finally{
 			executedAction = action;
+			// Free resources about uploaded files ; only unused files will be deleted:
+			UWSToolBox.deleteUploads(request);
 		}
 
 		return actionApplied;

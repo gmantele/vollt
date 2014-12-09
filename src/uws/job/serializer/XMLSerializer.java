@@ -32,12 +32,13 @@ import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
+import uws.service.request.UploadFile;
 
 /**
  * Lets serializing any UWS resource in XML.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -191,7 +192,8 @@ public class XMLSerializer extends UWSSerializer {
 		// general information:
 		xml.append("<job").append(getUWSNamespace(root)).append(">");
 		xml.append(newLine).append(getJobID(job, false));
-		xml.append(newLine).append(getRunID(job, false));
+		if (job.getRunId() != null)
+			xml.append(newLine).append(getRunID(job, false));
 		xml.append(newLine).append(getOwnerID(job, false));
 		xml.append(newLine).append(getPhase(job, false));
 		xml.append(newLine).append(getQuote(job, false));
@@ -346,11 +348,42 @@ public class XMLSerializer extends UWSSerializer {
 	@Override
 	public String getAdditionalParameter(final String paramName, final Object paramValue, final boolean root){
 		if (paramName != null && paramValue != null){
-			if (root)
-				return paramValue.toString();
-			else
-				return (new StringBuffer("<parameter")).append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(paramName)).append("\">").append(escapeXMLData(paramValue.toString())).append("</parameter>").toString();
-		}else
+			// If ROOT, just the value must be returned:
+			if (root){
+				if (paramValue.getClass().isArray()){
+					StringBuffer buf = new StringBuffer();
+					for(Object o : (Object[])paramValue){
+						if (buf.length() > 0)
+							buf.append(';');
+						buf.append(o.toString());
+					}
+					return buf.toString();
+				}else
+					return paramValue.toString();
+			}
+			// OTHERWISE, return the XML description:
+			else{
+				StringBuffer buf = new StringBuffer();
+				// if array (=> multiple occurrences of the parameter), each item must be one individual parameter:
+				if (paramValue.getClass().isArray()){
+					for(Object o : (Object[])paramValue){
+						if (buf.length() > 0)
+							buf.append("\n\t").append(tabPrefix);
+						buf.append(getAdditionalParameter(paramName, o, root));
+					}
+				}
+				// otherwise, just return the XML parameter description:
+				else{
+					buf.append("<parameter").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(paramName));
+					if (paramValue instanceof UploadFile)
+						buf.append("\" byReference=\"true");
+					buf.append("\">").append(escapeXMLData(paramValue.toString())).append("</parameter>");
+				}
+				return buf.toString();
+			}
+		}
+		// If NO VALUE or NO NAME, return an empty string:
+		else
 			return "";
 	}
 
@@ -393,16 +426,31 @@ public class XMLSerializer extends UWSSerializer {
 	/* ESCAPE METHODS */
 	/* ************** */
 	/**
-	 * <p>Escapes the content of a node (data between the open and the close tags).</p>
-	 * 
-	 * <p><i>By default: surrounds the given data by "&lt;![CDATA[" and "]]&gt;".</i></p>
+	 * Escapes the content of a node (data between the open and the close tags).
 	 * 
 	 * @param data	Data to escape.
 	 * 
 	 * @return		Escaped data.
 	 */
 	public static String escapeXMLData(final String data){
-		return "<![CDATA[" + data + "]]>";
+		StringBuffer encoded = new StringBuffer();
+		for(int i = 0; i < data.length(); i++){
+			char c = data.charAt(i);
+			switch(c){
+				case '&':
+					encoded.append("&amp;");
+					break;
+				case '<':
+					encoded.append("&lt;");
+					break;
+				case '>':
+					encoded.append("&gt;");
+					break;
+				default:
+					encoded.append(ensureLegalXml(c));
+			}
+		}
+		return encoded.toString();
 	}
 
 	/**
@@ -429,11 +477,8 @@ public class XMLSerializer extends UWSSerializer {
 				case '"':
 					encoded.append("&quot;");
 					break;
-				case '\'':
-					encoded.append("&#039;");
-					break;
 				default:
-					encoded.append(c);
+					encoded.append(ensureLegalXml(c));
 			}
 		}
 		return encoded.toString();
@@ -455,6 +500,24 @@ public class XMLSerializer extends UWSSerializer {
 		}catch(UnsupportedEncodingException e){
 			return escapeXMLAttribute(url);
 		}
+	}
+
+	/**
+	 * <p>Returns a legal XML character corresponding to an input character.
+	 * Certain characters are simply illegal in XML (regardless of encoding).
+	 * If the input character is legal in XML, it is returned;
+	 * otherwise some other weird but legal character 
+	 * (currently the inverted question mark, "\u00BF") is returned instead.</p>
+	 * 
+	 * <p><i>Note: copy of the STILTS VOSerializer.ensureLegalXml(char) function.</i></p>
+	 *
+	 * @param   c  input character
+	 * @return  legal XML character, <code>c</code> if possible
+	 * 
+	 * @since 4.1
+	 */
+	public static char ensureLegalXml(char c){
+		return ((c >= '\u0020' && c <= '\uD7FF') || (c >= '\uE000' && c <= '\uFFFD') || ((c) == 0x09 || (c) == 0x0A || (c) == 0x0D)) ? c : '\u00BF';
 	}
 
 }

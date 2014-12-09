@@ -47,6 +47,7 @@ import uws.service.UWSUrl;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
+import uws.service.request.UploadFile;
 
 /**
  * <h3>Brief description</h3>
@@ -119,7 +120,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.1 (10/2014)
+ * @version	4.1 (12/2014)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -307,6 +308,14 @@ public class UWSJob extends SerializableUWSObject {
 
 		jobId = generateJobId();
 		restorationDate = null;
+
+		// Move all uploaded files in a location related with this job:
+		Iterator<UploadFile> files = inputParams.getFiles();
+		while(files.hasNext()){
+			try{
+				files.next().move(this);
+			}catch(IOException ioe){}
+		}
 	}
 
 	/**
@@ -582,7 +591,8 @@ public class UWSJob extends SerializableUWSObject {
 			ExecutionPhase oldPhase = phase.getPhase();
 			phase.setPhase(p, force);
 
-			getLogger().logJob(LogLevel.INFO, this, "CHANGE_PHASE", "The job \"" + getJobId() + "\" goes from " + oldPhase + " to " + p, null);
+			if (!force)
+				getLogger().logJob(LogLevel.INFO, this, "CHANGE_PHASE", "The job \"" + getJobId() + "\" goes from " + oldPhase + " to " + p, null);
 
 			// Notify the execution manager:
 			if (phase.isFinished() && getJobList() != null)
@@ -709,13 +719,13 @@ public class UWSJob extends SerializableUWSObject {
 	 * 	If known the jobs list is notify of this destruction time update.
 	 * </p>
 	 * 
-	 * @param destructionTime The destruction time of this job.
+	 * @param destructionTime The destruction time of this job. <i>MUST NOT be NULL</i>
 	 * 
 	 * @see JobList#updateDestruction(UWSJob)
 	 * @see UWSParameters#set(String, Object)
 	 */
 	public final void setDestructionTime(Date destructionTime){
-		if (phase.isJobUpdatable()){
+		if (destructionTime != null && phase.isJobUpdatable()){
 			try{
 				inputParams.set(PARAM_DESTRUCTION_TIME, destructionTime);
 				if (myJobList != null)
@@ -741,14 +751,16 @@ public class UWSJob extends SerializableUWSObject {
 	 * <p><b><u>IMPORTANT:</u> This function will have no effect if the job is finished, that is to say if the current phase is
 	 * {@link ExecutionPhase#ABORTED ABORTED}, {@link ExecutionPhase#ERROR ERROR} or {@link ExecutionPhase#COMPLETED COMPLETED}.</i>.</b></p>
 	 * 
-	 * @param errorSummary	A summary of the error.
+	 * @param errorSummary	A summary of the error. <i>MUST NOT be NULL</i>
 	 * 
 	 * @throws UWSException	If the job execution is finished that is to say if the phase is ABORTED, ERROR or COMPLETED.
 	 * 
 	 * @see #isFinished()
 	 */
 	public final void setErrorSummary(ErrorSummary errorSummary) throws UWSException{
-		if (!isFinished())
+		if (errorSummary == null)
+			return;
+		else if (!isFinished())
 			this.errorSummary = errorSummary;
 		else{
 			UWSException ue = new UWSException(UWSException.NOT_ALLOWED, UWSExceptionFactory.jobModificationForbidden(jobId, getPhase(), "ERROR SUMMARY"));
@@ -873,8 +885,49 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobPhase#isJobUpdatable()
 	 */
 	public final boolean addOrUpdateParameter(String paramName, Object paramValue) throws UWSException{
-		if (!phase.isFinished()){
+		return addOrUpdateParameter(paramName, paramValue, null);
+	}
+
+	/**
+	 * Adds or updates the specified parameter with the given value ONLY IF the job can be updated (considering its current execution phase, see {@link JobPhase#isJobUpdatable()}).
+	 * 
+	 * @param paramName		The name of the parameter to add or to update.
+	 * @param paramValue	The (new) value of the specified parameter.
+	 * @param user			The user who asks for this update.
+	 * 
+	 * @return				<ul><li><i>true</i> if the parameter has been successfully added/updated,</li>
+	 * 						<li><i>false</i> otherwise <i>(particularly if paramName=null or paramName="" or paramValue=null)</i>.</li></ul>
+	 * 
+	 * @throws UWSException	If a parameter value is incorrect.
+	 * 
+	 * @since 4.1
+	 * 
+	 * @see JobPhase#isJobUpdatable()
+	 */
+	public final boolean addOrUpdateParameter(String paramName, Object paramValue, final JobOwner user) throws UWSException{
+		if (paramValue != null && !phase.isFinished()){
+
+			// Set the parameter:
 			inputParams.set(paramName, paramValue);
+
+			// If it is a file or an array containing files, they must be moved in a location related to this job:
+			try{
+				if (paramValue instanceof UploadFile)
+					((UploadFile)paramValue).move(this);
+				else if (paramValue.getClass().isArray()){
+					for(Object o : (Object[])paramValue){
+						if (o != null && o instanceof UploadFile)
+							((UploadFile)o).move(this);
+					}
+				}
+			}catch(IOException ioe){
+				getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
+				return false;
+			}
+
+			// Apply the retrieved phase:
+			applyPhaseParam(user);
+
 			return true;
 		}else
 			return false;
@@ -913,6 +966,8 @@ public class UWSJob extends SerializableUWSObject {
 	 * </ul></p>
 	 * 
 	 * @param params		The UWS parameters to update.
+	 * @param user			The user who asks for this update.
+	 * 
 	 * @return				<ul><li><i>true</i> if all the given parameters have been successfully added/updated,</li>
 	 * 						<li><i>false</i> if some parameters have not been managed.</li></ul>
 	 * 
@@ -924,6 +979,10 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see #applyPhaseParam()
 	 */
 	public boolean addOrUpdateParameters(UWSParameters params, final JobOwner user) throws UWSException{
+		// The job can be modified ONLY IF in PENDING phase: 
+		if (!phase.isJobUpdatable())
+			throw new UWSException(UWSException.FORBIDDEN, "Parameters modification is now forbidden for this job: it is not any more in PENDING phase!");
+
 		// Forbids the update if the user has not the required permission:
 		if (user != null && !user.equals(owner) && !user.hasWritePermission(this))
 			throw new UWSException(UWSException.PERMISSION_DENIED, UWSExceptionFactory.writePermissionDenied(user, false, getJobId()));
@@ -932,11 +991,24 @@ public class UWSJob extends SerializableUWSObject {
 		String[] updated = inputParams.update(params);
 
 		// If the destruction time has been updated, the modification must be propagated to the jobs list:
+		Object newValue;
 		for(String updatedParam : updated){
+			// CASE DESTRUCTION_TIME: update the thread dedicated to the destruction:
 			if (updatedParam.equals(PARAM_DESTRUCTION_TIME)){
 				if (myJobList != null)
 					myJobList.updateDestruction(this);
-				break;
+			}
+			// DEFAULT: test whether the parameter is a file, and if yes, move it in a location related to this job:
+			else{
+				newValue = inputParams.get(updatedParam);
+				if (newValue != null && newValue instanceof UploadFile){
+					try{
+						((UploadFile)newValue).move(this);
+					}catch(IOException ioe){
+						getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
+						inputParams.remove(updatedParam);
+					}
+				}
 			}
 		}
 
@@ -960,7 +1032,16 @@ public class UWSJob extends SerializableUWSObject {
 		if (phase.isFinished() || paramName == null)
 			return false;
 		else{
-			inputParams.remove(paramName);
+			// Remove the parameter from the map:
+			Object removed = inputParams.remove(paramName);
+			// If the parameter value was an uploaded file, delete it physically:
+			if (removed != null && removed instanceof UploadFile){
+				try{
+					((UploadFile)removed).deleteFile();
+				}catch(IOException ioe){
+					getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not delete the uploaded file \"" + paramName + "\" of the job \"" + jobId + "\"!", ioe);
+				}
+			}
 			return true;
 		}
 	}
@@ -1138,7 +1219,7 @@ public class UWSJob extends SerializableUWSObject {
 	public void start(boolean useManager) throws UWSException{
 		// This job must know its jobs list and this jobs list must know its UWS:
 		if (myJobList == null || myJobList.getUWS() == null)
-			throw new NullPointerException("A UWSJob can not start if it is not part of a job list or if its job list is not part of a UWS.");
+			throw new IllegalStateException("A UWSJob can not start if it is not linked to a job list or if its job list is not linked to a UWS.");
 
 		// If already running do nothing:
 		else if (isRunning())
@@ -1153,7 +1234,7 @@ public class UWSJob extends SerializableUWSObject {
 			// Create its corresponding thread:
 			thread = getFactory().createJobThread(this);
 			if (thread == null)
-				throw new NullPointerException("Missing job work ! The thread created by the factory is NULL => The job can't be executed !");
+				throw new NullPointerException("Missing job work! The thread created by the factory is NULL => The job can't be executed!");
 
 			// Change the job phase:
 			setPhase(ExecutionPhase.EXECUTING);
@@ -1333,7 +1414,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * <p>Stops the job if running, removes the job from the execution manager, stops the timer for the execution duration
 	 * and may clear all files or any other resources associated to this job.</p>
 	 * 
-	 * <p><i>By default the job is aborted, only the {@link UWSJob#thread} attribute is set to null and the timers are stopped; no other operations (i.e. clear result files and error files) is done.</i></p>
+	 * <p><i>By default the job is aborted, the {@link UWSJob#thread} attribute is set to null, the timers are stopped and uploaded files, results and the error summary are deleted.</i></p>
 	 */
 	public void clearResources(){
 		// If still running, abort/stop the job:
@@ -1351,6 +1432,18 @@ public class UWSJob extends SerializableUWSObject {
 			getJobList().getExecutionManager().remove(this);
 
 		thread = null;
+
+		// Clear all uploaded files:
+		Iterator<UploadFile> files = inputParams.getFiles();
+		UploadFile upl;
+		while(files.hasNext()){
+			upl = files.next();
+			try{
+				upl.deleteFile();
+			}catch(IOException ioe){
+				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file uploaded as parameter \"" + upl.paramName + "\" (" + upl.getLocation() + ") of the job \"" + jobId + "\"!", null);
+			}
+		}
 
 		// Clear all results file:
 		for(Result r : results.values()){

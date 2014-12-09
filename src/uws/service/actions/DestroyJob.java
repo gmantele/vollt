@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.JobList;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
@@ -42,7 +43,7 @@ import uws.service.log.UWSLog.LogLevel;
  * The response of this action is a redirection to the jobs list.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (11/2014)
  */
 public class DestroyJob extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -78,7 +79,7 @@ public class DestroyJob extends UWSAction {
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
-		return (urlInterpreter.hasJobList() && urlInterpreter.hasJob() && (request.getMethod().equalsIgnoreCase("delete") || (request.getMethod().equalsIgnoreCase("post") && request.getParameter(UWSJob.PARAM_ACTION) != null && request.getParameter(UWSJob.PARAM_ACTION).equalsIgnoreCase(UWSJob.ACTION_DELETE))));
+		return urlInterpreter.hasJobList() && urlInterpreter.hasJob() && (request.getMethod().equalsIgnoreCase("delete") || (request.getMethod().equalsIgnoreCase("post") && UWSToolBox.hasParameter(UWSJob.PARAM_ACTION, UWSJob.ACTION_DELETE, request, false)));
 	}
 
 	/**

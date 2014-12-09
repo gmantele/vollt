@@ -38,7 +38,7 @@ import uws.service.UWSUrl;
  * Let log any kind of message about a UWS service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public interface UWSLog {
 
@@ -263,6 +263,7 @@ public interface UWSLog {
 	 * 	<li>NOTIFY</li>
 	 * 	<li>END</li>
 	 * 	<li>SERIALIZE</li>
+	 * 	<li>MOVE_UPLOAD</li>
 	 * 	<li>ADD_RESULT</li>
 	 * 	<li>SET_DESTRUCTION</li>
 	 * 	<li>SET_ERROR</li>

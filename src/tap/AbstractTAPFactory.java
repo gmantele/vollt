@@ -53,7 +53,7 @@ import adql.query.ADQLQuery;
  * Only the functions related with the database connection stay abstract.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.0 (12/2014)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
@@ -213,9 +213,13 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 */
 	@Override
 	public UWSService createUWS() throws TAPException{
-		UWSService uws = new UWSService(this, this.service.getFileManager(), this.service.getLogger());
-		uws.setErrorWriter(errorWriter);
-		return uws;
+		try{
+			UWSService uws = new UWSService(this, this.service.getFileManager(), this.service.getLogger());
+			uws.setErrorWriter(errorWriter);
+			return uws;
+		}catch(UWSException ue){
+			throw new TAPException("Can not create a UWS service (asynchronous resource of TAP)!", ue, UWSException.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	/**
@@ -243,7 +247,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 			TAPParameters tapParams = createTAPParameters(request);
 			return new TAPJob(owner, tapParams);
 		}catch(TAPException te){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, "Can not create a TAP asynchronous job !");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, "Can not create a TAP asynchronous job!");
 		}
 	}
 
@@ -276,11 +280,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 */
 	@Override
 	public TAPParameters createTAPParameters(final HttpServletRequest request) throws TAPException{
-		try{
-			return new TAPParameters(request, service);
-		}catch(UWSException ue){
-			throw new TAPException(ue);
-		}
+		return new TAPParameters(request, service);
 	}
 
 	/**
@@ -295,11 +295,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 */
 	@Override
 	public TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException{
-		try{
-			return new TAPParameters(service, params);
-		}catch(UWSException ue){
-			throw new TAPException(ue);
-		}
+		return new TAPParameters(service, params);
 	}
 
 }

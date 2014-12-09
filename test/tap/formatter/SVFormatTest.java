@@ -24,7 +24,6 @@ import tap.TAPFactory;
 import tap.TAPJob;
 import tap.data.ResultSetTableIterator;
 import tap.data.TableIterator;
-import tap.file.TAPFileManager;
 import tap.log.TAPLog;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata;
@@ -32,6 +31,7 @@ import tap.parameters.TAPParameters;
 import testtools.CommandExecute;
 import testtools.DBTools;
 import uws.service.UserIdentifier;
+import uws.service.file.UWSFileManager;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
@@ -239,7 +239,7 @@ public class SVFormatTest {
 		}
 
 		@Override
-		public TAPFileManager getFileManager(){
+		public UWSFileManager getFileManager(){
 			return null;
 		}
 
