@@ -114,7 +114,7 @@ public class TAPExecutionDurationController implements InputParamController {
 		if (value instanceof Long)
 			duration = (Long)value;
 		else if (value instanceof Integer)
-			duration = (long)(Integer)value;
+			duration = (long)((Integer)value).intValue();
 		else if (value instanceof String){
 			try{
 				duration = Long.parseLong((String)value);
