@@ -19,15 +19,12 @@
 	<property name="srcJarFile" value="${jarDest}/uws_src_${version}.jar" />
 	<property name="javadocJarFile" value="${jarDest}/uws_javadoc_${version}.jar" />
 	
-	<fail message="Missing property: CATALINA ! It provides the path toward a directory or a JAR which contains the following class: org.apache.catalina.connector.ClientAbortException.">
-		<condition><not><isset property="CATALINA"/></not></condition>
-	</fail>
+
 	<fail message="The property SERVLET-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.servlet.">
 		<condition><not><isset property="SERVLET-API"/></not></condition>
 	</fail>
 	
 	<path id="uws.classpath">
-		<pathelement location="${CATALINA}" />
 		<pathelement location="${SERVLET-API}" />
 	</path>
 	

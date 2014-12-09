@@ -39,8 +39,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.catalina.connector.ClientAbortException;
-
 import uws.AcceptHeader;
 import uws.UWSException;
 import uws.UWSExceptionFactory;
@@ -364,10 +362,15 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 		}catch(UWSException ue){
 			sendError(ue, req, reqID, user, uwsAction, resp);
-		}catch(ClientAbortException cae){
-			logger.logHttp(LogLevel.INFO, req, reqID, "HTTP " + UWSException.OK + " - Action \"" + uwsAction + "\" aborted by the client! [Client abort => ClientAbortException]", cae);
 		}catch(Throwable t){
-			sendError(t, req, reqID, user, uwsAction, resp);
+      // intercept tomcat client error:
+      // TODO: find the generic way to do it for any J2EE server = maybe just check for any IOException ?
+      // ClientAbortException extends IOException
+      if ("org.apache.catalina.connector.ClientAbortException".equals(t.getClass().getName())) {
+  			logger.logHttp(LogLevel.INFO, req, reqID, "HTTP " + UWSException.OK + " - Action \"" + uwsAction + "\" aborted by the client! [Client abort => ClientAbortException]", t);
+      } else {
+			  sendError(t, req, reqID, user, uwsAction, resp);
+      }
 		}
 	}
 

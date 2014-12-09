@@ -41,6 +41,6 @@ Below are summed up the dependencies of each library:
 At the root of the repository, there are 3 ANT scripts. Each is dedicated to one library. They are able to generate JAR for sources, binaries and Javadoc.
 
 3 properties must be set before using one of these scripts:
-* `CATALINA`: a path toward a JAR or a binary directory containing org.apache.catalina.connector.ClientAbortException.class
 * `SERVLET-API`: a path toward a JAR or a binary directory containing all javax.servlet.*
+* `POSTGRES_JDBC`: a path toward a JAR or a binary directory containing the postgres JDBC driver
 * (`JUNIT-API` *not required before the version 2.0 of the tap library*: a path toward one or several JARs or binary directories containing all classes to use JUnit.)

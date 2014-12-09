@@ -24,18 +24,20 @@
 	<property name="srcJarFile" value="${jarDest}/tap_src_${version}.jar" />
 	<property name="javadocJarFile" value="${jarDest}/tap_javadoc_${version}.jar" />
 	
-	<fail message="Missing property: CATALINA ! It provides the path toward a directory or a JAR which contains the following class: org.apache.catalina.connector.ClientAbortException.">
-		<condition><not><isset property="CATALINA"/></not></condition>
-	</fail>
+
 	<fail message="The property SERVLET-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.servlet.">
 		<condition><not><isset property="SERVLET-API"/></not></condition>
+	</fail>
+
+	<fail message="The property POSTGRES-JDBC must be set! It provides the path toward the postgres JDBC driver JAR.">
+		<condition><not><isset property="POSTGRES-JDBC"/></not></condition>
 	</fail>
 	
 	<path id="tap.classpath">
 		<pathelement location="${cosJar}" />
 		<pathelement location="${stilJar}" />
-		<pathelement location="${CATALINA}" />
 		<pathelement location="${SERVLET-API}" />
+		<pathelement location="${POSTGRES-JDBC}" />
 	</path>
 	
 	<echo>TAP LIBRARY VERSION = ${version}</echo>
