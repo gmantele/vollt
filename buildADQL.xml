@@ -51,7 +51,7 @@
 	
 	<target name="compileLib" depends="clean" description="Build all the classes of the ADQL library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
-		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false">
+		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" debug="true">
 			<classpath refid="adql.classpath" />
 		</javac>
 	</target>
