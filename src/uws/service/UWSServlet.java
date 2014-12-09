@@ -132,7 +132,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (11/2014)
+ * @version 4.1 (12/2014)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -255,6 +255,11 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	@Override
 	public UWSFileManager getFileManager(){
 		return fileManager;
+	}
+
+	@Override
+	public RequestParser getRequestParser(){
+		return requestParser;
 	}
 
 	@Override

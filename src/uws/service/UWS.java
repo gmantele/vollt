@@ -26,6 +26,8 @@ import uws.job.serializer.UWSSerializer;
 import uws.service.backup.UWSBackupManager;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog;
+import uws.service.request.RequestParser;
+import uws.service.request.UWSRequestParser;
 
 /**
  * <p>
@@ -196,6 +198,22 @@ public interface UWS extends Iterable<JobList> {
 	 * @return Its job factory.
 	 */
 	public UWSFactory getFactory();
+
+	/* ******************** */
+	/* HTTP REQUEST PARSING */
+	/* ******************** */
+
+	/**
+	 * <p>Get its HTTP request parser.</p>
+	 * <p><i><u>note:</u> This parser is the only one to be able to extract UWS and TAP parameters from any HTTP request.
+	 * Its behavior is adapted in function of the used HTTP method and of the content-type. A default implementation is
+	 * provided by the UWS library: {@link UWSRequestParser}.</i></p>
+	 * 
+	 * @return	Its request parser.
+	 * 
+	 * @since 4.1
+	 */
+	public RequestParser getRequestParser();
 
 	/* *************** */
 	/* FILE MANAGEMENT */

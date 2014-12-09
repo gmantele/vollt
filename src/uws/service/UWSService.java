@@ -184,7 +184,7 @@ import uws.service.request.RequestParser;
  * 
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public class UWSService implements UWS {
 
@@ -548,6 +548,11 @@ public class UWSService implements UWS {
 	 */
 	public final void setBackupManager(final UWSBackupManager backupManager){
 		this.backupManager = backupManager;
+	}
+
+	@Override
+	public final RequestParser getRequestParser(){
+		return requestParser;
 	}
 
 	/* ******************** */
@@ -1058,7 +1063,8 @@ public class UWSService implements UWS {
 
 		// Generate a unique ID for this request execution (for log purpose only):
 		final String reqID = generateRequestID(request);
-		request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
+		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
+			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
 		// Log the reception of the request:
 		logger.logHttp(LogLevel.INFO, request, reqID, null, null);
@@ -1081,7 +1087,8 @@ public class UWSService implements UWS {
 			urlInterpreter.load(request);
 
 			// Extract all parameters:
-			request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
+			if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null)
+				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
 
 			// Identify the user:
 			user = (userIdentifier == null) ? null : userIdentifier.extractUserId(urlInterpreter, request);

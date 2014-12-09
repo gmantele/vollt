@@ -46,6 +46,7 @@ import tap.metadata.TAPMetadata;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
 import uws.job.user.JobOwner;
+import uws.service.UWS;
 import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.error.ServiceErrorWriter;
@@ -656,6 +657,8 @@ public class TAP implements VOSIResource {
 
 		// Generate a unique ID for this request execution (for log purpose only):
 		final String reqID = generateRequestID(request);
+		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
+			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
 		// Retrieve the resource path parts:
 		String[] resourcePath = (request.getPathInfo() == null) ? null : request.getPathInfo().split("/");
@@ -675,6 +678,10 @@ public class TAP implements VOSIResource {
 
 		JobOwner owner = null;
 		try{
+			// Extract all parameters:
+			if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null)
+				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, getUWS().getRequestParser().parse(request));
+
 			// Identify the user:
 			try{
 				if (service.getUserIdentifier() != null)
