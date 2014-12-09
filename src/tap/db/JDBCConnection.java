@@ -1667,6 +1667,9 @@ public class JDBCConnection implements DBConnection {
 								throw new DataReadException("Incorrect STC-S syntax for the geometrical value \"" + val + "\"!", e);
 							}
 						}
+						/* BOOLEAN CASE (more generally, type incompatibility) */
+						else if (val != null && cols[c - 1].getDatatype().type == DBDatatype.SMALLINT && val instanceof Boolean)
+							val = ((Boolean)val) ? (short)1 : (short)0;
 					}
 					stmt.setObject(c++, val);
 				}
