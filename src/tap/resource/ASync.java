@@ -71,7 +71,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (12/2014)
  * 
  * @see UWSService
  */
@@ -181,7 +181,14 @@ public class ASync implements TAPResource {
 	@Override
 	public boolean executeResource(final HttpServletRequest request, final HttpServletResponse response) throws IOException, TAPException{
 		try{
+
+			// Ensure the service is currently available:
+			if (!service.isAvailable())
+				throw new TAPException("Can not execute a query: this TAP service is not available! " + service.getAvailability(), UWSException.SERVICE_UNAVAILABLE);
+
+			// Forward the request to the UWS service:
 			return uws.executeRequest(request, response);
+
 		}catch(UWSException ue){
 			throw new TAPException(ue);
 		}
