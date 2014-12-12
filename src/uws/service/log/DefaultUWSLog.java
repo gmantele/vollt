@@ -26,11 +26,14 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Enumeration;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
@@ -212,10 +215,34 @@ public class DefaultUWSLog implements UWSLog {
 		out.println(buf.toString());
 
 		// Print the stack trace, if any:
-		if (error != null)
-			error.printStackTrace(out);
+		printException(error, out);
 
 		out.flush();
+	}
+
+	/**
+	 * Format and print the given exception inside the given writer.
+	 * 
+	 * @param error	The exception to print.
+	 * @param out	The output in which the exception must be written.
+	 * 
+	 * @since 4.1
+	 */
+	protected void printException(final Throwable error, final PrintWriter out){
+		if (error != null){
+			if (error instanceof UWSException){
+				if (error.getCause() != null)
+					printException(error.getCause(), out);
+				else{
+					out.println("Caused by a " + error.getClass().getName());
+					if (error.getMessage() != null)
+						out.println("\t" + error.getMessage());
+				}
+			}else{
+				out.print("Caused by a ");
+				error.printStackTrace(out);
+			}
+		}
 	}
 
 	@Override
@@ -264,7 +291,7 @@ public class DefaultUWSLog implements UWSLog {
 
 	/**
 	 * <p>A message/error logged with this function will have the following format:</p>
-	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	REQUEST_RECEIVED	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	&lt;HTTP_METHOD&gt; at &lt;URL&gt; from &lt;IP_ADDR&gt; using &lt;USER_AGENT&gt; with parameters (&lt;PARAM1&gt;=&lt;VAL1&gt;&...)</pre>
+	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	REQUEST_RECEIVED	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	&lt;HTTP_METHOD&gt; in &lt;CONTENT_TYPE&gt; at &lt;URL&gt; from &lt;IP_ADDR&gt; using &lt;USER_AGENT&gt; with parameters (&lt;PARAM1&gt;=&lt;VAL1&gt;&...)</pre>
 	 * 
 	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletRequest, java.lang.String, java.lang.String, java.lang.Throwable)
 	 */
@@ -279,28 +306,31 @@ public class DefaultUWSLog implements UWSLog {
 				str.append(message);
 			str.append('\t');
 
-			// Write the request type and the URL:
-			str.append(request.getMethod()).append(" at ").append(request.getRequestURL());
+			// Write the request type, content type and the URL:
+			str.append(request.getMethod());
+			str.append(" as ");
+			if (request.getContentType() != null){
+				if (request.getContentType().indexOf(';') > 0)
+					str.append(request.getContentType().substring(0, request.getContentType().indexOf(';')));
+				else
+					str.append(request.getContentType());
+			}
+			str.append(" at ").append(request.getRequestURL());
 
 			// Write the IP address:
 			str.append(" from ").append(request.getRemoteAddr());
 
 			// Write the user agent:
-			str.append(" using ").append(request.getHeader("User-Agent"));
+			str.append(" using ").append(request.getHeader("User-Agent") == null ? "" : request.getHeader("User-Agent"));
 
 			// Write the posted parameters:
 			str.append(" with parameters (");
-			Enumeration<String> paramNames = request.getParameterNames();
-			while(paramNames.hasMoreElements()){
-				String param = paramNames.nextElement();
-				String paramValue = request.getParameter(param);
-				if (paramValue != null)
-					paramValue = paramValue.replaceAll("[\t\n\r]", " ");
-				else
-					paramValue = "";
-				str.append(param).append('=').append(paramValue);
-				if (paramNames.hasMoreElements())
+			Map<String,String> params = UWSToolBox.getParamsMap(request);
+			int i = -1;
+			for(Entry<String,String> p : params.entrySet()){
+				if (++i > 0)
 					str.append('&');
+				str.append(p.getKey()).append('=').append((p.getValue() != null) ? p.getValue().replaceAll("[\t\n\r]", " ") : "");
 			}
 			str.append(')');
 

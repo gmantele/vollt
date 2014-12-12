@@ -660,6 +660,15 @@ public class TAP implements VOSIResource {
 		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
 			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
+		// Extract all parameters:
+		if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null){
+			try{
+				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, getUWS().getRequestParser().parse(request));
+			}catch(UWSException ue){
+				getLogger().log(LogLevel.ERROR, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
+			}
+		}
+
 		// Retrieve the resource path parts:
 		String[] resourcePath = (request.getPathInfo() == null) ? null : request.getPathInfo().split("/");
 		final String resourceName = (resourcePath == null || resourcePath.length < 1) ? "homePage" : resourcePath[1].trim().toLowerCase();
@@ -678,10 +687,6 @@ public class TAP implements VOSIResource {
 
 		JobOwner owner = null;
 		try{
-			// Extract all parameters:
-			if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null)
-				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, getUWS().getRequestParser().parse(request));
-
 			// Identify the user:
 			try{
 				if (service.getUserIdentifier() != null)

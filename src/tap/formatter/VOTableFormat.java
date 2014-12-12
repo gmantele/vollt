@@ -84,7 +84,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (12/2014)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -330,8 +330,18 @@ public class VOTableFormat implements OutputFormat {
 			Iterator<Map.Entry<String,String>> it = otherInfo.entrySet().iterator();
 			while(it.hasNext()){
 				Map.Entry<String,String> entry = it.next();
-				out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + VOSerializer.formatAttribute("value", entry.getValue()) + "/>");
-				out.newLine();
+				if (entry.getValue() != null){
+					if (entry.getValue().startsWith("\n")){
+						int sep = entry.getValue().substring(1).indexOf('\n');
+						if (sep < 0)
+							sep = 0;
+						else
+							sep++;
+						out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + VOSerializer.formatAttribute("value", entry.getValue().substring(1, sep)) + ">\n" + entry.getValue().substring(sep + 1) + "\n</INFO>");
+					}else
+						out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + VOSerializer.formatAttribute("value", entry.getValue()) + "/>");
+					out.newLine();
+				}
 			}
 		}
 

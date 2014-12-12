@@ -287,6 +287,13 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		final String reqID = generateRequestID(req);
 		req.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
+		// Extract all parameters:
+		try{
+			req.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(req));
+		}catch(UWSException ue){
+			logger.log(LogLevel.ERROR, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
+		}
+
 		// Log the reception of the request:
 		logger.logHttp(LogLevel.INFO, req, reqID, null, null);
 
@@ -300,9 +307,6 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			// Update the UWS URL interpreter:
 			UWSUrl requestUrl = new UWSUrl(this.urlInterpreter);
 			requestUrl.load(req);
-
-			// Extract all parameters:
-			req.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(req));
 
 			// Identify the user:
 			user = (userIdentifier == null) ? null : userIdentifier.extractUserId(requestUrl, req);

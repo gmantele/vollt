@@ -1066,6 +1066,15 @@ public class UWSService implements UWS {
 		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
 			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
+		// Extract all parameters:
+		if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null){
+			try{
+				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
+			}catch(UWSException ue){
+				logger.log(LogLevel.ERROR, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
+			}
+		}
+
 		// Log the reception of the request:
 		logger.logHttp(LogLevel.INFO, request, reqID, null, null);
 
@@ -1085,10 +1094,6 @@ public class UWSService implements UWS {
 			// Update the UWS URL interpreter:
 			UWSUrl urlInterpreter = new UWSUrl(this.urlInterpreter);
 			urlInterpreter.load(request);
-
-			// Extract all parameters:
-			if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null)
-				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
 
 			// Identify the user:
 			user = (userIdentifier == null) ? null : userIdentifier.extractUserId(urlInterpreter, request);
@@ -1200,7 +1205,10 @@ public class UWSService implements UWS {
 		// Write the error in the response and return the appropriate HTTP status code:
 		errorWriter.writeError(error, response, request, reqID, user, uwsAction);
 		// Log the error:
-		logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the UWS action \"" + uwsAction + "\", because: " + error.getMessage(), error);
+		if (uwsAction == null)
+			logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Unknown UWS action!", error);
+		else
+			logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the UWS action \"" + uwsAction + "\"!", error);
 	}
 
 }

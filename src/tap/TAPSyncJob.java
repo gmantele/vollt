@@ -47,7 +47,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.0 (12/2014)
  */
 public class TAPSyncJob {
 
@@ -174,13 +174,7 @@ public class TAPSyncJob {
 		service.getLogger().logTAP(LogLevel.INFO, this, "SYNC_START", "Synchronous job " + ID + " is starting!", null);
 
 		// Create the object having the knowledge about how to execute an ADQL query:
-		ADQLExecutor executor;
-		try{
-			executor = service.getFactory().createADQLExecutor();
-		}catch(TAPException e){
-			service.getLogger().logTAP(LogLevel.ERROR, this, "SYNC_START", "An error has prevented the synchronous thread " + getID() + " to start!", e);
-			return false;
-		}
+		ADQLExecutor executor = service.getFactory().createADQLExecutor();
 
 		// Give to a thread which will execute the query:
 		thread = new SyncThread(executor, ID, tapParams, response);
@@ -222,14 +216,14 @@ public class TAPSyncJob {
 			// INTERRUPTION:
 			if (error instanceof InterruptedException){
 				// log the unexpected interruption (unexpected because not caused by a timeout):
-				service.getLogger().logTAP(LogLevel.WARNING, this, "SYNC_END", "The execution of the synchronous job " + ID + " has been unexpectedly interrupted!", error);
+				service.getLogger().logTAP(LogLevel.WARNING, this, "SYNC_END", "The execution of the synchronous job " + ID + " has been unexpectedly interrupted!", null);
 				// report the unexpected interruption to the user:
 				throw new TAPException("The execution of this synchronous job " + ID + " has been unexpectedly aborted!", UWSException.ACCEPTED_BUT_NOT_COMPLETE);
 			}
 			// TAP EXCEPTION:
 			else if (error instanceof TAPException){
 				// log the error:
-				service.getLogger().logTAP(LogLevel.ERROR, this, "SYNC_END", "An error occured while executing the query of the synchronous job " + ID + ".", error);
+				service.getLogger().logTAP(LogLevel.ERROR, this, "SYNC_END", "An error occured while executing the query of the synchronous job " + ID + ".", null);
 				// report the error to the user:
 				throw (TAPException)error;
 			}
@@ -349,7 +343,7 @@ public class TAPSyncJob {
 					executor.getLogger().logThread(LogLevel.FATAL, this, "END", "Synchronous thread \"" + ID + "\" ended with a FATAL error.", exception);
 				else
 					// Error:
-					executor.getLogger().logThread(LogLevel.ERROR, this, "END", "Synchronous thread \"" + ID + "\" ended with an error.", exception);
+					executor.getLogger().logThread(LogLevel.ERROR, this, "END", "Synchronous thread \"" + ID + "\" ended with an error.", null);
 			}
 		}
 

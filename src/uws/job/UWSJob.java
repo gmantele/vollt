@@ -763,9 +763,8 @@ public class UWSJob extends SerializableUWSObject {
 		else if (!isFinished())
 			this.errorSummary = errorSummary;
 		else{
-			UWSException ue = new UWSException(UWSException.NOT_ALLOWED, UWSExceptionFactory.jobModificationForbidden(jobId, getPhase(), "ERROR SUMMARY"));
-			getLogger().logJob(LogLevel.ERROR, this, "SET_ERROR", "Can not set an error summary when the job is finished (or not yet started)! The current phase is: " + getPhase() + " ; the summary of the error to set is: \"" + errorSummary.message + "\".", ue);
-			throw ue;
+			getLogger().logJob(LogLevel.ERROR, this, "SET_ERROR", "Can not set an error summary when the job is finished (or not yet started)! The current phase is: " + getPhase() + " ; the summary of the error to set is: \"" + errorSummary.message + "\".", null);
+			throw new UWSException(UWSException.NOT_ALLOWED, UWSExceptionFactory.jobModificationForbidden(jobId, getPhase(), "ERROR SUMMARY"));
 		}
 	}
 
@@ -981,7 +980,7 @@ public class UWSJob extends SerializableUWSObject {
 	public boolean addOrUpdateParameters(UWSParameters params, final JobOwner user) throws UWSException{
 		// The job can be modified ONLY IF in PENDING phase: 
 		if (!phase.isJobUpdatable())
-			throw new UWSException(UWSException.FORBIDDEN, "Parameters modification is now forbidden for this job: it is not any more in PENDING phase!");
+			throw new UWSException(UWSException.FORBIDDEN, "Forbidden parameters modification: the job is not any more in the PENDING phase!");
 
 		// Forbids the update if the user has not the required permission:
 		if (user != null && !user.equals(owner) && !user.hasWritePermission(this))
