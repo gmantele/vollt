@@ -323,9 +323,9 @@ public class DALIUpload {
 						uploads.add(upl);
 						if (!upl.isByReference())
 							usedFiles.add(upl.file.paramName);
-
-						// CASE String: it must be parsed and transformed into a DALIUpload item which will be then added inside the list:
-					}else if (value instanceof String)
+					}
+					// CASE String: it must be parsed and transformed into a DALIUpload item which will be then added inside the list:
+					else if (value instanceof String)
 						fetchDALIUploads(uploads, usedFiles, (String)value, requestParams, allowTAPSyntax, fileManager);
 
 					// CASE Array: 
@@ -382,7 +382,8 @@ public class DALIUpload {
 		}
 
 		// 3. Re-add a new "UPLOAD" parameter gathering all extracted DALI Uploads:
-		requestParams.put("UPLOAD", uploads.toArray(new DALIUpload[uploads.size()]));
+		if (uploads.size() > 0)
+			requestParams.put("UPLOAD", uploads.toArray(new DALIUpload[uploads.size()]));
 
 		return uploads;
 	}
