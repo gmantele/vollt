@@ -154,8 +154,18 @@ public class TAP implements VOSIResource {
 	 * @see TAPResource#destroy()
 	 */
 	public void destroy(){
+		// Set the availability to "false" and the reason to "The application server is stopping!":
+		service.setAvailable(false, "The application server is stopping!");
+
+		// Destroy all web resources:
 		for(TAPResource res : resources.values())
 			res.destroy();
+
+		// Destroy also all resources allocated in the factory:
+		service.getFactory().destroy();
+
+		// Log the end:
+		getLogger().logTAP(LogLevel.INFO, this, "STOP", "TAP Service stopped!", null);
 	}
 
 	/**

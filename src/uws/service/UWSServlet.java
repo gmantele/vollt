@@ -47,6 +47,7 @@ import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
+import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.parameters.DestructionTimeController;
@@ -239,6 +240,38 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	}
 
 	public abstract void initUWS() throws UWSException;
+
+	@Override
+	public void destroy(){
+		// Backup all jobs:
+		/* Jobs are backuped now so that running jobs are set back to the PENDING phase in the backup.
+		 * Indeed, the "stopAll" operation of the ExecutionManager may fail and would set the phase to ERROR
+		 * for the wrong reason. */
+		if (backupManager != null){
+			// save all jobs:
+			backupManager.setEnabled(true);
+			backupManager.saveAll();
+			// stop the automatic backup, if there is one:
+			backupManager.setEnabled(false);
+		}
+
+		// Stop all jobs and stop watching for the jobs' destruction:
+		for(JobList jl : mapJobLists.values()){
+			jl.getExecutionManager().stopAll();
+			jl.getDestructionManager().stop();
+		}
+
+		// Just in case that previous clean "stop"s did not work, try again an interruption for all running threads:
+		/* note: timers are not part of this ThreadGroup and so, they won't be affected by this function call. */
+		JobThread.tg.interrupt();
+
+		// Log the service is stopped:
+		if (logger != null)
+			logger.logUWS(LogLevel.INFO, this, "STOP", "UWS Service \"" + getName() + "\" stopped!", null);
+
+		// Default destroy function:
+		super.destroy();
+	}
 
 	public UWSFileManager createFileManager() throws UWSException{
 		UWSFileManager fm = null;

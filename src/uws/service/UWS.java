@@ -58,6 +58,11 @@ import uws.service.request.UWSRequestParser;
  * 	the UWS and the servlet.
  * </p>
  * 
+ * <p><b>IMPORTANT:
+ * 	All implementations of this interface should implement properly the function {@link #closeService()} and should call it
+ * 	when the JVM or the HTTP server application is closing.
+ * </b></p>
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 4.1 (12/2014)
  */
@@ -84,6 +89,28 @@ public interface UWS extends Iterable<JobList> {
 	 * @return	Its description (MAY BE NULL).
 	 */
 	public String getDescription();
+
+	/* ***************** */
+	/* RESOURCES RELEASE */
+	/* ***************** */
+
+	/**
+	 * <p>
+	 * 	End properly this UWS: jobs should be backuped (if this feature is enable), timers and threads should be stopped,
+	 * 	open files and database connections should be closed, etc...
+	 * 	In brief, this function should release all used resources.
+	 * </p>
+	 * 
+	 * <p><b>IMPORTANT: This function should be called only when the JVM or the Web Application Server is stopping.</b></p> 
+	 * 
+	 * <p><i>Note:
+	 * 	A call to this function may prevent this instance of {@link UWS} to execute any subsequent HTTP request, or the behavior
+	 * 	would be unpredictable.
+	 * </i></p>
+	 * 
+	 * @since 4.1
+	 */
+	public void destroy();
 
 	/* ******************* */
 	/* JOB LIST MANAGEMENT */

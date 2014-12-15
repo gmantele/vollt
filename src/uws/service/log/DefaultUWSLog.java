@@ -390,6 +390,16 @@ public class DefaultUWSLog implements UWSLog {
 
 	@Override
 	public void logUWS(LogLevel level, Object obj, String event, String message, Throwable error){
+		// CASE "BACKUPED": Append to the message the backup report:
+		if (event != null && event.equalsIgnoreCase("BACKUPED") && obj != null && obj.getClass().getName().equals("[I")){
+			int[] backupReport = (int[])obj;
+			message += "\t(" + backupReport[0] + "/" + backupReport[1] + " jobs backuped ; " + backupReport[2] + "/" + backupReport[3] + " users backuped)";
+		}else if (event != null && event.equalsIgnoreCase("RESTORED") && obj != null && obj.getClass().getName().equals("[I")){
+			int[] restoreReport = (int[])obj;
+			message += "\t(" + restoreReport[0] + "/" + restoreReport[1] + " jobs restored ; " + restoreReport[2] + "/" + restoreReport[3] + " users restored)";
+		}
+
+		// Log the message
 		log(level, "UWS", event, null, message, error);
 	}
 

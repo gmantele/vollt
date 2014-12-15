@@ -91,7 +91,8 @@ public interface ServiceConnection {
 
 	/**
 	 * <i><b>[MANDATORY]</b></i>
-	 * <p>This function controls the state of the whole TAP service.</p>
+	 * <p>This function tells whether the TAP service is available
+	 * (that's to say, "able to execute requests" ; resources like /availability, /capabilities and /tables may still work).</p>
 	 * 
 	 * <p>
 	 * 	A message explaining the current state of the TAP service could be provided thanks to {@link #getAvailability()}.
@@ -110,6 +111,21 @@ public interface ServiceConnection {
 	 * @return	Explanation about the TAP service state.
 	 */
 	public String getAvailability();
+
+	/**
+	 * <i><b>[MANDATORY]</b></i>
+	 * <p>This function sets the state of the whole TAP service.
+	 * 	If true, all TAP resources will be able to execute resources.
+	 * 	If false, /sync and /async won't answer any more to requests and a HTTP-503 (Service unavailable)
+	 * 	error will be returned.
+	 * </p>
+	 * 
+	 * @param isAvailable	<i>true</i> to enable all resources, <i>false</i> to forbid /sync and /async (all other resources will still be available).
+	 * @param message		A message describing the current state of the service. If NULL, a default message may be set by the library.
+	 * 
+	 * @since 2.0
+	 */
+	public void setAvailable(final boolean isAvailable, final String message);
 
 	/**
 	 * <i>[OPTIONAL]</i>

@@ -401,7 +401,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		// Build the report and log it:
 		int[] report = new int[]{nbSavedJobs,nbJobs,nbSavedOwners,nbOwners};
-		getLogger().logUWS(LogLevel.INFO, report, "BACKUPED", "UWS backuped! (" + nbSavedJobs + "/" + nbJobs + " jobs backuped ; " + nbSavedOwners + "/" + nbOwners + " users backuped)", null);
+		getLogger().logUWS(LogLevel.INFO, report, "BACKUPED", "UWS Service \"" + uws.getName() + "\" backuped!", null);
 
 		lastBackup = new Date();
 
@@ -465,7 +465,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			out.endObject();
 
 			// Log the "save" report:
-			getLogger().logUWS(LogLevel.INFO, saveReport, "BACKUPED", "UWS backuped! (" + saveReport[0] + "/" + saveReport[1] + " users backuped)", null);
+			getLogger().logUWS(LogLevel.INFO, saveReport, "BACKUPED", "UWS backuped!", null);
 
 			lastBackup = new Date();
 
@@ -756,7 +756,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		// Build the restoration report and log it:
 		int[] report = new int[]{nbRestoredJobs,nbJobs,nbRestoredUsers,nbUsers};
-		getLogger().logUWS(LogLevel.INFO, report, "RESTORED", "UWS restored! (" + nbRestoredJobs + "/" + nbJobs + " jobs restored ; " + nbRestoredUsers + "/" + nbUsers + " users restored)", null);
+		getLogger().logUWS(LogLevel.INFO, report, "RESTORED", "UWS restored!", null);
 
 		return report;
 	}

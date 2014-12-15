@@ -258,6 +258,9 @@ public class SVFormatTest {
 			return -1;
 		}
 
+		@Override
+		public void setAvailable(boolean isAvailable, String message){}
+
 	}
 
 }

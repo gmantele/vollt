@@ -215,6 +215,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	public UWSService createUWS() throws TAPException{
 		try{
 			UWSService uws = new UWSService(this, this.service.getFileManager(), this.service.getLogger());
+			uws.setName("TAP/async");
 			uws.setErrorWriter(errorWriter);
 			return uws;
 		}catch(UWSException ue){

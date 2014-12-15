@@ -175,7 +175,8 @@ public class ASync implements TAPResource {
 
 	@Override
 	public void destroy(){
-		;
+		if (uws != null)
+			uws.destroy();
 	}
 
 	@Override

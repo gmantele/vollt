@@ -191,6 +191,7 @@ public interface UWSLog {
 	 * 	<li>RESTORED (with "obj" as an integer array of 4 items: nb of restored jobs, total nb of jobs, nb of restored users, total nb of users)</li>
 	 * 	<li>BACKUPED (with "obj" as an integer array of 4 items: nb of saved jobs, total nb of jobs, nb of saved users, total nb of users or with just 2 items (the two last ones))</li>
 	 * 	<li>FORMAT_ERROR (with a NULL "obj")</li>
+	 * 	<li>STOP (with "obj" as an instance of {@link UWS})</li>
 	 * </ul>
 	 * 
 	 * @param level		Level of the log (info, warning, error, ...). <i>SHOULD NOT be NULL, but if NULL anyway, the level SHOULD be considered as INFO</i>
