@@ -108,7 +108,8 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @param root				UWS root directory.
 	 *
-	 * @throws UWSException		If the given root directory is <i>null</i>, is not a directory or has not the READ and WRITE permissions.
+	 * @throws NullPointerException	If the given root directory is <i>null</i>.
+	 * @throws UWSException			If the given file is not a directory or has not the READ and WRITE permissions.
 	 * 
 	 * @see #LocalUWSFileManager(File, boolean, boolean, OwnerGroupIdentifier)
 	 */
@@ -128,7 +129,8 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * @param groupUserDirectories		<i>true</i> to group user directories, <i>false</i> otherwise.
 	 * 									<i><u>note:</u> this value is ignored if the previous parameter is false.</i>
 	 *
-	 * @throws UWSException				If the given root directory is <i>null</i>, is not a directory or has not the READ and WRITE permissions.
+	 * @throws NullPointerException	If the given root directory is <i>null</i>.
+	 * @throws UWSException			If the given file is not a directory or has not the READ and WRITE permissions.
 	 * 
 	 * @see #LocalUWSFileManager(File, boolean, boolean, OwnerGroupIdentifier)
 	 */
@@ -150,7 +152,8 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 											{@link DefaultOwnerGroupIdentifier} will be chosen as default group identifier.</li>
 	 *									</ul></i>
 	 *
-	 * @throws UWSException				If the given root directory is <i>null</i>, is not a directory or has not the READ and WRITE permissions.
+	 * @throws NullPointerException	If the given root directory is <i>null</i>.
+	 * @throws UWSException			If the given file is not a directory or has not the READ and WRITE permissions.
 	 */
 	public LocalUWSFileManager(final File root, final boolean oneDirectoryForEachUser, final boolean groupUserDirectories, final OwnerGroupIdentifier ownerGroupIdentifier) throws UWSException{
 		if (root == null)
