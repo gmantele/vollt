@@ -42,7 +42,7 @@ import uws.service.UWSUrl;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  * 
  * @see XMLSerializer
  * @see JSONSerializer
@@ -114,9 +114,22 @@ public abstract class UWSSerializer implements Serializable {
 				// PARAMETER:
 				String secondAttribute = attributes[1];
 				Object value = job.getAdditionalParameterValue(secondAttribute);
-				if (value != null)
-					return value.toString();
-				else
+				if (value != null){
+					// CASE: array value
+					if (value.getClass().isArray()){
+						Object[] items = (Object[])value;
+						StringBuffer arrayAsString = new StringBuffer();
+						for(Object item : items){
+							if (arrayAsString.length() > 0)
+								arrayAsString.append(' ').append(';').append(' ');
+							arrayAsString.append(item.toString());
+						}
+						return arrayAsString.toString();
+					}
+					// DEFAULT:
+					else
+						return value.toString();
+				}else
 					throw new UWSException(UWSException.NOT_FOUND, "No parameter named \"" + secondAttribute + "\" in the job \"" + job.getJobId() + "\"!");
 			}
 			// RESULTS LIST:

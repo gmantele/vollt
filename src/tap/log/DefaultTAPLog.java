@@ -24,18 +24,20 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 
+import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.TAPSyncJob;
 import tap.db.DBConnection;
-import tap.file.TAPFileManager;
 import tap.parameters.TAPParameters;
+import uws.UWSException;
+import uws.service.file.UWSFileManager;
 import uws.service.log.DefaultUWSLog;
 
 /**
  * Default implementation of the {@link TAPLog} interface which lets logging any message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.0 (12/2014)
  * 
  * @see DefaultUWSLog
  */
@@ -43,7 +45,7 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 
 	/**
 	 * <p>Builds a {@link TAPLog} which will use the given file
-	 * manager to get the log output (see {@link TAPFileManager#getLogOutput(LogLevel, String)}).</p>
+	 * manager to get the log output (see {@link UWSFileManager#getLogOutput(LogLevel, String)}).</p>
 	 * 
 	 * <p><i><u>note 1</u>: This constructor is particularly useful if the way of managing log output may change in the given file manager.
 	 * Indeed, the output may change in function of the type of message to log ({@link LogLevel}).</i></p>
@@ -53,9 +55,9 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	 * 
 	 * @param fm	A TAP file manager.
 	 * 
-	 * @see DefaultUWSLog#DefaultUWSLog(uws.service.file.UWSFileManager)
+	 * @see DefaultUWSLog#DefaultUWSLog(UWSFileManager)
 	 */
-	public DefaultTAPLog(final TAPFileManager fm){
+	public DefaultTAPLog(final UWSFileManager fm){
 		super(fm);
 	}
 
@@ -88,6 +90,33 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	}
 
 	@Override
+	protected void printException(Throwable error, final PrintWriter out){
+		if (error != null){
+			if (error instanceof UWSException || error instanceof TAPException || error.getClass().getPackage().getName().startsWith("adql.")){
+				if (error.getCause() != null)
+					printException(error.getCause(), out);
+				else{
+					out.println("Caused by a " + error.getClass().getName());
+					if (error.getMessage() != null)
+						out.println("\t" + error.getMessage());
+				}
+			}else if (error instanceof SQLException){
+				out.println("Caused by a " + error.getClass().getName());
+				out.print("\t");
+				do{
+					out.println(error.getMessage());
+					error = ((SQLException)error).getNextException();
+					if (error != null)
+						out.print("\t=> ");
+				}while(error != null);
+			}else{
+				out.print("Caused by a ");
+				error.printStackTrace(out);
+			}
+		}
+	}
+
+	@Override
 	public void logDB(final LogLevel level, final DBConnection connection, final String event, final String message, final Throwable error){
 		// log the main given error:
 		log(level, "DB", event, (connection != null ? connection.getID() : null), message, error);
@@ -111,7 +140,7 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 			if (event != null && obj != null){
 				if (event.equals("SYNC_INIT"))
 					msgAppend = "QUERY=" + ((TAPParameters)obj).getQuery().replaceAll("(\t|\r?\n)+", " ");
-				else if (event.equals("SYNC_START"))
+				else if (obj instanceof TAPSyncJob)
 					jobId = ((TAPSyncJob)obj).getID();
 				else if (obj instanceof TAPExecutionReport){
 					TAPExecutionReport report = (TAPExecutionReport)obj;

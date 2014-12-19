@@ -20,10 +20,14 @@ package tap.error;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.util.HashMap;
+import java.sql.SQLException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -185,7 +189,7 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 		response.setContentType("application/xml");
 
 		// List any additional information useful to report to the user:
-		HashMap<String,String> addInfos = new HashMap<String,String>();
+		Map<String,String> addInfos = new LinkedHashMap<String,String>();
 		if (reqID != null)
 			addInfos.put("REQ_ID", reqID);
 		if (type != null)
@@ -211,18 +215,70 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 			message = "{NO MESSAGE}";
 
 		// List any additional information useful to report to the user:
-		HashMap<String,String> addInfos = new HashMap<String,String>();
+		Map<String,String> addInfos = new LinkedHashMap<String,String>();
+		// error type:
+		if (error != null && error.getType() != null)
+			addInfos.put("ERROR_TYPE", error.getType().toString());
+		// infos about the exception:
+		putExceptionInfos(t, addInfos);
+		// job ID:
 		if (job != null){
 			addInfos.put("JOB_ID", job.getJobId());
 			if (job.getOwner() != null)
 				addInfos.put("USER", job.getOwner().getID() + ((job.getOwner().getPseudo() == null) ? "" : " (" + job.getOwner().getPseudo() + ")"));
 		}
-		if (error != null && error.getType() != null)
-			addInfos.put("ERROR_TYPE", error.getType().toString());
+		// action running while the error occurred (only one is possible here: EXECUTING an ADQL query):
 		addInfos.put("ACTION", "EXECUTING");
 
 		// Format the error in VOTable and write the document in the given HTTP response:
 		getFormatter().writeError(message, addInfos, new PrintWriter(output));
+	}
+
+	/**
+	 * Add all interesting additional information about the given exception inside the given map.
+	 * 
+	 * @param t			Exception whose some details must be added inside the given map.
+	 * @param addInfos	Map of all additional information.
+	 * 
+	 * @since 2.0
+	 */
+	protected void putExceptionInfos(final Throwable t, final Map<String,String> addInfos){
+		if (t != null){
+			// Browse the exception stack in order to list all exceptions' messages and to get the last cause of this error:
+			StringBuffer causes = new StringBuffer();
+			Throwable cause = t.getCause(), lastCause = t;
+			int nbCauses = 0, nbStackTraces = 1;
+			while(cause != null){
+				// new line:
+				causes.append('\n');
+				// append the message:
+				causes.append("\t- ").append(cause.getMessage());
+				// SQLException case:
+				if (cause instanceof SQLException){
+					SQLException se = (SQLException)cause;
+					while(se.getNextException() != null){
+						se = se.getNextException();
+						causes.append("\n\t\t- ").append(se.getMessage());
+					}
+				}
+				// go to the next message:
+				lastCause = cause;
+				cause = cause.getCause();
+				nbCauses++;
+				nbStackTraces++;
+			}
+
+			// Add the list of all causes' message:
+			if (causes.length() > 0)
+				addInfos.put("CAUSES", "\n" + nbCauses + causes.toString());
+
+			// Add the stack trace of the original exception ONLY IF NOT A TAP OR A UWS EXCEPTION (only unexpected error should be detailed to the users):
+			if (!(lastCause instanceof TAPException && lastCause instanceof UWSException)){
+				ByteArrayOutputStream stackTrace = new ByteArrayOutputStream();
+				lastCause.printStackTrace(new PrintStream(stackTrace));
+				addInfos.put("ORIGIN_STACK_TRACE", "\n" + nbStackTraces + "\n" + stackTrace.toString());
+			}
+		}
 	}
 
 	@Override

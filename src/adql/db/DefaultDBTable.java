@@ -21,14 +21,15 @@ package adql.db;
  */
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Default implementation of {@link DBTable}.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (09/2014)
+ * @version 1.3 (11/2014)
  */
 public class DefaultDBTable implements DBTable {
 
@@ -40,7 +41,7 @@ public class DefaultDBTable implements DBTable {
 	protected String adqlSchemaName = null;
 	protected String adqlName = null;
 
-	protected HashMap<String,DBColumn> columns = new HashMap<String,DBColumn>();
+	protected Map<String,DBColumn> columns = new LinkedHashMap<String,DBColumn>();
 
 	/**
 	 * <p>Builds a default {@link DBTable} with the given DB name.</p>

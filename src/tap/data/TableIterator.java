@@ -21,8 +21,8 @@ package tap.data;
 
 import java.util.NoSuchElementException;
 
-import adql.db.DBType;
 import tap.metadata.TAPColumn;
+import adql.db.DBType;
 
 /**
  * <p>Let's iterate on each row and then on each column over a table dataset.</p>
@@ -50,8 +50,8 @@ import tap.metadata.TAPColumn;
  * 	}
  * </pre>
  * 
- * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 2.0 (08/2014)
+ * @author Gr&eacute;gory Mantelet (ARI)
+ * @version 2.0 (12/2014)
  * @since 2.0
  */
 public interface TableIterator {
@@ -70,7 +70,7 @@ public interface TableIterator {
 	 * 
 	 * @see #getColType()
 	 */
-	public TAPColumn[] getMetadata();
+	public TAPColumn[] getMetadata() throws DataReadException;
 
 	/**
 	 * <p>Go to the next row if there is one.</p>

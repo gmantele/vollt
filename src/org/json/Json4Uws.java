@@ -35,7 +35,7 @@ import uws.service.UWSUrl;
  * Useful conversion functions from UWS to JSON.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public final class Json4Uws {
 
@@ -153,8 +153,23 @@ public final class Json4Uws {
 	public final static JSONObject getJobParamsJson(final UWSJob job) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (job != null){
-			for(String name : job.getAdditionalParameters())
-				json.put(name, job.getAdditionalParameterValue(name));
+			Object val;
+			for(String name : job.getAdditionalParameters()){
+				// get the raw value:
+				val = job.getAdditionalParameterValue(name);
+				// if an array, build a JSON array of strings:
+				if (val != null && val.getClass().isArray()){
+					JSONArray array = new JSONArray();
+					for(Object o : (Object[])val){
+						if (o != null)
+							array.put(o.toString());
+					}
+					json.put(name, array);
+				}
+				// otherwise, just put the value:
+				else
+					json.put(name, val);
+			}
 		}
 		return json;
 	}

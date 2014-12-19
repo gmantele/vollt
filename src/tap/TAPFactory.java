@@ -41,6 +41,8 @@ import uws.service.UWSFactory;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
+import uws.service.file.UWSFileManager;
+import uws.service.request.RequestParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
@@ -59,7 +61,7 @@ import adql.query.ADQLQuery;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.0 (12/2014)
  */
 public abstract class TAPFactory implements UWSFactory {
 
@@ -88,7 +90,7 @@ public abstract class TAPFactory implements UWSFactory {
 	 * 
 	 * @return	The error writer to use.
 	 * 
-	 * @since 4.1
+	 * @since 2.0
 	 */
 	public abstract ServiceErrorWriter getErrorWriter();
 
@@ -123,6 +125,8 @@ public abstract class TAPFactory implements UWSFactory {
 	 * @return	A new and free connection to the database. <b>MUST BE NOT NULL, or otherwise a TAPException should be returned.</b>
 	 * 
 	 * @throws TAPException	If there is any error while getting a free connection.
+	 * 
+	 * @since 2.0
 	 */
 	public abstract DBConnection getConnection(final String jobID) throws TAPException;
 
@@ -140,6 +144,8 @@ public abstract class TAPFactory implements UWSFactory {
 	 * </i></p>
 	 * 
 	 * @param conn	The connection to close.
+	 * 
+	 * @since 2.0
 	 */
 	public abstract void freeConnection(final DBConnection conn);
 
@@ -161,8 +167,22 @@ public abstract class TAPFactory implements UWSFactory {
 	 * 
 	 * @return	The number of connections still available,
 	 *        	or <=0 in case of problem (<i>note: in this case, the error must be logged in the implementation of this function</i>).
+	 * 
+	 * @since 2.0
 	 */
 	public abstract int countFreeConnections();
+
+	/**
+	 * <p>Destroy all resources (and particularly DB connections and JDBC driver) allocated in this factory.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function is called when the TAP service is shutting down.
+	 * 	After this call, the factory may not be able to provide any closed resources ; its behavior may be unpredictable.
+	 * </i></p>
+	 * 
+	 * @since 2.0
+	 */
+	public abstract void destroy();
 
 	/* *************** */
 	/* ADQL MANAGEMENT */
@@ -447,5 +467,10 @@ public abstract class TAPFactory implements UWSFactory {
 	 * @throws TAPException	If any error occurs while creating the {@link TAPParameters} object.
 	 */
 	public abstract TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException;
+
+	@Override
+	public RequestParser createRequestParser(final UWSFileManager fileManager) throws UWSException{
+		return new TAPRequestParser(fileManager);
+	}
 
 }

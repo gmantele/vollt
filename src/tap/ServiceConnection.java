@@ -23,13 +23,13 @@ package tap;
 import java.util.Collection;
 import java.util.Iterator;
 
-import tap.file.LocalTAPFileManager;
-import tap.file.TAPFileManager;
 import tap.formatter.OutputFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
+import uws.service.file.LocalUWSFileManager;
+import uws.service.file.UWSFileManager;
 import adql.db.FunctionDef;
 
 /**
@@ -42,7 +42,7 @@ import adql.db.FunctionDef;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (12/2014)
  */
 public interface ServiceConnection {
 
@@ -91,7 +91,8 @@ public interface ServiceConnection {
 
 	/**
 	 * <i><b>[MANDATORY]</b></i>
-	 * <p>This function controls the state of the whole TAP service.</p>
+	 * <p>This function tells whether the TAP service is available
+	 * (that's to say, "able to execute requests" ; resources like /availability, /capabilities and /tables may still work).</p>
 	 * 
 	 * <p>
 	 * 	A message explaining the current state of the TAP service could be provided thanks to {@link #getAvailability()}.
@@ -110,6 +111,21 @@ public interface ServiceConnection {
 	 * @return	Explanation about the TAP service state.
 	 */
 	public String getAvailability();
+
+	/**
+	 * <i><b>[MANDATORY]</b></i>
+	 * <p>This function sets the state of the whole TAP service.
+	 * 	If true, all TAP resources will be able to execute resources.
+	 * 	If false, /sync and /async won't answer any more to requests and a HTTP-503 (Service unavailable)
+	 * 	error will be returned.
+	 * </p>
+	 * 
+	 * @param isAvailable	<i>true</i> to enable all resources, <i>false</i> to forbid /sync and /async (all other resources will still be available).
+	 * @param message		A message describing the current state of the service. If NULL, a default message may be set by the library.
+	 * 
+	 * @since 2.0
+	 */
+	public void setAvailable(final boolean isAvailable, final String message);
 
 	/**
 	 * <i>[OPTIONAL]</i>
@@ -494,13 +510,13 @@ public interface ServiceConnection {
 	 * </b></p>
 	 * 
 	 * <p><i>Piece of advice:
-	 * 	The library provides a default implementation of the interface {@link TAPFileManager}:
-	 * 	{@link LocalTAPFileManager}, which stores all files on the local file-system.
+	 * 	The library provides a default implementation of the interface {@link UWSFileManager}:
+	 * 	{@link LocalUWSFileManager}, which stores all files on the local file-system.
 	 * </i></p>
 	 * 
-	 * @return	An instance of {@link TAPFileManager}.
+	 * @return	An instance of {@link UWSFileManager}.
 	 */
-	public TAPFileManager getFileManager();
+	public UWSFileManager getFileManager();
 
 	/**
 	 * <i><b>[MANDATORY]</b></i>

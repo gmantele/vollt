@@ -36,9 +36,15 @@ import uws.service.log.UWSLog.LogLevel;
  * 
  * <p>This manager does not have a queue. That is to say that all jobs are always immediately starting.
  * Consequently this manager is just used to gather all running jobs.</p>
+ * 
+ * <p><i>Note:
+ *	After a call to {@link #stopAll()}, this manager is still able to execute new jobs.
+ *	Except if it was not possible to stop them properly, stopped jobs could be executed again by calling
+ *	afterwards {@link #execute(UWSJob)} with these jobs in parameter.
+ * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (12/2014)
  */
 public class DefaultExecutionManager implements ExecutionManager {
 
@@ -146,5 +152,23 @@ public class DefaultExecutionManager implements ExecutionManager {
 	public synchronized void remove(final UWSJob jobToRemove){
 		if (jobToRemove != null)
 			runningJobs.remove(jobToRemove.getJobId());
+	}
+
+	@Override
+	public synchronized void stopAll(){
+		// Stop all running jobs:
+		for(UWSJob rj : runningJobs.values()){
+			try{
+				// Stop the job:
+				rj.abort();
+				// Set its phase back to PENDING:
+				rj.setPhase(ExecutionPhase.PENDING, true);
+			}catch(UWSException ue){
+				if (logger != null)
+					logger.logJob(LogLevel.WARNING, rj, "ABORT", "Can not stop the job nicely. The thread may continue to run until its end.", ue);
+			}
+		}
+		// Empty the list of running jobs:
+		runningJobs.clear();
 	}
 }

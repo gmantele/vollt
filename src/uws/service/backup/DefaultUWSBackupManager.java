@@ -56,6 +56,7 @@ import uws.service.UWS;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
+import uws.service.request.UploadFile;
 
 /**
  * <p>Default implementation of the interface {@link UWSBackupManager}.</p>
@@ -77,7 +78,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -400,7 +401,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		// Build the report and log it:
 		int[] report = new int[]{nbSavedJobs,nbJobs,nbSavedOwners,nbOwners};
-		getLogger().logUWS(LogLevel.INFO, report, "BACKUPED", "UWS backuped! (" + nbSavedJobs + "/" + nbJobs + " jobs backuped ; " + nbSavedOwners + "/" + nbOwners + " users backuped)", null);
+		getLogger().logUWS(LogLevel.INFO, report, "BACKUPED", "UWS Service \"" + uws.getName() + "\" backuped!", null);
 
 		lastBackup = new Date();
 
@@ -464,7 +465,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			out.endObject();
 
 			// Log the "save" report:
-			getLogger().logUWS(LogLevel.INFO, saveReport, "BACKUPED", "UWS backuped! (" + saveReport[0] + "/" + saveReport[1] + " users backuped)", null);
+			getLogger().logUWS(LogLevel.INFO, saveReport, "BACKUPED", "UWS backuped!", null);
 
 			lastBackup = new Date();
 
@@ -538,9 +539,63 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 */
 	protected JSONObject getJSONJob(final UWSJob job, final String jlName) throws UWSException, JSONException{
 		JSONObject jsonJob = Json4Uws.getJson(job);
+
+		// Re-Build the parameters map, by separating the uploads and the "normal" parameters:
+		JSONArray uploads = new JSONArray();
+		JSONObject params = new JSONObject();
+		Object val;
+		for(String name : job.getAdditionalParameters()){
+			// get the raw value:
+			val = job.getAdditionalParameterValue(name);
+			// if an array, build a JSON array of strings:
+			if (val != null && val.getClass().isArray()){
+				JSONArray array = new JSONArray();
+				for(Object o : (Object[])val){
+					if (o != null)
+						array.put(o.toString());
+				}
+				params.put(name, array);
+			}else if (val != null && val instanceof UploadFile)
+				uploads.put(getUploadJson((UploadFile)val));
+			// otherwise, just put the value:
+			else if (val != null)
+				params.put(name, val);
+		}
+
+		// Add the parameters and the uploads inside the JSON representation of the job:
+		jsonJob.put(UWSJob.PARAM_PARAMETERS, params);
+		jsonJob.put("uwsUploads", uploads);
+
+		// Add the job owner:
 		jsonJob.put(UWSJob.PARAM_OWNER, (job != null && job.getOwner() != null) ? job.getOwner().getID() : null);
+
+		// Add the name of the job list owning the given job:
 		jsonJob.put("jobListName", jlName);
+
 		return jsonJob;
+	}
+
+	/**
+	 * Get the JSON representation of the given {@link UploadFile}.
+	 * 
+	 * @param upl	The uploaded file to serialize in JSON.
+	 * 
+	 * @return		Its JSON representation.
+	 * 
+	 * @throws JSONException	If there is an error while building the JSON object.
+	 * 
+	 * @since 4.1
+	 */
+	protected JSONObject getUploadJson(final UploadFile upl) throws JSONException{
+		if (upl == null)
+			return null;
+		JSONObject o = new JSONObject();
+		o.put("paramName", upl.paramName);
+		o.put("fileName", upl.fileName);
+		o.put("location", upl.getLocation());
+		o.put("mime", upl.mimeType);
+		o.put("lenght", upl.length);
+		return o;
 	}
 
 	/* ******************* */
@@ -701,7 +756,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		// Build the restoration report and log it:
 		int[] report = new int[]{nbRestoredJobs,nbJobs,nbRestoredUsers,nbUsers};
-		getLogger().logUWS(LogLevel.INFO, report, "RESTORED", "UWS restored! (" + nbRestoredJobs + "/" + nbJobs + " jobs restored ; " + nbRestoredUsers + "/" + nbUsers + " users restored)", null);
+		getLogger().logUWS(LogLevel.INFO, report, "RESTORED", "UWS restored!", null);
 
 		return report;
 	}
@@ -768,6 +823,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		//Map<String, Object> params = null;
 		ArrayList<Result> results = null;
 		ErrorSummary error = null;
+		JSONArray uploads = null;
 
 		String[] keys = JSONObject.getNames(json);
 		for(String key : keys){
@@ -835,6 +891,10 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS))
 					inputParams.put(UWSJob.PARAM_PARAMETERS, getParameters(json.getJSONObject(key)));
 
+				// key=uwsUploads:
+				else if (key.equalsIgnoreCase("uwsUploads"))
+					uploads = json.getJSONArray(key);
+
 				// key=RESULTS:
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_RESULTS))
 					results = getResults(json.getJSONArray(key));
@@ -849,6 +909,22 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 			}catch(JSONException je){
 				getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect JSON format for a job serialization (attribute: \"" + key + "\")!", je);
+			}
+		}
+
+		// Re-Build all the uploaded files' pointers for this job:
+		if (uploads != null){
+			@SuppressWarnings("unchecked")
+			Map<String,Object> params = (Map<String,Object>)(inputParams.get(UWSJob.PARAM_PARAMETERS));
+			UploadFile upl;
+			try{
+				for(int i = 0; i < uploads.length(); i++){
+					upl = getUploadFile(uploads.getJSONObject(i));;
+					if (upl != null)
+						params.put(upl.paramName, upl);
+				}
+			}catch(JSONException je){
+				getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect JSON format for the serialization of the job \"" + jobId + "\" (attribute: \"uwsUploads\")!", je);
 			}
 		}
 
@@ -923,10 +999,8 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @return					The corresponding list of parameters
 	 * 							or <i>null</i> if the given object is empty.
-	 * 
-	 * @throws UWSException
 	 */
-	protected Map<String,Object> getParameters(final JSONObject obj) throws UWSException{
+	protected Map<String,Object> getParameters(final JSONObject obj){
 		if (obj == null || obj.length() == 0)
 			return null;
 
@@ -940,6 +1014,31 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			}
 		}
 		return params;
+	}
+
+	/**
+	 * Build the upload file corresponding to the given JSON object.
+	 * 
+	 * @param obj	The JSON representation of the {@link UploadFile} to get.
+	 * 
+	 * @return		The corresponding {@link UploadFile}.
+	 * 
+	 * @since 4.1
+	 */
+	protected UploadFile getUploadFile(final JSONObject obj){
+		try{
+			UploadFile upl = new UploadFile(obj.getString("paramName"), (obj.has("fileName") ? obj.getString("fileName") : null), obj.getString("location"), uws.getFileManager());
+			if (obj.has("mime"))
+				upl.mimeType = obj.getString("mime");
+			try{
+				if (obj.has("length"))
+					upl.length = Long.parseLong(obj.getString("length"));
+			}catch(NumberFormatException ex){}
+			return upl;
+		}catch(JSONException je){
+			getLogger().logUWS(LogLevel.ERROR, obj, "RESTORATION", "Incorrect JSON format for the serialization of an uploaded file!", je);
+			return null;
+		}
 	}
 
 	/**
@@ -1050,7 +1149,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			}
 		}
 		if (message != null)
-			return new ErrorSummary(message, ErrorType.valueOf(type), details);
+			return new ErrorSummary(message, ErrorType.valueOf(type.toUpperCase()), details);
 		else
 			return null;
 	}

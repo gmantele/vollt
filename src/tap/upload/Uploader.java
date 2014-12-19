@@ -36,7 +36,9 @@ import tap.metadata.TAPMetadata;
 import tap.metadata.TAPMetadata.STDSchema;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
+import tap.parameters.DALIUpload;
 import uws.UWSException;
+import uws.service.file.UnsupportedURIProtocolException;
 
 import com.oreilly.servlet.multipart.ExceededSizeException;
 
@@ -49,7 +51,7 @@ import com.oreilly.servlet.multipart.ExceededSizeException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (11/2014)
  * 
  * @see LimitedTableIterator
  * @see VOTableIterator
@@ -137,7 +139,7 @@ public class Uploader {
 	 * 	is created, will be associated with the uploaded tables and will be returned by this function.
 	 * </i></p>
 	 * 
-	 * @param loaders	Array of tables to upload.
+	 * @param uploads	Array of tables to upload.
 	 * 
 	 * @return	A {@link TAPSchema} containing the list and the description of all uploaded tables.
 	 * 
@@ -145,16 +147,16 @@ public class Uploader {
 	 * 
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
-	public TAPSchema upload(final TableLoader[] loaders) throws TAPException{
+	public TAPSchema upload(final DALIUpload[] uploads) throws TAPException{
 		InputStream votable = null;
 		String tableName = null;
 		try{
 			// Iterate over the full list of uploaded tables:
-			for(TableLoader loader : loaders){
-				tableName = loader.tableName;
+			for(DALIUpload upl : uploads){
+				tableName = upl.label;
 
 				// Open a stream toward the VOTable:
-				votable = loader.openStream();
+				votable = upl.open();
 
 				// Start reading the VOTable (with the identified limit, if any):
 				TableIterator dataIt = new LimitedTableIterator(VOTableIterator.class, votable, limitUnit, limit);
@@ -183,6 +185,8 @@ public class Uploader {
 				throw new TAPException("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
 		}catch(IOException ioe){
 			throw new TAPException("IO error while reading the VOTable of \"" + tableName + "\"!", ioe);
+		}catch(UnsupportedURIProtocolException e){
+			throw new TAPException("URI error while trying to open the VOTable of \"" + tableName + "\"!", e);
 		}finally{
 			try{
 				if (votable != null)

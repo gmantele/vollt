@@ -38,7 +38,7 @@ import uws.service.UWSUrl;
  * Let log any kind of message about a UWS service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public interface UWSLog {
 
@@ -191,6 +191,7 @@ public interface UWSLog {
 	 * 	<li>RESTORED (with "obj" as an integer array of 4 items: nb of restored jobs, total nb of jobs, nb of restored users, total nb of users)</li>
 	 * 	<li>BACKUPED (with "obj" as an integer array of 4 items: nb of saved jobs, total nb of jobs, nb of saved users, total nb of users or with just 2 items (the two last ones))</li>
 	 * 	<li>FORMAT_ERROR (with a NULL "obj")</li>
+	 * 	<li>STOP (with "obj" as an instance of {@link UWS})</li>
 	 * </ul>
 	 * 
 	 * @param level		Level of the log (info, warning, error, ...). <i>SHOULD NOT be NULL, but if NULL anyway, the level SHOULD be considered as INFO</i>
@@ -263,6 +264,7 @@ public interface UWSLog {
 	 * 	<li>NOTIFY</li>
 	 * 	<li>END</li>
 	 * 	<li>SERIALIZE</li>
+	 * 	<li>MOVE_UPLOAD</li>
 	 * 	<li>ADD_RESULT</li>
 	 * 	<li>SET_DESTRUCTION</li>
 	 * 	<li>SET_ERROR</li>

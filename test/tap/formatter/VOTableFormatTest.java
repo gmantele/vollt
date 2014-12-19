@@ -24,7 +24,6 @@ import tap.TAPFactory;
 import tap.TAPJob;
 import tap.data.ResultSetTableIterator;
 import tap.data.TableIterator;
-import tap.file.TAPFileManager;
 import tap.log.TAPLog;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata;
@@ -33,6 +32,7 @@ import testtools.CommandExecute;
 import testtools.DBTools;
 import uk.ac.starlink.votable.DataFormat;
 import uws.service.UserIdentifier;
+import uws.service.file.UWSFileManager;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
@@ -244,7 +244,7 @@ public class VOTableFormatTest {
 		}
 
 		@Override
-		public TAPFileManager getFileManager(){
+		public UWSFileManager getFileManager(){
 			return null;
 		}
 
@@ -262,6 +262,9 @@ public class VOTableFormatTest {
 		public int getNbMaxAsyncJobs(){
 			return -1;
 		}
+
+		@Override
+		public void setAvailable(boolean isAvailable, String message){}
 
 	}
 

@@ -34,8 +34,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import uws.AcceptHeader;
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.ExecutionPhase;
 import uws.job.JobList;
+import uws.job.JobThread;
 import uws.job.UWSJob;
 import uws.job.manager.DefaultExecutionManager;
 import uws.job.serializer.JSONSerializer;
@@ -48,6 +50,7 @@ import uws.service.actions.GetJobParam;
 import uws.service.actions.JobSummary;
 import uws.service.actions.ListJobs;
 import uws.service.actions.SetJobParam;
+import uws.service.actions.SetUWSParameter;
 import uws.service.actions.ShowHomePage;
 import uws.service.actions.UWSAction;
 import uws.service.backup.UWSBackupManager;
@@ -57,6 +60,7 @@ import uws.service.file.UWSFileManager;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
+import uws.service.request.RequestParser;
 
 /**
  * <h3>General description</h3>
@@ -181,7 +185,7 @@ import uws.service.log.UWSLog.LogLevel;
  * 
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (12/2014)
  */
 public class UWSService implements UWS {
 
@@ -233,6 +237,10 @@ public class UWSService implements UWS {
 	/** Lets logging info/debug/warnings/errors about this UWS. */
 	protected UWSLog logger;
 
+	/** Lets extract all parameters from an HTTP request, whatever is its content-type.
+	 * @since 4.1*/
+	protected final RequestParser requestParser;
+
 	/** Lets writing/formatting any exception/throwable in a HttpServletResponse. */
 	protected ServiceErrorWriter errorWriter;
 
@@ -259,10 +267,11 @@ public class UWSService implements UWS {
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * 
 	 * @throws NullPointerException	If at least one of the parameters is <i>null</i>.
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 * 
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog)
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager) throws UWSException{
 		this(jobFactory, fileManager, (UWSLog)null);
 	}
 
@@ -280,8 +289,9 @@ public class UWSService implements UWS {
 	 * @param logger		Object which lets printing any message (error, info, debug, warning).
 	 * 
 	 * @throws NullPointerException	If at least one of the parameters is <i>null</i>.
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger) throws UWSException{
 		if (jobFactory == null)
 			throw new NullPointerException("Missing UWS factory! Can not create a UWSService.");
 		factory = jobFactory;
@@ -291,6 +301,9 @@ public class UWSService implements UWS {
 		this.fileManager = fileManager;
 
 		this.logger = (logger == null) ? new DefaultUWSLog(this) : logger;
+
+		requestParser = jobFactory.createRequestParser(fileManager);
+
 		errorWriter = new DefaultUWSErrorWriter(this.logger);
 
 		// Initialize the list of jobs:
@@ -308,6 +321,7 @@ public class UWSService implements UWS {
 		uwsActions.add(new ShowHomePage(this));
 		uwsActions.add(new ListJobs(this));
 		uwsActions.add(new AddJob(this));
+		uwsActions.add(new SetUWSParameter(this));
 		uwsActions.add(new DestroyJob(this));
 		uwsActions.add(new JobSummary(this));
 		uwsActions.add(new GetJobParam(this));
@@ -376,9 +390,11 @@ public class UWSService implements UWS {
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param urlInterpreter	The UWS URL interpreter to use in this UWS.
 	 * 
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
+	 * 
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog, UWSUrl)
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSUrl urlInterpreter){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSUrl urlInterpreter) throws UWSException{
 		this(jobFactory, fileManager, null, urlInterpreter);
 	}
 
@@ -389,12 +405,43 @@ public class UWSService implements UWS {
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param logger		Object which lets printing any message (error, info, debug, warning).
 	 * @param urlInterpreter	The UWS URL interpreter to use in this UWS.
+	 * 
+	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 */
-	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger, final UWSUrl urlInterpreter){
+	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger, final UWSUrl urlInterpreter) throws UWSException{
 		this(jobFactory, fileManager, logger);
 		setUrlInterpreter(urlInterpreter);
 		if (this.urlInterpreter != null)
 			logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized.", null);
+	}
+
+	@Override
+	public void destroy(){
+		// Backup all jobs:
+		/* Jobs are backuped now so that running jobs are set back to the PENDING phase in the backup.
+		 * Indeed, the "stopAll" operation of the ExecutionManager may fail and would set the phase to ERROR
+		 * for the wrong reason. */
+		if (backupManager != null){
+			// save all jobs:
+			backupManager.setEnabled(true);
+			backupManager.saveAll();
+			// stop the automatic backup, if there is one:
+			backupManager.setEnabled(false);
+		}
+
+		// Stop all jobs and stop watching for the jobs' destruction:
+		for(JobList jl : mapJobLists.values()){
+			jl.getExecutionManager().stopAll();
+			jl.getDestructionManager().stop();
+		}
+
+		// Just in case that previous clean "stop"s did not work, try again an interruption for all running threads:
+		/* note: timers are not part of this ThreadGroup and so, they won't be affected by this function call. */
+		JobThread.tg.interrupt();
+
+		// Log the service is stopped:
+		if (logger != null)
+			logger.logUWS(LogLevel.INFO, this, "STOP", "UWS Service \"" + getName() + "\" stopped!", null);
 	}
 
 	/* ************** */
@@ -531,6 +578,11 @@ public class UWSService implements UWS {
 	 */
 	public final void setBackupManager(final UWSBackupManager backupManager){
 		this.backupManager = backupManager;
+	}
+
+	@Override
+	public final RequestParser getRequestParser(){
+		return requestParser;
 	}
 
 	/* ******************** */
@@ -1041,6 +1093,17 @@ public class UWSService implements UWS {
 
 		// Generate a unique ID for this request execution (for log purpose only):
 		final String reqID = generateRequestID(request);
+		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
+			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
+
+		// Extract all parameters:
+		if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null){
+			try{
+				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
+			}catch(UWSException ue){
+				logger.log(LogLevel.ERROR, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
+			}
+		}
 
 		// Log the reception of the request:
 		logger.logHttp(LogLevel.INFO, request, reqID, null, null);
@@ -1092,6 +1155,8 @@ public class UWSService implements UWS {
 			sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
 		}finally{
 			executedAction = action;
+			// Free resources about uploaded files ; only unused files will be deleted:
+			UWSToolBox.deleteUploads(request);
 		}
 
 		return actionApplied;
@@ -1170,7 +1235,10 @@ public class UWSService implements UWS {
 		// Write the error in the response and return the appropriate HTTP status code:
 		errorWriter.writeError(error, response, request, reqID, user, uwsAction);
 		// Log the error:
-		logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the UWS action \"" + uwsAction + "\", because: " + error.getMessage(), error);
+		if (uwsAction == null)
+			logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Unknown UWS action!", error);
+		else
+			logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the UWS action \"" + uwsAction + "\"!", error);
 	}
 
 }

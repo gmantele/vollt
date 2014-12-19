@@ -16,7 +16,8 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -28,26 +29,26 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import uws.UWSException;
-
 import uws.job.ErrorSummary;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
-
 import uws.job.parameters.DestructionTimeController;
+import uws.job.parameters.DestructionTimeController.DateField;
 import uws.job.parameters.ExecutionDurationController;
 import uws.job.parameters.InputParamController;
 import uws.job.parameters.UWSParameters;
-import uws.job.parameters.DestructionTimeController.DateField;
-
 import uws.job.user.JobOwner;
+import uws.service.file.UWSFileManager;
+import uws.service.request.RequestParser;
+import uws.service.request.UWSRequestParser;
 
 /**
  * <p>Abstract implementation of {@link UWSFactory}.
  * Only the function which creates a {@link JobThread} from a {@link UWSJob} needs to be implemented.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (11/2014)
  */
 public abstract class AbstractUWSFactory implements UWSFactory {
 
@@ -99,6 +100,11 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	@Override
 	public UWSParameters createUWSParameters(final HttpServletRequest req) throws UWSException{
 		return new UWSParameters(req, expectedAdditionalParams, inputParamControllers);
+	}
+
+	@Override
+	public RequestParser createRequestParser(final UWSFileManager fileManager) throws UWSException{
+		return new UWSRequestParser(fileManager);
 	}
 
 	/**

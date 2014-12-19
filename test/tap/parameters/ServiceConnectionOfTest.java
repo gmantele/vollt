@@ -8,7 +8,6 @@ import java.util.List;
 import tap.ServiceConnection;
 import tap.TAPFactory;
 import tap.TAPJob;
-import tap.file.TAPFileManager;
 import tap.formatter.FITSFormat;
 import tap.formatter.OutputFormat;
 import tap.formatter.SVFormat;
@@ -16,10 +15,13 @@ import tap.formatter.VOTableFormat;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
+import uws.service.file.UWSFileManager;
 import adql.db.FunctionDef;
 
 public class ServiceConnectionOfTest implements ServiceConnection {
 
+	private boolean available = true;
+	private String availability = "TAP Service available!";
 	private int[] retentionPeriod = new int[]{-1,-1};
 	private int[] executionDuration = new int[]{(int)TAPJob.UNLIMITED_DURATION,(int)TAPJob.UNLIMITED_DURATION};
 	private int[] outputLimit = new int[]{TAPJob.UNLIMITED_MAX_REC,TAPJob.UNLIMITED_MAX_REC};
@@ -37,12 +39,21 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 
 	@Override
 	public boolean isAvailable(){
-		return true;
+		return available;
+	}
+
+	@Override
+	public void setAvailable(boolean isAvailable, String message){
+		available = isAvailable;
+		if (message != null)
+			availability = message;
+		else
+			availability = (isAvailable ? "TAP Service available!" : "TAP Service momentarily UNavailable!");
 	}
 
 	@Override
 	public String getAvailability(){
-		return null;
+		return availability;
 	}
 
 	@Override
@@ -141,7 +152,7 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	}
 
 	@Override
-	public TAPFileManager getFileManager(){
+	public UWSFileManager getFileManager(){
 		return null;
 	}
 

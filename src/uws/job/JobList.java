@@ -97,7 +97,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (11/2014)
  * 
  * @see UWSJob
  */
@@ -135,7 +135,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * @see #JobList(String, ExecutionManager)
 	 */
 	public JobList(String jobListName) throws NullPointerException{
-		this(jobListName, new DefaultExecutionManager(), new DefaultDestructionManager());
+		this(jobListName, null, new DefaultDestructionManager());
 	}
 
 	/**
@@ -525,7 +525,9 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * @see UWSJob#applyPhaseParam(JobOwner)
 	 */
 	public synchronized String addNewJob(final UWSJob j) throws UWSException{
-		if (j == null || jobsList.containsKey(j.getJobId())){
+		if (uws == null)
+			throw new IllegalStateException("Jobs can not be added to this job list until this job list is linked to a UWS!");
+		else if (j == null || jobsList.containsKey(j.getJobId())){
 			return null;
 		}else{
 			JobOwner owner = j.getOwner();
@@ -592,13 +594,6 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 		UWSJob removedJob = (jobId == null) ? null : jobsList.remove(jobId);
 
 		if (removedJob != null){
-			// Delete completely their association:
-			/*try{
-				removedJob.setJobList(null);
-			}catch(IllegalStateException ue){
-				getLogger().error("Impossible to set the job list of the removed job to NULL !", ue);
-			}*/
-
 			// Clear its owner index:
 			JobOwner owner = removedJob.getOwner();
 			if (owner != null && ownerJobs.containsKey(owner)){

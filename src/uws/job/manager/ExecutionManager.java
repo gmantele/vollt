@@ -36,7 +36,7 @@ import uws.job.UWSJob;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (12/2014)
  */
 public interface ExecutionManager {
 
@@ -102,4 +102,17 @@ public interface ExecutionManager {
 	 * @param jobToRemove		The job to remove.
 	 */
 	public void remove(final UWSJob jobToRemove);
+
+	/**
+	 * <p>Stop all running jobs. No more job, even the queued ones, must be executed after a call to this function.
+	 * All stopped or aborted queued jobs should be set forcedly back to the PENDING status.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	A call to {@link #execute(UWSJob)} would re-activate this manager. However jobs stopped or
+	 * 	aborted using this function might not be starting again. These behaviors at implementation-dependent.
+	 * </i></p> 
+	 * 
+	 * @since 4.1
+	 */
+	public void stopAll();
 }

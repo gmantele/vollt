@@ -34,17 +34,25 @@ import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Abstract implementation of the interface {@link ExecutionManager} which lets managing an execution queue.</p>
+ * 
  * <p>
  * 	When calling {@link #execute(UWSJob)}, ALL jobs are put into the list of queued jobs (so their phase is changed
  * 	to {@link ExecutionPhase#QUEUED}). A call to {@link #refresh()}, reads this list and tries to execute the first job of the list.
  * 	The function {@link #isReadyForExecution(UWSJob)} decides whether the first job of the queue can be executed NOW or not.
  * </p>
+ * 
  * <p><i>Note:
  * 	The order of queued jobs is preserved: it is implemented by a FIFO queue.
  * </i></p>
  * 
+ * <p><i>Note:
+ *	After a call to {@link #stopAll()}, this manager is still able to execute new jobs.
+ *	Except if it was not possible to stop them properly, stopped jobs could be executed again by calling
+ *	afterwards {@link #execute(UWSJob)} with these jobs in parameter.
+ * </i></p>
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (12/2014)
  */
 public abstract class AbstractQueuedExecutionManager implements ExecutionManager {
 
@@ -236,5 +244,37 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 			queuedJobs.remove(jobToRemove);
 			refresh();
 		}
+	}
+
+	@Override
+	public final synchronized void stopAll(){
+		// Set back all queued jobs to the PENDING phase:
+		for(UWSJob qj : queuedJobs){
+			try{
+				qj.setPhase(ExecutionPhase.PENDING, true);
+			}catch(UWSException ue){
+				if (logger != null)
+					logger.logJob(LogLevel.WARNING, qj, "ABORT", "Can not set back the job to the PENDING phase.", ue);
+			}
+		}
+
+		// Empty the queue:
+		queuedJobs.clear();
+
+		// Stop all running jobs and set them back to the PENDING phase:
+		for(UWSJob rj : runningJobs.values()){
+			try{
+				// Stop the job:
+				rj.abort();
+				// Set its phase back to PENDING:
+				rj.setPhase(ExecutionPhase.PENDING, true);
+			}catch(UWSException ue){
+				if (logger != null)
+					logger.logJob(LogLevel.WARNING, rj, "ABORT", "Can not stop the job nicely. The thread may continue to run until its end.", ue);
+			}
+		}
+
+		// Empty the list of running jobs:
+		runningJobs.clear();
 	}
 }
