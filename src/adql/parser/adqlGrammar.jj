@@ -646,6 +646,16 @@ TOKEN : {
 |	< TAN: "TAN" >
 }
 
+
+/* *************** */
+/* CAST            */
+/* *************** */
+TOKEN : {
+    < CAST: "CAST" >
+|   < CAST_TYPE : "SMALLINT"| "SHORT" | "INT" | "INTEGER" | "BIGINT" | "LONG" | "FLOAT" | "DOUBLE" >
+}
+
+
 /* ******* */
 /* Comment */
 /* ******* */
@@ -809,9 +819,9 @@ void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condit
 	<WHERE> ConditionsList(where)
 }
 
-void GroupBy(): {ClauseADQL<ColumnReference> groupBy = query.getGroupBy(); ColumnReference colRef = null;} {
-	<GROUP_BY> colRef=ColumnRef() { groupBy.add(colRef); }
-	( <COMMA> colRef=ColumnRef() { groupBy.add(colRef); } )*
+void GroupBy(): {ClauseADQL<ADQLOperand> groupBy = query.getGroupBy(); ADQLOperand colRef = null;} {
+	<GROUP_BY> colRef=ValueExpression() { groupBy.add(colRef); }
+	( <COMMA> colRef=ValueExpression() { groupBy.add(colRef); } )*
 }
 
 void Having(): {ClauseConstraints having = query.getHaving();} {
@@ -1005,6 +1015,7 @@ ADQLOperand NumericValueExpressionPrimary(): {String expr; ADQLColumn column; AD
 		| column=Column() {column.setExpectedType('N'); return column;}
 		// set_function_specification
 		| op=SqlFunction() {return op;}
+		| op=CastFunction() {return op;}
 		// LEFT_PAR value_expression RIGHT_PAR
 		| (<LEFT_PAR> op=NumericExpression() <RIGHT_PAR>) {return queryFactory.createWrappedOperand(op);})
 	}catch(Exception ex){
@@ -1263,6 +1274,23 @@ SQLFunction SqlFunction(): {Token fct, all=null, distinct=null; ADQLOperand op=n
 	}
 	{ return funct; }
 }
+
+/* ************* */
+/* CAST FUNCTION */
+/* ************* */
+CastFunction CastFunction(): {Token type; ADQLOperand oper = null; CastFunction funct = null;}{
+    try {
+		(
+	        ( <CAST> <LEFT_PAR> oper = ValueExpression() <AS> type = <CAST_TYPE> <RIGHT_PAR>
+            { funct = queryFactory.createCastFunction(type, oper); } )
+		)
+	    }
+	catch(Exception ex)
+	    {
+		throw generateParseException(ex);
+	    }
+	{ return funct; }
+    }
 
 
 /* ************** */

@@ -49,6 +49,7 @@ import adql.query.from.OuterJoin;
 import adql.query.from.OuterJoin.OuterType;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.function.CastFunction;
 import adql.query.operand.Concatenation;
 import adql.query.operand.NegativeOperand;
 import adql.query.operand.NumericConstant;
@@ -270,6 +271,14 @@ public class ADQLQueryFactory {
 
 	public MathFunction createMathFunction(MathFunctionType type, ADQLOperand param1, ADQLOperand param2) throws Exception{
 		return new MathFunction(type, param1, param2);
+	}
+	
+	public CastFunction createCastFunction(Token type, ADQLOperand oper)
+	{
+	return new CastFunction(
+		type,
+		oper
+		);
 	}
 
 	/**
