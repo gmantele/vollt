@@ -436,11 +436,11 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		}catch(UWSException ue){
 			sendError(ue, req, reqID, user, uwsAction, resp);
 		}catch(Throwable t){
-            if (t.getClass().getName().endsWith("ClientAbortException")) {
+        if (t.getClass().getName().endsWith("ClientAbortException")) {
     			logger.logHttp(LogLevel.INFO, req, reqID, "HTTP " + UWSException.OK + " - Action \"" + uwsAction + "\" aborted by the client! [Client abort => ClientAbortException]", t);
-            } else {
-                sendError(t, req, reqID, user, uwsAction, resp);
-            }
+        } else {
+            sendError(t, req, reqID, user, uwsAction, resp);
+        }
 		}finally{
 			// Free resources about uploaded files ; only unused files will be deleted:
 			UWSToolBox.deleteUploads(req);
