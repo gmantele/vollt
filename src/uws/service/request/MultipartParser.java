@@ -166,6 +166,8 @@ public class MultipartParser implements RequestParser {
 				throw new UWSException(UWSException.BAD_REQUEST, "Uploads are not allowed by this service!");
 			while(e.hasMoreElements()){
 				param = e.nextElement();
+				if (multipart.getFile(param) == null)
+					continue;
 
 				/*
 				 * TODO !!!POSSIBLE ISSUE!!!

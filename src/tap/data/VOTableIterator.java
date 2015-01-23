@@ -51,17 +51,17 @@ public class VOTableIterator implements TableIterator {
 		 * <p><i>Note: this may be NULL after the metadata has been read if an error occurred while performing the conversion.
 		 * In this case, metaError contains this error.</> */
 		private TAPColumn[] meta = null;
-		
+
 		/** The error which happened while converting the StarTable metadata into TAP metadata. */
 		private DataReadException metaError = null;
-		
+
 		/** The last accepted row. */
 		private Object[] pendingRow = null;
-		
+
 		/** Flag meaning that the end of the stream has been reached
 		 * OR if the VOTable reading should be stopped before reading more rows. */
 		private boolean endReached = false;
-		
+
 		/**
 		 * <p>Stop nicely reading the VOTable.</p>
 		 * 
@@ -74,17 +74,17 @@ public class VOTableIterator implements TableIterator {
 			endReached = true;
 			notifyAll();
 		}
-		
+
 		@Override
-		public synchronized void acceptMetadata(final StarTable metaTable) throws TableFormatException {
+		public synchronized void acceptMetadata(final StarTable metaTable) throws TableFormatException{
 			try{
 				// Convert the StartTable metadata into TAP metadata:
 				meta = extractColMeta(metaTable);
-				
+
 			}catch(DataReadException dre){
 				// Save the error ; this error will be throw when a call to getMetadata() will be done:
 				metaError = dre;
-				
+
 			}finally{
 				// Free all waiting threads:
 				notifyAll();
@@ -92,18 +92,18 @@ public class VOTableIterator implements TableIterator {
 		}
 
 		@Override
-		public synchronized void acceptRow(final Object[] row) throws IOException {
+		public synchronized void acceptRow(final Object[] row) throws IOException{
 			try{
 				// Wait until the last accepted row has been consumed: 
 				while(!endReached && pendingRow != null)
 					wait();
-				
+
 				/* If the end has been reached, this is not normal
 				 * (because endRows() is always called after acceptRow()...so, it means the iteration has been aborted before the end)
 				 * and so the stream reading should be interrupted: */
 				if (endReached)
 					throw new IOException("Streaming aborted!");
-				
+
 				// Otherwise, keep the given row:
 				pendingRow = row;
 
@@ -113,13 +113,13 @@ public class VOTableIterator implements TableIterator {
 				 * ...which should then mean that the end of the stream has been reached. */
 				if (pendingRow == null)
 					endReached = true;
-				
+
 			}catch(InterruptedException ie){
 				/* If the thread has been interrupted, set this TableSink in a state similar to
 				 * when the end of the stream has been reached: */
 				pendingRow = null;
 				endReached = true;
-				
+
 			}finally{
 				// In all cases, all waiting threads must be freed:
 				notifyAll();
@@ -127,15 +127,23 @@ public class VOTableIterator implements TableIterator {
 		}
 
 		@Override
-		public synchronized void endRows() throws IOException {
-			// No more rows are available:
-			pendingRow = null;
-			// Set the END flag:
-			endReached = true;
-			// Notify all waiting threads that the end has been reached:
-			notifyAll();
+		public synchronized void endRows() throws IOException{
+			try{
+				// Wait until the last accepted row has been consumed:
+				while(!endReached && pendingRow != null)
+					wait();
+			}catch(InterruptedException ie){
+				/* Nothing to do in particular ; the end of the stream will be set anyway. */
+			}finally{
+				// No more rows are available:
+				pendingRow = null;
+				// Set the END flag:
+				endReached = true;
+				// Notify all waiting threads that the end has been reached:
+				notifyAll();
+			}
 		}
-		
+
 		/**
 		 * <p>Get the metadata found in the VOTable.</p>
 		 * 
@@ -154,14 +162,14 @@ public class VOTableIterator implements TableIterator {
 				// Wait until metadata are available, or if an error has occurred while accepting them:
 				while(metaError == null && meta == null)
 					wait();
-				
+
 				// If there was an error while interpreting the accepted metadata, throw it:
 				if (metaError != null)
 					throw metaError;
-				
+
 				// Otherwise, just return the metadata:
 				return meta;
-				
+
 			}catch(InterruptedException ie){
 				/* If the thread has been interrupted, set this TableSink in a state similar to
 				 * when the end of the stream has been reached: */
@@ -169,13 +177,13 @@ public class VOTableIterator implements TableIterator {
 				/* Return the metadata ;
 				 * NULL will be returned if the interruption has occurred before the real reading of the VOTable metadata: */
 				return meta;
-				
+
 			}finally{
 				// In all cases, the waiting threads must be freed:
 				notifyAll();
 			}
 		}
-		
+
 		/**
 		 * <p>Get the last accepted row.</p>
 		 * 
@@ -186,35 +194,35 @@ public class VOTableIterator implements TableIterator {
 		 * 
 		 * @return
 		 */
-		public synchronized Object[] getRow() {
+		public synchronized Object[] getRow(){
 			try{
 				// Wait until a row has been accepted or the end has been reached:
 				while(!endReached && pendingRow == null)
 					wait();
-				
+
 				// If there is no more rows, just return NULL (meaning for the called "end of stream"):
-				if (endReached)
+				if (endReached && pendingRow == null)
 					return null;
-				
+
 				/* Otherwise, reset pendingRow to NULL in order to enable the reading of the next row,
 				 * and finally return the last accepted row: */
 				Object[] row = pendingRow;
 				pendingRow = null;
 				return row;
-				
+
 			}catch(InterruptedException ie){
 				/* If the thread has been interrupted, set this TableSink in a state similar to
 				 * when the end of the stream has been reached: */
 				endReached = true;
 				// Return NULL, meaning the end of the stream has been reached:
 				return null;
-				
-			}finally {
+
+			}finally{
 				// In all cases, the waiting threads must be freed:
 				notifyAll();
 			}
 		}
-		
+
 		/**
 		 * Extract an array of {@link TAPColumn} objects. Each corresponds to one of the columns listed in the given table,
 		 * and so corresponds to the metadata of a column. 
@@ -307,9 +315,9 @@ public class VOTableIterator implements TableIterator {
 			// Build the VOTable type:
 			return new VotType(votdatatype, arraysize, xtype);
 		}
-		
+
 	}
-	
+
 	/** Stream containing the VOTable on which this {@link TableIterator} is iterating. */
 	protected final InputStream input;
 	/** The StarTable consumer which is used to iterate on each row. */
@@ -319,14 +327,14 @@ public class VOTableIterator implements TableIterator {
 	protected boolean iterationStarted = false;
 	/** Indicate whether the last row has already been reached. */
 	protected boolean endReached = false;
-	
+
 	/** The last read row. Column iteration is done on this array. */
 	protected Object[] row;
 	/** Index of the last read column (=0 just after {@link #nextRow()} and before {@link #nextCol()}, ={@link #nbColumns} after the last column has been read). */
 	protected int indCol = -1;
 	/** Number of columns available according to the metadata. */
 	protected int nbCol = 0;
-	
+
 	/**
 	 * Build a TableIterator able to read rows and columns inside the given VOTable input stream.
 	 * 
@@ -340,7 +348,7 @@ public class VOTableIterator implements TableIterator {
 		if (input == null)
 			throw new NullPointerException("Missing VOTable document input stream over which to iterate!");
 		this.input = input;
-		
+
 		try{
 
 			// Set the VOTable builder/interpreter:
@@ -348,19 +356,20 @@ public class VOTableIterator implements TableIterator {
 
 			// Build the TableSink to use:
 			sink = new StreamVOTableSink();
-			
+
 			// Initiate the stream process:
-			Thread streamThread = new Thread() {
-                public void run() {
-                    try{
-            			tb.streamStarTable(input, sink, null);
-                    }catch(IOException e) {
-                    	if (e.getMessage() != null && !e.getMessage().equals("Reading interrupted!"))
-                    		e.printStackTrace();
-                    }
-                }
-            };
-            streamThread.start();
+			Thread streamThread = new Thread(){
+				@Override
+				public void run(){
+					try{
+						tb.streamStarTable(input, sink, null);
+					}catch(IOException e){
+						if (e.getMessage() != null && !e.getMessage().equals("Reading interrupted!"))
+							e.printStackTrace();
+					}
+				}
+			};
+			streamThread.start();
 
 		}catch(Exception ex){
 			throw new DataReadException("Unable to parse/read the given VOTable input stream!", ex);
@@ -368,33 +377,33 @@ public class VOTableIterator implements TableIterator {
 	}
 
 	@Override
-	public TAPColumn[] getMetadata() throws DataReadException {
+	public TAPColumn[] getMetadata() throws DataReadException{
 		return sink.getMeta();
 	}
 
 	@Override
-	public boolean nextRow() throws DataReadException {
+	public boolean nextRow() throws DataReadException{
 		// If no more rows, return false directly:
 		if (endReached)
 			return false;
-		
+
 		// Fetch the row:
 		row = sink.getRow();
-		
+
 		// Reset the column iteration:
 		if (!iterationStarted){
 			iterationStarted = true;
 			nbCol = sink.getMeta().length;
 		}
 		indCol = 0;
-		
+
 		// Tells whether there is more rows or not:
 		endReached = (row == null);
 		return !endReached;
 	}
 
 	@Override
-	public boolean hasNextCol() throws IllegalStateException, DataReadException {
+	public boolean hasNextCol() throws IllegalStateException, DataReadException{
 		// Check the read state:
 		checkReadState();
 
@@ -403,7 +412,7 @@ public class VOTableIterator implements TableIterator {
 	}
 
 	@Override
-	public Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException {
+	public Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException{
 		// Check the read state and ensure there is still at least one column to read:
 		if (!hasNextCol())
 			throw new NoSuchElementException("No more field to read!");
@@ -413,7 +422,7 @@ public class VOTableIterator implements TableIterator {
 	}
 
 	@Override
-	public DBType getColType() throws IllegalStateException, DataReadException {
+	public DBType getColType() throws IllegalStateException, DataReadException{
 		// Basically check the read state (for rows iteration):
 		checkReadState();
 
@@ -428,7 +437,7 @@ public class VOTableIterator implements TableIterator {
 	}
 
 	@Override
-	public void close() throws DataReadException {
+	public void close() throws DataReadException{
 		endReached = true;
 		sink.stop();
 		// input.close(); // in case sink.stop() is not enough to stop the VOTable reading!

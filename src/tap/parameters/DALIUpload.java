@@ -512,7 +512,7 @@ public class DALIUpload {
 
 		// Check the label:
 		if (!parts[0].matches("[a-zA-Z][a-zA-Z0-9_]*"))
-			throw new TAPException("Wrong uploaded item name syntax: \"" + parts[0] + "\"! An uploaded item must have a label with the syntax: [a-zA-Z][a-zA-Z0-9_]*.", UWSException.BAD_REQUEST);
+			throw new TAPException("Wrong uploaded item name syntax: \"" + parts[0] + "\"! An uploaded item must have a label respecting the 'regular_identifier' production of ADQL 2.0 (regular expression: [a-zA-Z][a-zA-Z0-9_]*).", UWSException.BAD_REQUEST);
 		// Check the URI:
 		else if (!parts[1].matches("[a-zA-Z][a-zA-Z0-9\\+\\.\\-]*:.+"))
 			throw new TAPException("Bad URI syntax: \"" + parts[1] + "\"! A URI must start with: \"<scheme>:\", where <scheme>=\"[a-zA-Z][a-zA-Z0-9+.-]*\".", UWSException.BAD_REQUEST);
