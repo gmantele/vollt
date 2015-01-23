@@ -2,31 +2,34 @@
 <!DOCTYPE project>
 <project name="tap" basedir="." default="buildLib">
 	
-	<property name="version" value="1.1b" />
+	<property name="version" value="2.0beta" />
 
 	<property name="srcDir" value="src" />
 	<property name="libDir" value="lib" />
 	<property name="compileDir" value="antBuild" />
 	<property name="classesDir" value="${compileDir}"/>
 	<property name="javadocDir" value="javadoc/tap" />
-	
-	<property name="cosJar" value="${libDir}/cos-1.5beta.jar" />
-	<property name="stilJar" value="${libDir}/stil3.0-5.jar" />
+
+	<property name="cosJarName" value="cos-1.5beta.jar" />
+	<property name="cosJar" value="${libDir}/${cosJarName}" />
+	<property name="stilJarName" value="stil3.0-5.jar" />
+	<property name="stilJar" value="${libDir}/${stilJarName}" />
 		
 	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
 	<property name="jsonPath" value="org/json/**" />
 	<property name="extLibsPath" value="com/oreilly/servlet/**,nom/tam/**,org/apache/tools/bzip2/**,uk/ac/starlink/**" />
-	<property name="licensePath" value="COPYING.LESSER.txt" />
-	<property name="includesList" value="${tapPath},${jsonPath},${extLibsPath},${licensePath}" />
+	<property name="licensePath" value="COPYING.LESSER" />
+	<property name="includesList" value="${tapPath},${jsonPath},${extLibsPath}" />
 
 	<property name="jarDest" value="." />
 	<property name="libJarFile" value="${jarDest}/tap_${version}.jar" />
 	<property name="srcJarFile" value="${jarDest}/tap_src_${version}.jar" />
 	<property name="javadocJarFile" value="${jarDest}/tap_javadoc_${version}.jar" />
 	
-	<fail message="Missing property: CATALINA ! It provides the path toward a directory or a JAR which contains the following class: org.apache.catalina.connector.ClientAbortException.">
-		<condition><not><isset property="CATALINA"/></not></condition>
+	<fail message="The property POSTGRES must be set! It provides the path toward a directory or a JAR which contains all classes inside org.postgresql.">
+		<condition><not><isset property="POSTGRES"/></not></condition>
 	</fail>
+	
 	<fail message="The property SERVLET-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.servlet.">
 		<condition><not><isset property="SERVLET-API"/></not></condition>
 	</fail>
@@ -34,7 +37,7 @@
 	<path id="tap.classpath">
 		<pathelement location="${cosJar}" />
 		<pathelement location="${stilJar}" />
-		<pathelement location="${CATALINA}" />
+		<pathelement location="${POSTGRES}" />
 		<pathelement location="${SERVLET-API}" />
 	</path>
 	
@@ -67,14 +70,16 @@
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
 			<zipfileset src="${cosJar}" excludes="META-INF/*" />
 			<zipfileset src="${stilJar}" excludes="META-INF/*" />
+			<zipfileset dir="src" includes="${licensePath}" />
 		</jar>
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>
 	
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
-		<jar compress="false" baseDir="${srcDir}" destfile="${srcJarFile}" includes="${includesList}">
-			<fileset file="${cosJar}" />
-			<fileset file="${stilJar}" />
+		<jar compress="false" destfile="${srcJarFile}">
+			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
+			<zipfileset dir="${libDir}" includes="${cosJarName}" fullPath="${cosJar}" />
+			<zipfileset dir="${libDir}" includes="${stilJarName}" fullPath="${stilJar}" />
 		</jar>
 	</target>
 	

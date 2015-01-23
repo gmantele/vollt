@@ -45,6 +45,7 @@ import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
+import uws.job.ErrorType;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSService;
@@ -59,7 +60,7 @@ import adql.db.FunctionDef;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (01/2015)
  */
 public class TAP implements VOSIResource {
 
@@ -727,10 +728,20 @@ public class TAP implements VOSIResource {
 				getLogger().logHttp(LogLevel.INFO, response, reqID, owner, "HTTP " + UWSException.OK + " - Action \"" + resourceName + "\" successfully executed.", null);
 
 		}catch(Throwable t){
-			// Write the error in the response and return the appropriate HTTP status code:
-			errorWriter.writeError(t, response, request, reqID, owner, resourceName);
-			// Log the error:
-			getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
+			// CLIENT ABORTION: (note: should work with Apache/Tomcat and JBoss)
+			if (t.getClass().getName().endsWith("ClientAbortException")){
+				// Log the client abortion:
+				getLogger().logHttp(LogLevel.INFO, response, reqID, owner, "HTTP " + response.getStatus() + " - HTTP request aborted by the client => the TAP resource \"" + resourceName + "\" has stopped!", t);
+				// Notify the client abortion in a TAP error:
+				errorWriter.writeError("The client aborts this HTTP request! It may happen due to a client timeout or to an interruption of the response waiting process.", ErrorType.TRANSIENT, UWSException.ACCEPTED_BUT_NOT_COMPLETE, response, request, reqID, owner, resourceName);
+			}
+			// ANY OTHER ERROR:
+			else{
+				// Log the error:
+				getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
+				// Write the error in the response and return the appropriate HTTP status code:
+				errorWriter.writeError(t, response, request, reqID, owner, resourceName);
+			}
 		}finally{
 			// Notify the queue of the asynchronous jobs that a new connection is available:
 			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME) && service.getFactory().countFreeConnections() >= 1)

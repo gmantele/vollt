@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import uws.AcceptHeader;
 import uws.UWSException;
 import uws.UWSToolBox;
+import uws.job.ErrorType;
 import uws.job.ExecutionPhase;
 import uws.job.JobList;
 import uws.job.JobThread;
@@ -185,7 +186,7 @@ import uws.service.request.RequestParser;
  * 
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.1 (01/2015)
  */
 public class UWSService implements UWS {
 
@@ -1152,7 +1153,13 @@ public class UWSService implements UWS {
 				actionApplied = true;
 			sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
 		}catch(Exception ex){
-			sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
+			if (ex.getClass().getName().endsWith("ClientAbortException")){
+				// Log the client abortion:
+				logger.logHttp(LogLevel.INFO, request, reqID, "HTTP " + UWSException.ACCEPTED_BUT_NOT_COMPLETE + " - Action \"" + action.getName() + "\" aborted by the client! [Client abort => " + ex.getClass().getName() + "]", ex);
+				// Notify the client abortion in a TAP error:
+				errorWriter.writeError("The client aborts this HTTP request! It may happen due to a client timeout or to an interruption of the response waiting process.", ErrorType.TRANSIENT, UWSException.ACCEPTED_BUT_NOT_COMPLETE, response, request, reqID, user, action.getName());
+			}else
+				sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
 		}finally{
 			executedAction = action;
 			// Free resources about uploaded files ; only unused files will be deleted:

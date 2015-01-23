@@ -33,14 +33,18 @@ Each library has its own package (`adql` for ADQL, `uws` for UWS and `tap` for T
 
 ### Dependencies
 Below are summed up the dependencies of each library:
-* ADQL: `adql`, `cds.utils`
-* UWS: `uws`, `org.json`
-* TAP: `adql`, `uws`, `cds.*`, `org.json`
+* ADQL: `adql`, `cds.utils`, `org.postgresql` *(for adql.translator.PgSphereTranslator only)*
+* UWS: `uws`, `org.json`, HTTP Multipart lib. (`com.oreilly.servlet`)
+* TAP: `adql`, `uws`, `cds.*`, `org.json`, `org.postgresql` *(for adql.translator.PgSphereTranslator only)*, HTTP Multipart lib. (`com.oreilly.servlet`), STIL (`nom.tap`, `org.apache.tools.bzip2`, `uk.ac.starlink`)
+
+In the `lib` directory, you will find 2 JAR files:
+* `cos-1.5beta.jar` to deal with HTTP multipart requests
+* `stil3.0-5.jar` for [STIL](http://www.star.bris.ac.uk/~mbt/stil/) (VOTable and other formats support)
 
 ### ANT scripts
 At the root of the repository, there are 3 ANT scripts. Each is dedicated to one library. They are able to generate JAR for sources, binaries and Javadoc.
 
 3 properties must be set before using one of these scripts:
-* `CATALINA`: a path toward a JAR or a binary directory containing org.apache.catalina.connector.ClientAbortException.class
+* `POSTGRES`: a path toward a JAR or a binary directory containing all org.postgresql.* - [https://jdbc.postgresql.org/download.html](JDBC Postgres driver) - **(ONLY for ADQL and TAP if you want to keep adql.translator.PgSphereTranslator)**
 * `SERVLET-API`: a path toward a JAR or a binary directory containing all javax.servlet.*
-* (`JUNIT-API` *not required before the version 2.0 of the tap library*: a path toward one or several JARs or binary directories containing all classes to use JUnit.)
+* (`JUNIT-API` *not required before the version 2.0 of the tap library OR if you are not interested by the `test` directory (JUnit tests)*: a path toward one or several JARs or binary directories containing all classes to use JUnit.)

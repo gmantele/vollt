@@ -39,13 +39,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.catalina.connector.ClientAbortException;
-
 import uws.AcceptHeader;
 import uws.UWSException;
 import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
 import uws.job.ErrorSummary;
+import uws.job.ErrorType;
 import uws.job.JobList;
 import uws.job.JobThread;
 import uws.job.Result;
@@ -133,7 +132,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.1 (01/2015)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -437,10 +436,14 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 		}catch(UWSException ue){
 			sendError(ue, req, reqID, user, uwsAction, resp);
-		}catch(ClientAbortException cae){
-			logger.logHttp(LogLevel.INFO, req, reqID, "HTTP " + UWSException.OK + " - Action \"" + uwsAction + "\" aborted by the client! [Client abort => ClientAbortException]", cae);
 		}catch(Throwable t){
-			sendError(t, req, reqID, user, uwsAction, resp);
+			if (t.getClass().getName().endsWith("ClientAbortException")){
+				// Log the client abortion:
+				logger.logHttp(LogLevel.INFO, req, reqID, "HTTP " + UWSException.ACCEPTED_BUT_NOT_COMPLETE + " - Action \"" + uwsAction + "\" aborted by the client! [Client abort => " + t.getClass().getName() + "]", t);
+				// Notify the client abortion in a TAP error:
+				errorWriter.writeError("The client aborts this HTTP request! It may happen due to a client timeout or to an interruption of the response waiting process.", ErrorType.TRANSIENT, UWSException.ACCEPTED_BUT_NOT_COMPLETE, resp, req, reqID, user, uwsAction);
+			}else
+				sendError(t, req, reqID, user, uwsAction, resp);
 		}finally{
 			// Free resources about uploaded files ; only unused files will be deleted:
 			UWSToolBox.deleteUploads(req);
