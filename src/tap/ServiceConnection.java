@@ -42,7 +42,7 @@ import adql.db.FunctionDef;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (01/2015)
  */
 public interface ServiceConnection {
 
@@ -204,7 +204,8 @@ public interface ServiceConnection {
 	 * </ul>
 	 * 
 	 * <p><i><b>Important note:</b>
-	 * 	To save performances, it is strongly recommended to use ROWS limit rather than in bytes. Indeed, the rows limit can be taken
+	 * 	Currently, the default implementations of the library is only able to deal with output limits in ROWS.<br/>
+	 * 	Anyway, in order to save performances, it is strongly recommended to use ROWS limit rather than in bytes. Indeed, the rows limit can be taken
 	 * 	into account at the effective execution of the query (so before getting the result), on the contrary of the bytes limit which
 	 * 	will be applied on the query result.
 	 * </i></p>
@@ -228,7 +229,8 @@ public interface ServiceConnection {
 	 * </ul>
 	 * 
 	 * <p><i><b>Important note:</b>
-	 * 	To save performances, it is strongly recommended to use ROWS limit rather than in bytes. Indeed, the rows limit can be taken
+	 * 	Currently, the default implementations of the library is only able to deal with output limits in ROWS.<br/>
+	 * 	Anyway, in order to save performances, it is strongly recommended to use ROWS limit rather than in bytes. Indeed, the rows limit can be taken
 	 * 	into account at the effective execution of the query (so before getting the result), on the contrary of the bytes limit which
 	 * 	will be applied on the query result.
 	 * </i></p>
@@ -392,8 +394,6 @@ public interface ServiceConnection {
 	 * 
 	 * @return	NULL to allow ALL coordinate systems, an empty list to allow NO coordinate system,
 	 *        	or a list of coordinate system patterns otherwise.
-	 * 
-	 * @since 2.0
 	 */
 	public Collection<String> getCoordinateSystems();
 
