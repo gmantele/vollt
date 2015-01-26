@@ -35,7 +35,7 @@ import adql.db.DBColumn;
  * Format any given query (table) result into CSV or TSV (or with custom separator).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (01/2015)
  */
 public class SVFormat implements OutputFormat {
 
@@ -57,6 +57,14 @@ public class SVFormat implements OutputFormat {
 
 	/** Indicate whether String values must be delimited by double quotes (default) or not. */
 	protected final boolean delimitStr;
+
+	/** MIME type associated with this format.
+	 * @since 1.1 */
+	protected final String mimeType;
+
+	/** Alias of the MIME type associated with this format.
+	 * @since 1.1 */
+	protected final String shortMimeType;
 
 	/**
 	 * Build a SVFormat (in which String values are delimited by double quotes).
@@ -80,7 +88,7 @@ public class SVFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings) throws NullPointerException{
-		this(service, colSeparator, delimitStrings, true);
+		this(service, colSeparator, delimitStrings, null, null, true);
 	}
 
 	/**
@@ -89,15 +97,33 @@ public class SVFormat implements OutputFormat {
 	 * @param service			Description of the TAP service.
 	 * @param colSeparator		Column separator to use.
 	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
+	 * @param mime				The MIME type to associate with this format. <i>note: this MIME type is then used by a user to specify the result format he wants.</i>
+	 * @param shortMime			The alias of the MIME type to associate with this format. <i>note: this short MIME type is then used by a user to specify the result format he wants.</i>
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
+	 * 
+	 * @since 2.0
+	 */
+	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings, final String mime, final String shortMime) throws NullPointerException{
+		this(service, colSeparator, delimitStrings, mime, shortMime, true);
+	}
+
+	/**
+	 * Build a SVFormat.
+	 * 
+	 * @param service			Description of the TAP service.
+	 * @param colSeparator		Column separator to use.
+	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
+	 * @param mime				The MIME type to associate with this format. <i>note: this MIME type is then used by a user to specify the result format he wants.</i>
+	 * @param shortMime			The alias of the MIME type to associate with this format. <i>note: this short MIME type is then used by a user to specify the result format he wants.</i>
 	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
+	 * 
+	 * @since 2.0
 	 */
-	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings, final boolean logFormatReport) throws NullPointerException{
-		separator = "" + colSeparator;
-		delimitStr = delimitStrings;
-		this.service = service;
-		this.logFormatReport = logFormatReport;
+	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings, final String mime, final String shortMime, final boolean logFormatReport) throws NullPointerException{
+		this(service, "" + colSeparator, delimitStrings, mime, shortMime, logFormatReport);
 	}
 
 	/**
@@ -122,16 +148,69 @@ public class SVFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings) throws NullPointerException{
+		this(service, colSeparator, delimitStrings, null, null, true);
+	}
+
+	/**
+	 * Build a SVFormat.
+	 * 
+	 * @param service			Description of the TAP service.
+	 * @param colSeparator		Column separator to use.
+	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
+	 * @param mime				The MIME type to associate with this format. <i>note: this MIME type is then used by a user to specify the result format he wants.</i>
+	 * @param shortMime			The alias of the MIME type to associate with this format. <i>note: this short MIME type is then used by a user to specify the result format he wants.</i>
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
+	 * 
+	 * @since 2.0
+	 */
+	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings, final String mime, final String shortMime) throws NullPointerException{
+		this(service, colSeparator, delimitStrings, mime, shortMime, true);
+	}
+
+	/**
+	 * Build a SVFormat.
+	 * 
+	 * @param service			Description of the TAP service.
+	 * @param colSeparator		Column separator to use.
+	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
+	 * @param mime				The MIME type to associate with this format. <i>note: this MIME type is then used by a user to specify the result format he wants.</i>
+	 * @param shortMime			The alias of the MIME type to associate with this format. <i>note: this short MIME type is then used by a user to specify the result format he wants.</i>
+	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
+	 * 
+	 * @since 2.0
+	 */
+	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings, final String mime, final String shortMime, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL!");
 
-		separator = (colSeparator == null) ? ("" + COMMA_SEPARATOR) : colSeparator;
+		separator = (colSeparator == null || colSeparator.length() <= 0) ? ("" + COMMA_SEPARATOR) : colSeparator;
 		delimitStr = delimitStrings;
+		mimeType = (mime == null || mime.trim().length() <= 0) ? guessMimeType(separator) : mime;
+		shortMimeType = (shortMime == null || shortMime.trim().length() <= 0) ? guessShortMimeType(separator) : shortMime;
 		this.service = service;
+		this.logFormatReport = logFormatReport;
 	}
 
-	@Override
-	public String getMimeType(){
+	/**
+	 * <p>Try to guess the MIME type to associate with this SV format, in function of the column separator.</p>
+	 * 
+	 * <p>
+	 * 	By default, only "," or ";" (text/csv) and [TAB] (text/tab-separated-values) are supported.
+	 * 	If the separator is unknown, "text/plain" will be returned.
+	 * </p>
+	 * 
+	 * <p><i>Note: In order to automatically guess more MIME types, you should overwrite this function.</i></p>
+	 * 
+	 * @param separator	Column separator of this SV format.
+	 * 
+	 * @return	The guessed MIME type.
+	 * 
+	 * @since 2.0
+	 */
+	protected String guessMimeType(final String separator){
 		switch(separator.charAt(0)){
 			case COMMA_SEPARATOR:
 			case SEMI_COLON_SEPARATOR:
@@ -143,8 +222,23 @@ public class SVFormat implements OutputFormat {
 		}
 	}
 
-	@Override
-	public String getShortMimeType(){
+	/**
+	 * <p>Try to guess the short MIME type to associate with this SV format, in function of the column separator.</p>
+	 * 
+	 * <p>
+	 * 	By default, only "," or ";" (csv) and [TAB] (tsv) are supported.
+	 * 	If the separator is unknown, "text" will be returned.
+	 * </p>
+	 * 
+	 * <p><i>Note: In order to automatically guess more short MIME types, you should overwrite this function.</i></p>
+	 * 
+	 * @param separator	Column separator of this SV format.
+	 * 
+	 * @return	The guessed short MIME type.
+	 * 
+	 * @since 2.0
+	 */
+	protected String guessShortMimeType(final String separator){
 		switch(separator.charAt(0)){
 			case COMMA_SEPARATOR:
 			case SEMI_COLON_SEPARATOR:
@@ -154,6 +248,16 @@ public class SVFormat implements OutputFormat {
 			default:
 				return "text";
 		}
+	}
+
+	@Override
+	public final String getMimeType(){
+		return mimeType;
+	}
+
+	@Override
+	public final String getShortMimeType(){
+		return shortMimeType;
 	}
 
 	@Override

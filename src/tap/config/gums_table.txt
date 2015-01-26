@@ -1,0 +1,49 @@
+Name|DBType|JDBCType|TAPType|VOTableType
+id|character varying(19)|varchar(19)||
+ra2|numeric(14,10)|numeric(14,10)||
+dec2|numeric(14,10)|numeric(14,10)||
+vmag|real|float4||
+gmag|real|float4||
+gbmag|real|float4||
+grmag|real|float4||
+gsmag|real|float4||
+ra|numeric(14,10)|numeric(14,10)||
+deg|numeric(14,10)|numeric(14,10)||
+r|double precision|float8||
+pmra|double precision|float8||
+pmde|double precision|float8||
+rv|double precision|float8||
+v_i|real|float4||
+av|real|float4||
+age|real|float4||
+alphafe|real|float4||
+balb|real|float4||
+e|real|float4||
+feh|real|float4||
+fi|smallint|int2||
+galb|real|float4||
+fm|smallint|int2||
+host|smallint|int2||
+i|real|float4||
+logg|real|float4||
+Omega|real|float4||
+mass|double precision|float8||
+mbol|real|float4||
+nc|smallint|int2||
+nt|smallint|int2||
+p|double precision|float8||
+omega|real|float4||
+t0|double precision|float8||
+phase|real|float4||
+pop|smallint|int2||
+beenv|double precision|float8||
+radius|double precision|float8||
+a|double precision|float8||
+teff|integer|int4||
+vamp|real|float4||
+vper|double precision|float8||
+vphase|real|float4||
+vtype|character varying(4)|varchar(4)||
+vsini|real|float4||
+recno|integer|int4||
+coord|spoint|spoint||

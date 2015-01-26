@@ -50,15 +50,128 @@ public interface ServiceConnection {
 	 * List of possible limit units.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (10/2014)
+	 * @version 2.0 (01/2015)
 	 */
 	public static enum LimitUnit{
-		rows("row"), bytes("byte");
+		rows("row"), bytes("byte"), kilobytes("kilobyte"), megabytes("megabyte"), gigabytes("gigabyte");
 
 		private final String str;
 
 		private LimitUnit(final String str){
 			this.str = str;
+		}
+
+		/**
+		 * Tells whether the given unit has the same type (bytes or rows).
+		 * 
+		 * @param anotherUnit	A unit.
+		 * 
+		 * @return				true if the given unit has the same type, false otherwise.
+		 * 
+		 * @since 1.1
+		 */
+		public boolean isCompatibleWith(final LimitUnit anotherUnit){
+			if (this == rows)
+				return anotherUnit == rows;
+			else
+				return anotherUnit != rows;
+		}
+
+		/**
+		 * Gets the factor to convert into bytes the value expressed in this unit.
+		 * <i>Note: if this unit is not a factor of bytes, 1 is returned (so that the factor does not affect the value).</i>
+		 * 
+		 * @return The factor need to convert a value expressed in this unit into bytes, or 1 if not a bytes derived unit.
+		 * 
+		 * @since 1.1
+		 */
+		public long bytesFactor(){
+			switch(this){
+				case bytes:
+					return 1;
+				case kilobytes:
+					return 1000;
+				case megabytes:
+					return 1000000;
+				case gigabytes:
+					return 1000000000l;
+				default:
+					return 1;
+			}
+		}
+
+		/**
+		 * Compares the 2 given values (each one expressed in the given unit).
+		 * Conversions are done internally in order to make a correct comparison between the 2 limits.
+		 * 
+		 * @param leftLimit	Value/Limit of the comparison left part.
+		 * @param leftUnit	Unit of the comparison left part value.
+		 * @param rightLimit	Value/Limit of the comparison right part.
+		 * @param rightUnit		Unit of the comparison right part value.
+		 * 
+		 * @return the value 0 if x == y; a value less than 0 if x < y; and a value greater than 0 if x > y
+		 * 
+		 * @throws TAPException If the two given units are not compatible.
+		 * 
+		 * @see #isCompatibleWith(LimitUnit)
+		 * @see #bytesFactor()
+		 * @see Integer#compare(int, int)
+		 * @see Long#compare(long, long)
+		 * 
+		 * @since 1.1
+		 */
+		public static int compare(final int leftLimit, final LimitUnit leftUnit, final int rightLimit, final LimitUnit rightUnit) throws TAPException{
+			if (!leftUnit.isCompatibleWith(rightUnit))
+				throw new TAPException("Limit units (" + leftUnit + " and " + rightUnit + ") are not compatible!");
+
+			if (leftUnit == rows || leftUnit == rightUnit)
+				return compare(leftLimit, rightLimit);
+			else
+				return compare(leftLimit * leftUnit.bytesFactor(), rightLimit * rightUnit.bytesFactor());
+		}
+
+		/**
+		 * <p><i>(Strict copy of Integer.compare(int,int) of Java 1.7)</i></p>
+		 * <p>
+		 * 	Compares two {@code int} values numerically.
+		 * 	The value returned is identical to what would be returned by:
+		 * </p>
+		 * <pre>
+		 *    Integer.valueOf(x).compareTo(Integer.valueOf(y))
+		 * </pre>
+		 *
+		 * @param  x the first {@code int} to compare
+		 * @param  y the second {@code int} to compare
+		 * @return the value {@code 0} if {@code x == y};
+		 *         a value less than {@code 0} if {@code x < y}; and
+		 *         a value greater than {@code 0} if {@code x > y}
+		 * 
+		 * @since 1.1
+		 */
+		private static int compare(int x, int y){
+			return (x < y) ? -1 : ((x == y) ? 0 : 1);
+		}
+
+		/**
+		 * <p><i>(Strict copy of Integer.compare(long,long) of Java 1.7)</i></p>
+		 * <p>
+		 * 	Compares two {@code long} values numerically.
+		 * 	The value returned is identical to what would be returned by:
+		 * </p>
+		 * <pre>
+		 *    Long.valueOf(x).compareTo(Long.valueOf(y))
+		 * </pre>
+		 *
+		 * @param  x the first {@code long} to compare
+		 * @param  y the second {@code long} to compare
+		 * @return the value {@code 0} if {@code x == y};
+		 *         a value less than {@code 0} if {@code x < y}; and
+		 *         a value greater than {@code 0} if {@code x > y}
+		 * 
+		 * @since 1.1
+		 */
+		public static int compare(long x, long y){
+			return (x < y) ? -1 : ((x == y) ? 0 : 1);
 		}
 
 		@Override

@@ -51,7 +51,7 @@ import com.oreilly.servlet.multipart.ExceededSizeException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.0 (01/2015)
  * 
  * @see LimitedTableIterator
  * @see VOTableIterator
@@ -120,8 +120,24 @@ public class Uploader {
 		if (this.service.uploadEnabled()){
 			// ...and set the rows or bytes limit:
 			if (this.service.getUploadLimitType()[1] != null && this.service.getUploadLimit()[1] > 0){
-				limit = this.service.getUploadLimit()[1];
-				limitUnit = this.service.getUploadLimitType()[1];
+				switch(service.getUploadLimitType()[1]){
+					case kilobytes:
+						limit = (int)(1000l * this.service.getUploadLimit()[1]);
+						limitUnit = LimitUnit.bytes;
+						break;
+					case megabytes:
+						limit = (int)(1000000l * this.service.getUploadLimit()[1]);
+						limitUnit = LimitUnit.bytes;
+						break;
+					case gigabytes:
+						limit = (int)(1000000000l * this.service.getUploadLimit()[1]);
+						limitUnit = LimitUnit.bytes;
+						break;
+					default:
+						limit = this.service.getUploadLimit()[1];
+						limitUnit = this.service.getUploadLimitType()[1];
+						break;
+				}
 			}else{
 				limit = -1;
 				limitUnit = null;

@@ -22,6 +22,7 @@ package tap.db;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import tap.data.DataReadException;
 import tap.data.ResultSetTableIterator;
@@ -119,7 +121,7 @@ import adql.translator.TranslationException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.0 (01/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -278,7 +280,8 @@ public class JDBCConnection implements DBConnection {
 	}
 
 	/**
-	 * Create a {@link Connection} instance using the specified JDBC Driver and the given database parameters.
+	 * Create a {@link Connection} instance using the given database parameters.
+	 * The path of the JDBC driver will be used to load the adequate driver if none is found by default. 
 	 * 
 	 * @param driverPath	Path to the JDBC driver.
 	 * @param dbUrl			JDBC URL to connect to the database. <i><u>note</u> This URL may not be prefixed by "jdbc:". If not, the prefix will be automatically added.</i>
@@ -289,20 +292,39 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @throws DBException	If the driver can not be found or if the connection can not merely be created (usually because DB parameters are wrong).
 	 * 
-	 * @see DriverManager#getConnection(String, String, String)
+	 * @see DriverManager#getDriver(String)
+	 * @see Driver#connect(String, Properties)
 	 */
 	private final static Connection createConnection(final String driverPath, final String dbUrl, final String dbUser, final String dbPassword) throws DBException{
-		// Load the specified JDBC driver:
+		// Normalize the DB URL:
+		String url = dbUrl.startsWith(JDBC_PREFIX) ? dbUrl : (JDBC_PREFIX + dbUrl);
+
+		// Select the JDBDC driver:
+		Driver d;
 		try{
-			Class.forName(driverPath);
-		}catch(ClassNotFoundException cnfe){
-			throw new DBException("Impossible to find the JDBC driver \"" + driverPath + "\" !", cnfe);
+			d = DriverManager.getDriver(dbUrl);
+		}catch(SQLException e){
+			try{
+				// ...load it, if necessary:
+				if (driverPath == null)
+					throw new DBException("Missing JDBC driver path! Since the required JDBC driver is not yet loaded, this path is needed to load it.");
+				Class.forName(driverPath);
+				// ...and try again:
+				d = DriverManager.getDriver(dbUrl);
+			}catch(ClassNotFoundException cnfe){
+				throw new DBException("Impossible to find the JDBC driver \"" + driverPath + "\" !", cnfe);
+			}catch(SQLException se){
+				throw new DBException("No suitable JDBC driver found for the database URL \"" + dbUrl + "\" and the driver path \"" + driverPath + "\"!", se);
+			}
 		}
 
 		// Build a connection to the specified database:
-		String url = dbUrl.startsWith(JDBC_PREFIX) ? dbUrl : (JDBC_PREFIX + dbUrl);
 		try{
-			return DriverManager.getConnection(url, dbUser, dbPassword);
+			Properties p = new Properties();
+			p.setProperty("user", dbUser);
+			p.setProperty("password", dbPassword);
+			Connection con = d.connect(url, p);
+			return con;
 		}catch(SQLException se){
 			throw new DBException("Impossible to establish a connection to the database \"" + url + "\" !", se);
 		}
