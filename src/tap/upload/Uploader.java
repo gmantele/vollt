@@ -120,24 +120,8 @@ public class Uploader {
 		if (this.service.uploadEnabled()){
 			// ...and set the rows or bytes limit:
 			if (this.service.getUploadLimitType()[1] != null && this.service.getUploadLimit()[1] > 0){
-				switch(service.getUploadLimitType()[1]){
-					case kilobytes:
-						limit = (int)(1000l * this.service.getUploadLimit()[1]);
-						limitUnit = LimitUnit.bytes;
-						break;
-					case megabytes:
-						limit = (int)(1000000l * this.service.getUploadLimit()[1]);
-						limitUnit = LimitUnit.bytes;
-						break;
-					case gigabytes:
-						limit = (int)(1000000000l * this.service.getUploadLimit()[1]);
-						limitUnit = LimitUnit.bytes;
-						break;
-					default:
-						limit = this.service.getUploadLimit()[1];
-						limitUnit = this.service.getUploadLimitType()[1];
-						break;
-				}
+				limit = (int)(this.service.getUploadLimitType()[1].bytesFactor() * this.service.getUploadLimit()[1]);
+				limitUnit = (this.service.getUploadLimitType()[1] == LimitUnit.rows) ? LimitUnit.rows : LimitUnit.bytes;
 			}else{
 				limit = -1;
 				limitUnit = null;

@@ -521,10 +521,17 @@ public class TAP implements VOSIResource {
 		if (outputLimit != null && outputLimit.length >= 2 && outputLimitType != null && outputLimitType.length >= 2){
 			if (outputLimit[0] > -1 || outputLimit[1] > -1){
 				xml.append("\t<outputLimit>\n");
-				if (outputLimit[0] > -1)
-					xml.append("\t\t<default ").append(VOSerializer.formatAttribute("unit", outputLimitType[0].toString())).append(">").append(outputLimit[0]).append("</default>\n");
-				if (outputLimit[1] > -1)
-					xml.append("\t\t<hard ").append(VOSerializer.formatAttribute("unit", outputLimitType[1].toString())).append(">").append(outputLimit[1]).append("</hard>\n");
+				String limitType;
+				if (outputLimit[0] > -1){
+					long limit = outputLimit[0] * outputLimitType[0].bytesFactor();
+					limitType = (outputLimitType[0] == null || outputLimitType[0] == LimitUnit.rows) ? LimitUnit.rows.toString() : LimitUnit.bytes.toString();
+					xml.append("\t\t<default ").append(VOSerializer.formatAttribute("unit", limitType)).append(">").append(limit).append("</default>\n");
+				}
+				if (outputLimit[1] > -1){
+					long limit = outputLimit[1] * outputLimitType[1].bytesFactor();
+					limitType = (outputLimitType[1] == null || outputLimitType[1] == LimitUnit.rows) ? LimitUnit.rows.toString() : LimitUnit.bytes.toString();
+					xml.append("\t\t<hard ").append(VOSerializer.formatAttribute("unit", limitType)).append(">").append(limit).append("</hard>\n");
+				}
 				xml.append("\t</outputLimit>\n");
 			}
 		}
@@ -537,48 +544,15 @@ public class TAP implements VOSIResource {
 			if (uploadLimit != null && uploadLimit.length >= 2 && uploadLimitType != null && uploadLimitType.length >= 2){
 				if (uploadLimit[0] > -1 || uploadLimit[1] > -1){
 					xml.append("\t<uploadLimit>\n");
+					String limitType;
 					if (uploadLimit[0] > -1){
-						String limitType;
-						long limit = uploadLimit[0];
-						switch(uploadLimitType[0]){
-							case kilobytes:
-								limit *= 1000l;
-								limitType = LimitUnit.rows.toString();
-								break;
-							case megabytes:
-								limit *= 1000000l;
-								limitType = LimitUnit.rows.toString();
-								break;
-							case gigabytes:
-								limit *= 1000000000l;
-								limitType = LimitUnit.rows.toString();
-								break;
-							default:
-								limitType = uploadLimitType[0].toString();
-								break;
-						}
+						long limit = uploadLimit[0] * uploadLimitType[0].bytesFactor();
+						limitType = (uploadLimitType[0] == null || uploadLimitType[0] == LimitUnit.rows) ? LimitUnit.rows.toString() : LimitUnit.bytes.toString();
 						xml.append("\t\t<default ").append(VOSerializer.formatAttribute("unit", limitType)).append("\">").append(limit).append("</default>\n");
 					}
 					if (uploadLimit[1] > -1){
-						String limitType;
-						long limit = uploadLimit[1];
-						switch(uploadLimitType[1]){
-							case kilobytes:
-								limit *= 1000l;
-								limitType = LimitUnit.rows.toString();
-								break;
-							case megabytes:
-								limit *= 1000000l;
-								limitType = LimitUnit.rows.toString();
-								break;
-							case gigabytes:
-								limit *= 1000000000l;
-								limitType = LimitUnit.rows.toString();
-								break;
-							default:
-								limitType = uploadLimitType[1].toString();
-								break;
-						}
+						long limit = uploadLimit[1] * uploadLimitType[1].bytesFactor();
+						limitType = (uploadLimitType[1] == null || uploadLimitType[1] == LimitUnit.rows) ? LimitUnit.rows.toString() : LimitUnit.bytes.toString();
 						xml.append("\t\t<hard ").append(VOSerializer.formatAttribute("unit", limitType)).append("\">").append(limit).append("</hard>\n");
 					}
 					xml.append("\t</uploadLimit>\n");

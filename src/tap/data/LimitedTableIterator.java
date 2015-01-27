@@ -55,7 +55,7 @@ import com.oreilly.servlet.multipart.ExceededSizeException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (01/2015)
  * @since 2.0
  */
 public class LimitedTableIterator implements TableIterator {
@@ -119,9 +119,9 @@ public class LimitedTableIterator implements TableIterator {
 	public < T extends TableIterator > LimitedTableIterator(final Class<T> classIt, final InputStream input, final LimitUnit type, final int limit) throws DataReadException{
 		try{
 			Constructor<T> construct = classIt.getConstructor(InputStream.class);
-			if (type == LimitUnit.bytes && limit > 0){
+			if (LimitUnit.bytes.isCompatibleWith(type) && limit > 0){
 				maxNbRows = -1;
-				innerIt = construct.newInstance(new LimitedSizeInputStream(input, limit));
+				innerIt = construct.newInstance(new LimitedSizeInputStream(input, limit * type.bytesFactor()));
 			}else{
 				innerIt = construct.newInstance(input);
 				maxNbRows = (type == null || type != LimitUnit.rows) ? -1 : limit;
