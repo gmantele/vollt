@@ -3,7 +3,6 @@ package tap.config;
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
-import static tap.config.TAPConfiguration.DEFAULT_IS_AVAILABLE;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
@@ -11,11 +10,9 @@ import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
-import static tap.config.TAPConfiguration.KEY_DISABILITY_REASON;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
 import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
-import static tap.config.TAPConfiguration.KEY_IS_AVAILABLE;
 import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
@@ -69,7 +66,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 	private final String serviceDescription;
 
 	private boolean isAvailable = false;	// the TAP service must be disabled until the end of its connection initialization 
-	private String availability = null;
+	private String availability = "TAP service not yet initialized.";
 
 	private int[] executionDuration = new int[2];
 	private int[] retentionPeriod = new int[2];
@@ -99,7 +96,6 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// 4. SET ALL GENERAL SERVICE CONNECTION INFORMATION:
 		providerName = getProperty(tapConfig, KEY_PROVIDER_NAME);
 		serviceDescription = getProperty(tapConfig, KEY_SERVICE_DESCRIPTION);
-		availability = getProperty(tapConfig, KEY_DISABILITY_REASON);
 		initRetentionPeriod(tapConfig);
 		initExecutionDuration(tapConfig);
 
@@ -120,9 +116,8 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// set the maximum upload file size:
 		initMaxUploadSize(tapConfig);
 
-		// 7. MAKE THE SERVICE AVAILABLE (or not, depending on the property value):
-		String propValue = getProperty(tapConfig, KEY_IS_AVAILABLE);
-		isAvailable = (propValue == null) ? DEFAULT_IS_AVAILABLE : Boolean.parseBoolean(propValue);
+		// 7. MAKE THE SERVICE AVAILABLE:
+		setAvailable(true, "TAP service available.");
 	}
 
 	private void initFileManager(final Properties tapConfig) throws TAPException{
@@ -357,17 +352,15 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		return isAvailable;
 	}
 
-	public void setAvailability(final boolean isAvailable){
-		this.isAvailable = isAvailable;
-	}
-
 	@Override
 	public String getAvailability(){
 		return availability;
 	}
 
-	public void setDisabilityReason(final String disabilityReason){
-		availability = disabilityReason;
+	@Override
+	public void setAvailable(boolean isAvailable, String message){
+		this.isAvailable = isAvailable;
+		availability = message;
 	}
 
 	@Override
@@ -559,12 +552,6 @@ public final class DefaultServiceConnection implements ServiceConnection {
 	public TAPMetadata getTAPMetadata(){
 		// TODO GET METADATA
 		return null;
-	}
-
-	@Override
-	public void setAvailable(boolean isAvailable, String message){
-		this.isAvailable = isAvailable;
-		availability = message;
 	}
 
 	@Override

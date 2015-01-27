@@ -57,11 +57,6 @@ public final class TAPConfiguration {
 	public final static String KEY_PROVIDER_NAME = "provider_name";
 	public final static String KEY_SERVICE_DESCRIPTION = "service_description";
 
-	/* AVAILABILITY KEYS */
-	public final static String KEY_IS_AVAILABLE = "is_available";
-	public final static boolean DEFAULT_IS_AVAILABLE = true;
-	public final static String KEY_DISABILITY_REASON = "disability_reason";
-
 	/* UPLOAD KEYS */
 	public final static String KEY_UPLOAD_ENABLED = "upload_enabled";
 	public final static String KEY_DEFAULT_UPLOAD_LIMIT = "upload_default_db_limit";
