@@ -23,8 +23,8 @@ package tap.metadata;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -62,7 +62,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (02/2015)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -100,7 +100,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * </i></p> 
 	 */
 	public TAPMetadata(){
-		schemas = new HashMap<String,TAPSchema>();
+		schemas = new LinkedHashMap<String,TAPSchema>();
 	}
 
 	/**
@@ -456,7 +456,21 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		response.setContentType("application/xml");
 
 		PrintWriter writer = response.getWriter();
+		write(writer);
 
+		return false;
+	}
+
+	/**
+	 * Format in XML this whole metadata set and write it in the given writer.
+	 * 
+	 * @param writer	Stream in which the XML representation of this metadata must be written.
+	 * 
+	 * @throws IOException	If there is any error while writing the XML in the given writer.
+	 * 
+	 * @since 2.0
+	 */
+	public void write(final PrintWriter writer) throws IOException{
 		writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
 		/* TODO The XSD schema for VOSITables should be fixed soon! This schema should be changed here before the library is released!
@@ -470,8 +484,6 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writer.println("</vosi:tableset>");
 
 		writer.flush();
-
-		return false;
 	}
 
 	/**
@@ -481,6 +493,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * <pre>
 	 * &lt;schema&gt;
 	 * 	&lt;name&gt;...&lt;/name&gt;
+	 * 	&lt;title&gt;...&lt;/title&gt;
 	 * 	&lt;description&gt;...&lt;/description&gt;
 	 * 	&lt;utype&gt;...&lt;/utype&gt;
 	 * 		// call #writeTable(TAPTable, PrintWriter) for each table
@@ -503,6 +516,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writer.println("\t<schema>");
 
 		writeAtt(prefix, "name", s.getADQLName(), false, writer);
+		writeAtt(prefix, "title", s.getTitle(), true, writer);
 		writeAtt(prefix, "description", s.getDescription(), true, writer);
 		writeAtt(prefix, "utype", s.getUtype(), true, writer);
 
@@ -519,6 +533,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * <pre>
 	 * &lt;table type="..."&gt;
 	 * 	&lt;name&gt;...&lt;/name&gt;
+	 * 	&lt;title&gt;...&lt;/title&gt;
 	 * 	&lt;description&gt;...&lt;/description&gt;
 	 * 	&lt;utype&gt;...&lt;/utype&gt;
 	 * 		// call #writeColumn(TAPColumn, PrintWriter) for each column
@@ -539,10 +554,17 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		final String prefix = "\t\t\t";
 
 		writer.print("\t\t<table");
-		writer.print(VOSerializer.formatAttribute("type", t.getType().toString()));
+		if (t.getType() != null){
+			if (t.getType() != TableType.table)
+				writer.print(VOSerializer.formatAttribute("type", t.getType().toString()));
+		}
 		writer.println(">");
 
-		writeAtt(prefix, "name", t.getADQLName(), false, writer);
+		if (t.isInitiallyQualified())
+			writeAtt(prefix, "name", t.getADQLSchemaName() + "." + t.getADQLName(), false, writer);
+		else
+			writeAtt(prefix, "name", t.getADQLName(), false, writer);
+		writeAtt(prefix, "title", t.getTitle(), true, writer);
 		writeAtt(prefix, "description", t.getDescription(), true, writer);
 		writeAtt(prefix, "utype", t.getUtype(), true, writer);
 
@@ -586,9 +608,10 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	private void writeColumn(TAPColumn c, PrintWriter writer) throws IOException{
 		final String prefix = "\t\t\t\t";
 
-		writer.print("\t\t\t<column std=\"");
-		writer.print(c.isStd());
-		writer.println("\">");
+		writer.print("\t\t\t<column");
+		if (c.isStd())
+			writer.print(" std=\"true\"");
+		writer.println(">");
 
 		writeAtt(prefix, "name", c.getADQLName(), false, writer);
 		writeAtt(prefix, "description", c.getDescription(), true, writer);
@@ -613,6 +636,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 			writeAtt(prefix, "flag", "indexed", true, writer);
 		if (c.isPrincipal())
 			writeAtt(prefix, "flag", "primary", true, writer);
+		if (c.isNullable())
+			writeAtt(prefix, "flag", "nullable", true, writer);
 
 		writer.println("\t\t\t</column>");
 	}
@@ -696,6 +721,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 	This function create the {@link TAPSchema} and all its {@link TAPTable}s objects on the fly.
 	 * </p>
 	 * 
+	 * @param isSchemaSupported	<i>false</i> if the DB name must be prefixed by "TAP_SCHEMA_", <i>true</i> otherwise.
+	 * 
 	 * @return	The whole TAP_SCHEMA definition.
 	 * 
 	 * @see STDSchema#TAPSCHEMA
@@ -704,10 +731,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 
 	 * @since 2.0
 	 */
-	public static final TAPSchema getStdSchema(){
+	public static final TAPSchema getStdSchema(final boolean isSchemaSupported){
 		TAPSchema tap_schema = new TAPSchema(STDSchema.TAPSCHEMA.toString(), "Set of tables listing and describing the schemas, tables and columns published in this TAP service.", null);
+		if (!isSchemaSupported)
+			tap_schema.setDBName(null);
 		for(STDTable t : STDTable.values()){
 			TAPTable table = getStdTable(t);
+			if (!isSchemaSupported)
+				table.setDBName(STDSchema.TAPSCHEMA.label + "_" + table.getADQLName());
 			tap_schema.addTable(table);
 		}
 		return tap_schema;

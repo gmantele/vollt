@@ -67,7 +67,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (02/2015)
  */
 public class TAPColumn implements DBColumn {
 
@@ -111,6 +111,11 @@ public class TAPColumn implements DBColumn {
 	/** Flag indicating whether this column is indexed in the database.
 	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
 	private boolean indexed = false;
+
+	/** Flag indicating whether this column can be set to NULL in the database.
+	 * <i>Note: Standard TAP column field ; FALSE by default.</i>
+	 * @since 2.0 */
+	private boolean nullable = false;
 
 	/** Flag indicating whether this column is defined by a standard.
 	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
@@ -480,6 +485,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * @return	Its datatype. <i>CAN'T be NULL</i>
 	 */
+	@Override
 	public final DBType getDatatype(){
 		return datatype;
 	}
@@ -532,6 +538,28 @@ public class TAPColumn implements DBColumn {
 	 */
 	public final void setIndexed(boolean indexed){
 		this.indexed = indexed;
+	}
+
+	/**
+	 * Tell whether this column is nullable.
+	 * 
+	 * @return	<i>true</i> if this column is nullable, <i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final boolean isNullable(){
+		return nullable;
+	}
+
+	/**
+	 * Set whether this column is nullable or not.
+	 * 
+	 * @param  nullable	<i>true</i> if this column is nullable, <i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final void setNullable(boolean nullable){
+		this.nullable = nullable;
 	}
 
 	/**

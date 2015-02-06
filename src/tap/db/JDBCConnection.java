@@ -121,7 +121,7 @@ import adql.translator.TranslationException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (01/2015)
+ * @version 2.0 (02/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -137,6 +137,9 @@ public class JDBCConnection implements DBConnection {
 
 	/** DBMS name of Oracle used in the database URL. */
 	protected final static String DBMS_ORACLE = "oracle";
+
+	/** Name of the database column giving the database name of a TAP column, table or schema. */
+	protected final static String DB_NAME_COLUMN = "dbname";
 
 	/** Connection ID (typically, the job ID). It lets identify the DB errors linked to the Job execution in the logs. */
 	protected final String ID;
@@ -321,8 +324,10 @@ public class JDBCConnection implements DBConnection {
 		// Build a connection to the specified database:
 		try{
 			Properties p = new Properties();
-			p.setProperty("user", dbUser);
-			p.setProperty("password", dbPassword);
+			if (dbUser != null)
+				p.setProperty("user", dbUser);
+			if (dbPassword != null)
+				p.setProperty("password", dbPassword);
 			Connection con = d.connect(url, p);
 			return con;
 		}catch(SQLException se){
@@ -464,15 +469,7 @@ public class JDBCConnection implements DBConnection {
 		TAPMetadata metadata = new TAPMetadata();
 
 		// Get the definition of the standard TAP_SCHEMA tables:
-		TAPSchema tap_schema = TAPMetadata.getStdSchema();
-
-		// If schemas are not supported by the DBMS connection, the schema must not be translated in the DB:
-		if (!supportsSchema){
-			String namePrefix = getTablePrefix(tap_schema.getADQLName());
-			tap_schema.setDBName(null);
-			for(TAPTable t : tap_schema)
-				t.setDBName(namePrefix + t.getDBName());
-		}
+		TAPSchema tap_schema = TAPMetadata.getStdSchema(supportsSchema);
 
 		// LOAD ALL METADATA FROM THE STANDARD TAP TABLES:
 		Statement stmt = null;
@@ -527,26 +524,29 @@ public class JDBCConnection implements DBConnection {
 	protected void loadSchemas(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
 		ResultSet rs = null;
 		try{
+			// Determine whether the dbName column exists:
+			/* note: if the schema notion is not supported by this DBMS, the column "dbname" is ignored. */
+			boolean hasDBName = supportsSchema && isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), DB_NAME_COLUMN, connection.getMetaData());
+
 			// Build the SQL query:
 			StringBuffer sqlBuf = new StringBuffer("SELECT ");
 			sqlBuf.append(translator.getColumnName(tableDef.getColumn("schema_name")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
-			sqlBuf.append(" FROM ").append(translator.getQualifiedTableName(tableDef)).append(';');
+			if (hasDBName)
+				sqlBuf.append(", ").append(DB_NAME_COLUMN);
+			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
 
 			// Create all schemas:
 			while(rs.next()){
-				String schemaName = rs.getString(1), description = rs.getString(2), utype = rs.getString(3);
+				String schemaName = rs.getString(1), description = rs.getString(2), utype = rs.getString(3), dbName = (hasDBName ? rs.getString(4) : null);
 
 				// create the new schema:
 				TAPSchema newSchema = new TAPSchema(schemaName, nullifyIfNeeded(description), nullifyIfNeeded(utype));
-
-				// If schemas are not supported by the DBMS connection, the schema must not be translated in the DB:
-				if (!supportsSchema)
-					newSchema.setDBName(null);
+				newSchema.setDBName(dbName);
 
 				// add the new schema inside the given metadata:
 				metadata.addSchema(newSchema);
@@ -586,6 +586,9 @@ public class JDBCConnection implements DBConnection {
 	protected List<TAPTable> loadTables(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
 		ResultSet rs = null;
 		try{
+			// Determine whether the dbName column exists:
+			boolean hasDBName = isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), DB_NAME_COLUMN, connection.getMetaData());
+
 			// Build the SQL query:
 			StringBuffer sqlBuf = new StringBuffer("SELECT ");
 			sqlBuf.append(translator.getColumnName(tableDef.getColumn("schema_name")));
@@ -593,7 +596,9 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("table_type")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
-			sqlBuf.append(" FROM ").append(translator.getQualifiedTableName(tableDef)).append(';');
+			if (hasDBName)
+				sqlBuf.append(", ").append(DB_NAME_COLUMN);
+			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
@@ -601,7 +606,7 @@ public class JDBCConnection implements DBConnection {
 			// Create all tables:
 			ArrayList<TAPTable> lstTables = new ArrayList<TAPTable>();
 			while(rs.next()){
-				String schemaName = rs.getString(1), tableName = rs.getString(2), typeStr = rs.getString(3), description = rs.getString(4), utype = rs.getString(5);
+				String schemaName = rs.getString(1), tableName = rs.getString(2), typeStr = rs.getString(3), description = rs.getString(4), utype = rs.getString(5), dbName = (hasDBName ? rs.getString(6) : null);
 
 				// get the schema:
 				TAPSchema schema = metadata.getSchema(schemaName);
@@ -609,6 +614,19 @@ public class JDBCConnection implements DBConnection {
 					if (logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the schema of the table \"" + tableName + "\": \"" + schemaName + "\"!", null);
 					throw new DBException("Impossible to find the schema of the table \"" + tableName + "\": \"" + schemaName + "\"!");
+				}
+
+				// If the table name is qualified, check its prefix (it must match to the schema name):
+				int endPrefix = tableName.indexOf('.');
+				if (endPrefix >= 0){
+					if (endPrefix == 0)
+						throw new DBException("Incorrect table name syntax: \"" + tableName + "\"! Missing schema name (before '.').");
+					else if (endPrefix == tableName.length() - 1)
+						throw new DBException("Incorrect table name syntax: \"" + tableName + "\"! Missing table name (after '.').");
+					else if (schemaName == null)
+						throw new DBException("Incorrect schema prefix for the table \"" + tableName.substring(endPrefix + 1) + "\": this table is not in a schema, according to the column \"schema_name\" of TAP_SCHEMA.tables!");
+					else if (!tableName.substring(0, endPrefix).trim().equalsIgnoreCase(schemaName))
+						throw new DBException("Incorrect schema prefix for the table \"" + schemaName + "." + tableName.substring(tableName.indexOf('.') + 1) + "\": " + tableName + "! Mismatch between the schema specified in prefix of the column \"table_name\" and in the column \"schema_name\".");
 				}
 
 				// resolve the table type (if any) ; by default, it will be "table":
@@ -621,10 +639,7 @@ public class JDBCConnection implements DBConnection {
 
 				// create the new table:
 				TAPTable newTable = new TAPTable(tableName, type, nullifyIfNeeded(description), nullifyIfNeeded(utype));
-
-				// If schemas are not supported by the DBMS connection, the DB table name must be prefixed by the schema name:
-				if (!supportsSchema)
-					newTable.setDBName(getTablePrefix(schema.getADQLName()) + newTable.getDBName());
+				newTable.setDBName(dbName);
 
 				// add the new table inside its corresponding schema:
 				schema.addTable(newTable);
@@ -658,6 +673,9 @@ public class JDBCConnection implements DBConnection {
 	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException{
 		ResultSet rs = null;
 		try{
+			// Determine whether the dbName column exists:
+			boolean hasDBName = isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), DB_NAME_COLUMN, connection.getMetaData());
+
 			// Build the SQL query:
 			StringBuffer sqlBuf = new StringBuffer("SELECT ");
 			sqlBuf.append(translator.getColumnName(tableDef.getColumn("table_name")));
@@ -671,14 +689,16 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("principal")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("indexed")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("std")));
-			sqlBuf.append(" FROM ").append(translator.getQualifiedTableName(tableDef)).append(';');
+			if (hasDBName)
+				sqlBuf.append(", ").append(DB_NAME_COLUMN);
+			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
 
 			// Create all tables:
 			while(rs.next()){
-				String tableName = rs.getString(1), columnName = rs.getString(2), description = rs.getString(3), unit = rs.getString(4), ucd = rs.getString(5), utype = rs.getString(6), datatype = rs.getString(7);
+				String tableName = rs.getString(1), columnName = rs.getString(2), description = rs.getString(3), unit = rs.getString(4), ucd = rs.getString(5), utype = rs.getString(6), datatype = rs.getString(7), dbName = (hasDBName ? rs.getString(12) : null);
 				int size = rs.getInt(8);
 				boolean principal = toBoolean(rs.getObject(9)), indexed = toBoolean(rs.getObject(10)), std = toBoolean(rs.getObject(11));
 
@@ -710,6 +730,7 @@ public class JDBCConnection implements DBConnection {
 				newColumn.setPrincipal(principal);
 				newColumn.setIndexed(indexed);
 				newColumn.setStd(std);
+				newColumn.setDBName(dbName);
 
 				// add the new column inside its corresponding table:
 				table.addColumn(newColumn);
@@ -747,7 +768,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(translator.getColumnName(keyColumnsDef.getColumn("key_id")));
 			sqlBuf.append(", ").append(translator.getColumnName(keyColumnsDef.getColumn("from_column")));
 			sqlBuf.append(", ").append(translator.getColumnName(keyColumnsDef.getColumn("target_column")));
-			sqlBuf.append(" FROM ").append(translator.getQualifiedTableName(keyColumnsDef));
+			sqlBuf.append(" FROM ").append(translator.getTableName(keyColumnsDef, supportsSchema));
 			sqlBuf.append(" WHERE ").append(translator.getColumnName(keyColumnsDef.getColumn("key_id"))).append(" = ?").append(';');
 			keyColumnsStmt = connection.prepareStatement(sqlBuf.toString());
 
@@ -758,7 +779,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(keysDef.getColumn("target_table")));
 			sqlBuf.append(", ").append(translator.getColumnName(keysDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(keysDef.getColumn("utype")));
-			sqlBuf.append(" FROM ").append(translator.getQualifiedTableName(keysDef)).append(';');
+			sqlBuf.append(" FROM ").append(translator.getTableName(keysDef, supportsSchema)).append(';');
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
@@ -953,12 +974,7 @@ public class JDBCConnection implements DBConnection {
 		if (tapSchema == null){
 
 			// build a new TAP_SCHEMA definition based on the standard definition:
-			tapSchema = TAPMetadata.getStdSchema();
-
-			/* if the schemas are not supported with this DBMS,
-			 * remove its DB name: */
-			if (!supportsSchema)
-				tapSchema.setDBName(null);
+			tapSchema = TAPMetadata.getStdSchema(supportsSchema);
 
 			// add the new TAP_SCHEMA definition in the given metadata object:
 			metadata.addSchema(tapSchema);
@@ -970,10 +986,8 @@ public class JDBCConnection implements DBConnection {
 
 			// CASE: no custom definition:
 			if (customStdTables[i] == null){
-				/* if the schemas are not supported with this DBMS,
-				 * prefix the DB name with "tap_schema_": */
 				if (!supportsSchema)
-					stdTables[i].setDBName(getTablePrefix(tapSchema.getADQLName()) + stdTables[i].getDBName());
+					stdTables[i].setDBName(STDSchema.TAPSCHEMA.label + "_" + stdTables[i].getADQLName());
 				// add the table to the fetched or built-in schema:
 				tapSchema.addTable(stdTables[i]);
 			}
@@ -1003,7 +1017,7 @@ public class JDBCConnection implements DBConnection {
 		DatabaseMetaData dbMeta = connection.getMetaData();
 
 		// 1. Get the qualified DB schema name:
-		String dbSchemaName = stdTables[0].getDBSchemaName();
+		String dbSchemaName = (supportsSchema ? stdTables[0].getDBSchemaName() : null);
 
 		/* 2. Test whether the schema TAP_SCHEMA exists
 		 *    and if it does not, create it: */
@@ -1080,6 +1094,11 @@ public class JDBCConnection implements DBConnection {
 	 * 	this function will do nothing and will throw an exception.
 	 * </i></p>
 	 * 
+	 * <p><i>Note:
+	 * 	An extra column is added in TAP_SCHEMA.schemas, TAP_SCHEMA.tables and TAP_SCHEMA.columns: {@value #DB_NAME_COLUMN}.
+	 * 	This column is particularly used when getting the TAP metadata from the database to alias some schema, table and/or column names in ADQL. 
+	 * </i></p>
+	 * 
 	 * @param table	Table to create.
 	 * @param stmt	Statement to use in order to interact with the database.
 	 * 
@@ -1095,7 +1114,7 @@ public class JDBCConnection implements DBConnection {
 		StringBuffer sql = new StringBuffer("CREATE TABLE ");
 
 		// a. Write the fully qualified table name:
-		sql.append(translator.getQualifiedTableName(table));
+		sql.append(translator.getTableName(table, supportsSchema));
 
 		// b. List all the columns:
 		sql.append('(');
@@ -1113,6 +1132,10 @@ public class JDBCConnection implements DBConnection {
 			if (it.hasNext())
 				sql.append(',');
 		}
+
+		// b bis. Add the extra dbName column (giving the database name of a schema, table or column): 
+		if ((supportsSchema && table.getADQLName().equalsIgnoreCase(STDTable.SCHEMAS.label)) || table.getADQLName().equalsIgnoreCase(STDTable.TABLES.label) || table.getADQLName().equalsIgnoreCase(STDTable.COLUMNS.label))
+			sql.append(',').append(DB_NAME_COLUMN).append(" VARCHAR");
 
 		// c. Append the primary key definition, if needed:
 		String primaryKey = getPrimaryKeyDef(table.getADQLName());
@@ -1179,7 +1202,7 @@ public class JDBCConnection implements DBConnection {
 			throw new DBException("Forbidden index creation: " + table + " is not a standard table of TAP_SCHEMA!");
 
 		// Build the fully qualified DB name of the table: 
-		final String dbTableName = translator.getQualifiedTableName(table);
+		final String dbTableName = translator.getTableName(table, supportsSchema);
 
 		// Build the name prefix of all the indexes to create: 
 		final String indexNamePrefix = "INDEX_" + ((table.getADQLSchemaName() != null) ? (table.getADQLSchemaName() + "_") : "") + table.getADQLName() + "_";
@@ -1268,11 +1291,15 @@ public class JDBCConnection implements DBConnection {
 
 		// Build the SQL update query:
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
-		sql.append(translator.getQualifiedTableName(metaTable)).append(" (");
+		sql.append(translator.getTableName(metaTable, supportsSchema)).append(" (");
 		sql.append(translator.getColumnName(metaTable.getColumn("schema_name")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("description")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("utype")));
-		sql.append(") VALUES (?, ?, ?);");
+		if (supportsSchema){
+			sql.append(", ").append(DB_NAME_COLUMN);
+			sql.append(") VALUES (?, ?, ?, ?);");
+		}else
+			sql.append(") VALUES (?, ?, ?);");
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
@@ -1292,6 +1319,8 @@ public class JDBCConnection implements DBConnection {
 				stmt.setString(1, schema.getADQLName());
 				stmt.setString(2, schema.getDescription());
 				stmt.setString(3, schema.getUtype());
+				if (supportsSchema)
+					stmt.setString(4, (schema.getDBName() == null || schema.getDBName().equals(schema.getADQLName())) ? null : schema.getDBName());
 				executeUpdate(stmt, nbRows);
 			}
 			executeBatchUpdates(stmt, nbRows);
@@ -1323,13 +1352,14 @@ public class JDBCConnection implements DBConnection {
 
 		// Build the SQL update query:
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
-		sql.append(translator.getQualifiedTableName(metaTable)).append(" (");
+		sql.append(translator.getTableName(metaTable, supportsSchema)).append(" (");
 		sql.append(translator.getColumnName(metaTable.getColumn("schema_name")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("table_name")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("table_type")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("description")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("utype")));
-		sql.append(") VALUES (?, ?, ?, ?, ?);");
+		sql.append(", ").append(DB_NAME_COLUMN);
+		sql.append(") VALUES (?, ?, ?, ?, ?, ?);");
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
@@ -1347,10 +1377,14 @@ public class JDBCConnection implements DBConnection {
 
 				// add the table entry into the DB:
 				stmt.setString(1, table.getADQLSchemaName());
-				stmt.setString(2, table.getADQLName());
+				if (table.isInitiallyQualified())
+					stmt.setString(2, table.getADQLSchemaName() + "." + table.getADQLName());
+				else
+					stmt.setString(2, table.getADQLName());
 				stmt.setString(3, table.getType().toString());
 				stmt.setString(4, table.getDescription());
 				stmt.setString(5, table.getUtype());
+				stmt.setString(6, (table.getDBName() == null || table.getDBName().equals(table.getADQLName())) ? null : table.getDBName());
 				executeUpdate(stmt, nbRows);
 			}
 			executeBatchUpdates(stmt, nbRows);
@@ -1382,7 +1416,7 @@ public class JDBCConnection implements DBConnection {
 
 		// Build the SQL update query:
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
-		sql.append(translator.getQualifiedTableName(metaTable)).append(" (");
+		sql.append(translator.getTableName(metaTable, supportsSchema)).append(" (");
 		sql.append(translator.getColumnName(metaTable.getColumn("table_name")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("column_name")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("description")));
@@ -1394,7 +1428,8 @@ public class JDBCConnection implements DBConnection {
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("principal")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("indexed")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("std")));
-		sql.append(") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+		sql.append(", ").append(DB_NAME_COLUMN);
+		sql.append(") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
@@ -1411,7 +1446,10 @@ public class JDBCConnection implements DBConnection {
 				appendAllInto(allKeys, col.getTargets());
 
 				// add the column entry into the DB:
-				stmt.setString(1, col.getTable().getADQLName());
+				if (!(col.getTable() instanceof TAPTable) || ((TAPTable)col.getTable()).isInitiallyQualified())
+					stmt.setString(1, col.getTable().getADQLSchemaName() + "." + col.getTable().getADQLName());
+				else
+					stmt.setString(1, col.getTable().getADQLName());
 				stmt.setString(2, col.getADQLName());
 				stmt.setString(3, col.getDescription());
 				stmt.setString(4, col.getUnit());
@@ -1422,6 +1460,7 @@ public class JDBCConnection implements DBConnection {
 				stmt.setInt(9, col.isPrincipal() ? 1 : 0);
 				stmt.setInt(10, col.isIndexed() ? 1 : 0);
 				stmt.setInt(11, col.isStd() ? 1 : 0);
+				stmt.setString(12, (col.getDBName() == null || col.getDBName().equals(col.getADQLName())) ? null : col.getDBName());
 				executeUpdate(stmt, nbRows);
 			}
 			executeBatchUpdates(stmt, nbRows);
@@ -1450,7 +1489,7 @@ public class JDBCConnection implements DBConnection {
 	private void fillKeys(final TAPTable metaKeys, final TAPTable metaKeyColumns, final Iterator<TAPForeignKey> itKeys) throws SQLException, DBException{
 		// Build the SQL update query for KEYS:
 		StringBuffer sqlKeys = new StringBuffer("INSERT INTO ");
-		sqlKeys.append(translator.getQualifiedTableName(metaKeys)).append(" (");
+		sqlKeys.append(translator.getTableName(metaKeys, supportsSchema)).append(" (");
 		sqlKeys.append(translator.getColumnName(metaKeys.getColumn("key_id")));
 		sqlKeys.append(", ").append(translator.getColumnName(metaKeys.getColumn("from_table")));
 		sqlKeys.append(", ").append(translator.getColumnName(metaKeys.getColumn("target_table")));
@@ -1465,7 +1504,7 @@ public class JDBCConnection implements DBConnection {
 
 			// Build the SQL update query for KEY_COLUMNS:
 			StringBuffer sqlKeyCols = new StringBuffer("INSERT INTO ");
-			sqlKeyCols.append(translator.getQualifiedTableName(metaKeyColumns)).append(" (");
+			sqlKeyCols.append(translator.getTableName(metaKeyColumns, supportsSchema)).append(" (");
 			sqlKeyCols.append(translator.getColumnName(metaKeyColumns.getColumn("key_id")));
 			sqlKeyCols.append(", ").append(translator.getColumnName(metaKeyColumns.getColumn("from_column")));
 			sqlKeyCols.append(", ").append(translator.getColumnName(metaKeyColumns.getColumn("target_column")));
@@ -1482,8 +1521,14 @@ public class JDBCConnection implements DBConnection {
 
 				// add the key entry into KEYS:
 				stmtKeys.setString(1, key.getKeyId());
-				stmtKeys.setString(2, key.getFromTable().getFullName());
-				stmtKeys.setString(3, key.getTargetTable().getFullName());
+				if (key.getFromTable().isInitiallyQualified())
+					stmtKeys.setString(2, key.getFromTable().getADQLSchemaName() + "." + key.getFromTable().getADQLName());
+				else
+					stmtKeys.setString(2, key.getFromTable().getADQLName());
+				if (key.getTargetTable().isInitiallyQualified())
+					stmtKeys.setString(3, key.getTargetTable().getADQLSchemaName() + "." + key.getTargetTable().getADQLName());
+				else
+					stmtKeys.setString(3, key.getTargetTable().getADQLName());
 				stmtKeys.setString(4, key.getDescription());
 				stmtKeys.setString(5, key.getUtype());
 				executeUpdate(stmtKeys, nbKeys);
@@ -1558,7 +1603,7 @@ public class JDBCConnection implements DBConnection {
 			}
 			// 1bis. Ensure the table does not already exist and if it is the case, throw an understandable exception:
 			else if (isTableExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), dbMeta)){
-				DBException de = new DBException("Impossible to create the user uploaded table in the database: " + translator.getQualifiedTableName(tableDef) + "! This table already exists.");
+				DBException de = new DBException("Impossible to create the user uploaded table in the database: " + translator.getTableName(tableDef, supportsSchema) + "! This table already exists.");
 				if (logger != null)
 					logger.logDB(LogLevel.ERROR, this, "ADD_UPLOAD_TABLE", de.getMessage(), de);
 				throw de;
@@ -1567,7 +1612,7 @@ public class JDBCConnection implements DBConnection {
 			// 2. Create the table:
 			// ...build the SQL query:
 			StringBuffer sqlBuf = new StringBuffer("CREATE TABLE ");
-			sqlBuf.append(translator.getQualifiedTableName(tableDef)).append(" (");
+			sqlBuf.append(translator.getTableName(tableDef, supportsSchema)).append(" (");
 			Iterator<TAPColumn> it = tableDef.getColumns();
 			while(it.hasNext()){
 				TAPColumn col = it.next();
@@ -1591,15 +1636,15 @@ public class JDBCConnection implements DBConnection {
 
 			// Log the end:
 			if (logger != null)
-				logger.logDB(LogLevel.INFO, this, "TABLE_CREATED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") created.", null);
+				logger.logDB(LogLevel.INFO, this, "TABLE_CREATED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") created.", null);
 
 			return true;
 
 		}catch(SQLException se){
 			rollback();
 			if (logger != null)
-				logger.logDB(LogLevel.WARNING, this, "ADD_UPLOAD_TABLE", "Impossible to create the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
-			throw new DBException("Impossible to create the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
+				logger.logDB(LogLevel.WARNING, this, "ADD_UPLOAD_TABLE", "Impossible to create the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
+			throw new DBException("Impossible to create the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 		}catch(DBException de){
 			rollback();
 			throw de;
@@ -1638,7 +1683,7 @@ public class JDBCConnection implements DBConnection {
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
 		StringBuffer varParam = new StringBuffer();
 		// ...table name:
-		sql.append(translator.getQualifiedTableName(metaTable)).append(" (");
+		sql.append(translator.getTableName(metaTable, supportsSchema)).append(" (");
 		// ...list of columns:
 		TAPColumn[] cols = data.getMetadata();
 		for(int c = 0; c < cols.length; c++){
@@ -1744,23 +1789,23 @@ public class JDBCConnection implements DBConnection {
 
 			// Execute the update:
 			stmt = connection.createStatement();
-			int cnt = stmt.executeUpdate("DROP TABLE " + translator.getQualifiedTableName(tableDef) + ";");
+			int cnt = stmt.executeUpdate("DROP TABLE " + translator.getTableName(tableDef, supportsSchema) + ";");
 
 			// Log the end:
 			if (logger != null){
-				if (cnt == 0)
-					logger.logDB(LogLevel.INFO, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") dropped.", null);
+				if (cnt >= 0)
+					logger.logDB(LogLevel.INFO, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") dropped.", null);
 				else
-					logger.logDB(LogLevel.ERROR, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getQualifiedTableName(tableDef) + ") NOT dropped.", null);
+					logger.logDB(LogLevel.ERROR, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") NOT dropped.", null);
 			}
 
 			// Ensure the update is successful:
-			return (cnt == 0);
+			return (cnt >= 0);
 
 		}catch(SQLException se){
 			if (logger != null)
-				logger.logDB(LogLevel.WARNING, this, "DROP_UPLOAD_TABLE", "Impossible to drop the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
-			throw new DBException("Impossible to drop the uploaded table: " + translator.getQualifiedTableName(tableDef) + "!", se);
+				logger.logDB(LogLevel.WARNING, this, "DROP_UPLOAD_TABLE", "Impossible to drop the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
+			throw new DBException("Impossible to drop the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 		}finally{
 			close(stmt);
 		}
@@ -1792,10 +1837,11 @@ public class JDBCConnection implements DBConnection {
 		if (tableDef.getSchema() == null || !tableDef.getSchema().getADQLName().equals(STDSchema.UPLOADSCHEMA.label))
 			throw new DBException("Missing upload schema! An uploaded table must be inside a schema whose the ADQL name is strictly equals to \"" + STDSchema.UPLOADSCHEMA.label + "\" (but the DB name may be different).");
 
-		// If schemas are not supported, prefix the table name and set to NULL the DB schema name:
-		if (!supportsSchema && tableDef.getDBSchemaName() != null){
-			tableDef.setDBName(getTablePrefix(tableDef.getDBSchemaName()) + tableDef.getDBName());
-			tableDef.getSchema().setDBName(null);
+		if (!supportsSchema){
+			if (tableDef.getADQLSchemaName() != null && tableDef.getADQLSchemaName().trim().length() > 0 && !tableDef.getDBName().startsWith(tableDef.getADQLSchemaName() + "_"))
+				tableDef.setDBName(tableDef.getADQLSchemaName() + "_" + tableDef.getDBName());
+			if (tableDef.getSchema() != null)
+				tableDef.getSchema().setDBName(null);
 		}
 	}
 
@@ -2156,7 +2202,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Return NULL if the given column value is an empty string (or it just contains space characters) or NULL.
-	 * Otherwise the given given is returned as provided.
+	 * Otherwise the given string is returned as provided.
 	 * 
 	 * @param dbValue	Value to nullify if needed.
 	 * 
@@ -2226,7 +2272,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws SQLException	If any error occurs while interrogating the database about existing schema.
 	 */
 	protected boolean isSchemaExisting(String schemaName, final DatabaseMetaData dbMeta) throws SQLException{
-		if (schemaName == null || schemaName.length() == 0)
+		if (!supportsSchema || schemaName == null || schemaName.length() == 0)
 			return true;
 
 		// Determine the case sensitivity to use for the equality test:
@@ -2282,9 +2328,6 @@ public class JDBCConnection implements DBConnection {
 
 		ResultSet rs = null;
 		try{
-			// Prefix the table name by the schema name if needed (if schemas are not supported by this connection):
-			if (!supportsSchema)
-				tableName = getTablePrefix(schemaName) + tableName;
 
 			// List all matching tables:
 			if (supportsSchema){
@@ -2321,6 +2364,103 @@ public class JDBCConnection implements DBConnection {
 	}
 
 	/**
+	 * <p>Tell whether the specified column exists in the specified table of the database.
+	 * 	To do so, it is using the given {@link DatabaseMetaData} object to query the database and list all existing columns.</p>
+	 * 
+	 * <p><i><b>Important note:</b>
+	 * 	If schemas are not supported by this connection but a schema name is even though provided in parameter,
+	 * 	the table name will be prefixed by the schema name using {@link #getTablePrefix(String)}.
+	 * 	The research will then be done with NULL as schema name and this prefixed table name.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	Test on the schema name is done considering the case sensitivity indicated by the translator
+	 * 	(see {@link ADQLTranslator#isCaseSensitive(IdentifierField)}).
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function is used by {@link #loadSchemas(TAPTable, TAPMetadata, Statement)}, {@link #loadTables(TAPTable, TAPMetadata, Statement)}
+	 * 	and {@link #loadColumns(TAPTable, List, Statement)}.
+	 * </i></p>
+	 * 
+	 * @param schemaName	DB name of the table schema. <i>MAY BE NULL</i>
+	 * @param tableName		DB name of the table containing the column to search. <i>MAY BE NULL</i>
+	 * @param columnName	DB name of the column to search.
+	 * @param dbMeta		Metadata about the database, and mainly the list of all existing tables.
+	 * 
+	 * @return	<i>true</i> if the specified column exists, <i>false</i> otherwise.
+	 * 
+	 * @throws SQLException	If any error occurs while interrogating the database about existing columns.
+	 */
+	protected boolean isColumnExisting(String schemaName, String tableName, String columnName, final DatabaseMetaData dbMeta) throws DBException, SQLException{
+		if (columnName == null || columnName.length() == 0)
+			return true;
+
+		// Determine the case sensitivity to use for the equality test:
+		boolean schemaCaseSensitive = translator.isCaseSensitive(IdentifierField.SCHEMA);
+		boolean tableCaseSensitive = translator.isCaseSensitive(IdentifierField.TABLE);
+		boolean columnCaseSensitive = translator.isCaseSensitive(IdentifierField.COLUMN);
+
+		ResultSet rsT = null, rsC = null;
+		try{
+			/* Note:
+			 * 
+			 *     The DatabaseMetaData.getColumns(....) function does not work properly
+			 * with the SQLite driver: when all parameters are set to null, meaning all columns of the database
+			 * must be returned, absolutely no rows are selected.
+			 * 
+			 *     The solution proposed here, is to first search all (matching) tables, and then for each table get
+			 * all its columns and find the matching one(s).
+			 */
+
+			// List all matching tables:
+			if (supportsSchema){
+				String schemaPattern = schemaCaseSensitive ? schemaName : null;
+				String tablePattern = tableCaseSensitive ? tableName : null;
+				rsT = dbMeta.getTables(null, schemaPattern, tablePattern, null);
+			}else{
+				String tablePattern = tableCaseSensitive ? tableName : null;
+				rsT = dbMeta.getTables(null, null, tablePattern, null);
+			}
+
+			// For each matching table:
+			int cnt = 0;
+			String columnPattern = columnCaseSensitive ? columnName : null;
+			while(rsT.next()){
+				String rsSchema = nullifyIfNeeded(rsT.getString(2));
+				String rsTable = rsT.getString(3);
+				// test the schema name:
+				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)){
+					// test the table name:
+					if ((tableName == null || equals(rsTable, tableName, tableCaseSensitive))){
+						// list its columns:
+						rsC = dbMeta.getColumns(null, rsSchema, rsTable, columnPattern);
+						// count all matching columns:
+						while(rsC.next()){
+							String rsColumn = rsC.getString(4);
+							if (equals(rsColumn, columnName, columnCaseSensitive))
+								cnt++;
+						}
+						close(rsC);
+					}
+				}
+			}
+
+			if (cnt > 1){
+				if (logger != null)
+					logger.logDB(LogLevel.ERROR, this, "COLUMN_EXIST", "More than one column match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + ") && column=" + columnName + " (case sensitive?" + columnCaseSensitive + "))!", null);
+				throw new DBException("More than one column match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + ") && column=" + columnName + " (case sensitive?" + columnCaseSensitive + "))!");
+			}
+
+			return cnt == 1;
+
+		}finally{
+			close(rsT);
+			close(rsC);
+		}
+	}
+
+	/*
 	 * <p>Build a table prefix with the given schema name.</p>
 	 * 
 	 * <p>By default, this function returns: schemaName + "_".</p>
@@ -2339,13 +2479,13 @@ public class JDBCConnection implements DBConnection {
 	 * @param schemaName	(DB) Schema name.
 	 * 
 	 * @return	The corresponding table prefix, or "" if the given schema name is an empty string or NULL.
-	 */
+	 *
 	protected String getTablePrefix(final String schemaName){
 		if (schemaName != null && schemaName.trim().length() > 0)
 			return schemaName + "_";
 		else
 			return "";
-	}
+	}*/
 
 	/**
 	 * Tell whether the specified table (using its DB name only) is a standard one or not.

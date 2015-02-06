@@ -46,6 +46,7 @@ public interface TAPLog extends UWSLog {
 	 * 	<li>CLEAN_TAP_SCHEMA</li>
 	 * 	<li>CREATE_TAP_SCHEMA</li>
 	 * 	<li>TABLE_EXIST</li>
+	 * 	<li>COLUMN_EXIST</li>
 	 * 	<li>EXEC_UPDATE</li>
 	 * 	<li>ADD_UPLOAD_TABLE</li>
 	 * 	<li>DROP_UPLOAD_TABLE</li>

@@ -569,11 +569,11 @@ public class VOTableFormat implements OutputFormat {
 				return isScalar ? Boolean.class : boolean[].class;
 			case DOUBLE:
 				return isScalar ? Double.class : double[].class;
-			case DOUBLE_COMPLEX:
+			case DOUBLECOMPLEX:
 				return double[].class;
 			case FLOAT:
 				return isScalar ? Float.class : float[].class;
-			case FLOAT_COMPLEX:
+			case FLOATCOMPLEX:
 				return float[].class;
 			case INT:
 				return isScalar ? Integer.class : int[].class;
@@ -581,10 +581,10 @@ public class VOTableFormat implements OutputFormat {
 				return isScalar ? Long.class : long[].class;
 			case SHORT:
 				return isScalar ? Short.class : short[].class;
-			case UNSIGNED_BYTE:
+			case UNSIGNEDBYTE:
 				return isScalar ? Short.class : short[].class;
 			case CHAR:
-			case UNICODE_CHAR:
+			case UNICODECHAR:
 			default: /* If the type is not know (theoretically, never happens), return char[*] by default. */
 				return isScalar ? Character.class : String.class;
 		}

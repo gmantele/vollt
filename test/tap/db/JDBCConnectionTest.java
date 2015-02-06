@@ -98,7 +98,7 @@ public class JDBCConnectionTest {
 			TAPMetadata meta = createCustomSchema();
 			TAPTable customColumns = meta.getTable(STDSchema.TAPSCHEMA.toString(), STDTable.COLUMNS.toString());
 			TAPTable[] tapTables = conn.mergeTAPSchemaDefs(meta);
-			TAPSchema stdSchema = TAPMetadata.getStdSchema();
+			TAPSchema stdSchema = TAPMetadata.getStdSchema(conn.supportsSchema);
 			assertEquals(5, tapTables.length);
 			assertTrue(equals(tapTables[0], stdSchema.getTable(STDTable.SCHEMAS.label)));
 			assertEquals(customColumns.getSchema(), tapTables[0].getSchema());
@@ -340,25 +340,62 @@ public class JDBCConnectionTest {
 				// Prepare the test:
 				createTAPSchema(conn);
 				// Test the existence of all TAP_SCHEMA tables:
-				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.SCHEMAS.label, dbMeta));
-				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.TABLES.label, dbMeta));
-				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.COLUMNS.label, dbMeta));
-				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.KEYS.label, dbMeta));
-				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.KEY_COLUMNS.label, dbMeta));
+				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.SCHEMAS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.SCHEMAS.label), dbMeta));
+				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.TABLES.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.TABLES.label), dbMeta));
+				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.COLUMNS.label), dbMeta));
+				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEYS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEYS.label), dbMeta));
+				assertTrue(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEY_COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEY_COLUMNS.label), dbMeta));
 				// Test the non-existence of any other table:
 				assertFalse(conn.isTableExisting(null, "foo", dbMeta));
 
 				// Prepare the test:
 				dropSchema(STDSchema.TAPSCHEMA.label, conn);
 				// Test the non-existence of all TAP_SCHEMA tables:
-				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.SCHEMAS.label, dbMeta));
-				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.TABLES.label, dbMeta));
-				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.COLUMNS.label, dbMeta));
-				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.KEYS.label, dbMeta));
-				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, STDTable.KEY_COLUMNS.label, dbMeta));
+				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.SCHEMAS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.SCHEMAS.label), dbMeta));
+				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.TABLES.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.TABLES.label), dbMeta));
+				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.COLUMNS.label), dbMeta));
+				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEYS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEYS.label), dbMeta));
+				assertFalse(conn.isTableExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEY_COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEY_COLUMNS.label), dbMeta));
 			}catch(Exception ex){
 				ex.printStackTrace(System.err);
 				fail("{" + conn.getID() + "} Testing the existence of a table should not throw an error!");
+			}
+		}
+	}
+
+	@Test
+	public void testIsColumnExisting(){
+		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
+		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
+		int i = -1;
+		for(JDBCConnection conn : connections){
+			i++;
+			try{
+				// Get the database metadata:
+				DatabaseMetaData dbMeta = conn.connection.getMetaData();
+
+				// Prepare the test:
+				createTAPSchema(conn);
+				// Test the existence of one column for all TAP_SCHEMA tables:
+				assertTrue(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.SCHEMAS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.SCHEMAS.label), "schema_name", dbMeta));
+				assertTrue(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.TABLES.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.TABLES.label), "table_name", dbMeta));
+				assertTrue(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.COLUMNS.label), "column_name", dbMeta));
+				assertTrue(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEYS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEYS.label), "key_id", dbMeta));
+				assertTrue(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEY_COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEY_COLUMNS.label), "key_id", dbMeta));
+				// Test the non-existence of any column:
+				assertFalse(conn.isColumnExisting(null, null, "foo", dbMeta));
+
+				// Prepare the test:
+				dropSchema(STDSchema.TAPSCHEMA.label, conn);
+				// Test the non-existence of the same column for all TAP_SCHEMA tables:
+				assertFalse(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.SCHEMAS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.SCHEMAS.label), "schema_name", dbMeta));
+				assertFalse(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.TABLES.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.TABLES.label), "table_name", dbMeta));
+				assertFalse(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.COLUMNS.label), "column_name", dbMeta));
+				assertFalse(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEYS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEYS.label), "key_id", dbMeta));
+				assertFalse(conn.isColumnExisting(STDSchema.TAPSCHEMA.label, (conn.supportsSchema ? STDTable.KEY_COLUMNS.label : STDSchema.TAPSCHEMA.label + "_" + STDTable.KEY_COLUMNS.label), "key_id", dbMeta));
+			}catch(Exception ex){
+				ex.printStackTrace(System.err);
+				fail("{" + conn.getID() + "} Testing the existence of a column should not throw an error!");
 			}
 		}
 	}
@@ -427,7 +464,7 @@ public class JDBCConnectionTest {
 					assertFalse(conn.addUploadedTable(tableDef, it));
 				}catch(Exception ex){
 					if (ex instanceof DBException)
-						assertEquals("Impossible to create the user uploaded table in the database: " + conn.translator.getQualifiedTableName(tableDef) + "! This table already exists.", ex.getMessage());
+						assertEquals("Impossible to create the user uploaded table in the database: " + conn.translator.getTableName(tableDef, conn.supportsSchema) + "! This table already exists.", ex.getMessage());
 					else{
 						ex.printStackTrace(System.err);
 						fail("{" + conn.ID + "} DBException was the expected exception!");
@@ -480,24 +517,25 @@ public class JDBCConnectionTest {
 
 	@Test
 	public void testExecuteQuery(){
-		TAPSchema schema = TAPMetadata.getStdSchema();
-		ArrayList<DBTable> tables = new ArrayList<DBTable>(schema.getNbTables());
-		for(TAPTable t : schema)
-			tables.add(t);
-
-		ADQLParser parser = new ADQLParser(new DBChecker(tables));
-		parser.setDebug(false);
-
 		// There should be no difference between a POSTGRESQL connection and a SQLITE one!
 		JDBCConnection[] connections = new JDBCConnection[]{pgJDBCConnection,sensPgJDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
 		for(JDBCConnection conn : connections){
-			if (conn.ID.equalsIgnoreCase("SQLITE")){
+
+			TAPSchema schema = TAPMetadata.getStdSchema(conn.supportsSchema);
+			ArrayList<DBTable> tables = new ArrayList<DBTable>(schema.getNbTables());
+			for(TAPTable t : schema)
+				tables.add(t);
+
+			ADQLParser parser = new ADQLParser(new DBChecker(tables));
+			parser.setDebug(false);
+
+			/*if (conn.ID.equalsIgnoreCase("SQLITE")){
 				for(DBTable t : tables){
 					TAPTable tapT = (TAPTable)t;
 					tapT.getSchema().setDBName(null);
 					tapT.setDBName(tapT.getSchema().getADQLName() + "_" + tapT.getDBName());
 				}
-			}
+			}*/
 
 			TableIterator result = null;
 			try{
@@ -571,6 +609,33 @@ public class JDBCConnectionTest {
 		JDBCConnectionTest.dropSchema(STDSchema.TAPSCHEMA.label, conn);
 	}
 
+	/**
+	 * <p>Build a table prefix with the given schema name.</p>
+	 * 
+	 * <p>By default, this function returns: schemaName + "_".</p>
+	 * 
+	 * <p><b>CAUTION:
+	 * 	This function is used only when schemas are not supported by the DBMS connection.
+	 * 	It aims to propose an alternative of the schema notion by prefixing the table name by the schema name.
+	 * </b></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given schema is NULL or is an empty string, an empty string will be returned.
+	 * 	Thus, no prefix will be set....which is very useful when the table name has already been prefixed
+	 * 	(in such case, the DB name of its schema has theoretically set to NULL).
+	 * </i></p>
+	 * 
+	 * @param schemaName	(DB) Schema name.
+	 * 
+	 * @return	The corresponding table prefix, or "" if the given schema name is an empty string or NULL.
+	 */
+	protected static String getTablePrefix(final String schemaName){
+		if (schemaName != null && schemaName.trim().length() > 0)
+			return schemaName + "_";
+		else
+			return "";
+	}
+
 	private static void dropSchema(final String schemaName, final JDBCConnection conn){
 		Statement stmt = null;
 		ResultSet rs = null;
@@ -582,7 +647,7 @@ public class JDBCConnectionTest {
 				stmt.executeUpdate("DROP SCHEMA IF EXISTS " + formatIdentifier(schemaName, caseSensitive) + " CASCADE;");
 			else{
 				startTransaction(conn);
-				final String tablePrefix = conn.getTablePrefix(schemaName);
+				final String tablePrefix = getTablePrefix(schemaName);
 				final int prefixLen = tablePrefix.length();
 				if (prefixLen <= 0)
 					return;
@@ -621,20 +686,13 @@ public class JDBCConnectionTest {
 			if (conn.supportsSchema)
 				stmt.executeUpdate("DROP TABLE IF EXISTS " + formatIdentifier(schemaName, sCaseSensitive) + "." + formatIdentifier(tableName, tCaseSensitive) + ";");
 			else{
-				final String tablePrefix = conn.getTablePrefix(schemaName);
-				final int prefixLen = tablePrefix.length();
 				rs = conn.connection.getMetaData().getTables(null, null, null, null);
 				String tableToDrop = null;
 				while(rs.next()){
 					String table = rs.getString(3);
-					if (prefixLen <= 0 && equals(tableName, table, tCaseSensitive)){
+					if (equals(tableName, table, tCaseSensitive)){
 						tableToDrop = table;
 						break;
-					}else if (prefixLen > 0 && table.length() > prefixLen){
-						if (equals(schemaName, table.substring(0, prefixLen - 1), sCaseSensitive) && equals(tableName, table.substring(prefixLen + 1), tCaseSensitive)){
-							tableToDrop = table;
-							break;
-						}
 					}
 				}
 				close(rs);
@@ -680,10 +738,10 @@ public class JDBCConnectionTest {
 			final boolean sCaseSensitive = conn.translator.isCaseSensitive(IdentifierField.SCHEMA);
 			final boolean tCaseSensitive = conn.translator.isCaseSensitive(IdentifierField.TABLE);
 			String tablePrefix = formatIdentifier(schemaName, sCaseSensitive);
-			if (tablePrefix == null)
+			if (!conn.supportsSchema || tablePrefix == null)
 				tablePrefix = "";
 			else
-				tablePrefix += (conn.supportsSchema ? "." : "_");
+				tablePrefix += ".";
 			stmt = conn.connection.createStatement();
 			stmt.executeUpdate("CREATE TABLE " + tablePrefix + formatIdentifier(tableName, tCaseSensitive) + " (ID integer);");
 		}catch(Exception ex){
@@ -695,9 +753,10 @@ public class JDBCConnectionTest {
 		}
 	}
 
-	private static void createTAPSchema(final JDBCConnection conn){
+	private static TAPMetadata createTAPSchema(final JDBCConnection conn){
 		dropSchema(STDSchema.TAPSCHEMA.label, conn);
 
+		TAPMetadata metadata = new TAPMetadata();
 		Statement stmt = null;
 		try{
 			final boolean sCaseSensitive = conn.translator.isCaseSensitive(IdentifierField.SCHEMA);
@@ -708,7 +767,7 @@ public class JDBCConnectionTest {
 					tableNames[i] = formatIdentifier(STDSchema.TAPSCHEMA.label, sCaseSensitive) + "." + formatIdentifier(tableNames[i], tCaseSensitive);
 			}else{
 				for(int i = 0; i < tableNames.length; i++)
-					tableNames[i] = formatIdentifier(conn.getTablePrefix(STDSchema.TAPSCHEMA.label) + tableNames[i], tCaseSensitive);
+					tableNames[i] = formatIdentifier(getTablePrefix(STDSchema.TAPSCHEMA.label) + tableNames[i], tCaseSensitive);
 			}
 
 			startTransaction(conn);
@@ -718,13 +777,13 @@ public class JDBCConnectionTest {
 			if (conn.supportsSchema)
 				stmt.executeUpdate("CREATE SCHEMA " + formatIdentifier(STDSchema.TAPSCHEMA.label, sCaseSensitive) + ";");
 
-			stmt.executeUpdate("CREATE TABLE " + tableNames[0] + "(\"schema_name\" VARCHAR,\"description\" VARCHAR,\"utype\" VARCHAR, PRIMARY KEY(\"schema_name\"));");
+			stmt.executeUpdate("CREATE TABLE " + tableNames[0] + "(\"schema_name\" VARCHAR,\"description\" VARCHAR,\"utype\" VARCHAR,\"dbname\" VARCHAR, PRIMARY KEY(\"schema_name\"));");
 			stmt.executeUpdate("DELETE FROM " + tableNames[0] + ";");
 
-			stmt.executeUpdate("CREATE TABLE " + tableNames[1] + "(\"schema_name\" VARCHAR,\"table_name\" VARCHAR,\"table_type\" VARCHAR,\"description\" VARCHAR,\"utype\" VARCHAR, PRIMARY KEY(\"schema_name\", \"table_name\"));");
+			stmt.executeUpdate("CREATE TABLE " + tableNames[1] + "(\"schema_name\" VARCHAR,\"table_name\" VARCHAR,\"table_type\" VARCHAR,\"description\" VARCHAR,\"utype\" VARCHAR,\"dbname\" VARCHAR, PRIMARY KEY(\"schema_name\", \"table_name\"));");
 			stmt.executeUpdate("DELETE FROM " + tableNames[1] + ";");
 
-			stmt.executeUpdate("CREATE TABLE " + tableNames[2] + "(\"table_name\" VARCHAR,\"column_name\" VARCHAR,\"description\" VARCHAR,\"unit\" VARCHAR,\"ucd\" VARCHAR,\"utype\" VARCHAR,\"datatype\" VARCHAR,\"size\" INTEGER,\"principal\" INTEGER,\"indexed\" INTEGER,\"std\" INTEGER, PRIMARY KEY(\"table_name\", \"column_name\"));");
+			stmt.executeUpdate("CREATE TABLE " + tableNames[2] + "(\"table_name\" VARCHAR,\"column_name\" VARCHAR,\"description\" VARCHAR,\"unit\" VARCHAR,\"ucd\" VARCHAR,\"utype\" VARCHAR,\"datatype\" VARCHAR,\"size\" INTEGER,\"principal\" INTEGER,\"indexed\" INTEGER,\"std\" INTEGER,\"dbname\" VARCHAR, PRIMARY KEY(\"table_name\", \"column_name\"));");
 			stmt.executeUpdate("DELETE FROM " + tableNames[2] + ";");
 
 			stmt.executeUpdate("CREATE TABLE " + tableNames[3] + "(\"key_id\" VARCHAR,\"from_table\" VARCHAR,\"target_table\" VARCHAR,\"description\" VARCHAR,\"utype\" VARCHAR, PRIMARY KEY(\"key_id\"));");
@@ -733,19 +792,24 @@ public class JDBCConnectionTest {
 			stmt.executeUpdate("CREATE TABLE " + tableNames[4] + "(\"key_id\" VARCHAR,\"from_column\" VARCHAR,\"target_column\" VARCHAR, PRIMARY KEY(\"key_id\"));");
 			stmt.executeUpdate("DELETE FROM " + tableNames[4] + ";");
 
-			TAPMetadata metadata = new TAPMetadata();
-			metadata.addSchema(TAPMetadata.getStdSchema());
+			/*if (!conn.supportsSchema){
+				TAPSchema stdSchema = TAPMetadata.getStdSchema();
+				for(TAPTable t : stdSchema)
+					t.setDBName(getTablePrefix(STDSchema.TAPSCHEMA.label) + t.getADQLName());
+				metadata.addSchema(stdSchema);
+			}else*/
+			metadata.addSchema(TAPMetadata.getStdSchema(conn.supportsSchema));
 
 			ArrayList<TAPTable> lstTables = new ArrayList<TAPTable>();
 			for(TAPSchema schema : metadata){
-				stmt.executeUpdate("INSERT INTO " + tableNames[0] + " VALUES('" + schema.getADQLName() + "','" + schema.getDescription() + "','" + schema.getUtype() + "')");
+				stmt.executeUpdate("INSERT INTO " + tableNames[0] + " VALUES('" + schema.getADQLName() + "','" + schema.getDescription() + "','" + schema.getUtype() + "','" + schema.getDBName() + "')");
 				for(TAPTable t : schema)
 					lstTables.add(t);
 			}
 
 			ArrayList<DBColumn> lstCols = new ArrayList<DBColumn>();
 			for(TAPTable table : lstTables){
-				stmt.executeUpdate("INSERT INTO " + tableNames[1] + " VALUES('" + table.getADQLSchemaName() + "','" + table.getADQLName() + "','" + table.getType() + "','" + table.getDescription() + "','" + table.getUtype() + "')");
+				stmt.executeUpdate("INSERT INTO " + tableNames[1] + " VALUES('" + table.getADQLSchemaName() + "','" + table.getADQLName() + "','" + table.getType() + "','" + table.getDescription() + "','" + table.getUtype() + "','" + table.getDBName() + "')");
 				for(DBColumn c : table)
 					lstCols.add(c);
 
@@ -754,7 +818,7 @@ public class JDBCConnectionTest {
 
 			for(DBColumn c : lstCols){
 				TAPColumn col = (TAPColumn)c;
-				stmt.executeUpdate("INSERT INTO " + tableNames[2] + " VALUES('" + col.getTable().getADQLName() + "','" + col.getADQLName() + "','" + col.getDescription() + "','" + col.getUnit() + "','" + col.getUcd() + "','" + col.getUtype() + "','" + col.getDatatype().type + "'," + col.getDatatype().length + "," + (col.isPrincipal() ? 1 : 0) + "," + (col.isIndexed() ? 1 : 0) + "," + (col.isStd() ? 1 : 0) + ")");
+				stmt.executeUpdate("INSERT INTO " + tableNames[2] + " VALUES('" + col.getTable().getADQLName() + "','" + col.getADQLName() + "','" + col.getDescription() + "','" + col.getUnit() + "','" + col.getUcd() + "','" + col.getUtype() + "','" + col.getDatatype().type + "'," + col.getDatatype().length + "," + (col.isPrincipal() ? 1 : 0) + "," + (col.isIndexed() ? 1 : 0) + "," + (col.isStd() ? 1 : 0) + ",'" + col.getDBName() + "')");
 			}
 
 			commit(conn);
@@ -766,6 +830,8 @@ public class JDBCConnectionTest {
 		}finally{
 			close(stmt);
 		}
+
+		return metadata;
 	}
 
 	private static void startTransaction(final JDBCConnection conn){
@@ -956,10 +1022,10 @@ public class JDBCConnectionTest {
 			TAPSchema tapSchema = meta.getSchema(STDSchema.TAPSCHEMA.toString());
 
 			String schemaPrefix = formatIdentifier(tapSchema.getDBName(), conn.translator.isCaseSensitive(IdentifierField.SCHEMA));
-			if (schemaPrefix == null)
+			if (!conn.supportsSchema || schemaPrefix == null)
 				schemaPrefix = "";
 			else
-				schemaPrefix += (conn.supportsSchema ? "." : "_");
+				schemaPrefix += ".";
 
 			boolean tCaseSensitive = conn.translator.isCaseSensitive(IdentifierField.TABLE);
 			TAPTable tapTable = tapSchema.getTable(STDTable.SCHEMAS.toString());

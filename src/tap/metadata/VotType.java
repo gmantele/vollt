@@ -20,10 +20,10 @@ package tap.metadata;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import adql.db.DBType;
-import adql.db.DBType.DBDatatype;
 import tap.TAPException;
 import uk.ac.starlink.votable.VOSerializer;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
 /**
  * <p>Describes a full VOTable type. Thus it includes the following field attributes:</p>
@@ -34,18 +34,18 @@ import uk.ac.starlink.votable.VOSerializer;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (02/2015)
  */
 public final class VotType {
 	/**
 	 * All possible values for a VOTable datatype (i.e. boolean, short, char, ...).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
-	 * @version 2.0 (07/2014)
+	 * @version 2.0 (01/2015)
 	 * @since 2.0
 	 */
 	public static enum VotDatatype{
-		BOOLEAN("boolean"), BIT("bit"), UNSIGNED_BYTE("unsignedByte"), SHORT("short"), INT("int"), LONG("long"), CHAR("char"), UNICODE_CHAR("unicodeChar"), FLOAT("float"), DOUBLE("double"), FLOAT_COMPLEX("floatComplex"), DOUBLE_COMPLEX("doubleComplex");
+		BOOLEAN("boolean"), BIT("bit"), UNSIGNEDBYTE("unsignedByte"), SHORT("short"), INT("int"), LONG("long"), CHAR("char"), UNICODECHAR("unicodeChar"), FLOAT("float"), DOUBLE("double"), FLOATCOMPLEX("floatComplex"), DOUBLECOMPLEX("doubleComplex");
 
 		private final String strExpr;
 
@@ -164,7 +164,7 @@ public final class VotType {
 				break;
 
 			case BINARY:
-				this.datatype = VotDatatype.UNSIGNED_BYTE;
+				this.datatype = VotDatatype.UNSIGNEDBYTE;
 				this.arraysize = Integer.toString(tapType.length > 0 ? tapType.length : 1);
 				this.xtype = null;
 				break;
@@ -173,13 +173,13 @@ public final class VotType {
 				/* TODO HOW TO MANAGE VALUES WHICH WHERE ORIGINALLY NUMERIC ARRAYS ?
 				 * (cf the IVOA document TAP#Upload: votable numeric arrays should be converted into VARBINARY...no more array information and particularly the datatype)
 				 */
-				this.datatype = VotDatatype.UNSIGNED_BYTE;
+				this.datatype = VotDatatype.UNSIGNEDBYTE;
 				this.arraysize = (tapType.length > 0 ? tapType.length + "*" : "*");
 				this.xtype = null;
 				break;
 
 			case BLOB:
-				this.datatype = VotDatatype.UNSIGNED_BYTE;
+				this.datatype = VotDatatype.UNSIGNEDBYTE;
 				this.arraysize = "*";
 				this.xtype = VotType.XTYPE_BLOB;
 				break;
@@ -282,7 +282,7 @@ public final class VotType {
 				return convertNumericType(DBDatatype.DOUBLE);
 
 				/* BINARY TYPES */
-			case UNSIGNED_BYTE:
+			case UNSIGNEDBYTE:
 				// BLOB exception:
 				if (xtype != null && xtype.equalsIgnoreCase(XTYPE_BLOB))
 					return new DBType(DBDatatype.BLOB);

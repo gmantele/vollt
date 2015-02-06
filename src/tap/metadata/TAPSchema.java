@@ -21,8 +21,8 @@ package tap.metadata;
  */
 
 import java.awt.List;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import tap.metadata.TAPTable.TableType;
@@ -44,7 +44,7 @@ import tap.metadata.TAPTable.TableType;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (02/2015)
  */
 public class TAPSchema implements Iterable<TAPTable> {
 
@@ -54,6 +54,11 @@ public class TAPSchema implements Iterable<TAPTable> {
 	/** Name that this schema have in the database.
 	 * <i>Note: It MAY be NULL. By default, it is the ADQL name.</i> */
 	private String dbName = null;
+
+	/** Descriptive, human-interpretable name of the schema.
+	 * <i>Note: Standard TAP schema field ; MAY be NULL.</i>
+	 * @since 2.0 */
+	private String title = null;
 
 	/** Description of this schema.
 	 * <i>Note: Standard TAP schema field ; MAY be NULL.</i> */
@@ -92,7 +97,7 @@ public class TAPSchema implements Iterable<TAPTable> {
 		int indPrefix = schemaName.lastIndexOf('.');
 		adqlName = (indPrefix >= 0) ? schemaName.substring(indPrefix + 1).trim() : schemaName.trim();
 		dbName = adqlName;
-		tables = new HashMap<String,TAPTable>();
+		tables = new LinkedHashMap<String,TAPTable>();
 	}
 
 	/**
@@ -176,6 +181,28 @@ public class TAPSchema implements Iterable<TAPTable> {
 	public final void setDBName(String name){
 		name = (name != null) ? name.trim() : name;
 		dbName = name;
+	}
+
+	/**
+	 * Get the title of this schema.
+	 * 
+	 * @return	Its title. <i>MAY be NULL</i>
+	 * 
+	 * @since 2.0
+	 */
+	public final String getTitle(){
+		return title;
+	}
+
+	/**
+	 * Set the title of this schema.
+	 * 
+	 * @param title	Its new title. <i>MAY be NULL</i>
+	 * 
+	 * @since 2.0
+	 */
+	public final void setTitle(final String title){
+		this.title = title;
 	}
 
 	/**

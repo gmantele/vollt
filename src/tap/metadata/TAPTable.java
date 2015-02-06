@@ -50,7 +50,7 @@ import adql.db.DBType;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2014)
+ * @version 2.0 (02/2015)
  */
 public class TAPTable implements DBTable {
 
@@ -70,6 +70,11 @@ public class TAPTable implements DBTable {
 	/** Name that this table MUST have in ADQL queries. */
 	private final String adqlName;
 
+	/** <p>Indicate whether the ADQL name has been given at creation with a schema prefix or not.</p>
+	 * <p><i>Note: This information is used only when writing TAP_SCHEMA.tables or when writing the output of the resource /tables.</i></p>
+	 * @since 2.0 */
+	private boolean isInitiallyQualified;
+
 	/** Name that this table have in the database.
 	 * <i>Note: It CAN'T be NULL. By default, it is the ADQL name.</i> */
 	private String dbName = null;
@@ -83,6 +88,11 @@ public class TAPTable implements DBTable {
 	/** Type of this table.
 	 * <i>Note: Standard TAP table field ; CAN NOT be NULL ; by default, it is "table".</i> */
 	private TableType type = TableType.table;
+
+	/** Descriptive, human-interpretable name of the table.
+	 * <i>Note: Standard TAP table field ; MAY be NULL.</i>
+	 * @since 2.0 */
+	private String title = null;
 
 	/** Description of this table.
 	 * <i>Note: Standard TAP table field ; MAY be NULL.</i> */
@@ -125,6 +135,7 @@ public class TAPTable implements DBTable {
 			throw new NullPointerException("Missing table name !");
 		int indPrefix = tableName.lastIndexOf('.');
 		adqlName = (indPrefix >= 0) ? tableName.substring(indPrefix + 1).trim() : tableName.trim();
+		isInitiallyQualified = (indPrefix >= 0);
 		dbName = adqlName;
 		columns = new LinkedHashMap<String,TAPColumn>();
 		foreignKeys = new ArrayList<TAPForeignKey>();
@@ -217,6 +228,38 @@ public class TAPTable implements DBTable {
 		return adqlName;
 	}
 
+	/**
+	 * <p>Tells whether the ADQL name of this table must be qualified in the "table_name" column of TAP_SCHEMA.tables
+	 * and in the /schema/table/name field of the resource /tables.</p>
+	 * 
+	 * <p><i>Note: this value is set automatically by the constructor: "true" if the table name was qualified,
+	 * "false" otherwise. It can be changed with the function {@link #setInitiallyQualifed(boolean)}, BUT by doing so
+	 * you may generate a mismatch between the table name of TAP_SCHEMA.tables and the one of /tables.</i></p>
+	 * 
+	 * @return	<i>true</i> if the table name must be qualified in TAP_SCHEMA.tables and in /tables, <i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final boolean isInitiallyQualified(){
+		return isInitiallyQualified;
+	}
+
+	/**
+	 * <p>Let specifying whether the table name must be qualified in TAP_SCHEMA.tables and in the resource /tables.</p>
+	 * 
+	 * <p><b>WARNING: Calling this function may generate a mismatch between the table name of TAP_SCHEMA.tables and
+	 * the one of the resource /tables. So, be sure to change this flag before setting the content of TAP_SCHEMA.tables
+	 * using {@link tap.db.JDBCConnection#setTAPSchema(TAPMetadata)}.</b></p>
+	 * 
+	 * @param mustBeQualified	<i>true</i> if the table name in TAP_SCHEMA.tables and in the resource /tables must be qualified by the schema name,
+	 *                       	<i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final void setInitiallyQualifed(final boolean mustBeQualified){
+		isInitiallyQualified = mustBeQualified;
+	}
+
 	@Override
 	public final String getDBName(){
 		return dbName;
@@ -233,7 +276,8 @@ public class TAPTable implements DBTable {
 	 */
 	public final void setDBName(String name){
 		name = (name != null) ? name.trim() : name;
-		dbName = (name == null || name.length() == 0) ? adqlName : name;
+		if (name != null && name.length() > 0)
+			dbName = name;
 	}
 
 	@Override
@@ -307,6 +351,28 @@ public class TAPTable implements DBTable {
 	public final void setType(TableType type){
 		if (type != null)
 			this.type = type;
+	}
+
+	/**
+	 * Get the title of this table.
+	 * 
+	 * @return	Its title. <i>MAY be NULL</i>
+	 * 
+	 * @since 2.0
+	 */
+	public final String getTitle(){
+		return title;
+	}
+
+	/**
+	 * Set the title of this table.
+	 * 
+	 * @param title	Its new title. <i>MAY be NULL</i>
+	 * 
+	 * @since 2.0
+	 */
+	public final void setTitle(final String title){
+		this.title = title;
 	}
 
 	/**

@@ -23,7 +23,7 @@ import adql.db.DBType;
  * <p>{@link #getColType()} will return TAP type based on the type declared in the VOTable metadata part.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (02/2015)
  * @since 2.0
  */
 public class VOTableIterator implements TableIterator {
@@ -42,7 +42,7 @@ public class VOTableIterator implements TableIterator {
 	 * </p> 
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 2.0 (12/2014)
+	 * @version 2.0 (01/2015)
 	 * @since 2.0
 	 */
 	protected static class StreamVOTableSink implements TableSink {
@@ -288,34 +288,6 @@ public class VOTableIterator implements TableIterator {
 			return (value != null) ? value.getValue().toString() : null;
 		}
 
-		/**
-		 * Resolve a VOTable field type by using the datatype, arraysize and xtype strings as specified in a VOTable document.
-		 * 
-		 * @param datatype		Attribute value of VOTable corresponding to the datatype.
-		 * @param arraysize		Attribute value of VOTable corresponding to the arraysize.
-		 * @param xtype			Attribute value of VOTable corresponding to the xtype.
-		 * 
-		 * @return	The resolved VOTable field type, or a CHAR(*) type if the specified type can not be resolved.
-		 * 
-		 * @throws DataReadException	If a field datatype is unknown.
-		 */
-		protected VotType resolveVotType(final String datatype, final String arraysize, final String xtype) throws DataReadException{
-			// If no datatype is specified, return immediately a CHAR(*) type:
-			if (datatype == null || datatype.trim().length() == 0)
-				return new VotType(VotDatatype.CHAR, "*");
-
-			// Identify the specified datatype:
-			VotDatatype votdatatype;
-			try{
-				votdatatype = VotDatatype.valueOf(datatype.toUpperCase());
-			}catch(IllegalArgumentException iae){
-				throw new DataReadException("unknown field datatype: \"" + datatype + "\"");
-			}
-
-			// Build the VOTable type:
-			return new VotType(votdatatype, arraysize, xtype);
-		}
-
 	}
 
 	/** Stream containing the VOTable on which this {@link TableIterator} is iterating. */
@@ -456,6 +428,34 @@ public class VOTableIterator implements TableIterator {
 			throw new IllegalStateException("No row has yet been read!");
 		else if (endReached)
 			throw new IllegalStateException("End of VOTable file already reached!");
+	}
+
+	/**
+	 * Resolve a VOTable field type by using the datatype, arraysize and xtype strings as specified in a VOTable document.
+	 * 
+	 * @param datatype		Attribute value of VOTable corresponding to the datatype.
+	 * @param arraysize		Attribute value of VOTable corresponding to the arraysize.
+	 * @param xtype			Attribute value of VOTable corresponding to the xtype.
+	 * 
+	 * @return	The resolved VOTable field type, or a CHAR(*) type if the specified type can not be resolved.
+	 * 
+	 * @throws DataReadException	If a field datatype is unknown.
+	 */
+	public static VotType resolveVotType(final String datatype, final String arraysize, final String xtype) throws DataReadException{
+		// If no datatype is specified, return immediately a CHAR(*) type:
+		if (datatype == null || datatype.trim().length() == 0)
+			return new VotType(VotDatatype.CHAR, "*");
+
+		// Identify the specified datatype:
+		VotDatatype votdatatype;
+		try{
+			votdatatype = VotDatatype.valueOf(datatype.toUpperCase());
+		}catch(IllegalArgumentException iae){
+			throw new DataReadException("unknown field datatype: \"" + datatype + "\"");
+		}
+
+		// Build the VOTable type:
+		return new VotType(votdatatype, arraysize, xtype);
 	}
 
 }
