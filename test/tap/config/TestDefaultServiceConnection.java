@@ -4,8 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
+import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
@@ -38,7 +40,8 @@ public class TestDefaultServiceConnection {
 	private Properties validProp, noFmProp, fmClassPathProp, incorrectFmProp,
 			xmlMetaProp, missingMetaProp, missingMetaFileProp, wrongMetaProp,
 			wrongMetaFileProp, validFormatsProp, badSVFormat1Prop,
-			badSVFormat2Prop, unknownFormatProp, defaultOutputLimitProp,
+			badSVFormat2Prop, unknownFormatProp, maxAsyncProp,
+			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
 			maxOutputLimitProp, bothOutputLimitGoodProp,
 			bothOutputLimitBadProp;
 
@@ -85,6 +88,15 @@ public class TestDefaultServiceConnection {
 
 		unknownFormatProp = (Properties)validProp.clone();
 		unknownFormatProp.setProperty(KEY_OUTPUT_FORMATS, "foo");
+
+		maxAsyncProp = (Properties)validProp.clone();
+		maxAsyncProp.setProperty(KEY_MAX_ASYNC_JOBS, "10");
+
+		negativeMaxAsyncProp = (Properties)validProp.clone();
+		negativeMaxAsyncProp.setProperty(KEY_MAX_ASYNC_JOBS, "-2");
+
+		notIntMaxAsyncProp = (Properties)validProp.clone();
+		notIntMaxAsyncProp.setProperty(KEY_MAX_ASYNC_JOBS, "foo");
 
 		defaultOutputLimitProp = (Properties)validProp.clone();
 		defaultOutputLimitProp.setProperty(KEY_DEFAULT_OUTPUT_LIMIT, "100");
@@ -136,6 +148,7 @@ public class TestDefaultServiceConnection {
 			assertTrue(connection.getTAPMetadata().getNbSchemas() >= 1);
 			assertTrue(connection.getTAPMetadata().getNbTables() >= 5);
 			assertTrue(connection.isAvailable());
+			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
 
@@ -162,6 +175,7 @@ public class TestDefaultServiceConnection {
 			assertEquals(nbSchemas, connection.getTAPMetadata().getNbSchemas());
 			assertEquals(nbTables, connection.getTAPMetadata().getNbTables());
 			assertTrue(connection.isAvailable());
+			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
 		}catch(Exception e){
@@ -284,6 +298,30 @@ public class TestDefaultServiceConnection {
 		}catch(Exception e){
 			assertEquals(e.getClass(), TAPException.class);
 			assertEquals(e.getMessage(), "Unknown output format: foo");
+		}
+
+		// Valid value for max_async_jobs:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(maxAsyncProp);
+			assertEquals(10, connection.getNbMaxAsyncJobs());
+		}catch(Exception e){
+			fail("This MUST have succeeded because a valid max_async_jobs is provided! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Negative value for max_async_jobs:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(negativeMaxAsyncProp);
+			assertEquals(-2, connection.getNbMaxAsyncJobs());
+		}catch(Exception e){
+			fail("This MUST have succeeded because a negative max_async_jobs is equivalent to 'no restriction'! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// A not integer value for max_async_jobs:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(notIntMaxAsyncProp);
+			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
+		}catch(Exception e){
+			fail("This MUST have succeeded because a not integer value for max_async_jobs is considered as 'no restriction'! \nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// Test with no output limit specified:

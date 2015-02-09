@@ -300,6 +300,19 @@
 				<td><ul><li>whole <em>(default)</em></li><li>user</li></ul></td>
 			</tr>
 			
+			<tr><td colspan="5">Asynchronous jobs management</td></tr>
+			<tr>
+				<td class="done">max_async_jobs</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Maximum number of asynchronous jobs that can run simultaneously.</p>
+					<p>A negative or null value means there is no restriction over the number of running asynchronous jobs.</p>
+					<p><em>By default, there is no restriction: max_async_jobs=0.</em></p>
+				</td>
+				<td><ul><li>0 <em>(default)</em></li><li>10</li></ul></td>
+			</tr>
+			
 			<tr><td colspan="5">Query Execution</td></tr>
 			<tr>
 				<td class="done">default_execution_duration</td>

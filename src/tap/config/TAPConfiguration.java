@@ -32,6 +32,10 @@ public final class TAPConfiguration {
 	public final static String KEY_BACKUP_BY_USER = "backup_by_user";
 	public final static boolean DEFAULT_BACKUP_BY_USER = false;
 
+	/* ASYNCHRONOUS JOBS */
+	public final static String KEY_MAX_ASYNC_JOBS = "max_async_jobs";
+	public final static int DEFAULT_MAX_ASYNC_JOBS = 0;
+
 	/* EXECUTION DURATION */
 	public final static String KEY_DEFAULT_EXECUTION_DURATION = "default_execution_duration";
 	public final static String KEY_MAX_EXECUTION_DURATION = "max_execution_duration";

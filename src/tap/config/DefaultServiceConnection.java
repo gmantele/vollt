@@ -3,6 +3,7 @@ package tap.config;
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
@@ -13,6 +14,7 @@ import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
 import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
@@ -77,6 +79,8 @@ public final class DefaultServiceConnection implements ServiceConnection {
 	private boolean isAvailable = false;	// the TAP service must be disabled until the end of its connection initialization 
 	private String availability = "TAP service not yet initialized.";
 
+	private int maxAsyncJobs = DEFAULT_MAX_ASYNC_JOBS;
+
 	private int[] executionDuration = new int[2];
 	private int[] retentionPeriod = new int[2];
 
@@ -108,6 +112,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// 5. SET ALL GENERAL SERVICE CONNECTION INFORMATION:
 		providerName = getProperty(tapConfig, KEY_PROVIDER_NAME);
 		serviceDescription = getProperty(tapConfig, KEY_SERVICE_DESCRIPTION);
+		initMaxAsyncJobs(tapConfig);
 		initRetentionPeriod(tapConfig);
 		initExecutionDuration(tapConfig);
 
@@ -228,6 +233,18 @@ public final class DefaultServiceConnection implements ServiceConnection {
 			throw new TAPException("Unsupported value for the property \"" + KEY_METADATA + "\": \"" + metaFetchType + "\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
 
 		return metadata;
+	}
+
+	private void initMaxAsyncJobs(final Properties tapConfig){
+		// Get the property value:
+		String propValue = getProperty(tapConfig, KEY_MAX_ASYNC_JOBS);
+		try{
+			// If a value is provided, cast it into an integer and set the attribute:
+			maxAsyncJobs = (propValue == null) ? DEFAULT_MAX_ASYNC_JOBS : Integer.parseInt(propValue);
+		}catch(NumberFormatException nfe){
+			// If the value given in the Property file is not an integer, set the default value:
+			maxAsyncJobs = DEFAULT_MAX_ASYNC_JOBS;
+		}
 	}
 
 	private void initRetentionPeriod(final Properties tapConfig){
@@ -606,6 +623,11 @@ public final class DefaultServiceConnection implements ServiceConnection {
 	}
 
 	@Override
+	public int getNbMaxAsyncJobs(){
+		return maxAsyncJobs;
+	}
+
+	@Override
 	public UserIdentifier getUserIdentifier(){
 		return null;	// NO USER IDENTIFICATION
 	}
@@ -623,11 +645,6 @@ public final class DefaultServiceConnection implements ServiceConnection {
 	@Override
 	public Collection<FunctionDef> getUDFs(){
 		return udfs;	// FORBID ANY UNKNOWN FUNCTION
-	}
-
-	@Override
-	public int getNbMaxAsyncJobs(){
-		return -1;	// UNLIMITED
 	}
 
 }
