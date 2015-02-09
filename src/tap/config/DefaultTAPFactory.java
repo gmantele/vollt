@@ -112,7 +112,9 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 				backupFrequency = Long.parseLong(propValue);
 				if (backupFrequency > 0)
 					isTime = true;
-			}catch(NumberFormatException nfe){}
+			}catch(NumberFormatException nfe){
+				throw new TAPException("Long expected for the property \"" + KEY_BACKUP_FREQUENCY + "\", instead of: \"" + propValue + "\"!");
+			}
 		}
 		// if the value was not a valid numeric time period, try to identify the different textual options:
 		if (!isTime){

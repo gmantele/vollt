@@ -2,6 +2,7 @@ package tap.config;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
@@ -12,6 +13,7 @@ import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
+import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
 import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
@@ -22,7 +24,10 @@ import static tap.config.TAPConfiguration.VALUE_XML;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Map;
 import java.util.Properties;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +36,10 @@ import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import uws.UWSException;
+import uws.job.user.DefaultJobOwner;
+import uws.job.user.JobOwner;
+import uws.service.UWSUrl;
+import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 
 public class TestDefaultServiceConnection {
@@ -43,7 +52,7 @@ public class TestDefaultServiceConnection {
 			badSVFormat2Prop, unknownFormatProp, maxAsyncProp,
 			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
 			maxOutputLimitProp, bothOutputLimitGoodProp,
-			bothOutputLimitBadProp;
+			bothOutputLimitBadProp, userIdentProp, notClassPathUserIdentProp;
 
 	@Before
 	public void setUp() throws Exception{
@@ -111,6 +120,12 @@ public class TestDefaultServiceConnection {
 		bothOutputLimitBadProp = (Properties)validProp.clone();
 		bothOutputLimitBadProp.setProperty(KEY_DEFAULT_OUTPUT_LIMIT, "1000");
 		bothOutputLimitBadProp.setProperty(KEY_MAX_OUTPUT_LIMIT, "100");
+
+		userIdentProp = (Properties)validProp.clone();
+		userIdentProp.setProperty(KEY_USER_IDENTIFIER, "{tap.config.TestDefaultServiceConnection$UserIdentifierTest}");
+
+		notClassPathUserIdentProp = (Properties)validProp.clone();
+		notClassPathUserIdentProp.setProperty(KEY_USER_IDENTIFIER, "foo");
 	}
 
 	/**
@@ -151,6 +166,7 @@ public class TestDefaultServiceConnection {
 			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
+			assertNull(connection.getUserIdentifier());
 
 			// finally, save metadata in an XML file for the other tests:
 			writer = new PrintWriter(new File(XML_FILE));
@@ -178,6 +194,7 @@ public class TestDefaultServiceConnection {
 			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
+			assertNull(connection.getUserIdentifier());
 		}catch(Exception e){
 			e.printStackTrace();
 			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
@@ -318,10 +335,11 @@ public class TestDefaultServiceConnection {
 
 		// A not integer value for max_async_jobs:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(notIntMaxAsyncProp);
-			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
+			new DefaultServiceConnection(notIntMaxAsyncProp);
+			fail("This MUST have failed because a not integer value has been provided for \"" + KEY_MAX_ASYNC_JOBS + "\"!");
 		}catch(Exception e){
-			fail("This MUST have succeeded because a not integer value for max_async_jobs is considered as 'no restriction'! \nCaught exception: " + getPertinentMessage(e));
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "Integer expected for the property \"" + KEY_MAX_ASYNC_JOBS + "\", instead of: \"foo\"!");
 		}
 
 		// Test with no output limit specified:
@@ -376,6 +394,25 @@ public class TestDefaultServiceConnection {
 			assertEquals(e.getClass(), TAPException.class);
 			assertEquals(e.getMessage(), "The default output limit (here: 1000) MUST be less or equal to the maximum output limit (here: 100)!");
 		}
+
+		// Valid user identifier:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(userIdentProp);
+			assertNotNull(connection.getUserIdentifier());
+			assertNotNull(connection.getUserIdentifier().extractUserId(null, null));
+			assertEquals("everybody", connection.getUserIdentifier().extractUserId(null, null).getID());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the class path toward the fake UserIdentifier is correct! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Not a class path for user_identifier:
+		try{
+			new DefaultServiceConnection(notClassPathUserIdentProp);
+			fail("This MUST have failed because the user_identifier value is not a class path!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "Class path expected for the property \"" + KEY_USER_IDENTIFIER + "\", instead of: \"foo\"!");
+		}
 	}
 
 	public static final String getPertinentMessage(final Exception ex){
@@ -393,6 +430,30 @@ public class TestDefaultServiceConnection {
 		public FileManagerTest(Properties tapConfig) throws UWSException{
 			super(new File(tapConfig.getProperty("file_root_path")), true, false);
 		}
+	}
+
+	/**
+	 * A UserIdentifier which always return the same user...that's to say, all users are in a way still anonymous :-)
+	 * This class is only for test purpose.
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 02/2015
+	 */
+	public static class UserIdentifierTest implements UserIdentifier {
+		private static final long serialVersionUID = 1L;
+
+		private final JobOwner everybody = new DefaultJobOwner("everybody");
+
+		@Override
+		public JobOwner extractUserId(UWSUrl urlInterpreter, HttpServletRequest request) throws UWSException{
+			return everybody;
+		}
+
+		@Override
+		public JobOwner restoreUser(String id, String pseudo, Map<String,Object> otherData) throws UWSException{
+			return everybody;
+		}
+
 	}
 
 }

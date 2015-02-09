@@ -83,6 +83,9 @@ public final class TAPConfiguration {
 	public final static String KEY_DEFAULT_OUTPUT_LIMIT = "output_default_limit";
 	public final static String KEY_MAX_OUTPUT_LIMIT = "output_max_limit";
 
+	/* USER IDENTIFICATION */
+	public final static String KEY_USER_IDENTIFIER = "user_identifier";
+
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>
 	 * <ul>
@@ -194,7 +197,7 @@ public final class TAPConfiguration {
 					numValue = Integer.parseInt(value.substring(0, i + 1));
 					break;
 				}catch(NumberFormatException nfe){
-					throw new TAPException("Numeric value expected for the property " + propertyName + " for the substring \"" + value.substring(0, i + 1) + "\" of the whole value: \"" + value + "\"!");
+					throw new TAPException("Integer expected for the property " + propertyName + " for the substring \"" + value.substring(0, i + 1) + "\" of the whole value: \"" + value + "\"!");
 				}
 			}
 			// if a character, store it for later processing:

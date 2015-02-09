@@ -438,6 +438,22 @@
 				</td>
 				<td><ul><li>2147483647B <em>(default)</em></li><li>2MB</li></ul></td>
 			</tr>
+			
+			<tr><td colspan="5">User identification</td></tr>
+			<tr>
+				<td class="done">user_identifier</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Class to use in order to identify a user of the TAP service. The same instance of this class will be used for every request sent to the service.</p>
+					<p>
+						The value of this property MUST be a class path (with brackets: {...}) toward a class implementing the interface uws.service.UserIdentifier.
+						This class MUST have one of its constructors with no parameter.
+					</p>
+					<p><em>By default, no identification is performed ; all users are then anonymous and their jobs can be seen by everybody.</em></p>
+				</td>
+				<td>{apackage.FooUserIdentifier}</td>
+			</tr>
 		</table>
 	</body>
 </html>

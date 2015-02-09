@@ -26,6 +26,7 @@ import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
+import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
 import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
@@ -94,6 +95,8 @@ public final class DefaultServiceConnection implements ServiceConnection {
 	private LimitUnit[] uploadLimitTypes = new LimitUnit[2];
 	private int maxUploadSize = DEFAULT_UPLOAD_MAX_FILE_SIZE;
 
+	private UserIdentifier userIdentifier = null;
+
 	private final Collection<FunctionDef> udfs = new ArrayList<FunctionDef>(0);
 
 	public DefaultServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
@@ -133,7 +136,10 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// set the maximum upload file size:
 		initMaxUploadSize(tapConfig);
 
-		// 8. MAKE THE SERVICE AVAILABLE:
+		// 8. SET A USER IDENTIFIER:
+		initUserIdentifier(tapConfig);
+
+		// 9. MAKE THE SERVICE AVAILABLE:
 		setAvailable(true, "TAP service available.");
 	}
 
@@ -235,19 +241,18 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		return metadata;
 	}
 
-	private void initMaxAsyncJobs(final Properties tapConfig){
+	private void initMaxAsyncJobs(final Properties tapConfig) throws TAPException{
 		// Get the property value:
 		String propValue = getProperty(tapConfig, KEY_MAX_ASYNC_JOBS);
 		try{
 			// If a value is provided, cast it into an integer and set the attribute:
 			maxAsyncJobs = (propValue == null) ? DEFAULT_MAX_ASYNC_JOBS : Integer.parseInt(propValue);
 		}catch(NumberFormatException nfe){
-			// If the value given in the Property file is not an integer, set the default value:
-			maxAsyncJobs = DEFAULT_MAX_ASYNC_JOBS;
+			throw new TAPException("Integer expected for the property \"" + KEY_MAX_ASYNC_JOBS + "\", instead of: \"" + propValue + "\"!");
 		}
 	}
 
-	private void initRetentionPeriod(final Properties tapConfig){
+	private void initRetentionPeriod(final Properties tapConfig) throws TAPException{
 		retentionPeriod = new int[2];
 
 		// Set the default period:
@@ -255,7 +260,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		try{
 			retentionPeriod[0] = (propValue == null) ? DEFAULT_RETENTION_PERIOD : Integer.parseInt(propValue);
 		}catch(NumberFormatException nfe){
-			retentionPeriod[0] = DEFAULT_RETENTION_PERIOD;
+			throw new TAPException("Integer expected for the property \"" + KEY_DEFAULT_RETENTION_PERIOD + "\", instead of: \"" + propValue + "\"!");
 		}
 
 		// Set the maximum period:
@@ -263,7 +268,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		try{
 			retentionPeriod[1] = (propValue == null) ? DEFAULT_RETENTION_PERIOD : Integer.parseInt(propValue);
 		}catch(NumberFormatException nfe){
-			retentionPeriod[1] = DEFAULT_RETENTION_PERIOD;
+			throw new TAPException("Integer expected for the property \"" + KEY_MAX_RETENTION_PERIOD + "\", instead of: \"" + propValue + "\"!");
 		}
 
 		// The maximum period MUST be greater or equals than the default period.
@@ -272,7 +277,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 			retentionPeriod[0] = retentionPeriod[1];
 	}
 
-	private void initExecutionDuration(final Properties tapConfig){
+	private void initExecutionDuration(final Properties tapConfig) throws TAPException{
 		executionDuration = new int[2];
 
 		// Set the default duration:
@@ -280,7 +285,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		try{
 			executionDuration[0] = (propValue == null) ? DEFAULT_EXECUTION_DURATION : Integer.parseInt(propValue);
 		}catch(NumberFormatException nfe){
-			executionDuration[0] = DEFAULT_EXECUTION_DURATION;
+			throw new TAPException("Integer expected for the property \"" + KEY_DEFAULT_EXECUTION_DURATION + "\", instead of: \"" + propValue + "\"!");
 		}
 
 		// Set the maximum duration:
@@ -288,7 +293,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		try{
 			executionDuration[1] = (propValue == null) ? DEFAULT_EXECUTION_DURATION : Integer.parseInt(propValue);
 		}catch(NumberFormatException nfe){
-			executionDuration[1] = DEFAULT_EXECUTION_DURATION;
+			throw new TAPException("Integer expected for the property \"" + KEY_MAX_EXECUTION_DURATION + "\", instead of: \"" + propValue + "\"!");
 		}
 
 		// The maximum duration MUST be greater or equals than the default duration.
@@ -365,7 +370,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 					if (e instanceof TAPException)
 						throw (TAPException)e;
 					else
-						throw new TAPException("Impossible to create an OutputFormat<ResultSet> instance with the constructor (ServiceConnection<ResultSet>) of \"" + userOutputFormatClass.getName() + "\" (see the property output_add_format) for the following reason: " + e.getMessage());
+						throw new TAPException("Impossible to create an OutputFormat instance with the constructor (ServiceConnection) of \"" + userOutputFormatClass.getName() + "\" (see the property output_add_format) for the following reason: " + e.getMessage());
 				}
 			}
 			// unknown format
@@ -413,6 +418,30 @@ public final class DefaultServiceConnection implements ServiceConnection {
 			// ...set the max file size:
 			int value = (int)((Integer)limit[0] * ((LimitUnit)limit[1]).bytesFactor());
 			setMaxUploadSize(value);
+		}
+	}
+
+	private void initUserIdentifier(final Properties tapConfig) throws TAPException{
+		// Get the property value:
+		String propValue = getProperty(tapConfig, KEY_USER_IDENTIFIER);
+		if (propValue == null)
+			return;
+
+		// Check the value is a class path:
+		if (!isClassPath(propValue))
+			throw new TAPException("Class path expected for the property \"" + KEY_USER_IDENTIFIER + "\", instead of: \"" + propValue + "\"!");
+
+		// Fetch the class:
+		Class<? extends UserIdentifier> c = fetchClass(propValue, KEY_USER_IDENTIFIER, UserIdentifier.class);
+
+		// Create an instance with the empty constructor:
+		try{
+			userIdentifier = c.getConstructor().newInstance();
+		}catch(Exception e){
+			if (e instanceof TAPException)
+				throw (TAPException)e;
+			else
+				throw new TAPException("Impossible to create a UserIdentifier instance with the empty constructor of \"" + c.getName() + "\" (see the property user_identifier) for the following reason: " + e.getMessage());
 		}
 	}
 
@@ -629,7 +658,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 
 	@Override
 	public UserIdentifier getUserIdentifier(){
-		return null;	// NO USER IDENTIFICATION
+		return userIdentifier;
 	}
 
 	@Override
