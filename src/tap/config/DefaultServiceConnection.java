@@ -17,22 +17,27 @@ import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.KEY_MAX_UPLOAD_LIMIT;
+import static tap.config.TAPConfiguration.KEY_METADATA;
+import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.VALUE_CSV;
+import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
 import static tap.config.TAPConfiguration.VALUE_SV;
 import static tap.config.TAPConfiguration.VALUE_TSV;
+import static tap.config.TAPConfiguration.VALUE_XML;
 import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.getProperty;
 import static tap.config.TAPConfiguration.isClassPath;
 import static tap.config.TAPConfiguration.parseLimit;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -41,6 +46,7 @@ import java.util.Properties;
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPFactory;
+import tap.db.DBConnection;
 import tap.formatter.JSONFormat;
 import tap.formatter.OutputFormat;
 import tap.formatter.SVFormat;
@@ -48,6 +54,7 @@ import tap.formatter.VOTableFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
+import tap.metadata.TableSetParser;
 import uws.UWSException;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
@@ -61,6 +68,8 @@ public final class DefaultServiceConnection implements ServiceConnection {
 	private TAPLog logger;
 
 	private DefaultTAPFactory tapFactory;
+
+	private final TAPMetadata metadata;
 
 	private final String providerName;
 	private final String serviceDescription;
@@ -93,13 +102,16 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// 3. BUILD THE TAP FACTORY:
 		tapFactory = new DefaultTAPFactory(this, tapConfig);
 
-		// 4. SET ALL GENERAL SERVICE CONNECTION INFORMATION:
+		// 4. GET THE METADATA:
+		metadata = initMetadata(tapConfig);
+
+		// 5. SET ALL GENERAL SERVICE CONNECTION INFORMATION:
 		providerName = getProperty(tapConfig, KEY_PROVIDER_NAME);
 		serviceDescription = getProperty(tapConfig, KEY_SERVICE_DESCRIPTION);
 		initRetentionPeriod(tapConfig);
 		initExecutionDuration(tapConfig);
 
-		// 5. CONFIGURE OUTPUT:
+		// 6. CONFIGURE OUTPUT:
 		// default output format = VOTable:
 		outputFormats = new ArrayList<OutputFormat>(1);
 		outputFormats.add(new VOTableFormat(this));
@@ -108,7 +120,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// set output limits:
 		initOutputLimits(tapConfig);
 
-		// 6. CONFIGURE THE UPLOAD:
+		// 7. CONFIGURE THE UPLOAD:
 		// is upload enabled ?
 		isUploadEnabled = Boolean.parseBoolean(getProperty(tapConfig, KEY_UPLOAD_ENABLED));
 		// set upload limits:
@@ -116,7 +128,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// set the maximum upload file size:
 		initMaxUploadSize(tapConfig);
 
-		// 7. MAKE THE SERVICE AVAILABLE:
+		// 8. MAKE THE SERVICE AVAILABLE:
 		setAvailable(true, "TAP service available.");
 	}
 
@@ -166,6 +178,56 @@ public final class DefaultServiceConnection implements ServiceConnection {
 					throw new TAPException("Impossible to create a TAPFileManager instance with the constructor (java.util.Properties tapConfig) of \"" + classObj.getName() + "\" for the following reason: " + e.getMessage());
 			}
 		}
+	}
+
+	private TAPMetadata initMetadata(final Properties tapConfig) throws TAPException{
+		// Get the fetching method to use:
+		String metaFetchType = getProperty(tapConfig, KEY_METADATA);
+		if (metaFetchType == null)
+			throw new TAPException("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+
+		TAPMetadata metadata = null;
+
+		// GET METADATA FROM XML & UPDATE THE DATABASE (schema TAP_SCHEMA only):
+		if (metaFetchType.equalsIgnoreCase(VALUE_XML)){
+			// Get the XML file path:
+			String xmlFilePath = getProperty(tapConfig, KEY_METADATA_FILE);
+			if (xmlFilePath == null)
+				throw new TAPException("The property \"" + KEY_METADATA_FILE + "\" is missing! According to the property \"" + KEY_METADATA + "\", metadata must be fetched from an XML document. The local file path of it MUST be provided using the property \"" + KEY_METADATA_FILE + "\".");
+
+			// Parse the XML document and build the corresponding metadata:
+			try{
+				metadata = (new TableSetParser()).parse(new File(xmlFilePath));
+			}catch(IOException ioe){
+				throw new TAPException("A grave error occurred while reading/parsing the TableSet XML document: \"" + xmlFilePath + "\"!", ioe);
+			}
+
+			// Update the database:
+			DBConnection conn = null;
+			try{
+				conn = tapFactory.getConnection("SET_TAP_SCHEMA");
+				conn.setTAPSchema(metadata);
+			}finally{
+				if (conn != null)
+					tapFactory.freeConnection(conn);
+			}
+		}
+		// GET METADATA FROM DATABASE (schema TAP_SCHEMA):
+		else if (metaFetchType.equalsIgnoreCase(VALUE_DB)){
+			DBConnection conn = null;
+			try{
+				conn = tapFactory.getConnection("GET_TAP_SCHEMA");
+				metadata = conn.getTAPSchema();
+			}finally{
+				if (conn != null)
+					tapFactory.freeConnection(conn);
+			}
+		}
+		// INCORRECT VALUE => ERROR!
+		else
+			throw new TAPException("Unsupported value for the property \"" + KEY_METADATA + "\": \"" + metaFetchType + "\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+
+		return metadata;
 	}
 
 	private void initRetentionPeriod(final Properties tapConfig){
@@ -550,8 +612,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 
 	@Override
 	public TAPMetadata getTAPMetadata(){
-		// TODO GET METADATA
-		return null;
+		return metadata;
 	}
 
 	@Override

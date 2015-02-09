@@ -18,8 +18,8 @@ public class AllTests {
 		validProp.setProperty("jdbc_driver", "org.postgresql.Driver");
 		validProp.setProperty("db_username", "gmantele");
 		validProp.setProperty("db_password", "pwd");
-		validProp.setProperty("db_tables", "");
 		validProp.setProperty("sql_translator", "postgres");
+		validProp.setProperty("metadata", "db");
 		validProp.setProperty("file_manager", "local");
 		validProp.setProperty("file_root_path", "bin/ext/test/tap");
 		return validProp;

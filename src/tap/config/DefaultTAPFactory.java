@@ -52,7 +52,7 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 		String dbUrl = getProperty(tapConfig, KEY_JDBC_URL);
 		if (jdbcDriver == null){
 			if (dbUrl == null)
-				throw new TAPException("JDBC URL missing.");
+				throw new TAPException("The property \"" + KEY_JDBC_URL + "\" is missing!");
 			else if (!dbUrl.startsWith(JDBCConnection.JDBC_PREFIX + ":"))
 				throw new TAPException("JDBC URL format incorrect! It MUST begins with " + JDBCConnection.JDBC_PREFIX + ":");
 			else{
@@ -70,8 +70,8 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 		/* 1. Set the ADQLTranslator to use in function of the sql_translator property */
 		String sqlTranslator = getProperty(tapConfig, KEY_SQL_TRANSLATOR);
 		// case a.) no translator specified
-		if (sqlTranslator == null || sqlTranslator.isEmpty())
-			throw new TAPException("No SQL translator specified !");
+		if (sqlTranslator == null)
+			throw new TAPException("The property \"" + KEY_SQL_TRANSLATOR + "\" is missing! ADQL queries can not be translated without it. Allowed values: \"" + VALUE_POSTGRESQL + "\", \"" + VALUE_PGSPHERE + "\" or a class path of a class implementing SQLTranslator.");
 
 		// case b.) PostgreSQL translator
 		else if (sqlTranslator.equalsIgnoreCase(VALUE_POSTGRESQL))

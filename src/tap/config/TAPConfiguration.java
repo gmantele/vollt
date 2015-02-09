@@ -53,6 +53,12 @@ public final class TAPConfiguration {
 	public final static String KEY_DB_USERNAME = "db_username";
 	public final static String KEY_DB_PASSWORD = "db_password";
 
+	/* METADATA KEYS */
+	public final static String KEY_METADATA = "metadata";
+	public final static String VALUE_XML = "xml";
+	public final static String VALUE_DB = "db";
+	public final static String KEY_METADATA_FILE = "metadata_file";
+
 	/* PROVIDER KEYS */
 	public final static String KEY_PROVIDER_NAME = "provider_name";
 	public final static String KEY_SERVICE_DESCRIPTION = "service_description";
@@ -74,9 +80,11 @@ public final class TAPConfiguration {
 	public final static String KEY_MAX_OUTPUT_LIMIT = "output_max_limit";
 
 	/**
-	 * Read the asked property from the given Properties object.
-	 * 	- The returned property value is trimmed (no space at the beginning and at the end of the string).
-	 * 	- If the value is empty (length=0), NULL is returned.
+	 * <p>Read the asked property from the given Properties object.</p>
+	 * <ul>
+	 * 	<li>The returned property value is trimmed (no space at the beginning and at the end of the string).</li>
+	 * 	<li>If the value is empty (length=0), NULL is returned.</li>
+	 * </ul>
 	 * 
 	 * @param prop	List of property
 	 * @param key	Property whose the value is requested.
@@ -242,7 +250,7 @@ public final class TAPConfiguration {
 
 		FileInputStream configFileStream = null;
 		try{
-			final File configFile = new File("src/ext/tap_min.properties");
+			final File configFile = new File("src/tap/config/tap_min.properties");
 			configFileStream = new FileInputStream(configFile);
 
 			Properties config = new Properties();

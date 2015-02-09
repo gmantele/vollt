@@ -7,14 +7,19 @@ import static org.junit.Assert.fail;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_METADATA;
+import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.VALUE_CSV;
+import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
 import static tap.config.TAPConfiguration.VALUE_SV;
 import static tap.config.TAPConfiguration.VALUE_TSV;
+import static tap.config.TAPConfiguration.VALUE_XML;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.Properties;
 
 import org.junit.Before;
@@ -28,10 +33,14 @@ import uws.service.file.LocalUWSFileManager;
 
 public class TestDefaultServiceConnection {
 
+	private final static String XML_FILE = "test/tap/config/tables.xml";
+
 	private Properties validProp, noFmProp, fmClassPathProp, incorrectFmProp,
-			validFormatsProp, badSVFormat1Prop, badSVFormat2Prop,
-			unknownFormatProp, defaultOutputLimitProp, maxOutputLimitProp,
-			bothOutputLimitGoodProp, bothOutputLimitBadProp;
+			xmlMetaProp, missingMetaProp, missingMetaFileProp, wrongMetaProp,
+			wrongMetaFileProp, validFormatsProp, badSVFormat1Prop,
+			badSVFormat2Prop, unknownFormatProp, defaultOutputLimitProp,
+			maxOutputLimitProp, bothOutputLimitGoodProp,
+			bothOutputLimitBadProp;
 
 	@Before
 	public void setUp() throws Exception{
@@ -46,6 +55,24 @@ public class TestDefaultServiceConnection {
 
 		incorrectFmProp = (Properties)validProp.clone();
 		incorrectFmProp.setProperty(KEY_FILE_MANAGER, "foo");
+
+		xmlMetaProp = (Properties)validProp.clone();
+		xmlMetaProp.setProperty(KEY_METADATA, VALUE_XML);
+		xmlMetaProp.setProperty(KEY_METADATA_FILE, XML_FILE);
+
+		missingMetaProp = (Properties)validProp.clone();
+		missingMetaProp.remove(KEY_METADATA);
+
+		wrongMetaProp = (Properties)validProp.clone();
+		wrongMetaProp.setProperty(KEY_METADATA, "foo");
+
+		wrongMetaFileProp = (Properties)validProp.clone();
+		wrongMetaFileProp.setProperty(KEY_METADATA, VALUE_XML);
+		wrongMetaFileProp.setProperty(KEY_METADATA_FILE, "foo");
+
+		missingMetaFileProp = (Properties)validProp.clone();
+		missingMetaFileProp.setProperty(KEY_METADATA, VALUE_XML);
+		missingMetaFileProp.remove(KEY_METADATA_FILE);
 
 		validFormatsProp = (Properties)validProp.clone();
 		validFormatsProp.setProperty(KEY_OUTPUT_FORMATS, VALUE_JSON + "," + VALUE_CSV + " , " + VALUE_TSV + ",, , " + VALUE_SV + "([])" + ", " + VALUE_SV + "(|):text/psv:psv" + ", " + VALUE_SV + "($)::test" + ", \t  " + VALUE_SV + "(@):text/arobase:");
@@ -95,16 +122,87 @@ public class TestDefaultServiceConnection {
 	@Test
 	public void testDefaultServiceConnectionProperties(){
 		// Valid Configuration File:
+		PrintWriter writer = null;
+		int nbSchemas = -1, nbTables = -1;
 		try{
+			// build the ServiceConnection:
 			ServiceConnection connection = new DefaultServiceConnection(validProp);
+
+			// tests:
 			assertNotNull(connection.getLogger());
 			assertNotNull(connection.getFileManager());
 			assertNotNull(connection.getFactory());
+			assertNotNull(connection.getTAPMetadata());
+			assertTrue(connection.getTAPMetadata().getNbSchemas() >= 1);
+			assertTrue(connection.getTAPMetadata().getNbTables() >= 5);
+			assertTrue(connection.isAvailable());
+			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
+			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
+
+			// finally, save metadata in an XML file for the other tests:
+			writer = new PrintWriter(new File(XML_FILE));
+			connection.getTAPMetadata().write(writer);
+			nbSchemas = connection.getTAPMetadata().getNbSchemas();
+			nbTables = connection.getTAPMetadata().getNbTables();
+
+		}catch(Exception e){
+			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
+		}finally{
+			if (writer != null)
+				writer.close();
+		}
+
+		// Valid XML metadata:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(xmlMetaProp);
+			assertNotNull(connection.getLogger());
+			assertNotNull(connection.getFileManager());
+			assertNotNull(connection.getFactory());
+			assertNotNull(connection.getTAPMetadata());
+			assertEquals(nbSchemas, connection.getTAPMetadata().getNbSchemas());
+			assertEquals(nbTables, connection.getTAPMetadata().getNbTables());
 			assertTrue(connection.isAvailable());
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
 		}catch(Exception e){
+			e.printStackTrace();
 			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Missing metadata property:
+		try{
+			new DefaultServiceConnection(missingMetaProp);
+			fail("This MUST have failed because the property 'metadata' is missing!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+		}
+
+		// Missing metadata_file property:
+		try{
+			new DefaultServiceConnection(missingMetaFileProp);
+			fail("This MUST have failed because the property 'metadata_file' is missing!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "The property \"" + KEY_METADATA_FILE + "\" is missing! According to the property \"" + KEY_METADATA + "\", metadata must be fetched from an XML document. The local file path of it MUST be provided using the property \"" + KEY_METADATA_FILE + "\".");
+		}
+
+		// Wrong metadata property:
+		try{
+			new DefaultServiceConnection(wrongMetaProp);
+			fail("This MUST have failed because the property 'metadata' has a wrong value!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "Unsupported value for the property \"" + KEY_METADATA + "\": \"foo\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+		}
+
+		// Wrong metadata_file property:
+		try{
+			new DefaultServiceConnection(wrongMetaFileProp);
+			fail("This MUST have failed because the property 'metadata_file' has a wrong value!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "A grave error occurred while reading/parsing the TableSet XML document: \"foo\"!");
 		}
 
 		// No File Manager:
@@ -122,6 +220,7 @@ public class TestDefaultServiceConnection {
 			assertNotNull(connection.getLogger());
 			assertNotNull(connection.getFileManager());
 			assertNotNull(connection.getFactory());
+			assertNotNull(connection.getTAPMetadata());
 			assertTrue(connection.isAvailable());
 
 			/* Retention periods and execution durations are different in this configuration file from the valid one (validProp).

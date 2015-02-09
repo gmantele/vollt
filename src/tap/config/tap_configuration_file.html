@@ -161,6 +161,19 @@
 				<td></td>
 			</tr>
 			<tr class="mandatory">
+				<td class="done">sql_translator</td>
+				<td>M</td>
+				<td>text</td>
+				<td>
+					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
+					<p>The TAP library supports only Postgresql (without spatial extension) and PgSphere for the moment. But you can provide your own SQL translator
+					(even if it does not have spatial features), by providing a path to a class (within brackets: {...}) that implements ADQLTranslator and which have at least an empty constructor.</p>
+				</td>
+				<td><ul><li>postgres</li><li>pgsphere</li><li>{apackage.MyADQLTranslator}</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Metadata</td></tr>
+			<!-- tr class="mandatory">
 				<td class="later">db_tables</td>
 				<td>M</td>
 				<td>text</td>
@@ -171,17 +184,30 @@
 					This list is not mandatory, but if provided it must be within parenthesis and comma separated.</p> 
 				</td>
 				<td>schema1.*, schema2.table1, table2, table3(col1, col2, col4, ...)</td>
-			</tr>
+			</tr -->
 			<tr class="mandatory">
-				<td class="done">sql_translator</td>
+				<td class="done">metadata</td>
 				<td>M</td>
 				<td>text</td>
 				<td>
-					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
-					<p>The TAP library supports only Postgresql (without spatial extension) and PgSphere for the moment. But you can provide your own SQL translator
-					(even if it does not have spatial features), by providing a path to a class (within brackets: {...}) that implements ADQLTranslator and which have at least an empty constructor.</p>
+					<p>Define the way the library must get the list of all schemas, tables and columns to publish and all their metadata (e.g. utype, description, type, ...)</p>
+					<p>In its current state, the library proposes two methods:</p>
+					<ol>
+						<li>Parse a TableSet XML document and load its content into the database schema TAP_SCHEMA (note: this schema is first erased and rebuilt by the library).</li>
+						<li>Get all metadata from the database schema TAP_SCHEMA.</li>
+					</ol> 
 				</td>
-				<td><ul><li>postgres</li><li>pgsphere</li><li>{apackage.MyADQLTranslator}</li></ul></td>
+				<td><ul><li>xml</li><li>db</li></ul>
+			</tr>
+			<tr>
+				<td class="done">metadata_file</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><b>Mandatory if</b> the value of "metadata" is "xml".</p>
+					<p>Local file path to the TableSet XML document. This XML must implement the schema TableSet defined by <a href="http://www.ivoa.net/xml/VODataService/v1.1">VODataService</a>.</p>
+				</td>
+				<td>/home/foo/my_metadata.xml</td>
 			</tr>
 			
 			<tr><td colspan="5">Files</td></tr>

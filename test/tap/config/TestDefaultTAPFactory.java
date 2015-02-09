@@ -10,6 +10,8 @@ import static tap.config.TAPConfiguration.KEY_DB_USERNAME;
 import static tap.config.TAPConfiguration.KEY_JDBC_DRIVER;
 import static tap.config.TAPConfiguration.KEY_JDBC_URL;
 import static tap.config.TAPConfiguration.KEY_SQL_TRANSLATOR;
+import static tap.config.TAPConfiguration.VALUE_PGSPHERE;
+import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
 
 import java.io.File;
 import java.util.Collection;
@@ -37,7 +39,8 @@ import adql.db.FunctionDef;
 public class TestDefaultTAPFactory {
 
 	private Properties validProp, noJdbcProp1, noJdbcProp2, badJdbcProp,
-			badTranslatorProp, badDBNameProp, badUsernameProp, badPasswordProp;
+			missingTranslatorProp, badTranslatorProp, badDBNameProp,
+			badUsernameProp, badPasswordProp;
 
 	private ServiceConnection serviceConnection = null;
 
@@ -58,6 +61,9 @@ public class TestDefaultTAPFactory {
 		badJdbcProp = (Properties)validProp.clone();
 		badJdbcProp.setProperty(KEY_JDBC_DRIVER, "foo");
 		badJdbcProp.setProperty(KEY_JDBC_URL, "jdbc:foo:gmantele");
+
+		missingTranslatorProp = (Properties)validProp.clone();
+		missingTranslatorProp.remove(KEY_SQL_TRANSLATOR);
 
 		badTranslatorProp = (Properties)validProp.clone();
 		badTranslatorProp.setProperty(KEY_SQL_TRANSLATOR, "foo");
@@ -106,6 +112,15 @@ public class TestDefaultTAPFactory {
 		}catch(Exception ex){
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to find the JDBC driver \"[^\\\"]*\" !"));
+		}
+
+		// Missing Translator:
+		try{
+			new DefaultTAPFactory(serviceConnection, missingTranslatorProp);
+			fail("This MUST have failed because the provided SQL translator is missing!");
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertTrue(ex.getMessage().matches("The property \"" + KEY_SQL_TRANSLATOR + "\" is missing! ADQL queries can not be translated without it. Allowed values: \"" + VALUE_POSTGRESQL + "\", \"" + VALUE_PGSPHERE + "\" or a class path of a class implementing SQLTranslator."));
 		}
 
 		// Bad Translator:
