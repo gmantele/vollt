@@ -13,6 +13,7 @@ import static tap.config.TAPConfiguration.KEY_DEFAULT_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
+import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
 import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
@@ -31,6 +32,7 @@ import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
+import static tap.config.TAPConfiguration.VALUE_NONE;
 import static tap.config.TAPConfiguration.VALUE_SV;
 import static tap.config.TAPConfiguration.VALUE_TSV;
 import static tap.config.TAPConfiguration.VALUE_XML;
@@ -97,7 +99,10 @@ public final class DefaultServiceConnection implements ServiceConnection {
 
 	private UserIdentifier userIdentifier = null;
 
-	private final Collection<FunctionDef> udfs = new ArrayList<FunctionDef>(0);
+	private ArrayList<String> geometries = null;
+	private final String GEOMETRY_REGEXP = "(AREA|BOX|CENTROID|CIRCLE|CONTAINS|DISTANCE|COORD1|COORD2|COORDSYS|INTERSECTS|POINT|POLYGON|REGION)";
+
+	private Collection<FunctionDef> udfs = new ArrayList<FunctionDef>(0);
 
 	public DefaultServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
 		// 1. INITIALIZE THE FILE MANAGER:
@@ -139,7 +144,10 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		// 8. SET A USER IDENTIFIER:
 		initUserIdentifier(tapConfig);
 
-		// 9. MAKE THE SERVICE AVAILABLE:
+		// 9. CONFIGURE ADQL:
+		initADQLGeometries(tapConfig);
+
+		// 10. MAKE THE SERVICE AVAILABLE:
 		setAvailable(true, "TAP service available.");
 	}
 
@@ -445,6 +453,47 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		}
 	}
 
+	private void initADQLGeometries(final Properties tapConfig) throws TAPException{
+		// Get the property value:
+		String propValue = getProperty(tapConfig, KEY_GEOMETRIES);
+
+		// NO VALUE => ALL FCT ALLOWED!
+		if (propValue == null)
+			geometries = null;
+
+		// "NONE" => ALL FCT FORBIDDEN (= none of these functions are allowed)!
+		else if (propValue.equalsIgnoreCase(VALUE_NONE))
+			geometries = new ArrayList<String>(0);
+
+		// OTHERWISE, JUST THE ALLOWED ONE ARE LISTED:
+		else{
+			// split all the list items:
+			String[] items = propValue.split(",");
+			if (items.length > 0){
+				geometries = new ArrayList<String>(items.length);
+				for(String item : items){
+					item = item.trim();
+					// empty item => ignored
+					if (item.length() <= 0)
+						continue;
+					// if it is a name of known ADQL geometrical function, add it to the list:
+					else if (item.toUpperCase().matches(GEOMETRY_REGEXP))
+						geometries.add(item.toUpperCase());
+					// "NONE" is not allowed inside a list => error!
+					else if (item.toUpperCase().equals(VALUE_NONE))
+						throw new TAPException("The special value \"" + VALUE_NONE + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that no value is allowed.");
+					// unknown value => error!
+					else
+						throw new TAPException("Unknown ADQL geometrical function: \"" + item + "\"!");
+				}
+				// if finally no item has been specified, consider it as "all functions allowed":
+				if (geometries.size() == 0)
+					geometries = null;
+			}else
+				geometries = null;
+		}
+	}
+
 	@Override
 	public String getProviderName(){
 		return providerName;
@@ -668,7 +717,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 
 	@Override
 	public Collection<String> getGeometries(){
-		return null;	// ALL GEOMETRIES ALLOWED
+		return geometries;
 	}
 
 	@Override

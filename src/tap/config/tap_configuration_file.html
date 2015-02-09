@@ -454,6 +454,23 @@
 				</td>
 				<td>{apackage.FooUserIdentifier}</td>
 			</tr>
+			
+			<tr><td colspan="5">ADQL restrictions</td></tr>
+			<tr>
+				<td class="done">geometries</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma-separated list of all allowed geometries.</p>
+					<p>
+						Each item of the list must be the name (whatever is the case) of an ADQL geometrical function (e.g. INTERSECTS, COORDSYS, POINT) to allow.
+						If the list is empty (no item), all functions are allowed. And if the special value <em>NONE</em> is given, no ADQL function will be allowed.
+					</p>
+					<p><em>By default, all ADQL geometrical functions are allowed.</em></p>
+				</td>
+				<td><ul><li>ø <em>(default)</em></li><li>NONE</li><li>CONTAINS, intersects, Point, Box, CIRCLE</li></ul></td>
+			</tr>
+			
 		</table>
 	</body>
 </html>

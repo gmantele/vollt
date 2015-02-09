@@ -86,6 +86,10 @@ public final class TAPConfiguration {
 	/* USER IDENTIFICATION */
 	public final static String KEY_USER_IDENTIFIER = "user_identifier";
 
+	/* ADQL RESTRICTIONS */
+	public final static String KEY_GEOMETRIES = "geometries";
+	public final static String VALUE_NONE = "NONE";
+
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>
 	 * <ul>

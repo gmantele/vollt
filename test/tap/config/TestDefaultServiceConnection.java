@@ -8,6 +8,7 @@ import static org.junit.Assert.fail;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
+import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_METADATA;
@@ -18,12 +19,14 @@ import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
+import static tap.config.TAPConfiguration.VALUE_NONE;
 import static tap.config.TAPConfiguration.VALUE_SV;
 import static tap.config.TAPConfiguration.VALUE_TSV;
 import static tap.config.TAPConfiguration.VALUE_XML;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Properties;
 
@@ -52,7 +55,8 @@ public class TestDefaultServiceConnection {
 			badSVFormat2Prop, unknownFormatProp, maxAsyncProp,
 			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
 			maxOutputLimitProp, bothOutputLimitGoodProp,
-			bothOutputLimitBadProp, userIdentProp, notClassPathUserIdentProp;
+			bothOutputLimitBadProp, userIdentProp, notClassPathUserIdentProp,
+			geometriesProp, noneGeomProp, noneInsideGeomProp, unknownGeomProp;
 
 	@Before
 	public void setUp() throws Exception{
@@ -126,6 +130,18 @@ public class TestDefaultServiceConnection {
 
 		notClassPathUserIdentProp = (Properties)validProp.clone();
 		notClassPathUserIdentProp.setProperty(KEY_USER_IDENTIFIER, "foo");
+
+		geometriesProp = (Properties)validProp.clone();
+		geometriesProp.setProperty(KEY_GEOMETRIES, "point, CIRCle  ,	cONTAins,intersECTS");
+
+		noneGeomProp = (Properties)validProp.clone();
+		noneGeomProp.setProperty(KEY_GEOMETRIES, VALUE_NONE);
+
+		noneInsideGeomProp = (Properties)validProp.clone();
+		noneInsideGeomProp.setProperty(KEY_GEOMETRIES, "POINT, Box, none, circle");
+
+		unknownGeomProp = (Properties)validProp.clone();
+		unknownGeomProp.setProperty(KEY_GEOMETRIES, "POINT, Contains, foo, circle,Polygon");
 	}
 
 	/**
@@ -167,6 +183,7 @@ public class TestDefaultServiceConnection {
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
 			assertNull(connection.getUserIdentifier());
+			assertNull(connection.getGeometries());
 
 			// finally, save metadata in an XML file for the other tests:
 			writer = new PrintWriter(new File(XML_FILE));
@@ -195,6 +212,7 @@ public class TestDefaultServiceConnection {
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
 			assertNull(connection.getUserIdentifier());
+			assertNull(connection.getGeometries());
 		}catch(Exception e){
 			e.printStackTrace();
 			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
@@ -412,6 +430,46 @@ public class TestDefaultServiceConnection {
 		}catch(Exception e){
 			assertEquals(e.getClass(), TAPException.class);
 			assertEquals(e.getMessage(), "Class path expected for the property \"" + KEY_USER_IDENTIFIER + "\", instead of: \"foo\"!");
+		}
+
+		// Valid geometry list:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(geometriesProp);
+			assertNotNull(connection.getGeometries());
+			assertEquals(4, connection.getGeometries().size());
+			assertEquals("POINT", ((ArrayList<String>)connection.getGeometries()).get(0));
+			assertEquals("CIRCLE", ((ArrayList<String>)connection.getGeometries()).get(1));
+			assertEquals("CONTAINS", ((ArrayList<String>)connection.getGeometries()).get(2));
+			assertEquals("INTERSECTS", ((ArrayList<String>)connection.getGeometries()).get(3));
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of geometries is correct! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// "NONE" as geometry list:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(noneGeomProp);
+			assertNotNull(connection.getGeometries());
+			assertEquals(0, connection.getGeometries().size());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of geometries is correct (reduced to only NONE)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// "NONE" inside a geometry list:
+		try{
+			new DefaultServiceConnection(noneInsideGeomProp);
+			fail("This MUST have failed because the given geometry list contains at least 2 items, whose one is NONE!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "The special value \"" + VALUE_NONE + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that no value is allowed.");
+		}
+
+		// Unknown geometrical function:
+		try{
+			new DefaultServiceConnection(unknownGeomProp);
+			fail("This MUST have failed because the given geometry list contains at least 1 unknown ADQL geometrical function!");
+		}catch(Exception e){
+			assertEquals(e.getClass(), TAPException.class);
+			assertEquals(e.getMessage(), "Unknown ADQL geometrical function: \"foo\"!");
 		}
 	}
 
