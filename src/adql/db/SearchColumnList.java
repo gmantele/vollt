@@ -46,7 +46,7 @@ import cds.utils.TextualSearchList;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (11/2013)
+ * @version 1.3 (02/2015)
  */
 public class SearchColumnList extends TextualSearchList<DBColumn> {
 	private static final long serialVersionUID = 1L;
@@ -284,7 +284,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 					}
 
 					// test the schema name:
-					if (schema != null){
+					if (schema != null && matchTable.getADQLSchemaName() != null){
 						if (IdentifierField.SCHEMA.isCaseSensitive(caseSensitivity)){
 							if (!matchTable.getADQLSchemaName().equals(schema))
 								continue;

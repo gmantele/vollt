@@ -36,7 +36,7 @@ import cds.utils.TextualSearchList;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (08/2014)
+ * @version 1.3 (02/2015)
  */
 public class SearchTableList extends TextualSearchList<DBTable> {
 	private static final long serialVersionUID = 1L;
@@ -156,21 +156,23 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 			ArrayList<DBTable> result = new ArrayList<DBTable>();
 
 			for(DBTable match : tmpResult){
-				if (IdentifierField.SCHEMA.isCaseSensitive(caseSensitivity)){
-					if (!match.getADQLSchemaName().equals(schema))
-						continue;
-				}else{
-					if (!match.getADQLSchemaName().equalsIgnoreCase(schema))
-						continue;
-				}
-
-				if (catalog != null){
-					if (IdentifierField.CATALOG.isCaseSensitive(caseSensitivity)){
-						if (!match.getADQLCatalogName().equals(catalog))
+				if (match.getADQLSchemaName() != null){
+					if (IdentifierField.SCHEMA.isCaseSensitive(caseSensitivity)){
+						if (!match.getADQLSchemaName().equals(schema))
 							continue;
 					}else{
-						if (!match.getADQLCatalogName().equalsIgnoreCase(catalog))
+						if (!match.getADQLSchemaName().equalsIgnoreCase(schema))
 							continue;
+					}
+
+					if (catalog != null && match.getADQLCatalogName() != null){
+						if (IdentifierField.CATALOG.isCaseSensitive(caseSensitivity)){
+							if (!match.getADQLCatalogName().equals(catalog))
+								continue;
+						}else{
+							if (!match.getADQLCatalogName().equalsIgnoreCase(catalog))
+								continue;
+						}
 					}
 				}
 
