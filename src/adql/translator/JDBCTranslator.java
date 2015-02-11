@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -167,7 +167,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (02/2015)
+ * @version 1.3 (02/2015)
  * @since 1.3
  * 
  * @see PostgreSQLTranslator
@@ -791,7 +791,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(UserDefinedFunction fct) throws TranslationException{
-		return getDefaultADQLFunction(fct);
+		return fct.translate(this);
 	}
 
 	/* *********************************** */

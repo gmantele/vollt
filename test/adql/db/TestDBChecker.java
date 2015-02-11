@@ -23,10 +23,16 @@ import adql.db.FunctionDef.FunctionParam;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
+import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.StringConstant;
 import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.UserDefinedFunction;
+import adql.search.SimpleSearchHandler;
+import adql.translator.ADQLTranslator;
+import adql.translator.TranslationException;
 
 public class TestDBChecker {
 
@@ -147,6 +153,52 @@ public class TestDBChecker {
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
 			assertEquals(1, ex.getNbErrors());
 			assertEquals("Unresolved function: \"toto('blabla')\"! No UDF has been defined or found with the signature: toto(STRING).", ex.getErrors().next().getMessage());
+		}
+
+		// Test with a UDF whose the class is specified ; the corresponding object in the ADQL tree must be replace by an instance of this class:
+		udfs = new FunctionDef[]{new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("txt", new DBType(DBDatatype.VARCHAR))})};
+		udfs[0].setUDFClass(UDFToto.class);
+		parser = new ADQLParser(new DBChecker(tables, Arrays.asList(udfs)));
+		try{
+			ADQLQuery query = parser.parseQuery("SELECT toto('blabla') FROM foo;");
+			assertNotNull(query);
+			Iterator<ADQLObject> it = query.search(new SimpleSearchHandler(){
+				@Override
+				protected boolean match(ADQLObject obj){
+					return (obj instanceof UserDefinedFunction) && ((UserDefinedFunction)obj).getName().equals("toto");
+				}
+			});
+			assertTrue(it.hasNext());
+			assertEquals(UDFToto.class.getName(), it.next().getClass().getName());
+			assertFalse(it.hasNext());
+		}catch(Exception e){
+			e.printStackTrace();
+			fail("This query contains a DECLARED UDF with a valid UserDefinedFunction class: this test should have succeeded!");
+		}
+
+		// Test with a wrong parameter type:
+		try{
+			parser.parseQuery("SELECT toto(123) FROM foo;");
+			fail("This query contains an unknown UDF signature (the fct toto is declared with one parameter of type STRING...here it is a numeric): this test should have failed!");
+		}catch(Exception e){
+			assertTrue(e instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Unresolved function: \"toto(123)\"! No UDF has been defined or found with the signature: toto(NUMERIC).", ex.getErrors().next().getMessage());
+		}
+
+		// Test with UDF class constructor throwing an exception:
+		udfs = new FunctionDef[]{new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("txt", new DBType(DBDatatype.VARCHAR))})};
+		udfs[0].setUDFClass(WrongUDFToto.class);
+		parser = new ADQLParser(new DBChecker(tables, Arrays.asList(udfs)));
+		try{
+			parser.parseQuery("SELECT toto('blabla') FROM foo;");
+			fail("The set UDF class constructor has throw an error: this test should have failed!");
+		}catch(Exception e){
+			assertTrue(e instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Impossible to represent the function \"toto\": the following error occured while creating this representation: \"[Exception] Systematic error!\"", ex.getErrors().next().getMessage());
 		}
 	}
 
@@ -603,6 +655,85 @@ public class TestDBChecker {
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
 			assertEquals(1, ex.getNbErrors());
 			assertEquals("Type mismatch! A string value was expected instead of \"toto(POINT('', 1, 2))\".", ex.getErrors().next().getMessage());
+		}
+	}
+
+	private static class WrongUDFToto extends UDFToto {
+		public WrongUDFToto(final ADQLOperand[] params) throws Exception{
+			super(params);
+			throw new Exception("Systematic error!");
+		}
+	}
+
+	public static class UDFToto extends UserDefinedFunction {
+		protected StringConstant fakeParam;
+
+		public UDFToto(final ADQLOperand[] params) throws Exception{
+			if (params == null || params.length == 0)
+				throw new Exception("Missing parameter for the user defined function \"toto\"!");
+			else if (params.length > 1)
+				throw new Exception("Too many parameters for the function \"toto\"! Only one is required.");
+			else if (!(params[0] instanceof StringConstant))
+				throw new Exception("Wrong parameter type! The parameter of the UDF \"toto\" must be a string constant.");
+			fakeParam = (StringConstant)params[0];
+		}
+
+		@Override
+		public final boolean isNumeric(){
+			return false;
+		}
+
+		@Override
+		public final boolean isString(){
+			return true;
+		}
+
+		@Override
+		public final boolean isGeometry(){
+			return false;
+		}
+
+		@Override
+		public ADQLObject getCopy() throws Exception{
+			ADQLOperand[] params = new ADQLOperand[]{(StringConstant)fakeParam.getCopy()};
+			return new UDFToto(params);
+		}
+
+		@Override
+		public final String getName(){
+			return "toto";
+		}
+
+		@Override
+		public final ADQLOperand[] getParameters(){
+			return new ADQLOperand[]{fakeParam};
+		}
+
+		@Override
+		public final int getNbParameters(){
+			return 1;
+		}
+
+		@Override
+		public final ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException{
+			if (index != 0)
+				throw new ArrayIndexOutOfBoundsException("Incorrect parameter index: " + index + "! The function \"toto\" has only one parameter.");
+			return fakeParam;
+		}
+
+		@Override
+		public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
+			if (index != 0)
+				throw new ArrayIndexOutOfBoundsException("Incorrect parameter index: " + index + "! The function \"toto\" has only one parameter.");
+			else if (!(replacer instanceof StringConstant))
+				throw new Exception("Wrong parameter type! The parameter of the UDF \"toto\" must be a string constant.");
+			return (fakeParam = (StringConstant)replacer);
+		}
+
+		@Override
+		public String translate(final ADQLTranslator caller) throws TranslationException{
+			/* Note: Since this function is totally fake, this function will be replaced in SQL by its parameter (the string). */
+			return caller.translate(fakeParam);
 		}
 	}
 

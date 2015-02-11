@@ -16,15 +16,19 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015 - Astronomisches Rechen Institut (ARI)
  */
 
+import java.lang.reflect.Constructor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import adql.db.DBType.DBDatatype;
 import adql.parser.ParseException;
+import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.ADQLFunction;
+import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.UserDefinedFunction;
 
 /**
  * <p>Definition of any function that could be used in ADQL queries.</p>
@@ -45,7 +49,7 @@ import adql.query.operand.function.ADQLFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (10/2014)
+ * @version 1.3 (02/2015)
  * 
  * @since 1.3
  */
@@ -104,6 +108,13 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * <p>So the syntax of this form is the following <i>(items between brackets are optional ; xxx is a string of 3 characters, each being either 0 or 1)</i>:</p>
 	 * <pre>{fctName}([xxx, ...])</pre> */
 	private final String compareForm;
+
+	/**
+	 * <p>Class of the {@link UserDefinedFunction} which must represent the UDF defined by this {@link FunctionDef} in the ADQL tree.</p>
+	 * <p>This class MUST have a constructor with a single parameter of type {@link ADQLOperand}[].</p>
+	 * <p>If this {@link FunctionDef} is defining an ordinary ADQL function, this attribute must be NULL. It is used only for user defined functions.</p> 
+	 */
+	private Class<? extends UserDefinedFunction> udfClass = null;
 
 	/**
 	 * <p>Definition of a function parameter.</p>
@@ -256,6 +267,60 @@ public class FunctionDef implements Comparable<FunctionDef> {
 			throw new ArrayIndexOutOfBoundsException(indParam);
 		else
 			return params[indParam];
+	}
+
+	/**
+	 * <p>Get the class of the {@link UserDefinedFunction} able to represent the function defined here in an ADQL tree.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This getter should return always NULL if the function defined here is not a user defined function.
+	 * 	<br/>
+	 * 	However, if this {@link FunctionDef} is defining a user defined function and this function returns NULL,
+	 * 	the library will create on the fly a {@link DefaultUDF} corresponding to this definition when needed.
+	 * 	Indeed this UDF class is useful only if the translation from ADQL (to SQL for instance) of the defined
+	 * 	function has a different signature (e.g. a different name) in the target language (e.g. SQL).
+	 * </i></p>
+	 * 
+	 * @return	The corresponding {@link UserDefinedFunction}. <i>MAY BE NULL</i>
+	 */
+	public final Class<? extends UserDefinedFunction> getUDFClass(){
+		return udfClass;
+	}
+
+	/**
+	 * <p>Set the class of the {@link UserDefinedFunction} able to represent the function defined here in an ADQL tree.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If this {@link FunctionDef} defines an ordinary ADQL function - and not a user defined function - no class should be set here.
+	 * 	<br/>
+	 * 	However, if it defines a user defined function, there is no obligation to set a UDF class. It is useful only if the translation
+	 * 	from ADQL (to SQL for instance) of the function has a different signature (e.g. a different name) in the target language (e.g. SQL).
+	 * 	If the signature is the same, there is no need to set a UDF class ; a {@link DefaultUDF} will be created on the fly by the library
+	 * 	when needed if it turns out that no UDF class is set.
+	 * </i></p>
+	 * 
+	 * @param udfClass	Class to use to represent in an ADQL tree the User Defined Function defined in this {@link FunctionDef}.
+	 * 
+	 * @throws IllegalArgumentException	If the given class does not provide any constructor with a single parameter of type ADQLOperand[].
+	 */
+	public final < T extends UserDefinedFunction > void setUDFClass(final Class<T> udfClass) throws IllegalArgumentException{
+		try{
+
+			// Ensure that, if a class is provided, it contains a constructor with a single parameter of type ADQLOperand[]:
+			if (udfClass != null){
+				Constructor<T> constructor = udfClass.getConstructor(ADQLOperand[].class);
+				if (constructor == null)
+					throw new IllegalArgumentException("The given class (" + udfClass.getName() + ") does not provide any constructor with a single parameter of type ADQLOperand[]!");
+			}
+
+			// Set the new UDF class:
+			this.udfClass = udfClass;
+
+		}catch(SecurityException e){
+			throw new IllegalArgumentException("A security problem occurred while trying to get constructor from the class " + udfClass.getName() + ": " + e.getMessage());
+		}catch(NoSuchMethodException e){
+			throw new IllegalArgumentException("The given class (" + udfClass.getName() + ") does not provide any constructor with a single parameter of type ADQLOperand[]!");
+		}
 	}
 
 	/**

@@ -14,7 +14,9 @@ import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
+import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
+import static tap.config.TAPConfiguration.VALUE_ANY;
 import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
@@ -27,6 +29,7 @@ import static tap.config.TAPConfiguration.VALUE_XML;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
@@ -44,6 +47,8 @@ import uws.job.user.JobOwner;
 import uws.service.UWSUrl;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
+import adql.db.FunctionDef;
+import adql.db.TestDBChecker.UDFToto;
 
 public class TestDefaultServiceConnection {
 
@@ -56,7 +61,12 @@ public class TestDefaultServiceConnection {
 			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
 			maxOutputLimitProp, bothOutputLimitGoodProp,
 			bothOutputLimitBadProp, userIdentProp, notClassPathUserIdentProp,
-			geometriesProp, noneGeomProp, noneInsideGeomProp, unknownGeomProp;
+			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
+			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
+			udfsWithClassPathProp, udfsListWithNONEorANYProp,
+			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
+			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
+			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp;
 
 	@Before
 	public void setUp() throws Exception{
@@ -137,11 +147,50 @@ public class TestDefaultServiceConnection {
 		noneGeomProp = (Properties)validProp.clone();
 		noneGeomProp.setProperty(KEY_GEOMETRIES, VALUE_NONE);
 
+		anyGeomProp = (Properties)validProp.clone();
+		anyGeomProp.setProperty(KEY_GEOMETRIES, VALUE_ANY);
+
 		noneInsideGeomProp = (Properties)validProp.clone();
 		noneInsideGeomProp.setProperty(KEY_GEOMETRIES, "POINT, Box, none, circle");
 
 		unknownGeomProp = (Properties)validProp.clone();
 		unknownGeomProp.setProperty(KEY_GEOMETRIES, "POINT, Contains, foo, circle,Polygon");
+
+		anyUdfsProp = (Properties)validProp.clone();
+		anyUdfsProp.setProperty(KEY_UDFS, VALUE_ANY);
+
+		noneUdfsProp = (Properties)validProp.clone();
+		noneUdfsProp.setProperty(KEY_UDFS, VALUE_NONE);
+
+		udfsProp = (Properties)validProp.clone();
+		udfsProp.setProperty(KEY_UDFS, "[toto(a string)] ,	[  titi(b REAL) -> double 	]");
+
+		udfsWithClassPathProp = (Properties)validProp.clone();
+		udfsWithClassPathProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
+
+		udfsListWithNONEorANYProp = (Properties)validProp.clone();
+		udfsListWithNONEorANYProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR],ANY");
+
+		udfsWithWrongParamLengthProp = (Properties)validProp.clone();
+		udfsWithWrongParamLengthProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, foo]");
+
+		udfsWithMissingBracketsProp = (Properties)validProp.clone();
+		udfsWithMissingBracketsProp.setProperty(KEY_UDFS, "toto(a string)->VARCHAR");
+
+		udfsWithMissingDefProp1 = (Properties)validProp.clone();
+		udfsWithMissingDefProp1.setProperty(KEY_UDFS, "[{adql.db.TestDBChecker$UDFToto}]");
+
+		udfsWithMissingDefProp2 = (Properties)validProp.clone();
+		udfsWithMissingDefProp2.setProperty(KEY_UDFS, "[,{adql.db.TestDBChecker$UDFToto}]");
+
+		emptyUdfItemProp1 = (Properties)validProp.clone();
+		emptyUdfItemProp1.setProperty(KEY_UDFS, "[ ]");
+
+		emptyUdfItemProp2 = (Properties)validProp.clone();
+		emptyUdfItemProp2.setProperty(KEY_UDFS, "[ ,	 ]");
+
+		udfWithMissingEndBracketProp = (Properties)validProp.clone();
+		udfWithMissingEndBracketProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR");
 	}
 
 	/**
@@ -184,6 +233,7 @@ public class TestDefaultServiceConnection {
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
 			assertNull(connection.getUserIdentifier());
 			assertNull(connection.getGeometries());
+			assertEquals(0, connection.getUDFs().size());
 
 			// finally, save metadata in an XML file for the other tests:
 			writer = new PrintWriter(new File(XML_FILE));
@@ -213,8 +263,8 @@ public class TestDefaultServiceConnection {
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
 			assertNull(connection.getUserIdentifier());
 			assertNull(connection.getGeometries());
+			assertEquals(0, connection.getUDFs().size());
 		}catch(Exception e){
-			e.printStackTrace();
 			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
 		}
 
@@ -223,8 +273,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(missingMetaProp);
 			fail("This MUST have failed because the property 'metadata' is missing!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).", e.getMessage());
 		}
 
 		// Missing metadata_file property:
@@ -232,8 +282,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(missingMetaFileProp);
 			fail("This MUST have failed because the property 'metadata_file' is missing!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The property \"" + KEY_METADATA_FILE + "\" is missing! According to the property \"" + KEY_METADATA + "\", metadata must be fetched from an XML document. The local file path of it MUST be provided using the property \"" + KEY_METADATA_FILE + "\".");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("The property \"" + KEY_METADATA_FILE + "\" is missing! According to the property \"" + KEY_METADATA + "\", metadata must be fetched from an XML document. The local file path of it MUST be provided using the property \"" + KEY_METADATA_FILE + "\".", e.getMessage());
 		}
 
 		// Wrong metadata property:
@@ -241,8 +291,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(wrongMetaProp);
 			fail("This MUST have failed because the property 'metadata' has a wrong value!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Unsupported value for the property \"" + KEY_METADATA + "\": \"foo\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Unsupported value for the property \"" + KEY_METADATA + "\": \"foo\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).", e.getMessage());
 		}
 
 		// Wrong metadata_file property:
@@ -250,8 +300,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(wrongMetaFileProp);
 			fail("This MUST have failed because the property 'metadata_file' has a wrong value!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "A grave error occurred while reading/parsing the TableSet XML document: \"foo\"!");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("A grave error occurred while reading/parsing the TableSet XML document: \"foo\"!", e.getMessage());
 		}
 
 		// No File Manager:
@@ -259,8 +309,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(noFmProp);
 			fail("This MUST have failed because no File Manager is specified!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The property \"" + KEY_FILE_MANAGER + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("The property \"" + KEY_FILE_MANAGER + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_LOCAL + " or a class path between {...}.", e.getMessage());
 		}
 
 		// File Manager = Class Path:
@@ -288,8 +338,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(incorrectFmProp);
 			fail("This MUST have failed because an incorrect File Manager value has been provided!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Unknown value for the property \"" + KEY_FILE_MANAGER + "\": \"foo\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Unknown value for the property \"" + KEY_FILE_MANAGER + "\": \"foo\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.", e.getMessage());
 		}
 
 		// Valid output formats list:
@@ -313,8 +363,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(badSVFormat1Prop);
 			fail("This MUST have failed because an incorrect SV output format value has been provided!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Missing separator char/string for the SV output format: \"sv\"!");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Missing separator char/string for the SV output format: \"sv\"!", e.getMessage());
 		}
 
 		// Bad SV(...) format 2 = "sv()":
@@ -322,8 +372,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(badSVFormat2Prop);
 			fail("This MUST have failed because an incorrect SV output format value has been provided!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Missing separator char/string for the SV output format: \"sv()\"!");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Missing separator char/string for the SV output format: \"sv()\"!", e.getMessage());
 		}
 
 		// Unknown output format:
@@ -331,8 +381,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(unknownFormatProp);
 			fail("This MUST have failed because an incorrect output format value has been provided!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Unknown output format: foo");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Unknown output format: foo", e.getMessage());
 		}
 
 		// Valid value for max_async_jobs:
@@ -356,8 +406,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(notIntMaxAsyncProp);
 			fail("This MUST have failed because a not integer value has been provided for \"" + KEY_MAX_ASYNC_JOBS + "\"!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Integer expected for the property \"" + KEY_MAX_ASYNC_JOBS + "\", instead of: \"foo\"!");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Integer expected for the property \"" + KEY_MAX_ASYNC_JOBS + "\", instead of: \"foo\"!", e.getMessage());
 		}
 
 		// Test with no output limit specified:
@@ -409,8 +459,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(bothOutputLimitBadProp);
 			fail("This MUST have failed because the default output limit is greater than the maximum one!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The default output limit (here: 1000) MUST be less or equal to the maximum output limit (here: 100)!");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("The default output limit (here: 1000) MUST be less or equal to the maximum output limit (here: 100)!", e.getMessage());
 		}
 
 		// Valid user identifier:
@@ -428,8 +478,8 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(notClassPathUserIdentProp);
 			fail("This MUST have failed because the user_identifier value is not a class path!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Class path expected for the property \"" + KEY_USER_IDENTIFIER + "\", instead of: \"foo\"!");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Class path expected for the property \"" + KEY_USER_IDENTIFIER + "\", instead of: \"foo\"!", e.getMessage());
 		}
 
 		// Valid geometry list:
@@ -454,13 +504,21 @@ public class TestDefaultServiceConnection {
 			fail("This MUST have succeeded because the given list of geometries is correct (reduced to only NONE)! \nCaught exception: " + getPertinentMessage(e));
 		}
 
+		// "ANY" as geometry list:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(anyGeomProp);
+			assertNull(connection.getGeometries());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of geometries is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
 		// "NONE" inside a geometry list:
 		try{
 			new DefaultServiceConnection(noneInsideGeomProp);
 			fail("This MUST have failed because the given geometry list contains at least 2 items, whose one is NONE!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The special value \"" + VALUE_NONE + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that no value is allowed.");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("The special value \"" + VALUE_NONE + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that no value is allowed.", e.getMessage());
 		}
 
 		// Unknown geometrical function:
@@ -468,8 +526,121 @@ public class TestDefaultServiceConnection {
 			new DefaultServiceConnection(unknownGeomProp);
 			fail("This MUST have failed because the given geometry list contains at least 1 unknown ADQL geometrical function!");
 		}catch(Exception e){
-			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "Unknown ADQL geometrical function: \"foo\"!");
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Unknown ADQL geometrical function: \"foo\"!", e.getMessage());
+		}
+
+		// "ANY" as UDFs list:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(anyUdfsProp);
+			assertNull(connection.getUDFs());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of UDFs is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// "NONE" as UDFs list:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(noneUdfsProp);
+			assertNotNull(connection.getUDFs());
+			assertEquals(0, connection.getUDFs().size());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of UDFs is correct (reduced to only NONE)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Valid list of UDFs:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(udfsProp);
+			assertNotNull(connection.getUDFs());
+			assertEquals(2, connection.getUDFs().size());
+			Iterator<FunctionDef> it = connection.getUDFs().iterator();
+			assertEquals("toto(a VARCHAR)", it.next().toString());
+			assertEquals("titi(b REAL) -> DOUBLE", it.next().toString());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Valid list of UDFs containing one UDF with a classpath:
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(udfsWithClassPathProp);
+			assertNotNull(connection.getUDFs());
+			assertEquals(1, connection.getUDFs().size());
+			FunctionDef def = connection.getUDFs().iterator().next();
+			assertEquals("toto(a VARCHAR) -> VARCHAR", def.toString());
+			assertEquals(UDFToto.class, def.getUDFClass());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// "NONE" inside a UDFs list:
+		try{
+			new DefaultServiceConnection(udfsListWithNONEorANYProp);
+			fail("This MUST have failed because the given UDFs list contains at least 2 items, whose one is ANY!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong UDF declaration syntax: unexpected character at position 27 in the property " + KEY_UDFS + ": \"A\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{classpath}]\".", e.getMessage());
+		}
+
+		// UDF with no brackets:
+		try{
+			new DefaultServiceConnection(udfsWithMissingBracketsProp);
+			fail("This MUST have failed because one UDFs list item has no brackets!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong UDF declaration syntax: unexpected character at position 1 in the property " + KEY_UDFS + ": \"t\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{classpath}]\".", e.getMessage());
+		}
+
+		// UDFs whose one item have more parts than supported:
+		try{
+			new DefaultServiceConnection(udfsWithWrongParamLengthProp);
+			fail("This MUST have failed because one UDFs list item has too many parameters!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong UDF declaration syntax: only two items (signature and classpath) can be given within brackets. (position in the property " + KEY_UDFS + ": 58)", e.getMessage());
+		}
+
+		// UDF with missing definition part (or wrong since there is no comma):
+		try{
+			new DefaultServiceConnection(udfsWithMissingDefProp1);
+			fail("This MUST have failed because one UDFs list item has a wrong signature part (it has been forgotten)!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong UDF declaration syntax: Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\" (position in the property " + KEY_UDFS + ": 2-33)", e.getMessage());
+		}
+
+		// UDF with missing definition part (or wrong since there is no comma):
+		try{
+			new DefaultServiceConnection(udfsWithMissingDefProp2);
+			fail("This MUST have failed because one UDFs list item has no signature part!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Missing UDF declaration! (position in the property " + KEY_UDFS + ": 2-2)", e.getMessage());
+		}
+
+		// Empty UDF item (without comma):
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(emptyUdfItemProp1);
+			assertNotNull(connection.getUDFs());
+			assertEquals(0, connection.getUDFs().size());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of UDFs contains one empty UDF (which should be merely ignored)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Empty UDF item (with comma):
+		try{
+			ServiceConnection connection = new DefaultServiceConnection(emptyUdfItemProp2);
+			assertNotNull(connection.getUDFs());
+			assertEquals(0, connection.getUDFs().size());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of UDFs contains one empty UDF (which should be merely ignored)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// UDF item without its closing bracket:
+		try{
+			new DefaultServiceConnection(udfWithMissingEndBracketProp);
+			fail("This MUST have failed because one UDFs list item has no closing bracket!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong UDF declaration syntax: missing closing bracket at position 24!", e.getMessage());
 		}
 	}
 

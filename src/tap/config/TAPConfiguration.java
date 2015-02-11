@@ -89,6 +89,8 @@ public final class TAPConfiguration {
 	/* ADQL RESTRICTIONS */
 	public final static String KEY_GEOMETRIES = "geometries";
 	public final static String VALUE_NONE = "NONE";
+	public final static String KEY_UDFS = "udfs";
+	public final static String VALUE_ANY = "ANY";
 
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>

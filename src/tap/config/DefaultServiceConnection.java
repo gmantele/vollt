@@ -25,9 +25,11 @@ import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
+import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
+import static tap.config.TAPConfiguration.VALUE_ANY;
 import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
 import static tap.config.TAPConfiguration.VALUE_JSON;
@@ -65,6 +67,8 @@ import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
 import adql.db.FunctionDef;
+import adql.parser.ParseException;
+import adql.query.operand.function.UserDefinedFunction;
 
 public final class DefaultServiceConnection implements ServiceConnection {
 
@@ -146,6 +150,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 
 		// 9. CONFIGURE ADQL:
 		initADQLGeometries(tapConfig);
+		initUDFs(tapConfig);
 
 		// 10. MAKE THE SERVICE AVAILABLE:
 		setAvailable(true, "TAP service available.");
@@ -465,6 +470,10 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		else if (propValue.equalsIgnoreCase(VALUE_NONE))
 			geometries = new ArrayList<String>(0);
 
+		// "ANY" => ALL FCT ALLOWED (= all of these functions are allowed)!
+		else if (propValue.equalsIgnoreCase(VALUE_ANY))
+			geometries = null;
+
 		// OTHERWISE, JUST THE ALLOWED ONE ARE LISTED:
 		else{
 			// split all the list items:
@@ -482,6 +491,9 @@ public final class DefaultServiceConnection implements ServiceConnection {
 					// "NONE" is not allowed inside a list => error!
 					else if (item.toUpperCase().equals(VALUE_NONE))
 						throw new TAPException("The special value \"" + VALUE_NONE + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that no value is allowed.");
+					// "ANY" is not allowed inside a list => error!
+					else if (item.toUpperCase().equals(VALUE_ANY))
+						throw new TAPException("The special value \"" + VALUE_ANY + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that any value is allowed.");
 					// unknown value => error!
 					else
 						throw new TAPException("Unknown ADQL geometrical function: \"" + item + "\"!");
@@ -491,6 +503,159 @@ public final class DefaultServiceConnection implements ServiceConnection {
 					geometries = null;
 			}else
 				geometries = null;
+		}
+	}
+
+	private void initUDFs(final Properties tapConfig) throws TAPException{
+		// Get the property value:
+		String propValue = getProperty(tapConfig, KEY_UDFS);
+
+		// NO VALUE => NO UNKNOWN FCT ALLOWED!
+		if (propValue == null)
+			udfs = new ArrayList<FunctionDef>(0);
+
+		// "NONE" => NO UNKNOWN FCT ALLOWED (= none of the unknown functions are allowed)!
+		else if (propValue.equalsIgnoreCase(VALUE_NONE))
+			udfs = new ArrayList<FunctionDef>(0);
+
+		// "ANY" => ALL UNKNOWN FCT ALLOWED (= all of the unknown functions are allowed)!
+		else if (propValue.equalsIgnoreCase(VALUE_ANY))
+			udfs = null;
+
+		// OTHERWISE, JUST THE ALLOWED ONE ARE LISTED:
+		else{
+
+			char c;
+			int ind = 0;
+			short nbComma = 0;
+			boolean within_item = false, within_params = false, within_classpath = false;
+			StringBuffer buf = new StringBuffer();
+			String signature, classpath;
+			int[] posSignature = new int[]{-1,-1}, posClassPath = new int[]{-1,-1};
+
+			signature = null;
+			classpath = null;
+			buf.delete(0, buf.length());
+
+			while(ind < propValue.length()){
+				// Get the character:
+				c = propValue.charAt(ind++);
+				// If space => ignore
+				if (!within_params && Character.isWhitespace(c))
+					continue;
+				// If inside a parameters list, keep all characters until the list end (')'):
+				if (within_params){
+					if (c == ')')
+						within_params = false;
+					buf.append(c);
+				}
+				// If inside a classpath, keep all characters until the classpath end ('}'):
+				else if (within_classpath){
+					if (c == '}')
+						within_classpath = false;
+					buf.append(c);
+				}
+				// If inside an UDF declaration:
+				else if (within_item){
+					switch(c){
+						case '(': /* start of a parameters list */
+							within_params = true;
+							buf.append(c);
+							break;
+						case '{': /* start of a classpath */
+							within_classpath = true;
+							buf.append(c);
+							break;
+						case ',': /* separation between the signature and the classpath */
+							// count commas within this item:
+							if (++nbComma > 1)
+								// if more than 1, throw an error:
+								throw new TAPException("Wrong UDF declaration syntax: only two items (signature and classpath) can be given within brackets. (position in the property " + KEY_UDFS + ": " + ind + ")");
+							else{
+								// end of the signature and start of the class path:
+								signature = buf.toString();
+								buf.delete(0, buf.length());
+								posSignature[1] = ind;
+								posClassPath[0] = ind + 1;
+							}
+							break;
+						case ']': /* end of a UDF declaration */
+							within_item = false;
+							if (nbComma == 0){
+								signature = buf.toString();
+								posSignature[1] = ind;
+							}else{
+								classpath = (buf.length() == 0 ? null : buf.toString());
+								if (classpath != null)
+									posClassPath[1] = ind;
+							}
+							buf.delete(0, buf.length());
+
+							// no signature...
+							if (signature == null || signature.length() == 0){
+								// ...BUT a classpath => error
+								if (classpath != null)
+									throw new TAPException("Missing UDF declaration! (position in the property " + KEY_UDFS + ": " + posSignature[0] + "-" + posSignature[1] + ")");
+								// ... => ignore this item
+								else
+									continue;
+							}
+
+							// add the new UDF in the list:
+							try{
+								// resolve the function signature:
+								FunctionDef def = FunctionDef.parse(signature);
+								// resolve the class path:
+								if (classpath != null){
+									if (isClassPath(classpath)){
+										Class<? extends UserDefinedFunction> fctClass = null;
+										try{
+											// fetch the class:
+											fctClass = fetchClass(classpath, KEY_UDFS, UserDefinedFunction.class);
+											// set the class inside the UDF definition:
+											def.setUDFClass(fctClass);
+										}catch(TAPException te){
+											throw new TAPException("Invalid class path for the UDF definition \"" + def + "\": " + te.getMessage() + " (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")", te);
+										}catch(IllegalArgumentException iae){
+											throw new TAPException("Invalid class path for the UDF definition \"" + def + "\": missing a constructor with a single parameter of type ADQLOperand[] " + (fctClass != null ? "in the class \"" + fctClass.getName() + "\"" : "") + "! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
+										}
+									}else
+										throw new TAPException("Invalid class path for the UDF definition \"" + def + "\": \"" + classpath + "\" is not a class path (or is not surrounding by {} as expected in this property file)! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
+								}
+								// add the UDF:
+								udfs.add(def);
+							}catch(ParseException pe){
+								throw new TAPException("Wrong UDF declaration syntax: " + pe.getMessage() + " (position in the property " + KEY_UDFS + ": " + posSignature[0] + "-" + posSignature[1] + ")", pe);
+							}
+
+							// reset some variables:
+							nbComma = 0;
+							signature = null;
+							classpath = null;
+							break;
+						default: /* keep all other characters */
+							buf.append(c);
+							break;
+					}
+				}
+				// If outside of everything, just starting a UDF declaration or separate each declaration is allowed:
+				else{
+					switch(c){
+						case '[':
+							within_item = true;
+							posSignature[0] = ind + 1;
+							break;
+						case ',':
+							break;
+						default:
+							throw new TAPException("Wrong UDF declaration syntax: unexpected character at position " + ind + " in the property " + KEY_UDFS + ": \"" + c + "\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{classpath}]\".");
+					}
+				}
+			}
+
+			// If the parsing is not finished, throw an error:
+			if (within_item)
+				throw new TAPException("Wrong UDF declaration syntax: missing closing bracket at position " + propValue.length() + "!");
 		}
 	}
 
@@ -722,7 +887,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 
 	@Override
 	public Collection<FunctionDef> getUDFs(){
-		return udfs;	// FORBID ANY UNKNOWN FUNCTION
+		return udfs;
 	}
 
 }
