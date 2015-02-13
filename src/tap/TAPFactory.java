@@ -150,29 +150,6 @@ public abstract class TAPFactory implements UWSFactory {
 	public abstract void freeConnection(final DBConnection conn);
 
 	/**
-	 * <p>Count the number of connection not currently used and available on demand.</p>
-	 * 
-	 * <p>This function is called particularly by the queue manager in order to determine whether a job can start.
-	 * It won't start if no connection is available.</p>
-	 * 
-	 * <p><i><b>Important note:</b>
-	 * 	If the implementation of this factory creates connections on the fly, the value 2 (or bigger) must always be returned.
-	 * 	However, if the connections are managed by a connection pool, the count value must be asked to it.
-	 * </i></p>
-	 * 
-	 * <p><i>Note:
-	 * 	In case of error when counting, a null or negative value must be returned. If the error must be
-	 * 	reported, it is up to this function to log the error before returning a null or negative value.
-	 * </i></p>
-	 * 
-	 * @return	The number of connections still available,
-	 *        	or <=0 in case of problem (<i>note: in this case, the error must be logged in the implementation of this function</i>).
-	 * 
-	 * @since 2.0
-	 */
-	public abstract int countFreeConnections();
-
-	/**
 	 * <p>Destroy all resources (and particularly DB connections and JDBC driver) allocated in this factory.</p>
 	 * 
 	 * <p><i>Note:

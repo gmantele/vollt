@@ -4,12 +4,16 @@ import static tap.config.TAPConfiguration.DEFAULT_BACKUP_BY_USER;
 import static tap.config.TAPConfiguration.DEFAULT_BACKUP_FREQUENCY;
 import static tap.config.TAPConfiguration.KEY_BACKUP_BY_USER;
 import static tap.config.TAPConfiguration.KEY_BACKUP_FREQUENCY;
+import static tap.config.TAPConfiguration.KEY_DATABASE_ACCESS;
+import static tap.config.TAPConfiguration.KEY_DATASOURCE_JNDI_NAME;
 import static tap.config.TAPConfiguration.KEY_DB_PASSWORD;
 import static tap.config.TAPConfiguration.KEY_DB_USERNAME;
 import static tap.config.TAPConfiguration.KEY_JDBC_DRIVER;
 import static tap.config.TAPConfiguration.KEY_JDBC_URL;
 import static tap.config.TAPConfiguration.KEY_SQL_TRANSLATOR;
+import static tap.config.TAPConfiguration.VALUE_JDBC;
 import static tap.config.TAPConfiguration.VALUE_JDBC_DRIVERS;
+import static tap.config.TAPConfiguration.VALUE_JNDI;
 import static tap.config.TAPConfiguration.VALUE_PGSPHERE;
 import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
 import static tap.config.TAPConfiguration.VALUE_USER_ACTION;
@@ -18,6 +22,10 @@ import static tap.config.TAPConfiguration.getProperty;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
@@ -32,9 +40,11 @@ import adql.translator.JDBCTranslator;
 import adql.translator.PgSphereTranslator;
 import adql.translator.PostgreSQLTranslator;
 
-public final class DefaultTAPFactory extends AbstractTAPFactory {
+public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 
 	private Class<? extends JDBCTranslator> translator;
+
+	private final DataSource datasource;
 
 	private final String driverPath;
 	private final String dbUrl;
@@ -44,66 +54,102 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 	private boolean backupByUser;
 	private long backupFrequency;
 
-	public DefaultTAPFactory(ServiceConnection service, final Properties tapConfig) throws NullPointerException, TAPException{
+	public ConfigurableTAPFactory(ServiceConnection service, final Properties tapConfig) throws NullPointerException, TAPException{
 		super(service);
 
-		/* 0. Extract the DB type and deduce the JDBC Driver path */
-		String jdbcDriver = getProperty(tapConfig, KEY_JDBC_DRIVER);
-		String dbUrl = getProperty(tapConfig, KEY_JDBC_URL);
-		if (jdbcDriver == null){
-			if (dbUrl == null)
-				throw new TAPException("The property \"" + KEY_JDBC_URL + "\" is missing!");
-			else if (!dbUrl.startsWith(JDBCConnection.JDBC_PREFIX + ":"))
-				throw new TAPException("JDBC URL format incorrect! It MUST begins with " + JDBCConnection.JDBC_PREFIX + ":");
-			else{
-				String dbType = dbUrl.substring(JDBCConnection.JDBC_PREFIX.length() + 1);
-				if (dbType.indexOf(':') <= 0)
-					throw new TAPException("JDBC URL format incorrect! Database type name is missing.");
-				dbType = dbType.substring(0, dbType.indexOf(':'));
+		/* 1. Configure the database access */
+		final String dbAccessMethod = getProperty(tapConfig, KEY_DATABASE_ACCESS);
 
-				jdbcDriver = VALUE_JDBC_DRIVERS.get(dbType);
-				if (jdbcDriver == null)
-					throw new TAPException("No JDBC driver known for the DBMS \"" + dbType + "\"!");
+		// Case a: Missing access method => error!
+		if (dbAccessMethod == null)
+			throw new TAPException("The property \"" + KEY_DATABASE_ACCESS + "\" is missing! It is required to connect to the database. Two possible values: \"" + VALUE_JDBC + "\" and \"" + VALUE_JNDI + "\".");
+
+		// Case b: JDBC ACCESS
+		else if (dbAccessMethod.equalsIgnoreCase(VALUE_JDBC)){
+			// Extract the DB type and deduce the JDBC Driver path:
+			String jdbcDriver = getProperty(tapConfig, KEY_JDBC_DRIVER);
+			String dbUrl = getProperty(tapConfig, KEY_JDBC_URL);
+			if (jdbcDriver == null){
+				if (dbUrl == null)
+					throw new TAPException("The property \"" + KEY_JDBC_URL + "\" is missing! Since the choosen database access method is \"" + VALUE_JDBC + "\", this property is required.");
+				else if (!dbUrl.startsWith(JDBCConnection.JDBC_PREFIX + ":"))
+					throw new TAPException("JDBC URL format incorrect! It MUST begins with " + JDBCConnection.JDBC_PREFIX + ":");
+				else{
+					String dbType = dbUrl.substring(JDBCConnection.JDBC_PREFIX.length() + 1);
+					if (dbType.indexOf(':') <= 0)
+						throw new TAPException("JDBC URL format incorrect! Database type name is missing.");
+					dbType = dbType.substring(0, dbType.indexOf(':'));
+
+					jdbcDriver = VALUE_JDBC_DRIVERS.get(dbType);
+					if (jdbcDriver == null)
+						throw new TAPException("No JDBC driver known for the DBMS \"" + dbType + "\"!");
+				}
+			}
+			// Set the DB connection parameters:
+			this.driverPath = jdbcDriver;
+			this.dbUrl = dbUrl;
+			this.dbUser = getProperty(tapConfig, KEY_DB_USERNAME);
+			this.dbPassword = getProperty(tapConfig, KEY_DB_PASSWORD);
+			// Set the other DB connection parameters:
+			this.datasource = null;
+		}
+		// Case c: JNDI ACCESS
+		else if (dbAccessMethod.equalsIgnoreCase(VALUE_JNDI)){
+			// Get the datasource JDNI name:
+			String dsName = getProperty(tapConfig, KEY_DATASOURCE_JNDI_NAME);
+			if (dsName == null)
+				throw new TAPException("The property \"" + KEY_DATASOURCE_JNDI_NAME + "\" is missing! Since the choosen database access method is \"" + VALUE_JNDI + "\", this property is required.");
+			try{
+				// Load the JNDI context:
+				InitialContext cxt = new InitialContext();
+				// Look for the specified datasource:
+				datasource = (DataSource)cxt.lookup(dsName);
+				if (datasource == null)
+					throw new TAPException("No datasource found with the JNDI name \"" + dsName + "\"!");
+				// Set the other DB connection parameters:
+				this.driverPath = null;
+				this.dbUrl = null;
+				this.dbUser = null;
+				this.dbPassword = null;
+			}catch(NamingException ne){
+				throw new TAPException("No datasource found with the JNDI name \"" + dsName + "\"!");
 			}
 		}
+		// Case d: unsupported value
+		else
+			throw new TAPException("Unsupported value for the property " + KEY_DATABASE_ACCESS + ": \"" + dbAccessMethod + "\"! Allowed values: \"" + VALUE_JNDI + "\" or \"" + VALUE_JDBC + "\".");
 
-		/* 1. Set the ADQLTranslator to use in function of the sql_translator property */
+		/* 2. Set the ADQLTranslator to use in function of the sql_translator property */
 		String sqlTranslator = getProperty(tapConfig, KEY_SQL_TRANSLATOR);
-		// case a.) no translator specified
+		// case a: no translator specified
 		if (sqlTranslator == null)
 			throw new TAPException("The property \"" + KEY_SQL_TRANSLATOR + "\" is missing! ADQL queries can not be translated without it. Allowed values: \"" + VALUE_POSTGRESQL + "\", \"" + VALUE_PGSPHERE + "\" or a class path of a class implementing SQLTranslator.");
 
-		// case b.) PostgreSQL translator
+		// case b: PostgreSQL translator
 		else if (sqlTranslator.equalsIgnoreCase(VALUE_POSTGRESQL))
 			translator = PostgreSQLTranslator.class;
 
-		// case c.) PgSphere translator
+		// case c: PgSphere translator
 		else if (sqlTranslator.equalsIgnoreCase(VALUE_PGSPHERE))
 			translator = PgSphereTranslator.class;
 
-		// case d.) a client defined ADQLTranslator (with the provided class path)
+		// case d: a client defined ADQLTranslator (with the provided class path)
 		else if (TAPConfiguration.isClassPath(sqlTranslator))
 			translator = TAPConfiguration.fetchClass(sqlTranslator, KEY_SQL_TRANSLATOR, JDBCTranslator.class);
 
-		// case e.) unsupported value
+		// case e: unsupported value
 		else
-			throw new TAPException("Unsupported value for the property sql_translator: \"" + sqlTranslator + "\" !");
+			throw new TAPException("Unsupported value for the property " + KEY_SQL_TRANSLATOR + ": \"" + sqlTranslator + "\" !");
 
-		/* 2. Test the construction of the ADQLTranslator */
+		/* 3. Test the construction of the ADQLTranslator */
 		createADQLTranslator();
 
-		/* 3. Store the DB connection parameters */
-		this.driverPath = jdbcDriver;
-		this.dbUrl = dbUrl;
-		this.dbUser = getProperty(tapConfig, KEY_DB_USERNAME);;
-		this.dbPassword = getProperty(tapConfig, KEY_DB_PASSWORD);
-
-		/* 4. Test the DB connection */
+		/* 4. Test the DB connection (note: a translator is needed to create a connection) */
 		DBConnection dbConn = getConnection("0");
 		freeConnection(dbConn);
 
 		/* 5. Set the UWS Backup Parameter */
-		// BACKUP FREQUENCY:
+		// Set the backup frequency:
 		String propValue = getProperty(tapConfig, KEY_BACKUP_FREQUENCY);
 		boolean isTime = false;
 		// determine whether the value is a time period ; if yes, set the frequency:
@@ -123,7 +169,7 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 			else
 				backupFrequency = DEFAULT_BACKUP_FREQUENCY;
 		}
-		// BACKUP BY USER:
+		// Specify whether the backup must be organized by user or not:
 		propValue = getProperty(tapConfig, KEY_BACKUP_BY_USER);
 		backupByUser = (propValue == null) ? DEFAULT_BACKUP_BY_USER : Boolean.parseBoolean(propValue);
 	}
@@ -133,7 +179,7 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 	 * specified by the property sql_translator). If the instance can not be build,
 	 * whatever is the reason, a TAPException MUST be thrown.
 	 * 
-	 * Note: This function is called at the initialization of {@link DefaultTAPFactory}
+	 * Note: This function is called at the initialization of {@link ConfigurableTAPFactory}
 	 * in order to check that a translator can be created.
 	 */
 	protected JDBCTranslator createADQLTranslator() throws TAPException{
@@ -143,7 +189,7 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 			if (ex instanceof TAPException)
 				throw (TAPException)ex;
 			else
-				throw new TAPException("Impossible to create a JDBCTranslator instance with the empty constructor of \"" + translator.getName() + "\" (see the property sql_translator) for the following reason: " + ex.getMessage());
+				throw new TAPException("Impossible to create a JDBCTranslator instance with the empty constructor of \"" + translator.getName() + "\" (see the property " + KEY_SQL_TRANSLATOR + ") for the following reason: " + ex.getMessage());
 		}
 	}
 
@@ -156,7 +202,14 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 	 */
 	@Override
 	public DBConnection getConnection(String jobID) throws TAPException{
-		return new JDBCConnection(driverPath, dbUrl, dbUser, dbPassword, createADQLTranslator(), jobID, this.service.getLogger());
+		if (datasource != null){
+			try{
+				return new JDBCConnection(datasource.getConnection(), createADQLTranslator(), jobID, this.service.getLogger());
+			}catch(SQLException se){
+				throw new TAPException("Impossible to establish a connection to the database using the set up datasource!", se);
+			}
+		}else
+			return new JDBCConnection(driverPath, dbUrl, dbUser, dbPassword, createADQLTranslator(), jobID, this.service.getLogger());
 	}
 
 	@Override
@@ -166,11 +219,6 @@ public final class DefaultTAPFactory extends AbstractTAPFactory {
 		}catch(SQLException se){
 			service.getLogger().error("Can not close properly the connection \"" + conn.getID() + "\"!", se);
 		}
-	}
-
-	@Override
-	public int countFreeConnections(){
-		return 2;	// 1 for /sync + 1 for /async
 	}
 
 	@Override

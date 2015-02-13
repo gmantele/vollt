@@ -29,7 +29,7 @@ public class TestTAPConfiguration {
 	 * 	- null, "", "{}", "an incorrect syntax" 				=> FALSE must be returned
 	 * 	- "{ }", "{ 	}", "{class.path}", "{ class.path	}" 	=> TRUE must be returned
 	 * 
-	 * @see DefaultServiceConnection#isClassPath(String)
+	 * @see ConfigurableServiceConnection#isClassPath(String)
 	 */
 	@Test
 	public void testIsClassPath(){
@@ -268,7 +268,7 @@ public class TestTAPConfiguration {
 			fail("This test should have failed because an incorrect limit is provided: \"abc100b\"!");
 		}catch(TAPException te){
 			assertEquals(te.getClass(), TAPException.class);
-			assertEquals(te.getMessage(), "Numeric value expected for the property " + propertyName + " for the substring \"abc100\" of the whole value: \"abc100b\"!");
+			assertEquals(te.getMessage(), "Integer expected for the property " + propertyName + " for the substring \"abc100\" of the whole value: \"abc100b\"!");
 		}
 
 		// Test with a BYTES unit whereas the BYTES unit is forbidden:

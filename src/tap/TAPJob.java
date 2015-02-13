@@ -20,16 +20,21 @@ package tap;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.util.Date;
 import java.util.List;
 
+import tap.log.TAPLog;
 import tap.parameters.DALIUpload;
 import tap.parameters.TAPParameters;
 import uws.UWSException;
 import uws.job.ErrorSummary;
+import uws.job.ExecutionPhase;
+import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Description of a TAP job. This class is used for asynchronous but also synchronous queries.</p>
@@ -251,6 +256,105 @@ public class TAPJob extends UWSJob {
 		if (getRestorationDate() == null && !isRunning())
 			throw new UWSException("Impossible to set an execution report if the job is not in the EXECUTING phase ! Here, the job \"" + jobId + "\" is in the phase " + getPhase());
 		this.execReport = execReport;
+	}
+
+	/**
+	 * <p>Create the thread to use for the execution of this job.</p>
+	 * 
+	 * <p><i>Note: If the job already exists, this function does nothing.</i></p>
+	 * 
+	 * @throws NullPointerException	If the factory returned NULL rather than the asked {@link JobThread}.
+	 * @throws UWSException			If the thread creation fails.
+	 * 
+	 * @see TAPFactory#createJobThread(UWSJob)
+	 * 
+	 * @since 2.0
+	 */
+	private final void createThread() throws NullPointerException, UWSException{
+		if (thread == null){
+			thread = getFactory().createJobThread(this);
+			if (thread == null)
+				throw new NullPointerException("Missing job work! The thread created by the factory is NULL => The job can't be executed!");
+		}
+	}
+
+	/**
+	 * <p>Check whether this job is able to start right now.</p>
+	 * 
+	 * <p>
+	 * 	Basically, this function try to get a database connection. If none is available,
+	 * 	then this job can not start and this function return FALSE. In all the other cases,
+	 * 	TRUE is returned.
+	 * </p>
+	 * 
+	 * <p><b>Warning:</b> This function will indirectly open and keep a database connection, so that the job can be started just after its call.
+	 * If it turns out that the execution won't start just after this call, the DB connection should be closed in some way in order to save database resources.</i></p>
+	 * 
+	 * @return	<i>true</i> if this job can start right now, <i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final boolean isReadyForExecution(){
+		return thread != null && ((AsyncThread)thread).isReadyForExecution();
+	}
+
+	@Override
+	public final void start(final boolean useManager) throws UWSException{
+		// This job must know its jobs list and this jobs list must know its UWS:
+		if (getJobList() == null || getJobList().getUWS() == null)
+			throw new IllegalStateException("A TAPJob can not start if it is not linked to a job list or if its job list is not linked to a UWS.");
+
+		// If already running do nothing:
+		else if (isRunning())
+			return;
+
+		// If asked propagate this request to the execution manager:
+		else if (useManager){
+			// Create its corresponding thread, if not already existing:
+			createThread();
+			// Ask to the execution manager to test whether the job is ready for execution, and if, execute it (by calling this function with "false" as parameter):
+			getJobList().getExecutionManager().execute(this);
+
+		}// Otherwise start directly the execution:
+		else{
+			// Create its corresponding thread, if not already existing:
+			createThread();
+			if (!isReadyForExecution()){
+				UWSException ue = new NoDBConnectionAvailableException();
+				((TAPLog)getLogger()).logDB(LogLevel.ERROR, null, "CONNECTION_LACK", "No more database connection available for the moment!", ue);
+				getLogger().logJob(LogLevel.ERROR, this, "ERROR", "Asynchronous job " + jobId + " execution aborted: no database connection available!", null);
+				throw ue;
+			}
+
+			// Change the job phase:
+			setPhase(ExecutionPhase.EXECUTING);
+
+			// Set the start time:
+			setStartTime(new Date());
+
+			// Run the job:
+			thread.start();
+			(new JobTimeOut()).start();
+
+			// Log the start of this job:
+			getLogger().logJob(LogLevel.INFO, this, "START", "Job \"" + jobId + "\" started.", null);
+		}
+	}
+
+	/**
+	 * This exception is thrown by a job execution when no database connection are available anymore.
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 2.0 (02/2015)
+	 * @since 2.0
+	 */
+	public static class NoDBConnectionAvailableException extends UWSException {
+		private static final long serialVersionUID = 1L;
+
+		public NoDBConnectionAvailableException(){
+			super("Service momentarily too busy! Please try again later.");
+		}
+
 	}
 
 }

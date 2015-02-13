@@ -331,7 +331,7 @@ public class JDBCConnection implements DBConnection {
 			Connection con = d.connect(url, p);
 			return con;
 		}catch(SQLException se){
-			throw new DBException("Impossible to establish a connection to the database \"" + url + "\" !", se);
+			throw new DBException("Impossible to establish a connection to the database \"" + url + "\"!", se);
 		}
 	}
 

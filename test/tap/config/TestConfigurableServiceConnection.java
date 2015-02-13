@@ -35,7 +35,7 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tap.ServiceConnection;
@@ -50,26 +50,27 @@ import uws.service.file.LocalUWSFileManager;
 import adql.db.FunctionDef;
 import adql.db.TestDBChecker.UDFToto;
 
-public class TestDefaultServiceConnection {
+public class TestConfigurableServiceConnection {
 
 	private final static String XML_FILE = "test/tap/config/tables.xml";
 
-	private Properties validProp, noFmProp, fmClassPathProp, incorrectFmProp,
-			xmlMetaProp, missingMetaProp, missingMetaFileProp, wrongMetaProp,
-			wrongMetaFileProp, validFormatsProp, badSVFormat1Prop,
-			badSVFormat2Prop, unknownFormatProp, maxAsyncProp,
-			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
-			maxOutputLimitProp, bothOutputLimitGoodProp,
-			bothOutputLimitBadProp, userIdentProp, notClassPathUserIdentProp,
-			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
-			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
-			udfsWithClassPathProp, udfsListWithNONEorANYProp,
-			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
-			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
-			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp;
+	private static Properties validProp, noFmProp, fmClassPathProp,
+			incorrectFmProp, xmlMetaProp, missingMetaProp, missingMetaFileProp,
+			wrongMetaProp, wrongMetaFileProp, validFormatsProp,
+			badSVFormat1Prop, badSVFormat2Prop, unknownFormatProp,
+			maxAsyncProp, negativeMaxAsyncProp, notIntMaxAsyncProp,
+			defaultOutputLimitProp, maxOutputLimitProp,
+			bothOutputLimitGoodProp, bothOutputLimitBadProp, userIdentProp,
+			notClassPathUserIdentProp, geometriesProp, noneGeomProp,
+			anyGeomProp, noneInsideGeomProp, unknownGeomProp, anyUdfsProp,
+			noneUdfsProp, udfsProp, udfsWithClassPathProp,
+			udfsListWithNONEorANYProp, udfsWithWrongParamLengthProp,
+			udfsWithMissingBracketsProp, udfsWithMissingDefProp1,
+			udfsWithMissingDefProp2, emptyUdfItemProp1, emptyUdfItemProp2,
+			udfWithMissingEndBracketProp;
 
-	@Before
-	public void setUp() throws Exception{
+	@BeforeClass
+	public static void setUp() throws Exception{
 		// LOAD ALL PROPERTIES FILES NEEDED FOR ALL THE TESTS:
 		validProp = AllTests.getValidProperties();
 
@@ -207,9 +208,9 @@ public class TestDefaultServiceConnection {
 	 *  	- If a SV format is badly expressed (test with "sv" and "sv()"), an exception must be thrown.
 	 *  	- If an unknown output format is provided an exception must be thrown.
 	 *  
-	 * Note: the good configuration of the TAPFactory built by the DefaultServiceConnection is tested in {@link TestDefaultTAPFactory}.
+	 * Note: the good configuration of the TAPFactory built by the DefaultServiceConnection is tested in {@link TestConfigurableTAPFactory}.
 	 * 
-	 * @see DefaultServiceConnection#DefaultServiceConnection(Properties)
+	 * @see ConfigurableServiceConnection#DefaultServiceConnection(Properties)
 	 */
 	@Test
 	public void testDefaultServiceConnectionProperties(){
@@ -218,7 +219,7 @@ public class TestDefaultServiceConnection {
 		int nbSchemas = -1, nbTables = -1;
 		try{
 			// build the ServiceConnection:
-			ServiceConnection connection = new DefaultServiceConnection(validProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validProp);
 
 			// tests:
 			assertNotNull(connection.getLogger());
@@ -250,7 +251,7 @@ public class TestDefaultServiceConnection {
 
 		// Valid XML metadata:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(xmlMetaProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(xmlMetaProp);
 			assertNotNull(connection.getLogger());
 			assertNotNull(connection.getFileManager());
 			assertNotNull(connection.getFactory());
@@ -270,7 +271,7 @@ public class TestDefaultServiceConnection {
 
 		// Missing metadata property:
 		try{
-			new DefaultServiceConnection(missingMetaProp);
+			new ConfigurableServiceConnection(missingMetaProp);
 			fail("This MUST have failed because the property 'metadata' is missing!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -279,7 +280,7 @@ public class TestDefaultServiceConnection {
 
 		// Missing metadata_file property:
 		try{
-			new DefaultServiceConnection(missingMetaFileProp);
+			new ConfigurableServiceConnection(missingMetaFileProp);
 			fail("This MUST have failed because the property 'metadata_file' is missing!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -288,7 +289,7 @@ public class TestDefaultServiceConnection {
 
 		// Wrong metadata property:
 		try{
-			new DefaultServiceConnection(wrongMetaProp);
+			new ConfigurableServiceConnection(wrongMetaProp);
 			fail("This MUST have failed because the property 'metadata' has a wrong value!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -297,7 +298,7 @@ public class TestDefaultServiceConnection {
 
 		// Wrong metadata_file property:
 		try{
-			new DefaultServiceConnection(wrongMetaFileProp);
+			new ConfigurableServiceConnection(wrongMetaFileProp);
 			fail("This MUST have failed because the property 'metadata_file' has a wrong value!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -306,7 +307,7 @@ public class TestDefaultServiceConnection {
 
 		// No File Manager:
 		try{
-			new DefaultServiceConnection(noFmProp);
+			new ConfigurableServiceConnection(noFmProp);
 			fail("This MUST have failed because no File Manager is specified!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -315,7 +316,7 @@ public class TestDefaultServiceConnection {
 
 		// File Manager = Class Path:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(fmClassPathProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(fmClassPathProp);
 			assertNotNull(connection.getLogger());
 			assertNotNull(connection.getFileManager());
 			assertNotNull(connection.getFactory());
@@ -335,7 +336,7 @@ public class TestDefaultServiceConnection {
 
 		// Incorrect File Manager Value:
 		try{
-			new DefaultServiceConnection(incorrectFmProp);
+			new ConfigurableServiceConnection(incorrectFmProp);
 			fail("This MUST have failed because an incorrect File Manager value has been provided!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -344,7 +345,7 @@ public class TestDefaultServiceConnection {
 
 		// Valid output formats list:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(validFormatsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validFormatsProp);
 			assertNotNull(connection.getOutputFormat(VALUE_JSON));
 			assertNotNull(connection.getOutputFormat(VALUE_CSV));
 			assertNotNull(connection.getOutputFormat(VALUE_TSV));
@@ -360,7 +361,7 @@ public class TestDefaultServiceConnection {
 
 		// Bad SV(...) format 1 = "sv":
 		try{
-			new DefaultServiceConnection(badSVFormat1Prop);
+			new ConfigurableServiceConnection(badSVFormat1Prop);
 			fail("This MUST have failed because an incorrect SV output format value has been provided!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -369,7 +370,7 @@ public class TestDefaultServiceConnection {
 
 		// Bad SV(...) format 2 = "sv()":
 		try{
-			new DefaultServiceConnection(badSVFormat2Prop);
+			new ConfigurableServiceConnection(badSVFormat2Prop);
 			fail("This MUST have failed because an incorrect SV output format value has been provided!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -378,7 +379,7 @@ public class TestDefaultServiceConnection {
 
 		// Unknown output format:
 		try{
-			new DefaultServiceConnection(unknownFormatProp);
+			new ConfigurableServiceConnection(unknownFormatProp);
 			fail("This MUST have failed because an incorrect output format value has been provided!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -387,7 +388,7 @@ public class TestDefaultServiceConnection {
 
 		// Valid value for max_async_jobs:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(maxAsyncProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(maxAsyncProp);
 			assertEquals(10, connection.getNbMaxAsyncJobs());
 		}catch(Exception e){
 			fail("This MUST have succeeded because a valid max_async_jobs is provided! \nCaught exception: " + getPertinentMessage(e));
@@ -395,7 +396,7 @@ public class TestDefaultServiceConnection {
 
 		// Negative value for max_async_jobs:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(negativeMaxAsyncProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(negativeMaxAsyncProp);
 			assertEquals(-2, connection.getNbMaxAsyncJobs());
 		}catch(Exception e){
 			fail("This MUST have succeeded because a negative max_async_jobs is equivalent to 'no restriction'! \nCaught exception: " + getPertinentMessage(e));
@@ -403,7 +404,7 @@ public class TestDefaultServiceConnection {
 
 		// A not integer value for max_async_jobs:
 		try{
-			new DefaultServiceConnection(notIntMaxAsyncProp);
+			new ConfigurableServiceConnection(notIntMaxAsyncProp);
 			fail("This MUST have failed because a not integer value has been provided for \"" + KEY_MAX_ASYNC_JOBS + "\"!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -412,7 +413,7 @@ public class TestDefaultServiceConnection {
 
 		// Test with no output limit specified:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(validProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validProp);
 			assertEquals(connection.getOutputLimit()[0], -1);
 			assertEquals(connection.getOutputLimit()[1], -1);
 			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
@@ -423,7 +424,7 @@ public class TestDefaultServiceConnection {
 
 		// Test with only a set default output limit:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(defaultOutputLimitProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(defaultOutputLimitProp);
 			assertEquals(connection.getOutputLimit()[0], 100);
 			assertEquals(connection.getOutputLimit()[1], -1);
 			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
@@ -434,7 +435,7 @@ public class TestDefaultServiceConnection {
 
 		// Test with only a set maximum output limit:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(maxOutputLimitProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(maxOutputLimitProp);
 			assertEquals(connection.getOutputLimit()[0], -1);
 			assertEquals(connection.getOutputLimit()[1], 1000);
 			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
@@ -445,7 +446,7 @@ public class TestDefaultServiceConnection {
 
 		// Test with both a default and a maximum output limits where default <= max:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(bothOutputLimitGoodProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(bothOutputLimitGoodProp);
 			assertEquals(connection.getOutputLimit()[0], 100);
 			assertEquals(connection.getOutputLimit()[1], 1000);
 			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
@@ -456,7 +457,7 @@ public class TestDefaultServiceConnection {
 
 		// Test with both a default and a maximum output limits BUT where default > max:
 		try{
-			new DefaultServiceConnection(bothOutputLimitBadProp);
+			new ConfigurableServiceConnection(bothOutputLimitBadProp);
 			fail("This MUST have failed because the default output limit is greater than the maximum one!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -465,7 +466,7 @@ public class TestDefaultServiceConnection {
 
 		// Valid user identifier:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(userIdentProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(userIdentProp);
 			assertNotNull(connection.getUserIdentifier());
 			assertNotNull(connection.getUserIdentifier().extractUserId(null, null));
 			assertEquals("everybody", connection.getUserIdentifier().extractUserId(null, null).getID());
@@ -475,7 +476,7 @@ public class TestDefaultServiceConnection {
 
 		// Not a class path for user_identifier:
 		try{
-			new DefaultServiceConnection(notClassPathUserIdentProp);
+			new ConfigurableServiceConnection(notClassPathUserIdentProp);
 			fail("This MUST have failed because the user_identifier value is not a class path!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -484,7 +485,7 @@ public class TestDefaultServiceConnection {
 
 		// Valid geometry list:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(geometriesProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(geometriesProp);
 			assertNotNull(connection.getGeometries());
 			assertEquals(4, connection.getGeometries().size());
 			assertEquals("POINT", ((ArrayList<String>)connection.getGeometries()).get(0));
@@ -497,7 +498,7 @@ public class TestDefaultServiceConnection {
 
 		// "NONE" as geometry list:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(noneGeomProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(noneGeomProp);
 			assertNotNull(connection.getGeometries());
 			assertEquals(0, connection.getGeometries().size());
 		}catch(Exception e){
@@ -506,7 +507,7 @@ public class TestDefaultServiceConnection {
 
 		// "ANY" as geometry list:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(anyGeomProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(anyGeomProp);
 			assertNull(connection.getGeometries());
 		}catch(Exception e){
 			fail("This MUST have succeeded because the given list of geometries is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
@@ -514,7 +515,7 @@ public class TestDefaultServiceConnection {
 
 		// "NONE" inside a geometry list:
 		try{
-			new DefaultServiceConnection(noneInsideGeomProp);
+			new ConfigurableServiceConnection(noneInsideGeomProp);
 			fail("This MUST have failed because the given geometry list contains at least 2 items, whose one is NONE!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -523,7 +524,7 @@ public class TestDefaultServiceConnection {
 
 		// Unknown geometrical function:
 		try{
-			new DefaultServiceConnection(unknownGeomProp);
+			new ConfigurableServiceConnection(unknownGeomProp);
 			fail("This MUST have failed because the given geometry list contains at least 1 unknown ADQL geometrical function!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -532,7 +533,7 @@ public class TestDefaultServiceConnection {
 
 		// "ANY" as UDFs list:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(anyUdfsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(anyUdfsProp);
 			assertNull(connection.getUDFs());
 		}catch(Exception e){
 			fail("This MUST have succeeded because the given list of UDFs is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
@@ -540,7 +541,7 @@ public class TestDefaultServiceConnection {
 
 		// "NONE" as UDFs list:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(noneUdfsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(noneUdfsProp);
 			assertNotNull(connection.getUDFs());
 			assertEquals(0, connection.getUDFs().size());
 		}catch(Exception e){
@@ -549,7 +550,7 @@ public class TestDefaultServiceConnection {
 
 		// Valid list of UDFs:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(udfsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsProp);
 			assertNotNull(connection.getUDFs());
 			assertEquals(2, connection.getUDFs().size());
 			Iterator<FunctionDef> it = connection.getUDFs().iterator();
@@ -561,7 +562,7 @@ public class TestDefaultServiceConnection {
 
 		// Valid list of UDFs containing one UDF with a classpath:
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(udfsWithClassPathProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithClassPathProp);
 			assertNotNull(connection.getUDFs());
 			assertEquals(1, connection.getUDFs().size());
 			FunctionDef def = connection.getUDFs().iterator().next();
@@ -573,7 +574,7 @@ public class TestDefaultServiceConnection {
 
 		// "NONE" inside a UDFs list:
 		try{
-			new DefaultServiceConnection(udfsListWithNONEorANYProp);
+			new ConfigurableServiceConnection(udfsListWithNONEorANYProp);
 			fail("This MUST have failed because the given UDFs list contains at least 2 items, whose one is ANY!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -582,7 +583,7 @@ public class TestDefaultServiceConnection {
 
 		// UDF with no brackets:
 		try{
-			new DefaultServiceConnection(udfsWithMissingBracketsProp);
+			new ConfigurableServiceConnection(udfsWithMissingBracketsProp);
 			fail("This MUST have failed because one UDFs list item has no brackets!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -591,7 +592,7 @@ public class TestDefaultServiceConnection {
 
 		// UDFs whose one item have more parts than supported:
 		try{
-			new DefaultServiceConnection(udfsWithWrongParamLengthProp);
+			new ConfigurableServiceConnection(udfsWithWrongParamLengthProp);
 			fail("This MUST have failed because one UDFs list item has too many parameters!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -600,7 +601,7 @@ public class TestDefaultServiceConnection {
 
 		// UDF with missing definition part (or wrong since there is no comma):
 		try{
-			new DefaultServiceConnection(udfsWithMissingDefProp1);
+			new ConfigurableServiceConnection(udfsWithMissingDefProp1);
 			fail("This MUST have failed because one UDFs list item has a wrong signature part (it has been forgotten)!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -609,7 +610,7 @@ public class TestDefaultServiceConnection {
 
 		// UDF with missing definition part (or wrong since there is no comma):
 		try{
-			new DefaultServiceConnection(udfsWithMissingDefProp2);
+			new ConfigurableServiceConnection(udfsWithMissingDefProp2);
 			fail("This MUST have failed because one UDFs list item has no signature part!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -618,7 +619,7 @@ public class TestDefaultServiceConnection {
 
 		// Empty UDF item (without comma):
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(emptyUdfItemProp1);
+			ServiceConnection connection = new ConfigurableServiceConnection(emptyUdfItemProp1);
 			assertNotNull(connection.getUDFs());
 			assertEquals(0, connection.getUDFs().size());
 		}catch(Exception e){
@@ -627,7 +628,7 @@ public class TestDefaultServiceConnection {
 
 		// Empty UDF item (with comma):
 		try{
-			ServiceConnection connection = new DefaultServiceConnection(emptyUdfItemProp2);
+			ServiceConnection connection = new ConfigurableServiceConnection(emptyUdfItemProp2);
 			assertNotNull(connection.getUDFs());
 			assertEquals(0, connection.getUDFs().size());
 		}catch(Exception e){
@@ -636,7 +637,7 @@ public class TestDefaultServiceConnection {
 
 		// UDF item without its closing bracket:
 		try{
-			new DefaultServiceConnection(udfWithMissingEndBracketProp);
+			new ConfigurableServiceConnection(udfWithMissingEndBracketProp);
 			fail("This MUST have failed because one UDFs list item has no closing bracket!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
@@ -653,7 +654,7 @@ public class TestDefaultServiceConnection {
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 01/2015
-	 * @see TestDefaultServiceConnection#testDefaultServiceConnectionProperties()
+	 * @see TestConfigurableServiceConnection#testDefaultServiceConnectionProperties()
 	 */
 	public static class FileManagerTest extends LocalUWSFileManager {
 		public FileManagerTest(Properties tapConfig) throws UWSException{

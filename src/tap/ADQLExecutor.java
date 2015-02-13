@@ -229,6 +229,25 @@ public class ADQLExecutor {
 	}
 
 	/**
+	 * <p>Create the database connection required for the ADQL execution.</p>
+	 * 
+	 * <p><i>Note: This function has no effect if the DB connection already exists.</i></p>
+	 * 
+	 * @param jobID	ID of the job which will be executed by this {@link ADQLExecutor}.
+	 *             	This ID will be the database connection ID.
+	 * 
+	 * @throws TAPException	If the DB connection creation fails.
+	 * 
+	 * @see TAPFactory#getConnection(String)
+	 * 
+	 * @since 2.0
+	 */
+	public final void initDBConnection(final String jobID) throws TAPException{
+		if (dbConn == null)
+			dbConn = service.getFactory().getConnection(jobID);
+	}
+
+	/**
 	 * <p>Start the synchronous processing of the ADQL query.</p>
 	 * 
 	 * <p>This function initialize the execution report and then call {@link #start()}.</p>
@@ -296,7 +315,7 @@ public class ADQLExecutor {
 
 		try{
 			// Get a "database" connection:
-			dbConn = service.getFactory().getConnection(report.jobID);
+			initDBConnection(report.jobID);
 
 			// 1. UPLOAD TABLES, if there is any:
 			if (tapParams.getUploadedTables() != null && tapParams.getUploadedTables().length > 0){

@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -28,7 +28,7 @@ import uws.service.error.ServiceErrorWriter;
  * Thread in charge of a TAP job execution.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (02/2015)
  */
 public class AsyncThread extends JobThread {
 
@@ -42,11 +42,37 @@ public class AsyncThread extends JobThread {
 	 * @param executor		The object to use for the ADQL execution itself.
 	 * @param errorWriter	The object to use to format and to write an execution error for the user.
 	 * 
-	 * @throws NullPointerException	If the job parameter is missing.
+	 * @throws NullPointerException	If the job parameter or the {@link ADQLExecutor} is missing.
 	 */
 	public AsyncThread(final TAPJob j, final ADQLExecutor executor, final ServiceErrorWriter errorWriter) throws NullPointerException{
 		super(j, "Execute the ADQL query of the TAP request " + j.getJobId(), errorWriter);
+		if (executor == null)
+			throw new NullPointerException("Missing ADQLExecutor! Can not create an instance of AsyncThread without.");
 		this.executor = executor;
+	}
+
+	/**
+	 * <p>Check whether this thread is able to start right now.</p>
+	 * 
+	 * <p>
+	 * 	Basically, this function asks to the {@link ADQLExecutor} to get a database connection. If no DB connection is available,
+	 * 	then this thread can not start and this function return FALSE. In all the other cases, TRUE is returned.
+	 * </p>
+	 * 
+	 * <p><b>Warning:</b> This function will indirectly open and keep a database connection, so that the job can be started just after its call.
+	 * If it turns out that the execution won't start just after this call, the DB connection should be closed in some way in order to save database resources.</i></p>
+	 * 
+	 * @return	<i>true</i> if this thread can start right now, <i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final boolean isReadyForExecution(){
+		try{
+			executor.initDBConnection(job.getJobId());
+			return true;
+		}catch(TAPException te){
+			return false;
+		}
 	}
 
 	@Override

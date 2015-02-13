@@ -9,11 +9,12 @@ import org.junit.runners.Suite.SuiteClasses;
 import tap.parameters.TestMaxRecController;
 
 @RunWith(Suite.class)
-@SuiteClasses({TestTAPConfiguration.class,TestDefaultServiceConnection.class,TestDefaultTAPFactory.class,TestMaxRecController.class})
+@SuiteClasses({TestTAPConfiguration.class,TestConfigurableServiceConnection.class,TestConfigurableTAPFactory.class,TestMaxRecController.class})
 public class AllTests {
 
 	public final static Properties getValidProperties(){
 		Properties validProp = new Properties();
+		validProp.setProperty("database_access", "jdbc");
 		validProp.setProperty("jdbc_url", "jdbc:postgresql:gmantele");
 		validProp.setProperty("jdbc_driver", "org.postgresql.Driver");
 		validProp.setProperty("db_username", "gmantele");

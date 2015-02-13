@@ -751,14 +751,14 @@ public class TAP implements VOSIResource {
 			}
 			// ANY OTHER ERROR:
 			else{
-				// Log the error:
-				getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
 				// Write the error in the response and return the appropriate HTTP status code:
 				errorWriter.writeError(t, response, request, reqID, owner, resourceName);
+				// Log the error:
+				getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
 			}
 		}finally{
-			// Notify the queue of the asynchronous jobs that a new connection is available:
-			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME) && service.getFactory().countFreeConnections() >= 1)
+			// Notify the queue of the asynchronous jobs that a new connection may be available:
+			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME))
 				getASync().freeConnectionAvailable();
 		}
 	}

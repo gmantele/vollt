@@ -42,6 +42,13 @@ public final class TAPConfiguration {
 	public final static int DEFAULT_EXECUTION_DURATION = 0;
 
 	/* DATABASE KEYS */
+	public final static String KEY_DATABASE_ACCESS = "database_access";
+	public final static String VALUE_JDBC = "jdbc";
+	public final static String VALUE_JNDI = "jndi";
+	public final static String KEY_SQL_TRANSLATOR = "sql_translator";
+	public final static String VALUE_POSTGRESQL = "postgres";
+	public final static String VALUE_PGSPHERE = "pgsphere";
+	public final static String KEY_DATASOURCE_JNDI_NAME = "datasource_jndi_name";
 	public final static String KEY_JDBC_DRIVER = "jdbc_driver";
 	public final static HashMap<String,String> VALUE_JDBC_DRIVERS = new HashMap<String,String>(4);
 	static{
@@ -50,9 +57,6 @@ public final class TAPConfiguration {
 		VALUE_JDBC_DRIVERS.put("mysql", "com.mysql.jdbc.Driver");
 		VALUE_JDBC_DRIVERS.put("sqlite", "org.sqlite.JDBC");
 	}
-	public final static String KEY_SQL_TRANSLATOR = "sql_translator";
-	public final static String VALUE_POSTGRESQL = "postgres";
-	public final static String VALUE_PGSPHERE = "pgsphere";
 	public final static String KEY_JDBC_URL = "jdbc_url";
 	public final static String KEY_DB_USERNAME = "db_username";
 	public final static String KEY_DB_PASSWORD = "db_password";

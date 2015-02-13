@@ -47,7 +47,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (02/2015)
  */
 public class TAPSyncJob {
 
@@ -175,6 +175,13 @@ public class TAPSyncJob {
 
 		// Create the object having the knowledge about how to execute an ADQL query:
 		ADQLExecutor executor = service.getFactory().createADQLExecutor();
+		try{
+			executor.initDBConnection(ID);
+		}catch(TAPException te){
+			service.getLogger().logDB(LogLevel.ERROR, null, "CONNECTION_LACK", "No more database connection available for the moment!", te);
+			service.getLogger().logTAP(LogLevel.ERROR, this, "END_EXEC", "Synchronous job " + ID + " execution aborted: no database connection available!", null);
+			throw new TAPException("TAP service too busy! No connection available for the moment. You should try later or create an asynchronous query (which will be executed when enough resources will be available again).", UWSException.SERVICE_UNAVAILABLE);
+		}
 
 		// Give to a thread which will execute the query:
 		thread = new SyncThread(executor, ID, tapParams, response);

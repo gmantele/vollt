@@ -106,23 +106,17 @@ public class Sync implements TAPResource {
 		if (!service.isAvailable())
 			throw new TAPException("Can not execute a query: this TAP service is not available! " + service.getAvailability(), UWSException.SERVICE_UNAVAILABLE);
 
-		/* Ensure that at least 1 DB connection is available for asynchronous queries.
-		 * If yes, just execute synchronously the given job: */
-		if (service.getFactory().countFreeConnections() > 1){
-			try{
-				TAPSyncJob syncJob = new TAPSyncJob(service, params);
-				syncJob.start(response);
-				return true;
-			}catch(TAPException te){
-				throw te;
-			}catch(Exception t){
-				service.getLogger().logTAP(LogLevel.FATAL, params, "SYNC_INIT", "Unexpected error while executing the given ADQL query!", t);
-				throw new TAPException("Unexpected error while executing the given ADQL query!");
-			}
+		// Execute synchronously the given job:
+		try{
+			TAPSyncJob syncJob = new TAPSyncJob(service, params);
+			syncJob.start(response);
+			return true;
+		}catch(TAPException te){
+			throw te;
+		}catch(Exception t){
+			service.getLogger().logTAP(LogLevel.FATAL, params, "SYNC_INIT", "Unexpected error while executing the given ADQL query!", t);
+			throw new TAPException("Unexpected error while executing the given ADQL query!");
 		}
-		// Otherwise, send an error:
-		else
-			throw new TAPException("TAP service too busy! No connection available for the moment. You should try later or create an asynchronous query (which will be executed when enough resources will be available again).", UWSException.SERVICE_UNAVAILABLE);
 
 	}
 

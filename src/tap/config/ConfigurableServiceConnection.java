@@ -70,13 +70,13 @@ import adql.db.FunctionDef;
 import adql.parser.ParseException;
 import adql.query.operand.function.UserDefinedFunction;
 
-public final class DefaultServiceConnection implements ServiceConnection {
+public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	private UWSFileManager fileManager;
 
 	private TAPLog logger;
 
-	private DefaultTAPFactory tapFactory;
+	private ConfigurableTAPFactory tapFactory;
 
 	private final TAPMetadata metadata;
 
@@ -108,7 +108,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 
 	private Collection<FunctionDef> udfs = new ArrayList<FunctionDef>(0);
 
-	public DefaultServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
+	public ConfigurableServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
 		// 1. INITIALIZE THE FILE MANAGER:
 		initFileManager(tapConfig);
 
@@ -116,7 +116,7 @@ public final class DefaultServiceConnection implements ServiceConnection {
 		logger = new DefaultTAPLog(fileManager);
 
 		// 3. BUILD THE TAP FACTORY:
-		tapFactory = new DefaultTAPFactory(this, tapConfig);
+		tapFactory = new ConfigurableTAPFactory(this, tapConfig);
 
 		// 4. GET THE METADATA:
 		metadata = initMetadata(tapConfig);

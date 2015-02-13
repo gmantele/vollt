@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
 import tap.TAPException;
-import tap.TAPFactory;
+import tap.TAPJob;
 import uws.UWSException;
 import uws.job.JobList;
 import uws.job.UWSJob;
@@ -71,7 +71,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (02/2015)
  * 
  * @see UWSService
  */
@@ -107,7 +107,7 @@ public class ASync implements TAPResource {
 		if (uws.getJobList(getName()) == null){
 			jobList = new JobList(getName());
 			uws.addJobList(jobList);
-			jobList.setExecutionManager(new AsyncExecutionManager(service.getFactory(), service.getLogger(), service.getNbMaxAsyncJobs()));
+			jobList.setExecutionManager(new AsyncExecutionManager(service.getLogger(), service.getNbMaxAsyncJobs()));
 		}else
 			jobList = uws.getJobList(getName());
 
@@ -200,13 +200,10 @@ public class ASync implements TAPResource {
 	 * when no more DB connection is available for the moment.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (09/2014)
+	 * @version 2.0 (02/2015)
 	 * @since 2.0
 	 */
 	private class AsyncExecutionManager extends AbstractQueuedExecutionManager {
-
-		/** A factory of TAP objects. */
-		private final TAPFactory factory;
 
 		/** The maximum number of running jobs. */
 		protected int nbMaxRunningJobs = QueuedExecutionManager.NO_QUEUE;
@@ -214,22 +211,20 @@ public class ASync implements TAPResource {
 		/**
 		 * Build a queuing execution manager.
 		 * 
-		 * @param factory			Factory of TAP objects.
 		 * @param logger			Logger to use.
 		 * @param maxRunningJobs	Maximum number of asynchronous jobs that can run in the same time.
 		 */
-		public AsyncExecutionManager(final TAPFactory factory, UWSLog logger, int maxRunningJobs){
+		public AsyncExecutionManager(UWSLog logger, int maxRunningJobs){
 			super(logger);
-			this.factory = factory;
 			nbMaxRunningJobs = (maxRunningJobs <= 0) ? QueuedExecutionManager.NO_QUEUE : maxRunningJobs;
 		}
 
 		@Override
 		public boolean isReadyForExecution(final UWSJob jobToExecute){
 			if (!hasQueue())
-				return factory.countFreeConnections() >= 1;
+				return ((TAPJob)jobToExecute).isReadyForExecution();
 			else
-				return (runningJobs.size() < nbMaxRunningJobs) && (factory.countFreeConnections() >= 1);
+				return (runningJobs.size() < nbMaxRunningJobs) && ((TAPJob)jobToExecute).isReadyForExecution();
 		}
 
 	}
