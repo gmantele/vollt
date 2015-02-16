@@ -12,6 +12,9 @@ import tap.backup.DefaultTAPBackupManager;
 
 public final class TAPConfiguration {
 
+	public final static String TAP_CONF_PARAMETER = "tapconf";
+	public final static String DEFAULT_TAP_CONF_FILE = "tap.properties";
+
 	/* FILE MANAGER KEYS */
 	public final static String KEY_FILE_MANAGER = "file_manager";
 	public final static String VALUE_LOCAL = "local";
