@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -61,7 +61,7 @@ import adql.query.ADQLQuery;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (02/2015)
  */
 public abstract class TAPFactory implements UWSFactory {
 
@@ -364,7 +364,10 @@ public abstract class TAPFactory implements UWSFactory {
 		try{
 			return new AsyncThread((TAPJob)job, createADQLExecutor(), getErrorWriter());
 		}catch(TAPException te){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, "Impossible to create an AsyncThread !");
+			if (te.getCause() != null && te.getCause() instanceof UWSException)
+				throw (UWSException)te.getCause();
+			else
+				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, te, "Impossible to create an AsyncThread !");
 		}
 	}
 
@@ -385,7 +388,7 @@ public abstract class TAPFactory implements UWSFactory {
 		try{
 			return createTAPParameters(request);
 		}catch(TAPException te){
-			if (te.getCause() != null && te.getCause() instanceof UWSException && te.getMessage().equals(te.getCause().getMessage()))
+			if (te.getCause() != null && te.getCause() instanceof UWSException)
 				throw (UWSException)te.getCause();
 			else
 				throw new UWSException(te.getHttpErrorCode(), te);
@@ -423,7 +426,7 @@ public abstract class TAPFactory implements UWSFactory {
 		try{
 			return createTAPParameters(params);
 		}catch(TAPException te){
-			if (te.getCause() != null && te.getCause() instanceof UWSException && te.getMessage().equals(te.getCause().getMessage()))
+			if (te.getCause() != null && te.getCause() instanceof UWSException)
 				throw (UWSException)te.getCause();
 			else
 				throw new UWSException(te.getHttpErrorCode(), te);
