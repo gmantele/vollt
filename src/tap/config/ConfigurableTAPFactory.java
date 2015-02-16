@@ -19,8 +19,10 @@ import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
 import static tap.config.TAPConfiguration.VALUE_USER_ACTION;
 import static tap.config.TAPConfiguration.getProperty;
 
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Enumeration;
 import java.util.Properties;
 
 import javax.naming.InitialContext;
@@ -36,6 +38,7 @@ import tap.db.JDBCConnection;
 import uws.UWSException;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
+import uws.service.log.UWSLog.LogLevel;
 import adql.translator.JDBCTranslator;
 import adql.translator.PgSphereTranslator;
 import adql.translator.PostgreSQLTranslator;
@@ -223,14 +226,26 @@ public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 
 	@Override
 	public void destroy(){
-		// Unregister the JDBC driver:
-		try{
-			DriverManager.deregisterDriver(DriverManager.getDriver(dbUrl));
-		}catch(SQLException e){
-			service.getLogger().warning("Can not deregister the JDBC driver manager!");
+		// Unregister the JDBC driver, only if registered by the library (i.e. database_access=jdbc):
+		if (dbUrl != null){
+			// Now deregister JDBC drivers in this context's ClassLoader:
+			// Get the webapp's ClassLoader
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			// Loop through all drivers
+			Enumeration<Driver> drivers = DriverManager.getDrivers();
+			while(drivers.hasMoreElements()){
+				Driver driver = drivers.nextElement();
+				if (driver.getClass().getClassLoader() == cl){
+					// This driver was registered by the webapp's ClassLoader, so deregister it:
+					try{
+						DriverManager.deregisterDriver(driver);
+						service.getLogger().logTAP(LogLevel.INFO, null, "STOP", "JDBC driver " + driver.getClass().getName() + " successfully deregistered!", null);
+					}catch(SQLException ex){
+						service.getLogger().logTAP(LogLevel.FATAL, null, "STOP", "Error deregistering JDBC driver " + driver.getClass().getName() + "!", ex);
+					}
+				}
+			}
 		}
-
-		// TODO Nothing else to do!
 	}
 
 	/**
