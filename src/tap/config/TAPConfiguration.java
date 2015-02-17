@@ -161,7 +161,7 @@ public final class TAPConfiguration {
 			return null;
 
 		try{
-			Class<? extends C> classObject = (Class<? extends C>)ClassLoader.getSystemClassLoader().loadClass(classPath);
+			Class<? extends C> classObject = (Class<? extends C>)Class.forName(classPath);
 			if (!expectedType.isAssignableFrom(classObject))
 				throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") is not implementing " + expectedType.getName() + ".");
 			else
