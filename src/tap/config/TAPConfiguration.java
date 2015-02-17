@@ -70,6 +70,10 @@ public final class TAPConfiguration {
 	public final static String VALUE_DB = "db";
 	public final static String KEY_METADATA_FILE = "metadata_file";
 
+	/* HOME PAGE KEY */
+	public final static String KEY_HOME_PAGE = "home_page";
+	public final static String KEY_HOME_PAGE_MIME_TYPE = "home_page_mime_type";
+
 	/* PROVIDER KEYS */
 	public final static String KEY_PROVIDER_NAME = "provider_name";
 	public final static String KEY_SERVICE_DESCRIPTION = "service_description";

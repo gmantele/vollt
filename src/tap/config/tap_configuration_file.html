@@ -33,9 +33,13 @@
 				background-color: #CEE3F6;
 			}
 			th:nth-child(2), td:nth-child(2) {
-				font-weight: bold;
 				text-align: center;
 				max-width: 2em;
+			}
+			tr.mandatory td:nth-child(2):after{
+				color: red;
+				font-weight: bold;
+				content: "M";
 			}
 			td:nth-child(5) {
 				font-family: monospace;
@@ -50,6 +54,17 @@
 			.todo, .mandatory .todo {color: red; }
 			
 		</style>
+		<script type="text/javascript">
+			function toggleOptional(){
+				var button = document.getElementById("toggleOptional");
+				var display = (button.value == "hide") ? 'none' : '';
+				var lines = document.querySelectorAll("tr.optional");
+				for(var i=0 ; i<lines.length ; i++)
+					lines[i].style.display = display;
+				button.value = (display == '') ? 'hide' : 'show';
+				button.textContent = (display == '') ? 'Hide optional' : 'Show optional';
+			}
+		</script>
 	</head>
 	<body>
 		<h1>TAP Configuration File</h1>
@@ -71,8 +86,10 @@
 		<p><b>Important note:</b> Any limit value is an integer and so can be at most: 2<sup>31</sup>-1 bytes/rows = 2147483647B/R (or also for the byte unit: = 2147483kB = 2147MB = 2GB).
 		Otherwise, you should use the null value 0 to raise the limit constraint.</p>
 		
-		<p><i><u>Legend:</u> <b>M</b> means that the property is mandatory. If nothing is written for the second column, the property is optional.</i>
-	
+		<p><i><u>Legend:</u> <b style="color:red">M</b> means that the property is mandatory. If nothing is written for the second column, the property is optional.</i></p>
+		
+		<button id="toggleOptional" value="hide" onClick="toggleOptional();">Hide optional</button> <i><span id="nbMandatory"></span>/<span id="nbTotal"></span> mandatory properties</i>
+		<br /><br/>
 		<table>
 			<tr>
 				<th>Property</th>
@@ -83,26 +100,44 @@
 			</tr>
 			
 			<tr><td colspan="5">General</td></tr>
-			<tr>
-				<td class="later">service_home_page</td>
+			<tr class="optional">
+				<td class="done">home_page</td>
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>Path to the page which will be the index/home page of the TAP Service.</p>
-					<p><i>A default home page - just listing the TAP resources - is set if none is provided.</i></p>
+					<p>This property lets set a custom home page. 4 different kinds of value are accepted:</p>
+					<ul>
+						<li><u>nothing (default)</u>: the default home page provided by the library (just a simple HTML page displaying a list of all available TAP resources).</li>
+						<li><u>name or relative path of a file</u>: this method MUST be chosen if the new home page is a JSP file. This file MUST be inside the directory WebContent of your web application.</li>
+						<li><u>a URI starting with <code>file://</code></u>: in this method the local file pointed by the URI will be merely returned when the home page will be requested.</li>
+						<li><u>a URL</u>: here, a redirection toward this URL will be made at each request on the home page</li>
+						<li><u>a classpath</u>: the classpath of an extension of tap.resource.HomePage which must replace the default home page resource. This class MUST have at least one constructor with exactly one parameter not NULL of type tap.resource.TAP.</li>
+					</ul>
 				</td>
-				<td><ul><li>home.html</li><li>/home/foo/my_tap_homepage.jsp</li></ul></td>
+				<td><ul><li>my_tap_homepage.jsp</li><li>jsp/my_tap_homepage.jsp</li><li>file:///home/foo/customHomePage.html</li><li>http://...</li><li>{aPackage.NewHomePage}</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">home_page_mime_type</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>MIME type of the service home page.</p>
+					<p>This property is used only if the specified "home_page" is a local file path (i.e. if "home_page=file://...").</p>
+					<p>If no value is provided "text/html" will be set by default.</p>
+					<p><i>Default: <code>text/html</code></i></p>
+				</td>
+				<td><ul><li>text/html <em>(default)</em></li><li>text/plain</li><li>application/xml</li></ul></td>
 			</tr>
 			
 			<tr><td colspan="5">Provider</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">provider_name</td>
 				<td></td>
 				<td>text</td>
 				<td>Name of the provider of the TAP Service.</td>
-				<td><ul><li>ARI</li><li>Mr. Smith</li></ul></td>
+				<td></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">service_description</td>
 				<td></td>
 				<td>text</td>
@@ -113,7 +148,7 @@
 			<tr><td colspan="5">Database</td></tr>
 			<tr class="mandatory">
 				<td class="done">database_access</td>
-				<td>M</td>
+				<td></td>
 				<td>text</td>
 				<td>
 					<p>Method to use in order to create database connections.</p>
@@ -127,7 +162,7 @@
 			</tr>
 			<tr class="mandatory">
 				<td class="done">sql_translator</td>
-				<td>M</td>
+				<td></td>
 				<td>text</td>
 				<td>
 					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
@@ -140,16 +175,16 @@
 			<tr><td colspan="5">&#10551; JNDI datasource <i>(only if database_access=jndi)</i></td></tr>
 			<tr class="mandatory">
 				<td class="done">datasource_jndi_name</td>
-				<td>M</td>
+				<td></td>
 				<td>text</td>
 				<td>
 					<p>JNDI name of the datasource. It should be defined in the web application (e.g. in the META-INF/context.xml file in tomcat).</p>
 				</td>
-				<td><ul><li>jdbc/postgres</li><li>jdbc/mydatasource</li><li>mydatasource</li><li>...</li></ul></td>
+				<td><ul><li>jdbc/postgres</li><li>jdbc/mydatasource</li><li>mydatasource</li></ul></td>
 			</tr>
 			
 			<tr><td colspan="5">&#10551; JDBC parameters <i>(only if database_access=jdbc)</i></td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">jdbc_driver</td>
 				<td></td>
 				<td>text</td>
@@ -168,7 +203,7 @@
 			</tr>
 			<tr class="mandatory">
 				<td class="done">jdbc_url</td>
-				<td>M</td>
+				<td></td>
 				<td>text</td>
 				<td>
 					<p>It must be a JDBC driver URL.</p>
@@ -177,7 +212,7 @@
 				</td>
 				<td><ul><li>jdbc:postgresql:mydb</li><li>jdbc:postgresql://myserver:1234/mydb</li><li>jdbc:sqlite:Database.db</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">db_username</td>
 				<td></td>
 				<td>text</td>
@@ -187,7 +222,7 @@
 				</td>
 				<td></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">db_password</td>
 				<td></td>
 				<td>text</td>
@@ -202,7 +237,7 @@
 			<tr><td colspan="5">Metadata</td></tr>
 			<tr class="mandatory">
 				<td class="done">metadata</td>
-				<td>M</td>
+				<td></td>
 				<td>text</td>
 				<td>
 					<p>Define the way the library must get the list of all schemas, tables and columns to publish and all their metadata (e.g. utype, description, type, ...)</p>
@@ -214,7 +249,7 @@
 				</td>
 				<td><ul><li>xml</li><li>db</li></ul>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">metadata_file</td>
 				<td></td>
 				<td>text</td>
@@ -228,7 +263,7 @@
 			<tr><td colspan="5">Files</td></tr>
 			<tr class="mandatory">
 				<td class="done">file_manager</td>
-				<td>M</td>
+				<td></td>
 				<td>text</td>
 				<td>
 					<p>Type of the file manager.</p>
@@ -239,12 +274,12 @@
 			</tr>
 			<tr class="mandatory">
 				<td class="done">file_root_path</td>
-				<td>M</td>
+				<td></td>
 				<td>text</td>
 				<td>File path of the directory in which all TAP files (logs, errors, job results, backup, ...) must be.</td>
 				<td></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">directory_per_user</td>
 				<td></td>
 				<td>boolean</td>
@@ -255,7 +290,7 @@
 				</td>
 				<td><ul><li>true <i>(default)</i></li><li>false</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">group_user_directories</td>
 				<td></td>
 				<td>boolean</td>
@@ -265,7 +300,7 @@
 				</td>
 				<td><ul><li>true</li><li>false <i>(default)</i></li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">default_retention_period</td>
 				<td></td>
 				<td>integer</td>
@@ -278,7 +313,7 @@
 					<p><em>By default query results are kept forever: default_retention_period=0.</em></p></td>
 				<td>86400 <em>(1 day)</em></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">max_retention_period</td>
 				<td></td>
 				<td>integer</td>
@@ -292,7 +327,7 @@
 			</tr>
 			
 			<tr><td colspan="5">UWS Backup</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">backup_frequency</td>
 				<td></td>
 				<td>text or integer</td>
@@ -303,7 +338,7 @@
 				</td>
 				<td><ul><li>never <em>(default)</em></li><li>user_action</li><li>3600000 <em>(1 hour)</em></li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">backup_mode</td>
 				<td></td>
 				<td>text</td>
@@ -316,7 +351,7 @@
 			</tr>
 			
 			<tr><td colspan="5">Asynchronous jobs management</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">max_async_jobs</td>
 				<td></td>
 				<td>integer</td>
@@ -329,7 +364,7 @@
 			</tr>
 			
 			<tr><td colspan="5">Query Execution</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">default_execution_duration</td>
 				<td></td>
 				<td>integer</td>
@@ -342,7 +377,7 @@
 				</td>
 				<td>600000 <em>(10 minutes)</em></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">max_execution_duration</td>
 				<td></td>
 				<td>integer</td>
@@ -357,7 +392,7 @@
 			</tr>
 			
 			<tr><td colspan="5">Output</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">output_add_formats</td>
 				<td></td>
 				<td>text</td>
@@ -368,7 +403,7 @@
 				</td>
 				<td><ul><li>json</li><li>csv</li><li>tsv</li><li>sv(|):text/psv:psv</li><li>sv([])</li><li>{apackage.FooOutputFormat}</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">output_default_limit</td>
 				<td></td>
 				<td>text</td>
@@ -381,7 +416,7 @@
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">output_max_limit</td>
 				<td></td>
 				<td>text</td>
@@ -396,7 +431,7 @@
 			</tr>
 			
 			<tr><td colspan="5">Upload</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">upload_enabled</td>
 				<td></td>
 				<td>boolean</td>
@@ -407,7 +442,7 @@
 				</td>
 				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">upload_default_db_limit</td>
 				<td></td>
 				<td>text</td>
@@ -423,7 +458,7 @@
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">upload_max_db_limit</td>
 				<td></td>
 				<td>text</td>
@@ -439,7 +474,7 @@
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">upload_max_file_size</td>
 				<td></td>
 				<td>text</td>
@@ -455,7 +490,7 @@
 			</tr>
 			
 			<tr><td colspan="5">User identification</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">user_identifier</td>
 				<td></td>
 				<td>text</td>
@@ -471,7 +506,7 @@
 			</tr>
 			
 			<tr><td colspan="5">ADQL restrictions</td></tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">geometries</td>
 				<td></td>
 				<td>text</td>
@@ -485,7 +520,7 @@
 				</td>
 				<td><ul><li>ø <em>(default)</em></li><li>NONE</li><li>CONTAINS, intersects, Point, Box, CIRCLE</li></ul></td>
 			</tr>
-			<tr>
+			<tr class="optional">
 				<td class="done">udfs</td>
 				<td></td>
 				<td>text</td>
@@ -508,5 +543,11 @@
 			</tr>
 			
 		</table>
+		<script type="text/javascript">
+			var nb = document.getElementsByClassName("mandatory").length;
+			document.getElementById("nbMandatory").textContent = nb;
+			nb += document.getElementsByClassName("optional").length;
+			document.getElementById("nbTotal").textContent = nb;
+		</script>
 	</body>
 </html>

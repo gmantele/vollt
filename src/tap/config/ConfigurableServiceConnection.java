@@ -151,9 +151,6 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// 9. CONFIGURE ADQL:
 		initADQLGeometries(tapConfig);
 		initUDFs(tapConfig);
-
-		// 10. MAKE THE SERVICE AVAILABLE:
-		setAvailable(true, "TAP service available.");
 	}
 
 	private void initFileManager(final Properties tapConfig) throws TAPException{

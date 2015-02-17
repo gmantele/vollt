@@ -20,13 +20,7 @@ package tap.resource;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -64,6 +58,32 @@ import adql.db.FunctionDef;
  */
 public class TAP implements VOSIResource {
 
+	/** <p>Name of the TAP AVAILABILITY resource.
+	 * This resource tells whether the TAP service is available (i.e. whether it accepts queries or not).</p>
+	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+	 * @since 2.0 */
+	public final static String RESOURCE_AVAILABILITY = "availability";
+	/** <p>Name of the TAP CAPABILITIES resource.
+	 * This resource list all capabilities (e.g. output limits and formats, uploads, ...) of this TAP resource.</p>
+	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+	 * @since 2.0 */
+	public final static String RESOURCE_CAPABILITIES = "capabilities";
+	/** <p>Name of the TAP HOME PAGE resource.
+	 * This resource lists and describes all published and query-able schemas, tables and columns.</p>
+	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+	 * @since 2.0 */
+	public final static String RESOURCE_METADATA = "tables";
+	/** <p>Name of the TAP HOME PAGE resource.
+	 * This resource is used to submit ADQL queries to run asynchronously.</p>
+	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+	 * @since 2.0 */
+	public final static String RESOURCE_ASYNC = "async";
+	/** <p>Name of the TAP HOME PAGE resource.
+	 * This resource is used to submit ADQL queries to run synchronously.</p>
+	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+	 * @since 2.0 */
+	public final static String RESOURCE_SYNC = "sync";
+
 	/** Description of the TAP service owning this resource. */
 	protected final ServiceConnection service;
 
@@ -72,6 +92,17 @@ public class TAP implements VOSIResource {
 
 	/** Base URL of the TAP service. It is also the URL of this resource (HOME). */
 	protected String tapBaseURL = null;
+
+	/**
+	 * <p>HOME PAGE resource.
+	 * This resource lets write the home page.</p>
+	 * <p><i>Note:
+	 * 	at the URI {@link #homePageURI} or it is a very simple HTML page listing the link of all available
+	 * 	TAP resources.
+	 * </i></p>
+	 * @since 2.0
+	 */
+	protected HomePage homePage = null;
 
 	/** URI of the page or path of the file to display when this resource is requested. */
 	protected String homePageURI = null;
@@ -106,6 +137,10 @@ public class TAP implements VOSIResource {
 		if (errorWriter == null)
 			errorWriter = new DefaultTAPErrorWriter(service);
 
+		// Set the default home page:
+		homePage = new HomePage(this);
+
+		// Set all the standard TAP resources:
 		TAPResource res = new Availability(service);
 		resources.put(res.getName(), res);
 
@@ -207,12 +242,23 @@ public class TAP implements VOSIResource {
 	/* ******************** */
 
 	/**
+	 * Get the description of this service.
+	 * 
+	 * @return	Description/Configuration of this TAP service.
+	 * 
+	 * @since 2.0
+	 */
+	public final ServiceConnection getServiceConnection(){
+		return service;
+	}
+
+	/**
 	 * Get the /availability resource of this TAP service.
 	 * 
 	 * @return	The /availability resource.
 	 */
 	public final Availability getAvailability(){
-		return (Availability)resources.get(Availability.RESOURCE_NAME);
+		return (Availability)resources.get(RESOURCE_AVAILABILITY);
 	}
 
 	/**
@@ -221,7 +267,7 @@ public class TAP implements VOSIResource {
 	 * @return	The /capabilities resource.
 	 */
 	public final Capabilities getCapabilities(){
-		return (Capabilities)resources.get(Capabilities.RESOURCE_NAME);
+		return (Capabilities)resources.get(RESOURCE_CAPABILITIES);
 	}
 
 	/**
@@ -230,7 +276,7 @@ public class TAP implements VOSIResource {
 	 * @return	The /sync resource.
 	 */
 	public final Sync getSync(){
-		return (Sync)resources.get(Sync.RESOURCE_NAME);
+		return (Sync)resources.get(RESOURCE_SYNC);
 	}
 
 	/**
@@ -239,7 +285,7 @@ public class TAP implements VOSIResource {
 	 * @return	The /async resource.
 	 */
 	public final ASync getASync(){
-		return (ASync)resources.get(ASync.RESOURCE_NAME);
+		return (ASync)resources.get(RESOURCE_ASYNC);
 	}
 
 	/**
@@ -349,8 +395,20 @@ public class TAP implements VOSIResource {
 	 * 
 	 * @return	Iterator over the available TAP resources.
 	 */
-	public final Iterator<TAPResource> getTAPResources(){
+	public final Iterator<TAPResource> getResources(){
 		return resources.values().iterator();
+	}
+
+	/**
+	 * Let iterate over the full list of the TAP resources managed by this TAP service.
+	 * 
+	 * @return	Iterator over the available TAP resources.
+	 * @deprecated	The name of this function has been normalized. So now, you should use {@link #getResources()}
+	 *            	which is doing exactly the same thing.
+	 */
+	@Deprecated
+	public final Iterator<TAPResource> getTAPResources(){
+		return getResources();
 	}
 
 	/**
@@ -571,9 +629,44 @@ public class TAP implements VOSIResource {
 	/* ************************************* */
 
 	/**
+	 * Get the HOME PAGE resource of this TAP service.
+	 * 
+	 * @return	The HOME PAGE resource.
+	 * 
+	 * @since 2.0
+	 */
+	public final HomePage getHomePage(){
+		return homePage;
+	}
+
+	/**
+	 * <p>Change the whole behavior of the TAP home page.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given resource is NULL, the default home page (i.e. {@link HomePage}) is set.
+	 * </i></p>
+	 * 
+	 * @param newHomePageResource	The new HOME PAGE resource for this TAP service.
+	 * 
+	 * @since 2.0
+	 */
+	public final void setHomePage(final HomePage newHomePageResource){
+		if (newHomePageResource == null){
+			if (homePage == null || !(homePage instanceof HomePage))
+				homePage = new HomePage(this);
+		}else
+			homePage = newHomePageResource;
+	}
+
+	/**
 	 * <p>Get the URL or the file path of a custom home page.</p>
 	 * 
 	 * <p>The home page will be displayed when this resource is directly requested.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function has a sense only if the HOME PAGE resource of this TAP service
+	 * 	is still the default home page (i.e. {@link HomePage}).
+	 * </i></p>
 	 * 
 	 * @return	URL or file path of the file to display as home page,
 	 *        	or NULL if no custom home page has been specified.
@@ -587,6 +680,11 @@ public class TAP implements VOSIResource {
 	 * 
 	 * <p>The home page will be displayed when this resource is directly requested.</p>
 	 * 
+	 * <p><i>Note:
+	 * 	This function has a sense only if the HOME PAGE resource of this TAP service
+	 * 	is still the default home page (i.e. {@link HomePage}).
+	 * </i></p>
+	 * 
 	 * @param uri	URL or file path of the file to display as home page, or NULL to display the default home page.
 	 */
 	public final void setHomePageURI(final String uri){
@@ -598,9 +696,12 @@ public class TAP implements VOSIResource {
 	/**
 	 * <p>Get the MIME type of the custom home page.</p>
 	 * 
-	 * <p>
-	 * 	By default, it is the same as the default home page: "text/html".
-	 * </p>
+	 * <p>By default, it is the same as the default home page: "text/html".</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function has a sense only if the HOME PAGE resource of this TAP service
+	 * 	is still the default home page (i.e. {@link HomePage}).
+	 * </i></p>
 	 * 
 	 * @return	MIME type of the custom home page.
 	 */
@@ -612,6 +713,11 @@ public class TAP implements VOSIResource {
 	 * <p>Set the MIME type of the custom home page.</p>
 	 * 
 	 * <p>A NULL value will be considered as "text/html".</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function has a sense only if the HOME PAGE resource of this TAP service
+	 * 	is still the default home page (i.e. {@link HomePage}).
+	 * </i></p>
 	 * 
 	 * @param mime	MIME type of the custom home page.
 	 */
@@ -696,7 +802,7 @@ public class TAP implements VOSIResource {
 
 		// Retrieve the resource path parts:
 		String[] resourcePath = (request.getPathInfo() == null) ? null : request.getPathInfo().split("/");
-		final String resourceName = (resourcePath == null || resourcePath.length < 1) ? "homePage" : resourcePath[1].trim().toLowerCase();
+		String resourceName = (resourcePath == null || resourcePath.length < 1) ? "" : resourcePath[1].trim();
 
 		// Log the reception of the request, only if the asked resource is not UWS (because UWS is already logging the received request):
 		if (!resourceName.equalsIgnoreCase(ASync.RESOURCE_NAME))
@@ -707,7 +813,7 @@ public class TAP implements VOSIResource {
 			// initialize the base URL:
 			setTAPBaseURL(request);
 			// log the successful initialization:
-			getLogger().logUWS(LogLevel.INFO, this, "INIT", "TAP successfully initialized.", null);
+			getLogger().logUWS(LogLevel.INFO, this, "INIT", "TAP successfully initialized (" + tapBaseURL + ").", null);
 		}
 
 		JobOwner user = null;
@@ -719,9 +825,11 @@ public class TAP implements VOSIResource {
 				throw new TAPException(ue);
 			}
 
-			// Display the TAP Main Page:
-			if (resourceName.equals("homePage"))
-				writeHomePage(response, user);
+			// Display the TAP Home Page:
+			if (resourceName.length() == 0){
+				resourceName = homePage.getName();
+				homePage.executeResource(request, response);
+			}
 			// or Display/Execute the selected TAP Resource:
 			else{
 				// search for the corresponding resource:
@@ -759,62 +867,6 @@ public class TAP implements VOSIResource {
 			// Notify the queue of the asynchronous jobs that a new connection may be available:
 			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME))
 				getASync().freeConnectionAvailable();
-		}
-	}
-
-	/**
-	 * <p>Write the content of the home page in the given writer.</p>
-	 * 
-	 * <p>This content can be:</p>
-	 * <ul>
-	 * 	<li><b>a distance document</b> if a URL has been provided to this class using {@link #setHomePageURI(String)}.
-	 * 	                               In this case, the content of the distant document is copied in the given writer.
-	 * 	                               No redirection is done.</li>
-	 * 	<li><b>a local file</b> if a file path has been provided to this class using {@link #setHomePageURI(String)}.
-	 * 	                        In this case, the content of the local file is copied in the given writer.</li>
-	 * 	<li><b>a default content</b> if no custom home page has been specified using {@link #setHomePageURI(String)}.
-	 * 	                             This default home page is hard-coded in this function and displays just an HTML list of
-	 * 	                             links. There is one link for each resources of this TAP service.</li>
-	 * </ul>
-	 * 
-	 * @param response	{@link HttpServletResponse} in which the home page must be written.
-	 * @param owner		The identified user who asked this home page.
-	 * 
-	 * @throws IOException	If any error occurs while writing the home page in the given HTTP response.
-	 */
-	public void writeHomePage(final HttpServletResponse response, final JobOwner owner) throws IOException{
-		PrintWriter writer = response.getWriter();
-
-		// By default, list all available resources:
-		if (homePageURI == null){
-			// Set the content type: HTML document
-			response.setContentType("text/html");
-
-			// Write the home page:
-			writer.println("<html><head><title>TAP HOME PAGE</title></head><body><h1 style=\"text-align: center\">TAP HOME PAGE</h1><h2>Available resources:</h2><ul>");
-			for(TAPResource res : resources.values())
-				writer.println("<li><a href=\"" + tapBaseURL + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
-			writer.println("</ul></body></html>");
-		}
-		// or Display the specified home page:
-		else{
-			response.setContentType(homePageMimeType);
-
-			// Get an input toward the custom home page:
-			BufferedInputStream input = null;
-			try{
-				// CASE: URL => distant document
-				input = new BufferedInputStream((new URL(homePageURI)).openStream());
-			}catch(MalformedURLException mue){
-				// CASE: file path => local file
-				input = new BufferedInputStream(new FileInputStream(new File(homePageURI)));
-			}
-
-			// Copy the content of the input into the given writer:
-			byte[] buffer = new byte[255];
-			int nbReads = 0;
-			while((nbReads = input.read(buffer)) > 0)
-				writer.print(new String(buffer, 0, nbReads));
 		}
 	}
 
