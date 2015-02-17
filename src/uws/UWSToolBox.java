@@ -16,7 +16,7 @@ package uws;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -41,8 +41,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import uws.job.ErrorSummary;
 import uws.job.UWSJob;
+import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
+import uws.service.UserIdentifier;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
 import uws.service.request.RequestParser;
@@ -52,7 +54,7 @@ import uws.service.request.UploadFile;
  * Some useful functions for the managing of a UWS service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.1 (02/2015)
  */
 public class UWSToolBox {
 
@@ -392,6 +394,43 @@ public class UWSToolBox {
 			}
 		}
 		return cnt;
+	}
+
+	/* *************** */
+	/* USER EXTRACTION */
+	/* *************** */
+	/**
+	 * <p>Extract the user/job owner from the given HTTP request.</p>
+	 * 
+	 * Two cases are supported:
+	 * <ol>
+	 * 	<li><b>The user has already been identified and is stored in the HTTP attribute {@link UWS#REQ_ATTRIBUTE_USER}</b> => the stored value is returned.</li>
+	 * 	<li><b>No HTTP attribute and a {@link UserIdentifier} is provided</b> => the user is identified with the given {@link UserIdentifier} and stored in the HTTP attribute {@link UWS#REQ_ATTRIBUTE_USER} before being returned.</li>
+	 * </ol>
+	 * 
+	 * <p>In any other case, NULL is returned.</p>
+	 * 
+	 * @param request			The HTTP request from which the user must be extracted. <i>note: if NULL, NULL will be returned.</i>
+	 * @param userIdentifier	The method to use in order to extract a user from the given request. <i>note: if NULL, NULL is returned IF no HTTP attribute {@link UWS#REQ_ATTRIBUTE_USER} can be found.</i>
+	 * 
+	 * @return	The identified user. <i>MAY be NULL</i>
+	 * 
+	 * @throws NullPointerException	If an error occurs while extracting a {@link UWSUrl} from the given {@link HttpServletRequest}.
+	 * @throws UWSException			If any error occurs while extracting a user from the given {@link HttpServletRequest}.
+	 * 
+	 * @since 4.1
+	 */
+	public static final JobOwner getUser(final HttpServletRequest request, final UserIdentifier userIdentifier) throws NullPointerException, UWSException{
+		if (request == null)
+			return null;
+		else if (request.getAttribute(UWS.REQ_ATTRIBUTE_USER) != null)
+			return (JobOwner)request.getAttribute(UWS.REQ_ATTRIBUTE_USER);
+		else if (userIdentifier != null){
+			JobOwner user = userIdentifier.extractUserId(new UWSUrl(request), request);
+			request.setAttribute(UWS.REQ_ATTRIBUTE_USER, user);
+			return user;
+		}else
+			return null;
 	}
 
 	/* **************************** */

@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -64,7 +64,7 @@ import uws.service.request.UWSRequestParser;
  * </b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.1 (02/2015)
  */
 public interface UWS extends Iterable<JobList> {
 
@@ -75,6 +75,10 @@ public interface UWS extends Iterable<JobList> {
 	/** Attribute of the HttpServletRequest to set and to get in order to access the parameters extracted by the UWS library (using a RequestParser).
 	 * @since 4.1 */
 	public static final String REQ_ATTRIBUTE_PARAMETERS = "UWS_PARAMETERS";
+
+	/** Attribute of the HttpServletRequest to set and to get in order to access the user at the origin of the HTTP request.
+	 * @since 4.1 */
+	public static final String REQ_ATTRIBUTE_USER = "UWS_USER";
 
 	/**
 	 * Gets the name of this UWS.

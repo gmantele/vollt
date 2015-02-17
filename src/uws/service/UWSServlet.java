@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -132,7 +132,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (01/2015)
+ * @version 4.1 (02/2015)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -341,7 +341,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			requestUrl.load(req);
 
 			// Identify the user:
-			user = (userIdentifier == null) ? null : userIdentifier.extractUserId(requestUrl, req);
+			user = UWSToolBox.getUser(req, userIdentifier);
 
 			// METHOD GET:
 			if (method.equals("GET")){

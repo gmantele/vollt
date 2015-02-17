@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -45,11 +45,11 @@ import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.ErrorType;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSService;
-import uws.service.UWSUrl;
 import uws.service.error.ServiceErrorWriter;
 import uws.service.log.UWSLog.LogLevel;
 import adql.db.FunctionDef;
@@ -60,7 +60,7 @@ import adql.db.FunctionDef;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (01/2015)
+ * @version 2.0 (02/2015)
  */
 public class TAP implements VOSIResource {
 
@@ -710,19 +710,18 @@ public class TAP implements VOSIResource {
 			getLogger().logUWS(LogLevel.INFO, this, "INIT", "TAP successfully initialized.", null);
 		}
 
-		JobOwner owner = null;
+		JobOwner user = null;
 		try{
 			// Identify the user:
 			try{
-				if (service.getUserIdentifier() != null)
-					owner = service.getUserIdentifier().extractUserId(new UWSUrl(request), request);
+				user = UWSToolBox.getUser(request, service.getUserIdentifier());
 			}catch(UWSException ue){
 				throw new TAPException(ue);
 			}
 
 			// Display the TAP Main Page:
 			if (resourceName.equals("homePage"))
-				writeHomePage(response, owner);
+				writeHomePage(response, user);
 			// or Display/Execute the selected TAP Resource:
 			else{
 				// search for the corresponding resource:
@@ -739,22 +738,22 @@ public class TAP implements VOSIResource {
 
 			// Log the successful execution of the action, only if the asked resource is not UWS (because UWS is already logging the received request):
 			if (!resourceName.equalsIgnoreCase(ASync.RESOURCE_NAME))
-				getLogger().logHttp(LogLevel.INFO, response, reqID, owner, "HTTP " + UWSException.OK + " - Action \"" + resourceName + "\" successfully executed.", null);
+				getLogger().logHttp(LogLevel.INFO, response, reqID, user, "HTTP " + UWSException.OK + " - Action \"" + resourceName + "\" successfully executed.", null);
 
 		}catch(Throwable t){
 			// CLIENT ABORTION: (note: should work with Apache/Tomcat and JBoss)
 			if (t.getClass().getName().endsWith("ClientAbortException")){
 				// Log the client abortion:
-				getLogger().logHttp(LogLevel.INFO, response, reqID, owner, "HTTP " + response.getStatus() + " - HTTP request aborted by the client => the TAP resource \"" + resourceName + "\" has stopped!", t);
+				getLogger().logHttp(LogLevel.INFO, response, reqID, user, "HTTP " + response.getStatus() + " - HTTP request aborted by the client => the TAP resource \"" + resourceName + "\" has stopped!", t);
 				// Notify the client abortion in a TAP error:
-				errorWriter.writeError("The client aborts this HTTP request! It may happen due to a client timeout or to an interruption of the response waiting process.", ErrorType.TRANSIENT, UWSException.ACCEPTED_BUT_NOT_COMPLETE, response, request, reqID, owner, resourceName);
+				errorWriter.writeError("The client aborts this HTTP request! It may happen due to a client timeout or to an interruption of the response waiting process.", ErrorType.TRANSIENT, UWSException.ACCEPTED_BUT_NOT_COMPLETE, response, request, reqID, user, resourceName);
 			}
 			// ANY OTHER ERROR:
 			else{
 				// Write the error in the response and return the appropriate HTTP status code:
-				errorWriter.writeError(t, response, request, reqID, owner, resourceName);
+				errorWriter.writeError(t, response, request, reqID, user, resourceName);
 				// Log the error:
-				getLogger().logHttp(LogLevel.ERROR, response, reqID, owner, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
+				getLogger().logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
 			}
 		}finally{
 			// Notify the queue of the asynchronous jobs that a new connection may be available:
