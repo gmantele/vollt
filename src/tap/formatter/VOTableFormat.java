@@ -16,7 +16,7 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -84,7 +84,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (02/2015)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -247,19 +247,34 @@ public class VOTableFormat implements OutputFormat {
 	/**
 	 * <p>Set the MIME type associated with this format.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	Nothing will be done if the given MIME type is NULL.
-	 * 	But the short form may be NULL.
-	 * </i></p>
+	 * <p><i>Note: NULL means no modification of the current value:</i></p>
 	 * 
-	 * @param mimeType	Full MIME type of this VOTable format.	<i>note: if NULL, this function does nothing</i>
-	 * @param shortForm	Short form of this MIME type. <i>note: MAY be NULL</i>
+	 * @param mimeType	Full MIME type of this VOTable format.	<i>note: if NULL, the MIME type is not modified.</i>
+	 * @param shortForm	Short form of this MIME type. <i>note: if NULL, the short MIME type is not modified.</i>
 	 */
 	public final void setMimeType(final String mimeType, final String shortForm){
-		if (mimeType != null){
+		if (mimeType != null)
 			this.mimeType = mimeType;
+		if (shortForm != null)
 			this.shortMimeType = shortForm;
-		}
+	}
+
+	/**
+	 * Get the set VOTable data serialization/format (e.g. BINARY, TABLEDATA).
+	 * 
+	 * @return	The data format.
+	 */
+	public final DataFormat getVotSerialization(){
+		return votFormat;
+	}
+
+	/**
+	 * Get the set VOTable version.
+	 * 
+	 * @return	The VOTable version.
+	 */
+	public final VOTableVersion getVotVersion(){
+		return votVersion;
 	}
 
 	@Override

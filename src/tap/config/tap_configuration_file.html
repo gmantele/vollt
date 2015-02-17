@@ -113,6 +113,7 @@
 						<li><u>a URL</u>: here, a redirection toward this URL will be made at each request on the home page</li>
 						<li><u>a classpath</u>: the classpath of an extension of tap.resource.HomePage which must replace the default home page resource. This class MUST have at least one constructor with exactly one parameter not NULL of type tap.resource.TAP.</li>
 					</ul>
+					<p><em>By default, the default home page provided by the library is used.</em></p>
 				</td>
 				<td><ul><li>my_tap_homepage.jsp</li><li>jsp/my_tap_homepage.jsp</li><li>file:///home/foo/customHomePage.html</li><li>http://...</li><li>{aPackage.NewHomePage}</li></ul></td>
 			</tr>
@@ -124,7 +125,7 @@
 					<p>MIME type of the service home page.</p>
 					<p>This property is used only if the specified "home_page" is a local file path (i.e. if "home_page=file://...").</p>
 					<p>If no value is provided "text/html" will be set by default.</p>
-					<p><i>Default: <code>text/html</code></i></p>
+					<p><em>Default: <code>text/html</code></em></p>
 				</td>
 				<td><ul><li>text/html <em>(default)</em></li><li>text/plain</li><li>application/xml</li></ul></td>
 			</tr>
@@ -229,7 +230,7 @@
 				<td>
 					<p><strong>Mandatory if</strong> the password is not already provided in jdbc_url</p>
 					<p>Password used by db_username to access to the database.</p>
-					<p><em><u>Note:</u> No password encryption can be done in this configuration file for the moment.</em></p>
+					<p><em><u>Warning:</u> No password encryption can be done in this configuration file for the moment.</em></p>
 				</td>
 				<td></td>
 			</tr>
@@ -254,7 +255,7 @@
 				<td></td>
 				<td>text</td>
 				<td>
-					<p><b>Mandatory if</b> the value of "metadata" is "xml".</p>
+					<p><strong>Mandatory if</strong> the value of "metadata" is "xml".</p>
 					<p>Local file path to the TableSet XML document. This XML must implement the schema TableSet defined by <a href="http://www.ivoa.net/xml/VODataService/v1.1">VODataService</a>.</p>
 				</td>
 				<td>/home/foo/my_metadata.xml</td>
@@ -286,7 +287,7 @@
 				<td>
 					<p>Tells whether a directory should be created for each user. If yes, the user directory will be named with the user ID. In this directory, there will be error files, job results
 					and it may be the backup file of the user.</p>
-					<p><em>The default value is: true.</em></p>
+					<p><em>Default: <code>true</code></em></p>
 				</td>
 				<td><ul><li>true <i>(default)</i></li><li>false</li></ul></td>
 			</tr>
@@ -296,7 +297,7 @@
 				<td>boolean</td>
 				<td>
 					<p>Tells whether user directories must be grouped. If yes, directories are grouped by the first letter found in the user ID.</p>
-					<p><em>The default value is: false.</em></p>
+					<p><em>Default: <code>false</code></em></p>
 				</td>
 				<td><ul><li>true</li><li>false <i>(default)</i></li></ul></td>
 			</tr>
@@ -322,7 +323,7 @@
 					<p>The maximum period MUST be greater or equals to the default retention period. If this rule is not respected, the default retention period is set immediately
 					 to the maximum retention period.</p>
 					<p>A negative or null value means there is no restriction over the maximum retention period: the job results will be kept forever. Float values are not allowed.</p>
-					<p><em>By default query results are kept forever: max_retention_period=0.</em></p></td>
+					<p><em>Default: <code>max_retention_period=0</code> (results kept for ever)</em></p></td>
 				<td>604800 <em>(1 week)</em></td>
 			</tr>
 			
@@ -334,7 +335,7 @@
 				<td>
 					<p>Frequency at which the UWS service (that's to say, all its users and jobs) must be backuped.</p>
 					<p>Allowed values are: never (no backup will never be done), user_action (each time a user does a writing action, like creating or execution a job), a time (must be positive and not null) in milliseconds.</p>
-					<p><em>By default, no backup is done, so: backup_frequency=never.</em></p>
+					<p><em>Default: <code>backup_frequency=never</code> (no backup)</em></p>
 				</td>
 				<td><ul><li>never <em>(default)</em></li><li>user_action</li><li>3600000 <em>(1 hour)</em></li></ul></td>
 			</tr>
@@ -345,7 +346,7 @@
 				<td>
 					<p>Tells whether the backup must be one file for every user, or one file for each user. This second option should be chosen if your TAP Service is organizing its files by user directories ; see the property <em>directory_per_user</em>.</p>
 					<p>Allowed values are: user (one backup file for each user), whole (one file for all users ; may generates a big file).</p>
-					<p><em>The default mode is: whole.</em></p>
+					<p><em>Default: <code>whole</code></em></p>
 				</td>
 				<td><ul><li>whole <em>(default)</em></li><li>user</li></ul></td>
 			</tr>
@@ -358,7 +359,7 @@
 				<td>
 					<p>Maximum number of asynchronous jobs that can run simultaneously.</p>
 					<p>A negative or null value means there is no restriction over the number of running asynchronous jobs.</p>
-					<p><em>By default, there is no restriction: max_async_jobs=0.</em></p>
+					<p><em>Default: <code>max_async_jobs=0</code> (no restriction)</em></p>
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>10</li></ul></td>
 			</tr>
@@ -373,7 +374,7 @@
 					<p>The default duration MUST be less or equals to the maximum execution duration. If this rule is not respected, the default execution duration is set immediately
 					 to the maximum execution duration.</p>
 					<p>A negative or null value means there is no restriction over the default execution duration: the execution could never end. Float values are not allowed.</p>
-					<p><em>By default, there is no restriction: default_execution_duration=0.</em></p>
+					<p><em>Default: <code>default_execution_duration=0</code> (no restriction)</em></p>
 				</td>
 				<td>600000 <em>(10 minutes)</em></td>
 			</tr>
@@ -386,7 +387,7 @@
 					<p>The maximum duration MUST be greater or equals to the default execution duration. If this rule is not respected, the default execution duration is set immediately
 					 to the maximum execution duration.</p>
 					<p>A negative or null value means there is no restriction over the maximum execution duration: the execution could never end. Float values are not allowed.</p>
-					<p><em>By default, there is no restriction: max_execution_duration=0.</em></p>
+					<p><em>Default: <code>max_execution_duration=0</code> (no restriction)</em></p>
 				</td>
 				<td>3600000 <em>(1 hour)</em></td>
 			</tr>
@@ -397,11 +398,18 @@
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>Comma separated list of output formats for query results, in addition to the VOTable.</p>
-					<p>Allowed values are: json, csv, tsv, sv(<i>&lt;separator&gt;</i>)[:<i>mime_type</i>[:<i>mime_type_alias</i>]], or a path (within brackets: {...}) to a class implementing OutputFormat&lt;ResultSet&gt; and having at least one constructor with only a tap.ServiceConnection&lt;ResultSet&gt; parameter.</p>
-					<p><i>Note: if no MIME type or MIME type alias is provided for the sv(...) format, defaults are: </i>text/plain<i> and </i>text<i>. So </i>sv([])<i> is equivalent to </i>sv([]):text/plain:text<i>.</i></p>
+					<p>Comma separated list of output formats for query results.</p>
+					<p>Allowed values are: votable (or 'vot'), fits, text, csv, tsv, json and html.</p>
+					<p>The special value "ALL" will select all formats provided by the library.</p>
+					<p>The VOTable format may be more detailed with the following syntax: (<code>serialization</code>,<code>version</code>):<code>mime_type</code>:<code>short_mime_type</code>.
+					The MIME type part and the parameters part may be omitted (e.g. votable:application/xml:votable , votable(td,1.3)]).
+					Empty string values are allowed for each values (e.g. votable():: , votable(td)::votable).</p>
+					<p>It is also possible to define a custom Separated Value format, different from CSV and TSV, thanks to the following syntax: sv(<code>separator</code>):<code>mime_type</code>:<code>short_mime_type</code>.
+					On the contrary to the VOTable syntax, the parameter (i.e. separator) MUST BE provided. The MIME type part may be omitted ; then the MIME type will be set by default to text/plain.</p>
+					<p>There is finally a last possible value: a classpath to a class implementing OutputFormat and having at least one constructor with exactly one parameter of type tap.ServiceConnection.</p>
+					<p><em>Default: <code>ALL</code></em></p>
 				</td>
-				<td><ul><li>json</li><li>csv</li><li>tsv</li><li>sv(|):text/psv:psv</li><li>sv([])</li><li>{apackage.FooOutputFormat}</li></ul></td>
+				<td><ul><li>votable</li><li>vot</li><li>vot(td,1.2)::votable</li><li>json,html ,csv, text</li><li>sv(|):text/psv:psv</li><li>sv([])</li><li>{apackage.FooOutputFormat}</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">output_default_limit</td>
@@ -412,7 +420,7 @@
 					<p>This limit can be expressed in only one unit: rows.</p>
 					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
 					<p>Obviously this limit MUST be less or equal than output_max_limit.</p>
-					<p><em>By default, there is no restriction: output_default_limit=0</em></p>
+					<p><em>Default: <code>output_default_limit=0</code> (no restriction)</em></p>
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li></ul></td>
 			</tr>
@@ -425,7 +433,7 @@
 					<p>This limit can be expressed in only one unit: rows.</p>
 					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
 					<p>Obviously this limit MUST be greater or equal than output_default_limit.</p>
-					<p><em>By default, there is no restriction: output_max_limit=0</em></p>
+					<p><em>Default: <code>output_max_limit=0</code> (no restriction)</em></p>
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>1000</li><li>10000r</li><li>10000R</li></ul></td>
 			</tr>
@@ -454,7 +462,7 @@
 					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
 					<p><b>Warning!</b> Obviously this limit MUST be less or equal than upload_max_db_limit, and MUST be of the same type as it.
 					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
-					<p><i>By default, there is no restriction: upload_default_db_limit=0</i></p>
+					<p><em>Default: <code>upload_default_db_limit=0</code> (no restriction)</em></p>
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
 			</tr>
@@ -470,7 +478,7 @@
 					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
 					<p><b>Warning!</b> Obviously this limit MUST be greater or equal than upload_default_db_limit, and MUST be of the same type as it.
 					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
-					<p><i>By default, there is no restriction: upload_max_db_limit=0</i></p>
+					<p><em>Default: <code>upload_max_db_limit=0</code> (no restriction)</em></p>
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
 			</tr>
@@ -484,7 +492,7 @@
 					Here, unit is case sensitive. No other storage unit is allowed.</p>
 					<p><b>Warning!</b> When the upload is enabled, there must be a maximum file size. Here, no "unlimited" value is possible ; 0 and any negative value are not allowed.</p>
 					<p><b>Warning!</b> In function of the chosen upload_max_db_limit type, upload_max_file_size MUST be greater in order to figure out the file metadata part.</p>
-					<p><i>By default, the maximum size is set to its maximum possible value: upload_max_file_size=2147483647B (~2GB)</i></p>
+					<p><em>Default: <code>upload_max_file_size=2147483647B</code> (~2GB ; maximum possible value)</em></p>
 				</td>
 				<td><ul><li>2147483647B <em>(default)</em></li><li>2MB</li></ul></td>
 			</tr>

@@ -87,7 +87,13 @@ public final class TAPConfiguration {
 
 	/* OUTPUT KEYS */
 	public final static String KEY_OUTPUT_FORMATS = "output_add_formats";
+	public final static String VALUE_ALL = "ALL";
+	public final static String VALUE_VOTABLE = "votable";
+	public final static String VALUE_VOT = "vot";
+	public final static String VALUE_FITS = "fits";
 	public final static String VALUE_JSON = "json";
+	public final static String VALUE_HTML = "html";
+	public final static String VALUE_TEXT = "text";
 	public final static String VALUE_CSV = "csv";
 	public final static String VALUE_TSV = "tsv";
 	public final static String VALUE_SV = "sv";

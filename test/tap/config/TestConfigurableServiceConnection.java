@@ -1,6 +1,7 @@
 package tap.config;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -19,11 +20,14 @@ import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
 import static tap.config.TAPConfiguration.VALUE_ANY;
 import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
+import static tap.config.TAPConfiguration.VALUE_FITS;
 import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
 import static tap.config.TAPConfiguration.VALUE_NONE;
 import static tap.config.TAPConfiguration.VALUE_SV;
+import static tap.config.TAPConfiguration.VALUE_TEXT;
 import static tap.config.TAPConfiguration.VALUE_TSV;
+import static tap.config.TAPConfiguration.VALUE_VOTABLE;
 import static tap.config.TAPConfiguration.VALUE_XML;
 
 import java.io.File;
@@ -41,6 +45,10 @@ import org.junit.Test;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
+import tap.formatter.OutputFormat;
+import tap.formatter.VOTableFormat;
+import uk.ac.starlink.votable.DataFormat;
+import uk.ac.starlink.votable.VOTableVersion;
 import uws.UWSException;
 import uws.job.user.DefaultJobOwner;
 import uws.job.user.JobOwner;
@@ -57,9 +65,11 @@ public class TestConfigurableServiceConnection {
 	private static Properties validProp, noFmProp, fmClassPathProp,
 			incorrectFmProp, xmlMetaProp, missingMetaProp, missingMetaFileProp,
 			wrongMetaProp, wrongMetaFileProp, validFormatsProp,
-			badSVFormat1Prop, badSVFormat2Prop, unknownFormatProp,
-			maxAsyncProp, negativeMaxAsyncProp, notIntMaxAsyncProp,
-			defaultOutputLimitProp, maxOutputLimitProp,
+			validVOTableFormatsProp, badSVFormat1Prop, badSVFormat2Prop,
+			badVotFormat1Prop, badVotFormat2Prop, badVotFormat3Prop,
+			badVotFormat4Prop, badVotFormat5Prop, badVotFormat6Prop,
+			unknownFormatProp, maxAsyncProp, negativeMaxAsyncProp,
+			notIntMaxAsyncProp, defaultOutputLimitProp, maxOutputLimitProp,
 			bothOutputLimitGoodProp, bothOutputLimitBadProp, userIdentProp,
 			notClassPathUserIdentProp, geometriesProp, noneGeomProp,
 			anyGeomProp, noneInsideGeomProp, unknownGeomProp, anyUdfsProp,
@@ -78,7 +88,7 @@ public class TestConfigurableServiceConnection {
 		noFmProp.setProperty(KEY_FILE_MANAGER, "");
 
 		fmClassPathProp = (Properties)validProp.clone();
-		fmClassPathProp.setProperty(KEY_FILE_MANAGER, "{tap.config.TestDefaultServiceConnection$FileManagerTest}");
+		fmClassPathProp.setProperty(KEY_FILE_MANAGER, "{tap.config.TestConfigurableServiceConnection$FileManagerTest}");
 
 		incorrectFmProp = (Properties)validProp.clone();
 		incorrectFmProp.setProperty(KEY_FILE_MANAGER, "foo");
@@ -102,13 +112,34 @@ public class TestConfigurableServiceConnection {
 		missingMetaFileProp.remove(KEY_METADATA_FILE);
 
 		validFormatsProp = (Properties)validProp.clone();
-		validFormatsProp.setProperty(KEY_OUTPUT_FORMATS, VALUE_JSON + "," + VALUE_CSV + " , " + VALUE_TSV + ",, , " + VALUE_SV + "([])" + ", " + VALUE_SV + "(|):text/psv:psv" + ", " + VALUE_SV + "($)::test" + ", \t  " + VALUE_SV + "(@):text/arobase:");
+		validFormatsProp.setProperty(KEY_OUTPUT_FORMATS, VALUE_FITS + "," + VALUE_TEXT + "," + VALUE_JSON + "," + VALUE_CSV + " , " + VALUE_TSV + ",, , " + VALUE_SV + "([])" + ", " + VALUE_SV + "(|):text/psv:psv" + ", " + VALUE_SV + "($)::test" + ", \t  " + VALUE_SV + "(@):text/arobase:" + ", {tap.formatter.HTMLFormat}");
+
+		validVOTableFormatsProp = (Properties)validProp.clone();
+		validVOTableFormatsProp.setProperty(KEY_OUTPUT_FORMATS, "votable, votable()::, vot(), vot::, votable:, votable(Td, 1.0), vot(TableData), votable(,1.2), vot(Fits):application/fits:supervot");
 
 		badSVFormat1Prop = (Properties)validProp.clone();
 		badSVFormat1Prop.setProperty(KEY_OUTPUT_FORMATS, VALUE_SV);
 
 		badSVFormat2Prop = (Properties)validProp.clone();
 		badSVFormat2Prop.setProperty(KEY_OUTPUT_FORMATS, VALUE_SV + "()");
+
+		badVotFormat1Prop = (Properties)validProp.clone();
+		badVotFormat1Prop.setProperty(KEY_OUTPUT_FORMATS, "votable(foo)");
+
+		badVotFormat2Prop = (Properties)validProp.clone();
+		badVotFormat2Prop.setProperty(KEY_OUTPUT_FORMATS, "vot(,foo)");
+
+		badVotFormat3Prop = (Properties)validProp.clone();
+		badVotFormat3Prop.setProperty(KEY_OUTPUT_FORMATS, "text, vot(TD");
+
+		badVotFormat4Prop = (Properties)validProp.clone();
+		badVotFormat4Prop.setProperty(KEY_OUTPUT_FORMATS, "vot(TD, text");
+
+		badVotFormat5Prop = (Properties)validProp.clone();
+		badVotFormat5Prop.setProperty(KEY_OUTPUT_FORMATS, "vot(TD, 1.0, foo)");
+
+		badVotFormat6Prop = (Properties)validProp.clone();
+		badVotFormat6Prop.setProperty(KEY_OUTPUT_FORMATS, "vot:application/xml:votable:foo");
 
 		unknownFormatProp = (Properties)validProp.clone();
 		unknownFormatProp.setProperty(KEY_OUTPUT_FORMATS, "foo");
@@ -137,7 +168,7 @@ public class TestConfigurableServiceConnection {
 		bothOutputLimitBadProp.setProperty(KEY_MAX_OUTPUT_LIMIT, "100");
 
 		userIdentProp = (Properties)validProp.clone();
-		userIdentProp.setProperty(KEY_USER_IDENTIFIER, "{tap.config.TestDefaultServiceConnection$UserIdentifierTest}");
+		userIdentProp.setProperty(KEY_USER_IDENTIFIER, "{tap.config.TestConfigurableServiceConnection$UserIdentifierTest}");
 
 		notClassPathUserIdentProp = (Properties)validProp.clone();
 		notClassPathUserIdentProp.setProperty(KEY_USER_IDENTIFIER, "foo");
@@ -228,7 +259,7 @@ public class TestConfigurableServiceConnection {
 			assertNotNull(connection.getTAPMetadata());
 			assertTrue(connection.getTAPMetadata().getNbSchemas() >= 1);
 			assertTrue(connection.getTAPMetadata().getNbTables() >= 5);
-			assertTrue(connection.isAvailable());
+			assertFalse(connection.isAvailable());
 			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
@@ -258,7 +289,7 @@ public class TestConfigurableServiceConnection {
 			assertNotNull(connection.getTAPMetadata());
 			assertEquals(nbSchemas, connection.getTAPMetadata().getNbSchemas());
 			assertEquals(nbTables, connection.getTAPMetadata().getNbTables());
-			assertTrue(connection.isAvailable());
+			assertFalse(connection.isAvailable());
 			assertEquals(DEFAULT_MAX_ASYNC_JOBS, connection.getNbMaxAsyncJobs());
 			assertTrue(connection.getRetentionPeriod()[0] <= connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] <= connection.getExecutionDuration()[1]);
@@ -321,7 +352,7 @@ public class TestConfigurableServiceConnection {
 			assertNotNull(connection.getFileManager());
 			assertNotNull(connection.getFactory());
 			assertNotNull(connection.getTAPMetadata());
-			assertTrue(connection.isAvailable());
+			assertFalse(connection.isAvailable());
 
 			/* Retention periods and execution durations are different in this configuration file from the valid one (validProp).
 			 * Max period and max duration are set in this file as less than respectively the default period and the default duration.
@@ -346,6 +377,7 @@ public class TestConfigurableServiceConnection {
 		// Valid output formats list:
 		try{
 			ServiceConnection connection = new ConfigurableServiceConnection(validFormatsProp);
+			assertNotNull(connection.getOutputFormat(VALUE_VOTABLE));
 			assertNotNull(connection.getOutputFormat(VALUE_JSON));
 			assertNotNull(connection.getOutputFormat(VALUE_CSV));
 			assertNotNull(connection.getOutputFormat(VALUE_TSV));
@@ -355,6 +387,69 @@ public class TestConfigurableServiceConnection {
 			assertNotNull(connection.getOutputFormat("text/plain"));
 			assertNotNull(connection.getOutputFormat("test"));
 			assertNotNull(connection.getOutputFormat("text/arobase"));
+		}catch(Exception e){
+			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Valid VOTable output formats list:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(validVOTableFormatsProp);
+			Iterator<OutputFormat> it = connection.getOutputFormats();
+			OutputFormat f = it.next(); /* votable */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml", f.getMimeType());
+			assertEquals(VALUE_VOTABLE, f.getShortMimeType());
+			assertEquals(DataFormat.BINARY, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V13, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* votable():: */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml", f.getMimeType());
+			assertEquals(VALUE_VOTABLE, f.getShortMimeType());
+			assertEquals(DataFormat.BINARY, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V13, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* vot() */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml", f.getMimeType());
+			assertEquals(VALUE_VOTABLE, f.getShortMimeType());
+			assertEquals(DataFormat.BINARY, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V13, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* vot:: */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml", f.getMimeType());
+			assertEquals(VALUE_VOTABLE, f.getShortMimeType());
+			assertEquals(DataFormat.BINARY, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V13, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* votable: */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml", f.getMimeType());
+			assertEquals(VALUE_VOTABLE, f.getShortMimeType());
+			assertEquals(DataFormat.BINARY, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V13, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* votable(Td, 1.0) */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml;serialization=TABLEDATA", f.getMimeType());
+			assertEquals("votable/td", f.getShortMimeType());
+			assertEquals(DataFormat.TABLEDATA, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V10, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* votable(TableData) */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml;serialization=TABLEDATA", f.getMimeType());
+			assertEquals("votable/td", f.getShortMimeType());
+			assertEquals(DataFormat.TABLEDATA, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V13, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* votable(, 1.2) */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/x-votable+xml", f.getMimeType());
+			assertEquals(VALUE_VOTABLE, f.getShortMimeType());
+			assertEquals(DataFormat.BINARY, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V12, ((VOTableFormat)f).getVotVersion());
+			f = it.next(); /* vot(fits):application/fits,supervot */
+			assertEquals(VOTableFormat.class, f.getClass());
+			assertEquals("application/fits", f.getMimeType());
+			assertEquals("supervot", f.getShortMimeType());
+			assertEquals(DataFormat.FITS, ((VOTableFormat)f).getVotSerialization());
+			assertEquals(VOTableVersion.V13, ((VOTableFormat)f).getVotVersion());
+			assertFalse(it.hasNext());
 		}catch(Exception e){
 			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
 		}
@@ -375,6 +470,60 @@ public class TestConfigurableServiceConnection {
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("Missing separator char/string for the SV output format: \"sv()\"!", e.getMessage());
+		}
+
+		// Bad VOTable(...) format 1 = "votable(foo)":
+		try{
+			new ConfigurableServiceConnection(badVotFormat1Prop);
+			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Unsupported VOTable serialization: \"foo\"! Accepted values: 'binary' (or 'b'), 'binary2' (or 'b2'), 'tabledata' (or 'td') and 'fits'.", e.getMessage());
+		}
+
+		// Bad VOTable(...) format 2 = "votable(,foo)":
+		try{
+			new ConfigurableServiceConnection(badVotFormat2Prop);
+			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Unsupported VOTable version: \"foo\"! Accepted values: '1.0' (or 'v1.0'), '1.1' (or 'v1.1'), '1.2' (or 'v1.2') and '1.3' (or 'v1.3').", e.getMessage());
+		}
+
+		// Bad VOTable(...) format 3 = "text, vot(TD":
+		try{
+			new ConfigurableServiceConnection(badVotFormat3Prop);
+			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong output format specification syntax in: \"vot(TD\"! A VOTable parameters list must end with ')'.", e.getMessage());
+		}
+
+		// Bad VOTable(...) format 4 = "vot(TD, text":
+		try{
+			new ConfigurableServiceConnection(badVotFormat4Prop);
+			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Missing right parenthesis in: \"vot(TD, text\"!", e.getMessage());
+		}
+
+		// Bad VOTable(...) format 5 = "vot(TD, 1.0, foo)":
+		try{
+			new ConfigurableServiceConnection(badVotFormat5Prop);
+			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong number of parameters for the output format VOTable: \"vot(TD, 1.0, foo)\"! Only two parameters may be provided: serialization and version.", e.getMessage());
+		}
+
+		// Bad VOTable(...) format 6 = "vot:application/xml:votable:foo":
+		try{
+			new ConfigurableServiceConnection(badVotFormat6Prop);
+			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong output format specification syntax in: \"vot:application/xml:votable:foo\"! After a MIME type and a short MIME type, no more information is expected.", e.getMessage());
 		}
 
 		// Unknown output format:

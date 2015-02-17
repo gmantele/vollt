@@ -29,14 +29,20 @@ import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
+import static tap.config.TAPConfiguration.VALUE_ALL;
 import static tap.config.TAPConfiguration.VALUE_ANY;
 import static tap.config.TAPConfiguration.VALUE_CSV;
 import static tap.config.TAPConfiguration.VALUE_DB;
+import static tap.config.TAPConfiguration.VALUE_FITS;
+import static tap.config.TAPConfiguration.VALUE_HTML;
 import static tap.config.TAPConfiguration.VALUE_JSON;
 import static tap.config.TAPConfiguration.VALUE_LOCAL;
 import static tap.config.TAPConfiguration.VALUE_NONE;
 import static tap.config.TAPConfiguration.VALUE_SV;
+import static tap.config.TAPConfiguration.VALUE_TEXT;
 import static tap.config.TAPConfiguration.VALUE_TSV;
+import static tap.config.TAPConfiguration.VALUE_VOT;
+import static tap.config.TAPConfiguration.VALUE_VOTABLE;
 import static tap.config.TAPConfiguration.VALUE_XML;
 import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.getProperty;
@@ -54,14 +60,19 @@ import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPFactory;
 import tap.db.DBConnection;
+import tap.formatter.FITSFormat;
+import tap.formatter.HTMLFormat;
 import tap.formatter.JSONFormat;
 import tap.formatter.OutputFormat;
 import tap.formatter.SVFormat;
+import tap.formatter.TextFormat;
 import tap.formatter.VOTableFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TableSetParser;
+import uk.ac.starlink.votable.DataFormat;
+import uk.ac.starlink.votable.VOTableVersion;
 import uws.UWSException;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
@@ -131,8 +142,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// 6. CONFIGURE OUTPUT:
 		// default output format = VOTable:
 		outputFormats = new ArrayList<OutputFormat>(1);
-		outputFormats.add(new VOTableFormat(this));
-		// set additional output formats:
+		// set output formats:
 		addOutputFormats(tapConfig);
 		// set output limits:
 		initOutputLimits(tapConfig);
@@ -314,14 +324,39 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	private void addOutputFormats(final Properties tapConfig) throws TAPException{
 		// Fetch the value of the property for additional output formats:
-		String formats = TAPConfiguration.getProperty(tapConfig, KEY_OUTPUT_FORMATS);
+		String formats = getProperty(tapConfig, KEY_OUTPUT_FORMATS);
 
+		// SPECIAL VALUE "ALL":
+		if (formats == null || formats.equalsIgnoreCase(VALUE_ALL)){
+			outputFormats.add(new VOTableFormat(this, DataFormat.BINARY));
+			outputFormats.add(new VOTableFormat(this, DataFormat.BINARY2));
+			outputFormats.add(new VOTableFormat(this, DataFormat.TABLEDATA));
+			outputFormats.add(new VOTableFormat(this, DataFormat.FITS));
+			outputFormats.add(new FITSFormat(this));
+			outputFormats.add(new SVFormat(this, ",", true));
+			outputFormats.add(new SVFormat(this, "\t", true));
+			outputFormats.add(new TextFormat(this));
+			outputFormats.add(new HTMLFormat(this));
+			return;
+		}
+
+		// LIST OF FORMATS:
 		// Since it is a comma separated list of output formats, a loop will parse this list comma by comma:
 		String f;
-		int indexSep;
+		int indexSep, indexLPar, indexRPar;
+		boolean hasVotableFormat = false;
 		while(formats != null && formats.length() > 0){
 			// Get a format item from the list:
 			indexSep = formats.indexOf(',');
+			// if a comma is after a left parenthesis
+			indexLPar = formats.indexOf('(');
+			if (indexSep > 0 && indexLPar > 0 && indexSep > indexLPar){
+				indexRPar = formats.indexOf(')', indexLPar);
+				if (indexRPar > 0)
+					indexSep = formats.indexOf(',', indexRPar);
+				else
+					throw new TAPException("Missing right parenthesis in: \"" + formats + "\"!");
+			}
 			// no comma => only one format
 			if (indexSep < 0){
 				f = formats;
@@ -339,9 +374,18 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			}
 
 			// Identify the format and append it to the output format list of the service:
+			// FITS
+			if (f.equalsIgnoreCase(VALUE_FITS))
+				outputFormats.add(new FITSFormat(this));
 			// JSON
-			if (f.equalsIgnoreCase(VALUE_JSON))
+			else if (f.equalsIgnoreCase(VALUE_JSON))
 				outputFormats.add(new JSONFormat(this));
+			// HTML
+			else if (f.equalsIgnoreCase(VALUE_HTML))
+				outputFormats.add(new HTMLFormat(this));
+			// TEXT
+			else if (f.equalsIgnoreCase(VALUE_TEXT))
+				outputFormats.add(new TextFormat(this));
 			// CSV
 			else if (f.equalsIgnoreCase(VALUE_CSV))
 				outputFormats.add(new SVFormat(this, ",", true));
@@ -370,6 +414,18 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 				}else
 					throw new TAPException("Missing separator char/string for the SV output format: \"" + f + "\"!");
 			}
+			// VOTABLE
+			else if (f.toLowerCase().startsWith(VALUE_VOTABLE) || f.toLowerCase().startsWith(VALUE_VOT)){
+				// Parse the format:
+				VOTableFormat votFormat = parseVOTableFormat(f);
+
+				// Add the VOTable format:
+				outputFormats.add(votFormat);
+
+				// Determine whether the MIME type is the VOTable expected one:
+				if (votFormat.getShortMimeType().equals("votable") || votFormat.getMimeType().equals("votable"))
+					hasVotableFormat = true;
+			}
 			// custom OutputFormat
 			else if (isClassPath(f)){
 				Class<? extends OutputFormat> userOutputFormatClass = fetchClass(f, KEY_OUTPUT_FORMATS, OutputFormat.class);
@@ -387,6 +443,86 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			else
 				throw new TAPException("Unknown output format: " + f);
 		}
+
+		// Add by default VOTable format if none is specified:
+		if (!hasVotableFormat)
+			outputFormats.add(new VOTableFormat(this));
+	}
+
+	private VOTableFormat parseVOTableFormat(final String propValue) throws TAPException{
+		DataFormat serialization = null;
+		VOTableVersion votVersion = null;
+		String mimeType = null, shortMimeType = null;
+
+		// Get the parameters, if any:
+		int beginSep = propValue.indexOf('(');
+		if (beginSep > 0){
+			int endSep = propValue.indexOf(')');
+			if (endSep <= beginSep)
+				throw new TAPException("Wrong output format specification syntax in: \"" + propValue + "\"! A VOTable parameters list must end with ')'.");
+			// split the parameters:
+			String[] params = propValue.substring(beginSep + 1, endSep).split(",");
+			if (params.length > 2)
+				throw new TAPException("Wrong number of parameters for the output format VOTable: \"" + propValue + "\"! Only two parameters may be provided: serialization and version.");
+			else if (params.length >= 1){
+				// resolve the serialization format:
+				params[0] = params[0].trim().toLowerCase();
+				if (params[0].length() == 0 || params[0].equals("b") || params[0].equals("binary"))
+					serialization = DataFormat.BINARY;
+				else if (params[0].equals("b2") || params[0].equals("binary2"))
+					serialization = DataFormat.BINARY2;
+				else if (params[0].equals("td") || params[0].equals("tabledata"))
+					serialization = DataFormat.TABLEDATA;
+				else if (params[0].equals("fits"))
+					serialization = DataFormat.FITS;
+				else
+					throw new TAPException("Unsupported VOTable serialization: \"" + params[0] + "\"! Accepted values: 'binary' (or 'b'), 'binary2' (or 'b2'), 'tabledata' (or 'td') and 'fits'.");
+				// resolve the version:
+				if (params.length == 2){
+					params[1] = params[1].trim();
+					if (params[1].equals("1.0") || params[1].equalsIgnoreCase("v1.0"))
+						votVersion = VOTableVersion.V10;
+					else if (params[1].equals("1.1") || params[1].equalsIgnoreCase("v1.1"))
+						votVersion = VOTableVersion.V11;
+					else if (params[1].equals("1.2") || params[1].equalsIgnoreCase("v1.2"))
+						votVersion = VOTableVersion.V12;
+					else if (params[1].equals("1.3") || params[1].equalsIgnoreCase("v1.3"))
+						votVersion = VOTableVersion.V13;
+					else
+						throw new TAPException("Unsupported VOTable version: \"" + params[1] + "\"! Accepted values: '1.0' (or 'v1.0'), '1.1' (or 'v1.1'), '1.2' (or 'v1.2') and '1.3' (or 'v1.3').");
+				}
+			}
+		}
+
+		// Get the MIME type and its alias, if any:
+		beginSep = propValue.indexOf(':');
+		if (beginSep > 0){
+			int endSep = propValue.indexOf(':', beginSep + 1);
+			if (endSep < 0)
+				endSep = propValue.length();
+			// extract the MIME type, if any:
+			mimeType = propValue.substring(beginSep + 1, endSep).trim();
+			if (mimeType.length() == 0)
+				mimeType = null;
+			// extract the short MIME type, if any:
+			if (endSep < propValue.length()){
+				beginSep = endSep;
+				endSep = propValue.indexOf(':', beginSep + 1);
+				if (endSep >= 0)
+					throw new TAPException("Wrong output format specification syntax in: \"" + propValue + "\"! After a MIME type and a short MIME type, no more information is expected.");
+				else
+					endSep = propValue.length();
+				shortMimeType = propValue.substring(beginSep + 1, endSep).trim();
+				if (shortMimeType.length() == 0)
+					shortMimeType = null;
+			}
+		}
+
+		// Create the VOTable format:
+		VOTableFormat votFormat = new VOTableFormat(this, serialization, votVersion);
+		votFormat.setMimeType(mimeType, shortMimeType);
+
+		return votFormat;
 	}
 
 	private void initOutputLimits(final Properties tapConfig) throws TAPException{

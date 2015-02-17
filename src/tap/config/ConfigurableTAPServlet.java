@@ -23,7 +23,9 @@ import static tap.config.TAPConfiguration.DEFAULT_TAP_CONF_FILE;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE_MIME_TYPE;
 import static tap.config.TAPConfiguration.TAP_CONF_PARAMETER;
+import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.getProperty;
+import static tap.config.TAPConfiguration.isClassPath;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -114,11 +116,11 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		String propValue = getProperty(tapConf, KEY_HOME_PAGE);
 		if (propValue != null){
 			// If it is a class path, replace the current home page by an instance of this class:
-			if (TAPConfiguration.isClassPath(propValue)){
+			if (isClassPath(propValue)){
 				Class<? extends HomePage> newHomePage = null;
 				try{
 					// ...fetch the class:
-					newHomePage = TAPConfiguration.fetchClass(propValue, KEY_HOME_PAGE, HomePage.class);
+					newHomePage = fetchClass(propValue, KEY_HOME_PAGE, HomePage.class);
 					// ...get its constructor with TAP object:
 					Constructor<? extends HomePage> constructor = newHomePage.getConstructor(TAP.class);
 					// ...create a new instance and set it as new home page:
