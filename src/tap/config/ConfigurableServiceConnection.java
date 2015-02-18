@@ -15,6 +15,7 @@ import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
 import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
@@ -22,6 +23,7 @@ import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.KEY_MAX_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
+import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
@@ -77,6 +79,7 @@ import uws.UWSException;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
+import uws.service.log.UWSLog.LogLevel;
 import adql.db.FunctionDef;
 import adql.parser.ParseException;
 import adql.query.operand.function.UserDefinedFunction;
@@ -124,7 +127,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		initFileManager(tapConfig);
 
 		// 2. CREATE THE LOGGER:
-		logger = new DefaultTAPLog(fileManager);
+		initLogger(tapConfig);
 
 		// 3. BUILD THE TAP FACTORY:
 		tapFactory = new ConfigurableTAPFactory(this, tapConfig);
@@ -209,6 +212,34 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 					throw new TAPException("Impossible to create a TAPFileManager instance with the constructor (java.util.Properties tapConfig) of \"" + classObj.getName() + "\" for the following reason: " + e.getMessage());
 			}
 		}
+	}
+
+	private void initLogger(final Properties tapConfig){
+		// Create the logger:
+		logger = new DefaultTAPLog(fileManager);
+
+		StringBuffer buf = new StringBuffer("Logger initialized");
+
+		// Set the minimum log level:
+		String propValue = getProperty(tapConfig, KEY_MIN_LOG_LEVEL);
+		if (propValue != null){
+			try{
+				((DefaultTAPLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));
+			}catch(IllegalArgumentException iae){}
+		}
+		buf.append(" (minimum log level: ").append(((DefaultTAPLog)logger).getMinLogLevel());
+
+		// Set the log rotation period, if any:
+		if (fileManager instanceof LocalUWSFileManager){
+			propValue = getProperty(tapConfig, KEY_LOG_ROTATION);
+			if (propValue != null)
+				((LocalUWSFileManager)fileManager).setLogRotationFreq(propValue);
+			buf.append(", log rotation: ").append(((LocalUWSFileManager)fileManager).getLogRotationFreq());
+		}
+
+		// Log the successful initialization with set parameters:
+		buf.append(").");
+		logger.info(buf.toString());
 	}
 
 	private TAPMetadata initMetadata(final Properties tapConfig) throws TAPException{

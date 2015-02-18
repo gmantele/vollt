@@ -10,10 +10,12 @@ import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
+import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
+import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
@@ -55,6 +57,8 @@ import uws.job.user.JobOwner;
 import uws.service.UWSUrl;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
+import uws.service.log.DefaultUWSLog;
+import uws.service.log.UWSLog.LogLevel;
 import adql.db.FunctionDef;
 import adql.db.TestDBChecker.UDFToto;
 
@@ -63,21 +67,22 @@ public class TestConfigurableServiceConnection {
 	private final static String XML_FILE = "test/tap/config/tables.xml";
 
 	private static Properties validProp, noFmProp, fmClassPathProp,
-			incorrectFmProp, xmlMetaProp, missingMetaProp, missingMetaFileProp,
-			wrongMetaProp, wrongMetaFileProp, validFormatsProp,
-			validVOTableFormatsProp, badSVFormat1Prop, badSVFormat2Prop,
-			badVotFormat1Prop, badVotFormat2Prop, badVotFormat3Prop,
-			badVotFormat4Prop, badVotFormat5Prop, badVotFormat6Prop,
-			unknownFormatProp, maxAsyncProp, negativeMaxAsyncProp,
-			notIntMaxAsyncProp, defaultOutputLimitProp, maxOutputLimitProp,
-			bothOutputLimitGoodProp, bothOutputLimitBadProp, userIdentProp,
-			notClassPathUserIdentProp, geometriesProp, noneGeomProp,
-			anyGeomProp, noneInsideGeomProp, unknownGeomProp, anyUdfsProp,
-			noneUdfsProp, udfsProp, udfsWithClassPathProp,
-			udfsListWithNONEorANYProp, udfsWithWrongParamLengthProp,
-			udfsWithMissingBracketsProp, udfsWithMissingDefProp1,
-			udfsWithMissingDefProp2, emptyUdfItemProp1, emptyUdfItemProp2,
-			udfWithMissingEndBracketProp;
+			incorrectFmProp, correctLogProp, incorrectLogLevelProp,
+			incorrectLogRotationProp, xmlMetaProp, missingMetaProp,
+			missingMetaFileProp, wrongMetaProp, wrongMetaFileProp,
+			validFormatsProp, validVOTableFormatsProp, badSVFormat1Prop,
+			badSVFormat2Prop, badVotFormat1Prop, badVotFormat2Prop,
+			badVotFormat3Prop, badVotFormat4Prop, badVotFormat5Prop,
+			badVotFormat6Prop, unknownFormatProp, maxAsyncProp,
+			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
+			maxOutputLimitProp, bothOutputLimitGoodProp,
+			bothOutputLimitBadProp, userIdentProp, notClassPathUserIdentProp,
+			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
+			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
+			udfsWithClassPathProp, udfsListWithNONEorANYProp,
+			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
+			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
+			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
@@ -92,6 +97,16 @@ public class TestConfigurableServiceConnection {
 
 		incorrectFmProp = (Properties)validProp.clone();
 		incorrectFmProp.setProperty(KEY_FILE_MANAGER, "foo");
+
+		correctLogProp = (Properties)validProp.clone();
+		correctLogProp.setProperty(KEY_LOG_ROTATION, "	M	  	5  6	03 ");
+		correctLogProp.setProperty(KEY_MIN_LOG_LEVEL, "	WARNing ");
+
+		incorrectLogLevelProp = (Properties)validProp.clone();
+		incorrectLogLevelProp.setProperty(KEY_MIN_LOG_LEVEL, "foo");
+
+		incorrectLogRotationProp = (Properties)validProp.clone();
+		incorrectLogRotationProp.setProperty(KEY_LOG_ROTATION, "foo");
 
 		xmlMetaProp = (Properties)validProp.clone();
 		xmlMetaProp.setProperty(KEY_METADATA, VALUE_XML);
@@ -254,7 +269,9 @@ public class TestConfigurableServiceConnection {
 
 			// tests:
 			assertNotNull(connection.getLogger());
+			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 			assertNotNull(connection.getFileManager());
+			assertEquals("daily at 00:00", ((LocalUWSFileManager)connection.getFileManager()).getLogRotationFreq());
 			assertNotNull(connection.getFactory());
 			assertNotNull(connection.getTAPMetadata());
 			assertTrue(connection.getTAPMetadata().getNbSchemas() >= 1);
@@ -284,7 +301,9 @@ public class TestConfigurableServiceConnection {
 		try{
 			ServiceConnection connection = new ConfigurableServiceConnection(xmlMetaProp);
 			assertNotNull(connection.getLogger());
+			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 			assertNotNull(connection.getFileManager());
+			assertEquals("daily at 00:00", ((LocalUWSFileManager)connection.getFileManager()).getLogRotationFreq());
 			assertNotNull(connection.getFactory());
 			assertNotNull(connection.getTAPMetadata());
 			assertEquals(nbSchemas, connection.getTAPMetadata().getNbSchemas());
@@ -349,7 +368,9 @@ public class TestConfigurableServiceConnection {
 		try{
 			ServiceConnection connection = new ConfigurableServiceConnection(fmClassPathProp);
 			assertNotNull(connection.getLogger());
+			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 			assertNotNull(connection.getFileManager());
+			assertEquals("daily at 00:00", ((LocalUWSFileManager)connection.getFileManager()).getLogRotationFreq());
 			assertNotNull(connection.getFactory());
 			assertNotNull(connection.getTAPMetadata());
 			assertFalse(connection.isAvailable());
@@ -372,6 +393,35 @@ public class TestConfigurableServiceConnection {
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("Unknown value for the property \"" + KEY_FILE_MANAGER + "\": \"foo\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.", e.getMessage());
+		}
+
+		// Custom log level and log rotation:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(correctLogProp);
+			assertNotNull(connection.getLogger());
+			assertEquals(LogLevel.WARNING, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
+			assertNotNull(connection.getFileManager());
+			assertEquals("monthly on the 5th at 06:03", ((LocalUWSFileManager)connection.getFileManager()).getLogRotationFreq());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the provided log level and log rotation are valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Incorrect log level:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(incorrectLogLevelProp);
+			assertNotNull(connection.getLogger());
+			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
+		}catch(Exception e){
+			fail("This MUST have succeeded because even if the provided log level is incorrect the default behavior is to not throw exception and set the default value! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Incorrect log rotation:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(incorrectLogRotationProp);
+			assertNotNull(connection.getFileManager());
+			assertEquals("daily at 00:00", ((LocalUWSFileManager)connection.getFileManager()).getLogRotationFreq());
+		}catch(Exception e){
+			fail("This MUST have succeeded because even if the provided log rotation is incorrect the default behavior is to not throw exception and set the default value! \nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// Valid output formats list:

@@ -28,6 +28,10 @@ public final class TAPConfiguration {
 	public final static String KEY_MAX_RETENTION_PERIOD = "max_retention_period";
 	public final static int DEFAULT_RETENTION_PERIOD = 0;
 
+	/* LOG KEYS */
+	public final static String KEY_MIN_LOG_LEVEL = "min_log_level";
+	public final static String KEY_LOG_ROTATION = "log_rotation";
+
 	/* UWS BACKUP */
 	public final static String KEY_BACKUP_FREQUENCY = "backup_frequency";
 	public final static String VALUE_USER_ACTION = "user_action";

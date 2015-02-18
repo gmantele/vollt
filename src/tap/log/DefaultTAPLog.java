@@ -16,7 +16,7 @@ package tap.log;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -37,7 +37,7 @@ import uws.service.log.DefaultUWSLog;
  * Default implementation of the {@link TAPLog} interface which lets logging any message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (02/2015)
  * 
  * @see DefaultUWSLog
  */
@@ -117,7 +117,15 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	}
 
 	@Override
-	public void logDB(final LogLevel level, final DBConnection connection, final String event, final String message, final Throwable error){
+	public void logDB(LogLevel level, final DBConnection connection, final String event, final String message, final Throwable error){
+		// If the type is missing:
+		if (level == null)
+			level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+		// Log or not?
+		if (!canLog(level))
+			return;
+
 		// log the main given error:
 		log(level, "DB", event, (connection != null ? connection.getID() : null), message, error);
 
@@ -133,7 +141,15 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	}
 
 	@Override
-	public void logTAP(final LogLevel level, final Object obj, final String event, final String message, final Throwable error){
+	public void logTAP(LogLevel level, final Object obj, final String event, final String message, final Throwable error){
+		// If the type is missing:
+		if (level == null)
+			level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+		// Log or not?
+		if (!canLog(level))
+			return;
+
 		// Get more information (when known event and available object):
 		String jobId = null, msgAppend = null;
 		try{
