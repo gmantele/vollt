@@ -66,23 +66,24 @@ public class TestConfigurableServiceConnection {
 
 	private final static String XML_FILE = "test/tap/config/tables.xml";
 
-	private static Properties validProp, noFmProp, fmClassPathProp,
+	private static Properties validProp, noFmProp, fmClassNameProp,
 			incorrectFmProp, correctLogProp, incorrectLogLevelProp,
-			incorrectLogRotationProp, xmlMetaProp, missingMetaProp,
-			missingMetaFileProp, wrongMetaProp, wrongMetaFileProp,
-			validFormatsProp, validVOTableFormatsProp, badSVFormat1Prop,
-			badSVFormat2Prop, badVotFormat1Prop, badVotFormat2Prop,
-			badVotFormat3Prop, badVotFormat4Prop, badVotFormat5Prop,
-			badVotFormat6Prop, unknownFormatProp, maxAsyncProp,
-			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
-			maxOutputLimitProp, bothOutputLimitGoodProp,
-			bothOutputLimitBadProp, userIdentProp, notClassPathUserIdentProp,
-			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
-			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
-			udfsWithClassPathProp, udfsListWithNONEorANYProp,
-			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
-			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
-			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp;
+			incorrectLogRotationProp, xmlMetaProp, wrongManualMetaProp,
+			missingMetaProp, missingMetaFileProp, wrongMetaProp,
+			wrongMetaFileProp, validFormatsProp, validVOTableFormatsProp,
+			badSVFormat1Prop, badSVFormat2Prop, badVotFormat1Prop,
+			badVotFormat2Prop, badVotFormat3Prop, badVotFormat4Prop,
+			badVotFormat5Prop, badVotFormat6Prop, unknownFormatProp,
+			maxAsyncProp, negativeMaxAsyncProp, notIntMaxAsyncProp,
+			defaultOutputLimitProp, maxOutputLimitProp,
+			bothOutputLimitGoodProp, bothOutputLimitBadProp, userIdentProp,
+			notClassPathUserIdentProp, geometriesProp, noneGeomProp,
+			anyGeomProp, noneInsideGeomProp, unknownGeomProp, anyUdfsProp,
+			noneUdfsProp, udfsProp, udfsWithClassNameProp,
+			udfsListWithNONEorANYProp, udfsWithWrongParamLengthProp,
+			udfsWithMissingBracketsProp, udfsWithMissingDefProp1,
+			udfsWithMissingDefProp2, emptyUdfItemProp1, emptyUdfItemProp2,
+			udfWithMissingEndBracketProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
@@ -92,8 +93,8 @@ public class TestConfigurableServiceConnection {
 		noFmProp = (Properties)validProp.clone();
 		noFmProp.setProperty(KEY_FILE_MANAGER, "");
 
-		fmClassPathProp = (Properties)validProp.clone();
-		fmClassPathProp.setProperty(KEY_FILE_MANAGER, "{tap.config.TestConfigurableServiceConnection$FileManagerTest}");
+		fmClassNameProp = (Properties)validProp.clone();
+		fmClassNameProp.setProperty(KEY_FILE_MANAGER, "{tap.config.TestConfigurableServiceConnection$FileManagerTest}");
 
 		incorrectFmProp = (Properties)validProp.clone();
 		incorrectFmProp.setProperty(KEY_FILE_MANAGER, "foo");
@@ -111,6 +112,9 @@ public class TestConfigurableServiceConnection {
 		xmlMetaProp = (Properties)validProp.clone();
 		xmlMetaProp.setProperty(KEY_METADATA, VALUE_XML);
 		xmlMetaProp.setProperty(KEY_METADATA_FILE, XML_FILE);
+
+		wrongManualMetaProp = (Properties)validProp.clone();
+		wrongManualMetaProp.setProperty(KEY_METADATA, "{tap.metadata.TAPMetadata}");
 
 		missingMetaProp = (Properties)validProp.clone();
 		missingMetaProp.remove(KEY_METADATA);
@@ -212,8 +216,8 @@ public class TestConfigurableServiceConnection {
 		udfsProp = (Properties)validProp.clone();
 		udfsProp.setProperty(KEY_UDFS, "[toto(a string)] ,	[  titi(b REAL) -> double 	]");
 
-		udfsWithClassPathProp = (Properties)validProp.clone();
-		udfsWithClassPathProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
+		udfsWithClassNameProp = (Properties)validProp.clone();
+		udfsWithClassNameProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
 
 		udfsListWithNONEorANYProp = (Properties)validProp.clone();
 		udfsListWithNONEorANYProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR],ANY");
@@ -247,7 +251,7 @@ public class TestConfigurableServiceConnection {
 	 * 
 	 * 	* Over the file manager:
 	 * 		- If no TAPFileManager is provided, an exception must be thrown. 
-	 * 		- If a classpath toward a valid TAPFileManager is provided, a functional DefaultServiceConnection must be successfully built.
+	 * 		- If a class name toward a valid TAPFileManager is provided, a functional DefaultServiceConnection must be successfully built.
 	 * 		- An incorrect file manager value in the configuration file must generate an exception.
 	 * 
 	 *  * Over the output format:
@@ -325,7 +329,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because the property 'metadata' is missing!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).", e.getMessage());
+			assertEquals("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Three possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document), " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA) or the name (between {}) of a class extending TAPMetadata.", e.getMessage());
 		}
 
 		// Missing metadata_file property:
@@ -346,6 +350,15 @@ public class TestConfigurableServiceConnection {
 			assertEquals("Unsupported value for the property \"" + KEY_METADATA + "\": \"foo\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).", e.getMessage());
 		}
 
+		// Wrong MANUAL metadata:
+		try{
+			new ConfigurableServiceConnection(wrongManualMetaProp);
+			fail("This MUST have failed because the class specified in the property 'metadata' does not extend TAPMetadata but is TAPMetadata!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Wrong class for the property \"" + KEY_METADATA + "\": \"tap.metadata.TAPMetadata\"! The class provided in this property MUST EXTEND tap.metadata.TAPMetadata.", e.getMessage());
+		}
+
 		// Wrong metadata_file property:
 		try{
 			new ConfigurableServiceConnection(wrongMetaFileProp);
@@ -361,12 +374,12 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because no File Manager is specified!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("The property \"" + KEY_FILE_MANAGER + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_LOCAL + " or a class path between {...}.", e.getMessage());
+			assertEquals("The property \"" + KEY_FILE_MANAGER + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_LOCAL + " or a class name between {...}.", e.getMessage());
 		}
 
-		// File Manager = Class Path:
+		// File Manager = Class Name:
 		try{
-			ServiceConnection connection = new ConfigurableServiceConnection(fmClassPathProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(fmClassNameProp);
 			assertNotNull(connection.getLogger());
 			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 			assertNotNull(connection.getFileManager());
@@ -383,7 +396,7 @@ public class TestConfigurableServiceConnection {
 			assertTrue(connection.getRetentionPeriod()[0] == connection.getRetentionPeriod()[1]);
 			assertTrue(connection.getExecutionDuration()[0] == connection.getExecutionDuration()[1]);
 		}catch(Exception e){
-			fail("This MUST have succeeded because the provided file manager is a class path valid! \nCaught exception: " + getPertinentMessage(e));
+			fail("This MUST have succeeded because the provided file manager is a class name valid! \nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// Incorrect File Manager Value:
@@ -673,13 +686,13 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have succeeded because the class path toward the fake UserIdentifier is correct! \nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// Not a class path for user_identifier:
+		// Not a class name for user_identifier:
 		try{
 			new ConfigurableServiceConnection(notClassPathUserIdentProp);
-			fail("This MUST have failed because the user_identifier value is not a class path!");
+			fail("This MUST have failed because the user_identifier value is not a class name!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Class path expected for the property \"" + KEY_USER_IDENTIFIER + "\", instead of: \"foo\"!", e.getMessage());
+			assertEquals("Class name expected for the property \"" + KEY_USER_IDENTIFIER + "\" instead of: \"foo\"! The specified class must extend/implement uws.service.UserIdentifier.", e.getMessage());
 		}
 
 		// Valid geometry list:
@@ -759,9 +772,9 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// Valid list of UDFs containing one UDF with a classpath:
+		// Valid list of UDFs containing one UDF with a class name:
 		try{
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithClassPathProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithClassNameProp);
 			assertNotNull(connection.getUDFs());
 			assertEquals(1, connection.getUDFs().size());
 			FunctionDef def = connection.getUDFs().iterator().next();
@@ -777,7 +790,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because the given UDFs list contains at least 2 items, whose one is ANY!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: unexpected character at position 27 in the property " + KEY_UDFS + ": \"A\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{classpath}]\".", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: unexpected character at position 27 in the property " + KEY_UDFS + ": \"A\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{className}]\".", e.getMessage());
 		}
 
 		// UDF with no brackets:
@@ -786,7 +799,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because one UDFs list item has no brackets!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: unexpected character at position 1 in the property " + KEY_UDFS + ": \"t\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{classpath}]\".", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: unexpected character at position 1 in the property " + KEY_UDFS + ": \"t\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{className}]\".", e.getMessage());
 		}
 
 		// UDFs whose one item have more parts than supported:
@@ -795,7 +808,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because one UDFs list item has too many parameters!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: only two items (signature and classpath) can be given within brackets. (position in the property " + KEY_UDFS + ": 58)", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: only two items (signature and class name) can be given within brackets. (position in the property " + KEY_UDFS + ": 58)", e.getMessage());
 		}
 
 		// UDF with missing definition part (or wrong since there is no comma):

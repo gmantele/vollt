@@ -139,8 +139,8 @@ public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 		else if (sqlTranslator.equalsIgnoreCase(VALUE_PGSPHERE))
 			translator = PgSphereTranslator.class;
 
-		// case d: a client defined ADQLTranslator (with the provided class path)
-		else if (TAPConfiguration.isClassPath(sqlTranslator))
+		// case d: a client defined ADQLTranslator (with the provided class name)
+		else if (TAPConfiguration.isClassName(sqlTranslator))
 			translator = TAPConfiguration.fetchClass(sqlTranslator, KEY_SQL_TRANSLATOR, JDBCTranslator.class);
 
 		// case e: unsupported value

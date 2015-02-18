@@ -1,10 +1,7 @@
 package tap.config;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -144,35 +141,35 @@ public final class TAPConfiguration {
 	}
 
 	/**
-	 * Test whether a property value is a class path.
+	 * Test whether a property value is a class name.
 	 * Expected syntax: a non-empty string surrounded by brackets ('{' and '}').
 	 * 
-	 * Note: The class path itself is not checked!
+	 * Note: The class name itself is not checked!
 	 * 
 	 * @param value	Property value.
 	 * 
-	 * @return <i>true</i> if the given value is formatted as a class path, <i>false</i> otherwise.
+	 * @return <i>true</i> if the given value is formatted as a class name, <i>false</i> otherwise.
 	 */
-	public final static boolean isClassPath(final String value){
+	public final static boolean isClassName(final String value){
 		return (value != null && value.length() > 2 && value.charAt(0) == '{' && value.charAt(value.length() - 1) == '}');
 	}
 
 	/**
-	 * Fetch the class object corresponding to the classpath provided between brackets in the given value. 
+	 * Fetch the class object corresponding to the class name provided between brackets in the given value. 
 	 * 
-	 * @param value			Value which is supposed to contain the classpath between brackets (see {@link #isClassPath(String)} for more details)
+	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propertyName	Name of the property associated with the parameter "value".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * 
 	 * @return	The corresponding Class object.
 	 * 
-	 * @throws TAPException	If the classpath is incorrect or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
+	 * @throws TAPException	If the class name is incorrect or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
 	 * 
-	 * @see {@link #isClassPath(String)}
+	 * @see {@link #isClassName(String)}
 	 */
 	@SuppressWarnings("unchecked")
 	public final static < C > Class<? extends C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws TAPException{
-		if (!isClassPath(value))
+		if (!isClassName(value))
 			return null;
 
 		String classPath = value.substring(1, value.length() - 1).trim();
@@ -182,13 +179,13 @@ public final class TAPConfiguration {
 		try{
 			Class<? extends C> classObject = (Class<? extends C>)Class.forName(classPath);
 			if (!expectedType.isAssignableFrom(classObject))
-				throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") is not implementing " + expectedType.getName() + ".");
+				throw new TAPException("The class specified by the property \"" + propertyName + "\" (" + value + ") is not implementing " + expectedType.getName() + ".");
 			else
 				return classObject;
 		}catch(ClassNotFoundException cnfe){
-			throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") can not be found.");
+			throw new TAPException("The class specified by the property \"" + propertyName + "\" (" + value + ") can not be found.");
 		}catch(ClassCastException cce){
-			throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") is not implementing " + expectedType.getName() + ".");
+			throw new TAPException("The class specified by the property \"" + propertyName + "\" (" + value + ") is not implementing " + expectedType.getName() + ".");
 		}
 	}
 
@@ -197,7 +194,7 @@ public final class TAPConfiguration {
 	 * 
 	 * <p>The instance is created using the empty constructor of the specified class.</p>
 	 * 
-	 * @param value			Value which is supposed to contain the classpath between brackets (see {@link #isClassPath(String)} for more details)
+	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propertyName	Name of the property associated with the parameter "value".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * 
@@ -208,7 +205,7 @@ public final class TAPConfiguration {
 	 *                     	or if the specified class has no empty constructor
 	 *                     	or if an error occurred while calling this constructor.
 	 * 
-	 * @see {@link #isClassPath(String)}
+	 * @see {@link #isClassName(String)}
 	 * @see #fetchClass(String, String, Class)
 	 */
 	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType) throws TAPException{
@@ -223,7 +220,7 @@ public final class TAPConfiguration {
 	 * 	The number and types of given parameters MUST match exactly to the list of parameter types.
 	 * </p>
 	 * 
-	 * @param value			Value which is supposed to contain the classpath between brackets (see {@link #isClassPath(String)} for more details)
+	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propertyName	Name of the property associated with the parameter "value".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
@@ -236,12 +233,12 @@ public final class TAPConfiguration {
 	 *                     	or if the constructor with the specified parameters can not be found
 	 *                     	or if an error occurred while calling this constructor.
 	 * 
-	 * @see {@link #isClassPath(String)}
+	 * @see {@link #isClassName(String)}
 	 * @see #fetchClass(String, String, Class)
 	 */
 	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes, final Object[] parameters) throws TAPException{
 		// Ensure the given name is a class name specification:
-		if (!isClassPath(propValue))
+		if (!isClassName(propValue))
 			throw new TAPException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
 
 		Class<? extends C> classObj = null;
@@ -376,31 +373,6 @@ public final class TAPConfiguration {
 		}
 
 		return new Object[]{((numValue <= 0) ? -1 : numValue),unit};
-	}
-
-	public final static void main(final String[] args) throws Throwable{
-
-		FileInputStream configFileStream = null;
-		try{
-			final File configFile = new File("src/tap/config/tap_min.properties");
-			configFileStream = new FileInputStream(configFile);
-
-			Properties config = new Properties();
-			config.load(configFileStream);
-
-			configFileStream.close();
-			configFileStream = null;
-
-			Enumeration<Object> keys = config.keys();
-			String key;
-			while(keys.hasMoreElements()){
-				key = keys.nextElement().toString();
-				System.out.println("* " + key + " = " + config.getProperty(key));
-			}
-		}finally{
-			if (configFileStream != null)
-				configFileStream.close();
-		}
 	}
 
 }

@@ -10,7 +10,7 @@ import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.fetchClass;
-import static tap.config.TAPConfiguration.isClassPath;
+import static tap.config.TAPConfiguration.isClassName;
 import static tap.config.TAPConfiguration.newInstance;
 import static tap.config.TAPConfiguration.parseLimit;
 
@@ -35,33 +35,33 @@ public class TestTAPConfiguration {
 	public void setUp() throws Exception{}
 
 	/**
-	 * TEST isClassPath(String):
+	 * TEST isClassName(String):
 	 * 	- null, "", "{}", "an incorrect syntax" 				=> FALSE must be returned
 	 * 	- "{ }", "{ 	}", "{class.path}", "{ class.path	}" 	=> TRUE must be returned
 	 * 
-	 * @see ConfigurableServiceConnection#isClassPath(String)
+	 * @see ConfigurableServiceConnection#isClassName(String)
 	 */
 	@Test
 	public void testIsClassPath(){
 		// NULL and EMPTY:
-		assertFalse(isClassPath(null));
-		assertFalse(isClassPath(""));
+		assertFalse(isClassName(null));
+		assertFalse(isClassName(""));
 
 		// EMPTY CLASSPATH:
-		assertFalse(isClassPath("{}"));
+		assertFalse(isClassName("{}"));
 
 		// INCORRECT CLASSPATH:
-		assertFalse(isClassPath("incorrect class path ; missing {}"));
+		assertFalse(isClassName("incorrect class name ; missing {}"));
 
 		// VALID CLASSPATH:
-		assertTrue(isClassPath("{class.path}"));
+		assertTrue(isClassName("{class.path}"));
 
 		// CLASSPATH VALID ONLY IN THE SYNTAX:
-		assertTrue(isClassPath("{ }"));
-		assertTrue(isClassPath("{		}"));
+		assertTrue(isClassName("{ }"));
+		assertTrue(isClassName("{		}"));
 
 		// NOT TRIM CLASSPATH:
-		assertTrue(isClassPath("{ class.path	}"));
+		assertTrue(isClassName("{ class.name	}"));
 	}
 
 	/**
@@ -76,44 +76,44 @@ public class TestTAPConfiguration {
 		try{
 			assertNull(fetchClass(null, KEY_FILE_MANAGER, String.class));
 		}catch(TAPException e){
-			fail("If a NULL value is provided as classpath: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			fail("If a NULL value is provided as class name: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
 		}
 		try{
 			assertNull(fetchClass("", KEY_FILE_MANAGER, String.class));
 		}catch(TAPException e){
-			fail("If an EMPTY value is provided as classpath: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			fail("If an EMPTY value is provided as class name: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// EMPTY CLASSPATH:
+		// EMPTY CLASS NAME:
 		try{
 			assertNull(fetchClass("{}", KEY_FILE_MANAGER, String.class));
 		}catch(TAPException e){
-			fail("If an EMPTY classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			fail("If an EMPTY class name is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// INCORRECT SYNTAX:
 		try{
-			assertNull(fetchClass("incorrect class path ; missing {}", KEY_FILE_MANAGER, String.class));
+			assertNull(fetchClass("incorrect class name ; missing {}", KEY_FILE_MANAGER, String.class));
 		}catch(TAPException e){
-			fail("If an incorrect classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			fail("If an incorrect class name is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// VALID CLASSPATH:
+		// VALID CLASS NAME:
 		try{
 			Class<? extends String> classObject = fetchClass("{java.lang.String}", KEY_FILE_MANAGER, String.class);
 			assertNotNull(classObject);
 			assertEquals(classObject.getName(), "java.lang.String");
 		}catch(TAPException e){
-			fail("If a VALID classpath is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
+			fail("If a VALID class name is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// INCORRECT CLASSPATH:
+		// INCORRECT CLASS NAME:
 		try{
 			fetchClass("{mypackage.foo}", KEY_FILE_MANAGER, String.class);
-			fail("This MUST have failed because an incorrect classpath is provided!");
+			fail("This MUST have failed because an incorrect class name is provided!");
 		}catch(TAPException e){
 			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The class specified by the property " + KEY_FILE_MANAGER + " ({mypackage.foo}) can not be found.");
+			assertEquals(e.getMessage(), "The class specified by the property \"" + KEY_FILE_MANAGER + "\" ({mypackage.foo}) can not be found.");
 		}
 
 		// INCOMPATIBLE TYPES:
@@ -123,28 +123,28 @@ public class TestTAPConfiguration {
 			fail("This MUST have failed because a class of a different type has been asked!");
 		}catch(TAPException e){
 			assertEquals(e.getClass(), TAPException.class);
-			assertEquals(e.getMessage(), "The class specified by the property " + KEY_FILE_MANAGER + " ({java.util.ArrayList}) is not implementing " + String.class.getName() + ".");
+			assertEquals(e.getMessage(), "The class specified by the property \"" + KEY_FILE_MANAGER + "\" ({java.util.ArrayList}) is not implementing " + String.class.getName() + ".");
 		}
 
-		// CLASSPATH VALID ONLY IN THE SYNTAX:
+		// CLASS NAME VALID ONLY IN THE SYNTAX:
 		try{
 			assertNull(fetchClass("{ }", KEY_FILE_MANAGER, String.class));
 		}catch(TAPException e){
-			fail("If an EMPTY classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			fail("If an EMPTY class name is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
 		}
 		try{
 			assertNull(fetchClass("{		}", KEY_FILE_MANAGER, String.class));
 		}catch(TAPException e){
-			fail("If an EMPTY classpath is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
+			fail("If an EMPTY class name is provided: getClass(...) MUST return null!\nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// NOT TRIM CLASSPATH:
+		// NOT TRIM CLASS NAME:
 		try{
 			Class<?> classObject = fetchClass("{ java.lang.String	}", KEY_FILE_MANAGER, String.class);
 			assertNotNull(classObject);
 			assertEquals(classObject.getName(), "java.lang.String");
 		}catch(TAPException e){
-			fail("If a VALID classpath is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
+			fail("If a VALID class name is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
 		}
 	}
 
@@ -194,9 +194,8 @@ public class TestTAPConfiguration {
 
 		// NOT A CLASS NAME:
 		try{
-			TAPMetadata metadata = newInstance("tap.metadata.TAPMetadata", "metadata", TAPMetadata.class);
-			assertNotNull(metadata);
-			assertEquals("tap.metadata.TAPMetadata", metadata.getClass().getName());
+			newInstance("tap.metadata.TAPMetadata", "metadata", TAPMetadata.class);
+			fail("This MUST have failed because the property value is not a class name!");
 		}catch(Exception ex){
 			assertEquals(TAPException.class, ex.getClass());
 			assertEquals("Class name expected for the property \"metadata\" instead of: \"tap.metadata.TAPMetadata\"! The specified class must extend/implement tap.metadata.TAPMetadata.", ex.getMessage());
@@ -205,6 +204,7 @@ public class TestTAPConfiguration {
 		// NO MATCHING CONSTRUCTOR:
 		try{
 			newInstance("{tap.metadata.TAPSchema}", "schema", TAPSchema.class, new Class<?>[]{Integer.class}, new Object[]{new Integer(123)});
+			fail("This MUST have failed because the specified class does not have any expected constructor!");
 		}catch(Exception ex){
 			assertEquals(TAPException.class, ex.getClass());
 			assertEquals("Missing constructor tap.metadata.TAPSchema(java.lang.Integer)! See the value \"{tap.metadata.TAPSchema}\" of the property \"schema\".", ex.getMessage());
@@ -228,6 +228,7 @@ public class TestTAPConfiguration {
 		// WRONG CONSTRUCTOR with primitive type:
 		try{
 			newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{Integer.class}, new Object[]{new Integer(123)});
+			fail("This MUST have failed because the constructor of the specified class expects an int, not an java.lang.Integer!");
 		}catch(Exception ex){
 			assertEquals(TAPException.class, ex.getClass());
 			assertEquals("Missing constructor adql.query.ColumnReference(java.lang.Integer)! See the value \"{adql.query.ColumnReference}\" of the property \"colRef\".", ex.getMessage());
@@ -236,6 +237,7 @@ public class TestTAPConfiguration {
 		// THE CONSTRUCTOR THROWS AN EXCEPTION:
 		try{
 			newInstance("{tap.metadata.TAPSchema}", "schema", TAPSchema.class, new Class<?>[]{String.class}, new Object[]{null});
+			fail("This MUST have failed because the constructor of the specified class throws an exception!");
 		}catch(Exception ex){
 			assertEquals(TAPException.class, ex.getClass());
 			assertNotNull(ex.getCause());
@@ -243,9 +245,10 @@ public class TestTAPConfiguration {
 			assertEquals("Missing schema name!", ex.getCause().getMessage());
 		}
 
-		// THE CONSTRUCTOR THROWS AN EXCEPTION:
+		// THE CONSTRUCTOR THROWS A TAPEXCEPTION:
 		try{
 			newInstance("{tap.config.TestTAPConfiguration$ClassAlwaysThrowTAPError}", "tapError", ClassAlwaysThrowTAPError.class);
+			fail("This MUST have failed because the constructor of the specified class throws a TAPException!");
 		}catch(Exception ex){
 			assertEquals(TAPException.class, ex.getClass());
 			assertEquals("This error is always thrown by ClassAlwaysThrowTAPError ^^", ex.getMessage());

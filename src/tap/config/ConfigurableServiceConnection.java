@@ -48,12 +48,14 @@ import static tap.config.TAPConfiguration.VALUE_VOTABLE;
 import static tap.config.TAPConfiguration.VALUE_XML;
 import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.getProperty;
-import static tap.config.TAPConfiguration.isClassPath;
+import static tap.config.TAPConfiguration.isClassName;
 import static tap.config.TAPConfiguration.newInstance;
 import static tap.config.TAPConfiguration.parseLimit;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -174,7 +176,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// Read the desired file manager:
 		String fileManagerType = getProperty(tapConfig, KEY_FILE_MANAGER);
 		if (fileManagerType == null)
-			throw new TAPException("The property \"" + KEY_FILE_MANAGER + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
+			throw new TAPException("The property \"" + KEY_FILE_MANAGER + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_LOCAL + " or a class name between {...}.");
 		else
 			fileManagerType = fileManagerType.trim();
 
@@ -238,7 +240,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// Get the fetching method to use:
 		String metaFetchType = getProperty(tapConfig, KEY_METADATA);
 		if (metaFetchType == null)
-			throw new TAPException("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Two possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+			throw new TAPException("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Three possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document), " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA) or the name (between {}) of a class extending TAPMetadata.");
 
 		TAPMetadata metadata = null;
 
@@ -272,6 +274,52 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			try{
 				conn = tapFactory.getConnection("GET_TAP_SCHEMA");
 				metadata = conn.getTAPSchema();
+			}finally{
+				if (conn != null)
+					tapFactory.freeConnection(conn);
+			}
+		}
+		// MANUAL ~ TAPMETADATA CLASS
+		else if (isClassName(metaFetchType)){
+			/* 1. Get the metadata */
+			// get the class:
+			Class<? extends TAPMetadata> metaClass = fetchClass(metaFetchType, KEY_METADATA, TAPMetadata.class);
+			if (metaClass == TAPMetadata.class)
+				throw new TAPException("Wrong class for the property \"" + KEY_METADATA + "\": \"" + metaClass.getName() + "\"! The class provided in this property MUST EXTEND tap.metadata.TAPMetadata.");
+			try{
+				// get one of the expected constructors:
+				try{
+					// (UWSFileManager, TAPFactory, TAPLog):
+					Constructor<? extends TAPMetadata> constructor = metaClass.getConstructor(UWSFileManager.class, TAPFactory.class, TAPLog.class);
+					// create the TAP metadata:
+					metadata = constructor.newInstance(fileManager, tapFactory, logger);
+				}catch(NoSuchMethodException nsme){
+					// () (empty constructor):
+					Constructor<? extends TAPMetadata> constructor = metaClass.getConstructor();
+					// create the TAP metadata:
+					metadata = constructor.newInstance();
+				}
+			}catch(NoSuchMethodException nsme){
+				throw new TAPException("Missing constructor tap.metadata.TAPMetadata() or tap.metadata.TAPMetadata(uws.service.file.UWSFileManager, tap.TAPFactory, tap.log.TAPLog)! See the value \"" + metaFetchType + "\" of the property \"" + KEY_METADATA + "\".");
+			}catch(InstantiationException ie){
+				throw new TAPException("Impossible to create an instance of an abstract class: \"" + metaClass.getName() + "\"! See the value \"" + metaFetchType + "\" of the property \"" + KEY_METADATA + "\".");
+			}catch(InvocationTargetException ite){
+				if (ite.getCause() != null){
+					if (ite.getCause() instanceof TAPException)
+						throw (TAPException)ite.getCause();
+					else
+						throw new TAPException(ite.getCause());
+				}else
+					throw new TAPException(ite);
+			}catch(Exception ex){
+				throw new TAPException("Impossible to create an instance of tap.metadata.TAPMetadata as specified in the property \"" + KEY_METADATA + "\": \"" + metaFetchType + "\"!", ex);
+			}
+
+			/* 2. Update the database */
+			DBConnection conn = null;
+			try{
+				conn = tapFactory.getConnection("SET_TAP_SCHEMA");
+				conn.setTAPSchema(metadata);
 			}finally{
 				if (conn != null)
 					tapFactory.freeConnection(conn);
@@ -450,7 +498,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 					hasVotableFormat = true;
 			}
 			// custom OutputFormat
-			else if (isClassPath(f))
+			else if (isClassName(f))
 				outputFormats.add(TAPConfiguration.newInstance(f, KEY_OUTPUT_FORMATS, OutputFormat.class, new Class<?>[]{ServiceConnection.class}, new Object[]{this}));
 			// unknown format
 			else
@@ -583,25 +631,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private void initUserIdentifier(final Properties tapConfig) throws TAPException{
 		// Get the property value:
 		String propValue = getProperty(tapConfig, KEY_USER_IDENTIFIER);
-		if (propValue == null)
-			return;
-
-		// Check the value is a class path:
-		if (!isClassPath(propValue))
-			throw new TAPException("Class path expected for the property \"" + KEY_USER_IDENTIFIER + "\", instead of: \"" + propValue + "\"!");
-
-		// Fetch the class:
-		Class<? extends UserIdentifier> c = fetchClass(propValue, KEY_USER_IDENTIFIER, UserIdentifier.class);
-
-		// Create an instance with the empty constructor:
-		try{
-			userIdentifier = c.getConstructor().newInstance();
-		}catch(Exception e){
-			if (e instanceof TAPException)
-				throw (TAPException)e;
-			else
-				throw new TAPException("Impossible to create a UserIdentifier instance with the empty constructor of \"" + c.getName() + "\" (see the property user_identifier) for the following reason: " + e.getMessage());
-		}
+		if (propValue != null)
+			userIdentifier = newInstance(propValue, KEY_USER_IDENTIFIER, UserIdentifier.class);
 	}
 
 	private void initADQLGeometries(final Properties tapConfig) throws TAPException{
@@ -708,17 +739,17 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 							within_params = true;
 							buf.append(c);
 							break;
-						case '{': /* start of a classpath */
+						case '{': /* start of a class name */
 							within_classpath = true;
 							buf.append(c);
 							break;
-						case ',': /* separation between the signature and the classpath */
+						case ',': /* separation between the signature and the class name */
 							// count commas within this item:
 							if (++nbComma > 1)
 								// if more than 1, throw an error:
-								throw new TAPException("Wrong UDF declaration syntax: only two items (signature and classpath) can be given within brackets. (position in the property " + KEY_UDFS + ": " + ind + ")");
+								throw new TAPException("Wrong UDF declaration syntax: only two items (signature and class name) can be given within brackets. (position in the property " + KEY_UDFS + ": " + ind + ")");
 							else{
-								// end of the signature and start of the class path:
+								// end of the signature and start of the class name:
 								signature = buf.toString();
 								buf.delete(0, buf.length());
 								posSignature[1] = ind;
@@ -739,7 +770,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 							// no signature...
 							if (signature == null || signature.length() == 0){
-								// ...BUT a classpath => error
+								// ...BUT a class name => error
 								if (classpath != null)
 									throw new TAPException("Missing UDF declaration! (position in the property " + KEY_UDFS + ": " + posSignature[0] + "-" + posSignature[1] + ")");
 								// ... => ignore this item
@@ -751,9 +782,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 							try{
 								// resolve the function signature:
 								FunctionDef def = FunctionDef.parse(signature);
-								// resolve the class path:
+								// resolve the class name:
 								if (classpath != null){
-									if (isClassPath(classpath)){
+									if (isClassName(classpath)){
 										Class<? extends UserDefinedFunction> fctClass = null;
 										try{
 											// fetch the class:
@@ -761,12 +792,12 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 											// set the class inside the UDF definition:
 											def.setUDFClass(fctClass);
 										}catch(TAPException te){
-											throw new TAPException("Invalid class path for the UDF definition \"" + def + "\": " + te.getMessage() + " (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")", te);
+											throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": " + te.getMessage() + " (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")", te);
 										}catch(IllegalArgumentException iae){
-											throw new TAPException("Invalid class path for the UDF definition \"" + def + "\": missing a constructor with a single parameter of type ADQLOperand[] " + (fctClass != null ? "in the class \"" + fctClass.getName() + "\"" : "") + "! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
+											throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": missing a constructor with a single parameter of type ADQLOperand[] " + (fctClass != null ? "in the class \"" + fctClass.getName() + "\"" : "") + "! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
 										}
 									}else
-										throw new TAPException("Invalid class path for the UDF definition \"" + def + "\": \"" + classpath + "\" is not a class path (or is not surrounding by {} as expected in this property file)! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
+										throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": \"" + classpath + "\" is not a class name (or is not surrounding by {} as expected in this property file)! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
 								}
 								// add the UDF:
 								udfs.add(def);
@@ -794,7 +825,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 						case ',':
 							break;
 						default:
-							throw new TAPException("Wrong UDF declaration syntax: unexpected character at position " + ind + " in the property " + KEY_UDFS + ": \"" + c + "\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{classpath}]\".");
+							throw new TAPException("Wrong UDF declaration syntax: unexpected character at position " + ind + " in the property " + KEY_UDFS + ": \"" + c + "\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{className}]\".");
 					}
 				}
 			}
