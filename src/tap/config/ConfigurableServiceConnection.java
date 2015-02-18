@@ -49,6 +49,7 @@ import static tap.config.TAPConfiguration.VALUE_XML;
 import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.getProperty;
 import static tap.config.TAPConfiguration.isClassPath;
+import static tap.config.TAPConfiguration.newInstance;
 import static tap.config.TAPConfiguration.parseLimit;
 
 import java.io.File;
@@ -123,6 +124,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private Collection<FunctionDef> udfs = new ArrayList<FunctionDef>(0);
 
 	public ConfigurableServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
+		if (tapConfig == null)
+			throw new NullPointerException("Missing TAP properties! ");
+
 		// 1. INITIALIZE THE FILE MANAGER:
 		initFileManager(tapConfig);
 
@@ -198,20 +202,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			}
 		}
 		// CUSTOM file manager:
-		else{
-			Class<? extends UWSFileManager> classObj = fetchClass(fileManagerType, KEY_FILE_MANAGER, UWSFileManager.class);
-			if (classObj == null)
-				throw new TAPException("Unknown value for the property \"" + KEY_FILE_MANAGER + "\": \"" + fileManagerType + "\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.");
-
-			try{
-				fileManager = classObj.getConstructor(Properties.class).newInstance(tapConfig);
-			}catch(Exception e){
-				if (e instanceof TAPException)
-					throw (TAPException)e;
-				else
-					throw new TAPException("Impossible to create a TAPFileManager instance with the constructor (java.util.Properties tapConfig) of \"" + classObj.getName() + "\" for the following reason: " + e.getMessage());
-			}
-		}
+		else
+			fileManager = newInstance(fileManagerType, KEY_FILE_MANAGER, UWSFileManager.class, new Class<?>[]{Properties.class}, new Object[]{tapConfig});
 	}
 
 	private void initLogger(final Properties tapConfig){
@@ -458,18 +450,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 					hasVotableFormat = true;
 			}
 			// custom OutputFormat
-			else if (isClassPath(f)){
-				Class<? extends OutputFormat> userOutputFormatClass = fetchClass(f, KEY_OUTPUT_FORMATS, OutputFormat.class);
-				try{
-					OutputFormat userOutputFormat = userOutputFormatClass.getConstructor(ServiceConnection.class).newInstance(this);
-					outputFormats.add(userOutputFormat);
-				}catch(Exception e){
-					if (e instanceof TAPException)
-						throw (TAPException)e;
-					else
-						throw new TAPException("Impossible to create an OutputFormat instance with the constructor (ServiceConnection) of \"" + userOutputFormatClass.getName() + "\" (see the property output_add_format) for the following reason: " + e.getMessage());
-				}
-			}
+			else if (isClassPath(f))
+				outputFormats.add(TAPConfiguration.newInstance(f, KEY_OUTPUT_FORMATS, OutputFormat.class, new Class<?>[]{ServiceConnection.class}, new Object[]{this}));
 			// unknown format
 			else
 				throw new TAPException("Unknown output format: " + f);

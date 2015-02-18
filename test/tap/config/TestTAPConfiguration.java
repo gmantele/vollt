@@ -11,13 +11,23 @@ import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.isClassPath;
+import static tap.config.TAPConfiguration.newInstance;
 import static tap.config.TAPConfiguration.parseLimit;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
+import tap.metadata.TAPMetadata;
+import tap.metadata.TAPSchema;
+import adql.query.ColumnReference;
 
 public class TestTAPConfiguration {
 
@@ -135,6 +145,110 @@ public class TestTAPConfiguration {
 			assertEquals(classObject.getName(), "java.lang.String");
 		}catch(TAPException e){
 			fail("If a VALID classpath is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
+		}
+	}
+
+	@Test
+	public void testNewInstance(){
+		// VALID CONSTRUCTOR with no parameters:
+		try{
+			TAPMetadata metadata = newInstance("{tap.metadata.TAPMetadata}", "metadata", TAPMetadata.class);
+			assertNotNull(metadata);
+			assertEquals("tap.metadata.TAPMetadata", metadata.getClass().getName());
+		}catch(Exception ex){
+			ex.printStackTrace();
+			fail("This test should have succeeded: the parameters of newInstance(...) are all valid.");
+		}
+
+		// VALID CONSTRUCTOR with some parameters:
+		try{
+			final String schemaName = "MySuperSchema", description = "And its less super description.", utype = "UTYPE";
+			TAPSchema schema = newInstance("{tap.metadata.TAPSchema}", "schema", TAPSchema.class, new Class<?>[]{String.class,String.class,String.class}, new String[]{schemaName,description,utype});
+			assertNotNull(schema);
+			assertEquals("tap.metadata.TAPSchema", schema.getClass().getName());
+			assertEquals(schemaName, schema.getADQLName());
+			assertEquals(description, schema.getDescription());
+			assertEquals(utype, schema.getUtype());
+		}catch(Exception ex){
+			ex.printStackTrace();
+			fail("This test should have succeeded: the constructor TAPSchema(String,String,String) exists.");
+		}
+
+		// VALID CONSTRUCTOR with some parameters whose the type is an extension (not the exact type):
+		OutputStream output = null;
+		File tmp = new File("tmp.empty");
+		try{
+			output = newInstance("{java.io.BufferedOutputStream}", "stream", OutputStream.class, new Class<?>[]{OutputStream.class}, new OutputStream[]{new FileOutputStream(tmp)});
+			assertNotNull(output);
+			assertEquals(BufferedOutputStream.class, output.getClass());
+		}catch(Exception ex){
+			ex.printStackTrace();
+			fail("This test should have succeeded: the constructor TAPSchema(String,String,String) exists.");
+		}finally{
+			try{
+				tmp.delete();
+				if (output != null)
+					output.close();
+			}catch(IOException ioe){}
+		}
+
+		// NOT A CLASS NAME:
+		try{
+			TAPMetadata metadata = newInstance("tap.metadata.TAPMetadata", "metadata", TAPMetadata.class);
+			assertNotNull(metadata);
+			assertEquals("tap.metadata.TAPMetadata", metadata.getClass().getName());
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertEquals("Class name expected for the property \"metadata\" instead of: \"tap.metadata.TAPMetadata\"! The specified class must extend/implement tap.metadata.TAPMetadata.", ex.getMessage());
+		}
+
+		// NO MATCHING CONSTRUCTOR:
+		try{
+			newInstance("{tap.metadata.TAPSchema}", "schema", TAPSchema.class, new Class<?>[]{Integer.class}, new Object[]{new Integer(123)});
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertEquals("Missing constructor tap.metadata.TAPSchema(java.lang.Integer)! See the value \"{tap.metadata.TAPSchema}\" of the property \"schema\".", ex.getMessage());
+		}
+
+		// VALID CONSTRUCTOR with primitive type:
+		try{
+			ColumnReference colRef = newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{int.class}, new Object[]{123});
+			assertNotNull(colRef);
+			assertEquals(ColumnReference.class, colRef.getClass());
+			assertEquals(123, colRef.getColumnIndex());
+			colRef = newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{int.class}, new Object[]{new Integer(123)});
+			assertNotNull(colRef);
+			assertEquals(ColumnReference.class, colRef.getClass());
+			assertEquals(123, colRef.getColumnIndex());
+		}catch(Exception ex){
+			ex.printStackTrace();
+			fail("This test should have succeeded: the constructor ColumnReference(int) exists.");
+		}
+
+		// WRONG CONSTRUCTOR with primitive type:
+		try{
+			newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{Integer.class}, new Object[]{new Integer(123)});
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertEquals("Missing constructor adql.query.ColumnReference(java.lang.Integer)! See the value \"{adql.query.ColumnReference}\" of the property \"colRef\".", ex.getMessage());
+		}
+
+		// THE CONSTRUCTOR THROWS AN EXCEPTION:
+		try{
+			newInstance("{tap.metadata.TAPSchema}", "schema", TAPSchema.class, new Class<?>[]{String.class}, new Object[]{null});
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertNotNull(ex.getCause());
+			assertEquals(NullPointerException.class, ex.getCause().getClass());
+			assertEquals("Missing schema name!", ex.getCause().getMessage());
+		}
+
+		// THE CONSTRUCTOR THROWS AN EXCEPTION:
+		try{
+			newInstance("{tap.config.TestTAPConfiguration$ClassAlwaysThrowTAPError}", "tapError", ClassAlwaysThrowTAPError.class);
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertEquals("This error is always thrown by ClassAlwaysThrowTAPError ^^", ex.getMessage());
 		}
 	}
 
@@ -283,6 +397,13 @@ public class TestTAPConfiguration {
 
 	public static final String getPertinentMessage(final Exception ex){
 		return (ex.getCause() == null || ex.getMessage().equals(ex.getCause().getMessage())) ? ex.getMessage() : ex.getCause().getMessage();
+	}
+
+	private static class ClassAlwaysThrowTAPError {
+		@SuppressWarnings("unused")
+		public ClassAlwaysThrowTAPError() throws TAPException{
+			throw new TAPException("This error is always thrown by ClassAlwaysThrowTAPError ^^");
+		}
 	}
 
 }

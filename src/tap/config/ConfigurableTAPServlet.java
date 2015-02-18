@@ -20,18 +20,18 @@ package tap.config;
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_TAP_CONF_FILE;
+import static tap.config.TAPConfiguration.KEY_ADD_TAP_RESOURCES;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE_MIME_TYPE;
 import static tap.config.TAPConfiguration.TAP_CONF_PARAMETER;
-import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.getProperty;
 import static tap.config.TAPConfiguration.isClassPath;
+import static tap.config.TAPConfiguration.newInstance;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.util.Properties;
 
 import javax.servlet.ServletConfig;
@@ -44,6 +44,7 @@ import tap.ServiceConnection;
 import tap.TAPException;
 import tap.resource.HomePage;
 import tap.resource.TAP;
+import tap.resource.TAPResource;
 
 public class ConfigurableTAPServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -117,21 +118,10 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		if (propValue != null){
 			// If it is a class path, replace the current home page by an instance of this class:
 			if (isClassPath(propValue)){
-				Class<? extends HomePage> newHomePage = null;
 				try{
-					// ...fetch the class:
-					newHomePage = fetchClass(propValue, KEY_HOME_PAGE, HomePage.class);
-					// ...get its constructor with TAP object:
-					Constructor<? extends HomePage> constructor = newHomePage.getConstructor(TAP.class);
-					// ...create a new instance and set it as new home page:
-					tap.setHomePage(constructor.newInstance(tap));
-				}catch(NoSuchMethodException e){
-					throw new ServletException("Missing constructor " + (newHomePage == null ? "HomePage" : newHomePage.getName()) + "(TAP)! This constructor is required to set a new home page to your TAP service.");
-				}catch(Exception ex){
-					if (ex instanceof TAPException)
-						throw new ServletException(ex.getMessage(), (ex.getCause() == null ? ex : ex.getCause()));
-					else
-						throw new ServletException("Impossible to set the specified home page: \"" + propValue + "\"!", ex);
+					tap.setHomePage(newInstance(propValue, KEY_HOME_PAGE, HomePage.class, new Class<?>[]{TAP.class}, new Object[]{tap}));
+				}catch(TAPException te){
+					throw new ServletException(te.getMessage(), te.getCause());
 				}
 			}
 			// If it is a file URI (null, file inside WebContent, file://..., http://..., etc...):
@@ -145,10 +135,33 @@ public class ConfigurableTAPServlet extends HttpServlet {
 			}
 		}
 
-		/* 5. DEFAULT SERVLET INITIALIZATION */
+		/* 5. SET ADDITIONAL TAP RESOURCES */
+		propValue = getProperty(tapConf, KEY_ADD_TAP_RESOURCES);
+		if (propValue != null){
+			// split all list items:
+			String[] lstResources = propValue.split(",");
+			for(String addRes : lstResources){
+				addRes = addRes.trim();
+				// ignore empty items:
+				if (addRes.length() > 0){
+					try{
+						// create an instance of the resource:
+						TAPResource newRes = newInstance(addRes, KEY_ADD_TAP_RESOURCES, TAPResource.class, new Class<?>[]{TAP.class}, new Object[]{tap});
+						if (newRes.getName() == null || newRes.getName().trim().length() == 0)
+							throw new TAPException("TAP resource name missing for the new resource \"" + addRes + "\"! The function getName() of the new TAPResource must return a non-empty and not NULL name. See the property \"" + KEY_ADD_TAP_RESOURCES + "\".");
+						// add it into TAP:
+						tap.addResource(newRes);
+					}catch(TAPException te){
+						throw new ServletException(te.getMessage(), te.getCause());
+					}
+				}
+			}
+		}
+
+		/* 6. DEFAULT SERVLET INITIALIZATION */
 		super.init(config);
 
-		/* 6. FINALLY MAKE THE SERVICE AVAILABLE */
+		/* 7. FINALLY MAKE THE SERVICE AVAILABLE */
 		serviceConn.setAvailable(true, "TAP service available.");
 	}
 

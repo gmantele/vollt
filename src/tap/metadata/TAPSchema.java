@@ -93,7 +93,7 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 */
 	public TAPSchema(String schemaName){
 		if (schemaName == null || schemaName.trim().length() == 0)
-			throw new NullPointerException("Missing schema name !");
+			throw new NullPointerException("Missing schema name!");
 		int indPrefix = schemaName.lastIndexOf('.');
 		adqlName = (indPrefix >= 0) ? schemaName.substring(indPrefix + 1).trim() : schemaName.trim();
 		dbName = adqlName;

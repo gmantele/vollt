@@ -595,6 +595,31 @@
 				<td><ul><li>ø <em>(default)</em></li><li>ANY</li><li>[trim(txt String) -&gt; String], [random() -&gt; DOUBLE]</li><li>[newFct(x double)-&gt;double, {apackage.MyNewFunction}]</li></ul></td>
 			</tr>
 			
+			<tr><td colspan="5">Additional TAP Resources</td></tr>
+			<tr class="optional">
+				<td class="done">additional_resources</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma-separated list of additional TAP resources/end-point.</p>
+					<p>
+						By default, the following standard TAP resources are already existing: /sync, /async, /tables, /capabilities and /availability.
+						With this property, you can add a custom resource to your TAP service (e.g. /adqlValidator, /admin).
+					</p>
+					<p>
+						Each item of the list MUST be the name of a class implementing tap.resource.TAPResource. This class MUST have at least one constructor
+						with exactly one parameter of type tap.resource.TAP.
+					</p>
+					<p>
+						The string returned by tap.resource.TAPResource.getName() will be the resource name, following the root TAP service URL (e.g. if getName()
+						returns "foo", then its access URL will "{tapRoot}/foo"). Then, it is possible to replace TAP resources already existing by using the same
+						name (e.g. if getName() returns "sync", the /sync resource won't be anymore the default Sync resource of this library but your new resource).
+					</p>
+					<p><em>By default, this list is empty ; only the standard TAP resources exist.</em></p>
+				</td>
+				<td>{aPackage.QuickADQLValidator}</td>
+			</tr>
+			
 		</table>
 		<script type="text/javascript">
 			var nb = document.getElementsByClassName("mandatory").length;

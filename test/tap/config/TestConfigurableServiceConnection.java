@@ -392,7 +392,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because an incorrect File Manager value has been provided!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Unknown value for the property \"" + KEY_FILE_MANAGER + "\": \"foo\". Only two possible values: " + VALUE_LOCAL + " or a class path between {...}.", e.getMessage());
+			assertEquals("Class name expected for the property \"file_manager\" instead of: \"foo\"! The specified class must extend/implement uws.service.file.UWSFileManager.", e.getMessage());
 		}
 
 		// Custom log level and log rotation:

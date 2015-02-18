@@ -2,6 +2,8 @@ package tap.config;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
@@ -113,6 +115,9 @@ public final class TAPConfiguration {
 	public final static String KEY_UDFS = "udfs";
 	public final static String VALUE_ANY = "ANY";
 
+	/* ADDITIONAL TAP RESOURCES */
+	public final static String KEY_ADD_TAP_RESOURCES = "additional_resources";
+
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>
 	 * <ul>
@@ -184,6 +189,99 @@ public final class TAPConfiguration {
 			throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") can not be found.");
 		}catch(ClassCastException cce){
 			throw new TAPException("The class specified by the property " + propertyName + " (" + value + ") is not implementing " + expectedType.getName() + ".");
+		}
+	}
+
+	/**
+	 * <p>Create an instance of the specified class. The class name is expected to be surrounded by {} in the given value.</p>
+	 * 
+	 * <p>The instance is created using the empty constructor of the specified class.</p>
+	 * 
+	 * @param value			Value which is supposed to contain the classpath between brackets (see {@link #isClassPath(String)} for more details)
+	 * @param propertyName	Name of the property associated with the parameter "value".
+	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
+	 * 
+	 * @return	The corresponding instance.
+	 * 
+	 * @throws TAPException	If the class name is incorrect
+	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType")
+	 *                     	or if the specified class has no empty constructor
+	 *                     	or if an error occurred while calling this constructor.
+	 * 
+	 * @see {@link #isClassPath(String)}
+	 * @see #fetchClass(String, String, Class)
+	 */
+	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType) throws TAPException{
+		return newInstance(propValue, propName, expectedType, null, null);
+	}
+
+	/**
+	 * <p>Create an instance of the specified class. The class name is expected to be surrounded by {} in the given value.</p>
+	 * 
+	 * <p><b>IMPORTANT:</b>
+	 * 	The instance is created using the constructor whose the declaration matches exactly with the given list of parameter types.
+	 * 	The number and types of given parameters MUST match exactly to the list of parameter types.
+	 * </p>
+	 * 
+	 * @param value			Value which is supposed to contain the classpath between brackets (see {@link #isClassPath(String)} for more details)
+	 * @param propertyName	Name of the property associated with the parameter "value".
+	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
+	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
+	 * @param parameters	List of all constructor parameters. The number of object MUST match exactly the number of classes provided in the parameter pTypes. <i>NULL or empty array if no parameter.</i>
+	 * 
+	 * @return	The corresponding instance.
+	 * 
+	 * @throws TAPException	If the class name is incorrect
+	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType")
+	 *                     	or if the constructor with the specified parameters can not be found
+	 *                     	or if an error occurred while calling this constructor.
+	 * 
+	 * @see {@link #isClassPath(String)}
+	 * @see #fetchClass(String, String, Class)
+	 */
+	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes, final Object[] parameters) throws TAPException{
+		// Ensure the given name is a class name specification:
+		if (!isClassPath(propValue))
+			throw new TAPException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
+
+		Class<? extends C> classObj = null;
+		try{
+
+			// Fetch the class object:
+			classObj = fetchClass(propValue, propName, expectedType);
+
+			// Get a constructor matching the given parameters list:
+			Constructor<? extends C> constructor = classObj.getConstructor((pTypes == null) ? new Class<?>[0] : pTypes);
+
+			// Finally create a new instance:
+			return constructor.newInstance((parameters == null) ? new Object[0] : parameters);
+
+		}catch(NoSuchMethodException e){
+			// List parameters' type:
+			StringBuffer pTypesStr = new StringBuffer();
+			for(int i = 0; i < pTypes.length; i++){
+				if (pTypesStr.length() > 0)
+					pTypesStr.append(", ");
+				if (pTypes[i] == null)
+					pTypesStr.append("NULL");
+				pTypesStr.append(pTypes[i].getName());
+			}
+			// Throw the error:
+			throw new TAPException("Missing constructor " + classObj.getName() + "(" + pTypesStr.toString() + ")! See the value \"" + propValue + "\" of the property \"" + propName + "\".");
+		}catch(InstantiationException ie){
+			throw new TAPException("Impossible to create an instance of an abstract class: \"" + classObj.getName() + "\"! See the value \"" + propValue + "\" of the property \"" + propName + "\".");
+		}catch(InvocationTargetException ite){
+			if (ite.getCause() != null){
+				if (ite.getCause() instanceof TAPException)
+					throw (TAPException)ite.getCause();
+				else
+					throw new TAPException(ite.getCause());
+			}else
+				throw new TAPException(ite);
+		}catch(TAPException te){
+			throw te;
+		}catch(Exception ex){
+			throw new TAPException("Impossible to create an instance of " + expectedType.getName() + " as specified in the property \"" + propName + "\": \"" + propValue + "\"!", ex);
 		}
 	}
 

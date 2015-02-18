@@ -60,6 +60,9 @@ public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 	public ConfigurableTAPFactory(ServiceConnection service, final Properties tapConfig) throws NullPointerException, TAPException{
 		super(service);
 
+		if (tapConfig == null)
+			throw new NullPointerException("Missing TAP properties! ");
+
 		/* 1. Configure the database access */
 		final String dbAccessMethod = getProperty(tapConfig, KEY_DATABASE_ACCESS);
 
