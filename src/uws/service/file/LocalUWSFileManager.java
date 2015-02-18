@@ -65,7 +65,7 @@ import uws.service.request.UploadFile;
  * <p>
  * 	A log file rotation is set by default so that avoiding a too big log file after several months/years of use.
  * 	By default the rotation is done every month on the 1st at 6am. This frequency can be changed easily thanks to the function
- * 	{@link #setRotationFreq(String)}.
+ * 	{@link #setLogRotationFreq(String)}.
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
@@ -88,7 +88,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	protected PrintWriter logOutput = null;
 	/** Frequency at which the log file must be "rotated" (the file is renamed with the date of its first write and a new log file is created).
 	 * Thus, too big log files can be avoided. */
-	protected EventFrequency logRotation = new EventFrequency("M 1 06 00");	// Log file rotation every month on the 1st at 6am. 
+	protected EventFrequency logRotation = new EventFrequency("D 0 0");	// Log file rotation every day at midnight. 
 
 	/** Indicate whether a directory must be used to gather all jobs, results and errors related to one identified user.
 	 * If FALSE, all jobs, results and errors will be in only one directory, whoever owns them. */
@@ -250,7 +250,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @return	A human readable frequency of the log file rotation.
 	 */
-	public final String getRotationFreq(){
+	public final String getLogRotationFreq(){
 		return logRotation.toString();
 	}
 
@@ -311,7 +311,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @param interval	Interval between two log rotations.
 	 */
-	public final void setRotationFreq(final String interval){
+	public final void setLogRotationFreq(final String interval){
 		logRotation = new EventFrequency(interval);
 	}
 

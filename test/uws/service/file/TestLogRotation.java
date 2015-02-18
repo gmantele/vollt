@@ -56,6 +56,10 @@ public class TestLogRotation {
 			freq = new EventFrequency("D 6 30");
 			assertEquals("daily at 06:30", freq.toString());
 
+			// FREQ = "D	06 	 30" => ok! (with spaces and tabs inside) ; frequency = every day at 06:30
+			freq = new EventFrequency("D	06 	 30");
+			assertEquals("daily at 06:30", freq.toString());
+
 			// FREQ = "D 24 30" => !!! ; frequency = every day at midnight
 			freq = new EventFrequency("D 24 30");
 			assertEquals(DEFAULT_FREQ, freq.toString());
@@ -65,7 +69,7 @@ public class TestLogRotation {
 			assertEquals(DEFAULT_FREQ, freq.toString());
 
 			// FREQ = "D 6 30 01 blabla" => ok! ; frequency = every day at 06:30
-			freq = new EventFrequency("D 6 30");
+			freq = new EventFrequency("D 6 30 01 blabla");
 			assertEquals("daily at 06:30", freq.toString());
 
 			// FREQ = "d 06 30" => !!! ; frequency = every day at midnight
@@ -121,8 +125,12 @@ public class TestLogRotation {
 			freq = new EventFrequency("W 2 6 30");
 			assertEquals("weekly on Monday at 06:30", freq.toString());
 
+			// FREQ = "W	2   6 	 30" => ok! (with spaces and tabs inside) ; frequency = every week the Monday at 06:30
+			freq = new EventFrequency("W	2   6 	 30");
+			assertEquals("weekly on Monday at 06:30", freq.toString());
+
 			// FREQ = "W 2 6 30 12 blabla" => ok! ; frequency = every week the Monday at 06:30
-			freq = new EventFrequency("W 2 6 30");
+			freq = new EventFrequency("W 2 6 30 12 blabla");
 			assertEquals("weekly on Monday at 06:30", freq.toString());
 
 			/* ***************************************** */
@@ -132,6 +140,10 @@ public class TestLogRotation {
 
 			// FREQ = "M 2 06 30" => ok! ; frequency = every month on the 2nd at 06:30
 			freq = new EventFrequency("M 2 06 30");
+			assertEquals("monthly on the 2nd at 06:30", freq.toString());
+
+			// FREQ = "M	2 	 06   30" => ok! (with spaces and tabs inside) ; frequency = every month on the 2nd at 06:30
+			freq = new EventFrequency("M	2 	 06   30");
 			assertEquals("monthly on the 2nd at 06:30", freq.toString());
 
 			// FREQ = "m 2 06 30" => !!! ; frequency = every minute
@@ -159,6 +171,10 @@ public class TestLogRotation {
 			freq = new EventFrequency("h 10");
 			assertEquals("hourly at 10", freq.toString());
 
+			// FREQ = "h 	 10" => ok! (with spaces and tabs inside) ; frequency = every hour at 10
+			freq = new EventFrequency("h 	 10");
+			assertEquals("hourly at 10", freq.toString());
+
 			// FREQ = "H 10" => !!! ; frequency = every day at 00:00
 			freq = new EventFrequency("H 10");
 			assertEquals("daily at 00:00", freq.toString());
@@ -172,7 +188,7 @@ public class TestLogRotation {
 			assertEquals("hourly at 00", freq.toString());
 
 			// FREQ = "h 10 12 blabla" => ok! ; frequency = every hour at 10
-			freq = new EventFrequency("h 10");
+			freq = new EventFrequency("h 10 12 blabla");
 			assertEquals("hourly at 10", freq.toString());
 
 			/* ********** */
@@ -185,7 +201,7 @@ public class TestLogRotation {
 			assertEquals(DEFAULT_FREQ, freq.toString());
 
 			// FREQ = "m 10 blabla" => ok! ; frequency = every minute
-			freq = new EventFrequency("m");
+			freq = new EventFrequency("m 10 blabla");
 			assertEquals(DEFAULT_FREQ, freq.toString());
 
 			// FREQ = "M" => !!! ; frequency = every month on the 1st at 00:00

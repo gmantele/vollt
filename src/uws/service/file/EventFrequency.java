@@ -16,8 +16,8 @@ package uws.service.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                  Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.text.DateFormat;
@@ -49,7 +49,7 @@ import java.util.regex.MatchResult;
  * <p><i><b>Warning:</b>
  * 	The frequency type is case sensitive! Then you should particularly pay attention at the case
  * 	when using the frequency types 'M' (monthly) and 'm' (every minute).
- * </p>
+ * </i></p>
  * 
  * <p>
  * 	Parsing errors are not thrown but "resolved" silently. The "solution" depends of the error.
@@ -101,7 +101,7 @@ import java.util.regex.MatchResult;
  * 
  * @author Marc Wenger (CDS)
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (02/2015)
  * @since 4.1
  */
 public final class EventFrequency {
@@ -151,7 +151,7 @@ public final class EventFrequency {
 	 * <p><i><b>Warning:</b>
 	 * 	The frequency type is case sensitive! Then you should particularly pay attention at the case
 	 * 	when using the frequency types 'M' (monthly) and 'm' (every minute).
-	 * </p>
+	 * </i></p>
 	 * 
 	 * <p>
 	 * 	Parsing errors are not thrown but "resolved" silently. The "solution" depends of the error.
@@ -195,7 +195,7 @@ public final class EventFrequency {
 		if (interval == null)
 			interval = "";
 		else{
-			interval = interval.trim();
+			interval = interval.replaceAll("[ \t]+", " ").trim();
 			p = interval.indexOf(' ');
 		}
 

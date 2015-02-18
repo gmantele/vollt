@@ -16,7 +16,7 @@ package uws.service.log;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -43,7 +43,7 @@ import uws.service.file.UWSFileManager;
  * <p>Default implementation of {@link UWSLog} interface which lets logging any message about a UWS.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (02/2015)
  */
 public class DefaultUWSLog implements UWSLog {
 
@@ -53,6 +53,18 @@ public class DefaultUWSLog implements UWSLog {
 	protected final UWS uws;
 	protected final UWSFileManager fileManager;
 	protected final PrintWriter defaultOutput;
+
+	/** <p>Minimum level that a message must have in order to be logged.</p>
+	 * <p>The default behavior is the following:</p>
+	 * <ul>
+	 * 	<li><b>DEBUG</b>: every messages are logged.</li>
+	 * 	<li><b>INFO</b>: every messages EXCEPT DEBUG are logged.</li>
+	 * 	<li><b>WARNING</b>: every messages EXCEPT DEBUG and INFO are logged.</li>
+	 * 	<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
+	 * 	<li><b>FATAL</b>: only FATAL messages are logged.</li>
+	 * </ul>
+	 * @since 4.1 */
+	protected LogLevel minLogLevel = LogLevel.DEBUG;
 
 	/**
 	 * <p>Builds a {@link UWSLog} which will use the file manager
@@ -117,6 +129,51 @@ public class DefaultUWSLog implements UWSLog {
 	}
 
 	/**
+	 * <p>Get the minimum level that a message must have in order to be logged.</p>
+	 * 
+	 * <p>The default behavior is the following:</p>
+	 * <ul>
+	 * 	<li><b>DEBUG</b>: every messages are logged.</li>
+	 * 	<li><b>INFO</b>: every messages EXCEPT DEBUG are logged.</li>
+	 * 	<li><b>WARNING</b>: every messages EXCEPT DEBUG and INFO are logged.</li>
+	 * 	<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
+	 * 	<li><b>FATAL</b>: only FATAL messages are logged.</li>
+	 * </ul>
+	 * 
+	 * @return	The minimum log level.
+	 * 
+	 * @since 4.1
+	 */
+	public final LogLevel getMinLogLevel(){
+		return minLogLevel;
+	}
+
+	/**
+	 * <p>Set the minimum level that a message must have in order to be logged.</p>
+	 * 
+	 * <p>The default behavior is the following:</p>
+	 * <ul>
+	 * 	<li><b>DEBUG</b>: every messages are logged.</li>
+	 * 	<li><b>INFO</b>: every messages EXCEPT DEBUG are logged.</li>
+	 * 	<li><b>WARNING</b>: every messages EXCEPT DEBUG and INFO are logged.</li>
+	 * 	<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
+	 * 	<li><b>FATAL</b>: only FATAL messages are logged.</li>
+	 * </ul>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given level is NULL, this function has no effect.
+	 * </i></p>
+	 * 
+	 * @param newMinLevel	The new minimum log level.
+	 * 
+	 * @since 4.1
+	 */
+	public final void setMinLogLevel(final LogLevel newMinLevel){
+		if (newMinLevel != null)
+			minLogLevel = newMinLevel;
+	}
+
+	/**
 	 * Gets the date formatter/parser to use for any date read/write into this logger.
 	 * @return A date formatter/parser.
 	 */
@@ -163,6 +220,45 @@ public class DefaultUWSLog implements UWSLog {
 	/* GENERAL LOGGING METHODS */
 	/* *********************** */
 
+	/**
+	 * <p>Tells whether a message with the given error level can be logged or not.</p>
+	 * 
+	 * <p>In function of the minimum log level of this class, the default behavior is the following:</p>
+	 * <ul>
+	 * 	<li><b>DEBUG</b>: every messages are logged.</li>
+	 * 	<li><b>INFO</b>: every messages EXCEPT DEBUG are logged.</li>
+	 * 	<li><b>WARNING</b>: every messages EXCEPT DEBUG and INFO are logged.</li>
+	 * 	<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
+	 * 	<li><b>FATAL</b>: only FATAL messages are logged.</li>
+	 * </ul>
+	 * 
+	 * @param msgLevel	Level of the message which has been asked to log. <i>Note: if NULL, it will be considered as DEBUG.</i>
+	 * 
+	 * @return	<i>true</i> if the message associated with the given log level can be logged, <i>false</i> otherwise.
+	 * 
+	 * @since 4.1
+	 */
+	protected boolean canLog(LogLevel msgLevel){
+		// No level specified => DEBUG
+		if (msgLevel == null)
+			msgLevel = LogLevel.DEBUG;
+
+		// Decide in function of the minimum log level set in this class:
+		switch(minLogLevel){
+			case INFO:
+				return (msgLevel != LogLevel.DEBUG);
+			case WARNING:
+				return (msgLevel != LogLevel.DEBUG && msgLevel != LogLevel.INFO);
+			case ERROR:
+				return (msgLevel == LogLevel.ERROR || msgLevel == LogLevel.FATAL);
+			case FATAL:
+				return (msgLevel == LogLevel.FATAL);
+			case DEBUG:
+			default:
+				return true;
+		}
+	}
+
 	@Override
 	public void log(LogLevel level, final String context, final String message, final Throwable error){
 		log(level, context, null, null, message, error);
@@ -192,6 +288,10 @@ public class DefaultUWSLog implements UWSLog {
 		// If the type is missing:
 		if (level == null)
 			level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+		// Log or not?
+		if (!canLog(level))
+			return;
 
 		StringBuffer buf = new StringBuffer();
 		// Print the date/time:
@@ -296,9 +396,17 @@ public class DefaultUWSLog implements UWSLog {
 	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletRequest, java.lang.String, java.lang.String, java.lang.Throwable)
 	 */
 	@Override
-	public void logHttp(final LogLevel level, final HttpServletRequest request, final String requestId, final String message, final Throwable error){
+	public void logHttp(LogLevel level, final HttpServletRequest request, final String requestId, final String message, final Throwable error){
 		// IF A REQUEST IS PROVIDED, write its details after the message in a new column:
 		if (request != null){
+			// If the type is missing:
+			if (level == null)
+				level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+			// Log or not?
+			if (!canLog(level))
+				return;
+
 			StringBuffer str = new StringBuffer();
 
 			// Write the message (if any):
@@ -352,6 +460,14 @@ public class DefaultUWSLog implements UWSLog {
 	@Override
 	public void logHttp(LogLevel level, HttpServletResponse response, String requestId, JobOwner user, String message, Throwable error){
 		if (response != null){
+			// If the type is missing:
+			if (level == null)
+				level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+			// Log or not?
+			if (!canLog(level))
+				return;
+
 			StringBuffer str = new StringBuffer();
 
 			// Write the message (if any):
@@ -390,6 +506,14 @@ public class DefaultUWSLog implements UWSLog {
 
 	@Override
 	public void logUWS(LogLevel level, Object obj, String event, String message, Throwable error){
+		// If the type is missing:
+		if (level == null)
+			level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+		// Log or not?
+		if (!canLog(level))
+			return;
+
 		// CASE "BACKUPED": Append to the message the backup report:
 		if (event != null && event.equalsIgnoreCase("BACKUPED") && obj != null && obj.getClass().getName().equals("[I")){
 			int[] backupReport = (int[])obj;
@@ -419,6 +543,14 @@ public class DefaultUWSLog implements UWSLog {
 	@Override
 	public void logThread(LogLevel level, Thread thread, String event, String message, Throwable error){
 		if (thread != null){
+			// If the type is missing:
+			if (level == null)
+				level = (error != null) ? LogLevel.ERROR : LogLevel.INFO;
+
+			// Log or not?
+			if (!canLog(level))
+				return;
+
 			StringBuffer str = new StringBuffer();
 
 			// Write the message (if any):
