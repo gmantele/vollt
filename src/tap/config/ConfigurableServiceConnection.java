@@ -27,6 +27,7 @@ import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
+import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
@@ -93,7 +94,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	private TAPLog logger;
 
-	private ConfigurableTAPFactory tapFactory;
+	private TAPFactory tapFactory;
 
 	private final TAPMetadata metadata;
 
@@ -136,7 +137,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		initLogger(tapConfig);
 
 		// 3. BUILD THE TAP FACTORY:
-		tapFactory = new ConfigurableTAPFactory(this, tapConfig);
+		initFactory(tapConfig);
 
 		// 4. GET THE METADATA:
 		metadata = initMetadata(tapConfig);
@@ -234,6 +235,14 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// Log the successful initialization with set parameters:
 		buf.append(").");
 		logger.info(buf.toString());
+	}
+
+	private void initFactory(final Properties tapConfig) throws TAPException{
+		String propValue = getProperty(tapConfig, KEY_TAP_FACTORY);
+		if (propValue == null)
+			tapFactory = new ConfigurableTAPFactory(this, tapConfig);
+		else
+			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class}, new Object[]{this});
 	}
 
 	private TAPMetadata initMetadata(final Properties tapConfig) throws TAPException{

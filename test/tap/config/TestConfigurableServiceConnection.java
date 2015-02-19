@@ -17,6 +17,7 @@ import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
+import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
 import static tap.config.TAPConfiguration.VALUE_ANY;
@@ -44,9 +45,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
+import tap.db.DBConnection;
+import tap.db.DBException;
+import tap.db.JDBCConnection;
 import tap.formatter.OutputFormat;
 import tap.formatter.VOTableFormat;
 import uk.ac.starlink.votable.DataFormat;
@@ -61,6 +66,7 @@ import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog.LogLevel;
 import adql.db.FunctionDef;
 import adql.db.TestDBChecker.UDFToto;
+import adql.translator.PostgreSQLTranslator;
 
 public class TestConfigurableServiceConnection {
 
@@ -83,7 +89,8 @@ public class TestConfigurableServiceConnection {
 			udfsListWithNONEorANYProp, udfsWithWrongParamLengthProp,
 			udfsWithMissingBracketsProp, udfsWithMissingDefProp1,
 			udfsWithMissingDefProp2, emptyUdfItemProp1, emptyUdfItemProp2,
-			udfWithMissingEndBracketProp;
+			udfWithMissingEndBracketProp, customFactoryProp,
+			badCustomFactoryProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
@@ -242,6 +249,12 @@ public class TestConfigurableServiceConnection {
 
 		udfWithMissingEndBracketProp = (Properties)validProp.clone();
 		udfWithMissingEndBracketProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR");
+
+		customFactoryProp = (Properties)validProp.clone();
+		customFactoryProp.setProperty(KEY_TAP_FACTORY, "{tap.config.TestConfigurableServiceConnection$CustomTAPFactory}");
+
+		badCustomFactoryProp = (Properties)validProp.clone();
+		badCustomFactoryProp.setProperty(KEY_TAP_FACTORY, "{tap.config.TestConfigurableServiceConnection$BadCustomTAPFactory}");
 	}
 
 	/**
@@ -855,6 +868,24 @@ public class TestConfigurableServiceConnection {
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("Wrong UDF declaration syntax: missing closing bracket at position 24!", e.getMessage());
 		}
+
+		// Valid custom TAPFactory:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(customFactoryProp);
+			assertNotNull(connection.getFactory());
+			assertEquals(CustomTAPFactory.class, connection.getFactory().getClass());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given custom TAPFactory exists and have the required constructor! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Bad custom TAPFactory (required constructor missing):
+		try{
+			new ConfigurableServiceConnection(badCustomFactoryProp);
+			fail("This MUST have failed because the specified TAPFactory extension does not have a constructor with ServiceConnection!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Missing constructor tap.config.TestConfigurableServiceConnection$BadCustomTAPFactory(tap.ServiceConnection)! See the value \"{tap.config.TestConfigurableServiceConnection$BadCustomTAPFactory}\" of the property \"" + KEY_TAP_FACTORY + "\".", e.getMessage());
+		}
 	}
 
 	public static final String getPertinentMessage(final Exception ex){
@@ -895,6 +926,63 @@ public class TestConfigurableServiceConnection {
 		public JobOwner restoreUser(String id, String pseudo, Map<String,Object> otherData) throws UWSException{
 			return everybody;
 		}
+
+	}
+
+	/**
+	 * TAPFactory just to test whether the property tap_factory works well.
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 02/2015
+	 */
+	private static class CustomTAPFactory extends AbstractTAPFactory {
+
+		private final JDBCConnection dbConn;
+
+		public CustomTAPFactory(final ServiceConnection conn) throws DBException{
+			super(conn);
+			dbConn = new JDBCConnection("", "jdbc:postgresql:gmantele", "gmantele", null, new PostgreSQLTranslator(), "TheOnlyConnection", conn.getLogger());
+		}
+
+		@Override
+		public DBConnection getConnection(final String jobID) throws TAPException{
+			return dbConn;
+		}
+
+		@Override
+		public void freeConnection(final DBConnection conn){}
+
+		@Override
+		public void destroy(){
+			try{
+				dbConn.getInnerConnection().close();
+			}catch(Exception ex){}
+		}
+
+	}
+
+	/**
+	 * TAPFactory just to test whether the property tap_factory is rejected when no constructor with a single parameter of type ServiceConnection exists.
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 02/2015
+	 */
+	private static class BadCustomTAPFactory extends AbstractTAPFactory {
+
+		public BadCustomTAPFactory() throws DBException{
+			super(null);
+		}
+
+		@Override
+		public DBConnection getConnection(final String jobID) throws TAPException{
+			return null;
+		}
+
+		@Override
+		public void freeConnection(final DBConnection conn){}
+
+		@Override
+		public void destroy(){}
 
 	}
 

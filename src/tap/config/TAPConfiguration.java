@@ -115,6 +115,9 @@ public final class TAPConfiguration {
 	/* ADDITIONAL TAP RESOURCES */
 	public final static String KEY_ADD_TAP_RESOURCES = "additional_resources";
 
+	/* CUSTOM FACTORY */
+	public final static String KEY_TAP_FACTORY = "tap_factory";
+
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>
 	 * <ul>

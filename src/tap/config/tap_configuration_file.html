@@ -146,7 +146,7 @@
 				<td></td>
 			</tr>
 			
-			<tr><td colspan="5">Database</td></tr>
+			<tr><td colspan="5">Database (only if tap_factory = ø)</td></tr>
 			<tr class="mandatory">
 				<td class="done">database_access</td>
 				<td></td>
@@ -374,7 +374,7 @@
 				<td><ul><li>D 6 30</li><li>W 2 6 30</li><li>M 2 6 30</li><li>H 10</li><li>m</li></ul></td>
 			</tr>
 			
-			<tr><td colspan="5">UWS Backup</td></tr>
+			<tr><td colspan="5">UWS Backup (only if tap_factory = ø)</td></tr>
 			<tr class="optional">
 				<td class="done">backup_frequency</td>
 				<td></td>
@@ -620,6 +620,23 @@
 					<p><em>By default, this list is empty ; only the standard TAP resources exist.</em></p>
 				</td>
 				<td>{aPackage.QuickADQLValidator}</td>
+			</tr>
+			
+			<tr><td colspan="5">Custom TAP Factory</td></tr>
+			<tr class="optional">
+				<td class="done">tap_factory</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Class to use in replacement of the default TAPFactory.</p>
+					<p>
+						This property must be a class name (given between {...}). It must reference an extension of the abstract TAPFactory.
+						This extension must have at least one constructor with exactly one parameter of type ServiceConnection.
+					</p>
+					<p><em>By default, the default TAPFactory (tap.config.ConfigurableTAPFactory) is used and may use all properties related to the backup management,
+					the database access and the ADQL translation.</em></p>
+				</td>
+				<td>{aPackage.MyTAPFactory}</td>
 			</tr>
 			
 		</table>
