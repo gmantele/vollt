@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import tap.db.DBConnection;
 import tap.metadata.TAPSchema;
@@ -277,9 +276,6 @@ public abstract class TAPFactory implements UWSFactory {
 	 */
 	@Override
 	public final UWSJob createJob(HttpServletRequest request, JobOwner owner) throws UWSException{
-		if (!service.isAvailable())
-			throw new UWSException(HttpServletResponse.SC_SERVICE_UNAVAILABLE, service.getAvailability());
-
 		return createTAPJob(request, owner);
 	}
 
@@ -320,9 +316,6 @@ public abstract class TAPFactory implements UWSFactory {
 	 */
 	@Override
 	public final UWSJob createJob(String jobId, JobOwner owner, final UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException{
-		if (!service.isAvailable())
-			throw new UWSException(HttpServletResponse.SC_SERVICE_UNAVAILABLE, service.getAvailability());
-
 		return createTAPJob(jobId, owner, (TAPParameters)params, quote, startTime, endTime, results, error);
 	}
 
