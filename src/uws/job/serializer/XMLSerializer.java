@@ -16,7 +16,7 @@ package uws.job.serializer;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI) 
  */
 
@@ -38,7 +38,7 @@ import uws.service.request.UploadFile;
  * Lets serializing any UWS resource in XML.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.1 (02/2015)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -152,7 +152,7 @@ public class XMLSerializer extends UWSSerializer {
 			UWSUrl jlUrl = jobList.getUrl();
 			xml.append("\t\t<jobListRef name=\"").append(escapeXMLAttribute(jobList.getName())).append("\" href=\"");
 			if (jlUrl != null && jlUrl.getRequestURL() != null)
-				xml.append(escapeURL(jlUrl.getRequestURL()));
+				xml.append(escapeXMLAttribute(jlUrl.getRequestURL()));
 			xml.append("\" />\n");
 		}
 		xml.append("\t</jobLists>\n");
@@ -167,7 +167,7 @@ public class XMLSerializer extends UWSSerializer {
 		StringBuffer xml = new StringBuffer(getHeader());
 
 		xml.append("<jobs").append(getUWSNamespace(true));
-		/* Note: NO ATTRIBUTE "name" IN THE XML SCHEMA!
+		/* NOTE: NO ATTRIBUTE "name" IN THE XML SCHEMA!
 		 * String name = jobsList.getName();
 		 * if (name != null)
 		 * 	xml.append(" name=\"").append(escapeXMLAttribute(name)).append("\"");
@@ -228,13 +228,13 @@ public class XMLSerializer extends UWSSerializer {
 
 		StringBuffer xml = new StringBuffer("<jobref id=\"");
 		xml.append(escapeXMLAttribute(job.getJobId()));
-		/* Note: NO ATTRIBUTE "runId" IN THE XML SCHEMA!
+		/* NOTE: NO ATTRIBUTE "runId" IN THE XML SCHEMA!
 		 * if (job.getRunId() != null && job.getRunId().length() > 0)
 		 * 	xml.append("\" runId=\"").append(escapeXMLAttribute(job.getRunId()));
 		 */
 		xml.append("\" xlink:href=\"");
 		if (url != null)
-			xml.append(escapeURL(url));
+			xml.append(escapeXMLAttribute(url));
 		xml.append("\">\n\t\t").append(getPhase(job, false)).append("\n\t</jobref>");
 
 		return xml.toString();
@@ -407,10 +407,10 @@ public class XMLSerializer extends UWSSerializer {
 		if (result.getHref() != null){
 			if (result.getType() != null)
 				xml.append(" xlink:type=\"").append(escapeXMLAttribute(result.getType())).append("\"");
-			xml.append(" xlink:href=\"").append(escapeURL(result.getHref())).append("\"");
+			xml.append(" xlink:href=\"").append(escapeXMLAttribute(result.getHref())).append("\"");
 		}
 
-		/* Note: THE FOLLOWING ATTRIBUTES MAY PROVIDE USEFUL INFORMATION TO USERS, BUT THEY ARE NOT ALLOWED BY THE CURRENT UWS STANDARD.
+		/* NOTE: THE FOLLOWING ATTRIBUTES MAY PROVIDE USEFUL INFORMATION TO USERS, BUT THEY ARE NOT ALLOWED BY THE CURRENT UWS STANDARD.
 		 *       HOWEVER, IF, ONE DAY, THEY ARE, THE FOLLOWING LINES SHOULD BE UNCOMNENTED. 
 		 *
 		 * if (result.getMimeType() != null)
