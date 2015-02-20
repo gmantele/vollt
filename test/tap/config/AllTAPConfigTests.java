@@ -10,7 +10,7 @@ import tap.parameters.TestMaxRecController;
 
 @RunWith(Suite.class)
 @SuiteClasses({TestTAPConfiguration.class,TestConfigurableServiceConnection.class,TestConfigurableTAPFactory.class,TestMaxRecController.class})
-public class AllTests {
+public class AllTAPConfigTests {
 
 	public final static Properties getValidProperties(){
 		Properties validProp = new Properties();

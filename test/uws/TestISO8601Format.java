@@ -14,7 +14,7 @@ import org.junit.Test;
 public class TestISO8601Format {
 
 	private final long date = 1411737870325L;		// Fri Sep 26 15:24:30 CEST 2014 = 2014-09-26T15:24:30.325+02:00 = 1411737870325 ms
-	private final long dateAlone = 1411682400000L;
+	private final long dateAlone = 1411689600000L;
 
 	private final long oldDate = -3506029200000L;	// Thu Nov 25 00:00:00 CET 1858 = 1858-11-25T00:00:00+01:00 = -3506029200000 ms
 
@@ -125,8 +125,8 @@ public class TestISO8601Format {
 			assertEquals(date - 325, ISO8601Format.parse("2014-09-26T13:24:30Z"));
 
 			// If no time zone is specified, the local one should be used:
-			assertEquals(date, ISO8601Format.parse("2014-09-26T15:24:30.325"));
-			assertEquals(date - 325, ISO8601Format.parse("2014-09-26T15:24:30"));
+			assertEquals(date, ISO8601Format.parse("2014-09-26T13:24:30.325"));
+			assertEquals(date - 325, ISO8601Format.parse("2014-09-26T13:24:30"));
 
 			// All the previous tests without the _ between days, month, and years:
 			assertEquals(0, ISO8601Format.parse("19700101T01:00:00+01:00"));
@@ -138,8 +138,8 @@ public class TestISO8601Format {
 			assertEquals(date - 325, ISO8601Format.parse("20140926T15:24:30+02:00"));
 			assertEquals(date, ISO8601Format.parse("20140926T13:24:30.325Z"));
 			assertEquals(date - 325, ISO8601Format.parse("20140926T13:24:30Z"));
-			assertEquals(date, ISO8601Format.parse("20140926T15:24:30.325"));
-			assertEquals(date - 325, ISO8601Format.parse("20140926T15:24:30"));
+			assertEquals(date, ISO8601Format.parse("20140926T13:24:30.325"));
+			assertEquals(date - 325, ISO8601Format.parse("20140926T13:24:30"));
 
 			// All the previous tests without the : between hours, minutes and seconds:
 			assertEquals(0, ISO8601Format.parse("1970-01-01T010000+0100"));
@@ -152,8 +152,8 @@ public class TestISO8601Format {
 			assertEquals(oldDate, ISO8601Format.parse("1858-11-24 23:00:00Z"));
 			assertEquals(date, ISO8601Format.parse("2014-09-26 13:24:30.325Z"));
 			assertEquals(date - 325, ISO8601Format.parse("2014-09-26 13:24:30Z"));
-			assertEquals(date, ISO8601Format.parse("2014-09-26 15:24:30.325"));
-			assertEquals(date - 325, ISO8601Format.parse("2014-09-26 15:24:30"));
+			assertEquals(date, ISO8601Format.parse("2014-09-26 13:24:30.325"));
+			assertEquals(date - 325, ISO8601Format.parse("2014-09-26 13:24:30"));
 
 		}catch(ParseException ex){
 			ex.printStackTrace(System.err);

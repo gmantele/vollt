@@ -95,7 +95,7 @@ public class TestConfigurableServiceConnection {
 	@BeforeClass
 	public static void setUp() throws Exception{
 		// LOAD ALL PROPERTIES FILES NEEDED FOR ALL THE TESTS:
-		validProp = AllTests.getValidProperties();
+		validProp = AllTAPConfigTests.getValidProperties();
 
 		noFmProp = (Properties)validProp.clone();
 		noFmProp.setProperty(KEY_FILE_MANAGER, "");

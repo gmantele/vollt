@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,7 +38,7 @@ import uk.ac.starlink.votable.VOSerializer;
  * <p>This resource just return an XML document giving a description of the TAP service and list all its VOSI resources.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (02/2015)
  */
 public class Capabilities implements TAPResource, VOSIResource {
 
@@ -128,7 +128,7 @@ public class Capabilities implements TAPResource, VOSIResource {
 		out.print(tap.getCapability());
 
 		// Write the capabilities of all VOSI resources:
-		Iterator<TAPResource> it = tap.getTAPResources();
+		Iterator<TAPResource> it = tap.getResources();
 		while(it.hasNext()){
 			TAPResource res = it.next();
 			if (res instanceof VOSIResource){

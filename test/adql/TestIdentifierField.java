@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import adql.query.IdentifierField;
 
-public class IdentifierFieldTest {
+public class TestIdentifierField {
 
 	@Test
 	public void testIsCaseSensitive(){

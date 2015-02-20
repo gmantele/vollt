@@ -83,7 +83,7 @@ public class TestConfigurableTAPFactory {
 		serviceConnection = new ServiceConnectionTest();
 
 		// LOAD ALL PROPERTIES FILES NEEDED FOR ALL THE TESTS:
-		validJDBCProp = AllTests.getValidProperties();
+		validJDBCProp = AllTAPConfigTests.getValidProperties();
 
 		setJNDIDatasource();
 		validJNDIProp = (Properties)validJDBCProp.clone();

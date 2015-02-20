@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import uws.service.log.UWSLog.LogLevel;
 
-public class DefaultUWSLogTest {
+public class TestDefaultUWSLog {
 
 	@Test
 	public void testCanLog(){

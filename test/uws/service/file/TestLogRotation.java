@@ -4,12 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import org.junit.Test;
 
-import uws.UWSException;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
@@ -219,18 +220,27 @@ public class TestLogRotation {
 		try{
 			final LocalUWSFileManager fileManager = new LocalUWSFileManager(new File("."));
 			fileManager.logRotation = new EventFrequency("m");
+			final int MAX_TIME = 3000; // 3 seconds => 68 messages (for 5 threads)
+			int nbExpectedMessages = 0;
 
+			// Delete old log file:
+			fileManager.getLogFile(LogLevel.DEBUG, null).delete();
+
+			// Log a lot of messages:
 			final UWSLog logger = new DefaultUWSLog(fileManager);
 			for(int i = 0; i < 5; i++){
 				final int logFreq = i + 1;
+				nbExpectedMessages += 30 / logFreq;
 				(new Thread(new Runnable(){
 					@Override
 					public void run(){
 						try{
-							for(int cnt = 0; cnt < 3 * 60 / logFreq; cnt++){
+							final int nbMsgs = 30 / logFreq;
+							final int freq = MAX_TIME / nbMsgs;
+							for(int cnt = 0; cnt < nbMsgs; cnt++){
 								logger.log(LogLevel.INFO, "TEST", "LOG MESSAGE FROM Thread-" + logFreq, null);
 								assertFalse(fileManager.getLogOutput(LogLevel.INFO, "UWS").checkError());	// if true, it means that at least one attempt to write something fails, and so, that write attempts have been done after a log rotation!
-								Thread.sleep(1000 * logFreq);
+								Thread.sleep(freq);
 							}
 						}catch(InterruptedException e){
 							e.printStackTrace(System.err);
@@ -242,14 +252,25 @@ public class TestLogRotation {
 					}
 				})).start();
 			}
-			Thread.sleep(180000);
+			Thread.sleep(MAX_TIME);
 
-		}catch(UWSException e){
-			e.printStackTrace(System.err);
-			fail("CAN NOT CREATE THE FILE MANAGER!");
+			// Check that all messages have been well written:
+			BufferedReader input = new BufferedReader(new InputStreamReader(fileManager.getLogInput(LogLevel.DEBUG, null)));
+			int nbLines = 0;
+			while(input.readLine() != null)
+				nbLines++;
+			nbLines -= 3; // deduce the number of 3 header lines
+			assertEquals(nbExpectedMessages, nbLines);
+
+			// Delete log file if no error:
+			fileManager.getLogFile(LogLevel.DEBUG, null).delete();
+
 		}catch(InterruptedException e){
 			e.printStackTrace(System.err);
-			fail("CAN NOT WAIT 3 MINUTES!");
+			fail("CAN NOT WAIT 3 SECONDS!");
+		}catch(Exception e){
+			e.printStackTrace(System.err);
+			fail("CAN NOT CREATE THE FILE MANAGER!");
 		}
 	}
 
