@@ -102,7 +102,7 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		ServiceConnection serviceConn = null;
 		try{
 			// Create the service connection:
-			serviceConn = new ConfigurableServiceConnection(tapConf);
+			serviceConn = new ConfigurableServiceConnection(tapConf, config.getServletContext().getRealPath(""));
 			// Create all the TAP resources:
 			tap = new TAP(serviceConn);
 		}catch(Exception ex){

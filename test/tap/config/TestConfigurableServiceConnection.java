@@ -888,6 +888,57 @@ public class TestConfigurableServiceConnection {
 		}
 	}
 
+	@Test
+	public void testGetFile(){
+		final String rootPath = "/ROOT", propertyName = "SuperProperty";
+		String path;
+
+		try{
+			// NULL test => NULL must be returned.
+			assertNull(ConfigurableServiceConnection.getFile(null, rootPath, propertyName));
+
+			// Valid file URI:
+			path = "/custom/user/dir";
+			assertEquals(path, ConfigurableServiceConnection.getFile("file://" + path, rootPath, propertyName).getAbsolutePath());
+
+			// Valid absolute file path:
+			assertEquals(path, ConfigurableServiceConnection.getFile(path, rootPath, propertyName).getAbsolutePath());
+
+			// File name relative to the given rootPath:
+			path = "dir";
+			assertEquals(rootPath + File.separator + path, ConfigurableServiceConnection.getFile(path, rootPath, propertyName).getAbsolutePath());
+
+			// Idem but with a relative file path:
+			path = "gmantele/workspace";
+			assertEquals(rootPath + File.separator + path, ConfigurableServiceConnection.getFile(path, rootPath, propertyName).getAbsolutePath());
+
+		}catch(Exception ex){
+			ex.printStackTrace();
+			fail("None of these tests should have failed!");
+		}
+
+		// Test with a file URI having a bad syntax:
+		path = "file:#toto^foo";
+		try{
+			ConfigurableServiceConnection.getFile(path, rootPath, propertyName);
+			fail("This test should have failed, because the given file URI has a bad syntax!");
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertEquals("Incorrect file URI for the property \"" + propertyName + "\": \"" + path + "\"! Bad syntax for the given file URI.", ex.getMessage());
+		}
+
+		// Test with an URL:
+		path = "http://www.google.com";
+		try{
+			ConfigurableServiceConnection.getFile(path, rootPath, propertyName);
+			fail("This test should have failed, because the given URI uses the HTTP protocol (actually, it uses a protocol different from \"file\"!");
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertEquals("Incorrect file URI for the property \"" + propertyName + "\": \"" + path + "\"! Only URI with the protocol \"file:\" are allowed.", ex.getMessage());
+		}
+
+	}
+
 	public static final String getPertinentMessage(final Exception ex){
 		return (ex.getCause() == null || ex.getMessage().equals(ex.getCause().getMessage())) ? ex.getMessage() : ex.getCause().getMessage();
 	}

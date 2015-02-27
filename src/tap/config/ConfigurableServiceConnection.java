@@ -57,6 +57,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -127,11 +129,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private Collection<FunctionDef> udfs = new ArrayList<FunctionDef>(0);
 
 	public ConfigurableServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException, UWSException{
+		this(tapConfig, null);
+	}
+
+	public ConfigurableServiceConnection(final Properties tapConfig, final String webAppRootDir) throws NullPointerException, TAPException, UWSException{
 		if (tapConfig == null)
 			throw new NullPointerException("Missing TAP properties! ");
 
 		// 1. INITIALIZE THE FILE MANAGER:
-		initFileManager(tapConfig);
+		initFileManager(tapConfig, webAppRootDir);
 
 		// 2. CREATE THE LOGGER:
 		initLogger(tapConfig);
@@ -140,7 +146,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		initFactory(tapConfig);
 
 		// 4. GET THE METADATA:
-		metadata = initMetadata(tapConfig);
+		metadata = initMetadata(tapConfig, webAppRootDir);
 
 		// 5. SET ALL GENERAL SERVICE CONNECTION INFORMATION:
 		providerName = getProperty(tapConfig, KEY_PROVIDER_NAME);
@@ -173,7 +179,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		initUDFs(tapConfig);
 	}
 
-	private void initFileManager(final Properties tapConfig) throws TAPException{
+	private void initFileManager(final Properties tapConfig, final String webAppRootDir) throws TAPException{
 		// Read the desired file manager:
 		String fileManagerType = getProperty(tapConfig, KEY_FILE_MANAGER);
 		if (fileManagerType == null)
@@ -187,7 +193,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			String rootPath = getProperty(tapConfig, KEY_FILE_ROOT_PATH);
 			if (rootPath == null)
 				throw new TAPException("The property \"" + KEY_FILE_ROOT_PATH + "\" is missing! It is required to create a TAP Service. Please provide a path toward a directory which will contain all files related to the service.");
-			File rootFile = new File(rootPath);
+			File rootFile = getFile(rootPath, webAppRootDir, KEY_FILE_ROOT_PATH);
 
 			// Determine whether there should be one directory for each user:
 			String propValue = getProperty(tapConfig, KEY_DIRECTORY_PER_USER);
@@ -207,6 +213,23 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// CUSTOM file manager:
 		else
 			fileManager = newInstance(fileManagerType, KEY_FILE_MANAGER, UWSFileManager.class, new Class<?>[]{Properties.class}, new Object[]{tapConfig});
+	}
+
+	protected static final File getFile(final String filePath, final String webAppRootPath, final String propertyName) throws TAPException{
+		if (filePath == null)
+			return null;
+		else if (filePath.startsWith("file:"))
+			try{
+				return new File(new URI(filePath));
+			}catch(URISyntaxException e){
+				throw new TAPException("Incorrect file URI for the property \"" + propertyName + "\": \"" + filePath + "\"! Bad syntax for the given file URI.", e);
+			}
+		else if (filePath.startsWith("/"))
+			return new File(filePath);
+		else if (filePath.matches("[a-zA-Z]+:.*"))
+			throw new TAPException("Incorrect file URI for the property \"" + propertyName + "\": \"" + filePath + "\"! Only URI with the protocol \"file:\" are allowed.");
+		else
+			return new File(webAppRootPath, filePath);
 	}
 
 	private void initLogger(final Properties tapConfig){
@@ -245,7 +268,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class}, new Object[]{this});
 	}
 
-	private TAPMetadata initMetadata(final Properties tapConfig) throws TAPException{
+	private TAPMetadata initMetadata(final Properties tapConfig, final String webAppRootDir) throws TAPException{
 		// Get the fetching method to use:
 		String metaFetchType = getProperty(tapConfig, KEY_METADATA);
 		if (metaFetchType == null)
@@ -262,7 +285,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 			// Parse the XML document and build the corresponding metadata:
 			try{
-				metadata = (new TableSetParser()).parse(new File(xmlFilePath));
+				metadata = (new TableSetParser()).parse(getFile(xmlFilePath, webAppRootDir, KEY_METADATA_FILE));
 			}catch(IOException ioe){
 				throw new TAPException("A grave error occurred while reading/parsing the TableSet XML document: \"" + xmlFilePath + "\"!", ioe);
 			}
