@@ -16,7 +16,7 @@ package uws.service.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -69,7 +69,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.1 (02/2015)
  */
 public class LocalUWSFileManager implements UWSFileManager {
 
@@ -77,9 +77,9 @@ public class LocalUWSFileManager implements UWSFileManager {
 	private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 	/** Default name of the log file. */
-	protected static final String DEFAULT_LOG_FILE_NAME = "uws.log";
+	protected static final String DEFAULT_LOG_FILE_NAME = "service.log";
 	/** Default name of the general UWS backup file. */
-	protected static final String DEFAULT_BACKUP_FILE_NAME = "uws.backup";
+	protected static final String DEFAULT_BACKUP_FILE_NAME = "service.backup";
 
 	/** Directory in which all files managed by this class will be written and read. */
 	protected final File rootDirectory;
