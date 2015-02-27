@@ -258,9 +258,12 @@
 				<td>text</td>
 				<td>
 					<p><strong>Mandatory if</strong> the value of "metadata" is "xml".</p>
-					<p>Local file path to the TableSet XML document. This XML must implement the schema TableSet defined by <a href="http://www.ivoa.net/xml/VODataService/v1.1">VODataService</a>.</p>
+					<p>Local file path to the TableSet XML document.</p>
+					<p>The XML document must implement the schema TableSet defined by <a href="http://www.ivoa.net/xml/VODataService/v1.1">VODataService</a>.</p>
+					<p>The file path must be either an absolute local file path or a file path relative to WebContent
+					(i.e. the web application directory in which there are WEB-INF and META-INF).</p>
 				</td>
-				<td>/home/foo/my_metadata.xml</td>
+				<td><ul><li>/home/foo/my_metadata.xml</li><li>my_metadata.xml</li><li>WEB-INF/my_metadata.xml</li></ul></td>
 			</tr>
 			
 			<tr><td colspan="5">Files</td></tr>
@@ -279,8 +282,12 @@
 				<td class="done">file_root_path</td>
 				<td></td>
 				<td>text</td>
-				<td>File path of the directory in which all TAP files (logs, errors, job results, backup, ...) must be.</td>
-				<td></td>
+				<td>
+					<p>Local file path of the directory in which all TAP files (logs, errors, job results, backup, ...) must be.</p>
+					<p>The file path must be either an absolute local directory path or a directory path relative to WebContent
+					(i.e. the web application directory in which there are WEB-INF and META-INF).</p>
+				</td>	
+				<td><ul><li>/home/my_home_dir/tapFiles</li><li>tapFiles</li><li>WEB-INF/tapFiles</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">directory_per_user</td>
