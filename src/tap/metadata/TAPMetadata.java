@@ -767,6 +767,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 			case SCHEMAS:
 				TAPTable schemas = new TAPTable(STDTable.SCHEMAS.toString(), TableType.table, "List of schemas published in this TAP service.", null);
+				schemas.setInitiallyQualifed(true);
 				schemas.addColumn("schema_name", new DBType(DBDatatype.VARCHAR), "schema name, possibly qualified", null, null, null, true, true, true);
 				schemas.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of schema", null, null, null, false, false, true);
 				schemas.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE if schema corresponds to a data model", null, null, null, false, false, true);
@@ -774,6 +775,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 			case TABLES:
 				TAPTable tables = new TAPTable(STDTable.TABLES.toString(), TableType.table, "List of tables published in this TAP service.", null);
+				tables.setInitiallyQualifed(true);
 				tables.addColumn("schema_name", new DBType(DBDatatype.VARCHAR), "the schema name from TAP_SCHEMA.schemas", null, null, null, true, true, true);
 				tables.addColumn("table_name", new DBType(DBDatatype.VARCHAR), "table name as it should be used in queries", null, null, null, true, true, true);
 				tables.addColumn("table_type", new DBType(DBDatatype.VARCHAR), "one of: table, view", null, null, null, false, false, true);
@@ -783,6 +785,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 			case COLUMNS:
 				TAPTable columns = new TAPTable(STDTable.COLUMNS.toString(), TableType.table, "List of columns of all tables listed in TAP_SCHEMA.TABLES and published in this TAP service.", null);
+				columns.setInitiallyQualifed(true);
 				columns.addColumn("table_name", new DBType(DBDatatype.VARCHAR), "table name from TAP_SCHEMA.tables", null, null, null, true, true, true);
 				columns.addColumn("column_name", new DBType(DBDatatype.VARCHAR), "column name", null, null, null, true, true, true);
 				columns.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of column", null, null, null, false, false, true);
@@ -798,6 +801,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 			case KEYS:
 				TAPTable keys = new TAPTable(STDTable.KEYS.toString(), TableType.table, "List all foreign keys but provides just the tables linked by the foreign key. To know which columns of these tables are linked, see in TAP_SCHEMA.key_columns using the key_id.", null);
+				keys.setInitiallyQualifed(true);
 				keys.addColumn("key_id", new DBType(DBDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
 				keys.addColumn("from_table", new DBType(DBDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
 				keys.addColumn("target_table", new DBType(DBDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
@@ -807,6 +811,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 			case KEY_COLUMNS:
 				TAPTable key_columns = new TAPTable(STDTable.KEY_COLUMNS.toString(), TableType.table, "List all foreign keys but provides just the columns linked by the foreign key. To know the table of these columns, see in TAP_SCHEMA.keys using the key_id.", null);
+				key_columns.setInitiallyQualifed(true);
 				key_columns.addColumn("key_id", new DBType(DBDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
 				key_columns.addColumn("from_column", new DBType(DBDatatype.VARCHAR), "key column name in the from_table", null, null, null, false, false, true);
 				key_columns.addColumn("target_column", new DBType(DBDatatype.VARCHAR), "key column name in the target_table", null, null, null, false, false, true);

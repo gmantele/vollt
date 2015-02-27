@@ -1169,7 +1169,7 @@ public class JDBCConnection implements DBConnection {
 			case SCHEMAS:
 				return " PRIMARY KEY(" + (caseSensitive ? "\"schema_name\"" : "schema_name") + ")";
 			case TABLES:
-				return " PRIMARY KEY(" + (caseSensitive ? "\"schema_name\"" : "schema_name") + ", " + (caseSensitive ? "\"table_name\"" : "table_name") + ")";
+				return " PRIMARY KEY(" + (caseSensitive ? "\"table_name\"" : "table_name") + ")";
 			case COLUMNS:
 				return " PRIMARY KEY(" + (caseSensitive ? "\"table_name\"" : "table_name") + ", " + (caseSensitive ? "\"column_name\"" : "column_name") + ")";
 			case KEYS:
