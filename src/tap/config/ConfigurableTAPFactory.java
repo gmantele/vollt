@@ -265,6 +265,8 @@ public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 	@Override
 	public UWSBackupManager createUWSBackupManager(UWSService uws) throws TAPException{
 		try{
+			System.out.println("BACKUP FREQUENCY ? " + backupFrequency);
+			System.out.println("BACKUP BY USER ? " + backupByUser);
 			return (backupFrequency < 0) ? null : new DefaultTAPBackupManager(uws, backupByUser, backupFrequency);
 		}catch(UWSException ex){
 			throw new TAPException("Impossible to create a backup manager, because: " + ex.getMessage(), ex);

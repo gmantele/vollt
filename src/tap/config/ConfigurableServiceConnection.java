@@ -651,6 +651,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		if (propValue != null){
 			// ...parse the value:
 			Object[] limit = parseLimit(propValue, KEY_UPLOAD_MAX_FILE_SIZE, true);
+			if (((Integer)limit[0]).intValue() <= 0)
+				limit[0] = new Integer(TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE);
 			// ...check that the unit is correct (bytes): 
 			if (!LimitUnit.bytes.isCompatibleWith((LimitUnit)limit[1]))
 				throw new TAPException("The maximum upload file size " + KEY_UPLOAD_MAX_FILE_SIZE + " (here: " + propValue + ") can not be expressed in a unit different from bytes (B, kB, MB, GB)!");

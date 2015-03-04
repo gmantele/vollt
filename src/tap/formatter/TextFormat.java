@@ -223,6 +223,6 @@ public class TextFormat implements OutputFormat {
 	protected void writeFieldValue(final Object value, final DBColumn tapCol, final StringBuffer line){
 		Object obj = value;
 		if (obj != null)
-			line.append(obj.toString());
+			line.append('"').append(obj.toString()).append('"');
 	}
 }

@@ -119,7 +119,7 @@ public class Uploader {
 		// Ensure UPLOAD is allowed by the TAP service specification...
 		if (this.service.uploadEnabled()){
 			// ...and set the rows or bytes limit:
-			if (this.service.getUploadLimitType()[1] != null && this.service.getUploadLimit()[1] > 0){
+			if (this.service.getUploadLimitType()[1] != null && this.service.getUploadLimit()[1] >= 0){
 				limit = (int)(this.service.getUploadLimitType()[1].bytesFactor() * this.service.getUploadLimit()[1]);
 				limitUnit = (this.service.getUploadLimitType()[1] == LimitUnit.rows) ? LimitUnit.rows : LimitUnit.bytes;
 			}else{

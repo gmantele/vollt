@@ -272,13 +272,17 @@ public class TestTAPConfiguration {
 		final String propertyName = KEY_DEFAULT_OUTPUT_LIMIT + " or " + KEY_MAX_OUTPUT_LIMIT;
 		// Test empty or negative or null values => OK!
 		try{
-			String[] testValues = new String[]{null,"","  	 ","0","-123"};
+			String[] testValues = new String[]{null,"","  	 ","-123"};
 			Object[] limit;
 			for(String v : testValues){
 				limit = parseLimit(v, propertyName, false);
 				assertEquals(limit[0], -1);
 				assertEquals(limit[1], LimitUnit.rows);
 			}
+			// 0 test:
+			limit = parseLimit("0", propertyName, false);
+			assertEquals(limit[0], 0);
+			assertEquals(limit[1], LimitUnit.rows);
 		}catch(TAPException te){
 			fail("All these empty limit values are valid, so these tests should have succeeded!\nCaught exception: " + getPertinentMessage(te));
 		}

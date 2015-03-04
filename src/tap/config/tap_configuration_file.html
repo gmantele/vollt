@@ -319,7 +319,7 @@
 					if the client does not provide a value for it.</p>
 					<p>The default period MUST be less or equals to the maximum retention period. If this rule is not respected, the default retention period is set immediately
 					 to the maximum retention period.</p>
-					<p>A negative or null value means there is no restriction over the default retention period: job results will be kept forever. Float values are not allowed.</p>
+					<p>A negative or null value means there is no restriction on the default retention period: job results will be kept forever. Float values are not allowed.</p>
 					<p><em>By default query results are kept forever: default_retention_period=0.</em></p></td>
 				<td>86400 <em>(1 day)</em></td>
 			</tr>
@@ -331,7 +331,7 @@
 					<p>The maximum period (in seconds) to keep query results. The prefix "max" means here that the client can not set a retention period greater than this one.</p>
 					<p>The maximum period MUST be greater or equals to the default retention period. If this rule is not respected, the default retention period is set immediately
 					 to the maximum retention period.</p>
-					<p>A negative or null value means there is no restriction over the maximum retention period: the job results will be kept forever. Float values are not allowed.</p>
+					<p>A negative or null value means there is no restriction on the maximum retention period: the job results will be kept forever. Float values are not allowed.</p>
 					<p><em>Default: <code>max_retention_period=0</code> (results kept for ever)</em></p></td>
 				<td>604800 <em>(1 week)</em></td>
 			</tr>
@@ -412,7 +412,7 @@
 				<td>integer</td>
 				<td>
 					<p>Maximum number of asynchronous jobs that can run simultaneously.</p>
-					<p>A negative or null value means there is no restriction over the number of running asynchronous jobs.</p>
+					<p>A negative or null value means there is no restriction on the number of running asynchronous jobs.</p>
 					<p><em>Default: <code>max_async_jobs=0</code> (no restriction)</em></p>
 				</td>
 				<td><ul><li>0 <em>(default)</em></li><li>10</li></ul></td>
@@ -427,7 +427,7 @@
 					<p>Default time (in milliseconds) for query execution. The prefix "default" means here that the execution duration will be this one if the client does not set one.</p>
 					<p>The default duration MUST be less or equals to the maximum execution duration. If this rule is not respected, the default execution duration is set immediately
 					 to the maximum execution duration.</p>
-					<p>A negative or null value means there is no restriction over the default execution duration: the execution could never end. Float values are not allowed.</p>
+					<p>A negative or null value means there is no restriction on the default execution duration: the execution could never end. Float values are not allowed.</p>
 					<p><em>Default: <code>default_execution_duration=0</code> (no restriction)</em></p>
 				</td>
 				<td>600000 <em>(10 minutes)</em></td>
@@ -440,7 +440,7 @@
 					<p>Maximum time (in milliseconds) for query execution. The prefix "max" means here that the client can not set a time greater than this one.</p>
 					<p>The maximum duration MUST be greater or equals to the default execution duration. If this rule is not respected, the default execution duration is set immediately
 					 to the maximum execution duration.</p>
-					<p>A negative or null value means there is no restriction over the maximum execution duration: the execution could never end. Float values are not allowed.</p>
+					<p>A negative or null value means there is no restriction on the maximum execution duration: the execution could never end. Float values are not allowed.</p>
 					<p><em>Default: <code>max_execution_duration=0</code> (no restriction)</em></p>
 				</td>
 				<td>3600000 <em>(1 hour)</em></td>
@@ -472,11 +472,11 @@
 				<td>
 					<p>Default limit for the result output. The prefix "default" means here that this value will be set if the client does not provide one.</p>
 					<p>This limit can be expressed in only one unit: rows.</p>
-					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
 					<p>Obviously this limit MUST be less or equal than output_max_limit.</p>
-					<p><em>Default: <code>output_default_limit=0</code> (no restriction)</em></p>
+					<p><em>Default: <code>output_default_limit=-1</code> (no restriction)</em></p>
 				</td>
-				<td><ul><li>0 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li></ul></td>
+				<td><ul><li>-1 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">output_max_limit</td>
@@ -485,11 +485,11 @@
 				<td>
 					<p>Maximum limit for the result output. The prefix "max" means here that the client can not set a limit greater than this one.</p>
 					<p>This limit can be expressed in only one unit: rows.</p>
-					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
 					<p>Obviously this limit MUST be greater or equal than output_default_limit.</p>
-					<p><em>Default: <code>output_max_limit=0</code> (no restriction)</em></p>
+					<p><em>Default: <code>output_max_limit=-1</code> (no restriction)</em></p>
 				</td>
-				<td><ul><li>0 <em>(default)</em></li><li>1000</li><li>10000r</li><li>10000R</li></ul></td>
+				<td><ul><li>-1 <em>(default)</em></li><li>1000</li><li>10000r</li><li>10000R</li></ul></td>
 			</tr>
 			
 			<tr><td colspan="5">Upload</td></tr>
@@ -513,12 +513,12 @@
 					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case)
 					or by nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
 					Here, unit is case sensitive. No other storage unit is allowed.</p>
-					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
 					<p><b>Warning!</b> Obviously this limit MUST be less or equal than upload_max_db_limit, and MUST be of the same type as it.
 					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
-					<p><em>Default: <code>upload_default_db_limit=0</code> (no restriction)</em></p>
+					<p><em>Default: <code>upload_default_db_limit=-1</code> (no restriction)</em></p>
 				</td>
-				<td><ul><li>0 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
+				<td><ul><li>-1 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">upload_max_db_limit</td>
@@ -529,12 +529,12 @@
 					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
 					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
 					Here, unit is case sensitive. No other storage unit is allowed.</p>
-					<p>A negative or null value means there is no restriction over this limit. Float values are not allowed.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
 					<p><b>Warning!</b> Obviously this limit MUST be greater or equal than upload_default_db_limit, and MUST be of the same type as it.
 					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
-					<p><em>Default: <code>upload_max_db_limit=0</code> (no restriction)</em></p>
+					<p><em>Default: <code>upload_max_db_limit=-1</code> (no restriction)</em></p>
 				</td>
-				<td><ul><li>0 <em>(default)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
+				<td><ul><li>-1 <em>(default)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">upload_max_file_size</td>

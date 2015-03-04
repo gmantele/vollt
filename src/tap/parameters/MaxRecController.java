@@ -49,7 +49,7 @@ import uws.job.parameters.InputParamController;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.0 (03/2015)
  */
 public class MaxRecController implements InputParamController {
 
@@ -73,7 +73,7 @@ public class MaxRecController implements InputParamController {
 		// Get the default output limit:
 		int defaultLimit = TAPJob.UNLIMITED_MAX_REC;
 		if (service.getOutputLimit() != null && service.getOutputLimit().length >= 2 && service.getOutputLimitType() != null && service.getOutputLimitType().length == service.getOutputLimit().length){
-			if (service.getOutputLimit()[0] > 0 && service.getOutputLimitType()[0] == LimitUnit.rows)
+			if (service.getOutputLimit()[0] >= 0 && service.getOutputLimitType()[0] == LimitUnit.rows)
 				defaultLimit = service.getOutputLimit()[0];
 		}
 
@@ -92,7 +92,7 @@ public class MaxRecController implements InputParamController {
 	public final int getMaxOutputLimit(){
 		// If a maximum output limit is set by the TAP service connection, return it:
 		if (service.getOutputLimit() != null && service.getOutputLimit().length >= 2 && service.getOutputLimitType() != null && service.getOutputLimitType().length == service.getOutputLimit().length){
-			if (service.getOutputLimit()[1] > 0 && service.getOutputLimitType()[1] == LimitUnit.rows)
+			if (service.getOutputLimit()[1] >= 0 && service.getOutputLimitType()[1] == LimitUnit.rows)
 				return service.getOutputLimit()[1];
 		}
 		// Otherwise, there is no limit:

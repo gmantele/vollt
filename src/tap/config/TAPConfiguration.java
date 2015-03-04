@@ -292,6 +292,7 @@ public final class TAPConfiguration {
 	 * 	Where unit is optional and should be one of the following values: r or R, B, kB, MB, GB.
 	 * 	If the unit is not specified, it is set by default to ROWS.
 	 * </p>
+	 * <p><i>Note: If the value is strictly less than 0 (whatever is the unit), the returned value will be -1.</i></p>
 	 * 
 	 * @param value				Property value (must follow the limit syntax: num_val[unit] ; ex: 20kB or 2000 (for 2000 rows)).
 	 * @param propertyName		Name of the property which specify the limit.
@@ -375,7 +376,7 @@ public final class TAPConfiguration {
 			}
 		}
 
-		return new Object[]{((numValue <= 0) ? -1 : numValue),unit};
+		return new Object[]{((numValue < 0) ? -1 : numValue),unit};
 	}
 
 }
