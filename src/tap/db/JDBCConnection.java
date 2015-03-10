@@ -546,7 +546,8 @@ public class JDBCConnection implements DBConnection {
 
 				// create the new schema:
 				TAPSchema newSchema = new TAPSchema(schemaName, nullifyIfNeeded(description), nullifyIfNeeded(utype));
-				newSchema.setDBName(dbName);
+				if (dbName != null && dbName.trim().length() > 0)
+					newSchema.setDBName(dbName);
 
 				// add the new schema inside the given metadata:
 				metadata.addSchema(newSchema);
