@@ -89,7 +89,7 @@ public final class TAPConfiguration {
 	public final static int DEFAULT_UPLOAD_MAX_FILE_SIZE = Integer.MAX_VALUE;
 
 	/* OUTPUT KEYS */
-	public final static String KEY_OUTPUT_FORMATS = "output_add_formats";
+	public final static String KEY_OUTPUT_FORMATS = "output_formats";
 	public final static String VALUE_ALL = "ALL";
 	public final static String VALUE_VOTABLE = "votable";
 	public final static String VALUE_VOT = "vot";
