@@ -79,7 +79,7 @@
 	
 	<target name="compileLib" depends="clean,junitValidation" description="Build all the classes of the UWS library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
-		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false">
+		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8">
 			<classpath refid="uws.classpath" />
 		</javac>
 	</target>

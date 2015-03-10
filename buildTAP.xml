@@ -102,7 +102,7 @@
 	</target>
 			
 	<!-- LIB & SOURCES -->
-	<target name="clean" depends="junitValidation" description="Delete the JARs for the library (classes) and for its sources for the set version.">
+	<target name="clean" description="Delete the JARs for the library (classes) and for its sources for the set version.">
 		<delete file="${libJarFile}" failonerror="false" />
 		<delete file="${srcJarFile}" failonerror="false" />
 		<delete dir="${compileDir}" failonerror="false" />
@@ -110,7 +110,7 @@
 	
 	<target name="compileLib" depends="clean,junitValidation" description="Build all the classes of the TAP library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
-		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false">
+		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8">
 			<classpath refid="tap.classpath" />
 		</javac>
 	</target>
