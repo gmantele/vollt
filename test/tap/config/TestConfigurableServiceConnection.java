@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
+import static tap.config.TAPConfiguration.KEY_COORD_SYS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
@@ -65,6 +66,9 @@ import uws.service.file.LocalUWSFileManager;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog.LogLevel;
 import adql.db.FunctionDef;
+import adql.db.STCS.Flavor;
+import adql.db.STCS.Frame;
+import adql.db.STCS.RefPos;
 import adql.db.TestDBChecker.UDFToto;
 import adql.translator.PostgreSQLTranslator;
 
@@ -83,14 +87,15 @@ public class TestConfigurableServiceConnection {
 			maxAsyncProp, negativeMaxAsyncProp, notIntMaxAsyncProp,
 			defaultOutputLimitProp, maxOutputLimitProp,
 			bothOutputLimitGoodProp, bothOutputLimitBadProp, userIdentProp,
-			notClassPathUserIdentProp, geometriesProp, noneGeomProp,
-			anyGeomProp, noneInsideGeomProp, unknownGeomProp, anyUdfsProp,
-			noneUdfsProp, udfsProp, udfsWithClassNameProp,
-			udfsListWithNONEorANYProp, udfsWithWrongParamLengthProp,
-			udfsWithMissingBracketsProp, udfsWithMissingDefProp1,
-			udfsWithMissingDefProp2, emptyUdfItemProp1, emptyUdfItemProp2,
-			udfWithMissingEndBracketProp, customFactoryProp,
-			badCustomFactoryProp;
+			notClassPathUserIdentProp, coordSysProp, noneCoordSysProp,
+			anyCoordSysProp, noneInsideCoordSysProp, unknownCoordSysProp,
+			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
+			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
+			udfsWithClassNameProp, udfsListWithNONEorANYProp,
+			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
+			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
+			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp,
+			customFactoryProp, badCustomFactoryProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
@@ -198,6 +203,21 @@ public class TestConfigurableServiceConnection {
 
 		notClassPathUserIdentProp = (Properties)validProp.clone();
 		notClassPathUserIdentProp.setProperty(KEY_USER_IDENTIFIER, "foo");
+
+		coordSysProp = (Properties)validProp.clone();
+		coordSysProp.setProperty(KEY_COORD_SYS, "icrs *		*, ICrs * (Spherical2|  	CARTEsian2)");
+
+		noneCoordSysProp = (Properties)validProp.clone();
+		noneCoordSysProp.setProperty(KEY_COORD_SYS, VALUE_NONE);
+
+		anyCoordSysProp = (Properties)validProp.clone();
+		anyCoordSysProp.setProperty(KEY_COORD_SYS, VALUE_ANY);
+
+		noneInsideCoordSysProp = (Properties)validProp.clone();
+		noneInsideCoordSysProp.setProperty(KEY_COORD_SYS, "	ICRS * *, none, FK4 (GEOCENTER|heliocenter) *");
+
+		unknownCoordSysProp = (Properties)validProp.clone();
+		unknownCoordSysProp.setProperty(KEY_COORD_SYS, "ICRS foo *");
 
 		geometriesProp = (Properties)validProp.clone();
 		geometriesProp.setProperty(KEY_GEOMETRIES, "point, CIRCle  ,	cONTAins,intersECTS");
@@ -754,6 +774,52 @@ public class TestConfigurableServiceConnection {
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("Unknown ADQL geometrical function: \"foo\"!", e.getMessage());
+		}
+
+		// Valid coordinate systems list:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(coordSysProp);
+			assertNotNull(connection.getCoordinateSystems());
+			assertEquals(2, connection.getCoordinateSystems().size());
+			assertEquals("icrs *		*", ((ArrayList<String>)connection.getCoordinateSystems()).get(0));
+			assertEquals("ICrs * (Spherical2|  	CARTEsian2)", ((ArrayList<String>)connection.getCoordinateSystems()).get(1));
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of coordinate systems is correct! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// "NONE" as coordinate systems list:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(noneCoordSysProp);
+			assertNotNull(connection.getCoordinateSystems());
+			assertEquals(0, connection.getCoordinateSystems().size());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of coordinate systems is correct (reduced to only NONE)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// "ANY" as coordinate systems list:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(anyCoordSysProp);
+			assertNull(connection.getCoordinateSystems());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given list of coordinate systems is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// "NONE" inside a coordinate systems list:
+		try{
+			new ConfigurableServiceConnection(noneInsideCoordSysProp);
+			fail("This MUST have failed because the given coordinate systems list contains at least 3 items, whose one is NONE!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("The special value \"" + VALUE_NONE + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that no value is allowed.", e.getMessage());
+		}
+
+		// Unknown coordinate system function:
+		try{
+			new ConfigurableServiceConnection(unknownCoordSysProp);
+			fail("This MUST have failed because the given coordinate systems list contains at least 1 unknown coordinate system!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Incorrect coordinate system regular expression (\"ICRS foo *\"): Wrong allowed coordinate system syntax for the 1-th item: \"ICRS foo *\"! Expected: \"frameRegExp refposRegExp flavorRegExp\" ; where each xxxRegExp = (xxx | '*' | '('xxx ('|' xxx)*')'), frame=\"" + Frame.regexp + "\", refpos=\"" + RefPos.regexp + "\" and flavor=\"" + Flavor.regexp + "\" ; an empty string is also allowed and will be interpreted as '*' (so all possible values).", e.getMessage());
 		}
 
 		// "ANY" as UDFs list:

@@ -6,6 +6,7 @@ import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE;
+import static tap.config.TAPConfiguration.KEY_COORD_SYS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_RETENTION_PERIOD;
@@ -87,6 +88,7 @@ import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog.LogLevel;
 import adql.db.FunctionDef;
+import adql.db.STCS;
 import adql.parser.ParseException;
 import adql.query.operand.function.UserDefinedFunction;
 
@@ -122,6 +124,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private int maxUploadSize = DEFAULT_UPLOAD_MAX_FILE_SIZE;
 
 	private UserIdentifier userIdentifier = null;
+
+	private ArrayList<String> lstCoordSys = null;
 
 	private ArrayList<String> geometries = null;
 	private final String GEOMETRY_REGEXP = "(AREA|BOX|CENTROID|CIRCLE|CONTAINS|DISTANCE|COORD1|COORD2|COORDSYS|INTERSECTS|POINT|POLYGON|REGION)";
@@ -175,6 +179,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		initUserIdentifier(tapConfig);
 
 		// 9. CONFIGURE ADQL:
+		initCoordSys(tapConfig);
 		initADQLGeometries(tapConfig);
 		initUDFs(tapConfig);
 	}
@@ -669,6 +674,57 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			userIdentifier = newInstance(propValue, KEY_USER_IDENTIFIER, UserIdentifier.class);
 	}
 
+	private void initCoordSys(final Properties tapConfig) throws TAPException{
+		// Get the property value:
+		String propValue = getProperty(tapConfig, KEY_COORD_SYS);
+
+		// NO VALUE => ALL COORD SYS ALLOWED!
+		if (propValue == null)
+			lstCoordSys = null;
+
+		// "NONE" => ALL COORD SYS FORBIDDEN (= no coordinate system expression is allowed)!
+		else if (propValue.equalsIgnoreCase(VALUE_NONE))
+			lstCoordSys = new ArrayList<String>(0);
+
+		// "ANY" => ALL COORD SYS ALLOWED (= any coordinate system is allowed)!
+		else if (propValue.equalsIgnoreCase(VALUE_ANY))
+			lstCoordSys = null;
+
+		// OTHERWISE, JUST THE ALLOWED ONE ARE LISTED:
+		else{
+			// split all the list items:
+			String[] items = propValue.split(",");
+			if (items.length > 0){
+				lstCoordSys = new ArrayList<String>(items.length);
+				for(String item : items){
+					item = item.trim();
+					// empty item => ignored
+					if (item.length() <= 0)
+						continue;
+					// "NONE" is not allowed inside a list => error!
+					else if (item.toUpperCase().equals(VALUE_NONE))
+						throw new TAPException("The special value \"" + VALUE_NONE + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that no value is allowed.");
+					// "ANY" is not allowed inside a list => error!
+					else if (item.toUpperCase().equals(VALUE_ANY))
+						throw new TAPException("The special value \"" + VALUE_ANY + "\" can not be used inside a list! It MUST be used in replacement of a whole list to specify that any value is allowed.");
+					// parse the coordinate system regular expression in order to check it:
+					else{
+						try{
+							STCS.buildCoordSysRegExp(new String[]{item});
+							lstCoordSys.add(item);
+						}catch(ParseException pe){
+							throw new TAPException("Incorrect coordinate system regular expression (\"" + item + "\"): " + pe.getMessage(), pe);
+						}
+					}
+				}
+				// if finally no item has been specified, consider it as "any coordinate system allowed":
+				if (lstCoordSys.size() == 0)
+					lstCoordSys = null;
+			}else
+				lstCoordSys = null;
+		}
+	}
+
 	private void initADQLGeometries(final Properties tapConfig) throws TAPException{
 		// Get the property value:
 		String propValue = getProperty(tapConfig, KEY_GEOMETRIES);
@@ -996,7 +1052,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	@Override
 	public Collection<String> getCoordinateSystems(){
-		return null;
+		return lstCoordSys;
 	}
 
 	@Override

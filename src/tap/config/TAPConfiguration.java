@@ -107,6 +107,7 @@ public final class TAPConfiguration {
 	public final static String KEY_USER_IDENTIFIER = "user_identifier";
 
 	/* ADQL RESTRICTIONS */
+	public final static String KEY_COORD_SYS = "coordinate_systems";
 	public final static String KEY_GEOMETRIES = "geometries";
 	public final static String VALUE_NONE = "NONE";
 	public final static String KEY_UDFS = "udfs";

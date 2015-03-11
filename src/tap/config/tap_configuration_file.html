@@ -569,6 +569,33 @@
 			
 			<tr><td colspan="5">ADQL restrictions</td></tr>
 			<tr class="optional">
+				<td class="done">coordinate_systems</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma-separated list of all allowed coordinate systems.</p>
+					<p>
+						Each item of the list be a kind of regular expression respecting the following syntax:
+						<code><i>Frame</i> <i>RefPos</i> <i>Flavor</i></code>. In other words, it must be a string of exactly
+						3 parts. Each of this part is a single value, a list of allowed values or a <code>*</code> meaning all
+						values. A list of values must be indicated between parenthesis and values must be separated by a pipe.
+					</p>
+					<p>Allowed values for <code>Frame</code> are: <code>ICRS</code>, <code>FK4</code>,
+						<code>FK5</code>, <code>ECLIPTIC</code>, <code>GALACTIC</code> and <code>UNKNOWNFRAME</code>.</p>
+					<p>Allowed values for <code>RefPos</code> are:  <code>BARYCENTER</code>, <code>GEOCENTER</code>,
+						<code>HELIOCENTER</code>, <code>LSR</code>, <code>TOPOCENTER</code>, <code>RELOCATABLE</code>
+						and <code>UNKNOWNREFPOS</code>.</p>
+					<p>Allowed values for <code>Flavor</code> are: <code>CARTESIAN2</code>, <code>CARTESIAN3</code> and
+						<code>SPHERICAL2</code>.</p>
+					<p>
+						If the special value <em>NONE</em> is given instead of a list of allowed coordinate systems,
+						no coordinate system will be allowed. And if the list is empty, any coordinate system will be allowed.
+					</p>
+					<p><em>By default, any coordinate system is allowed.</em></p>
+				</td>
+				<td><ul><li>ø <em>(default)</em></li><li>NONE</li><li>ICRS * *</li><li>ICRS * *, ECLIPTIC * (CARTESIAN2 | SPHERICAL2)</li></ul></td>
+			</tr>
+			<tr class="optional">
 				<td class="done">geometries</td>
 				<td></td>
 				<td>text</td>
