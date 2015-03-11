@@ -84,7 +84,7 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		}
 		// If no file has been found, cancel the servlet loading:
 		if (input == null)
-			throw new ServletException("Configuration file not found with the path: \"" + tapConfPath + "\"! Please provide a correct file path for the TAP configuration file.");
+			throw new ServletException("Configuration file not found with the path: \"" + ((tapConfPath == null) ? DEFAULT_TAP_CONF_FILE : tapConfPath) + "\"! Please provide a correct file path in servlet init parameter (\"" + TAP_CONF_PARAMETER + "\") or put your configuration file named \"" + DEFAULT_TAP_CONF_FILE + "\" in a directory of the classpath or in WEB-INF or META-INF.");
 
 		/* 3. PARSE IT INTO A PROPERTIES SET */
 		Properties tapConf = new Properties();
@@ -165,18 +165,16 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		serviceConn.setAvailable(true, "TAP service available.");
 	}
 
-	protected final InputStream searchFile(final String filePath, final ServletConfig config){
+	protected final InputStream searchFile(String filePath, final ServletConfig config){
 		InputStream input = null;
 
 		// Try to search in the classpath (with just a file name or a relative path):
 		input = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
 
-		// If not found, try searching in the WebContent directory (as this fileName is a file path relative to WebContent):
-		if (input == null)
-			input = config.getServletContext().getResourceAsStream(filePath);
-
-		// LAST CHANCE: Only if it is not a path...
-		if (input == null && filePath.indexOf(File.separatorChar) < 0){
+		// If not found, try searching in WEB-INF and META-INF (as this fileName is a file path relative to one of these directories):
+		if (input == null){
+			if (filePath.startsWith("/"))
+				filePath = filePath.substring(1);
 			// ...try at the root of WEB-INF:
 			input = config.getServletContext().getResourceAsStream("/WEB-INF/" + filePath);
 			// ...and at the root of META-INF:
