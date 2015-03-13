@@ -167,7 +167,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (02/2015)
+ * @version 1.3 (03/2015)
  * @since 1.3
  * 
  * @see PostgreSQLTranslator
@@ -365,6 +365,9 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 		if (query.getSelect().hasLimit())
 			sql.append("\nLimit ").append(query.getSelect().getLimit());
+
+		if (query.getSelect().hasOffset())
+			sql.append("\nOffset ").append(query.getSelect().getOffset());
 
 		return sql.toString();
 	}
