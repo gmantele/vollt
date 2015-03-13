@@ -16,7 +16,7 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_TAP_CONF_FILE;
@@ -46,6 +46,12 @@ import tap.resource.HomePage;
 import tap.resource.TAP;
 import tap.resource.TAPResource;
 
+/**
+ * 
+ * 
+ * @author Gr&eacute;gory Mantelet (ARI)
+ * @version 2.0 (03/2015)
+ */
 public class ConfigurableTAPServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 

@@ -1,5 +1,24 @@
 package tap.config;
 
+/*
+ * This file is part of TAPLibrary.
+ * 
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ */
+
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
@@ -92,6 +111,12 @@ import adql.db.STCS;
 import adql.parser.ParseException;
 import adql.query.operand.function.UserDefinedFunction;
 
+/**
+ * 
+ * 
+ * @author Gr&eacute;gory Mantelet (ARI)
+ * @version 2.0 (03/2015)
+ */
 public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	private UWSFileManager fileManager;
