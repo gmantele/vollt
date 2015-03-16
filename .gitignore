@@ -1,0 +1,4 @@
+nb-configuration.xml
+tap_*.jar
+/javadoc/
+/target/
