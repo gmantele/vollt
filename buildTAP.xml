@@ -59,7 +59,7 @@
 	
 	<target name="compileLib" depends="clean" description="Build all the classes of the TAP library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
-		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" debug="true">
+		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" debug="true" source="1.6" target="1.6">
 			<classpath refid="tap.classpath" />
 		</javac>
 	</target>
