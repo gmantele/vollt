@@ -16,7 +16,7 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -25,12 +25,14 @@ import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ClauseADQL;
 import adql.query.operand.ADQLOperand;
+import adql.translator.ADQLTranslator;
+import adql.translator.TranslationException;
 
 /**
  * It represents any function which is not managed by ADQL.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.3 (02/2015)
  */
 public final class DefaultUDF extends UserDefinedFunction {
 
@@ -48,7 +50,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * Creates a user function.
 	 * @param params	Parameters of the function.
 	 */
-	public DefaultUDF(final String name, ADQLOperand[] params) throws NullPointerException{
+	public DefaultUDF(final String name, final ADQLOperand[] params) throws NullPointerException{
 		functionName = name;
 		parameters = new ClauseADQL<ADQLOperand>();
 		if (params != null){
@@ -64,7 +66,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	public DefaultUDF(DefaultUDF toCopy) throws Exception{
+	public DefaultUDF(final DefaultUDF toCopy) throws Exception{
 		functionName = toCopy.functionName;
 		parameters = (ADQLList<ADQLOperand>)(toCopy.parameters.getCopy());
 	}
@@ -91,6 +93,8 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * @param def	The definition applying to this parsed UDF, or NULL if none has been found.
 	 * 
 	 * @throws IllegalArgumentException	If the name in the given definition does not match the name of this parsed function.
+	 * 
+	 * @since 1.3
 	 */
 	public final void setDefinition(final FunctionDef def) throws IllegalArgumentException{
 		if (def != null && (def.name == null || !functionName.equalsIgnoreCase(def.name)))
@@ -153,6 +157,19 @@ public final class DefaultUDF extends UserDefinedFunction {
 	@Override
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
 		return parameters.set(index, replacer);
+	}
+
+	@Override
+	public String translate(final ADQLTranslator caller) throws TranslationException{
+		StringBuffer sql = new StringBuffer(functionName);
+		sql.append('(');
+		for(int i = 0; i < parameters.size(); i++){
+			if (i > 0)
+				sql.append(',').append(' ');
+			sql.append(caller.translate(parameters.get(i)));
+		}
+		sql.append(')');
+		return sql.toString();
 	}
 
 }

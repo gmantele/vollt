@@ -158,6 +158,8 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 	public void writeError(final Throwable t, final HttpServletResponse response, final HttpServletRequest request, final String reqID, final JobOwner user, final String action) throws IOException{
 		if (t == null || response == null)
 			return;
+        
+        getLogger().error("writeError: exception: ", t);
 
 		// If expected error, just write it in VOTable:
 		if (t instanceof UWSException || t instanceof TAPException){

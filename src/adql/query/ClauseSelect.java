@@ -16,7 +16,8 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -30,8 +31,8 @@ import adql.query.operand.ADQLOperand;
  * <ul><li>The user can specify the maximum number of rows the query must return.</li>
  * <li>He can also ask that all the returned rows are unique according to the first returned column.</li></ul></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 03/2015
  */
 public class ClauseSelect extends ClauseADQL<SelectItem> {
 
@@ -40,6 +41,9 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 
 	/** The maximum number of returned rows. */
 	private int limit = -1;
+
+	/** The number of rows to skip before selection. */
+	private int offset = -1;
 
 	/**
 	 * Builds an empty SELECT clause.
@@ -140,6 +144,40 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 */
 	public final void setLimit(int limit){
 		this.limit = limit;
+	}
+
+	/**
+	 * Indicates whether this SELECT clause sets an offset.
+	 * 
+	 * @return	<i>true</i> this clause has an OFFSET flag, <i>false</i> otherwise.
+	 */
+	public final boolean hasOffset(){
+		return offset >= 0;
+	}
+
+	/**
+	 * Gets the offset set by this SELECT clause.
+	 * 
+	 * @return	Number of rows the query must skip before selection (SELECT OFFSET offset).
+	 */
+	public final int getOffset(){
+		return offset;
+	}
+
+	/**
+	 * Sets no offset (classic SELECT).
+	 */
+	public final void setNoOffset(){
+		offset = -1;
+	}
+
+	/**
+	 * Changes the number of rows to skip this clause imposes.
+	 * 
+	 * @param limit	The number of rows to skip before selection (SELECT OFFSET offset).
+	 */
+	public final void setOffset(int newOffset){
+		this.offset = newOffset;
 	}
 
 	/**

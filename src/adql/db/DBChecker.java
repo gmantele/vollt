@@ -20,6 +20,8 @@ package adql.db;
  *                            Astronomisches Rechen Institut (ARI)
  */
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -62,6 +64,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
 import adql.search.ISearchHandler;
 import adql.search.SearchColumnHandler;
+import adql.search.SimpleReplaceHandler;
 import adql.search.SimpleSearchHandler;
 
 /**
@@ -780,7 +783,7 @@ public class DBChecker implements QueryChecker {
 	 * @since 1.3
 	 */
 	protected void checkUDFs(final ADQLQuery query, final UnresolvedIdentifiersException errors){
-		// Search all UDFs:
+		// 1. Search all UDFs:
 		ISearchHandler sHandler = new SearchUDFHandler();
 		sHandler.search(query);
 
@@ -789,7 +792,7 @@ public class DBChecker implements QueryChecker {
 			for(ADQLObject result : sHandler)
 				errors.addException(new UnresolvedFunction((UserDefinedFunction)result));
 		}
-		// Otherwise, try to resolve all of them:
+		// 2. Try to resolve all of them:
 		else{
 			ArrayList<UserDefinedFunction> toResolveLater = new ArrayList<UserDefinedFunction>();
 			UserDefinedFunction udf;
@@ -835,6 +838,9 @@ public class DBChecker implements QueryChecker {
 				else if (udf instanceof DefaultUDF)
 					((DefaultUDF)udf).setDefinition(allowedUdfs[match]);
 			}
+
+			// 3. Replace all the resolved DefaultUDF by an instance of the class associated with the set signature:
+			(new ReplaceDefaultUDFHandler(errors)).searchAndReplace(query);
 		}
 	}
 
@@ -1302,6 +1308,51 @@ public class DBChecker implements QueryChecker {
 		@Override
 		protected boolean match(ADQLObject obj){
 			return (obj instanceof UserDefinedFunction);
+		}
+	}
+
+	/**
+	 * <p>Let replacing every {@link DefaultUDF}s whose a {@link FunctionDef} is set by their corresponding {@link UserDefinedFunction} class.</p>
+	 * 
+	 * <p><i><b>Important note:</b>
+	 * 	If the replacer can not be created using the class returned by {@link FunctionDef#getUDFClass()}, no replacement is performed.
+	 * </i></p>
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 1.3 (02/2015)
+	 * @since 1.3
+	 */
+	private static class ReplaceDefaultUDFHandler extends SimpleReplaceHandler {
+		private final UnresolvedIdentifiersException errors;
+
+		public ReplaceDefaultUDFHandler(final UnresolvedIdentifiersException errorsContainer){
+			errors = errorsContainer;
+		}
+
+		@Override
+		protected boolean match(ADQLObject obj){
+			return (obj.getClass().getName().equals(DefaultUDF.class.getName())) && (((DefaultUDF)obj).getDefinition() != null) && (((DefaultUDF)obj).getDefinition().getUDFClass() != null);
+			/* Note: detection of DefaultUDF is done on the exact class name rather than using "instanceof" in order to have only direct instances of DefaultUDF,
+			 * and not extensions of it. Indeed, DefaultUDFs are generally created automatically by the ADQLQueryFactory ; so, extensions of it can only be custom
+			 * UserDefinedFunctions. */
+		}
+
+		@Override
+		protected ADQLObject getReplacer(ADQLObject objToReplace) throws UnsupportedOperationException{
+			try{
+				// get the associated UDF class:
+				Class<? extends UserDefinedFunction> udfClass = ((DefaultUDF)objToReplace).getDefinition().getUDFClass();
+				// get the constructor with a single parameter of type ADQLOperand[]:
+				Constructor<? extends UserDefinedFunction> constructor = udfClass.getConstructor(ADQLOperand[].class);
+				// create a new instance of this UDF class with the operands stored in the object to replace:
+				return constructor.newInstance((Object)(((DefaultUDF)objToReplace).getParameters())); /* note: without this class, each item of the given array will be considered as a single parameter. */
+			}catch(Exception ex){
+				// IF NO INSTANCE CAN BE CREATED...
+				// ...keep the error for further report:
+				errors.addException(new UnresolvedFunction("Impossible to represent the function \"" + ((DefaultUDF)objToReplace).getName() + "\": the following error occured while creating this representation: \"" + ((ex instanceof InvocationTargetException) ? "[" + ex.getCause().getClass().getSimpleName() + "] " + ex.getCause().getMessage() : ex.getMessage()) + "\"", (DefaultUDF)objToReplace));
+				// ...keep the same object (i.e. no replacement):
+				return objToReplace;
+			}
 		}
 	}
 

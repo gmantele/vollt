@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.3 (10/2014)
+*  Version: 1.3 (03/2015)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.3 (10/2014)
+* @version 1.3 (03/2015)
 */
 public class ADQLParser {
 	
@@ -527,6 +527,7 @@ TOKEN : {
 	< SELECT: "SELECT" >
 |	< QUANTIFIER: "DISTINCT" | "ALL" >
 |	< TOP: "TOP" >
+|	< OFFSET: "OFFSET" >
 }
 
 /* ************* */
@@ -742,6 +743,15 @@ void Select(): {ClauseSelect select = query.getSelect(); SelectItem item=null; T
 	  	select.setLimit(Integer.parseInt(t.image));
 	  }catch(NumberFormatException nfe){
 	  	throw new ParseException("[l."+t.beginLine+";c."+t.beginColumn+"] The TOP limit (\""+t.image+"\") isn't a regular unsigned integer !");
+	  }
+	 }
+	]
+	[<OFFSET> t=<UNSIGNED_INTEGER>
+	 {
+	  try{
+	  	select.setOffset(Integer.parseInt(t.image));
+	  }catch(NumberFormatException nfe){
+	  	throw new ParseException("[l."+t.beginLine+";c."+t.beginColumn+"] The OFFSET limit (\""+t.image+"\") isn't a regular unsigned integer !");
 	  }
 	 }
 	]
