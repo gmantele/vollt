@@ -356,7 +356,10 @@ public class ADQLExecutor {
 
 			// 4. WRITE RESULT:
 			startStep(ExecutionProgression.WRITING_RESULT);
-			writeResult(queryResult);
+			if (response != null && response.isCommitted())
+				getLogger().logTAP(LogLevel.WARNING, report, "WRITING_RESULT", "HTTP request canceled/timeout! The result can not have been returned to the user.", null);
+			else
+				writeResult(queryResult);
 			endStep();
 
 			// Report the COMPLETED status:
@@ -547,6 +550,14 @@ public class ADQLExecutor {
 	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, TAPException{
 		// Log the start of execution:
 		logger.logTAP(LogLevel.INFO, report, "EXECUTING", "Executing ADQL: " + adql.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
+
+		// Set the fetch size, if any:
+		if (service.getFetchSize() != null && service.getFetchSize().length >= 1){
+			if (report.synchronous && service.getFetchSize().length >= 2)
+				dbConn.setFetchSize(service.getFetchSize()[1]);
+			else
+				dbConn.setFetchSize(service.getFetchSize()[0]);
+		}
 
 		// Execute the ADQL query:
 		TableIterator result = dbConn.executeQuery(adql);

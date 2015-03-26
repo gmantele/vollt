@@ -169,4 +169,9 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 		return null;
 	}
 
+	@Override
+	public int[] getFetchSize(){
+		return null;
+	}
+
 }

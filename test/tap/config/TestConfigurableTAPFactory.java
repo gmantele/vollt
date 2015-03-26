@@ -421,6 +421,11 @@ public class TestConfigurableTAPFactory {
 		public int getNbMaxAsyncJobs(){
 			return -1;
 		}
+
+		@Override
+		public int[] getFetchSize(){
+			return null;
+		}
 	}
 
 }

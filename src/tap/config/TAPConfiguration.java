@@ -54,6 +54,10 @@ public final class TAPConfiguration {
 	public final static String KEY_SQL_TRANSLATOR = "sql_translator";
 	public final static String VALUE_POSTGRESQL = "postgres";
 	public final static String VALUE_PGSPHERE = "pgsphere";
+	public final static String KEY_SYNC_FETCH_SIZE = "sync_fetch_size";
+	public final static int DEFAULT_SYNC_FETCH_SIZE = 10000;
+	public final static String KEY_ASYNC_FETCH_SIZE = "async_fetch_size";
+	public final static int DEFAULT_ASYNC_FETCH_SIZE = 100000;
 	public final static String KEY_DATASOURCE_JNDI_NAME = "datasource_jndi_name";
 	public final static String KEY_JDBC_DRIVER = "jdbc_driver";
 	public final static HashMap<String,String> VALUE_JDBC_DRIVERS = new HashMap<String,String>(4);

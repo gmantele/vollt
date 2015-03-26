@@ -19,12 +19,15 @@ package tap.config;
  * Copyright 2015 - Astronomisches Rechen Institut (ARI)
  */
 
+import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE;
+import static tap.config.TAPConfiguration.KEY_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_COORD_SYS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
@@ -47,6 +50,7 @@ import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
+import static tap.config.TAPConfiguration.KEY_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
@@ -148,6 +152,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private LimitUnit[] uploadLimitTypes = new LimitUnit[2];
 	private int maxUploadSize = DEFAULT_UPLOAD_MAX_FILE_SIZE;
 
+	private int[] fetchSize = new int[]{DEFAULT_ASYNC_FETCH_SIZE,DEFAULT_SYNC_FETCH_SIZE};
+
 	private UserIdentifier userIdentifier = null;
 
 	private ArrayList<String> lstCoordSys = null;
@@ -191,6 +197,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		addOutputFormats(tapConfig);
 		// set output limits:
 		initOutputLimits(tapConfig);
+		// set fetch size:
+		initFetchSize(tapConfig);
 
 		// 7. CONFIGURE THE UPLOAD:
 		// is upload enabled ?
@@ -466,6 +474,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			outputFormats.add(new VOTableFormat(this, DataFormat.TABLEDATA));
 			outputFormats.add(new VOTableFormat(this, DataFormat.FITS));
 			outputFormats.add(new FITSFormat(this));
+			outputFormats.add(new JSONFormat(this));
 			outputFormats.add(new SVFormat(this, ",", true));
 			outputFormats.add(new SVFormat(this, "\t", true));
 			outputFormats.add(new TextFormat(this));
@@ -658,6 +667,38 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 		if (!setMaxOutputLimit((Integer)limit[0]))
 			throw new TAPException("The default output limit (here: " + outputLimits[0] + ") MUST be less or equal to the maximum output limit (here: " + limit[0] + ")!");
+	}
+
+	private void initFetchSize(final Properties tapConfig) throws TAPException{
+		fetchSize = new int[2];
+
+		// Set the fetch size for asynchronous queries:
+		String propVal = getProperty(tapConfig, KEY_ASYNC_FETCH_SIZE);
+		if (propVal == null)
+			fetchSize[0] = DEFAULT_ASYNC_FETCH_SIZE;
+		else{
+			try{
+				fetchSize[0] = Integer.parseInt(propVal);
+				if (fetchSize[0] < 0)
+					fetchSize[0] = 0;
+			}catch(NumberFormatException nfe){
+				throw new TAPException("Integer expected for the property " + KEY_ASYNC_FETCH_SIZE + ": \"" + propVal + "\"!");
+			}
+		}
+
+		// Set the fetch size for synchronous queries:
+		propVal = getProperty(tapConfig, KEY_SYNC_FETCH_SIZE);
+		if (propVal == null)
+			fetchSize[1] = DEFAULT_SYNC_FETCH_SIZE;
+		else{
+			try{
+				fetchSize[1] = Integer.parseInt(propVal);
+				if (fetchSize[1] < 0)
+					fetchSize[1] = 0;
+			}catch(NumberFormatException nfe){
+				throw new TAPException("Integer expected for the property " + KEY_SYNC_FETCH_SIZE + ": \"" + propVal + "\"!");
+			}
+		}
 	}
 
 	private void initUploadLimits(final Properties tapConfig) throws TAPException{
@@ -1180,6 +1221,11 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	@Override
 	public Collection<FunctionDef> getUDFs(){
 		return udfs;
+	}
+
+	@Override
+	public int[] getFetchSize(){
+		return fetchSize;
 	}
 
 }

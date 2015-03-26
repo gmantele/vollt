@@ -6,7 +6,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
+import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
+import static tap.config.TAPConfiguration.KEY_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_COORD_SYS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
@@ -18,6 +21,7 @@ import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
+import static tap.config.TAPConfiguration.KEY_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
@@ -86,16 +90,19 @@ public class TestConfigurableServiceConnection {
 			badVotFormat5Prop, badVotFormat6Prop, unknownFormatProp,
 			maxAsyncProp, negativeMaxAsyncProp, notIntMaxAsyncProp,
 			defaultOutputLimitProp, maxOutputLimitProp,
-			bothOutputLimitGoodProp, bothOutputLimitBadProp, userIdentProp,
-			notClassPathUserIdentProp, coordSysProp, noneCoordSysProp,
-			anyCoordSysProp, noneInsideCoordSysProp, unknownCoordSysProp,
-			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
-			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
-			udfsWithClassNameProp, udfsListWithNONEorANYProp,
-			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
-			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
-			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp,
-			customFactoryProp, badCustomFactoryProp;
+			bothOutputLimitGoodProp, bothOutputLimitBadProp, syncFetchSizeProp,
+			notIntSyncFetchSizeProp, negativeSyncFetchSizeProp,
+			notIntAsyncFetchSizeProp, negativeAsyncFetchSizeProp,
+			asyncFetchSizeProp, userIdentProp, notClassPathUserIdentProp,
+			coordSysProp, noneCoordSysProp, anyCoordSysProp,
+			noneInsideCoordSysProp, unknownCoordSysProp, geometriesProp,
+			noneGeomProp, anyGeomProp, noneInsideGeomProp, unknownGeomProp,
+			anyUdfsProp, noneUdfsProp, udfsProp, udfsWithClassNameProp,
+			udfsListWithNONEorANYProp, udfsWithWrongParamLengthProp,
+			udfsWithMissingBracketsProp, udfsWithMissingDefProp1,
+			udfsWithMissingDefProp2, emptyUdfItemProp1, emptyUdfItemProp2,
+			udfWithMissingEndBracketProp, customFactoryProp,
+			badCustomFactoryProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
@@ -197,6 +204,24 @@ public class TestConfigurableServiceConnection {
 		bothOutputLimitBadProp = (Properties)validProp.clone();
 		bothOutputLimitBadProp.setProperty(KEY_DEFAULT_OUTPUT_LIMIT, "1000");
 		bothOutputLimitBadProp.setProperty(KEY_MAX_OUTPUT_LIMIT, "100");
+
+		syncFetchSizeProp = (Properties)validProp.clone();
+		syncFetchSizeProp.setProperty(KEY_SYNC_FETCH_SIZE, "50");
+
+		notIntSyncFetchSizeProp = (Properties)validProp.clone();
+		notIntSyncFetchSizeProp.setProperty(KEY_SYNC_FETCH_SIZE, "foo");
+
+		negativeSyncFetchSizeProp = (Properties)validProp.clone();
+		negativeSyncFetchSizeProp.setProperty(KEY_SYNC_FETCH_SIZE, "-3");
+
+		asyncFetchSizeProp = (Properties)validProp.clone();
+		asyncFetchSizeProp.setProperty(KEY_ASYNC_FETCH_SIZE, "50");
+
+		notIntAsyncFetchSizeProp = (Properties)validProp.clone();
+		notIntAsyncFetchSizeProp.setProperty(KEY_ASYNC_FETCH_SIZE, "foo");
+
+		negativeAsyncFetchSizeProp = (Properties)validProp.clone();
+		negativeAsyncFetchSizeProp.setProperty(KEY_ASYNC_FETCH_SIZE, "-3");
 
 		userIdentProp = (Properties)validProp.clone();
 		userIdentProp.setProperty(KEY_USER_IDENTIFIER, "{tap.config.TestConfigurableServiceConnection$UserIdentifierTest}");
@@ -320,6 +345,10 @@ public class TestConfigurableServiceConnection {
 			assertNull(connection.getUserIdentifier());
 			assertNull(connection.getGeometries());
 			assertEquals(0, connection.getUDFs().size());
+			assertNotNull(connection.getFetchSize());
+			assertEquals(2, connection.getFetchSize().length);
+			assertEquals(DEFAULT_ASYNC_FETCH_SIZE, connection.getFetchSize()[0]);
+			assertEquals(DEFAULT_SYNC_FETCH_SIZE, connection.getFetchSize()[1]);
 
 			// finally, save metadata in an XML file for the other tests:
 			writer = new PrintWriter(new File(XML_FILE));
@@ -352,6 +381,10 @@ public class TestConfigurableServiceConnection {
 			assertNull(connection.getUserIdentifier());
 			assertNull(connection.getGeometries());
 			assertEquals(0, connection.getUDFs().size());
+			assertNotNull(connection.getFetchSize());
+			assertEquals(2, connection.getFetchSize().length);
+			assertEquals(DEFAULT_ASYNC_FETCH_SIZE, connection.getFetchSize()[0]);
+			assertEquals(DEFAULT_SYNC_FETCH_SIZE, connection.getFetchSize()[1]);
 		}catch(Exception e){
 			fail("This MUST have succeeded because the property file is valid! \nCaught exception: " + getPertinentMessage(e));
 		}
@@ -707,6 +740,64 @@ public class TestConfigurableServiceConnection {
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("The default output limit (here: 1000) MUST be less or equal to the maximum output limit (here: 100)!", e.getMessage());
+		}
+
+		// Test with a not integer sync. fetch size:
+		try{
+			new ConfigurableServiceConnection(notIntSyncFetchSizeProp);
+			fail("This MUST have failed because the set sync. fetch size is not an integer!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Integer expected for the property " + KEY_SYNC_FETCH_SIZE + ": \"foo\"!", e.getMessage());
+		}
+
+		// Test with a negative sync. fetch size:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(negativeSyncFetchSizeProp);
+			assertNotNull(connection.getFetchSize());
+			assertTrue(connection.getFetchSize().length >= 2);
+			assertEquals(connection.getFetchSize()[1], 0);
+		}catch(Exception e){
+			fail("This MUST have succeeded because a negative fetch size must be set by default to 0 (meaning default JDBC driver value)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with any valid sync. fetch size:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(syncFetchSizeProp);
+			assertNotNull(connection.getFetchSize());
+			assertTrue(connection.getFetchSize().length >= 2);
+			assertEquals(connection.getFetchSize()[1], 50);
+		}catch(Exception e){
+			fail("This MUST have succeeded because a valid fetch size has been provided! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with a not integer async. fetch size:
+		try{
+			new ConfigurableServiceConnection(notIntAsyncFetchSizeProp);
+			fail("This MUST have failed because the set async. fetch size is not an integer!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Integer expected for the property " + KEY_ASYNC_FETCH_SIZE + ": \"foo\"!", e.getMessage());
+		}
+
+		// Test with a negative async. fetch size:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(negativeAsyncFetchSizeProp);
+			assertNotNull(connection.getFetchSize());
+			assertTrue(connection.getFetchSize().length >= 1);
+			assertEquals(connection.getFetchSize()[0], 0);
+		}catch(Exception e){
+			fail("This MUST have succeeded because a negative fetch size must be set by default to 0 (meaning default JDBC driver value)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with any valid async. fetch size:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(asyncFetchSizeProp);
+			assertNotNull(connection.getFetchSize());
+			assertTrue(connection.getFetchSize().length >= 1);
+			assertEquals(connection.getFetchSize()[0], 50);
+		}catch(Exception e){
+			fail("This MUST have succeeded because a valid fetch size has been provided! \nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// Valid user identifier:

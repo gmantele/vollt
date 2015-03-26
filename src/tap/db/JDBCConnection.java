@@ -120,8 +120,32 @@ import adql.translator.TranslationException;
  * 	and managed.
  * </p>
  * 
+ * <h3>Fetch size</h3>
+ * 
+ * <p>
+ * 	The possibility to specify a "fetch size" to the JDBC driver (and more exactly to a {@link Statement}) may reveal
+ * 	very helpful when dealing with large datasets. Thus, it is possible to fetch rows by block of a size represented
+ * 	by this "fetch size". This is also possible with this {@link DBConnection} thanks to the function {@link #setFetchSize(int)}.
+ * </p>
+ * 
+ * <p>
+ * 	However, some JDBC driver or DBMS may not support this feature. In such case, it is then automatically disabled by
+ * 	{@link JDBCConnection} so that any subsequent queries do not attempt to use it again. The {@link #supportsFetchSize}
+ * 	is however reset to <code>true</code> when {@link #setFetchSize(int)} is called.
+ * </p>
+ * 
+ * <p><i>Note 1:
+ * 	The "fetch size" feature is used only for SELECT queries executed by {@link #executeQuery(ADQLQuery)}. In all other functions,
+ * 	results of SELECT queries are fetched with the default parameter of the JDBC driver and its {@link Statement} implementation.
+ * </i></p>
+ * 
+ * <p><i>Note 2:
+ * 	By default, this feature is disabled. So the default value of the JDBC driver is used.
+ * 	To enable it, a simple call to {@link #setFetchSize(int)} is enough, whatever is the given value.
+ * </i></p>
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (03/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -192,6 +216,27 @@ public class JDBCConnection implements DBConnection {
 	protected boolean mixedCaseQuoted;
 	/** Indicate whether the quoted identifiers are stored in upper case in the DBMS. */
 	protected boolean upperCaseQuoted;
+
+	/* FETCH SIZE */
+
+	/** Special fetch size meaning that the JDBC driver is free to set its own guess for this value. */
+	public final static int IGNORE_FETCH_SIZE = 0;
+	/** Default fetch size.
+	 * <i>Note 1: this value may be however ignored if the JDBC driver does not support this feature.</i>
+	 * <i>Note 2: by default set to {@link #IGNORE_FETCH_SIZE}.</i> */
+	public final static int DEFAULT_FETCH_SIZE = IGNORE_FETCH_SIZE;
+
+	/** <p>Indicate whether the last fetch size operation works.</p>
+	 * <p>By default, this attribute is set to <code>false</code>, meaning that the "fetch size" feature is
+	 * disabled. To enable it, a simple call to {@link #setFetchSize(int)} is enough, whatever is the given value.</p>
+	 * <p>If just once this operation fails, the fetch size feature will be always considered as unsupported in this {@link JDBCConnection}
+	 * until the next call of {@link #setFetchSize(int)}.</p> */
+	protected boolean supportsFetchSize = false;
+
+	/** <p>Fetch size to set in the {@link Statement} in charge of executing a SELECT query.</p>
+	 * <p><i>Note 1: this value must always be positive. If negative or null, it will be ignored and the {@link Statement} will keep its default behavior.</i></p>
+	 * <p><i>Note 2: if this feature is enabled (i.e. has a value &gt; 0), the AutoCommit will be disabled.</i></p> */
+	protected int fetchSize = DEFAULT_FETCH_SIZE;
 
 	/**
 	 * <p>Creates a JDBC connection to the specified database and with the specified JDBC driver.
@@ -366,13 +411,33 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.INFO, this, "TRANSLATE", "Translating ADQL: " + adqlQuery.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 			sql = translator.translate(adqlQuery);
 
-			// 2. Execute the SQL query:
-			Statement stmt = connection.createStatement();
+			// 2. Create the statement and if needed, configure it for the given fetch size:
+			if (supportsFetchSize && fetchSize > 0){
+				try{
+					connection.setAutoCommit(false);
+				}catch(SQLException se){
+					supportsFetchSize = false;
+					if (logger != null)
+						logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
+				}
+			}
+			Statement stmt = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			if (supportsFetchSize){
+				try{
+					stmt.setFetchSize(fetchSize);
+				}catch(SQLException se){
+					supportsFetchSize = false;
+					if (logger != null)
+						logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
+				}
+			}
+
+			// 3. Execute the SQL query:
+			result = stmt.executeQuery(sql);
 			if (logger != null)
 				logger.logDB(LogLevel.INFO, this, "EXECUTE", "Executing translated query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
-			result = stmt.executeQuery(sql);
 
-			// 3. Return the result through a TableIterator object:
+			// 4. Return the result through a TableIterator object:
 			if (logger != null)
 				logger.logDB(LogLevel.INFO, this, "RESULT", "Returning result", null);
 			return createTableIterator(result, adqlQuery.getResultingColumns());
@@ -2699,5 +2764,11 @@ public class JDBCConnection implements DBConnection {
 			else
 				return dbName.equalsIgnoreCase(metaName);
 		}
+	}
+
+	@Override
+	public void setFetchSize(final int size){
+		supportsFetchSize = true;
+		fetchSize = (size > 0) ? size : IGNORE_FETCH_SIZE;
 	}
 }

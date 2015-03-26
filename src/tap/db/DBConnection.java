@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -43,7 +43,7 @@ import adql.translator.ADQLTranslator;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (03/2015)
  */
 public interface DBConnection {
 
@@ -234,5 +234,40 @@ public interface DBConnection {
 	 * @since 2.0
 	 */
 	public TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException;
+
+	/**
+	 * <p>Set the number of rows to fetch before searching/getting the following.
+	 * Thus, rows are fetched by block whose the size is set by this function.</p>
+	 * 
+	 * <p>
+	 * 	<i>This feature may not be supported.</i> In such case or if an exception occurs while setting the fetch size,
+	 * 	this function must not send any exception and the connection stays with its default fetch size. A message may be however
+	 * 	logged.
+	 * </p>
+	 * 
+	 * <p><i>Note:
+	 * 	The "fetch size" should be taken into account only for SELECT queries executed by {@link #executeQuery(ADQLQuery)}.
+	 * </i></p>
+	 * 
+	 * <p>
+	 * 	This feature is generally implemented by JDBC drivers using the V3 protocol. Thus, here is how the PostgreSQL JDBC documentation
+	 * 	(https://jdbc.postgresql.org/documentation/head/query.html#query-with-cursor) describes this feature:
+	 * </p>
+	 * <blockquote>
+	 *	 <p>
+	 * 		By default the driver collects all the results for the query at once. This can be inconvenient for large data sets
+	 * 		so the JDBC driver provides a means of basing a ResultSet on a database cursor and only fetching a small number of rows.
+	 * 	</p>
+	 * 	<p>
+	 * 		A small number of rows are cached on the client side of the connection and when exhausted the next block of rows
+	 * 		is retrieved by repositioning the cursor.
+	 * 	</p>
+	 * </blockquote>
+	 * 
+	 * @param size	Blocks size (in number of rows) to fetch.
+	 * 
+	 * @since 2.0
+	 */
+	public void setFetchSize(final int size);
 
 }

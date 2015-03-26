@@ -16,13 +16,14 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Collection;
 import java.util.Iterator;
 
+import tap.db.DBConnection;
 import tap.formatter.OutputFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
@@ -42,7 +43,7 @@ import adql.db.FunctionDef;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (01/2015)
+ * @version 2.0 (03/2015)
  */
 public interface ServiceConnection {
 
@@ -659,5 +660,34 @@ public interface ServiceConnection {
 	 * @return	The corresponding {@link OutputFormat} or NULL if not found.
 	 */
 	public OutputFormat getOutputFormat(final String mimeOrAlias);
+
+	/**
+	 * <i>[OPTIONAL]</i>
+	 * <p>Get the size of result blocks to fetch from the database.</p>
+	 * 
+	 * <p>
+	 * 	Rather than fetching a query result in a whole, it may be possible to specify to the database
+	 * 	that results may be retrieved by blocks whose the size can be specified by this function.
+	 * 	If supported by the DBMS and the JDBC driver, this feature may help sparing memory and avoid
+	 * 	too much waiting time from the TAP /sync users (and thus, avoiding some HTTP client timeouts).
+	 * </p>
+	 * 
+	 * <p><i>Note:
+	 * 	Generally, this feature is well supported by DBMS. But for that, the used JDBC driver must use
+	 * 	the V3 protocol. If anyway, this feature is supported neither by the DBMS, the JDBC driver nor your
+	 * 	{@link DBConnection}, no error will be thrown if a value is returned by this function: it will be silently
+	 * 	ignored by the library.
+	 * </i></p>
+	 * 
+	 * @return	<i>null</i> or an array of 1 or 2 integers.
+	 * 			If <i>null</i> (or empty array), no attempt to set fetch size will be done and so, ONLY the default
+	 *        	value of the {@link DBConnection} will be used.
+	 *        	[0]=fetchSize for async queries, [1]=fetchSize for sync queries.
+	 *        	If [1] is omitted, it will be considered as equals to [0].
+	 *        	If a fetchSize is negative or null, the default value of your JDBC driver will be used.
+	 * 
+	 * @since 2.0
+	 */
+	public int[] getFetchSize();
 
 }
