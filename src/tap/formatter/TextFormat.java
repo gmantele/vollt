@@ -16,7 +16,7 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -36,9 +36,14 @@ import cds.util.AsciiTable;
  * (columns' width are adjusted so that all columns are well aligned and of the same width).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (03/2015)
  */
 public class TextFormat implements OutputFormat {
+
+	/** Internal column separator.
+	 * Note: the output separator is however always a |.
+	 * @since 2.0 */
+	protected static final char COL_SEP = '\u25c6';
 
 	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
 	private boolean logFormatReport;
@@ -97,7 +102,7 @@ public class TextFormat implements OutputFormat {
 	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
 		try{
 			// Prepare the formatting of the whole output:
-			AsciiTable asciiTable = new AsciiTable('|');
+			AsciiTable asciiTable = new AsciiTable(COL_SEP);
 
 			final long startTime = System.currentTimeMillis();
 
@@ -110,7 +115,7 @@ public class TextFormat implements OutputFormat {
 			int nbRows = writeData(result, asciiTable, execReport, thread);
 
 			// Finally write the formatted ASCII table (header + data) in the output stream:
-			String[] lines = asciiTable.displayAligned(new int[]{AsciiTable.LEFT});
+			String[] lines = asciiTable.displayAligned(new int[]{AsciiTable.LEFT}, '|');
 			for(String l : lines){
 				output.write(l.getBytes());
 				output.write('\n');
@@ -155,7 +160,7 @@ public class TextFormat implements OutputFormat {
 
 			// Write all columns' name:
 			for(int i = 0; i < nbColumns - 1; i++)
-				line.append(selectedColumns[i].getADQLName()).append('|');
+				line.append(selectedColumns[i].getADQLName()).append(COL_SEP);
 			line.append(selectedColumns[nbColumns - 1].getADQLName());
 		}
 
@@ -201,7 +206,7 @@ public class TextFormat implements OutputFormat {
 
 				// Write the column separator (if needed):
 				if (indCol != nbColumns)
-					line.append('|');
+					line.append(COL_SEP);
 			}
 
 			// Append the line/row in the ASCII table:
@@ -221,8 +226,11 @@ public class TextFormat implements OutputFormat {
 	 * @param line				The buffer in which the field value must be written.
 	 */
 	protected void writeFieldValue(final Object value, final DBColumn tapCol, final StringBuffer line){
-		Object obj = value;
-		if (obj != null)
-			line.append('"').append(obj.toString()).append('"');
+		if (value != null){
+			if (value instanceof String)
+				line.append('"').append(value.toString()).append('"');
+			else
+				line.append(value.toString());
+		}
 	}
 }
