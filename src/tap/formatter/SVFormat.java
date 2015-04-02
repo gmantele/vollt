@@ -16,31 +16,28 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.data.TableIterator;
-import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 
 /**
  * Format any given query (table) result into CSV or TSV (or with custom separator).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (01/2015)
+ * @version 2.0 (04/2015)
  */
 public class SVFormat implements OutputFormat {
-
-	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
-	private boolean logFormatReport;
 
 	/** Column separator for CSV format. */
 	public static final char COMMA_SEPARATOR = ',';
@@ -88,7 +85,7 @@ public class SVFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings) throws NullPointerException{
-		this(service, colSeparator, delimitStrings, null, null, true);
+		this(service, colSeparator, delimitStrings, null, null);
 	}
 
 	/**
@@ -105,25 +102,7 @@ public class SVFormat implements OutputFormat {
 	 * @since 2.0
 	 */
 	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings, final String mime, final String shortMime) throws NullPointerException{
-		this(service, colSeparator, delimitStrings, mime, shortMime, true);
-	}
-
-	/**
-	 * Build a SVFormat.
-	 * 
-	 * @param service			Description of the TAP service.
-	 * @param colSeparator		Column separator to use.
-	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
-	 * @param mime				The MIME type to associate with this format. <i>note: this MIME type is then used by a user to specify the result format he wants.</i>
-	 * @param shortMime			The alias of the MIME type to associate with this format. <i>note: this short MIME type is then used by a user to specify the result format he wants.</i>
-	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
-	 * 
-	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 * 
-	 * @since 2.0
-	 */
-	public SVFormat(final ServiceConnection service, char colSeparator, boolean delimitStrings, final String mime, final String shortMime, final boolean logFormatReport) throws NullPointerException{
-		this(service, "" + colSeparator, delimitStrings, mime, shortMime, logFormatReport);
+		this(service, "" + colSeparator, delimitStrings, mime, shortMime);
 	}
 
 	/**
@@ -148,7 +127,7 @@ public class SVFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings) throws NullPointerException{
-		this(service, colSeparator, delimitStrings, null, null, true);
+		this(service, colSeparator, delimitStrings, null, null);
 	}
 
 	/**
@@ -165,24 +144,6 @@ public class SVFormat implements OutputFormat {
 	 * @since 2.0
 	 */
 	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings, final String mime, final String shortMime) throws NullPointerException{
-		this(service, colSeparator, delimitStrings, mime, shortMime, true);
-	}
-
-	/**
-	 * Build a SVFormat.
-	 * 
-	 * @param service			Description of the TAP service.
-	 * @param colSeparator		Column separator to use.
-	 * @param delimitStrings	<i>true</i> if String values must be delimited by double quotes, <i>false</i> otherwise.
-	 * @param mime				The MIME type to associate with this format. <i>note: this MIME type is then used by a user to specify the result format he wants.</i>
-	 * @param shortMime			The alias of the MIME type to associate with this format. <i>note: this short MIME type is then used by a user to specify the result format he wants.</i>
-	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
-	 * 
-	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 * 
-	 * @since 2.0
-	 */
-	public SVFormat(final ServiceConnection service, String colSeparator, boolean delimitStrings, final String mime, final String shortMime, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL!");
 
@@ -191,7 +152,6 @@ public class SVFormat implements OutputFormat {
 		mimeType = (mime == null || mime.trim().length() <= 0) ? guessMimeType(separator) : mime;
 		shortMimeType = (shortMime == null || shortMime.trim().length() <= 0) ? guessShortMimeType(separator) : shortMime;
 		this.service = service;
-		this.logFormatReport = logFormatReport;
 	}
 
 	/**
@@ -279,28 +239,20 @@ public class SVFormat implements OutputFormat {
 	}
 
 	@Override
-	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
-		try{
-			final long startTime = System.currentTimeMillis();
+	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, IOException, InterruptedException{
+		// Prepare the output stream:
+		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
 
-			// Prepare the output stream:
-			final PrintWriter writer = new PrintWriter(output);
+		// Write header:
+		DBColumn[] columns = writeHeader(result, writer, execReport, thread);
 
-			// Write header:
-			DBColumn[] columns = writeHeader(result, writer, execReport, thread);
+		if (thread.isInterrupted())
+			throw new InterruptedException();
 
-			// Write data:
-			int nbRows = writeData(result, columns, writer, execReport, thread);
+		// Write data:
+		writeData(result, columns, writer, execReport, thread);
 
-			writer.flush();
-
-			// Report stats about the result writing:
-			if (logFormatReport)
-				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in SV[" + delimitStr + "] ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - startTime) + "ms!", null);
-
-		}catch(Exception ex){
-			service.getLogger().logTAP(LogLevel.ERROR, execReport, "FORMAT", "Error while formatting in (T/C)SV (delimiter: " + delimitStr + ")!", ex);
-		}
+		writer.flush();
 	}
 
 	/**
@@ -317,7 +269,7 @@ public class SVFormat implements OutputFormat {
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If any other error occurs.
 	 */
-	protected DBColumn[] writeHeader(TableIterator result, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
+	protected DBColumn[] writeHeader(TableIterator result, BufferedWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
 		// Get the columns meta:
 		DBColumn[] selectedColumns = execReport.resultingColumns;
 
@@ -326,13 +278,13 @@ public class SVFormat implements OutputFormat {
 		if (nbColumns > 0){
 			// Write all columns' name:
 			for(int i = 0; i < nbColumns - 1; i++){
-				writer.print(selectedColumns[i].getADQLName());
-				writer.print(separator);
+				writer.write(selectedColumns[i].getADQLName());
+				writer.write(separator);
 			}
-			writer.print(selectedColumns[nbColumns - 1].getADQLName());
+			writer.write(selectedColumns[nbColumns - 1].getADQLName());
 
 			// Go to a new line (in order to prepare the data writing):
-			writer.println();
+			writer.newLine();
 			writer.flush();
 		}
 
@@ -349,18 +301,20 @@ public class SVFormat implements OutputFormat {
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
 	 * 
-	 * @return	The number of written result rows. (<i>note: if this number is greater than the value of MAXREC: OVERFLOW</i>)
-	 * 
 	 * @throws IOException				If there is an error while writing something in the output stream.
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If any other error occurs.
 	 */
-	protected int writeData(TableIterator result, DBColumn[] selectedColumns, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
-		int nbRows = 0;
+	protected void writeData(TableIterator result, DBColumn[] selectedColumns, BufferedWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
+		execReport.nbRows = 0;
 
 		while(result.nextRow()){
+			// Stop right now the formatting if the job has been aborted/canceled/interrupted:
+			if (thread.isInterrupted())
+				throw new InterruptedException();
+
 			// Deal with OVERFLOW, if needed:
-			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec()) // that's to say: OVERFLOW !
+			if (execReport.parameters.getMaxRec() > 0 && execReport.nbRows >= execReport.parameters.getMaxRec()) // that's to say: OVERFLOW !
 				break;
 
 			int indCol = 0;
@@ -370,20 +324,17 @@ public class SVFormat implements OutputFormat {
 
 				// Append the column separator:
 				if (result.hasNextCol())
-					writer.print(separator);
-
-				if (thread.isInterrupted())
-					throw new InterruptedException();
+					writer.write(separator);
 			}
-			writer.println();
-			nbRows++;
-
-			if (thread.isInterrupted())
-				throw new InterruptedException();
+			writer.newLine();
+			
+			execReport.nbRows++;
+			
+			// flush the writer every 30 lines:
+			if (execReport.nbRows % 30 == 0)
+				writer.flush();
 		}
 		writer.flush();
-
-		return nbRows;
 	}
 
 	/**
@@ -401,14 +352,14 @@ public class SVFormat implements OutputFormat {
 	 * @throws IOException		If there is an error while writing the given field value in the given stream.
 	 * @throws TAPException		If there is any other error (by default: never happen).
 	 */
-	protected void writeFieldValue(final Object value, final DBColumn column, final PrintWriter writer) throws IOException, TAPException{
+	protected void writeFieldValue(final Object value, final DBColumn column, final BufferedWriter writer) throws IOException, TAPException{
 		if (value != null){
 			if ((delimitStr && value instanceof String) || value.toString().contains(separator)){
-				writer.print('"');
-				writer.print(value.toString().replaceAll("\"", "'"));
-				writer.print('"');
+				writer.write('"');
+				writer.write(value.toString().replaceAll("\"", "'"));
+				writer.write('"');
 			}else
-				writer.print(value.toString());
+				writer.write(value.toString());
 		}
 	}
 }

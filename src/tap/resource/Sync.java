@@ -33,7 +33,6 @@ import tap.TAPJob;
 import tap.TAPSyncJob;
 import tap.parameters.TAPParameters;
 import uws.UWSException;
-import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Synchronous resource of a TAP service.</p>
@@ -107,16 +106,10 @@ public class Sync implements TAPResource {
 			throw new TAPException("Can not execute a query: this TAP service is not available! " + service.getAvailability(), UWSException.SERVICE_UNAVAILABLE);
 
 		// Execute synchronously the given job:
-		try{
-			TAPSyncJob syncJob = new TAPSyncJob(service, params);
-			syncJob.start(response);
-			return true;
-		}catch(TAPException te){
-			throw te;
-		}catch(Exception t){
-			service.getLogger().logTAP(LogLevel.FATAL, params, "SYNC_INIT", "Unexpected error while executing the given ADQL query!", t);
-			throw new TAPException("Unexpected error while executing the given ADQL query!");
-		}
+		TAPSyncJob syncJob = new TAPSyncJob(service, params);
+		syncJob.start(response);
+
+		return true;
 
 	}
 

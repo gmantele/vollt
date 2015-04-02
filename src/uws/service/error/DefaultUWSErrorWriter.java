@@ -16,12 +16,14 @@ package uws.service.error;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
@@ -67,7 +69,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (04/2015)
  */
 public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 
@@ -90,31 +92,40 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	}
 
 	@Override
-	public void writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, String reqID, JobOwner user, String action) throws IOException{
+	public boolean writeError(Throwable t, HttpServletResponse response, HttpServletRequest request, String reqID, JobOwner user, String action){
 		if (t == null || response == null)
-			return;
+			return true;
 
+		boolean written = false;
 		// If expected error, just write it:
 		if (t instanceof UWSException){
 			UWSException ue = (UWSException)t;
-			writeError(ue.getMessage(), ue.getUWSErrorType(), ue.getHttpErrorCode(), response, request, reqID, user, action);
+			written = writeError(ue.getMessage(), ue.getUWSErrorType(), ue.getHttpErrorCode(), response, request, reqID, user, action);
 		}
 		// Otherwise, log it and write a message to the user:
 		else{
 			// log the error as GRAVE/FATAL (because unexpected/unmanaged):
 			logger.logUWS(LogLevel.FATAL, null, null, "[REQUEST N°" + reqID + "] " + t.getMessage(), t);
 			// write a message to the user:
-			writeError("INTERNAL SERVER ERROR! Sorry, this error is unexpected and no explanation can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following 'Request ID').", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
+			written = writeError("INTERNAL SERVER ERROR! Sorry, this error is unexpected and no explanation can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following 'Request ID').", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
 		}
+		return written;
 	}
 
 	@Override
-	public void writeError(String message, ErrorType type, int httpErrorCode, HttpServletResponse response, HttpServletRequest request, String reqID, JobOwner user, String action) throws IOException{
+	public boolean writeError(String message, ErrorType type, int httpErrorCode, HttpServletResponse response, HttpServletRequest request, String reqID, JobOwner user, String action){
 		if (message == null || response == null)
-			return;
+			return true;
 
-		// Just format and write the error message:
-		formatError(message, type, httpErrorCode, reqID, action, user, response, (request != null) ? request.getHeader("Accept") : null);
+		try{
+			// Just format and write the error message:
+			formatError(message, type, httpErrorCode, reqID, action, user, response, (request != null) ? request.getHeader("Accept") : null);
+			return true;
+		}catch(IllegalStateException ise){
+			return false;
+		}catch(IOException ioe){
+			return false;
+		}
 	}
 
 	@Override
@@ -169,11 +180,6 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	 * @see #formatJSONError(Throwable, boolean, ErrorType, int, String, JobOwner, HttpServletResponse)
 	 */
 	protected void formatError(final String message, final ErrorType type, final int httpErrorCode, final String reqID, final String action, final JobOwner user, final HttpServletResponse response, final String acceptHeader) throws IOException{
-		// Reset the whole response to ensure the output stream is free:
-		if (response.isCommitted())
-			return;
-		response.reset();
-
 		String format = chooseFormat(acceptHeader);
 		if (format != null && (format.equalsIgnoreCase("application/json") || format.equalsIgnoreCase("text/json") || format.equalsIgnoreCase("json")))
 			formatJSONError(message, type, httpErrorCode, reqID, action, user, response);
@@ -196,14 +202,33 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	 * @throws IOException		If there is an error while writing the given exception.
 	 */
 	protected void formatHTMLError(final String message, final ErrorType type, final int httpErrorCode, final String reqID, final String action, final JobOwner user, final HttpServletResponse response) throws IOException{
-		// Erase anything written previously in the HTTP response:
-		response.reset();
+		try{
+			// Erase anything written previously in the HTTP response:
+			response.reset();
 
-		// Set the HTTP status code and the content type of the response:
-		response.setStatus(httpErrorCode);
-		response.setContentType(UWSSerializer.MIME_TYPE_HTML);
+			// Set the HTTP status:
+			response.setStatus(httpErrorCode);
 
-		PrintWriter out = response.getWriter();
+			// Set the MIME type of the answer (XML for a VOTable document):
+			response.setContentType(UWSSerializer.MIME_TYPE_HTML);
+
+		}catch(IllegalStateException ise){
+			/*   If it is not possible any more to reset the response header and body,
+			 * the error is anyway written in order to corrupt the HTTP response.
+			 *   Thus, it will be obvious that an error occurred and the result is
+			 * incomplete and/or wrong.*/
+		}
+
+		PrintWriter out;
+		try{
+			out = response.getWriter();
+		}catch(IllegalStateException ise){
+			/*   This exception may occur just because either the writer or
+			 * the output-stream can be used (because already got before).
+			 *   So, we just have to get the output-stream if getting the writer
+			 * throws an error.*/
+			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(response.getOutputStream())));
+		}
 
 		// Header:
 		out.println("<html>\n\t<head>");
@@ -238,7 +263,8 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 		out.println("\t\t</ul>");
 
 		out.println("\t</body>\n</html>");
-		out.close();
+
+		out.flush();
 	}
 
 	/**
@@ -256,14 +282,34 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	 * @throws IOException		If there is an error while writing the given exception.
 	 */
 	protected void formatJSONError(final String message, final ErrorType type, final int httpErrorCode, final String reqID, final String action, final JobOwner user, final HttpServletResponse response) throws IOException{
-		// Erase anything written previously in the HTTP response:
-		response.reset();
+		try{
+			// Erase anything written previously in the HTTP response:
+			response.reset();
 
-		// Set the HTTP status code and the content type of the response:
-		response.setStatus(httpErrorCode);
-		response.setContentType(UWSSerializer.MIME_TYPE_JSON);
+			// Set the HTTP status:
+			response.setStatus(httpErrorCode);
 
-		PrintWriter out = response.getWriter();
+			// Set the MIME type of the answer (JSON):
+			response.setContentType(UWSSerializer.MIME_TYPE_JSON);
+
+		}catch(IllegalStateException ise){
+			/*   If it is not possible any more to reset the response header and body,
+			 * the error is anyway written in order to corrupt the HTTP response.
+			 *   Thus, it will be obvious that an error occurred and the result is
+			 * incomplete and/or wrong.*/
+		}
+
+		PrintWriter out;
+		try{
+			out = response.getWriter();
+		}catch(IllegalStateException ise){
+			/*   This exception may occur just because either the writer or
+			 * the output-stream can be used (because already got before).
+			 *   So, we just have to get the output-stream if getting the writer
+			 * throws an error.*/
+			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(response.getOutputStream())));
+		}
+
 		try{
 			JSONWriter json = new JSONWriter(out);
 
@@ -277,12 +323,12 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 			json.key("message").value(message);
 
 			json.endObject();
+
+			out.flush();
+
 		}catch(JSONException je){
 			logger.logUWS(LogLevel.ERROR, null, "FORMAT_ERROR", "Impossible to format/write an error in JSON!", je);
 			throw new IOException("Error while formatting the error in JSON!", je);
-		}finally{
-			out.flush();
-			out.close();
 		}
 	}
 

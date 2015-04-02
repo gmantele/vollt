@@ -435,27 +435,27 @@ public class JDBCConnection implements DBConnection {
 			// 3. Execute the SQL query:
 			result = stmt.executeQuery(sql);
 			if (logger != null)
-				logger.logDB(LogLevel.INFO, this, "EXECUTE", "Executing translated query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
+				logger.logDB(LogLevel.INFO, this, "EXECUTE", "SQL query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
 
 			// 4. Return the result through a TableIterator object:
 			if (logger != null)
-				logger.logDB(LogLevel.INFO, this, "RESULT", "Returning result", null);
+				logger.logDB(LogLevel.INFO, this, "RESULT", "Returning result (" + (supportsFetchSize ? "fetch size = " + fetchSize : "all in once") + ").", null);
 			return createTableIterator(result, adqlQuery.getResultingColumns());
 
 		}catch(SQLException se){
 			close(result);
 			if (logger != null)
-				logger.logDB(LogLevel.ERROR, this, "EXECUTE", "Unexpected error while EXECUTING SQL query!", se);
+				logger.logDB(LogLevel.ERROR, this, "EXECUTE", "Unexpected error while EXECUTING SQL query!", null);
 			throw new DBException("Unexpected error while executing a SQL query: " + se.getMessage(), se);
 		}catch(TranslationException te){
 			close(result);
 			if (logger != null)
-				logger.logDB(LogLevel.ERROR, this, "TRANSLATE", "Unexpected error while TRANSLATING ADQL into SQL!", te);
+				logger.logDB(LogLevel.ERROR, this, "TRANSLATE", "Unexpected error while TRANSLATING ADQL into SQL!", null);
 			throw new DBException("Unexpected error while translating ADQL into SQL: " + te.getMessage(), te);
 		}catch(DataReadException dre){
 			close(result);
 			if (logger != null)
-				logger.logDB(LogLevel.ERROR, this, "RESULT", "Unexpected error while reading the query result!", dre);
+				logger.logDB(LogLevel.ERROR, this, "RESULT", "Unexpected error while reading the query result!", null);
 			throw new DBException("Impossible to read the query result, because: " + dre.getMessage(), dre);
 		}
 	}

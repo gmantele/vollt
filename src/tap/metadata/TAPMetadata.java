@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,6 +38,8 @@ import tap.resource.Capabilities;
 import tap.resource.TAPResource;
 import tap.resource.VOSIResource;
 import uk.ac.starlink.votable.VOSerializer;
+import uws.ClientAbortException;
+import uws.UWSToolBox;
 import adql.db.DBTable;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
@@ -62,7 +64,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (03/2015)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -483,7 +485,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 		writer.println("</vosi:tableset>");
 
-		writer.flush();
+		UWSToolBox.flush(writer);
 	}
 
 	/**
@@ -507,7 +509,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * @param s			The schema to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given schema must be written.
 	 * 
-	 * @throws IOException	If there is any error while writing the XML in the given writer.
+	 * @throws IOException	If the connection with the HTTP client has been either canceled or closed for another reason.
 	 * 
 	 * @see #writeTable(TAPTable, PrintWriter)
 	 */
@@ -520,10 +522,28 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writeAtt(prefix, "description", s.getDescription(), true, writer);
 		writeAtt(prefix, "utype", s.getUtype(), true, writer);
 
-		for(TAPTable t : s)
-			writeTable(t, writer);
+		int nbColumns = 0;
+		for(TAPTable t : s){
+
+			// write each table:
+			nbColumns += writeTable(t, writer);
+
+			// flush the PrintWriter buffer when at least 30 tables have been read:
+			/* Note: the buffer may have already been flushed before automatically,
+			 *       but this manual flush is also checking whether any error has occurred while writing the previous characters.
+			 *       If so, a ClientAbortException (extension of IOException) is thrown in order to interrupt the writing of the
+			 *       metadata and thus, in order to spare server resources (and particularly memory if the metadata set is large). */
+			if (nbColumns / 30 > 1){
+				UWSToolBox.flush(writer);
+				nbColumns = 0;
+			}
+
+		}
 
 		writer.println("\t</schema>");
+
+		if (nbColumns > 0)
+			UWSToolBox.flush(writer);
 	}
 
 	/**
@@ -541,16 +561,22 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * &lt;/table&gt;
 	 * </pre>
 	 * 
-	 * <p><i>Note:
+	 * <p><i>Note 1:
 	 * 	When NULL an attribute or a field is not written. Here this rule concerns: description and utype.
+	 * </i></p>
+	 * 
+	 * <p><i>Note 2:
+	 * 	The PrintWriter buffer is flushed all the 10 columns. At that moment the writer is checked for errors.
+	 * 	If the error flag is set, a {@link ClientAbortException} is thrown in order to stop the metadata writing.
+	 * 	This is particularly useful if the metadata data is pretty large.
 	 * </i></p>
 	 * 
 	 * @param t			The table to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given table must be written.
 	 * 
-	 * @throws IOException	If there is any error while writing the XML in the given writer.
+	 * @return	The total number of written columns.
 	 */
-	private void writeTable(TAPTable t, PrintWriter writer) throws IOException{
+	private int writeTable(TAPTable t, PrintWriter writer){
 		final String prefix = "\t\t\t";
 
 		writer.print("\t\t<table");
@@ -568,15 +594,20 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writeAtt(prefix, "description", t.getDescription(), true, writer);
 		writeAtt(prefix, "utype", t.getUtype(), true, writer);
 
+		int nbCol = 0;
 		Iterator<TAPColumn> itCols = t.getColumns();
-		while(itCols.hasNext())
+		while(itCols.hasNext()){
 			writeColumn(itCols.next(), writer);
+			nbCol++;
+		}
 
 		Iterator<TAPForeignKey> itFK = t.getForeignKeys();
 		while(itFK.hasNext())
 			writeForeignKey(itFK.next(), writer);
 
 		writer.println("\t\t</table>");
+
+		return nbCol;
 	}
 
 	/**
@@ -602,10 +633,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 
 	 * @param c			The column to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given column must be written.
-	 * 
-	 * @throws IOException	If there is any error while writing the XML in the given writer.
 	 */
-	private void writeColumn(TAPColumn c, PrintWriter writer) throws IOException{
+	private void writeColumn(TAPColumn c, PrintWriter writer){
 		final String prefix = "\t\t\t\t";
 
 		writer.print("\t\t\t<column");
@@ -665,10 +694,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 
 	 * @param fk		The foreign key to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given foreign key must be written.
-	 * 
-	 * @throws IOException	If there is any error while writing the XML in the given writer.
 	 */
-	private void writeForeignKey(TAPForeignKey fk, PrintWriter writer) throws IOException{
+	private void writeForeignKey(TAPForeignKey fk, PrintWriter writer){
 		final String prefix = "\t\t\t\t";
 
 		writer.println("\t\t\t<foreignKey>");
@@ -699,10 +726,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * @param isOptionalAttr	<i>true</i> if the attribute to write is optional (in this case, if the value is NULL or an empty string, the whole attribute item won't be written), 
 	 *                      	<i>false</i> otherwise (here, if the value is NULL or an empty string, the XML item will be written with an empty string as value). 
 	 * @param writer			Output in which the XML node must be written.
-	 * 
-	 * @throws IOException	If there is a problem while writing the XML node inside the given writer.
 	 */
-	private void writeAtt(String prefix, String attributeName, String attributeValue, boolean isOptionalAttr, PrintWriter writer) throws IOException{
+	private void writeAtt(String prefix, String attributeName, String attributeValue, boolean isOptionalAttr, PrintWriter writer){
 		if (attributeValue != null && attributeValue.trim().length() > 0){
 			StringBuffer xml = new StringBuffer(prefix);
 			xml.append('<').append(attributeName).append('>').append(VOSerializer.formatText(attributeValue)).append("</").append(attributeName).append('>');

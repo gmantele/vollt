@@ -35,7 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import uws.AcceptHeader;
 import uws.UWSException;
 import uws.UWSToolBox;
-import uws.job.ErrorType;
 import uws.job.ExecutionPhase;
 import uws.job.JobList;
 import uws.job.JobThread;
@@ -186,7 +185,7 @@ import uws.service.request.RequestParser;
  * 
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (02/2015)
+ * @version 4.1 (04/2015)
  */
 public class UWSService implements UWS {
 
@@ -1145,21 +1144,55 @@ public class UWSService implements UWS {
 			response.flushBuffer();
 
 			// Log the successful execution of the action:
-			logger.logHttp(LogLevel.INFO, response, reqID, user, "HTTP " + UWSException.OK + " - Action \"" + ((action != null) ? action.getName() : null) + "\" successfully executed.", null);
+			logger.logHttp(LogLevel.INFO, response, reqID, user, "UWS action \"" + ((action != null) ? action.getName() : null) + "\" successfully executed.", null);
+
+		}catch(IOException ioe){
+			/*
+			 *   Any IOException thrown while writing the HTTP response is generally caused by a client abortion (intentional or timeout)
+			 * or by a connection closed with the client for another reason.
+			 *   Consequently, a such error should not be considered as a real error from the server or the library: the request is
+			 * canceled, and so the response is not expected. It is anyway not possible any more to send it (header and/or body) totally
+			 * or partially.
+			 *   Nothing can solve this error. So the "error" is just reported as a simple information and theoretically the action
+			 * executed when this error has been thrown is already stopped.
+			 */
+			logger.logHttp(LogLevel.INFO, response, reqID, user, "HTTP request aborted or connection with the client closed => the UWS action \"" + action.getName() + "\" has stopped and the body of the HTTP response can not have been partially or completely written!", null);
 
 		}catch(UWSException ex){
+			/*
+			 *   Any known/"expected" UWS exception is logged but also returned to the HTTP client in an error document.
+			 *   Since the error is known, it is supposed to have already been logged with a full stack trace. Thus, there
+			 * is no need to log again its stack trace...just its message is logged. 
+			 *   Besides, this error may also be just a redirection and not a true error. In such case, the error message
+			 * is not logged.
+			 */
 			// If redirection, flag the action as executed with success:
 			if (ex.getHttpErrorCode() == UWSException.SEE_OTHER)
 				actionApplied = true;
 			sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
-		}catch(Exception ex){
-			if (ex.getClass().getName().endsWith("ClientAbortException")){
-				// Log the client abortion:
-				logger.logHttp(LogLevel.INFO, request, reqID, "HTTP " + UWSException.ACCEPTED_BUT_NOT_COMPLETE + " - Action \"" + action.getName() + "\" aborted by the client! [Client abort => " + ex.getClass().getName() + "]", ex);
-				// Notify the client abortion in a TAP error:
-				errorWriter.writeError("The client aborts this HTTP request! It may happen due to a client timeout or to an interruption of the response waiting process.", ErrorType.TRANSIENT, UWSException.ACCEPTED_BUT_NOT_COMPLETE, response, request, reqID, user, action.getName());
-			}else
-				sendError(ex, request, reqID, user, ((action != null) ? action.getName() : null), response);
+
+		}catch(IllegalStateException ise){
+			/*
+			 *   Any IllegalStateException that reaches this point, is supposed coming from a HttpServletResponse operation which
+			 * has to reset the response buffer (e.g. resetBuffer(), sendRedirect(), sendError()).
+			 *   If this exception happens, the library tried to rewrite the HTTP response body with a message or a result,
+			 * while this body has already been partially sent to the client. It is then no longer possible to change its content.
+			 *   Consequently, the error is logged as FATAL and a message will be appended at the end of the already submitted response
+			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable. 
+			 */
+			// Write the error in the response and return the appropriate HTTP status code:
+			errorWriter.writeError(ise, response, request, reqID, user, ((action != null) ? action.getName() : null));
+			// Log the error:
+			getLogger().logHttp(LogLevel.FATAL, response, reqID, user, "HTTP response already partially committed => the UWS action \"" + action.getName() + "\" has stopped and the body of the HTTP response can not have been partially or completely written!", (ise.getCause() != null) ? ise.getCause() : ise);
+
+		}catch(Throwable t){
+			/*
+			 *   Any other error is considered as unexpected if it reaches this point. Consequently, it has not yet been logged.
+			 * So its stack trace will be fully logged, and an appropriate message will be returned to the HTTP client. The
+			 * returned document should contain not too technical information which would be useless for the user.
+			 */
+			sendError(t, request, reqID, user, ((action != null) ? action.getName() : null), response);
+
 		}finally{
 			executedAction = action;
 			// Free resources about uploaded files ; only unused files will be deleted:
@@ -1215,7 +1248,7 @@ public class UWSService implements UWS {
 			// Apply the redirection:
 			redirect(error.getMessage(), request, user, uwsAction, response);
 		}else
-			sendError((Exception)error, request, reqID, user, uwsAction, response);
+			sendError((Throwable)error, request, reqID, user, uwsAction, response);
 	}
 
 	/**
@@ -1231,21 +1264,21 @@ public class UWSService implements UWS {
 	 * @param request		The request which has caused the given error <i>(not used by default)</i>.
 	 * @param reqID			ID of the request.
 	 * @param user			The user which executes the given request.
-	 * @param uwsAction	The UWS action corresponding to the given request.
+	 * @param uwsAction		The UWS action corresponding to the given request.
 	 * @param response		The response in which the error must be published.
 	 * 
 	 * @throws IOException	If there is an error when calling {@link HttpServletResponse#sendError(int, String)}.
 	 * 
 	 * @see {@link ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, String, JobOwner, String)}
 	 */
-	public final void sendError(Exception error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException{
+	public final void sendError(Throwable error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException{
 		// Write the error in the response and return the appropriate HTTP status code:
 		errorWriter.writeError(error, response, request, reqID, user, uwsAction);
 		// Log the error:
-		if (uwsAction == null)
-			logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Unknown UWS action!", error);
+		if (error instanceof UWSException)
+			logger.logHttp(LogLevel.ERROR, response, reqID, user, "UWS action \"" + uwsAction + "\" FAILED with the error: \"" + error.getMessage() + "\"!", null);
 		else
-			logger.logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the UWS action \"" + uwsAction + "\"!", error);
+			logger.logHttp(LogLevel.FATAL, response, reqID, user, "UWS action \"" + uwsAction + "\" execution FAILED with a GRAVE error!", error);
 	}
 
 }

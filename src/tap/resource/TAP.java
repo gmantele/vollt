@@ -40,7 +40,6 @@ import tap.metadata.TAPMetadata;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
 import uws.UWSToolBox;
-import uws.job.ErrorType;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSService;
@@ -54,7 +53,7 @@ import adql.db.FunctionDef;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  */
 public class TAP implements VOSIResource {
 
@@ -796,7 +795,7 @@ public class TAP implements VOSIResource {
 			try{
 				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, getUWS().getRequestParser().parse(request));
 			}catch(UWSException ue){
-				getLogger().log(LogLevel.ERROR, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
+				getLogger().log(LogLevel.WARNING, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
 			}
 		}
 
@@ -822,6 +821,7 @@ public class TAP implements VOSIResource {
 			try{
 				user = UWSToolBox.getUser(request, service.getUserIdentifier());
 			}catch(UWSException ue){
+				getLogger().logTAP(LogLevel.ERROR, null, "IDENT_USER", "Can not identify the HTTP request user!", ue);
 				throw new TAPException(ue);
 			}
 
@@ -846,23 +846,56 @@ public class TAP implements VOSIResource {
 
 			// Log the successful execution of the action, only if the asked resource is not UWS (because UWS is already logging the received request):
 			if (!resourceName.equalsIgnoreCase(ASync.RESOURCE_NAME))
-				getLogger().logHttp(LogLevel.INFO, response, reqID, user, "HTTP " + UWSException.OK + " - Action \"" + resourceName + "\" successfully executed.", null);
+				getLogger().logHttp(LogLevel.INFO, response, reqID, user, "Action \"" + resourceName + "\" successfully executed.", null);
+
+		}catch(IOException ioe){
+			/*
+			 *   Any IOException thrown while writing the HTTP response is generally caused by a client abortion (intentional or timeout)
+			 * or by a connection closed with the client for another reason.
+			 *   Consequently, a such error should not be considered as a real error from the server or the library: the request is
+			 * canceled, and so the response is not expected. It is anyway not possible any more to send it (header and/or body) totally
+			 * or partially.
+			 *   Nothing can solve this error. So the "error" is just reported as a simple information and theoretically the action
+			 * executed when this error has been thrown is already stopped.
+			 */
+			getLogger().logHttp(LogLevel.INFO, response, reqID, user, "HTTP request aborted or connection with the client closed => the TAP resource \"" + resourceName + "\" has stopped and the body of the HTTP response can not have been partially or completely written!", null);
+
+		}catch(TAPException te){
+			/*
+			 *   Any known/"expected" TAP exception is logged but also returned to the HTTP client in an XML error document.
+			 *   Since the error is known, it is supposed to have already been logged with a full stack trace. Thus, there
+			 * is no need to log again its stack trace...just its message is logged. 
+			 */
+			// Write the error in the response and return the appropriate HTTP status code:
+			errorWriter.writeError(te, response, request, reqID, user, resourceName);
+			// Log the error:
+			getLogger().logHttp(LogLevel.ERROR, response, reqID, user, "TAP resource \"" + resourceName + "\" execution FAILED with the error: \"" + te.getMessage() + "\"!", null);
+
+		}catch(IllegalStateException ise){
+			/*
+			 *   Any IllegalStateException that reaches this point, is supposed coming from a HttpServletResponse operation which
+			 * has to reset the response buffer (e.g. resetBuffer(), sendRedirect(), sendError()).
+			 *   If this exception happens, the library tried to rewrite the HTTP response body with a message or a result,
+			 * while this body has already been partially sent to the client. It is then no longer possible to change its content.
+			 *   Consequently, the error is logged as FATAL and a message will be appended at the end of the already submitted response
+			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable. 
+			 */
+			// Write the error in the response and return the appropriate HTTP status code:
+			errorWriter.writeError(ise, response, request, reqID, user, resourceName);
+			// Log the error:
+			getLogger().logHttp(LogLevel.FATAL, response, reqID, user, "HTTP response already partially committed => the TAP resource \"" + resourceName + "\" has stopped and the body of the HTTP response can not have been partially or completely written!", (ise.getCause() != null) ? ise.getCause() : ise);
 
 		}catch(Throwable t){
-			// CLIENT ABORTION: (note: should work with Apache/Tomcat and JBoss)
-			if (t.getClass().getName().endsWith("ClientAbortException")){
-				// Log the client abortion:
-				getLogger().logHttp(LogLevel.INFO, response, reqID, user, "HTTP " + response.getStatus() + " - HTTP request aborted by the client => the TAP resource \"" + resourceName + "\" has stopped!", t);
-				// Notify the client abortion in a TAP error:
-				errorWriter.writeError("The client aborts this HTTP request! It may happen due to a client timeout or to an interruption of the response waiting process.", ErrorType.TRANSIENT, UWSException.ACCEPTED_BUT_NOT_COMPLETE, response, request, reqID, user, resourceName);
-			}
-			// ANY OTHER ERROR:
-			else{
-				// Write the error in the response and return the appropriate HTTP status code:
-				errorWriter.writeError(t, response, request, reqID, user, resourceName);
-				// Log the error:
-				getLogger().logHttp(LogLevel.ERROR, response, reqID, user, "HTTP " + response.getStatus() + " - Can not complete the execution of the TAP resource \"" + resourceName + "\"!", t);
-			}
+			/*
+			 *   Any other error is considered as unexpected if it reaches this point. Consequently, it has not yet been logged.
+			 * So its stack trace will be fully logged, and an appropriate message will be returned to the HTTP client. The
+			 * returned XML document should contain not too technical information which would be useless for the user.
+			 */
+			// Write the error in the response and return the appropriate HTTP status code:
+			errorWriter.writeError(t, response, request, reqID, user, resourceName);
+			// Log the error:
+			getLogger().logHttp(LogLevel.FATAL, response, reqID, user, "TAP resource \"" + resourceName + "\" execution FAILED with a GRAVE error!", t);
+
 		}finally{
 			// Notify the queue of the asynchronous jobs that a new connection may be available:
 			if (resourceName.equalsIgnoreCase(Sync.RESOURCE_NAME))

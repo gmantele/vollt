@@ -30,7 +30,7 @@ import uws.service.log.UWSLog;
  * Let log any kind of message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  */
 public interface TAPLog extends UWSLog {
 
@@ -78,18 +78,21 @@ public interface TAPLog extends UWSLog {
 	 * 
 	 * <p>List of all events sent by the library (case sensitive):</p>
 	 * <ul>
+	 * 	<li>IDENT_USER (with a NULL "obj")</li>
 	 * 	<li>SYNC_INIT (with "obj" as an instance of {@link TAPParameters})</li>
 	 * 	<li>ASYNC_INIT (with a NULL "obj")</li>
-	 * 	<li>SYNC_START (with "obj" as an instance of {@link TAPSyncJob})</li>
+	 * 	<li>START (with "obj" as an instance of {@link TAPSyncJob})</li>
 	 * 	<li>UPLOADING (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>PARSING (with "obj" as an instance of {@link TAPExecutionReport})</li>
-	 * 	<li>EXECUTING (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>START_DB_EXECUTION (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>WRITING_RESULT (with "obj" as an instance of {@link TAPExecutionReport})</li>
-	 * 	<li>FORMAT (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>RESULT_WRITTEN (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>START_STEP (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>END_EXEC (with "obj" as an instance of {@link TAPExecutionReport})</li>
-	 * 	<li>END_QUERY (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>END_DB_EXECUTION (with "obj" as an instance of {@link TAPExecutionReport})</li>
 	 * 	<li>DROP_UPLOAD (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>TIME_OUT (with "obj" as an instance of {@link TAPSyncJob})</li>
+	 * 	<li>END (with "obj" as an instance of {@link TAPSyncJob})</li>
 	 * </ul>
 	 * 
 	 * @param level		Level of the log (info, warning, error, ...). <i>SHOULD NOT be NULL, but if NULL anyway, the level SHOULD be considered as INFO</i>

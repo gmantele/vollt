@@ -19,9 +19,10 @@ package tap.formatter;
  * Copyright 2014 - Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 
 import tap.ServiceConnection;
 import tap.TAPException;
@@ -29,7 +30,6 @@ import tap.TAPExecutionReport;
 import tap.data.TableIterator;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.ISO8601Format;
-import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 
 /**
@@ -40,9 +40,6 @@ import adql.db.DBColumn;
  * @since 2.0
  */
 public class HTMLFormat implements OutputFormat {
-
-	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
-	private boolean logFormatReport;
 
 	/** The {@link ServiceConnection} to use (for the log and to have some information about the service (particularly: name, description). */
 	protected final ServiceConnection service;
@@ -55,23 +52,10 @@ public class HTMLFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public HTMLFormat(final ServiceConnection service) throws NullPointerException{
-		this(service, true);
-	}
-
-	/**
-	 * Creates an HTML formatter
-	 * 
-	 * @param service			Description of the TAP service.
-	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
-	 * 
-	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 */
-	public HTMLFormat(final ServiceConnection service, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL!");
 
 		this.service = service;
-		this.logFormatReport = logFormatReport;
 	}
 
 	@Override
@@ -95,30 +79,24 @@ public class HTMLFormat implements OutputFormat {
 	}
 
 	@Override
-	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
-		try{
-			final long startTime = System.currentTimeMillis();
+	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, IOException, InterruptedException{
+		// Prepare the output stream:
+		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
+		writer.write("<table>");
+		writer.newLine();
 
-			// Prepare the output stream:
-			final PrintWriter writer = new PrintWriter(output);
-			writer.println("<table>");
+		// Write header:
+		DBColumn[] columns = writeHeader(result, writer, execReport, thread);
 
-			// Write header:
-			DBColumn[] columns = writeHeader(result, writer, execReport, thread);
+		if (thread.isInterrupted())
+			throw new InterruptedException();
 
-			// Write data:
-			int nbRows = writeData(result, columns, writer, execReport, thread);
+		// Write data:
+		writeData(result, columns, writer, execReport, thread);
 
-			writer.println("</table>");
-			writer.flush();
-
-			// Report stats about the result writing:
-			if (logFormatReport)
-				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in HTML ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - startTime) + "ms!", null);
-
-		}catch(Exception ex){
-			service.getLogger().logTAP(LogLevel.ERROR, execReport, "FORMAT", "Error while formatting in HTML!", ex);
-		}
+		writer.write("</table>");
+		writer.newLine();
+		writer.flush();
 	}
 
 	/**
@@ -135,14 +113,15 @@ public class HTMLFormat implements OutputFormat {
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If any other error occurs.
 	 */
-	protected DBColumn[] writeHeader(TableIterator result, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
+	protected DBColumn[] writeHeader(TableIterator result, BufferedWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
 		// Prepend a description of this result:
-		writer.print("<caption>TAP result");
+		writer.write("<caption>TAP result");
 		if (service.getProviderName() != null)
-			writer.print(" from " + VOSerializer.formatText(service.getProviderName()));
-		writer.print(" on " + ISO8601Format.format(System.currentTimeMillis()));
-		writer.print("<br/><em>" + VOSerializer.formatText(execReport.parameters.getQuery()) + "</em>");
-		writer.println("</caption>");
+			writer.write(" from " + VOSerializer.formatText(service.getProviderName()));
+		writer.write(" on " + ISO8601Format.format(System.currentTimeMillis()));
+		writer.write("<br/><em>" + VOSerializer.formatText(execReport.parameters.getQuery()) + "</em>");
+		writer.write("</caption>");
+		writer.newLine();
 
 		// Get the columns meta:
 		DBColumn[] selectedColumns = execReport.resultingColumns;
@@ -150,19 +129,22 @@ public class HTMLFormat implements OutputFormat {
 		// If meta are not known, no header will be written:
 		int nbColumns = (selectedColumns == null) ? -1 : selectedColumns.length;
 		if (nbColumns > 0){
-			writer.println("<thead>");
-			writer.print("<tr>");
+			writer.write("<thead>");
+			writer.newLine();
+			writer.write("<tr>");
 
 			// Write all columns' name:
 			for(int i = 0; i < nbColumns; i++){
-				writer.print("<th>");
-				writer.print(VOSerializer.formatText(selectedColumns[i].getADQLName()));
-				writer.print("</th>");
+				writer.write("<th>");
+				writer.write(VOSerializer.formatText(selectedColumns[i].getADQLName()));
+				writer.write("</th>");
 			}
 
 			// Go to a new line (in order to prepare the data writing):
-			writer.println("</tr>");
-			writer.println("</thead>");
+			writer.write("</tr>");
+			writer.newLine();
+			writer.write("</thead>");
+			writer.newLine();
 			writer.flush();
 		}
 
@@ -179,50 +161,55 @@ public class HTMLFormat implements OutputFormat {
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
 	 * 
-	 * @return	The number of written result rows. (<i>note: if this number is greater than the value of MAXREC: OVERFLOW</i>)
-	 * 
 	 * @throws IOException				If there is an error while writing something in the output stream.
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If any other error occurs.
 	 */
-	protected int writeData(TableIterator result, DBColumn[] selectedColumns, PrintWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
-		int nbRows = 0;
+	protected void writeData(TableIterator result, DBColumn[] selectedColumns, BufferedWriter writer, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException{
+		execReport.nbRows = 0;
 
-		writer.println("<tbody>");
+		writer.write("<tbody>");
+		writer.newLine();
 
 		while(result.nextRow()){
+			// Stop right now the formatting if the job has been aborted/canceled/interrupted:
+			if (thread.isInterrupted())
+				throw new InterruptedException();
+
 			// Deal with OVERFLOW, if needed:
-			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec()){ // that's to say: OVERFLOW !
-				writer.println("<tr class=\"OVERFLOW\"><td colspan=\"" + selectedColumns.length + "\"><em><strong>OVERFLOW</strong> (more rows were available but have been truncated by the TAP service)</em></td></tr>");
+			if (execReport.parameters.getMaxRec() > 0 && execReport.nbRows >= execReport.parameters.getMaxRec()){ // that's to say: OVERFLOW !
+				writer.write("<tr class=\"OVERFLOW\"><td colspan=\"" + selectedColumns.length + "\"><em><strong>OVERFLOW</strong> (more rows were available but have been truncated by the TAP service)</em></td></tr>");
+				writer.newLine();
 				break;
 			}
 
-			writer.print("<tr>");
+			writer.write("<tr>");
 
 			while(result.hasNextCol()){
-				writer.print("<td>");
+				writer.write("<td>");
 
 				// Write the column value:
 				Object colVal = result.nextCol();
 				if (colVal != null)
-					writer.print(VOSerializer.formatText(colVal.toString()));
+					writer.write(VOSerializer.formatText(colVal.toString()));
 
-				writer.print("</td>");
+				writer.write("</td>");
 
 				if (thread.isInterrupted())
 					throw new InterruptedException();
 			}
-			writer.println("</tr>");
-			nbRows++;
+			writer.write("</tr>");
+			writer.newLine();
+			execReport.nbRows++;
 
-			if (thread.isInterrupted())
-				throw new InterruptedException();
+			// flush the writer every 30 lines:
+			if (execReport.nbRows % 30 == 0)
+				writer.flush();
 		}
 
-		writer.println("</tbody>");
+		writer.write("</tbody>");
+		writer.newLine();
 		writer.flush();
-
-		return nbRows;
 	}
 
 }

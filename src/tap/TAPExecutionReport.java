@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -31,7 +31,7 @@ import adql.db.DBColumn;
  * <p>This report is completely filled by {@link ADQLExecutor}, and aims to be used/read only at the end of the job or when it is definitely finished.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2014)
+ * @version 2.0 (04/2015)
  */
 public class TAPExecutionReport {
 
@@ -46,6 +46,10 @@ public class TAPExecutionReport {
 
 	/** List of all resulting columns. <i>Empty array, if not yet known.</i> */
 	public DBColumn[] resultingColumns = new DBColumn[0];
+
+	/** Total number of written rows.
+	 * @since 2.0 */
+	public long nbRows = -1;
 
 	/** Duration of all execution steps. <i>For the moment only 4 steps (in the order): uploading, parsing, executing and writing.</i> */
 	protected final long[] durations = new long[]{-1,-1,-1,-1};

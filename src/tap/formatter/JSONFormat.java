@@ -16,13 +16,14 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 
 import org.json.JSONException;
 import org.json.JSONWriter;
@@ -33,7 +34,6 @@ import tap.TAPExecutionReport;
 import tap.data.TableIterator;
 import tap.metadata.TAPColumn;
 import tap.metadata.VotType;
-import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
@@ -42,44 +42,25 @@ import adql.db.DBType.DBDatatype;
  * Format any given query (table) result into JSON.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2014)
+ * @version 2.0 (04/2015)
  */
 public class JSONFormat implements OutputFormat {
-
-	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
-	private boolean logFormatReport;
 
 	/** The {@link ServiceConnection} to use (for the log and to have some information about the service (particularly: name, description). */
 	protected final ServiceConnection service;
 
 	/**
-	 * <p>Build a JSON formatter.</p>
-	 * 
-	 * <p><i>note: The built formatter will not write a log entry each time a result is written.
-	 * However if you want this behavior you must you {@link #JSONFormat(ServiceConnection, boolean)}.</i></p>
+	 * Build a JSON formatter.
 	 * 
 	 * @param service	Description of the TAP service.
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public JSONFormat(final ServiceConnection service) throws NullPointerException{
-		this(service, true);
-	}
-
-	/**
-	 * Build a JSON formatter.
-	 * 
-	 * @param service			Description of the TAP service.
-	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
-	 * 
-	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 */
-	public JSONFormat(final ServiceConnection service, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL!");
 
 		this.service = service;
-		this.logFormatReport = logFormatReport;
 	}
 
 	@Override
@@ -103,12 +84,11 @@ public class JSONFormat implements OutputFormat {
 	}
 
 	@Override
-	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
+	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, IOException, InterruptedException{
 		try{
-			long start = System.currentTimeMillis();
 
 			// Prepare the output stream for JSON:
-			PrintWriter writer = new PrintWriter(output);
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
 			JSONWriter out = new JSONWriter(writer);
 
 			// {
@@ -122,24 +102,21 @@ public class JSONFormat implements OutputFormat {
 
 			writer.flush();
 
+			if (thread.isInterrupted())
+				throw new InterruptedException();
+
 			// "data": [...]
 			out.key("data");
 
 			// Write the data part:
-			int nbRows = writeData(result, columns, out, execReport, thread);
+			writeData(result, columns, out, execReport, thread);
 
 			// }
 			out.endObject();
 			writer.flush();
 
-			// Report stats about the result writing:
-			if (logFormatReport)
-				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in JSON ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - start) + "ms!", null);
-
 		}catch(JSONException je){
-			throw new TAPException("Error while writing a query result in JSON!", je);
-		}catch(IOException ioe){
-			throw new TAPException("Error while writing a query result in JSON!", ioe);
+			throw new TAPException(je.getMessage(), je);
 		}
 	}
 
@@ -185,9 +162,6 @@ public class JSONFormat implements OutputFormat {
 				// Write the field/column metadata in the JSON output:
 				writeFieldMeta(tapCol, out);
 				indField++;
-
-				if (thread.isInterrupted())
-					throw new InterruptedException();
 			}
 		}
 
@@ -273,44 +247,38 @@ public class JSONFormat implements OutputFormat {
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
 	 * 
-	 * @return	The number of written result rows. (<i>note: if this number is greater than the value of MAXREC: OVERFLOW</i>)
-	 * 
 	 * @throws IOException				If there is an error while writing something in the output stream.
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws JSONException			If there is an error while formatting something in JSON.
 	 * @throws TAPException				If any other error occurs.
 	 */
-	protected int writeData(TableIterator result, DBColumn[] selectedColumns, JSONWriter out, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException, JSONException{
+	protected void writeData(TableIterator result, DBColumn[] selectedColumns, JSONWriter out, TAPExecutionReport execReport, Thread thread) throws IOException, TAPException, InterruptedException, JSONException{
 		// [
 		out.array();
 
-		int nbRows = 0;
+		execReport.nbRows = 0;
 		while(result.nextRow()){
+			// Stop right now the formatting if the job has been aborted/canceled/interrupted:
+			if (thread.isInterrupted())
+				throw new InterruptedException();
+
 			// Deal with OVERFLOW, if needed:
-			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec())
+			if (execReport.parameters.getMaxRec() > 0 && execReport.nbRows >= execReport.parameters.getMaxRec())
 				break;
 
 			// [
 			out.array();
 			int indCol = 0;
-			while(result.hasNextCol()){
+			while(result.hasNextCol())
 				// ...
 				writeFieldValue(result.nextCol(), selectedColumns[indCol++], out);
-
-				if (thread.isInterrupted())
-					throw new InterruptedException();
-			}
 			// ]
 			out.endArray();
-			nbRows++;
-
-			if (thread.isInterrupted())
-				throw new InterruptedException();
+			execReport.nbRows++;
 		}
 
 		// ]
 		out.endArray();
-		return nbRows;
 	}
 
 	/**

@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -45,7 +45,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (04/2015)
  */
 public class TAPJob extends UWSJob {
 	private static final long serialVersionUID = 1L;
@@ -253,7 +253,7 @@ public class TAPJob extends UWSJob {
 	 * @throws UWSException	If this job has never been restored and is not running.
 	 */
 	public final void setExecReport(final TAPExecutionReport execReport) throws UWSException{
-		if (getRestorationDate() == null && !isRunning())
+		if (getRestorationDate() == null && (thread == null || thread.isFinished()))
 			throw new UWSException("Impossible to set an execution report if the job is not in the EXECUTING phase ! Here, the job \"" + jobId + "\" is in the phase " + getPhase());
 		this.execReport = execReport;
 	}

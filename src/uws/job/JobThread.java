@@ -16,7 +16,7 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -60,7 +60,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (04/2015)
  * 
  * @see UWSJob#start()
  * @see UWSJob#abort()
@@ -74,6 +74,11 @@ public abstract class JobThread extends Thread {
 
 	/** The last error which has occurred during the execution of this thread. */
 	protected UWSException lastError = null;
+
+	/** Indicate whether the exception stored in the attribute {@link #lastError} should be considered as a grave error or not.
+	 * By default, {@link #lastError} is a "normal" error.
+	 * @since 4.1 */
+	protected boolean fatalError = false;
 
 	/** Indicates whether the {@link UWSJob#jobWork()} has been called and finished, or not. */
 	protected boolean finished = false;
@@ -424,44 +429,60 @@ public abstract class JobThread extends Thread {
 		logger.logThread(LogLevel.INFO, this, "START", "Thread \"" + getName() + "\" started.", null);
 
 		try{
-			try{
-				// Execute the task:
-				jobWork();
+			// Execute the task:
+			jobWork();
 
-				// Change the phase to COMPLETED:
-				finished = true;
-				complete();
-			}catch(InterruptedException ex){
-				// Abort:
-				finished = true;
-				if (!job.stopping)
+			// Change the phase to COMPLETED:
+			finished = true;
+			complete();
+			logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" successfully ended.", null);
+
+		}catch(InterruptedException ex){
+			/* CASE: ABORTION
+			 *   In case of abortion, the thread just stops normally, just logging an INFO saying that the thread has been cancelled.
+			 * Since it is not an abnormal behavior there is no reason to keep a trace of the interrupted exception. */
+			finished = true;
+			// Abort:
+			if (!job.stopping){
+				try{
 					job.abort();
-				// Log the abortion:
-				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" cancelled.", null);
+				}catch(UWSException ue){
+					/* Should not happen since the reason of a such exception would be that the thread can not be stopped...
+					 * ...but we are already in the thread and it is stopping. */
+					logger.logJob(LogLevel.WARNING, job, "ABORT", "Can not put the job in its ABORTED phase!", ue);
+				}
 			}
-			return;
+			// Log the abortion:
+			logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" cancelled.", null);
 
 		}catch(UWSException ue){
-			// Save the error:
+			/* CASE: ERROR for a known reason
+			 *   A such error is just a "normal" error, in the sense its cause is known and in a way supported or expected in
+			 * a special configuration or parameters. Thus, the error is kept and will logged with a stack trace afterwards.*/
 			lastError = ue;
 
 		}catch(Throwable t){
-			// Build the error:
+			/* DEFAULT: FATAL error
+			 *   Any other error is considered as FATAL because it was not expected or supported at a given point.
+			 * It is generally a bug or a forgiven thing in the code of the library. As for "normal" errors, this error
+			 * is kept and will logged with stack trace afterwards. */
+			fatalError = true;
 			if (t instanceof Error)
 				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, "A FATAL DEEP ERROR OCCURED WHILE EXECUTING THIS QUERY! This error is reported in the service logs.", ErrorType.FATAL);
 			else if (t.getMessage() == null || t.getMessage().trim().isEmpty())
-				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t.getClass().getName(), ErrorType.FATAL);
+				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, t.getClass().getName(), ErrorType.FATAL);
 			else
 				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, ErrorType.FATAL);
 
 		}finally{
 			finished = true;
 
-			// Publish the error if any has occurred:
+			/* PUBLISH THE ERROR if any has occurred */
 			if (lastError != null){
 				// Log the error:
-				LogLevel logLevel = (lastError.getCause() != null && lastError.getCause() instanceof Error) ? LogLevel.FATAL : LogLevel.ERROR;
-				logger.logThread(logLevel, this, "END", "Thread \"" + getName() + "\" ended with an error.", lastError);
+				LogLevel logLevel = fatalError ? LogLevel.FATAL : LogLevel.ERROR;
+				logger.logJob(logLevel, job, "END", "The following " + (fatalError ? "GRAVE" : "") + " error interrupted the execution of the job " + job.getJobId() + ".", lastError);
+				logger.logThread(logLevel, this, "END", "Thread \"" + getName() + "\" ended with an error.", null);
 				// Set the error into the job:
 				try{
 					setError(lastError);
@@ -472,11 +493,9 @@ public abstract class JobThread extends Thread {
 					}catch(UWSException ue2){
 						logger.logThread(logLevel, this, "SET_ERROR", "[2nd and last Attempt] Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId() + ". This error can not be reported to the user, but it will be reported in the log in the JOB context.", ue2);
 						// Note: no need of a level 3: if the second attempt fails, it means the job is in a wrong phase and no error summary can never be set ; further attempt won't change anything!
-						logger.logJob(logLevel, job, "EXECUTING", "An error has interrupted the execution of the job \"" + job.getJobId() + "\". Here is its summary: " + lastError.getMessage(), lastError);
 					}
 				}
-			}else
-				logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" successfully ended.", null);
+			}
 		}
 	}
 }

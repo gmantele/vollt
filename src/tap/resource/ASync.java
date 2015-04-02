@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -71,7 +71,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  * 
  * @see UWSService
  */
@@ -191,6 +191,7 @@ public class ASync implements TAPResource {
 			return uws.executeRequest(request, response);
 
 		}catch(UWSException ue){
+			service.getLogger().logTAP(LogLevel.FATAL, null, null, "Error while executing the /async resource.", ue);
 			throw new TAPException(ue);
 		}
 	}

@@ -54,7 +54,7 @@ import uws.service.request.UploadFile;
  * Some useful functions for the managing of a UWS service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (02/2015)
+ * @version 4.1 (03/2015)
  */
 public class UWSToolBox {
 
@@ -463,6 +463,30 @@ public class UWSToolBox {
 	/* *************************** */
 	/* RESPONSE MANAGEMENT METHODS */
 	/* *************************** */
+
+	/**
+	 * <p>Flush the buffer of the given {@link PrintWriter}.</p>
+	 * 
+	 * <p>
+	 * 	This function aims to be used if the given {@link PrintWriter} has been provided by an {@link HttpServletResponse}.
+	 * 	In such case, a call to its flush() function may generate a silent error which could only mean that
+	 * 	the connection with the HTTP client has been closed.
+	 * </p>
+	 * 
+	 * @param writer	The writer to flush.
+	 * 
+	 * @throws ClientAbortException		If the connection with the HTTP client is closed.
+	 * 
+	 * @see PrintWriter#flush()
+	 * 
+	 * @since 4.1
+	 */
+	public static final void flush(final PrintWriter writer) throws ClientAbortException{
+		writer.flush();
+		if (writer.checkError())
+			throw new ClientAbortException();
+	}
+
 	/**
 	 * Copies the content of the given input stream in the given HTTP response.
 	 * 

@@ -43,7 +43,7 @@ import uws.service.file.UWSFileManager;
  * <p>Default implementation of {@link UWSLog} interface which lets logging any message about a UWS.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (02/2015)
+ * @version 4.1 (04/2015)
  */
 public class DefaultUWSLog implements UWSLog {
 
@@ -221,6 +221,27 @@ public class DefaultUWSLog implements UWSLog {
 	/* *********************** */
 
 	/**
+	 * <p>Normalize a log message.</p>
+	 * 
+	 * <p>
+	 * 	Since a log entry will a tab-separated concatenation of information, additional tabulations or new-lines
+	 * 	would corrupt a log entry. This function replaces such characters by one space. Only \r are definitely deleted.
+	 * </p>
+	 * 
+	 * @param message	Log message to normalize.
+	 * 
+	 * @return	The normalized log message.
+	 * 
+	 * @since 4.1
+	 */
+	protected String normalizeMessage(final String message){
+		if (message == null)
+			return null;
+		else
+			return message.replaceAll("[\n\t]", " ").replaceAll("\r", "");
+	}
+
+	/**
 	 * <p>Tells whether a message with the given error level can be logged or not.</p>
 	 * 
 	 * <p>In function of the minimum log level of this class, the default behavior is the following:</p>
@@ -261,7 +282,7 @@ public class DefaultUWSLog implements UWSLog {
 
 	@Override
 	public void log(LogLevel level, final String context, final String message, final Throwable error){
-		log(level, context, null, null, message, error);
+		log(level, context, null, null, message, null, error);
 	}
 
 	/**
@@ -276,11 +297,12 @@ public class DefaultUWSLog implements UWSLog {
 	 * @param event		Context event during which this log is emitted. <i>MAY be NULL</i>
 	 * @param ID		ID of the job or HTTP request (it may also be an ID of anything else). <i>MAY BE NULL</i>
 	 * @param message	Message of the error. <i>MAY be NULL</i>
+	 * @param addColumn	Additional column to append after the message and before the stack trace.
 	 * @param error		Error at the origin of the log error/warning/fatal. <i>MAY be NULL</i>
 	 * 
 	 * @since 4.1
 	 */
-	protected final void log(LogLevel level, final String context, final String event, final String ID, final String message, final Throwable error){
+	protected final void log(LogLevel level, final String context, final String event, final String ID, final String message, final String addColumn, final Throwable error){
 		// If no message and no error is provided, nothing to log, so nothing to write:
 		if ((message == null || message.length() <= 0) && error == null)
 			return;
@@ -306,9 +328,12 @@ public class DefaultUWSLog implements UWSLog {
 		buf.append((ID == null) ? "" : ID).append('\t');
 		// Print the message:
 		if (message != null)
-			buf.append(message);
+			buf.append(normalizeMessage(message));
 		else if (error != null)
-			buf.append("[EXCEPTION ").append(error.getClass().getName()).append("] ").append(error.getMessage());
+			buf.append("[EXCEPTION ").append(error.getClass().getName()).append("] ").append(normalizeMessage(error.getMessage()));
+		// Print the additional column, if any:
+		if (addColumn != null)
+			buf.append('\t').append(normalizeMessage(addColumn));
 
 		// Write the whole log line:
 		PrintWriter out = getOutput(level, context);
@@ -409,11 +434,6 @@ public class DefaultUWSLog implements UWSLog {
 
 			StringBuffer str = new StringBuffer();
 
-			// Write the message (if any):
-			if (message != null)
-				str.append(message);
-			str.append('\t');
-
 			// Write the request type, content type and the URL:
 			str.append(request.getMethod());
 			str.append(" as ");
@@ -438,16 +458,16 @@ public class DefaultUWSLog implements UWSLog {
 			for(Entry<String,String> p : params.entrySet()){
 				if (++i > 0)
 					str.append('&');
-				str.append(p.getKey()).append('=').append((p.getValue() != null) ? p.getValue().replaceAll("[\t\n\r]", " ") : "");
+				str.append(p.getKey()).append('=').append((p.getValue() != null) ? p.getValue() : "");
 			}
 			str.append(')');
 
 			// Send the log message to the log file:
-			log(level, "HTTP", "REQUEST_RECEIVED", requestId, str.toString(), error);
+			log(level, "HTTP", "REQUEST_RECEIVED", requestId, message, str.toString(), error);
 		}
 		// OTHERWISE, just write the given message:
 		else
-			log(level, "HTTP", "REQUEST_RECEIVED", requestId, message, error);
+			log(level, "HTTP", "REQUEST_RECEIVED", requestId, message, null, error);
 	}
 
 	/**
@@ -470,11 +490,6 @@ public class DefaultUWSLog implements UWSLog {
 
 			StringBuffer str = new StringBuffer();
 
-			// Write the message (if any):
-			if (message != null)
-				str.append(message);
-			str.append('\t');
-
 			// Write the response status code:
 			str.append("HTTP-").append(response.getStatus());
 
@@ -493,11 +508,11 @@ public class DefaultUWSLog implements UWSLog {
 				str.append(" as ").append(response.getContentType());
 
 			// Send the log message to the log file:
-			log(level, "HTTP", "RESPONSE_SENT", requestId, str.toString(), error);
+			log(level, "HTTP", "RESPONSE_SENT", requestId, message, str.toString(), error);
 		}
 		// OTHERWISE, just write the given message:
 		else
-			log(level, "HTTP", "RESPONSE_SENT", requestId, message, error);
+			log(level, "HTTP", "RESPONSE_SENT", requestId, message, null, error);
 	}
 
 	/* ************ */
@@ -515,16 +530,17 @@ public class DefaultUWSLog implements UWSLog {
 			return;
 
 		// CASE "BACKUPED": Append to the message the backup report:
+		String report = null;
 		if (event != null && event.equalsIgnoreCase("BACKUPED") && obj != null && obj.getClass().getName().equals("[I")){
 			int[] backupReport = (int[])obj;
-			message += "\t(" + backupReport[0] + "/" + backupReport[1] + " jobs backuped ; " + backupReport[2] + "/" + backupReport[3] + " users backuped)";
+			report = "(" + backupReport[0] + "/" + backupReport[1] + " jobs backuped ; " + backupReport[2] + "/" + backupReport[3] + " users backuped)";
 		}else if (event != null && event.equalsIgnoreCase("RESTORED") && obj != null && obj.getClass().getName().equals("[I")){
 			int[] restoreReport = (int[])obj;
-			message += "\t(" + restoreReport[0] + "/" + restoreReport[1] + " jobs restored ; " + restoreReport[2] + "/" + restoreReport[3] + " users restored)";
+			report = "(" + restoreReport[0] + "/" + restoreReport[1] + " jobs restored ; " + restoreReport[2] + "/" + restoreReport[3] + " users restored)";
 		}
 
 		// Log the message
-		log(level, "UWS", event, null, message, error);
+		log(level, "UWS", event, null, message, report, error);
 	}
 
 	/* ************ */
@@ -533,7 +549,7 @@ public class DefaultUWSLog implements UWSLog {
 
 	@Override
 	public void logJob(LogLevel level, UWSJob job, String event, String message, Throwable error){
-		log(level, "JOB", event, (job == null) ? null : job.getJobId(), message, error);
+		log(level, "JOB", event, (job == null) ? null : job.getJobId(), message, null, error);
 	}
 
 	/* ********************** */
@@ -553,11 +569,6 @@ public class DefaultUWSLog implements UWSLog {
 
 			StringBuffer str = new StringBuffer();
 
-			// Write the message (if any):
-			if (message != null)
-				str.append(message);
-			str.append('\t');
-
 			// Write the thread name and ID:
 			str.append(thread.getName()).append(" (thread ID: ").append(thread.getId()).append(")");
 
@@ -570,10 +581,10 @@ public class DefaultUWSLog implements UWSLog {
 			// Write the number of active threads:
 			str.append(" where ").append(thread.getThreadGroup().activeCount()).append(" threads are active");
 
-			log(level, "THREAD", event, thread.getName(), str.toString(), error);
+			log(level, "THREAD", event, thread.getName(), message, str.toString(), error);
 
 		}else
-			log(level, "THREAD", event, null, message, error);
+			log(level, "THREAD", event, null, message, null, error);
 	}
 
 }

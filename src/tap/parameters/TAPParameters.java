@@ -268,13 +268,13 @@ public class TAPParameters extends UWSParameters {
 		// Check that required parameters are not NON-NULL:
 		String requestParam = getRequest();
 		if (requestParam == null)
-			throw new TAPException("The parameter \"" + TAPJob.PARAM_REQUEST + "\" must be provided and its value must be equal to \"" + TAPJob.REQUEST_DO_QUERY + "\" or \"" + TAPJob.REQUEST_GET_CAPABILITIES + "\" !", UWSException.BAD_REQUEST);
+			throw new TAPException("The parameter \"" + TAPJob.PARAM_REQUEST + "\" must be provided and its value must be equal to \"" + TAPJob.REQUEST_DO_QUERY + "\" or \"" + TAPJob.REQUEST_GET_CAPABILITIES + "\"!", UWSException.BAD_REQUEST);
 
 		if (requestParam.equals(TAPJob.REQUEST_DO_QUERY)){
 			if (get(TAPJob.PARAM_LANGUAGE) == null)
-				throw new TAPException("The parameter \"" + TAPJob.PARAM_LANGUAGE + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !", UWSException.BAD_REQUEST);
+				throw new TAPException("The parameter \"" + TAPJob.PARAM_LANGUAGE + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + "!", UWSException.BAD_REQUEST);
 			else if (get(TAPJob.PARAM_QUERY) == null)
-				throw new TAPException("The parameter \"" + TAPJob.PARAM_QUERY + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + " !", UWSException.BAD_REQUEST);
+				throw new TAPException("The parameter \"" + TAPJob.PARAM_QUERY + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + "!", UWSException.BAD_REQUEST);
 		}
 	}
 }

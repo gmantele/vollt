@@ -19,12 +19,14 @@ package tap.resource;
  * Copyright 2015 - Astronomisches Rechen Institut (ARI)
  */
 
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -32,6 +34,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import tap.TAPException;
+import uws.ClientAbortException;
+import uws.UWSToolBox;
 import uws.service.log.UWSLog.LogLevel;
 
 /**
@@ -58,7 +62,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ol>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  * @since 2.0
  */
 public class HomePage implements TAPResource {
@@ -91,7 +95,6 @@ public class HomePage implements TAPResource {
 
 	@Override
 	public boolean executeResource(final HttpServletRequest request, final HttpServletResponse response) throws IOException, TAPException{
-		PrintWriter writer = response.getWriter();
 		boolean written = false;
 
 		// Display the specified home page, if any is specified:
@@ -102,19 +105,29 @@ public class HomePage implements TAPResource {
 				uri = new URI(tap.homePageURI);
 				/* CASE: FILE IN WebContent */
 				if (uri.getScheme() == null){
-					if (request.getServletContext().getResource(tap.homePageURI) != null){
-						request.getRequestDispatcher(tap.homePageURI).forward(request, response);
-						written = true;
-					}else
-						tap.getLogger().logTAP(LogLevel.ERROR, null, "HOME_PAGE", "Can not write the specified home page content (" + tap.homePageURI + "): Web application file not found!", null);
+					try{
+						if (request.getServletContext().getResource(tap.homePageURI) != null){
+							request.getRequestDispatcher(tap.homePageURI).forward(request, response);
+							written = true;
+						}else
+							logError("Web application file not found", null);
+					}catch(MalformedURLException mue){
+						logError("incorrect URL syntax", mue);
+					}
 				}
 				/* CASE: LOCAL FILE */
 				else if (uri.getScheme().equalsIgnoreCase("file")){
 					// Set the content type:
 					response.setContentType(tap.homePageMimeType);
 
+					// set character encoding:
+					response.setCharacterEncoding("UTF-8");
+
+					// Get the character writer:
+					PrintWriter writer = response.getWriter();
+
 					// Get an input toward the custom home page:
-					BufferedInputStream input = null;
+					BufferedReader input = null;
 					try{
 						File f = new File(uri.getPath());
 						if (f.exists() && !f.isDirectory() && f.canRead()){
@@ -122,23 +135,50 @@ public class HomePage implements TAPResource {
 							response.setContentLength((int)f.length());
 
 							// get the input stream:
-							input = new BufferedInputStream(new FileInputStream(f));
+							input = new BufferedReader(new FileReader(f));
 
 							// Copy the content of the input into the given writer:
-							byte[] buffer = new byte[2048];
-							int nbReads = 0;
-							while((nbReads = input.read(buffer)) > 0)
-								writer.print(new String(buffer, 0, nbReads));
+							char[] buffer = new char[2048];
+							int nbReads = 0, nbBufferWritten = 0;
+							while((nbReads = input.read(buffer)) > 0){
+								writer.write(buffer, 0, nbReads);
+								if ((++nbBufferWritten) % 4 == 0){ // the minimum and default buffer size of an HttpServletResponse is 8kiB => 4*2048
+									UWSToolBox.flush(writer);
+									nbBufferWritten = 0;
+								}
+							}
+							UWSToolBox.flush(writer);
 
 							// copy successful:
 							written = true;
 						}else
-							tap.getLogger().logTAP(LogLevel.ERROR, null, "HOME_PAGE", "Can not write the specified home page content (" + tap.homePageURI + "): File not found or not readable (" + f.exists() + !f.isDirectory() + f.canRead() + ")!", null);
+							logError("file not found or not readable (" + f.exists() + !f.isDirectory() + f.canRead() + ")", null);
+
+					}catch(ClientAbortException cae){
+						/*   This exception is an extension of IOException thrown only by some functions of UWSToolBox.
+						 * It aims to notify about an IO error while trying to write the content of an HttpServletResponse.
+						 * Such exception just means that the connection with the HTTP client has been closed/aborted.
+						 * Consequently, no error nor result can be written any more in the HTTP response.
+						 *   This error, is just propagated to the TAP instance, so that stopping any current process
+						 * for this request and so that being logged without any attempt of writing the error in the HTTP response.
+						 */
+						throw cae;
+
+					}catch(IOException ioe){
+						/*   This IOException can be thrown only by InputStream.read(...) (because PrintWriter.print(...)
+						 * silently fallbacks in case of error).
+						 *   So this error must not be propagated but caught and logged right now. Thus the default home page
+						 * can be displayed after the error has been logged. */
+						logError("the following error occurred while reading the specified local file", ioe);
 
 					}finally{
 						if (input != null)
 							input.close();
 					}
+
+					// Stop trying to write the home page if the HTTP request has been aborted/closed:
+					/*if (requestAborted)
+						throw new IOException("HTTP request aborted or connection with the HTTP client closed for another reason!");*/
 				}
 				/* CASE: HTTP/HTTPS/FTP/... */
 				else{
@@ -146,13 +186,33 @@ public class HomePage implements TAPResource {
 					written = true;
 				}
 
+			}catch(IOException ioe){
+				/*   This IOException can be caught here only if caused by a HTTP client abortion or by a closing of the HTTPrequest.
+				 * So, it must be propagated until the TAP instance, where it will be merely logged as INFO. No response/error can be 
+				 * returned in the HTTP response. */
+				throw ioe;
+
+			}catch(IllegalStateException ise){
+				/*   This exception is caused by an attempt to reset the HTTP response buffer while a part of its
+				 * content has already been submitted to the HTTP client.
+				 *   It must be propagated to the TAP instance so that being logged as a FATAL error. */
+				throw ise;
+
 			}catch(Exception e){
-				tap.getLogger().logTAP(LogLevel.ERROR, null, "HOME_PAGE", "Can not write the specified home page content (" + tap.homePageURI + "): " + e.getMessage(), e);
+				/*   The other errors are just logged, but not reported to the HTTP client,
+				 * and then the default home page is displayed. */
+				if (e instanceof URISyntaxException)
+					logError("the given URI has a wrong and unexpected syntax", e);
+				else
+					logError(null, e);
 			}
 		}
 
 		// DEFAULT: list all available resources:
 		if (!written){
+			// Get the output stream:
+			PrintWriter writer = response.getWriter();
+
 			// Set the content type: HTML document
 			response.setContentType("text/html");
 
@@ -162,10 +222,32 @@ public class HomePage implements TAPResource {
 				writer.println("<li><a href=\"" + tap.tapBaseURL + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
 			writer.println("</ul></body></html>");
 
+			writer.flush();
+
 			written = true;
 		}
 
 		return written;
+	}
+
+	/**
+	 * <p>Log the given error as a TAP log message with the {@link LogLevel} ERROR, and the event "HOME_PAGE".</p>
+	 * 
+	 * <p>
+	 * 	The logged message starts with: <code>Can not write the specified home page content ({tap.homePageURI})</code>.
+	 * 	After the specified error message, the following is appended: <code>! => The default home page will be displayed.</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * 	If the message parameter is missing, the {@link Throwable} message will be taken instead.
+	 * 	And if this latter is also missing, none will be written.
+	 * </p>
+	 *
+	 * @param message	Error message to log.
+	 * @param error		The exception at the origin of the error.
+	 */
+	protected void logError(final String message, final Throwable error){
+		tap.getLogger().logTAP(LogLevel.ERROR, null, "HOME_PAGE", "Can not write the specified home page content (" + tap.homePageURI + ") " + (message == null ? (error == null ? "" : ": " + error.getMessage()) : ": " + message) + "! => The default home page will be displayed.", error);
 	}
 
 }

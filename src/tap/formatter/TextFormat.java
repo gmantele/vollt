@@ -20,14 +20,15 @@ package tap.formatter;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.data.TableIterator;
-import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 import cds.util.AsciiTable;
 
@@ -36,7 +37,7 @@ import cds.util.AsciiTable;
  * (columns' width are adjusted so that all columns are well aligned and of the same width).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (03/2015)
+ * @version 2.0 (04/2015)
  */
 public class TextFormat implements OutputFormat {
 
@@ -44,9 +45,6 @@ public class TextFormat implements OutputFormat {
 	 * Note: the output separator is however always a |.
 	 * @since 2.0 */
 	protected static final char COL_SEP = '\u25c6';
-
-	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
-	private boolean logFormatReport;
 
 	/** The {@link ServiceConnection} to use (for the log and to have some information about the service (particularly: name, description). */
 	protected final ServiceConnection service;
@@ -59,23 +57,10 @@ public class TextFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public TextFormat(final ServiceConnection service) throws NullPointerException{
-		this(service, true);
-	}
-
-	/**
-	 * Build a {@link TextFormat}.
-	 * 
-	 * @param service			Description of the TAP service.
-	 * @param logFormatReport	<i>true</i> to write a log entry (with nb rows and columns + writing duration) each time a result is written, <i>false</i> otherwise.
-	 * 
-	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 */
-	public TextFormat(final ServiceConnection service, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL!");
 
 		this.service = service;
-		this.logFormatReport = logFormatReport;
 	}
 
 	@Override
@@ -99,41 +84,44 @@ public class TextFormat implements OutputFormat {
 	}
 
 	@Override
-	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, InterruptedException{
-		try{
-			// Prepare the formatting of the whole output:
-			AsciiTable asciiTable = new AsciiTable(COL_SEP);
+	public void writeResult(TableIterator result, OutputStream output, TAPExecutionReport execReport, Thread thread) throws TAPException, IOException, InterruptedException{
+		// Prepare the formatting of the whole output:
+		AsciiTable asciiTable = new AsciiTable(COL_SEP);
 
-			final long startTime = System.currentTimeMillis();
+		// Write header:
+		String headerLine = getHeader(result, execReport, thread);
+		asciiTable.addHeaderLine(headerLine);
+		asciiTable.endHeaderLine();
 
-			// Write header:
-			String headerLine = getHeader(result, execReport, thread);
-			asciiTable.addHeaderLine(headerLine);
-			asciiTable.endHeaderLine();
+		if (thread.isInterrupted())
+			throw new InterruptedException();
 
-			// Write data into the AsciiTable object:
-			int nbRows = writeData(result, asciiTable, execReport, thread);
+		// Write data into the AsciiTable object:
+		boolean overflow = writeData(result, asciiTable, execReport, thread);
 
-			// Finally write the formatted ASCII table (header + data) in the output stream:
-			String[] lines = asciiTable.displayAligned(new int[]{AsciiTable.LEFT}, '|');
-			for(String l : lines){
-				output.write(l.getBytes());
-				output.write('\n');
-			}
-
-			// Add a line in case of an OVERFLOW:
-			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec())
-				output.write("\nOVERFLOW (more rows were available but have been truncated by the TAP service)".getBytes());
-
-			output.flush();
-
-			// Report stats about the result writing:
-			if (logFormatReport)
-				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in text ; " + nbRows + " rows ; " + ((execReport != null && execReport.resultingColumns != null) ? "?" : execReport.resultingColumns.length) + " columns) in " + (System.currentTimeMillis() - startTime) + "ms!", null);
-
-		}catch(Exception ex){
-			service.getLogger().logTAP(LogLevel.ERROR, execReport, "FORMAT", "Error while formatting in text/plain!", ex);
+		// Finally write the formatted ASCII table (header + data) in the output stream:
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
+		String[] lines = asciiTable.displayAligned(new int[]{AsciiTable.LEFT}, '|');
+		execReport.nbRows = 0;
+		for(String l : lines){
+			// stop right now the formatting if the job has been aborted/canceled/interrupted:
+			if (thread.isInterrupted())
+				throw new InterruptedException();
+			// write the line:
+			writer.write(l);
+			writer.newLine();
+			// update the counter of written lines:
+			execReport.nbRows++;
+			// flush the writer every 30 lines:
+			if (execReport.nbRows % 30 == 0)
+				writer.flush();
 		}
+
+		// Add a line in case of an OVERFLOW:
+		if (overflow)
+			writer.write("\nOVERFLOW (more rows were available but have been truncated by the TAP service)");
+
+		writer.flush();
 	}
 
 	/**
@@ -176,14 +164,14 @@ public class TextFormat implements OutputFormat {
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
 	 * 
-	 * @return	The number of written result rows. (<i>note: if this number is greater than the value of MAXREC: OVERFLOW</i>)
+	 * @return	<i>true</i> if an overflow (i.e. nbDBRows > MAXREC) is detected, <i>false</i> otherwise.
 	 * 
-	 * @throws IOException				If there is an error while writing something in the output stream.
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If any other error occurs.
 	 */
-	protected int writeData(final TableIterator queryResult, final AsciiTable asciiTable, final TAPExecutionReport execReport, final Thread thread) throws TAPException{
-		int nbRows = 0;
+	protected boolean writeData(final TableIterator queryResult, final AsciiTable asciiTable, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException{
+		execReport.nbRows = 0;
+		boolean overflow = false;
 
 		// Get the list of columns:
 		DBColumn[] selectedColumns = execReport.resultingColumns;
@@ -191,9 +179,15 @@ public class TextFormat implements OutputFormat {
 
 		StringBuffer line = new StringBuffer();
 		while(queryResult.nextRow()){
+			// Stop right now the formatting if the job has been aborted/canceled/interrupted:
+			if (thread.isInterrupted())
+				throw new InterruptedException();
+
 			// Deal with OVERFLOW, if needed:
-			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec())
+			if (execReport.parameters.getMaxRec() > 0 && execReport.nbRows >= execReport.parameters.getMaxRec()){
+				overflow = true;
 				break;
+			}
 
 			// Clear the line buffer:
 			line.delete(0, line.length());
@@ -212,18 +206,18 @@ public class TextFormat implements OutputFormat {
 			// Append the line/row in the ASCII table:
 			asciiTable.addLine(line.toString());
 
-			nbRows++;
+			execReport.nbRows++;
 		}
 
-		return nbRows;
+		return overflow;
 	}
 
 	/**
 	 * Writes the given field value in the given buffer.
 	 * 
-	 * @param value				The value to write.
-	 * @param tapCol			The corresponding column metadata.
-	 * @param line				The buffer in which the field value must be written.
+	 * @param value		The value to write.
+	 * @param tapCol	The corresponding column metadata.
+	 * @param line		The buffer in which the field value must be written.
 	 */
 	protected void writeFieldValue(final Object value, final DBColumn tapCol, final StringBuffer line){
 		if (value != null){

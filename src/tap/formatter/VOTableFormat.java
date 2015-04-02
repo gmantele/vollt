@@ -46,7 +46,6 @@ import uk.ac.starlink.table.StarTable;
 import uk.ac.starlink.votable.DataFormat;
 import uk.ac.starlink.votable.VOSerializer;
 import uk.ac.starlink.votable.VOTableVersion;
-import uws.service.log.UWSLog.LogLevel;
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
@@ -84,12 +83,9 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  */
 public class VOTableFormat implements OutputFormat {
-
-	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
-	private boolean logFormatReport;
 
 	/** The {@link ServiceConnection} to use (for the log and to have some information about the service (particularly: name, description). */
 	protected final ServiceConnection service;
@@ -119,7 +115,7 @@ public class VOTableFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public VOTableFormat(final ServiceConnection service) throws NullPointerException{
-		this(service, true);
+		this(service, null, null);
 	}
 
 	/**
@@ -141,7 +137,7 @@ public class VOTableFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat) throws NullPointerException{
-		this(service, votFormat, null, true);
+		this(service, votFormat, null);
 	}
 
 	/**
@@ -164,52 +160,10 @@ public class VOTableFormat implements OutputFormat {
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat, final VOTableVersion votVersion) throws NullPointerException{
-		this(service, votFormat, votVersion, true);
-	}
-
-	/**
-	 * <p>Creates a VOTable formatter.</p>
-	 * 
-	 * <p><i>Note:
-	 * 	The MIME type is automatically set to "application/x-votable+xml" = "votable".
-	 * 	It is however possible to change this default value thanks to {@link #setMimeType(String, String)}.
-	 * </i></p>
-	 * 
-	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
-	 * @param logFormatReport		<code>true</code> to append a format report (start and end date/time) in the log output, <code>false</code> otherwise.
-	 * 
-	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 */
-	public VOTableFormat(final ServiceConnection service, final boolean logFormatReport) throws NullPointerException{
-		this(service, null, null, logFormatReport);
-	}
-
-	/**
-	 * <p>Creates a VOTable formatter.</p>
-	 * 
-	 * <i>Note: The MIME type is automatically set in function of the given VOTable serialization:</i>
-	 * <ul>
-	 * 	<li><i><b>none or unknown</b>: equivalent to BINARY</i></li>
-	 * 	<li><i><b>BINARY</b>:          "application/x-votable+xml" = "votable"</i></li>
-	 * 	<li><i><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</i></li>
-	 * 	<li><i><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</i></li>
-	 * 	<li><i><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</i></li>
-	 * </ul>
-	 * <p><i>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</i></p> 
-	 * 
-	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
-	 * @param votFormat				Serialization of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
-	 * @param votVersion			Version of the resulting VOTable.
-	 * @param logFormatReport		<code>true</code> to append a format report (start and end date/time) in the log output, <code>false</code> otherwise.
-	 * 
-	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 */
-	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat, final VOTableVersion votVersion, final boolean logFormatReport) throws NullPointerException{
 		if (service == null)
 			throw new NullPointerException("The given service connection is NULL!");
 
 		this.service = service;
-		this.logFormatReport = logFormatReport;
 
 		// Set the VOTable serialization and version:
 		this.votFormat = (votFormat == null) ? DataFormat.BINARY : votFormat;
@@ -372,48 +326,40 @@ public class VOTableFormat implements OutputFormat {
 	}
 
 	@Override
-	public final void writeResult(final TableIterator queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException{
-		try{
-			long start = System.currentTimeMillis();
+	public final void writeResult(final TableIterator queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, IOException, InterruptedException{
+		ColumnInfo[] colInfos = toColumnInfos(queryResult, execReport, thread);
 
-			ColumnInfo[] colInfos = toColumnInfos(queryResult, execReport, thread);
+		/* Turns the result set into a table. */
+		LimitedStarTable table = new LimitedStarTable(queryResult, colInfos, execReport.parameters.getMaxRec());
 
-			/* Turns the result set into a table. */
-			LimitedStarTable table = new LimitedStarTable(queryResult, colInfos, execReport.parameters.getMaxRec());
+		/* Prepares the object that will do the serialization work. */
+		VOSerializer voser = VOSerializer.makeSerializer(votFormat, votVersion, table);
+		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(output));
 
-			/* Prepares the object that will do the serialization work. */
-			VOSerializer voser = VOSerializer.makeSerializer(votFormat, votVersion, table);
-			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(output));
+		/* Write header. */
+		writeHeader(votVersion, execReport, out);
 
-			/* Write header. */
-			writeHeader(votVersion, execReport, out);
+		if (thread.isInterrupted())
+			throw new InterruptedException();
 
-			/* Write table element. */
-			voser.writeInlineTableElement(out);
-			out.flush();
+		/* Write table element. */
+		voser.writeInlineTableElement(out);
+		execReport.nbRows = table.getNbReadRows();
+		out.flush();
 
-			/* Check for overflow and write INFO if required. */
-			if (table.lastSequenceOverflowed()){
-				out.write("<INFO name=\"QUERY_STATUS\" value=\"OVERFLOW\"/>");
-				out.newLine();
-			}
-
-			/* Write footer. */
-			out.write("</RESOURCE>");
+		/* Check for overflow and write INFO if required. */
+		if (table.lastSequenceOverflowed()){
+			out.write("<INFO name=\"QUERY_STATUS\" value=\"OVERFLOW\"/>");
 			out.newLine();
-			out.write("</VOTABLE>");
-			out.newLine();
-
-			out.flush();
-
-			if (logFormatReport)
-				service.getLogger().logTAP(LogLevel.INFO, execReport, "FORMAT", "Result formatted (in VOTable ; " + table.getNbReadRows() + " rows ; " + table.getColumnCount() + " columns) in " + (System.currentTimeMillis() - start) + "ms!", null);
-		}catch(IOException ioe){
-			if (ioe.getCause() != null && ioe.getCause() instanceof DataReadException)
-				throw (DataReadException)ioe.getCause();
-			else
-				throw new TAPException("Error while writing a query result in VOTable!", ioe);
 		}
+
+		/* Write footer. */
+		out.write("</RESOURCE>");
+		out.newLine();
+		out.write("</VOTABLE>");
+		out.newLine();
+
+		out.flush();
 	}
 
 	/**
@@ -460,7 +406,7 @@ public class VOTableFormat implements OutputFormat {
 		 * 	2/ a GROUP item with the STC expression of the coordinate system. 
 		 */
 
-		//out.flush();  // TODO DEBUG flush() => commit
+		out.flush();
 	}
 
 	/**
@@ -502,9 +448,6 @@ public class VOTableFormat implements OutputFormat {
 				colInfos[indField] = getColumnInfo(tapCol);
 
 				indField++;
-
-				if (thread.isInterrupted())
-					throw new InterruptedException();
 			}
 
 			return colInfos;

@@ -37,7 +37,7 @@ import uws.service.log.DefaultUWSLog;
  * Default implementation of the {@link TAPLog} interface which lets logging any message about a TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  * 
  * @see DefaultUWSLog
  */
@@ -127,7 +127,7 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 			return;
 
 		// log the main given error:
-		log(level, "DB", event, (connection != null ? connection.getID() : null), message, error);
+		log(level, "DB", event, (connection != null ? connection.getID() : null), message, null, error);
 
 		/* Some SQL exceptions (like BatchUpdateException) have a next exception which provides more information.
 		 * Here, the stack trace of the next exception is also logged:
@@ -155,23 +155,23 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 		try{
 			if (event != null && obj != null){
 				if (event.equals("SYNC_INIT"))
-					msgAppend = "QUERY=" + ((TAPParameters)obj).getQuery().replaceAll("(\t|\r?\n)+", " ");
-				else if (obj instanceof TAPSyncJob)
-					jobId = ((TAPSyncJob)obj).getID();
-				else if (obj instanceof TAPExecutionReport){
+					msgAppend = "QUERY=" + ((TAPParameters)obj).getQuery();
+				else if (obj instanceof TAPSyncJob){
+					log(level, "JOB", event, ((TAPSyncJob)obj).getID(), message, null, error);
+					return;
+				}else if (obj instanceof TAPExecutionReport){
 					TAPExecutionReport report = (TAPExecutionReport)obj;
 					jobId = report.jobID;
 					msgAppend = (report.synchronous ? "SYNC" : "ASYNC") + ",duration=" + report.getTotalDuration() + "ms (upload=" + report.getUploadDuration() + ",parse=" + report.getParsingDuration() + ",exec=" + report.getExecutionDuration() + ",format[" + report.parameters.getFormat() + "]=" + report.getFormattingDuration() + ")";
-				}
+				}else if (event.equalsIgnoreCase("WRITING_ERROR"))
+					jobId = obj.toString();
 			}
-			if (msgAppend != null)
-				msgAppend = "\t" + msgAppend;
 		}catch(Throwable t){
 			error("Error while preparing a log message in logTAP(...)! The message will be logger but without additional information such as the job ID.", t);
 		}
 
 		// Log the message:
-		log(level, "TAP", event, jobId, message + (msgAppend != null ? msgAppend : ""), error);
+		log(level, "TAP", event, jobId, message, msgAppend, error);
 	}
 
 }

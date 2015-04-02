@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -104,7 +104,7 @@ import adql.query.ADQLQuery;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (04/2015)
  */
 public class ADQLExecutor {
 
@@ -223,6 +223,8 @@ public class ADQLExecutor {
 
 		try{
 			return start();
+		}catch(IOException ioe){
+			throw new UWSException(ioe);
 		}catch(TAPException te){
 			throw new UWSException(te.getHttpErrorCode(), te);
 		}
@@ -260,11 +262,12 @@ public class ADQLExecutor {
 	 * @return	The resulting execution report.
 	 * 
 	 * @throws TAPException			If any error occurs while executing the ADQL query.
+	 * @throws IOException			If any error occurs while writing the result in the given {@link HttpServletResponse}.
 	 * @throws InterruptedException	If the job has been interrupted (by the user or a time-out).
 	 * 
 	 * @see #start()
 	 */
-	public final TAPExecutionReport start(final Thread thread, final String jobId, final TAPParameters params, final HttpServletResponse response) throws TAPException, InterruptedException{
+	public final TAPExecutionReport start(final Thread thread, final String jobId, final TAPParameters params, final HttpServletResponse response) throws TAPException, IOException, InterruptedException{
 		if (this.thread != null || this.report != null)
 			throw new TAPException("This ADQLExecutor has already been executed!");
 
@@ -305,9 +308,14 @@ public class ADQLExecutor {
 	 * 
 	 * @throws TAPException			If any error occurs while executing the ADQL query.
 	 * @throws UWSException			If any error occurs while executing the ADQL query.
+	 * @throws IOException			If an error happens while writing the result in the specified {@link HttpServletResponse}.
+	 *                    			<i>That kind of error can be thrown only in synchronous mode.
+	 *                    			In asynchronous, the error is stored as job error report and is never propagated.</i>
 	 * @throws InterruptedException	If the job has been interrupted (by the user or a time-out).
 	 */
-	protected final TAPExecutionReport start() throws TAPException, UWSException, InterruptedException{
+	protected final TAPExecutionReport start() throws TAPException, UWSException, IOException, InterruptedException{
+		logger.logTAP(LogLevel.INFO, report, "START_EXEC", (report.synchronous ? "Synchronous" : "Asynchronous") + " execution of an ADQL query STARTED.", null);
+
 		// Save the start time (for reporting usage):
 		long start = System.currentTimeMillis();
 
@@ -356,15 +364,18 @@ public class ADQLExecutor {
 
 			// 4. WRITE RESULT:
 			startStep(ExecutionProgression.WRITING_RESULT);
-			if (response != null && response.isCommitted())
-				getLogger().logTAP(LogLevel.WARNING, report, "WRITING_RESULT", "HTTP request canceled/timeout! The result can not have been returned to the user.", null);
-			else
-				writeResult(queryResult);
+			writeResult(queryResult);
 			endStep();
 
 			// Report the COMPLETED status:
 			tapParams.remove(TAPJob.PARAM_PROGRESSION);
 			report.success = true;
+
+			// Set the total duration in the report:
+			report.setTotalDuration(System.currentTimeMillis() - start);
+
+			// Log and report the end of this execution:
+			logger.logTAP(LogLevel.INFO, report, "END_EXEC", "ADQL query execution finished.", null);
 
 			return report;
 		}finally{
@@ -373,7 +384,7 @@ public class ADQLExecutor {
 				try{
 					queryResult.close();
 				}catch(DataReadException dre){
-					logger.logTAP(LogLevel.ERROR, report, "END_EXEC", "Can not close the database query result!", dre);
+					logger.logTAP(LogLevel.WARNING, report, "END_EXEC", "Can not close the database query result!", dre);
 				}
 			}
 
@@ -381,7 +392,7 @@ public class ADQLExecutor {
 			try{
 				dropUploadedTables();
 			}catch(TAPException e){
-				logger.logTAP(LogLevel.ERROR, report, "END_EXEC", "Can not drop the uploaded tables from the database!", e);
+				logger.logTAP(LogLevel.WARNING, report, "END_EXEC", "Can not drop the uploaded tables from the database!", e);
 			}
 
 			// Free the connection (so that giving it back to a pool, if any, otherwise, just free resources):
@@ -389,12 +400,6 @@ public class ADQLExecutor {
 				service.getFactory().freeConnection(dbConn);
 				dbConn = null;
 			}
-
-			// Set the total duration in the report:
-			report.setTotalDuration(System.currentTimeMillis() - start);
-
-			// Log and report the end of this execution:
-			logger.logTAP(LogLevel.INFO, report, "END_EXEC", "ADQL query execution finished.", null);
 		}
 	}
 
@@ -549,7 +554,7 @@ public class ADQLExecutor {
 	 */
 	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, TAPException{
 		// Log the start of execution:
-		logger.logTAP(LogLevel.INFO, report, "EXECUTING", "Executing ADQL: " + adql.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
+		logger.logTAP(LogLevel.INFO, report, "START_DB_EXECUTION", "ADQL query: " + adql.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 
 		// Set the fetch size, if any:
 		if (service.getFetchSize() != null && service.getFetchSize().length >= 1){
@@ -564,9 +569,10 @@ public class ADQLExecutor {
 
 		// Log the success or failure:
 		if (result == null)
-			logger.logTAP(LogLevel.INFO, report, "END_QUERY", "Query execution aborted after " + (System.currentTimeMillis() - startStep) + "ms!", null);
+			logger.logTAP(LogLevel.INFO, report, "END_DB_EXECUTION", "Query execution aborted after " + (System.currentTimeMillis() - startStep) + "ms!", null);
 		else
-			logger.logTAP(LogLevel.INFO, report, "END_QUERY", "Query successfully executed in " + (System.currentTimeMillis() - startStep) + "ms!", null);
+			logger.logTAP(LogLevel.INFO, report, "END_DB_EXECUTION", "Query successfully executed in " + (System.currentTimeMillis() - startStep) + "ms!", null);
+
 		return result;
 	}
 
@@ -582,12 +588,15 @@ public class ADQLExecutor {
 	 * @param queryResult	The result of the query execution in database.
 	 * 
 	 * @throws InterruptedException	If the thread has been interrupted.
+	 * @throws IOException			If an error happens while writing the result in the {@link HttpServletResponse}.
+	 *                    			<i>That kind of error can be thrown only in synchronous mode.
+	 *                    			In asynchronous, the error is stored as job error report and is never propagated.</i>
 	 * @throws TAPException			If an error occurs while getting the appropriate formatter or while formatting or writing (synchronous execution) the result.
 	 * @throws UWSException			If an error occurs while getting the output stream or while writing (asynchronous execution) the result.
 	 * 
 	 * @see #writeResult(TableIterator, OutputFormat, OutputStream)
 	 */
-	protected final void writeResult(final TableIterator queryResult) throws InterruptedException, TAPException, UWSException{
+	protected final void writeResult(final TableIterator queryResult) throws InterruptedException, IOException, TAPException, UWSException{
 		// Log the start of the writing:
 		logger.logTAP(LogLevel.INFO, report, "WRITING_RESULT", "Writing the query result", null);
 
@@ -596,19 +605,20 @@ public class ADQLExecutor {
 
 		// CASE SYNCHRONOUS:
 		if (response != null){
-			try{
-				// Set the HTTP content type to the MIME type of the result format:
-				response.setContentType(formatter.getMimeType());
+			long start = -1;
 
-				// Write the formatted result in the HTTP response output:
-				writeResult(queryResult, formatter, response.getOutputStream());
+			// Set the HTTP content type to the MIME type of the result format:
+			response.setContentType(formatter.getMimeType());
 
-			}catch(IOException ioe){
-				throw new TAPException("Impossible to get the HTTP response, so the result of the job " + report.jobID + " can not be written!", ioe, UWSException.INTERNAL_SERVER_ERROR);
-			}
+			// Write the formatted result in the HTTP response output:
+			start = System.currentTimeMillis();
+			writeResult(queryResult, formatter, response.getOutputStream());
+
+			logger.logTAP(LogLevel.INFO, report, "RESULT_WRITTEN", "Result formatted (in " + formatter.getMimeType() + " ; " + (report.nbRows < 0 ? "?" : report.nbRows) + " rows ; " + ((report.resultingColumns == null) ? "?" : report.resultingColumns.length) + " columns) in " + ((start <= 0) ? "?" : (System.currentTimeMillis() - start)) + "ms!", null);
 		}
 		// CASE ASYNCHRONOUS:
 		else{
+			long start = -1, end = -1;
 			try{
 				// Create a UWS Result object to store the result
 				// (the result will be stored in a file and this object is the association between the job and the result file):
@@ -619,7 +629,9 @@ public class ADQLExecutor {
 				result.setMimeType(formatter.getMimeType());
 
 				// Write the formatted result in the file output:
+				start = System.currentTimeMillis();
 				writeResult(queryResult, formatter, jobThread.getResultOutput(result));
+				end = System.currentTimeMillis();
 
 				// Set the size (in bytes) of the result in the result description:
 				result.setSize(jobThread.getResultSize(result));
@@ -627,8 +639,10 @@ public class ADQLExecutor {
 				// Add the result description and link in the job description:
 				jobThread.publishResult(result);
 
+				logger.logTAP(LogLevel.INFO, report, "RESULT_WRITTEN", "Result formatted (in " + formatter.getMimeType() + " ; " + (report.nbRows < 0 ? "?" : report.nbRows) + " rows ; " + ((report.resultingColumns == null) ? "?" : report.resultingColumns.length) + " columns) in " + ((start <= 0 || end <= 0) ? "?" : (end - start)) + "ms!", null);
+
 			}catch(IOException ioe){
-				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to access the file into the result of the job " + report.jobID + " must be written!");
+				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to write in the file into the result of the job " + report.jobID + " must be written!");
 			}
 		}
 	}
@@ -648,9 +662,10 @@ public class ADQLExecutor {
 	 * @param output		The stream in which the result must be written.
 	 * 
 	 * @throws InterruptedException	If the thread has been interrupted.
+	 * @throws IOException			If there is an error while writing the result in the given stream.
 	 * @throws TAPException			If there is an error while formatting the result.
 	 */
-	protected void writeResult(TableIterator queryResult, OutputFormat formatter, OutputStream output) throws InterruptedException, TAPException{
+	protected void writeResult(TableIterator queryResult, OutputFormat formatter, OutputStream output) throws InterruptedException, IOException, TAPException{
 		formatter.writeResult(queryResult, output, report, thread);
 	}
 

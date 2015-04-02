@@ -16,10 +16,11 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.IOException;
 import java.io.OutputStream;
 
 import tap.TAPException;
@@ -31,7 +32,7 @@ import tap.data.TableIterator;
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * 
- * @version 2.0 (07/2014)
+ * @version 2.0 (03/2015)
  */
 public interface OutputFormat {
 
@@ -73,8 +74,10 @@ public interface OutputFormat {
 	 * @param execReport	The report of the execution of the TAP query whose the result must be now written.
 	 * @param thread		The thread which has asked the result writing.
 	 * 
-	 * @throws TAPException		If there is an error while formatting/writing the query result.
+	 * @throws TAPException			If there is an error while formatting the query result.
+	 * @throws IOException			If any error occurs while writing into the given stream.
+	 * @throws InterruptedException	If the query has been interrupted/aborted.
 	 */
-	public void writeResult(final TableIterator result, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException;
+	public void writeResult(final TableIterator result, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, IOException, InterruptedException;
 
 }

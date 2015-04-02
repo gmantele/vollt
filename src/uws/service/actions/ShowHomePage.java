@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -44,7 +44,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>This action displays the UWS home page.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (04/2015)
  */
 public class ShowHomePage extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -106,7 +106,7 @@ public class ShowHomePage extends UWSAction {
 				serialization = serializer.getUWS(uws);
 			}catch(Exception e){
 				if (!(e instanceof UWSException)){
-					getLogger().logUWS(LogLevel.WARNING, urlInterpreter, "SERIALIZE", "Can't display the default home page, due to a serialization error!", e);
+					getLogger().logUWS(LogLevel.ERROR, urlInterpreter, "SERIALIZE", "Can't display the default home page, due to a serialization error!", e);
 					throw new UWSException(UWSException.NO_CONTENT, e, "No home page available for this UWS service!");
 				}else
 					throw (UWSException)e;

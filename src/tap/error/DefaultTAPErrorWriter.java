@@ -16,13 +16,15 @@ package tap.error;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -73,7 +75,7 @@ import uws.service.error.ServiceErrorWriter;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.0 (04/2015)
  */
 public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 
@@ -155,10 +157,11 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 	}
 
 	@Override
-	public void writeError(final Throwable t, final HttpServletResponse response, final HttpServletRequest request, final String reqID, final JobOwner user, final String action) throws IOException{
+	public boolean writeError(final Throwable t, final HttpServletResponse response, final HttpServletRequest request, final String reqID, final JobOwner user, final String action){
 		if (t == null || response == null)
-			return;
+			return true;
 
+		boolean written = false;
 		// If expected error, just write it in VOTable:
 		if (t instanceof UWSException || t instanceof TAPException){
 			// get the error type:
@@ -166,41 +169,68 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 			// get the HTTP error code:
 			int httpErrorCode = (t instanceof UWSException) ? ((UWSException)t).getHttpErrorCode() : ((TAPException)t).getHttpErrorCode();
 			// write the VOTable error:
-			writeError(t.getMessage(), type, httpErrorCode, response, request, reqID, user, action);
+			written = writeError(t.getMessage(), type, httpErrorCode, response, request, reqID, user, action);
 		}
 		// Otherwise, log it and write a message to the user:
 		else
 			// write a message to the user:
-			writeError("INTERNAL SERVER ERROR! Sorry, this error is grave and unexpected. No explanation can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following REQ_ID).", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
+			written = writeError("INTERNAL SERVER ERROR! Sorry, this error is grave and unexpected. No explanation can be provided for the moment. Details about this error have been reported in the service log files ; you should try again your request later or notify the administrator(s) by yourself (with the following REQ_ID).", ErrorType.FATAL, UWSException.INTERNAL_SERVER_ERROR, response, request, reqID, user, action);
+		return written;
 	}
 
 	@Override
-	public void writeError(final String message, final ErrorType type, final int httpErrorCode, final HttpServletResponse response, final HttpServletRequest request, final String reqID, final JobOwner user, final String action) throws IOException{
+	public boolean writeError(final String message, final ErrorType type, final int httpErrorCode, final HttpServletResponse response, final HttpServletRequest request, final String reqID, final JobOwner user, final String action){
 		if (message == null || response == null)
-			return;
+			return true;
 
-		// Erase anything written previously in the HTTP response:
-		response.reset();
+		try{
+			// Erase anything written previously in the HTTP response:
+			response.reset();
 
-		// Set the HTTP status:
-		response.setStatus((httpErrorCode <= 0) ? 500 : httpErrorCode);
+			// Set the HTTP status:
+			response.setStatus((httpErrorCode <= 0) ? 500 : httpErrorCode);
 
-		// Set the MIME type of the answer (XML for a VOTable document):
-		response.setContentType("application/xml");
+			// Set the MIME type of the answer (XML for a VOTable document):
+			response.setContentType("application/xml");
 
-		// List any additional information useful to report to the user:
-		Map<String,String> addInfos = new LinkedHashMap<String,String>();
-		if (reqID != null)
-			addInfos.put("REQ_ID", reqID);
-		if (type != null)
-			addInfos.put("ERROR_TYPE", type.toString());
-		if (user != null)
-			addInfos.put("USER", user.getID() + ((user.getPseudo() == null) ? "" : " (" + user.getPseudo() + ")"));
-		if (action != null)
-			addInfos.put("ACTION", action);
+		}catch(IllegalStateException ise){
+			/*   If it is not possible any more to reset the response header and body,
+			 * the error is anyway written in order to corrupt the HTTP response.
+			 *   Thus, it will be obvious that an error occurred and the result is
+			 * incomplete and/or wrong.*/
+		}
 
-		// Format the error in VOTable and write the document in the given HTTP response:
-		getFormatter().writeError(message, addInfos, response.getWriter());
+		try{
+			// List any additional information useful to report to the user:
+			Map<String,String> addInfos = new LinkedHashMap<String,String>();
+			if (reqID != null)
+				addInfos.put("REQ_ID", reqID);
+			if (type != null)
+				addInfos.put("ERROR_TYPE", type.toString());
+			if (user != null)
+				addInfos.put("USER", user.getID() + ((user.getPseudo() == null) ? "" : " (" + user.getPseudo() + ")"));
+			if (action != null)
+				addInfos.put("ACTION", action);
+
+			// Format the error in VOTable and write the document in the given HTTP response:
+			PrintWriter writer;
+			try{
+				writer = response.getWriter();
+			}catch(IllegalStateException ise){
+				/*   This exception may occur just because either the writer or
+				 * the output-stream can be used (because already got before).
+				 *   So, we just have to get the output-stream if getting the writer
+				 * throws an error.*/
+				writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(response.getOutputStream())));
+			}
+			getFormatter().writeError(message, addInfos, writer);
+
+			return true;
+		}catch(IllegalStateException ise){
+			return false;
+		}catch(IOException ioe){
+			return false;
+		}
 	}
 
 	@Override
@@ -272,7 +302,7 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 			if (causes.length() > 0)
 				addInfos.put("CAUSES", "\n" + nbCauses + causes.toString());
 
-			// Add the stack trace of the original exception ONLY IF NOT A TAP OR A UWS EXCEPTION (only unexpected error should be detailed to the users):
+			// Add the stack trace of the original exception ONLY IF NOT A TAP NOR A UWS EXCEPTION (only unexpected error should be detailed to the users):
 			if (!(lastCause instanceof TAPException && lastCause instanceof UWSException)){
 				ByteArrayOutputStream stackTrace = new ByteArrayOutputStream();
 				lastCause.printStackTrace(new PrintStream(stackTrace));

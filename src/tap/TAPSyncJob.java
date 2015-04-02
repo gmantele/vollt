@@ -20,6 +20,7 @@ package tap;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.IOException;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletResponse;
@@ -162,16 +163,17 @@ public class TAPSyncJob {
 	 * @return	<i>true</i> if the execution was successful, <i>false</i> otherwise.
 	 * 
 	 * @throws IllegalStateException	If this synchronous job has already been started before.
+	 * @throws IOException				If any error occurs while writing the query result in the given {@link HttpServletResponse}.
 	 * @throws TAPException				If any error occurs while executing the ADQL query.
 	 * 
 	 * @see SyncThread
 	 */
-	public synchronized boolean start(final HttpServletResponse response) throws IllegalStateException, TAPException{
+	public synchronized boolean start(final HttpServletResponse response) throws IllegalStateException, IOException, TAPException{
 		if (startedAt != null)
-			throw new IllegalStateException("Impossible to restart a synchronous TAP query !");
+			throw new IllegalStateException("Impossible to restart a synchronous TAP query!");
 
 		// Log the start of this sync job:
-		service.getLogger().logTAP(LogLevel.INFO, this, "SYNC_START", "Synchronous job " + ID + " is starting!", null);
+		service.getLogger().logTAP(LogLevel.INFO, this, "START", "Synchronous job " + ID + " is starting!", null);
 
 		// Create the object having the knowledge about how to execute an ADQL query:
 		ADQLExecutor executor = service.getFactory().createADQLExecutor();
@@ -179,7 +181,7 @@ public class TAPSyncJob {
 			executor.initDBConnection(ID);
 		}catch(TAPException te){
 			service.getLogger().logDB(LogLevel.ERROR, null, "CONNECTION_LACK", "No more database connection available for the moment!", te);
-			service.getLogger().logTAP(LogLevel.ERROR, this, "END_EXEC", "Synchronous job " + ID + " execution aborted: no database connection available!", null);
+			service.getLogger().logTAP(LogLevel.ERROR, this, "END", "Synchronous job " + ID + " execution aborted: no database connection available!", null);
 			throw new TAPException("TAP service too busy! No connection available for the moment. You should try later or create an asynchronous query (which will be executed when enough resources will be available again).", UWSException.SERVICE_UNAVAILABLE);
 		}
 
@@ -211,9 +213,9 @@ public class TAPSyncJob {
 		if (timeout && error != null && error instanceof InterruptedException){
 			// Log the timeout:
 			if (thread.isAlive())
-				service.getLogger().logTAP(LogLevel.WARNING, this, "SYNC_TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "ms) for the synchonous job " + ID + ", but the thread can not be interrupted!", null);
+				service.getLogger().logTAP(LogLevel.WARNING, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "ms) for the synchonous job " + ID + ", but the thread can not be interrupted!", null);
 			else
-				service.getLogger().logTAP(LogLevel.INFO, this, "SYNC_TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "ms) for the synchonous job " + ID + ".", null);
+				service.getLogger().logTAP(LogLevel.INFO, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "ms) for the synchonous job " + ID + ".", null);
 
 			// Report the timeout to the user:
 			throw new TAPException("Time out! The execution of this synchronous TAP query was limited to " + tapParams.getExecutionDuration() + "ms. You should try again but in asynchronous execution.", UWSException.ACCEPTED_BUT_NOT_COMPLETE);
@@ -223,21 +225,28 @@ public class TAPSyncJob {
 			// INTERRUPTION:
 			if (error instanceof InterruptedException){
 				// log the unexpected interruption (unexpected because not caused by a timeout):
-				service.getLogger().logTAP(LogLevel.WARNING, this, "SYNC_END", "The execution of the synchronous job " + ID + " has been unexpectedly interrupted!", null);
+				service.getLogger().logTAP(LogLevel.ERROR, this, "END", "The execution of the synchronous job " + ID + " has been unexpectedly interrupted!", error);
 				// report the unexpected interruption to the user:
 				throw new TAPException("The execution of this synchronous job " + ID + " has been unexpectedly aborted!", UWSException.ACCEPTED_BUT_NOT_COMPLETE);
+			}
+			// REQUEST ABORTION:
+			else if (error instanceof IOException){
+				// log the unexpected interruption (unexpected because not caused by a timeout):
+				service.getLogger().logTAP(LogLevel.INFO, this, "END", "Abortion of the synchronous job " + ID + "! Cause: connection with the HTTP client unexpectedly closed.", null);
+				// throw the error until the TAP instance to notify it about the abortion:
+				throw (IOException)error;
 			}
 			// TAP EXCEPTION:
 			else if (error instanceof TAPException){
 				// log the error:
-				service.getLogger().logTAP(LogLevel.ERROR, this, "SYNC_END", "An error occured while executing the query of the synchronous job " + ID + ".", null);
+				service.getLogger().logTAP(LogLevel.ERROR, this, "END", "The following error interrupted the execution of the synchronous job " + ID + ".", error);
 				// report the error to the user:
 				throw (TAPException)error;
 			}
 			// ANY OTHER EXCEPTION:
 			else{
 				// log the error:
-				service.getLogger().logTAP(LogLevel.FATAL, this, "SYNC_END", "An unexpected error has stopped the execution of the synchronous job " + ID + ".", error);
+				service.getLogger().logTAP(LogLevel.FATAL, this, "END", "The following GRAVE error interrupted the execution of the synchronous job " + ID + ".", error);
 				// report the error to the user:
 				if (error instanceof Error)
 					throw (Error)error;
@@ -245,7 +254,7 @@ public class TAPSyncJob {
 					throw new TAPException(error);
 			}
 		}else
-			service.getLogger().logTAP(LogLevel.INFO, this, "SYNC_END", "The synchronous job " + ID + " successfully ended.", null);
+			service.getLogger().logTAP(LogLevel.INFO, this, "END", "Success of the synchronous job " + ID + ".", null);
 
 		return thread.isSuccess();
 	}
@@ -259,7 +268,7 @@ public class TAPSyncJob {
 	 * </p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (09/2014)
+	 * @version 2.0 (04/2015)
 	 */
 	protected class SyncThread extends Thread {
 
@@ -342,15 +351,15 @@ public class TAPSyncJob {
 				exception = e;
 
 				// Log the end of the job:
-				if (e instanceof InterruptedException)
+				if (e instanceof InterruptedException || e instanceof IOException)
 					// Abortion:
 					executor.getLogger().logThread(LogLevel.INFO, this, "END", "Synchronous thread \"" + ID + "\" cancelled.", null);
-				else if (e instanceof Error)
-					// GRAVE error:
-					executor.getLogger().logThread(LogLevel.FATAL, this, "END", "Synchronous thread \"" + ID + "\" ended with a FATAL error.", exception);
-				else
+				else if (e instanceof TAPException)
 					// Error:
 					executor.getLogger().logThread(LogLevel.ERROR, this, "END", "Synchronous thread \"" + ID + "\" ended with an error.", null);
+				else
+					// GRAVE error:
+					executor.getLogger().logThread(LogLevel.FATAL, this, "END", "Synchronous thread \"" + ID + "\" ended with a FATAL error.", null);
 			}
 		}
 
