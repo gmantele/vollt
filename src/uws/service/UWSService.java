@@ -1128,6 +1128,9 @@ public class UWSService implements UWS {
 			// Identify the user:
 			user = UWSToolBox.getUser(request, userIdentifier);
 
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
 			// Apply the appropriate UWS action:
 			for(int i = 0; action == null && i < uwsActions.size(); i++){
 				if (uwsActions.get(i).match(urlInterpreter, user, request)){
@@ -1217,6 +1220,7 @@ public class UWSService implements UWS {
 	public void redirect(String url, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException, UWSException{
 		response.setStatus(HttpServletResponse.SC_SEE_OTHER);
 		response.setContentType(request.getContentType());
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 		response.setHeader("Location", url);
 		response.flushBuffer();
 	}

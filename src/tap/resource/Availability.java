@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -31,12 +31,13 @@ import javax.servlet.http.HttpServletResponse;
 import tap.ServiceConnection;
 import tap.TAPException;
 import uk.ac.starlink.votable.VOSerializer;
+import uws.UWSToolBox;
 
 /**
  * <p>TAP resource describing the availability of a TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.0 (04/2015)
  */
 public class Availability implements TAPResource, VOSIResource {
 
@@ -108,6 +109,9 @@ public class Availability implements TAPResource, VOSIResource {
 
 		// Set the response MIME type (XML):
 		response.setContentType("text/xml");
+
+		// Set the character encoding:
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 		// Get the output stream:
 		PrintWriter pw = response.getWriter();

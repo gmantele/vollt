@@ -120,8 +120,8 @@ public class HomePage implements TAPResource {
 					// Set the content type:
 					response.setContentType(tap.homePageMimeType);
 
-					// set character encoding:
-					response.setCharacterEncoding("UTF-8");
+					// Set the character encoding:
+					response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 					// Get the character writer:
 					PrintWriter writer = response.getWriter();
@@ -215,6 +215,9 @@ public class HomePage implements TAPResource {
 
 			// Set the content type: HTML document
 			response.setContentType("text/html");
+
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 			// Write the home page:
 			writer.println("<html><head><title>TAP HOME PAGE</title></head><body><h1 style=\"text-align: center\">TAP HOME PAGE</h1><h2>Available resources:</h2><ul>");

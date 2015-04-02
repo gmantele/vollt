@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.UWSJob;
 import uws.job.serializer.UWSSerializer;
 import uws.job.user.JobOwner;
@@ -43,7 +44,7 @@ import uws.service.log.UWSLog.LogLevel;
  * This summary is serialized by the {@link UWSSerializer} choosed in function of the HTTP Accept header.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (08/2014)
+ * @version 4.1 (04/2015)
  */
 public class JobSummary extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -100,6 +101,7 @@ public class JobSummary extends UWSAction {
 		// Write the job summary:
 		UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 		response.setContentType(serializer.getMimeType());
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 		try{
 			job.serialize(response.getOutputStream(), serializer, user);
 		}catch(Exception e){

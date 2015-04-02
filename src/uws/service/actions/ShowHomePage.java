@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.serializer.UWSSerializer;
 import uws.job.user.JobOwner;
 import uws.service.UWSService;
@@ -100,6 +101,7 @@ public class ShowHomePage extends UWSAction {
 		if (uws.isDefaultHomePage()){
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 			response.setContentType(serializer.getMimeType());
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 			// Get a short and simple serialization of this UWS:
 			String serialization;
 			try{
@@ -127,6 +129,7 @@ public class ShowHomePage extends UWSAction {
 				BufferedReader reader = new BufferedReader(new InputStreamReader(homePageUrl.openStream()));
 
 				response.setContentType("text/html");
+				response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 				PrintWriter writer = response.getWriter();
 				try{
 					String line = null;

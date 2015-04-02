@@ -41,6 +41,7 @@ import tap.formatter.VOTableFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.ErrorSummary;
 import uws.job.ErrorType;
 import uws.job.UWSJob;
@@ -192,6 +193,9 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 
 			// Set the MIME type of the answer (XML for a VOTable document):
 			response.setContentType("application/xml");
+
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 		}catch(IllegalStateException ise){
 			/*   If it is not possible any more to reset the response header and body,

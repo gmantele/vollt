@@ -37,6 +37,7 @@ import tap.parameters.DALIUpload;
 import tap.parameters.TAPParameters;
 import tap.upload.Uploader;
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.service.log.UWSLog.LogLevel;
@@ -609,6 +610,9 @@ public class ADQLExecutor {
 
 			// Set the HTTP content type to the MIME type of the result format:
 			response.setContentType(formatter.getMimeType());
+
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 			// Write the formatted result in the HTTP response output:
 			start = System.currentTimeMillis();

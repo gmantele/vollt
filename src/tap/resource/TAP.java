@@ -825,6 +825,9 @@ public class TAP implements VOSIResource {
 				throw new TAPException(ue);
 			}
 
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
 			// Display the TAP Home Page:
 			if (resourceName.length() == 0){
 				resourceName = homePage.getName();

@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -40,7 +40,7 @@ import uws.service.UWSUrl;
  * <p><i><u>Note:</u> The corresponding name is {@link UWSAction#SET_UWS_PARAMETER}.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.1 (11/2014)
+ * @version 4.1 (04/2015)
  * @since 4.1
  */
 public class SetUWSParameter extends UWSAction {

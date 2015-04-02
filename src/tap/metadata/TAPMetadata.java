@@ -456,6 +456,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	@Override
 	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws IOException{
 		response.setContentType("application/xml");
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 		PrintWriter writer = response.getWriter();
 		write(writer);

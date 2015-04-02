@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -43,7 +43,7 @@ import uws.service.log.UWSLog.LogLevel;
  * The response of this action is a redirection to the jobs list.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (11/2014)
+ * @version 4.1 (04/2015)
  */
 public class DestroyJob extends UWSAction {
 	private static final long serialVersionUID = 1L;

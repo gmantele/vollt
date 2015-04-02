@@ -54,9 +54,14 @@ import uws.service.request.UploadFile;
  * Some useful functions for the managing of a UWS service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (03/2015)
+ * @version 4.1 (04/2015)
  */
 public class UWSToolBox {
+
+	/**
+	 * Default character encoding for all HTTP response sent by this library.
+	 * @since 4.1 */
+	public final static String DEFAULT_CHAR_ENCODING = "UTF-8";
 
 	private static UWSLog defaultLogger = null;
 
@@ -503,6 +508,9 @@ public class UWSToolBox {
 			// Set the HTTP content type:
 			if (mimeType != null)
 				response.setContentType(mimeType);
+
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 			// Set the HTTP content length:
 			if (contentSize > 0)

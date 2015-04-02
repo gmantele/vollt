@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -50,7 +50,7 @@ import uws.service.request.UploadFile;
  * The serializer is choosen in function of the HTTP Accept header.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.1 (04/2015)
  */
 public class GetJobParam extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -171,11 +171,16 @@ public class GetJobParam extends UWSAction {
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 			String uwsField = attributes[0];
 			boolean jobSerialization = false;
+			// Set the content type:
 			if (uwsField == null || uwsField.trim().isEmpty() || (attributes.length <= 1 && (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) || uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS) || uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)))){
 				response.setContentType(serializer.getMimeType());
 				jobSerialization = true;
 			}else
 				response.setContentType("text/plain");
+
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+			// Serialize the selected attribute:
 			try{
 				job.serialize(response.getOutputStream(), attributes, serializer);
 			}catch(Exception e){

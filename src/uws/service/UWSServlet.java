@@ -342,6 +342,9 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			// Identify the user:
 			user = UWSToolBox.getUser(req, userIdentifier);
 
+			// Set the character encoding:
+			resp.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
 			// METHOD GET:
 			if (method.equals("GET")){
 				// HOME PAGE:
@@ -489,6 +492,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	protected void writeHomePage(UWSUrl requestUrl, HttpServletRequest req, HttpServletResponse resp, JobOwner user) throws UWSException, ServletException, IOException{
 		UWSSerializer serializer = getSerializer(req.getHeader("Accept"));
 		resp.setContentType(serializer.getMimeType());
+		resp.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 		String serialization;
 		try{
 			serialization = serializer.getUWS(this);
@@ -514,6 +518,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		// Write the jobs list:
 		UWSSerializer serializer = getSerializer(req.getHeader("Accept"));
 		resp.setContentType(serializer.getMimeType());
+		resp.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 		try{
 			jobsList.serialize(resp.getOutputStream(), serializer, user);
 		}catch(Exception e){
@@ -585,6 +590,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		// Write the job summary:
 		UWSSerializer serializer = getSerializer(req.getHeader("Accept"));
 		resp.setContentType(serializer.getMimeType());
+		resp.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 		try{
 			job.serialize(resp.getOutputStream(), serializer, user);
 		}catch(Exception e){
@@ -664,11 +670,15 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			UWSSerializer serializer = getSerializer(req.getHeader("Accept"));
 			String uwsField = attributes[0];
 			boolean jobSerialization = false;
+			// Set the content type:
 			if (uwsField == null || uwsField.trim().isEmpty() || (attributes.length <= 1 && (uwsField.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) || uwsField.equalsIgnoreCase(UWSJob.PARAM_RESULTS) || uwsField.equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)))){
 				resp.setContentType(serializer.getMimeType());
 				jobSerialization = true;
 			}else
 				resp.setContentType("text/plain");
+			// Set the character encoding:
+			resp.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+			// Serialize the selected attribute:
 			try{
 				job.serialize(resp.getOutputStream(), attributes, serializer);
 			}catch(Exception e){
@@ -766,6 +776,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	public void redirect(String url, HttpServletRequest request, JobOwner user, String uwsAction, HttpServletResponse response) throws ServletException, IOException{
 		response.setStatus(HttpServletResponse.SC_SEE_OTHER);
 		response.setContentType(request.getContentType());
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 		response.setHeader("Location", url);
 		response.flushBuffer();
 	}

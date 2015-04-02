@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import tap.TAPException;
 import uk.ac.starlink.votable.VOSerializer;
+import uws.UWSToolBox;
 
 /**
  * <p>TAP resource describing the capabilities of a TAP service.</p>
@@ -38,7 +39,7 @@ import uk.ac.starlink.votable.VOSerializer;
  * <p>This resource just return an XML document giving a description of the TAP service and list all its VOSI resources.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  */
 public class Capabilities implements TAPResource, VOSIResource {
 
@@ -111,6 +112,9 @@ public class Capabilities implements TAPResource, VOSIResource {
 
 		// Set the response MIME type (XML):
 		response.setContentType("application/xml");
+
+		// Set the character encoding:
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 		// Get the response stream:
 		PrintWriter out = response.getWriter();

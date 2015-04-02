@@ -212,6 +212,9 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 			// Set the MIME type of the answer (XML for a VOTable document):
 			response.setContentType(UWSSerializer.MIME_TYPE_HTML);
 
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
 		}catch(IllegalStateException ise){
 			/*   If it is not possible any more to reset the response header and body,
 			 * the error is anyway written in order to corrupt the HTTP response.
@@ -291,6 +294,9 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 
 			// Set the MIME type of the answer (JSON):
 			response.setContentType(UWSSerializer.MIME_TYPE_JSON);
+
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 		}catch(IllegalStateException ise){
 			/*   If it is not possible any more to reset the response header and body,
