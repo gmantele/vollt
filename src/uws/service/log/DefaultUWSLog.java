@@ -463,7 +463,7 @@ public class DefaultUWSLog implements UWSLog {
 			str.append(')');
 
 			// Send the log message to the log file:
-			log(level, "HTTP", "REQUEST_RECEIVED", requestId, message, str.toString(), error);
+			log(level, "HTTP", "REQUEST_RECEIVED", requestId, (message != null ? message : str.toString()), (message != null ? str.toString() : null), error);
 		}
 		// OTHERWISE, just write the given message:
 		else
