@@ -27,6 +27,7 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Iterator;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -34,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import tap.TAPException;
+import tap.formatter.OutputFormat;
 import uws.ClientAbortException;
 import uws.UWSToolBox;
 import uws.service.log.UWSLog.LogLevel;
@@ -210,20 +212,69 @@ public class HomePage implements TAPResource {
 
 		// DEFAULT: list all available resources:
 		if (!written){
-			// Get the output stream:
-			PrintWriter writer = response.getWriter();
-
 			// Set the content type: HTML document
 			response.setContentType("text/html");
 
 			// Set the character encoding:
 			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
-			// Write the home page:
-			writer.println("<html><head><title>TAP HOME PAGE</title></head><body><h1 style=\"text-align: center\">TAP HOME PAGE</h1><h2>Available resources:</h2><ul>");
+			// Get the output stream:
+			PrintWriter writer = response.getWriter();
+
+			// HTML header + CSS + Javascript:
+			writer.print("<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<meta charset=\"UTF-8\">\n\t\t<title>TAP HOME PAGE</title>\n\t\t<style type=\"text/css\">\n\t\t\th1 { text-align: center; }\n\t\t\t.subtitle { font-size: .8em; }\n\t\t\th2 { border-bottom: 1px solid black; }\n\t\t\t.formField textarea { padding: .5em; display: block; margin: 0; }\n\t\t\t.formField { margin-bottom: .5em; }\n\t\t\t#submit { font-weight: bold; font-size: 1.1em; padding: .4em; color: green; }\n\t\t\t#footer { font-style: .8em; font-style: italic; }\n\t\t</style>\n\t\t<script type=\"text/javascript\">\n\t\t\tfunction toggleTextInput(id){\n\t\t\t\tdocument.getElementById(id).disabled = !document.getElementById(id).disabled;\n\t\t\t\tif (document.getElementById(id).disabled){\n\t\t\t\t\tdocument.getElementById(id).value = \"-1\";\n\t\t\t\t\tdocument.getElementById(id).removeAttribute('name');\n\t\t\t\t}else\n\t\t\t\t\tdocument.getElementById(id).name = id;\n\t\t\t}\n\t\t\tfunction toggleUploadFeature(){\n\t\t\t\tdocument.getElementById('uplTable').disabled = !document.getElementById('uplTable').disabled;\n\t\t\t\tif (document.getElementById('uplTable').disabled){\n\t\t\t\t\tdocument.getElementById('uplTable').removeAttribute('name');\n\t\t\t\t\tdocument.getElementById('queryForm').enctype = \"application/x-www-form-urlencoded\";\n\t\t\t\t\tdocument.getElementById('queryForm').removeChild(document.getElementById('uploadParam'));\n\t\t\t\t}else{\n\t\t\t\t\tdocument.getElementById('queryForm').enctype = \"multipart/form-data\";\n\t\t\t\t\tdocument.getElementById('uplTable').name = 'uplTable';\n\t\t\t\t\tvar newInput = document.createElement('input');\n\t\t\t\t\tnewInput.id = \"uploadParam\";\n\t\t\t\t\tnewInput.type = \"hidden\";\n\t\t\t\t\tnewInput.name = \"UPLOAD\";\n\t\t\t\t\tnewInput.value = \"upload,param:uplTable\";\n\t\t\t\t\tdocument.getElementById('queryForm').appendChild(newInput);\n\t\t\t\t}\n\t\t\t}\n\t\t</script>\n\t</head>\n\t<body>");
+
+			// Page title:
+			writer.print("\n\t\t<h1 class=\"centered\">TAP HOME PAGE<br/>");
+			if (tap.getServiceConnection().getProviderName() != null)
+				writer.print("<span class=\"subtitle\">- " + tap.getServiceConnection().getProviderName() + " -</span>");
+			writer.print("</h1>");
+
+			// Service description:
+			if (tap.getServiceConnection().getProviderDescription() != null)
+				writer.print("\n\n\t\t<h2>Service description</h2>\n\t\t<p>" + tap.getServiceConnection().getProviderDescription() + "</p>");
+
+			// List of all available resources:
+			writer.print("\n\n\t\t<h2>Available resources</h2>\n\t\t<ul>");
 			for(TAPResource res : tap.resources.values())
-				writer.println("<li><a href=\"" + tap.tapBaseURL + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
-			writer.println("</ul></body></html>");
+				writer.println("\n\t\t\t<li><a href=\"" + tap.tapBaseURL + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
+			writer.print("\n\t\t</ul>");
+
+			// ADQL query form:
+			writer.print("\n\t\t\n\t\t<h2>ADQL query</h2>\n\t\t<noscript>\n\t\t\t<p><strong><u>WARNING</u>! Javascript is disabled in your browser. Consequently, you can submit queries ONLY in synchronous mode and no limit on result nor execution duration can be specified. Besides, no table can be uploaded.</strong></p>\n\t\t</noscript>");
+			writer.print("\n\t\t<form id=\"queryForm\" action=\"" + tap.getAccessURL() + "/sync\" method=\"post\" enctype=\"application/x-www-form-urlencoded\" target=\"_blank\">\n\t\t\t<input type=\"hidden\" name=\"REQUEST\" value=\"doQuery\" />\n\t\t\t<input type=\"hidden\" name=\"VERSION\" value=\"1.0\" />\n\t\t\t<input type=\"hidden\" name=\"LANG\" value=\"ADQL\" />\n\t\t\t<div class=\"formField\">\n\t\t\t\t<strong>Query:</strong>\n\t\t\t\t<textarea name=\"QUERY\" cols=\"80\" rows=\"5\">\nSELECT *\nFROM TAP_SCHEMA.tables;</textarea>\n\t\t\t</div>");
+			writer.print("\n\n\t\t\t<div class=\"formField\">\n\t\t\t\t<strong>Execution mode:</strong> <input id=\"asyncOption\" name=\"REQUEST\" value=\"doQuery\" type=\"radio\" onclick=\"document.getElementById('queryForm').action='" + tap.getAccessURL() + "/async';\" /><label for=\"asyncOption\"> Asynchronous/Batch</label>\n\t\t\t\t<input id=\"syncOption\" name=\"REQUEST\" value=\"doQuery\" type=\"radio\" onclick=\"document.getElementById('queryForm').action='" + tap.getAccessURL() + "/sync';\" checked=\"checked\" /><label for=\"syncOption\"> Synchronous</label>\n\t\t\t</div>");
+			writer.print("\n\t\t\t<div class=\"formField\"><strong>Format:</strong>\n\t\t\t\t<select name=\"FORMAT\">");
+			Iterator<OutputFormat> itFormats = tap.getServiceConnection().getOutputFormats();
+			OutputFormat fmt;
+			while(itFormats.hasNext()){
+				fmt = itFormats.next();
+				writer.println("\n\t\t\t<option value=\"" + fmt.getMimeType() + "\"" + (fmt.getShortMimeType() != null && fmt.getShortMimeType().equalsIgnoreCase("votable") ? " selected=\"selected\"" : "") + ">" + fmt.getShortMimeType() + "</option>");
+			}
+			writer.print("\n\t\t\t\t</select>\n\t\t\t</div>");
+
+			// Result limit:
+			writer.print("\n\t\t\t<div class=\"formField\">\n\t\t\t\t<input id=\"toggleMaxRec\" type=\"checkbox\" onclick=\"toggleTextInput('MAXREC');\" /><label for=\"toggleMaxRec\"><strong>Result limit:</strong></label> <input id=\"MAXREC\" type=\"text\" value=\"-1\" list=\"maxrecList\" disabled=\"disabled\" /> rows <em>(0 to get only metadata ; a value &lt; 0 means 'default value')</em>\n\t\t\t\t<datalist id=\"maxrecList\">");
+			if (tap.getServiceConnection().getOutputLimit() != null && tap.getServiceConnection().getOutputLimit().length >= 2){
+				writer.print("\n\t\t\t\t\t<option value=\"" + tap.getServiceConnection().getOutputLimit()[0] + "\">Default</option>");
+				writer.print("\n\t\t\t\t\t<option value=\"" + tap.getServiceConnection().getOutputLimit()[1] + "\">Maximum</option>");
+			}
+			writer.print("\n\t\t\t\t</datalist>\n\t\t\t</div>");
+
+			// Execution duration limit:
+			writer.print("\n\t\t\t<div class=\"formField\">\n\t\t\t\t<input id=\"toggleDuration\" type=\"checkbox\" onclick=\"toggleTextInput('EXECUTIONDURATION');\" /><label for=\"toggleDuration\"><strong>Duration limit:</strong></label> <input id=\"EXECUTIONDURATION\" type=\"text\" value=\"-1\" list=\"durationList\" disabled=\"disabled\" /> seconds <em>(a value &le; 0 means 'default value')</em>\n\t\t\t\t<datalist id=\"durationList\">");
+			if (tap.getServiceConnection().getExecutionDuration() != null && tap.getServiceConnection().getExecutionDuration().length >= 2){
+				writer.print("\n\t\t\t\t\t<option value=\"" + tap.getServiceConnection().getExecutionDuration()[0] + "\">Default</option>");
+				writer.print("\n\t\t\t\t\t<option value=\"" + tap.getServiceConnection().getExecutionDuration()[1] + "\">Maximum</option>");
+			}
+			writer.print("\n\t\t\t\t</datalist>\n\t\t\t</div>");
+
+			// Upload feature:
+			if (tap.getServiceConnection().uploadEnabled())
+				writer.print("\n\t\t\t<div class=\"formField\">\n\t\t\t\t<input id=\"toggleUpload\" type=\"checkbox\" onclick=\"toggleUploadFeature();\" /><label for=\"toggleUpload\"><strong>Upload a VOTable:</strong></label> <input id=\"uplTable\" type=\"file\" disabled=\"disabled\" /> <em>(the uploaded table must be referenced in the ADQL query with the following full name: TAP_UPLOAD.upload)</em>\n\t\t\t</div>");
+
+			// Footer:
+			writer.print("\n\t\t\t<input id=\"submit\" type=\"submit\" value=\"Execute!\" />\n\t\t</form>\n\t\t<br/>\n\t\t<hr/>\n\t\t<div id=\"footer\">\n\t\t\t<p>Page generated by <a href=\"http://cdsportal.u-strasbg.fr/taptuto/\" target=\"_blank\">TAPLibrary</a> v2.0</p>\n\t\t</div>\n\t</body>\n</html>");
 
 			writer.flush();
 
