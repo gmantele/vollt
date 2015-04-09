@@ -42,6 +42,7 @@ import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
 import uws.service.file.UWSFileManager;
 import uws.service.request.RequestParser;
+import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
@@ -56,11 +57,13 @@ import adql.query.ADQLQuery;
  * 	<li>whether and how UWS/asynchronous jobs must be backuped and restored? <i>({@link UWSBackupManager})</i></li>
  * 	<li>how to create asynchronous jobs? <i>({@link TAPJob})</i></li>
  * 	<li>whether and how tables must be updated? <i>({@link Uploader})</i></li>
+ * 	<li>how to execute an ADQL query? <i>({@link ADQLExecutor})</i>
+ * 	<li>how to parser an ADQL query? <i>({@link ADQLParser})</i></li>
  * 	<li>how to check ADQL queries? <i>({@link QueryChecker})</i></li>
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  */
 public abstract class TAPFactory implements UWSFactory {
 
@@ -178,7 +181,35 @@ public abstract class TAPFactory implements UWSFactory {
 	public abstract ADQLExecutor createADQLExecutor() throws TAPException;
 
 	/**
+	 * <p>Create a parser of ADQL query.</p>
+	 * 
+	 * <p><i>Warning:
+	 * 	This parser can be created with a query factory and/or a query checker.
+	 * 	{@link #createQueryFactory()} will be used only if the default query factory (or none) is set
+	 * 	in the ADQL parser returned by this function.
+	 * 	Idem for {@link #createQueryChecker(TAPSchema)}: it will used only if no query checker is set
+	 * 	in the returned ADQL parser.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	A default implementation is provided by {@link AbstractTAPFactory}.
+	 * </i></p>
+	 * 
+	 * @return	An ADQL query parser.
+	 * 
+	 * @throws TAPException	If any error occurs while creating an ADQL parser.
+	 * 
+	 * @since 2.0
+	 */
+	public abstract ADQLParser createADQLParser() throws TAPException;
+
+	/**
 	 * <p>Create a factory able to build every part of an {@link ADQLQuery} object.</p>
+	 * 
+	 * <p><i>Warning:
+	 * 	This function is used only if the default query factory (or none) is set in the ADQL parser
+	 * 	returned by {@link #createADQLParser()}.
+	 * </i></p>
 	 * 
 	 * <p><i>Note:
 	 * 	A default implementation is provided by {@link AbstractTAPFactory}
@@ -194,6 +225,11 @@ public abstract class TAPFactory implements UWSFactory {
 	 * <p>Create an object able to check the consistency between the ADQL query and the database.
 	 * That's to say, it checks whether the tables and columns used in the query really exist
 	 * in the database.</p>
+	 * 
+	 * <p><i>Warning:
+	 * 	This function is used only if no query checker is set in the ADQL parser
+	 * 	returned by {@link #createADQLParser()}.
+	 * </i></p>
 	 * 
 	 * <p><i>Note:
 	 * 	A default implementation is provided by {@link AbstractTAPFactory}

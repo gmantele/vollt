@@ -43,6 +43,7 @@ import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
 import adql.db.DBChecker;
+import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.ParseException;
 import adql.parser.QueryChecker;
@@ -53,7 +54,7 @@ import adql.query.ADQLQuery;
  * Only the functions related with the database connection stay abstract.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
@@ -110,6 +111,16 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	@Override
 	public ADQLExecutor createADQLExecutor() throws TAPException{
 		return new ADQLExecutor(service);
+	}
+
+	/**
+	 * <p><i>Note:
+	 * 	This function should be extended if you want to customize the ADQL grammar.
+	 * </i></p>
+	 */
+	@Override
+	public ADQLParser createADQLParser() throws TAPException{
+		return new ADQLParser();
 	}
 
 	/**

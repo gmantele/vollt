@@ -44,7 +44,6 @@ import uws.service.log.UWSLog.LogLevel;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.ParseException;
-import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
 
 /**
@@ -508,18 +507,22 @@ public class ADQLExecutor {
 		// Log the start of the parsing:
 		logger.logTAP(LogLevel.INFO, report, "PARSING", "Parsing ADQL: " + tapParams.getQuery().replaceAll("(\t|\r?\n)+", " "), null);
 
-		// Get the ADQL factory:
-		ADQLQueryFactory queryFactory = service.getFactory().createQueryFactory();
+		// Create the ADQL parser:
+		ADQLParser parser = service.getFactory().createADQLParser();
+		if (parser == null){
+			logger.logTAP(LogLevel.WARNING, null, "PARSING", "No ADQL parser returned by the TAPFactory! The default implementation is used instead.", null);
+			parser = new ADQLParser();
+		}
 
-		// Get the query checker:
-		QueryChecker queryChecker = service.getFactory().createQueryChecker(uploadSchema);
+		// Set the ADQL factory:
+		if (parser.getQueryFactory() == null || parser.getQueryFactory().getClass() == ADQLQueryFactory.class)
+			parser.setQueryFactory(service.getFactory().createQueryFactory());
+
+		// Set the query checker:
+		if (parser.getQueryChecker() == null)
+			parser.setQueryChecker(service.getFactory().createQueryChecker(uploadSchema));
 
 		// Parse the ADQL query:
-		ADQLParser parser;
-		if (queryFactory == null)
-			parser = new ADQLParser(queryChecker);
-		else
-			parser = new ADQLParser(queryChecker, queryFactory);
 		ADQLQuery query = parser.parseQuery(tapParams.getQuery());
 
 		// Set or check the row limit:

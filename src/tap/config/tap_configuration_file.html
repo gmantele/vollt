@@ -695,8 +695,12 @@
 				<td>
 					<p>Class to use in replacement of the default TAPFactory.</p>
 					<p>
-						This property must be a class name (given between {...}). It must reference an extension of the abstract TAPFactory.
-						This extension must have at least one constructor with exactly one parameter of type ServiceConnection.
+						This property must be a class name (given between {...}). It must reference an implementation of TAPFactory.
+						This implementation must have at least one constructor with exactly one parameter of type ServiceConnection.
+					</p>
+					<p>
+						It is recommended to extend an existing implementation such as:
+						tap.AbstractTAPFactory or tap.config.ConfigurableTAPFactory.
 					</p>
 					<p><em>By default, the default TAPFactory (tap.config.ConfigurableTAPFactory) is used and may use all properties related to the backup management,
 					the database access and the ADQL translation.</em></p>
