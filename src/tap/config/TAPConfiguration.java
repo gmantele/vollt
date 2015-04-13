@@ -1,5 +1,24 @@
 package tap.config;
 
+/*
+ * This file is part of TAPLibrary.
+ * 
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ */
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -9,33 +28,80 @@ import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import tap.backup.DefaultTAPBackupManager;
 
+/**
+ * <p>Utility class gathering tool functions and properties' names useful to deal with a TAP configuration file.</p>
+ * 
+ * <p><i>This class implements the Design Pattern "Utility": no instance of this class can be created, it can not be extended,
+ * and it must be used only thanks to its static classes and attributes.</i></p> 
+ * 
+ * @author Gr&eacute;gory Mantelet (ARI)
+ * @version 2.0 (04/2015)
+ * @since 2.0
+ */
 public final class TAPConfiguration {
 
+	/** Name of the initial parameter to set in the WEB-INF/web.xml file
+	 * in order to specify the location and the name of the TAP configuration file to load. */
 	public final static String TAP_CONF_PARAMETER = "tapconf";
+	/** Default TAP configuration file. This file is research automatically
+	 * if none is specified in the WEB-INF/web.xml initial parameter {@value #TAP_CONF_PARAMETER}. */
 	public final static String DEFAULT_TAP_CONF_FILE = "tap.properties";
 
 	/* FILE MANAGER KEYS */
+	/** Name/Key of the property setting the file manager to use in the TAP service. */
 	public final static String KEY_FILE_MANAGER = "file_manager";
+	/** Value of the property {@link #KEY_FILE_MANAGER} specifying a local file manager. */
 	public final static String VALUE_LOCAL = "local";
+	/** Default value of the property {@link #KEY_FILE_MANAGER}: {@value #DEFAULT_FILE_MANAGER}. */
 	public final static String DEFAULT_FILE_MANAGER = VALUE_LOCAL;
+	/** Name/Key of the property setting the local root directory where all TAP files must be stored.
+	 * <em>This property is used only if {@link #KEY_FILE_MANAGER} is set to {@link #VALUE_LOCAL}.</em> */
 	public final static String KEY_FILE_ROOT_PATH = "file_root_path";
+	/** Name/Key of the property indicating whether the jobs must be saved by user or not.
+	 * If yes, there will be one directory per user. Otherwise, all jobs are backuped in the same directory
+	 * (generally {@link #KEY_FILE_ROOT_PATH}). */
 	public final static String KEY_DIRECTORY_PER_USER = "directory_per_user";
+	/** Default value of the property {@link #KEY_DIRECTORY_PER_USER}: {@value #DEFAULT_DIRECTORY_PER_USER}. */
 	public final static boolean DEFAULT_DIRECTORY_PER_USER = false;
+	/** Name/Key of the property indicating whether the user directories (in which jobs of the user are backuped)
+	 * must be gathered in less directories. If yes, the groups are generally made using the alphabetic order.
+	 * The idea is to reduce the number of apparent directories and to easier the research of a user directory. */
 	public final static String KEY_GROUP_USER_DIRECTORIES = "group_user_directories";
+	/** Default value of the property {@link #KEY_GROUP_USER_DIRECTORIES}: {@value #DEFAULT_GROUP_USER_DIRECTORIES}. */
 	public final static boolean DEFAULT_GROUP_USER_DIRECTORIES = false;
+	/** Name/Key of the property specifying the default period (in seconds) while a job must remain on the server.
+	 * This value is set automatically to any job whose the retention period has never been specified by the user. */
 	public final static String KEY_DEFAULT_RETENTION_PERIOD = "default_retention_period";
+	/** Name/Key of the property specifying the maximum period (in seconds) while a job can remain on the server. */
 	public final static String KEY_MAX_RETENTION_PERIOD = "max_retention_period";
+	/** Default value of the properties {@link #KEY_DEFAULT_RETENTION_PERIOD} and {@link #KEY_MAX_RETENTION_PERIOD}:
+	 * {@value #DEFAULT_RETENTION_PERIOD}. */
 	public final static int DEFAULT_RETENTION_PERIOD = 0;
 
 	/* LOG KEYS */
+	/** Name/Key of the property specifying the minimum type of messages (i.e. DEBUG, INFO, WARNING, ERROR, FATAL)
+	 * that must be logged. By default all messages are logged...which is equivalent to set this property to "DEBUG". */
 	public final static String KEY_MIN_LOG_LEVEL = "min_log_level";
+	/** Name/Key of the property specifying the frequency of the log file rotation.
+	 * By default the log rotation occurs every day at midnight. */
 	public final static String KEY_LOG_ROTATION = "log_rotation";
 
 	/* UWS BACKUP */
+	/** Name/Key of the property specifying the frequency (in milliseconds) of jobs backup.
+	 * This property accepts three types of value: "never" (default), "user_action" (the backup of a job is done when
+	 * it is modified), or a numeric positive value (expressed in milliseconds). */
 	public final static String KEY_BACKUP_FREQUENCY = "backup_frequency";
+	/** Value of the property {@link #KEY_BACKUP_FREQUENCY} indicating that jobs should never be backuped. */
+	public final static String VALUE_NEVER = "never";
+	/** Value of the property {@link #KEY_BACKUP_FREQUENCY} indicating that job backup should occur only when the user
+	 * creates or modifies one of his jobs. This value can be used ONLY IF {@link #KEY_BACKUP_BY_USER} is "true". */
 	public final static String VALUE_USER_ACTION = "user_action";
+	/** Default value of the property {@link #KEY_BACKUP_FREQUENCY}: {@link #DEFAULT_BACKUP_FREQUENCY}. */
 	public final static long DEFAULT_BACKUP_FREQUENCY = DefaultTAPBackupManager.MANUAL;	// = "never" => no UWS backup manager
+	/** Name/Key of the property indicating whether there should be one backup file per user or one file for all. */
 	public final static String KEY_BACKUP_BY_USER = "backup_by_user";
+	/** Default value of the property {@link #KEY_BACKUP_BY_USER}: {@value #DEFAULT_BACKUP_BY_USER}.
+	 * This property can be enabled only if a user identification method is provided. */
 	public final static boolean DEFAULT_BACKUP_BY_USER = false;
 
 	/* ASYNCHRONOUS JOBS */
@@ -122,6 +188,9 @@ public final class TAPConfiguration {
 
 	/* CUSTOM FACTORY */
 	public final static String KEY_TAP_FACTORY = "tap_factory";
+
+	/** No instance of this class should be created. */
+	private TAPConfiguration(){}
 
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>

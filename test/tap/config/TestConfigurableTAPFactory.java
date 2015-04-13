@@ -5,6 +5,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static tap.config.TAPConfiguration.KEY_BACKUP_BY_USER;
+import static tap.config.TAPConfiguration.KEY_BACKUP_FREQUENCY;
 import static tap.config.TAPConfiguration.KEY_DATABASE_ACCESS;
 import static tap.config.TAPConfiguration.KEY_DATASOURCE_JNDI_NAME;
 import static tap.config.TAPConfiguration.KEY_DB_PASSWORD;
@@ -21,11 +23,13 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.servlet.http.HttpServletRequest;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,6 +39,7 @@ import org.postgresql.util.PSQLException;
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPFactory;
+import tap.backup.DefaultTAPBackupManager;
 import tap.db.DBConnection;
 import tap.db.DBException;
 import tap.db.JDBCConnection;
@@ -42,7 +47,10 @@ import tap.formatter.OutputFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
+import uws.UWSException;
+import uws.job.user.JobOwner;
 import uws.service.UWSService;
+import uws.service.UWSUrl;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
@@ -55,7 +63,8 @@ public class TestConfigurableTAPFactory {
 			missingDatasourceJNDINameProp, wrongDatasourceJNDINameProp,
 			noJdbcProp1, noJdbcProp2, noJdbcProp3, badJdbcProp,
 			missingTranslatorProp, badTranslatorProp, badDBNameProp,
-			badUsernameProp, badPasswordProp;
+			badUsernameProp, badPasswordProp, validBackupFrequency, noBackup,
+			userBackup, badBackupFrequency;
 
 	private static ServiceConnection serviceConnection = null;
 
@@ -133,6 +142,18 @@ public class TestConfigurableTAPFactory {
 
 		badPasswordProp = (Properties)validJDBCProp.clone();
 		badPasswordProp.setProperty(KEY_DB_PASSWORD, "foo");
+
+		validBackupFrequency = (Properties)validJDBCProp.clone();
+		validBackupFrequency.setProperty(KEY_BACKUP_FREQUENCY, "3600");
+
+		noBackup = (Properties)validJDBCProp.clone();
+		noBackup.setProperty(KEY_BACKUP_FREQUENCY, "never");
+
+		userBackup = (Properties)validJDBCProp.clone();
+		userBackup.setProperty(KEY_BACKUP_FREQUENCY, "user_action");
+
+		badBackupFrequency = (Properties)validJDBCProp.clone();
+		badBackupFrequency.setProperty(KEY_BACKUP_FREQUENCY, "foo");
 	}
 
 	@Test
@@ -290,6 +311,66 @@ public class TestConfigurableTAPFactory {
 			assertTrue(ex.getMessage().matches("Impossible to establish a connection to the database \"[^\\\"]*\"!"));
 			assertEquals(PSQLException.class, ex.getCause().getClass());
 			assertTrue(ex.getCause().getMessage().matches("FATAL: password authentication failed for user \"[^\\\"]*\""));
+		}
+
+		// Valid backup frequency:
+		try{
+			ConfigurableTAPFactory factory = new ConfigurableTAPFactory(serviceConnection, validBackupFrequency);
+			DefaultTAPBackupManager backupManager = (DefaultTAPBackupManager)factory.createUWSBackupManager(new UWSService(factory, new LocalUWSFileManager(new File("/tmp"))));
+			assertEquals(3600L, backupManager.getBackupFreq());
+		}catch(Exception ex){
+			fail(getPertinentMessage(ex));
+		}
+
+		// No backup:
+		try{
+			ConfigurableTAPFactory factory = new ConfigurableTAPFactory(serviceConnection, noBackup);
+			assertNull(factory.createUWSBackupManager(new UWSService(factory, new LocalUWSFileManager(new File("/tmp")))));
+		}catch(Exception ex){
+			fail(getPertinentMessage(ex));
+		}
+
+		// User backup:
+		try{
+			UWSService uws;
+			UserIdentifier userIdent = new UserIdentifier(){
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public JobOwner restoreUser(String id, String pseudo, Map<String,Object> otherData) throws UWSException{
+					return null;
+				}
+
+				@Override
+				public JobOwner extractUserId(UWSUrl urlInterpreter, HttpServletRequest request) throws UWSException{
+					return null;
+				}
+			};
+			/* The value user_action has no effect if the by_user mode is not enabled.
+			 * So, if this value is given, it's falling back to manual.*/
+			userBackup.setProperty(KEY_BACKUP_BY_USER, "false");
+			ConfigurableTAPFactory factory = new ConfigurableTAPFactory(serviceConnection, userBackup);
+			uws = new UWSService(factory, new LocalUWSFileManager(new File("/tmp")));
+			DefaultTAPBackupManager backupManager = (DefaultTAPBackupManager)factory.createUWSBackupManager(uws);
+			assertEquals(DefaultTAPBackupManager.MANUAL, backupManager.getBackupFreq());
+
+			/* After having enabled the by_user mode, it should now work. */
+			userBackup.setProperty(KEY_BACKUP_BY_USER, "true");
+			factory = new ConfigurableTAPFactory(serviceConnection, userBackup);
+			uws = new UWSService(factory, new LocalUWSFileManager(new File("/tmp")));
+			uws.setUserIdentifier(userIdent);
+			backupManager = (DefaultTAPBackupManager)factory.createUWSBackupManager(uws);
+			assertEquals(DefaultTAPBackupManager.AT_USER_ACTION, backupManager.getBackupFreq());
+		}catch(Exception ex){
+			fail(getPertinentMessage(ex));
+		}
+
+		// Bad backup frequency:
+		try{
+			new ConfigurableTAPFactory(serviceConnection, badBackupFrequency);
+		}catch(Exception ex){
+			assertEquals(TAPException.class, ex.getClass());
+			assertEquals("Long expected for the property \"" + KEY_BACKUP_FREQUENCY + "\", instead of: \"foo\"!", ex.getMessage());
 		}
 	}
 

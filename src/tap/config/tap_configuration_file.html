@@ -419,21 +419,22 @@
 				<td>text or integer</td>
 				<td>
 					<p>Frequency at which the UWS service (that's to say, all its users and jobs) must be backuped.</p>
-					<p>Allowed values are: never (no backup will never be done), user_action (each time a user does a writing action, like creating or execution a job), a time (must be positive and not null) in milliseconds.</p>
+					<p>Allowed values are: <code>never</code> (no backup will never be done), <code>user_action</code> (each time a user does a writing action, like creating or execution a job), a time (must be positive and not null) in milliseconds.</p>
+					<p><em>The value <code>user_action</code> can be used ONLY IF <code>backup_mode=true</code>.</em></p>
 					<p><em>Default: <code>backup_frequency=never</code> (no backup)</em></p>
 				</td>
 				<td><ul><li>never <em>(default)</em></li><li>user_action</li><li>3600000 <em>(1 hour)</em></li></ul></td>
 			</tr>
 			<tr class="optional">
-				<td class="done">backup_mode</td>
+				<td class="done">backup_by_user</td>
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>Tells whether the backup must be one file for every user, or one file for each user. This second option should be chosen if your TAP Service is organizing its files by user directories ; see the property <em>directory_per_user</em>.</p>
-					<p>Allowed values are: user (one backup file for each user), whole (one file for all users ; may generates a big file).</p>
-					<p><em>Default: <code>whole</code></em></p>
+					<p>Tells whether the backup must be one file for every user (<code>false</code>), or one file for each user (<code>true</code>). This second option should be chosen if your TAP Service is organizing its files by user directories ; see the property <em>directory_per_user</em>.</p>
+					<p>This option can be enabled ONLY IF a user identification method is provided ; see property <code>user_identifier</code>.</p>
+					<p><em>Default: <code>false</code></em></p>
 				</td>
-				<td><ul><li>whole <em>(default)</em></li><li>user</li></ul></td>
+				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
 			</tr>
 			
 			<tr><td colspan="5">Asynchronous jobs management</td></tr>

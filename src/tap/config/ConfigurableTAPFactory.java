@@ -33,6 +33,7 @@ import static tap.config.TAPConfiguration.KEY_SQL_TRANSLATOR;
 import static tap.config.TAPConfiguration.VALUE_JDBC;
 import static tap.config.TAPConfiguration.VALUE_JDBC_DRIVERS;
 import static tap.config.TAPConfiguration.VALUE_JNDI;
+import static tap.config.TAPConfiguration.VALUE_NEVER;
 import static tap.config.TAPConfiguration.VALUE_PGSPHERE;
 import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
 import static tap.config.TAPConfiguration.VALUE_USER_ACTION;
@@ -66,7 +67,7 @@ import adql.translator.PostgreSQLTranslator;
  * 
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (03/2015)
+ * @version 2.0 (04/2015)
  */
 public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 
@@ -182,24 +183,23 @@ public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 		/* 5. Set the UWS Backup Parameter */
 		// Set the backup frequency:
 		String propValue = getProperty(tapConfig, KEY_BACKUP_FREQUENCY);
-		boolean isTime = false;
 		// determine whether the value is a time period ; if yes, set the frequency:
 		if (propValue != null){
 			try{
 				backupFrequency = Long.parseLong(propValue);
-				if (backupFrequency > 0)
-					isTime = true;
+				if (backupFrequency <= 0)
+					backupFrequency = DEFAULT_BACKUP_FREQUENCY;
 			}catch(NumberFormatException nfe){
-				throw new TAPException("Long expected for the property \"" + KEY_BACKUP_FREQUENCY + "\", instead of: \"" + propValue + "\"!");
+				// if the value was not a valid numeric time period, try to identify the different textual options:
+				if (propValue.equalsIgnoreCase(VALUE_NEVER))
+					backupFrequency = DefaultTAPBackupManager.MANUAL;
+				else if (propValue.equalsIgnoreCase(VALUE_USER_ACTION))
+					backupFrequency = DefaultTAPBackupManager.AT_USER_ACTION;
+				else
+					throw new TAPException("Long expected for the property \"" + KEY_BACKUP_FREQUENCY + "\", instead of: \"" + propValue + "\"!");
 			}
-		}
-		// if the value was not a valid numeric time period, try to identify the different textual options:
-		if (!isTime){
-			if (propValue != null && propValue.equalsIgnoreCase(VALUE_USER_ACTION))
-				backupFrequency = DefaultTAPBackupManager.AT_USER_ACTION;
-			else
-				backupFrequency = DEFAULT_BACKUP_FREQUENCY;
-		}
+		}else
+			backupFrequency = DEFAULT_BACKUP_FREQUENCY;
 		// Specify whether the backup must be organized by user or not:
 		propValue = getProperty(tapConfig, KEY_BACKUP_BY_USER);
 		backupByUser = (propValue == null) ? DEFAULT_BACKUP_BY_USER : Boolean.parseBoolean(propValue);
