@@ -47,14 +47,22 @@ import tap.resource.TAP;
 import tap.resource.TAPResource;
 
 /**
+ * <p>HTTP servlet fully configured with a TAP configuration file.</p>
  * 
+ * <p>
+ * 	This configuration file may be specified in the initial parameter named {@value TAPConfiguration#TAP_CONF_PARAMETER}
+ * 	of this servlet inside the WEB-INF/web.xml file. If none is specified, the file {@value TAPConfiguration#DEFAULT_TAP_CONF_FILE}
+ * 	will be searched inside the directories of the classpath, and inside WEB-INF and META-INF.
+ * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (03/2015)
+ * @version 2.0 (04/2015)
+ * @since 2.0
  */
 public class ConfigurableTAPServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
+	/** TAP object representing the TAP service. */
 	private TAP tap = null;
 
 	@Override
@@ -171,6 +179,16 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		serviceConn.setAvailable(true, "TAP service available.");
 	}
 
+	/**
+	 * Search the given file name/path in the directories of the classpath, then inside WEB-INF and finally inside META-INF.
+	 * 
+	 * @param filePath	A file name/path.
+	 * @param config	Servlet configuration (containing also the context class loader - link with the servlet classpath).
+	 * 
+	 * @return	The input stream toward the specified file, or NULL if no file can be found.
+	 * 
+	 * @since 2.0
+	 */
 	protected final InputStream searchFile(String filePath, final ServletConfig config){
 		InputStream input = null;
 
@@ -207,8 +225,6 @@ public class ConfigurableTAPServlet extends HttpServlet {
 			try{
 				tap.executeRequest(req, resp);
 			}catch(Throwable t){
-				System.err.println("Request aborted !");
-				t.printStackTrace(System.err);
 				resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, t.getMessage());
 			}
 		}else

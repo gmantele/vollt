@@ -714,10 +714,10 @@ public class TestConfigurableServiceConnection {
 		// Test with only a set maximum output limit:
 		try{
 			ServiceConnection connection = new ConfigurableServiceConnection(maxOutputLimitProp);
-			assertEquals(connection.getOutputLimit()[0], -1);
-			assertEquals(connection.getOutputLimit()[1], 1000);
-			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
-			assertEquals(connection.getOutputLimitType()[1], LimitUnit.rows);
+			assertEquals(1000, connection.getOutputLimit()[0]);
+			assertEquals(1000, connection.getOutputLimit()[1]);
+			assertEquals(LimitUnit.rows, connection.getOutputLimitType()[0]);
+			assertEquals(LimitUnit.rows, connection.getOutputLimitType()[1]);
 		}catch(Exception e){
 			fail("This MUST have succeeded because setting only the maximum output limit is valid! \nCaught exception: " + getPertinentMessage(e));
 		}
@@ -734,12 +734,15 @@ public class TestConfigurableServiceConnection {
 		}
 
 		// Test with both a default and a maximum output limits BUT where default > max:
+		/* In a such case, the default value is set silently to the maximum one. */
 		try{
-			new ConfigurableServiceConnection(bothOutputLimitBadProp);
-			fail("This MUST have failed because the default output limit is greater than the maximum one!");
+			ServiceConnection connection = new ConfigurableServiceConnection(bothOutputLimitBadProp);
+			assertEquals(100, connection.getOutputLimit()[1]);
+			assertEquals(connection.getOutputLimit()[1], connection.getOutputLimit()[0]);
+			assertEquals(LimitUnit.rows, connection.getOutputLimitType()[1]);
+			assertEquals(connection.getOutputLimitType()[1], connection.getOutputLimitType()[0]);
 		}catch(Exception e){
-			assertEquals(TAPException.class, e.getClass());
-			assertEquals("The default output limit (here: 1000) MUST be less or equal to the maximum output limit (here: 100)!", e.getMessage());
+			fail("This MUST have succeeded because the default output limit is set automatically to the maximum one if bigger! \nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// Test with a not integer sync. fetch size:

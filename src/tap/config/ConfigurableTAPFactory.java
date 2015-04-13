@@ -52,6 +52,7 @@ import javax.sql.DataSource;
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
 import tap.TAPException;
+import tap.TAPFactory;
 import tap.backup.DefaultTAPBackupManager;
 import tap.db.DBConnection;
 import tap.db.JDBCConnection;
@@ -64,25 +65,59 @@ import adql.translator.PgSphereTranslator;
 import adql.translator.PostgreSQLTranslator;
 
 /**
+ * <p>Concrete implementation of a {@link TAPFactory} which is parameterized by a TAP configuration file.</p>
  * 
+ * <p>
+ * 	All abstract or NULL-implemented methods/functions left by {@link AbstractTAPFactory} are implemented using values
+ *  of a TAP configuration file. The concerned methods are: {@link #getConnection(String)}, {@link #freeConnection(DBConnection)},
+ *  {@link #destroy()}, {@link #createADQLTranslator()} and {@link #createUWSBackupManager(UWSService)}.
+ * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
  * @version 2.0 (04/2015)
+ * @since 2.0
  */
 public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 
+	/* ADQL to SQL translation: */
+	/** The {@link JDBCTranslator} to use when a ADQL query must be executed in the database.
+	 * This translator is also used to convert ADQL types into database types. */
 	private Class<? extends JDBCTranslator> translator;
 
+	/* JNDI DB access: */
+	/** The {@link DataSource} to use in order to access the database.
+	 * <em>This attribute is actually used only if the chosen database access method is JNDI.</em> */
 	private final DataSource datasource;
 
+	/* Simple JDBC access: */
+	/** Classpath of the JDBC driver to use in order to access the database.
+	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
 	private final String driverPath;
+	/** JDBC URL of the database to access.
+	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
 	private final String dbUrl;
+	/** Name of the database user to use in order to access the database.
+	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
 	private final String dbUser;
+	/** Password of the database user to use in order to access the database.
+	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
 	private final String dbPassword;
 
+	/* UWS's jobs backup: */
+	/** Indicate whether the jobs must be backuped gathered by user or just all mixed together. */
 	private boolean backupByUser;
+	/** Frequency at which the jobs must be backuped. */
 	private long backupFrequency;
 
+	/**
+	 * Build a {@link TAPFactory} using the given TAP service description and TAP configuration file.
+	 * 
+	 * @param service		The TAP service description.
+	 * @param tapConfig		The TAP configuration file containing particularly information about the database access.
+	 * 
+	 * @throws NullPointerException	If one of the parameter is NULL.
+	 * @throws TAPException			If some properties of the TAP configuration file are wrong.
+	 */
 	public ConfigurableTAPFactory(ServiceConnection service, final Properties tapConfig) throws NullPointerException, TAPException{
 		super(service);
 

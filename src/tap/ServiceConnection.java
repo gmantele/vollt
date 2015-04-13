@@ -243,7 +243,7 @@ public interface ServiceConnection {
 
 	/**
 	 * <i>[OPTIONAL]</i>
-	 * <p>Get the limit of the retention period.</p>
+	 * <p>Get the limit of the retention period (in seconds).</p>
 	 * 
 	 * <p>
 	 * 	It is the maximum period while an asynchronous job can leave in the jobs list
@@ -269,7 +269,7 @@ public interface ServiceConnection {
 
 	/**
 	 * <i>[OPTIONAL]</i>
-	 * <p>Get the limit of the job execution duration.</p>
+	 * <p>Get the limit of the job execution duration (in milliseconds).</p>
 	 * 
 	 * <p>
 	 * 	It is the duration of a running job (including the query execution).

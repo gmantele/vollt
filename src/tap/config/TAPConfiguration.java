@@ -26,6 +26,7 @@ import java.util.Properties;
 
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
+import tap.TAPFactory;
 import tap.backup.DefaultTAPBackupManager;
 
 /**
@@ -105,27 +106,53 @@ public final class TAPConfiguration {
 	public final static boolean DEFAULT_BACKUP_BY_USER = false;
 
 	/* ASYNCHRONOUS JOBS */
+	/** Name/Key of the property specifying the maximum number of asynchronous jobs that can run simultaneously.
+	 * A negative or null value means "no limit". */
 	public final static String KEY_MAX_ASYNC_JOBS = "max_async_jobs";
+	/** Default value of the property {@link #KEY_MAX_ASYNC_JOBS}: {@value #DEFAULT_MAX_ASYNC_JOBS}. */
 	public final static int DEFAULT_MAX_ASYNC_JOBS = 0;
 
 	/* EXECUTION DURATION */
+	/** Name/Key of the property specifying the default execution duration (in milliseconds) set automatically to a job
+	 * if none has been specified by the user. */
 	public final static String KEY_DEFAULT_EXECUTION_DURATION = "default_execution_duration";
+	/** Name/Key of the property specifying the maximum execution duration (in milliseconds) that can be set on a job. */
 	public final static String KEY_MAX_EXECUTION_DURATION = "max_execution_duration";
+	/** Default value of the property {@link #KEY_DEFAULT_EXECUTION_DURATION} and {@link #KEY_MAX_EXECUTION_DURATION}: {@value #DEFAULT_EXECUTION_DURATION}. */
 	public final static int DEFAULT_EXECUTION_DURATION = 0;
 
 	/* DATABASE KEYS */
+	/** Name/Key of the property specifying the database access method to use. */
 	public final static String KEY_DATABASE_ACCESS = "database_access";
+	/** Value of the property {@link #KEY_DATABASE_ACCESS} to select the simple JDBC method.  */
 	public final static String VALUE_JDBC = "jdbc";
+	/** Value of the property {@link #KEY_DATABASE_ACCESS} to access the database using a DataSource stored in JNDI.  */
 	public final static String VALUE_JNDI = "jndi";
+	/** Name/Key of the property specifying the ADQL to SQL translator to use. */
 	public final static String KEY_SQL_TRANSLATOR = "sql_translator";
+	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a PostgreSQL translator (no support for geometrical functions). */
 	public final static String VALUE_POSTGRESQL = "postgres";
+	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a PgSphere translator. */
 	public final static String VALUE_PGSPHERE = "pgsphere";
+	/** Name/Key of the property specifying by how many rows the library should fetch a query result from the database.
+	 * This is the fetch size for to apply for synchronous queries. */
 	public final static String KEY_SYNC_FETCH_SIZE = "sync_fetch_size";
+	/** Default value of the property {@link #KEY_SYNC_FETCH_SIZE}: {@value #DEFAULT_SYNC_FETCH_SIZE}. */
 	public final static int DEFAULT_SYNC_FETCH_SIZE = 10000;
+	/** Name/Key of the property specifying by how many rows the library should fetch a query result from the database.
+	 * This is the fetch size for to apply for asynchronous queries. */
 	public final static String KEY_ASYNC_FETCH_SIZE = "async_fetch_size";
+	/** Default value of the property {@link #KEY_ASYNC_FETCH_SIZE}: {@value #DEFAULT_ASYNC_FETCH_SIZE}. */
 	public final static int DEFAULT_ASYNC_FETCH_SIZE = 100000;
+	/** Name/Key of the property specifying the name of the DataSource into the JDNI. */
 	public final static String KEY_DATASOURCE_JNDI_NAME = "datasource_jndi_name";
+	/** Name/Key of the property specifying the full class name of the JDBC driver.
+	 * Alternatively, a shortcut the most known JDBC drivers can be used. The list of these drivers is stored
+	 * in {@link #VALUE_JDBC_DRIVERS}. */
 	public final static String KEY_JDBC_DRIVER = "jdbc_driver";
+	/** List of the most known JDBC drivers. For the moment this list contains 4 drivers:
+	 * oracle ("oracle.jdbc.OracleDriver"), postgresql ("org.postgresql.Driver"), mysql ("com.mysql.jdbc.Driver")
+	 * and sqlite ("org.sqlite.JDBC"). */
 	public final static HashMap<String,String> VALUE_JDBC_DRIVERS = new HashMap<String,String>(4);
 	static{
 		VALUE_JDBC_DRIVERS.put("oracle", "oracle.jdbc.OracleDriver");
@@ -133,60 +160,116 @@ public final class TAPConfiguration {
 		VALUE_JDBC_DRIVERS.put("mysql", "com.mysql.jdbc.Driver");
 		VALUE_JDBC_DRIVERS.put("sqlite", "org.sqlite.JDBC");
 	}
+	/** Name/Key of the property specifying the JDBC URL of the database to access. */
 	public final static String KEY_JDBC_URL = "jdbc_url";
+	/** Name/Key of the property specifying the database user name to use to access the database. */
 	public final static String KEY_DB_USERNAME = "db_username";
+	/** Name/Key of the property specifying the password of the database user. */
 	public final static String KEY_DB_PASSWORD = "db_password";
 
 	/* METADATA KEYS */
+	/** Name/Key of the property specifying where the list of schemas, tables and columns and their respective metadata
+	 * is provided. */
 	public final static String KEY_METADATA = "metadata";
+	/** Value of the property {@link #KEY_METADATA} which indicates that metadata are provided in an XML file, whose the
+	 * local path is given by the property {@link #KEY_METADATA_FILE}. */
 	public final static String VALUE_XML = "xml";
+	/** Value of the property {@link #KEY_METADATA} which indicates that metadata are already in the TAP_SCHEMA of the database. */
 	public final static String VALUE_DB = "db";
+	/** Name/Key of the property specifying the local file path of the XML file containing the TAP metadata to load. */
 	public final static String KEY_METADATA_FILE = "metadata_file";
 
 	/* HOME PAGE KEY */
+	/** Name/Key of the property specifying the TAP home page to use.
+	 * It can be a file, a URL or a class. If null, the default TAP home page of the library is used.
+	 * By default the default library home page is used. */
 	public final static String KEY_HOME_PAGE = "home_page";
+	/** Name/Key of the property specifying the MIME type of the set home page.
+	 * By default, "text/html" is set. */
 	public final static String KEY_HOME_PAGE_MIME_TYPE = "home_page_mime_type";
 
 	/* PROVIDER KEYS */
+	/** Name/Key of the property specifying the name of the organization/person providing the TAP service. */
 	public final static String KEY_PROVIDER_NAME = "provider_name";
+	/** Name/Key of the property specifying the description of the TAP service. */
 	public final static String KEY_SERVICE_DESCRIPTION = "service_description";
 
 	/* UPLOAD KEYS */
+	/** Name/Key of the property indicating whether the UPLOAD feature must be enabled or not.
+	 * By default, this feature is disabled. */
 	public final static String KEY_UPLOAD_ENABLED = "upload_enabled";
+	/** Name/Key of the property specifying the default limit (in rows or bytes) on the uploaded VOTable(s). */
 	public final static String KEY_DEFAULT_UPLOAD_LIMIT = "upload_default_db_limit";
+	/** Name/Key of the property specifying the maximum limit (in rows or bytes) on the uploaded VOTable(s). */
 	public final static String KEY_MAX_UPLOAD_LIMIT = "upload_max_db_limit";
+	/** Name/Key of the property specifying the maximum size of all VOTable(s) uploaded in a query. */
 	public final static String KEY_UPLOAD_MAX_FILE_SIZE = "upload_max_file_size";
+	/** Default value of the property {@link #KEY_UPLOAD_MAX_FILE_SIZE}: {@value #DEFAULT_UPLOAD_MAX_FILE_SIZE}.  */
 	public final static int DEFAULT_UPLOAD_MAX_FILE_SIZE = Integer.MAX_VALUE;
 
 	/* OUTPUT KEYS */
+	/** Name/Key of the property specifying the list of all result output formats to support.
+	 * By default all formats provided by the library are allowed. */
 	public final static String KEY_OUTPUT_FORMATS = "output_formats";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select all formats that the library can provide. */
 	public final static String VALUE_ALL = "ALL";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a VOTable format.
+	 * The format can be parameterized with the VOTable version and serialization. */
 	public final static String VALUE_VOTABLE = "votable";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a VOTable format.
+	 * The format can be parameterized with the VOTable version and serialization.
+	 * <em>This value is just an alias of {@link #VALUE_VOTABLE}.</em> */
 	public final static String VALUE_VOT = "vot";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a FITS format. */
 	public final static String VALUE_FITS = "fits";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a JSON format. */
 	public final static String VALUE_JSON = "json";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select an HTML format. */
 	public final static String VALUE_HTML = "html";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a human-readable table. */
 	public final static String VALUE_TEXT = "text";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a CSV format. */
 	public final static String VALUE_CSV = "csv";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a TSV format. */
 	public final static String VALUE_TSV = "tsv";
+	/** Value of the property {@link #KEY_OUTPUT_FORMATS} which select a Separated-Value format.
+	 * <em>This value must be parameterized with the separator to use.</em> */
 	public final static String VALUE_SV = "sv";
+	/** Name/Key of the property specifying the number of result rows that should be returned if none is specified by the user. */
 	public final static String KEY_DEFAULT_OUTPUT_LIMIT = "output_default_limit";
+	/** Name/Key of the property specifying the maximum number of result rows that can be returned by the TAP service. */
 	public final static String KEY_MAX_OUTPUT_LIMIT = "output_max_limit";
 
 	/* USER IDENTIFICATION */
+	/** Name/Key of the property specifying the user identification method to use.
+	 * None is implemented by the library, so a class must be provided as value of this property. */
 	public final static String KEY_USER_IDENTIFIER = "user_identifier";
 
 	/* ADQL RESTRICTIONS */
+	/** Name/Key of the property specifying the list of all allowed coordinate systems that can be used in ADQL queries.
+	 * By default, all are allowed, but no conversion is done by the library. */
 	public final static String KEY_COORD_SYS = "coordinate_systems";
+	/** Name/Key of the property specifying the list of all ADQL geometrical function that can be used in ADQL queries.
+	 * By default, all are allowed. */
 	public final static String KEY_GEOMETRIES = "geometries";
+	/** Value of {@link #KEY_COORD_SYS} and {@link #KEY_GEOMETRIES} that forbid all possible values. */
 	public final static String VALUE_NONE = "NONE";
+	/** Name/Key of the property that lets declare all User Defined Functions that must be allowed in ADQL queries.
+	 * By default, all unknown functions are rejected. This default behavior can be totally reversed by using the
+	 * value {@link #VALUE_ANY} */
 	public final static String KEY_UDFS = "udfs";
+	/** Value of {@link #KEY_UDFS} allowing any unknown function in ADQL queries. Those functions will be considered as UDFs
+	 * and will be translated into SQL exactly as they are written in ADQL. */
 	public final static String VALUE_ANY = "ANY";
 
 	/* ADDITIONAL TAP RESOURCES */
+	/** Name/Key of the property specifying a list of resources to add to the TAP service (e.g. a ADQL query validator).
+	 * By default, this list if empty ; only the default TAP resources exist. */
 	public final static String KEY_ADD_TAP_RESOURCES = "additional_resources";
 
 	/* CUSTOM FACTORY */
+	/** Name/Key of the property specifying the {@link TAPFactory} class to use instead of the default {@link ConfigurableTAPFactory}. 
+	 * <em>Setting a value to this property could disable several properties of the TAP configuration file.</em> */
 	public final static String KEY_TAP_FACTORY = "tap_factory";
 
 	/** No instance of this class should be created. */
