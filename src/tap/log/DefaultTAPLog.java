@@ -96,12 +96,12 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 				if (error.getCause() != null)
 					printException(error.getCause(), out);
 				else{
-					out.println("Caused by a " + error.getClass().getName());
+					out.println("Caused by a " + error.getClass().getName() + " " + getExceptionOrigin(error));
 					if (error.getMessage() != null)
 						out.println("\t" + error.getMessage());
 				}
 			}else if (error instanceof SQLException){
-				out.println("Caused by a " + error.getClass().getName());
+				out.println("Caused by a " + error.getClass().getName() + " " + getExceptionOrigin(error));
 				out.print("\t");
 				do{
 					out.println(error.getMessage());

@@ -346,10 +346,27 @@ public class DefaultUWSLog implements UWSLog {
 	}
 
 	/**
-	 * Format and print the given exception inside the given writer.
+	 * <p>Format and print the given exception inside the given writer.</p>
+	 * 
+	 * <p>This function does nothing if the given error is NULL.</p>
+	 * 
+	 * <p>The full stack trace is printed ONLY for unknown exceptions.</p>
+	 * 
+	 * <p>The printed text has the following format for known exceptions:</p>
+	 * <pre>
+	 * Caused by a {ExceptionClassName} {ExceptionOrigin}
+	 *     {ExceptionMessage}
+	 * </pre>
+	 * 
+	 * <p>The printed text has the following format for unknown exceptions:</p>
+	 * <pre>
+	 * Caused by a {ExceptionFullStackTrace}
+	 * </pre>
 	 * 
 	 * @param error	The exception to print.
 	 * @param out	The output in which the exception must be written.
+	 * 
+	 * @see #getExceptionOrigin(Throwable)
 	 * 
 	 * @since 4.1
 	 */
@@ -359,7 +376,7 @@ public class DefaultUWSLog implements UWSLog {
 				if (error.getCause() != null)
 					printException(error.getCause(), out);
 				else{
-					out.println("Caused by a " + error.getClass().getName());
+					out.println("Caused by a " + error.getClass().getName() + " " + getExceptionOrigin(error));
 					if (error.getMessage() != null)
 						out.println("\t" + error.getMessage());
 				}
@@ -368,6 +385,33 @@ public class DefaultUWSLog implements UWSLog {
 				error.printStackTrace(out);
 			}
 		}
+	}
+
+	/**
+	 * <p>Format and return the origin of the given error.
+	 * "Origin" means here: "where the error has been thrown from?" (from which class? method? file? line?).</p>
+	 * 
+	 * <p>This function does nothing if the given error is NULL or if the origin information is missing.</p>
+	 * 
+	 * <p>The returned text has the following format:</p>
+	 * <pre>
+	 * at {OriginClass}.{OriginMethod}({OriginFile}:{OriginLine})
+	 * </pre>
+	 * 
+	 * <p>{OriginFile} and {OriginLine} are written only if provided.</p>
+	 * 
+	 * @param error	Error whose the origin should be returned.
+	 * 
+	 * @return	A string which contains formatted information about the origin of the given error.
+	 * 
+	 * @since 4.1
+	 */
+	protected String getExceptionOrigin(final Throwable error){
+		if (error != null && error.getStackTrace() != null && error.getStackTrace().length > 0){
+			StackTraceElement src = error.getStackTrace()[0];
+			return "at " + src.getClassName() + "." + src.getMethodName() + ((src.getFileName() != null) ? "(" + src.getFileName() + ((src.getLineNumber() >= 0) ? ":" + src.getLineNumber() : "") + ")" : "");
+		}else
+			return "";
 	}
 
 	@Override
