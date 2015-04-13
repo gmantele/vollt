@@ -1,5 +1,24 @@
 package tap.data;
 
+/*
+ * This file is part of TAPLibrary.
+ * 
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ */
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.NoSuchElementException;
@@ -23,10 +42,13 @@ import adql.db.DBType;
  * <p>{@link #getColType()} will return TAP type based on the type declared in the VOTable metadata part.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (02/2015)
+ * @version 2.0 (04/2015)
  * @since 2.0
  */
 public class VOTableIterator implements TableIterator {
+
+	/** Message of the IOException sent when the streaming is aborted. */
+	protected static final String STREAM_ABORTED_MESSAGE = "Streaming aborted!";
 
 	/**
 	 * <p>This class lets consume the metadata and rows of a VOTable document.</p>
@@ -42,7 +64,7 @@ public class VOTableIterator implements TableIterator {
 	 * </p> 
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 2.0 (01/2015)
+	 * @version 2.0 (04/2015)
 	 * @since 2.0
 	 */
 	protected static class StreamVOTableSink implements TableSink {
@@ -102,7 +124,7 @@ public class VOTableIterator implements TableIterator {
 				 * (because endRows() is always called after acceptRow()...so, it means the iteration has been aborted before the end)
 				 * and so the stream reading should be interrupted: */
 				if (endReached)
-					throw new IOException("Streaming aborted!");
+					throw new IOException(STREAM_ABORTED_MESSAGE);
 
 				// Otherwise, keep the given row:
 				pendingRow = row;
@@ -336,7 +358,7 @@ public class VOTableIterator implements TableIterator {
 					try{
 						tb.streamStarTable(input, sink, null);
 					}catch(IOException e){
-						if (e.getMessage() != null && !e.getMessage().equals("Reading interrupted!"))
+						if (e.getMessage() != null && !e.getMessage().equals(STREAM_ABORTED_MESSAGE))
 							e.printStackTrace();
 					}
 				}

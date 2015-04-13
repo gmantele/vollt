@@ -16,7 +16,7 @@ package tap.upload;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -51,7 +51,7 @@ import com.oreilly.servlet.multipart.ExceededSizeException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (01/2015)
+ * @version 2.0 (04/2015)
  * 
  * @see LimitedTableIterator
  * @see VOTableIterator
@@ -148,6 +148,7 @@ public class Uploader {
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
 	public TAPSchema upload(final DALIUpload[] uploads) throws TAPException{
+		TableIterator dataIt = null;
 		InputStream votable = null;
 		String tableName = null;
 		try{
@@ -159,7 +160,7 @@ public class Uploader {
 				votable = upl.open();
 
 				// Start reading the VOTable (with the identified limit, if any):
-				TableIterator dataIt = new LimitedTableIterator(VOTableIterator.class, votable, limitUnit, limit);
+				dataIt = new LimitedTableIterator(VOTableIterator.class, votable, limitUnit, limit);
 
 				// Define the table to upload:
 				TAPColumn[] columns = dataIt.getMetadata();
@@ -175,6 +176,7 @@ public class Uploader {
 				dbConn.addUploadedTable(table, dataIt);
 
 				// Close the VOTable stream:
+				dataIt.close();
 				votable.close();
 				votable = null;
 			}
@@ -189,6 +191,8 @@ public class Uploader {
 			throw new TAPException("URI error while trying to open the VOTable of \"" + tableName + "\"!", e);
 		}finally{
 			try{
+				if (dataIt != null)
+					dataIt.close();
 				if (votable != null)
 					votable.close();
 			}catch(IOException ioe){
