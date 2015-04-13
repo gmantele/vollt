@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -145,7 +145,7 @@ import adql.translator.TranslationException;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (03/2015)
+ * @version 2.0 (04/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -1782,22 +1782,28 @@ public class JDBCConnection implements DBConnection {
 								val = new Timestamp(ISO8601Format.parse(val.toString()));
 							}catch(ParseException pe){
 								if (logger != null)
-									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "Unexpected date format for the " + c + "-th column (" + val + ")! A date formatted in ISO8601 was expected.", pe);
-								throw new DBException("Unexpected date format for the " + c + "-th column (" + val + ")! A date formatted in ISO8601 was expected.", pe);
+									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Unexpected date format for the value: \"" + val + "\"! A date formatted in ISO8601 was expected.", pe);
+								throw new DBException("[l. " + nbRows + ", c. " + c + "] Unexpected date format for the value: \"" + val + "\"! A date formatted in ISO8601 was expected.", pe);
 							}
 						}
 						/* GEOMETRY FORMATTING */
 						else if (cols[c - 1].getDatatype().type == DBDatatype.POINT || cols[c - 1].getDatatype().type == DBDatatype.REGION){
 							Region region;
+							// parse the region as an STC-S expression:
 							try{
-								// parse the region as an STC-S expression:
 								region = STCS.parseRegion(val.toString());
-								// translate this STC region into the corresponding column value:
+							}catch(adql.parser.ParseException e){
+								if (logger != null)
+									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Incorrect STC-S syntax for the geometrical value \"" + val + "\"! " + e.getMessage(), e);
+								throw new DataReadException("[l. " + nbRows + ", c. " + c + "] Incorrect STC-S syntax for the geometrical value \"" + val + "\"! " + e.getMessage(), e);
+							}
+							// translate this STC region into the corresponding column value:
+							try{
 								val = translator.translateGeometryToDB(region);
 							}catch(adql.parser.ParseException e){
 								if (logger != null)
-									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "Incorrect STC-S syntax for the geometrical value \"" + val + "\"!", e);
-								throw new DataReadException("Incorrect STC-S syntax for the geometrical value \"" + val + "\"!", e);
+									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Impossible to import the ADQL geometry \"" + val + "\" into the database! " + e.getMessage(), e);
+								throw new DataReadException("[l. " + nbRows + ", c. " + c + "] Impossible to import the ADQL geometry \"" + val + "\" into the database! " + e.getMessage(), e);
 							}
 						}
 						/* BOOLEAN CASE (more generally, type incompatibility) */
