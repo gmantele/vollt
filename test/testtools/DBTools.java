@@ -90,9 +90,6 @@ public final class DBTools {
 			throw new DBToolsException("Impossible to load the JDBC driver: " + e.getMessage(), e);
 		}
 
-		// TODO DEBUG MSG
-		System.out.println("[DEBUG] " + dbms + " JDBC Driver Registered!");
-
 		// 3. Establish the connection:
 		Connection connection = null;
 		try{
@@ -103,9 +100,6 @@ public final class DBTools {
 
 		if (connection == null)
 			throw new DBToolsException("Failed to make connection!");
-
-		// TODO DEBUG MSG
-		System.out.println("[DEBUG] Connection to " + dbName + " established!");
 
 		return connection;
 	}
@@ -119,9 +113,6 @@ public final class DBTools {
 				}catch(InterruptedException e){
 					System.err.println("WARNING: can't wait/sleep before testing the connection close status! [" + e.getMessage() + "]");
 				}
-				// TODO DEBUG MSG
-				if (conn.isClosed())
-					System.out.println("[DEBUG] Connection closed!");
 				return conn.isClosed();
 			}else
 				return true;
