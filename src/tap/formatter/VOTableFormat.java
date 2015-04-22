@@ -265,7 +265,7 @@ public class VOTableFormat implements OutputFormat {
 	 * 
 	 * @param message	Error message to display to the user.
 	 * @param otherInfo	List of other additional information to display. <i>optional</i>
-	 * @param out		Stream in which the VOTable error must be written.
+	 * @param writer	Stream in which the VOTable error must be written.
 	 * 
 	 * @throws IOException	If any error occurs while writing in the given output.
 	 * 
@@ -410,17 +410,15 @@ public class VOTableFormat implements OutputFormat {
 	}
 
 	/**
-	 * <p>Writes fields' metadata of the given query result in the given Writer.</p>
-	 * <p><b><u>Important:</u> To write write metadata of a given field you can use {@link #writeFieldMeta(TAPColumn, PrintWriter)}.</b></p>
+	 * Writes fields' metadata of the given query result.
 	 * 
 	 * @param result		The query result from whose fields' metadata must be written.
-	 * @param output		Writer in which fields' metadata must be written.
 	 * @param execReport	The report of the query execution.
 	 * @param thread		The thread which asked for the result writing.
 	 * 
 	 * @return				Extracted field's metadata, or NULL if no metadata have been found (theoretically, it never happens).
 	 * 
-	 * @throws IOException				If there is an error while writing the metadata in the given Writer.
+	 * @throws IOException				If there is an error while writing the metadata.
 	 * @throws TAPException				If there is any other error.
 	 * @throws InterruptedException		If the given thread has been interrupted.
 	 */

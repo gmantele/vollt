@@ -128,13 +128,12 @@ public class TextFormat implements OutputFormat {
 	 * Get the whole header (one row whose columns are just the columns' name).
 	 * 
 	 * @param result		Result to write later (but it contains also metadata that was extracted from the result itself).
-	 * @param writer		Output in which the metadata must be written.
 	 * @param execReport	Execution report (which contains the metadata extracted/guessed from the ADQL query).
 	 * @param thread		Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
 	 * 
 	 * @return	All the written metadata.
 	 * 
-	 * @throws TAPException				If any other error occurs.
+	 * @throws TAPException	If any other error occurs.
 	 */
 	protected String getHeader(final TableIterator result, final TAPExecutionReport execReport, final Thread thread) throws TAPException{
 		// Get the columns meta:
@@ -159,7 +158,7 @@ public class TextFormat implements OutputFormat {
 	/**
 	 * Write all the data rows into the given {@link AsciiTable} object.
 	 * 
-	 * @param result			Result to write.	
+	 * @param queryResult		Result to write.	
 	 * @param asciiTable		Output in which the rows (as string) must be written.
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).

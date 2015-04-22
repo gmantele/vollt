@@ -72,7 +72,7 @@ public class SetUWSParameter extends UWSAction {
 	 * 	<li>the job attribute "phase", "runID", "executionduration" or "destruction" is used in the UWS URL,
 	 * 	<li>the HTTP method is HTTP-POST or HTTP-PUT.</li>
 	 * </ul>
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
@@ -87,7 +87,7 @@ public class SetUWSParameter extends UWSAction {
 	 * @see UWSJob#addOrUpdateParameter(String, Object)
 	 * @see UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{

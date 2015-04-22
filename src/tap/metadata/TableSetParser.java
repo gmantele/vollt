@@ -322,7 +322,7 @@ public class TableSetParser extends DefaultHandler {
 	 * </ul>
 	 * 
 	 * @param reader			XML reader.
-	 * @param allForeignKeys	List to fill with all encountered foreign keys.
+	 * @param keys				List to fill with all encountered foreign keys.
 	 *                      	<i>note: these keys are not the final TAP meta, but a collection of all information found in the XML document.
 	 *                      	The final TAP meta will be created later, once all available tables and columns are available.</i>
 	 * 

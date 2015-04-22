@@ -105,8 +105,8 @@ public class TAPSyncJob {
 	 * 
 	 * <p><i><b>By default:</b> "S"+System.currentTimeMillis()+UpperCharacter (UpperCharacter: one upper-case character: A, B, C, ....)</i></p>
 	 * 
-	 * <p><i><u>note: </u> DO NOT USE in this function any of the following functions: {@link #getLogger()},
-	 * {@link #getFileManager()} and {@link #getFactory()}. All of them will return NULL, because this job does not
+	 * <p><i><u>note: </u> DO NOT USE in this function any of the following functions: {@link ServiceConnection#getLogger()},
+	 * {@link ServiceConnection#getFileManager()} and {@link ServiceConnection#getFactory()}. All of them will return NULL, because this job does not
 	 * yet know its jobs list (which is needed to know the UWS and so, all of the objects returned by these functions).</i></p>
 	 * 
 	 * @return	A unique job identifier.

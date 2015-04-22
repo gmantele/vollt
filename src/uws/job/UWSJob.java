@@ -59,8 +59,8 @@ import uws.service.request.UploadFile;
  * <ul>
  * 	<li>
  * 		The job attributes <i>startTime</i> and <i>endTime</i> are automatically managed by {@link UWSJob}. You don't have to do anything !
- * 		However you can customize the used date/time format thanks to the function {@link #setDateFormat(DateFormat)}. The default date/time format is:
- * 		<i>yyyy-MM-dd'T'HH:mm:ss.SSSZ</i>
+ * 		The date/time format is managed automatically by the library and can not be customized since it is imposed by the UWS
+ * 		protocol definition: ISO-8601.
  * 	</li>
  * 	<br />
  * 	<li>Once set, the <i>destruction</i> and the <i>executionDuration</i> attributes are automatically managed. That is to say:
@@ -90,13 +90,6 @@ import uws.service.request.UploadFile;
  * 					This function is called at the construction of any {@link UWSJob}. It allows to generate a unique job ID.
  * 					By default: time (in milliseconds) + a upper-case letter (A, B, C, ....).
  * 					<u>If you want customizing the job ID of your jobs</u>, you need to override this function.
- * 	</li>
- * 	<br />
- * 	<li>
- * 		<b>{@link #loadAdditionalParams()}:</b>
- * 					All parameters that are not managed by default are automatically stored in the job attribute {@link #additionalParameters} (a map).
- * 					However if you want manage yourself some or all of these additional parameters (i.e. task parameters), you must override this method.
- * 					<i>(By default nothing is done.)</i>
  * 	</li>
  * 	<br />
  * 	<li>
@@ -278,7 +271,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * 
 	 * @param params	UWS standard and non-standard parameters.
 	 * 
-	 * @see UWSJob#AbstractJob(String, Map)
+	 * @see UWSJob#UWSJob(JobOwner, UWSParameters)
 	 */
 	public UWSJob(final UWSParameters params){
 		this(null, params);
@@ -293,8 +286,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @param owner		Job.owner ({@link #PARAM_OWNER}).
 	 * @param params	UWS standard and non-standard parameters.
 	 * 
-	 * @see #loadDefaultParams(Map)
-	 * @see #loadAdditionalParams()
+	 * @see UWSParameters#init()
 	 */
 	public UWSJob(JobOwner owner, final UWSParameters params){
 		this.owner = owner;
@@ -446,9 +438,9 @@ public class UWSJob extends SerializableUWSObject {
 	/**
 	 * <p>Looks for an additional parameters which corresponds to the Execution Phase. If it exists and:</p>
 	 * <ul>
-	 * 	<li> is equals to {@link UWSJob#PHASE_RUN RUN} => remove it from the attribute {@link #additionalParameters} and start the job.</li>
-	 * 	<li> is equals to {@link UWSJob#PHASE_ABORT ABORT} => remove it from the attribute {@link #additionalParameters} and abort the job.</li>
-	 * 	<li> is another value => the attribute stays in the attribute {@link #additionalParameters} and nothing is done.</li>
+	 * 	<li> is equals to {@link UWSJob#PHASE_RUN RUN} => remove it from the attribute {@link #inputParams} and start the job.</li>
+	 * 	<li> is equals to {@link UWSJob#PHASE_ABORT ABORT} => remove it from the attribute {@link #inputParams} and abort the job.</li>
+	 * 	<li> is another value => the attribute is though removed from the attribute {@link #inputParams} but nothing is done.</li>
 	 * </ul>
 	 * 
 	 * @param user			The user who asks to apply the phase parameter (start/abort). (may be NULL)
@@ -935,11 +927,11 @@ public class UWSJob extends SerializableUWSObject {
 	/**
 	 * <p>Adds or updates the given parameters ONLY IF the job can be updated (considering its current execution phase, see {@link JobPhase#isJobUpdatable()}).</p>
 	 * 
-	 * <p>Whatever is the result of {@link #loadDefaultParams(Map)} the method {@link #applyPhaseParam()} is called so that if there is an additional parameter {@link #PARAM_PHASE} with the value:
+	 * <p>At the end of this function, the method {@link #applyPhaseParam(JobOwner)} is called so that if there is an additional parameter {@link #PARAM_PHASE} with the value:
 	 * <ul>
 	 * 	<li>{@link UWSJob#PHASE_RUN RUN} then the job is starting and the phase goes to {@link ExecutionPhase#EXECUTING EXECUTING}.</li>
 	 * 	<li>{@link UWSJob#PHASE_ABORT ABORT} then the job is aborting.</li>
-	 * 	<li>otherwise the parameter {@link UWSJob#PARAM_PHASE PARAM_PHASE} remains in the {@link UWSJob#additionalParameters additionalParameters} list.</li>
+	 * 	<li>otherwise the parameter {@link UWSJob#PARAM_PHASE PARAM_PHASE} is removed from {@link UWSJob#inputParams inputParams} and nothing is done.</li>
 	 * </ul></p>
 	 * 
 	 * @param params		A list of parameters to add/update.
@@ -957,11 +949,11 @@ public class UWSJob extends SerializableUWSObject {
 	/**
 	 * <p>Adds or updates the given parameters ONLY IF the job can be updated (considering its current execution phase, see {@link JobPhase#isJobUpdatable()}).</p>
 	 * 
-	 * <p>Whatever is the result of {@link #loadDefaultParams(Map)} the method {@link #applyPhaseParam()} is called so that if there is an additional parameter {@link #PARAM_PHASE} with the value:
+	 * <p>At the end of this function, the method {@link #applyPhaseParam(JobOwner)} is called so that if there is an additional parameter {@link #PARAM_PHASE} with the value:
 	 * <ul>
 	 * 	<li>{@link UWSJob#PHASE_RUN RUN} then the job is starting and the phase goes to {@link ExecutionPhase#EXECUTING EXECUTING}.</li>
 	 * 	<li>{@link UWSJob#PHASE_ABORT ABORT} then the job is aborting.</li>
-	 * 	<li>otherwise the parameter {@link UWSJob#PARAM_PHASE PARAM_PHASE} remains in the {@link UWSJob#additionalParameters additionalParameters} list.</li>
+	 * 	<li>otherwise the parameter {@link UWSJob#PARAM_PHASE PARAM_PHASE} is removed from {@link UWSJob#inputParams inputParams} and nothing is done.</li>
 	 * </ul></p>
 	 * 
 	 * @param params		The UWS parameters to update.
@@ -972,10 +964,8 @@ public class UWSJob extends SerializableUWSObject {
 	 * 
 	 * @throws UWSException	If a parameter value is incorrect or if the given user can not update or execute this job.
 	 * 
-	 * @see #loadDefaultParams(Map)
 	 * @see JobPhase#isJobUpdatable()
-	 * @see #loadAdditionalParams()
-	 * @see #applyPhaseParam()
+	 * @see #applyPhaseParam(JobOwner)
 	 */
 	public boolean addOrUpdateParameters(UWSParameters params, final JobOwner user) throws UWSException{
 		// The job can be modified ONLY IF in PENDING phase: 
@@ -1310,7 +1300,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * <p>Stops immediately the job, sets its phase to {@link ExecutionPhase#ABORTED ABORTED} and sets its end time.</p>
 	 * 
 	 * <p><b><u>IMPORTANT:</u> If the thread does not stop immediately the phase and the end time are not modified. However it can be done by calling one more time {@link #abort()}.
-	 * Besides you should check that you test regularly the interrupted flag of the thread in {@link #jobWork()} !</b></p>
+	 * Besides you should check that you test regularly the interrupted flag of the thread in {@link JobThread#jobWork()} !</b></p>
 	 * 
 	 * @throws UWSException	If there is an error while changing the execution phase.
 	 * 
@@ -1341,7 +1331,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * 
 	 * <p><b><u>IMPORTANT:</u> If the thread does not stop immediately the phase, the error summary and the end time are not modified.
 	 * However it can be done by calling one more time {@link #error(ErrorSummary)}.
-	 * Besides you should check that you test regularly the interrupted flag of the thread in {@link #jobWork()} !</b></p>
+	 * Besides you should check that you test regularly the interrupted flag of the thread in {@link JobThread#jobWork()} !</b></p>
 	 * 
 	 * @param error			The error that has interrupted this job.
 	 * 

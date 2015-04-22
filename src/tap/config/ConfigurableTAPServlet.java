@@ -50,8 +50,8 @@ import tap.resource.TAPResource;
  * <p>HTTP servlet fully configured with a TAP configuration file.</p>
  * 
  * <p>
- * 	This configuration file may be specified in the initial parameter named {@value TAPConfiguration#TAP_CONF_PARAMETER}
- * 	of this servlet inside the WEB-INF/web.xml file. If none is specified, the file {@value TAPConfiguration#DEFAULT_TAP_CONF_FILE}
+ * 	This configuration file may be specified in the initial parameter named {@link TAPConfiguration#TAP_CONF_PARAMETER}
+ * 	of this servlet inside the WEB-INF/web.xml file. If none is specified, the file {@link TAPConfiguration#DEFAULT_TAP_CONF_FILE}
  * 	will be searched inside the directories of the classpath, and inside WEB-INF and META-INF.
  * </p>
  * 

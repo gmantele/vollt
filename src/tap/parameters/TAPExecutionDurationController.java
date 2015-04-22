@@ -69,7 +69,7 @@ public class TAPExecutionDurationController implements InputParamController {
 	/**
 	 * Let indicate whether the execution duration of any managed job can be modified.
 	 * 
-	 * @param allowModification <i>true</i> if the execution duration can be modified, <i>false</i> otherwise.
+	 * @param allowModif <i>true</i> if the execution duration can be modified, <i>false</i> otherwise.
 	 */
 	public final void allowModification(final boolean allowModif){
 		allowModification = allowModif;

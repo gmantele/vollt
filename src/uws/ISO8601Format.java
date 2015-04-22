@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * <p>
  * 	As said previously, it is possible to display or to hide the time zone and the milliseconds. This can be easily done by changing
  * 	the value of the static attributes {@link #displayTimeZone} and {@link #displayMilliseconds}. By default {@link #displayTimeZone} is <i>true</i>
- * 	and {@value #displayMilliseconds} is <i>false</i>.
+ * 	and {@link #displayMilliseconds} is <i>false</i>.
  * </i>
  * 
  * <p>

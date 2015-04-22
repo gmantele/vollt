@@ -284,7 +284,7 @@ public class DALIUpload {
 	 * 	Because of the possible presence of a semicolon in a URI (which is also used as separator of uploads in the TAP syntax),
 	 * 	there could be a problem while splitting the uploads specified in "UPLOAD". In that case, it is strongly recommended to
 	 * 	either encode the URI (in UTF-8) (i.e. ";" becomes "%3B") or to merely restrict the syntax to the DALI one. In this last case,
-	 * 	the parameter {@link #allowTAPSyntax} should be set to <i>false</i> and then all parameters should be submitted individually.
+	 * 	the parameter "allowTAPSyntax" should be set to <i>false</i> and then all parameters should be submitted individually.
 	 * </i></p>
 	 * 
 	 * @param requestParams		All parameters extracted from an HTTP request by a {@link RequestParser}.
@@ -298,7 +298,7 @@ public class DALIUpload {
 	 * 
 	 * @throws TAPException	If the syntax of an "UPLOAD" parameter is wrong.
 	 * 
-	 * @see {@link RequestParser#parse(javax.servlet.http.HttpServletRequest)}
+	 * @see RequestParser#parse(javax.servlet.http.HttpServletRequest)
 	 */
 	public final static List<DALIUpload> getDALIUploads(final Map<String,Object> requestParams, final boolean allowTAPSyntax, final UWSFileManager fileManager) throws TAPException{
 
@@ -403,8 +403,6 @@ public class DALIUpload {
 	 * @param fileManager		The file manager to use in order to build a {@link DALIUpload} objects from a URI.
 	 *                   		<i>(a link to the file manager will be set in the {@link DALIUpload} object in order to open it
 	 *                   		whenever it will asked after its creation)</i>
-	 * 
-	 * @return	The corresponding {@link DALIUpload} objects.
 	 * 
 	 * @throws TAPException	If the syntax of the given "UPLOAD" parameter is incorrect.
 	 */

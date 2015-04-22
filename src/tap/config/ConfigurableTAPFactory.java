@@ -263,8 +263,8 @@ public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 	 * Build a {@link JDBCConnection} thanks to the database parameters specified
 	 * in the TAP configuration file (the properties: jdbc_driver_path, db_url, db_user, db_password).
 	 * 
-	 * @see tap.TAPFactory#createDBConnection(java.lang.String)
-	 * @see JDBCConnection
+	 * @see JDBCConnection#JDBCConnection(java.sql.Connection, JDBCTranslator, String, tap.log.TAPLog)
+	 * @see JDBCConnection#JDBCConnection(String, String, String, String, JDBCTranslator, String, tap.log.TAPLog)
 	 */
 	@Override
 	public DBConnection getConnection(String jobID) throws TAPException{

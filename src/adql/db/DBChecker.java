@@ -991,7 +991,7 @@ public class DBChecker implements QueryChecker {
 	 * @param errors		List of errors to complete in this function each time a coordinate system has a wrong syntax or is not supported.
 	 * 
 	 * @see STCS#parseCoordSys(String)
-	 * @see #checkCoordinateSystem(CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 * @see #checkCoordinateSystem(adql.db.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 * 
 	 * @since 1.3
 	 */
@@ -1034,7 +1034,7 @@ public class DBChecker implements QueryChecker {
 	 * @param errors		List of errors to complete in this function each time the STC-S syntax is wrong or each time the declared coordinate system or region is not supported.
 	 * 
 	 * @see STCS#parseRegion(String)
-	 * @see #checkRegion(Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
+	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 * 
 	 * @since 1.3
 	 */
@@ -1076,8 +1076,9 @@ public class DBChecker implements QueryChecker {
 	 * @param fct		The REGION function containing the region to check.
 	 * @param errors	List of errors to complete in this function if the given region or its inner regions are not supported.
 	 * 
-	 * @see #checkCoordinateSystem(CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 * @see #checkCoordinateSystem(adql.db.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 * @see #checkGeometryFunction(String, ADQLFunction, BinarySearch, UnresolvedIdentifiersException)
+	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 * 
 	 * @since 1.3
 	 */

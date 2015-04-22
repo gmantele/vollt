@@ -120,7 +120,7 @@ public interface ServiceErrorWriter {
 	public void writeError(final Throwable t, final ErrorSummary error, final UWSJob job, final OutputStream output) throws IOException;
 
 	/**
-	 * <p>Get the MIME type of the error details written by {@link #writeError(UWSJob, Throwable, ErrorSummary, OutputStream)} in the error summary.</p>
+	 * <p>Get the MIME type of the error details written by {@link #writeError(Throwable, ErrorSummary, UWSJob, OutputStream)} in the error summary.</p>
 	 * 
 	 * <p><i><b>Important note:</b>
 	 * 	If NULL is returned, the MIME type will be considered as <i>text/plain</i>.
@@ -128,7 +128,7 @@ public interface ServiceErrorWriter {
 	 * 
 	 * @return	MIME type of the error details document. If NULL, it will be considered as text/plain.
 	 * 
-	 * @see #writeError(UWSJob, Throwable, ErrorSummary, OutputStream)
+	 * @see #writeError(Throwable, ErrorSummary, UWSJob, OutputStream)
 	 * 
 	 * @since 4.1
 	 */

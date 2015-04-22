@@ -121,7 +121,7 @@ public class UWSToolBox {
 	 * <p>Builds a map of strings with all parameters of the given HTTP request.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	If the request attribute {@value UWS#REQ_ATTRIBUTE_PARAMETERS} has been already set by the UWS library,
+	 * 	If the request attribute {@link UWS#REQ_ATTRIBUTE_PARAMETERS} has been already set by the UWS library,
 	 * 	this map (after conversion into a Map<String,String>) is returned.
 	 * 	Otherwise, the parameters identified automatically by the Servlet are returned (just the last occurrence of each parameter is kept).
 	 * </i></p>
@@ -369,7 +369,7 @@ public class UWSToolBox {
 	 * 
 	 * <p>
 	 * 	These files have been stored on the file system
-	 * 	if there is a request attribute named {@value UWS#REQ_ATTRIBUTE_PARAMETERS}.
+	 * 	if there is a request attribute named {@link UWS#REQ_ATTRIBUTE_PARAMETERS}.
 	 * </p>
 	 * 
 	 * @param req	Request in which files have been uploaded.
@@ -531,7 +531,7 @@ public class UWSToolBox {
 	/**
 	 * Writes the stack trace of the given exception in the file whose the name and the parent directory are given in parameters.
 	 * If the specified file already exists, it will be overwritten if the parameter <i>overwrite</i> is equal to <i>true</i>, otherwise
-	 * no file will not be changed <i>(default behavior of {@link UWSToolBox#writeErrorFile(Exception, String, String)})</i>.
+	 * no file will not be changed <i>(default behavior of {@link UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)})</i>.
 	 * 
 	 * @param ex				The exception which has to be used to generate the error file.
 	 * @param error				The error description.
@@ -660,7 +660,7 @@ public class UWSToolBox {
 	/**
 	 * Gets the file extension corresponding to the given MIME type.
 	 * 
-	 * @param MIME type		A MIME type (i.e. text/plain, application/json, application/xml, text/xml, application/x-votable+xml, ....)
+	 * @param mimeType		A MIME type (i.e. text/plain, application/json, application/xml, text/xml, application/x-votable+xml, ....)
 	 * 
 	 * @return				The corresponding file extension or <i>null</i> if not known.
 	 */

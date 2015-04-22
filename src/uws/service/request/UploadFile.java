@@ -179,7 +179,7 @@ public class UploadFile {
 	 * directory (e.g. /tmp on Unix/Linux systems).</p>
 	 * 
 	 * <p>
-	 * 	This function calls {@link UWSFileManager#move(UploadFile,UWSJob} to process to the physical
+	 * 	This function calls {@link UWSFileManager#moveUpload(UploadFile, UWSJob)} to process to the physical
 	 * 	moving of the file, but it then, it updates its location in this {@link UploadFile} instance.
 	 * 	<b>The file manager does NOT update this location! That's why it must not be called directly, but
 	 * 	through {@link #move(UWSJob)}.</b>

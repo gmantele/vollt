@@ -668,8 +668,6 @@ public class TAPColumn implements DBColumn {
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
 	 * 	that owns this column or that is part of the foreign key. 
 	 * </i></p>
-	 * 
-	 * @param key	Foreign key in which this column was targeting another column.
 	 */
 	protected void removeAllTargets(){
 		lstTargets.clear();
@@ -739,8 +737,6 @@ public class TAPColumn implements DBColumn {
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
 	 * 	that owns this column or that is part of the foreign key. 
 	 * </i></p>
-	 * 
-	 * @param key	Foreign key in which this column was targeted by another column.
 	 */
 	protected void removeAllSources(){
 		lstSources.clear();

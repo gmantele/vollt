@@ -192,7 +192,7 @@ public class JSONFormat implements OutputFormat {
 	/**
 	 * Formats in JSON and writes the given {@link TAPColumn} in the given output.
 	 * 
-	 * @param col				The column metadata to format/write in JSON.
+	 * @param tapCol			The column metadata to format/write in JSON.
 	 * @param out				The stream in which the formatted column metadata must be written.
 	 * 
 	 * @throws IOException		If there is an error while writing the field metadata.

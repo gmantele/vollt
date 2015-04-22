@@ -59,7 +59,7 @@ import uws.service.request.UWSRequestParser;
  * </p>
  * 
  * <p><b>IMPORTANT:
- * 	All implementations of this interface should implement properly the function {@link #closeService()} and should call it
+ * 	All implementations of this interface should implement properly the function {@link #destroy()} and should call it
  * 	when the JVM or the HTTP server application is closing.
  * </b></p>
  * 
@@ -123,7 +123,7 @@ public interface UWS extends Iterable<JobList> {
 	/**
 	 * Adds a jobs list to this UWS.
 	 * 
-	 * @param jl	The jobs list to add.
+	 * @param newJL	The jobs list to add.
 	 * 
 	 * @return		<i>true</i> if the jobs list has been successfully added,
 	 * 				<i>false</i> if the given jobs list is <i>null</i> or if a jobs list with this name already exists

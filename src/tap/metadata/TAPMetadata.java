@@ -86,7 +86,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 	By default, a TAP service must have at least a TAP_SCHEMA schema which contains a set of 5 tables
 	 * 	(schemas, tables, columns, keys and key_columns). This schema is not created here by default
 	 * 	because it can be customized by the service implementor. Besides, the DB name may be different.
-	 * 	However, you can easily get this schema thanks to the function {@link #getStdSchema()}
+	 * 	However, you can easily get this schema thanks to the function {@link #getStdSchema(boolean)}
 	 * 	which returns the standard definition of this schema (including all tables and columns described
 	 * 	by the standard). For a standard definition of this schema, you can then write the following:
 	 * </i></p>
@@ -774,7 +774,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * <p>Get the definition of the specified standard TAP table.</p>
 	 * 
 	 * <p><i><b>Important note:</b>
-	 * 	The returned table is not linked at all with a schema, on the contrary of {@link #getStdSchema()} which returns tables linked with the returned schema.
+	 * 	The returned table is not linked at all with a schema, on the contrary of {@link #getStdSchema(boolean)} which returns tables linked with the returned schema.
 	 * 	So, you may have to linked this table to schema (by using {@link TAPSchema#addTable(TAPTable)}) whose the ADQL name is TAP_SCHEMA after calling this function.
 	 * </i></p>
 	 * 

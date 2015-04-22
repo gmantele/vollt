@@ -51,7 +51,7 @@ public abstract class UserDefinedFunction extends ADQLFunction implements Unknow
 	/**
 	 * <p>Translate this User Defined Function into the language supported by the given translator.</p>
 	 * 
-	 * <p><b>VERY IMPORTANT:</b> This function <b>MUST NOT use</b> {@link ADQLTranslator#translate(UserDefinedFunction))} to translate itself.
+	 * <p><b>VERY IMPORTANT:</b> This function <b>MUST NOT use</b> {@link ADQLTranslator#translate(UserDefinedFunction)} to translate itself.
 	 * The given {@link ADQLTranslator} <b>must be used ONLY</b> to translate UDF's operands.</p>
 	 * 
 	 * <p>Implementation example (extract of {@link DefaultUDF#translate(ADQLTranslator)}):</p>

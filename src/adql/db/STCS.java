@@ -1219,8 +1219,6 @@ public final class STCS {
 	 * @return	The corresponding STC-S expression.
 	 * 
 	 * @throws ParseException	If the given object is NULL or not of the good type.
-	 * 
-	 * @see {@link Region#Region(GeometryFunction)}
 	 */
 	public static String toSTCS(final GeometryFunction region) throws ParseException{
 		if (region == null)

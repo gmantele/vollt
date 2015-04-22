@@ -362,7 +362,7 @@ public abstract class TAPFactory implements UWSFactory {
 	 * 	A default implementation is provided in {@link AbstractTAPFactory}.
 	 * </i></p>
 	 * 
-	 * @param jobID			ID of the job (NOT NULL).
+	 * @param jobId			ID of the job (NOT NULL).
 	 * @param owner			Owner of the job.
 	 * @param params		List of all input job parameters.
 	 * @param quote			Its quote (in seconds).
@@ -409,7 +409,6 @@ public abstract class TAPFactory implements UWSFactory {
 	 * 	that the returned object is always a {@link TAPParameters}.
 	 * </p>
 	 * 
-	 * @see uws.service.AbstractUWSFactory#extractParameters(javax.servlet.http.HttpServletRequest, uws.service.UWS)
 	 * @see #createTAPParameters(HttpServletRequest)
 	 */
 	@Override

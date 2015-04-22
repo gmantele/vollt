@@ -897,7 +897,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * 	If the given region is NULL, NULL will be returned.
 	 * </i></p>
 	 * 
-	 * @param stcs	The region to store in the DB.
+	 * @param region	The region to store in the DB.
 	 * 
 	 * @return	The corresponding DB column object.
 	 * 

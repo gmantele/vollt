@@ -45,10 +45,10 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 
 	/**
 	 * <p>Builds a {@link TAPLog} which will use the given file
-	 * manager to get the log output (see {@link UWSFileManager#getLogOutput(LogLevel, String)}).</p>
+	 * manager to get the log output (see {@link UWSFileManager#getLogOutput(uws.service.log.UWSLog.LogLevel, String)}).</p>
 	 * 
 	 * <p><i><u>note 1</u>: This constructor is particularly useful if the way of managing log output may change in the given file manager.
-	 * Indeed, the output may change in function of the type of message to log ({@link LogLevel}).</i></p>
+	 * Indeed, the output may change in function of the type of message to log ({@link uws.service.log.UWSLog.LogLevel}).</i></p>
 	 * 
 	 * <p><i><u>note 2</u> If no output can be found in the file manager the standard error output ({@link System#err})
 	 * will be chosen automatically for all log messages.</i></p>
@@ -65,7 +65,7 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	 * <p>Builds a {@link TAPLog} which will print all its
 	 * messages into the given stream.</p>
 	 * 
-	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link LogLevel}).</i></p>
+	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link uws.service.log.UWSLog.LogLevel}).</i></p>
 	 * 
 	 * @param output	An output stream.
 	 * 
@@ -79,7 +79,7 @@ public class DefaultTAPLog extends DefaultUWSLog implements TAPLog {
 	 * <p>Builds a {@link TAPLog} which will print all its
 	 * messages into the given stream.</p>
 	 * 
-	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link LogLevel}).</i></p>
+	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link uws.service.log.UWSLog.LogLevel}).</i></p>
 	 * 
 	 * @param writer	A print writer.
 	 * 

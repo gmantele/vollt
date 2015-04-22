@@ -297,11 +297,11 @@ public class SVFormat implements OutputFormat {
 	 * 
 	 * @param result			Result to write.	
 	 * @param selectedColumns	All columns' metadata.
-	 * @param out				Output stream in which the data must be written.
+	 * @param writer			Writer in which the data must be written.
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
 	 * 
-	 * @throws IOException				If there is an error while writing something in the output stream.
+	 * @throws IOException				If there is an error while writing something in the given writer.
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If any other error occurs.
 	 */
@@ -327,9 +327,9 @@ public class SVFormat implements OutputFormat {
 					writer.write(separator);
 			}
 			writer.newLine();
-			
+
 			execReport.nbRows++;
-			
+
 			// flush the writer every 30 lines:
 			if (execReport.nbRows % 30 == 0)
 				writer.flush();
@@ -338,7 +338,7 @@ public class SVFormat implements OutputFormat {
 	}
 
 	/**
-	 * <p>Writes the given field value in the given PrintWriter.</p>
+	 * <p>Writes the given field value in the given Writer.</p>
 	 * 
 	 * <p>
 	 * 	A String value will be delimited if {@link #delimitStr} is true, otherwise this type of value will
@@ -347,7 +347,7 @@ public class SVFormat implements OutputFormat {
 	 * 
 	 * @param value				The value to write.
 	 * @param column			The corresponding column metadata.
-	 * @param out				The stream in which the field value must be written.
+	 * @param writer			The stream in which the field value must be written.
 	 * 
 	 * @throws IOException		If there is an error while writing the given field value in the given stream.
 	 * @throws TAPException		If there is any other error (by default: never happen).

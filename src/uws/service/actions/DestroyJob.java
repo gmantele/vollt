@@ -75,7 +75,7 @@ public class DestroyJob extends UWSAction {
 	 * 	<li>...<b>or</b> the HTTP method is HTTP-POST <b>and</b> there is the parameter {@link UWSJob#PARAM_ACTION PARAM_ACTION} (=ACTION) with the value {@link UWSJob#ACTION_DELETE ACTION_DELETE} (=DELETE).</li>
 	 * </ul>
 	 * 
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
@@ -92,7 +92,7 @@ public class DestroyJob extends UWSAction {
 	 * @see JobList#destroyJob(String,JobOwner)
 	 * @see UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{

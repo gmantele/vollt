@@ -30,7 +30,6 @@ import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
-import uws.service.UWSService;
 import uws.service.UWSUrl;
 
 /**
@@ -177,7 +176,7 @@ public abstract class UWSSerializer implements Serializable {
 	 * 
 	 * @throws Exception	If there is an error during the serialization.
 	 * 
-	 * @see UWSSerializer#getUWS(UWSService, String)
+	 * @see UWSSerializer#getUWS(UWS, JobOwner)
 	 */
 	public String getUWS(final UWS uws) throws Exception{
 		return getUWS(uws, null);

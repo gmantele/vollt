@@ -162,7 +162,7 @@ public abstract class UWSAction implements Serializable {
 	 * <p>Extracts the job ID from the given UWS URL
 	 * and gets the corresponding job from the UWS.</p>
 	 * 
-	 * <p><i><u>Note:</u> This function calls {@link #getJob(UWSUrl, String, boolean)} with userId=null and checkUser=false !</i></p>
+	 * <p><i><u>Note:</u> This function calls {@link #getJob(UWSUrl, JobOwner)} with userId=null and checkUser=false !</i></p>
 	 * 
 	 * @param urlInterpreter	The UWS URL which contains the ID of the job to get.
 	 * 
@@ -172,7 +172,7 @@ public abstract class UWSAction implements Serializable {
 	 * 							or if there are no corresponding jobs list and/or job in the UWS
 	 * 							or if the specified user has not enough rights to get the specified job.
 	 * 
-	 * @see #getJob(UWSUrl, String, boolean)
+	 * @see #getJob(UWSUrl, JobOwner)
 	 */
 	protected final UWSJob getJob(UWSUrl urlInterpreter) throws UWSException{
 		return getJob(urlInterpreter, (JobOwner)null);
@@ -193,7 +193,7 @@ public abstract class UWSAction implements Serializable {
 	 * 
 	 * @see UWSUrl#getJobId()
 	 * @see #getJobsList(UWSUrl)
-	 * @see JobList#getJob(String,String)
+	 * @see JobList#getJob(String, JobOwner)
 	 * 
 	 * @since 3.1
 	 */
@@ -215,7 +215,7 @@ public abstract class UWSAction implements Serializable {
 	/**
 	 * <p>Extracts the job ID from the given UWS URL and gets the corresponding job from the given jobs list.</p>
 	 * 
-	 * <p><i><u>Note:</u> This function calls {@link #getJob(UWSUrl, JobList, String, boolean)} with userId=null and checkUser=false !</i></p>
+	 * <p><i><u>Note:</u> This function calls {@link #getJob(UWSUrl, JobList, JobOwner)} with userId=null and checkUser=false !</i></p>
 	 * 
 	 * @param urlInterpreter	The UWS URL which contains the ID of the job to get.
 	 * @param jobsList			The jobs list which is supposed to contain the job to get.
@@ -225,7 +225,7 @@ public abstract class UWSAction implements Serializable {
 	 * @throws UWSException		If no job ID can be found in the given UWS URL
 	 * 							or if there are no corresponding job in the UWS.
 	 * 
-	 * @see #getJob(UWSUrl, JobList, String, boolean)
+	 * @see #getJob(UWSUrl, JobList, JobOwner)
 	 */
 	protected final UWSJob getJob(UWSUrl urlInterpreter, JobList jobsList) throws UWSException{
 		return getJob(urlInterpreter, jobsList, null);
@@ -246,8 +246,7 @@ public abstract class UWSAction implements Serializable {
 	 * 							or if the specified user has not enough rights.
 	 * 
 	 * @see UWSUrl#getJobId()
-	 * @see JobList#getJob(String)
-	 * @see JobList#getJob(String,String)
+	 * @see JobList#getJob(String, JobOwner)
 	 * 
 	 * @since 3.1
 	 */

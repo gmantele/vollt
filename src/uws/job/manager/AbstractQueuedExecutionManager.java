@@ -123,7 +123,7 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	/* **************************** */
 	/**
 	 * <p>Removes the first queued job(s) from the queue and executes it (them)
-	 * <b>ONLY IF</b> it (they) can be executed (see {@link #isReadyForExecution(AbstractJob)}).</p>
+	 * <b>ONLY IF</b> it (they) can be executed (see {@link #isReadyForExecution(UWSJob)}).</p>
 	 * 
 	 * <p><i>Note:
 	 * 	Nothing is done if there is no queue.
@@ -187,11 +187,11 @@ public abstract class AbstractQueuedExecutionManager implements ExecutionManager
 	 * @return				The resulting execution phase of the given job ({@link ExecutionPhase#EXECUTING EXECUTING} or {@link ExecutionPhase#QUEUED QUEUED} or <i>null</i> if the given job is <i>null</i>).
 	 * 
 	 * @see #refresh()
-	 * @see AbstractJob#isRunning()
+	 * @see UWSJob#isRunning()
 	 * @see #isReadyForExecution(UWSJob)
 	 * @see UWSJob#setPhase(ExecutionPhase)
 	 * 
-	 * @see uws.job.manager.ExecutionManager#execute(AbstractJob)
+	 * @see uws.job.manager.ExecutionManager#execute(UWSJob)
 	 */
 	@Override
 	public synchronized final ExecutionPhase execute(final UWSJob jobToExecute){

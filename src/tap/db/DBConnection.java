@@ -27,7 +27,6 @@ import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPTable;
 import adql.query.ADQLQuery;
-import adql.translator.ADQLTranslator;
 
 /**
  * <p>Connection to the "database" (whatever is the type or whether it is linked to a true DBMS connection).</p>
@@ -64,7 +63,7 @@ public interface DBConnection {
 	 * 	to get the published schemas, tables and columns. The other way is to build a {@link TAPMetadata} object
 	 * 	yourself in function of the schemas/tables/columns you want to publish (i.e. which can be done by reading
 	 * 	metadata from a XML document - following the same schema - XSD- as for the TAP resource <i>tables</i>)
-	 * 	and then to load them in the DB (see {@link #setTAPSchema(TAPMetadata, boolean)} for more details).
+	 * 	and then to load them in the DB (see {@link #setTAPSchema(TAPMetadata)} for more details).
 	 * </p>
 	 * 
 	 * <p><b>CAUTION:
@@ -124,8 +123,7 @@ public interface DBConnection {
 	 * 	DB names provided in the given TAPMetadata (see {@link TAPTable#getDBSchemaName()}, {@link TAPTable#getDBName()} and {@link TAPColumn#getDBName()})
 	 * 	are used for the creation and filling of the tables.
 	 * 
-	 * 	Whether these requests must be case sensitive or not SHOULD be managed by ADQLTranslator (see {@link ADQLTranslator#getQualifiedSchemaName(adql.db.DBTable)},
-	 * {@link ADQLTranslator#getQualifiedTableName(adql.db.DBTable)} and {@link ADQLTranslator#getColumnName(adql.db.DBColumn)}).
+	 * 	Whether these requests must be case sensitive or not SHOULD be managed by ADQLTranslator.
 	 * </i></p>
 	 * 
 	 * <h3>TAPMetadata PARAMETER</h3>
@@ -183,7 +181,7 @@ public interface DBConnection {
 	 * <p>If the TAP_UPLOAD schema does not already exist, it will be created.</p>
 	 * 
 	 * <p><i>note: A table of TAP_UPLOAD MUST be transient and persistent only for the lifetime of the query.
-	 * So, this function should always be used with {@link #dropUploadedTable(String)}, which is called at
+	 * So, this function should always be used with {@link #dropUploadedTable(TAPTable)}, which is called at
 	 * the end of each query execution.</i></p>
 	 * 
 	 * @param tableDef	Definition of the table to upload (list of all columns and of their type).

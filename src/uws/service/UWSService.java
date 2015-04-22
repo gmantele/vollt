@@ -29,17 +29,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.AcceptHeader;
 import uws.UWSException;
 import uws.UWSToolBox;
-import uws.job.ExecutionPhase;
 import uws.job.JobList;
 import uws.job.JobThread;
-import uws.job.UWSJob;
-import uws.job.manager.DefaultExecutionManager;
 import uws.job.serializer.JSONSerializer;
 import uws.job.serializer.UWSSerializer;
 import uws.job.serializer.XMLSerializer;
@@ -63,126 +61,80 @@ import uws.service.log.UWSLog.LogLevel;
 import uws.service.request.RequestParser;
 
 /**
- * <h3>General description</h3>
+ * <p>This class implements directly the interface {@link UWS} and so, it represents the core of a UWS service.</p>
  * 
- * <p>An abstract facility to implement the <b>U</b>niversal <b>W</b>orker <b>S</b>ervice pattern.</p>
+ * <h3>Usage</h3>
  * 
- * <p>It can manage several jobs lists (create new, get and remove).</p>
+ * <p>
+ * 	Using this class is very simple! An instance must be created by providing at a factory - {@link UWSFactory} - and a file manager - {@link UWSFileManager}.
+ * 	This creation must be done in the init() function of a {@link HttpServlet}. Then, still in init(), at least one job list must be created.
+ * 	Finally, in order to ensure that all requests are interpreted by the UWS service, they must be sent to the created {@link UWSService} in the function
+ * 	{@link #executeRequest(HttpServletRequest, HttpServletResponse)}.
+ * </p>
+ * <p>Here is an example of what should look like the servlet class:</p>
+ * <pre>
+ * public class MyUWSService extends HttpServlet {
+ * 	private UWS uws;
  * 
- * <p>It also interprets {@link HttpServletRequest}, applies the action specified in its given URL and parameters
- * <i>(according to the <a href="http://www.ivoa.net/Documents/UWS/20100210">IVOA Proposed Recommendation of 2010-02-10</a>)</i>
- * and returns the corresponding response in a {@link HttpServletResponse}.</p>
+ * 	public void init(ServletConfig config) throws ServletException {
+ * 		try{
+ * 			// Create the UWS service:
+ * 			uws = new UWSService(new MyUWSFactory(), new LocalUWSFileManager(new File(config.getServletContext().getRealPath("UWSFiles"))));
+ * 			// Create at least one job list (otherwise no job can be started):
+ * 			uws.addJobList("jobList");
+ * 		}catch(UWSException ue){
+ * 			throw new ServletException("Can not initialize the UWS service!", ue);
+ * 		}
+ * 	}
  * 
- * <h3>The UWS URL interpreter</h3>
+ * 	public void destroy(){
+ *		if (uws != null)
+ * 			uws.destroy();
+ * 	}
  * 
- * <p>Any subclass of {@link UWSService} has one object called the UWS URL interpreter. It is stored in the field {@link #urlInterpreter}.
- * It lets interpreting the URL of any received request. Thus you can know on which jobs list, job and/or job attribute(s)
- * the request applies.</p>
- * 
- * <p>This interpreter must be initialized with the base URL/URI of this UWS. By using the default constructor (the one with no parameter),
- * the URL interpreter will be built at the first request (see {@link UWSUrl#UWSUrl(HttpServletRequest)}) and so the base URI is
- * extracted directly from the request).</p>
- * 
- * <p>You want to set another base URI or to use a custom URL interpreter, you have to set yourself the interpreter
- * by using the method {@link #setUrlInterpreter(UWSUrl)}.</p>
- * 
- * <h3>Create a job</h3>
- * 
- * <p>The most important abstract function of this class is {@link UWSService#createJob(Map)}. It allows to create an instance
- * of the type of job which is managed by this UWS. The only parameter is a map of a job attributes. It is the same map that
- * take the functions {@link UWSJob#UWSJob(Map)} and {@link UWSJob#addOrUpdateParameters(Map)}.</p>
- * 
- * <p>There are two convenient implementations of this abstract method in {@link BasicUWS} and {@link ExtendedUWS}. These two implementations
- * are based on the Java Reflection.</p>
+ * 	public void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException{
+ * 		try{
+ *			service.executeRequest(request, response);
+ * 		}catch(UWSException ue){
+ * 			response.sendError(ue.getHttpErrorCode(), ue.getMessage());
+ * 		}
+ * 	}
+ * }
+ * </pre>
  * 
  * <h3>UWS actions</h3>
  * 
- * <p>All the actions described in the IVOA recommendation are already managed. Each of these actions are defined in
- * an instance of {@link UWSAction}:</p>
+ * <p>
+ * 	All standard UWS actions are already implemented in this class. However, it is still possible to modify their implementation and/or to
+ * 	add or remove some actions.
+ * </p>
+ * <p>
+ * 	A UWS action is actually implemented here by a class extending the abstract class {@link UWSAction}. Here is the full list of all
+ * 	the available and already implemented actions:
+ * </p>
  * <ul>
- * 	<li>{@link UWSAction#LIST_JOBS LIST_JOBS}: see the class {@link ListJobs}</li>
- * 	<li>{@link UWSAction#ADD_JOB ADD_JOB}: see the class {@link AddJob}</li>
- * 	<li>{@link UWSAction#DESTROY_JOB DESTROY_JOB}: see the class {@link DestroyJob}</li>
- * 	<li>{@link UWSAction#JOB_SUMMARY JOB_SUMMARY}: see the class {@link JobSummary}</li>
- * 	<li>{@link UWSAction#GET_JOB_PARAM GET_JOB_PARAM}: see the class {@link GetJobParam}</li>
- * 	<li>{@link UWSAction#SET_JOB_PARAM SET_JOB_PARAM}: see the class {@link SetJobParam}</li>
- * 	<li>{@link UWSAction#HOME_PAGE HOME_PAGE}: see the class {@link ShowHomePage}</li>
+ * 	<li>{@link AddJob}</li>
+ * 	<li>{@link DestroyJob}</li>
+ * 	<li>{@link JobSummary}</li>
+ * 	<li>{@link GetJobParam}</li>
+ * 	<li>{@link SetJobParam}</li>
+ * 	<li>{@link ListJobs}</li>
  * </ul>
+ * <p>
+ * 	To add an action, you should use the function {@link #addUWSAction(UWSAction)}, to remove one {@link #removeUWSAction(int)} or {@link #removeUWSAction(String)}.
+ * 	Note that this last function takes a String parameter. This parameter is the name of the UWS action to remove. Indeed, each UWS action must have an internal
+ * 	name representing the action. Thus, it is possible to replace a UWS action implementation by using the function {@link #replaceUWSAction(UWSAction)} ; this
+ * 	function will replace the action having the same name as the given action.
+ * </p>
  * 
- * <p><b>However you can add your own UWS actions !</b> To do that you just need to implement the abstract class {@link UWSAction}
- * and to call the method {@link #addUWSAction(UWSAction)} with an instance of this implementation.</p>
- * 
- * <p><b><u>IMPORTANT:</u> You must be careful when you override the function {@link UWSAction#match(UWSUrl, String, HttpServletRequest)}
- * so that your test is as precise as possible ! Indeed the order in which the actions of a UWS are evaluated is very important !<br />
- * <u>If you want to be sure your custom UWS action is always evaluated before any other UWS action you can use the function
- * {@link #addUWSAction(int, UWSAction)} with 0 as first parameter !</u></b></p>
- * 
- * <p><i><u>Note:</u> You can also replace an existing UWS action thanks to the method {@link #replaceUWSAction(UWSAction)} or
- * {@link #setUWSAction(int, UWSAction)} !</i></p>
- * 
- * <h3>User identification</h3>
- * 
- * <p>Some UWS actions need to know the current user so that they can adapt their response (i.e. LIST_JOBS must return the jobs of only
- * one user: the current one). Thus, before executing a UWS action (and even before choosing the good action in function of the request)
- * the function {@link UserIdentifier#extractUserId(UWSUrl, HttpServletRequest)} is called. Its goal
- * is to identify the current user in function of the received request.</p>
+ * <h3>Home page</h3>
  * 
  * <p>
- * 	<i><u>Notes:</u>
- * 		<ul>
- * 			<li>If this function returns NULL, the UWS actions must be executed on all jobs, whatever is their owner !</li>
- * 			<li>{@link UserIdentifier} is an interface. So you must implement it and then set its extension to this UWS
- * 				by using {@link #setUserIdentifier(UserIdentifier)}.</li>
- *		</ul>
- * 	</i></p>
+ * 	In addition of all the actions listed above, a last action is automatically added: {@link ShowHomePage}. This is the action which will display the home page of
+ * 	the UWS service. It is called when the root resource of the web service is asked. To change it, you can either overwrite this action
+ * 	(see {@link #replaceUWSAction(UWSAction)}) or set an home page URL with the function {@link #setHomePage(String)} <i>(the parameter is a URI pointing on either
+ * 	a local or a remote resource)</i> or {@link #setHomePage(URL, boolean)}.
  * </p>
- * 
- * <h3>Queue management</h3>
- * 
- * <p>One of the goals of a UWS is to manage an execution queue for all managed jobs. This task is given to an instance
- * of {@link DefaultExecutionManager}, stored in the field {@link #executionManager}. Each time a job is created,
- * the UWS sets it the execution manager (see {@link AddJob}). Thus the {@link UWSJob#start()} method will ask to the manager
- * whether it can execute now or whether it must be put in a {@link ExecutionPhase#QUEUED QUEUED} phase until enough resources are available for its execution.</p>
- * 
- * <p>By extending the class {@link DefaultExecutionManager} and by overriding {@link DefaultExecutionManager#isReadyForExecution(UWSJob)}
- * you can change the condition which puts a job in the {@link ExecutionPhase#EXECUTING EXECUTING} or in the {@link ExecutionPhase#QUEUED QUEUED} phase. By default, a job is put
- * in the {@link ExecutionPhase#QUEUED QUEUED} phase if there are more running jobs than a given number.</p>
- * 
- * <p>With this manager it is also possible to list all running jobs in addition of all queued jobs, thanks to the methods:
- * {@link DefaultExecutionManager#getRunningJobs()}, {@link DefaultExecutionManager#getQueuedJobs()}, {@link DefaultExecutionManager#getNbRunningJobs()}
- * and {@link DefaultExecutionManager#getNbQueuedJobs()}.</p>
- * 
- * <h3>Serializers & MIME types</h3>
- * 
- * <p>According to the IVOA recommendation, the XML format is the default format in which each UWS resource must be returned. However it
- * is told that other formats can also be managed. To allow that, {@link UWSService} manages a list of {@link UWSSerializer} and
- * lets define which is the default one to use. <i>By default, there are two serializers: {@link XMLSerializer} (the default choice)
- * and {@link JSONSerializer}.</i></p>
- * 
- * <p>One proposed way to choose automatically the format to use is to look at the Accept header of a HTTP-Request. This header field is
- * a list of MIME types (each one with a quality - a sort of priority). Thus each {@link UWSSerializer} is associated with a MIME type so
- * that {@link UWSService} can choose automatically the preferred format and so, the serializer to use.</p>
- * 
- * <p><b><u>WARNING:</u> Only one {@link UWSSerializer} can be associated with a given MIME type in an {@link UWSService} instance !
- * Thus, if you add a {@link UWSSerializer} to a UWS, and this UWS has already a serializer for the same MIME type,
- * it will be replaced by the added one.</b></p>
- * 
- * <p><i><u>Note:</u> A XML document can be linked to a XSLT style-sheet. By using the method {@link XMLSerializer#setXSLTPath(String)}
- * you can define the path/URL of the XLST to link to each UWS resource. <br />
- * <u>Since the {@link XMLSerializer} is the default format for a UWS resource you can also use the function
- * {@link UWSService#setXsltURL(String)} !</u></i></p>
- * 
- * <h3>The UWS Home page</h3>
- * 
- * <p>As for a job or a jobs list, a UWS is also a UWS resource. That's why it can also be serialized !</p>
- * 
- * <p>However in some cases it could more interesting to substitute this resource by a home page of the whole UWS by using the function:
- * {@link #setHomePage(String)} or {@link #setHomePage(URL, boolean)}.
- * </p>
- * 
- * <p><i><u>Note:</u> To go back to the UWS serialization (that is to say to abort a call to {@link #setHomePage(String)}),
- * use the method {@link #setDefaultHomePage()} !</i></p>
- * 
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 4.1 (04/2015)
@@ -571,7 +523,7 @@ public class UWSService implements UWS {
 	/**
 	 * <p>
 	 * 	Sets its backup manager.
-	 * 	This manager will be called at each user action to save only its own jobs list by calling {@link UWSBackupManager#saveOwner(String)}.
+	 * 	This manager will be called at each user action to save only its own jobs list by calling {@link UWSBackupManager#saveOwner(JobOwner)}.
 	 * </p>
 	 * 
 	 * @param backupManager Its new backup manager.
@@ -826,7 +778,7 @@ public class UWSService implements UWS {
 	 * 				<i>false</i> if the given jobs list is <i>null</i> or if a jobs list with this name already exists
 	 * 				or if a UWS is already associated with another UWS.
 	 * 
-	 * @see JobList#setUWS(AbstractUWS)
+	 * @see JobList#setUWS(UWS)
 	 * @see UWS#addJobList(JobList)
 	 */
 	@Override
@@ -860,7 +812,7 @@ public class UWSService implements UWS {
 	 * @return	<i>true</i> if the given jobs list has been destroyed, <i>false</i> otherwise.
 	 * 
 	 * @see JobList#clear()
-	 * @see JobList#setUWS(UWSService)
+	 * @see JobList#setUWS(UWS)
 	 */
 	public boolean destroyJobList(JobList jl){
 		if (jl == null)
@@ -896,7 +848,7 @@ public class UWSService implements UWS {
 	 * <p>Lets adding the given action to this UWS.</p>
 	 * 
 	 * <p><b><u>WARNING:</u> The action will be added at the end of the actions list of this UWS. That means, it will be evaluated (call of
-	 * the method {@link UWSAction#match(UWSUrl, String, HttpServletRequest)}) lastly !</b></p>
+	 * the method {@link UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)}) lastly !</b></p>
 	 * 
 	 * @param action	The UWS action to add.
 	 * 
@@ -1070,7 +1022,7 @@ public class UWSService implements UWS {
 	 * 	<li>Load the request in the UWS URL interpreter (see {@link UWSUrl#load(HttpServletRequest)})</li>
 	 * 	<li>Extract the user ID (see {@link UserIdentifier#extractUserId(UWSUrl, HttpServletRequest)})</li>
 	 * 	<li>Iterate - in order - on all available actions and apply the first which matches.
-	 * 		(see {@link UWSAction#match(UWSUrl, String, HttpServletRequest)} and {@link UWSAction#apply(UWSUrl, String, HttpServletRequest, HttpServletResponse)})</li>
+	 * 		(see {@link UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)} and {@link UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)})</li>
 	 * </ol>
 	 * 
 	 * @param request		The UWS request.
@@ -1084,8 +1036,8 @@ public class UWSService implements UWS {
 	 * @see UWSUrl#UWSUrl(HttpServletRequest)
 	 * @see UWSUrl#load(HttpServletRequest)
 	 * @see UserIdentifier#extractUserId(UWSUrl, HttpServletRequest)
-	 * @see UWSAction#match(UWSUrl, String, HttpServletRequest)
-	 * @see UWSAction#apply(UWSUrl, String, HttpServletRequest, HttpServletResponse)
+	 * @see UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
+	 * @see UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	public boolean executeRequest(HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		if (request == null || response == null)
@@ -1240,10 +1192,10 @@ public class UWSService implements UWS {
 	 * @param response		The response in which the error must be published.
 	 * 
 	 * @throws IOException	If there is an error when calling {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)} or {@link HttpServletResponse#sendError(int, String)}.
-	 * @throws UWSException	If there is an error when calling {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse))}.
+	 * @throws UWSException	If there is an error when calling {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)}.
 	 * 
 	 * @see #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
-	 * @see {@link ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, JobOwner, String)}
+	 * @see #sendError(Throwable, HttpServletRequest, String, JobOwner, String, HttpServletResponse)
 	 */
 	public final void sendError(UWSException error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException, UWSException{
 		if (error.getHttpErrorCode() == UWSException.SEE_OTHER){
@@ -1273,7 +1225,7 @@ public class UWSService implements UWS {
 	 * 
 	 * @throws IOException	If there is an error when calling {@link HttpServletResponse#sendError(int, String)}.
 	 * 
-	 * @see {@link ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, String, JobOwner, String)}
+	 * @see ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, String, JobOwner, String)
 	 */
 	public final void sendError(Throwable error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException{
 		// Write the error in the response and return the appropriate HTTP status code:

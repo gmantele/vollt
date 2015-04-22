@@ -214,7 +214,8 @@ public class VOTableIterator implements TableIterator {
 		 * 	A Thread interruption will also make this function returning.
 		 * </i></p>
 		 * 
-		 * @return
+		 * @return	The last accepted row,
+		 * 			or <i>NULL</i> if no more rows are available or if the iteration has been interrupted/canceled.
 		 */
 		public synchronized Object[] getRow(){
 			try{
@@ -324,7 +325,7 @@ public class VOTableIterator implements TableIterator {
 
 	/** The last read row. Column iteration is done on this array. */
 	protected Object[] row;
-	/** Index of the last read column (=0 just after {@link #nextRow()} and before {@link #nextCol()}, ={@link #nbColumns} after the last column has been read). */
+	/** Index of the last read column (=0 just after {@link #nextRow()} and before {@link #nextCol()}, ={@link #nbCol} after the last column has been read). */
 	protected int indCol = -1;
 	/** Number of columns available according to the metadata. */
 	protected int nbCol = 0;

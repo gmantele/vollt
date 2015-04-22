@@ -51,7 +51,7 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @throws Exception	If there is an unexpected error during the serialization.
 	 * 
-	 * @see #serialize(UWSSerializer, String)
+	 * @see #serialize(UWSSerializer, JobOwner)
 	 */
 	public String serialize(UWSSerializer serializer) throws Exception{
 		return serialize(serializer, null);
@@ -79,7 +79,7 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @throws UWSException	If there is an error during the serialization.
 	 * 
-	 * @see #serialize(ServletOutputStream, UWSSerializer, String)
+	 * @see #serialize(ServletOutputStream, UWSSerializer, JobOwner)
 	 */
 	public void serialize(ServletOutputStream output, UWSSerializer serializer) throws Exception{
 		serialize(output, serializer, null);
@@ -91,13 +91,13 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @param output		The ouput stream in which this object must be serialized.
 	 * @param serializer	The serializer to use.
-	 * @param ownerId		The ID of the current ID.
+	 * @param owner			The user who asks for the serialization.
 	 * 
 	 * @throws UWSException		If the owner is not allowed to see the content of the serializable object.
 	 * @throws IOException		If there is an error while writing in the given stream. 
 	 * @throws Exception		If there is any other error during the serialization.
 	 * 
-	 * @see #serialize(UWSSerializer, String)
+	 * @see #serialize(UWSSerializer, JobOwner)
 	 */
 	public void serialize(ServletOutputStream output, UWSSerializer serializer, JobOwner owner) throws UWSException, IOException, Exception{
 		if (output == null)

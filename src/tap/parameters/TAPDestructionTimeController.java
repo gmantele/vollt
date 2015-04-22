@@ -74,7 +74,7 @@ public class TAPDestructionTimeController implements InputParamController {
 	/**
 	 * Let indicate whether the destruction time of any managed job can be modified.
 	 * 
-	 * @param allowModification <i>true</i> if the destruction time can be modified, <i>false</i> otherwise.
+	 * @param allowModif <i>true</i> if the destruction time can be modified, <i>false</i> otherwise.
 	 */
 	public final void allowModification(final boolean allowModif){
 		allowModification = allowModif;

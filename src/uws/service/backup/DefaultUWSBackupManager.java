@@ -50,7 +50,6 @@ import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.parameters.UWSParameters;
-import uws.job.serializer.JSONSerializer;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.file.UWSFileManager;
@@ -114,7 +113,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @param uws The UWS to save/restore.
 	 * 
-	 * @see #DefaultBackupManager(UWS, long)
+	 * @see #DefaultUWSBackupManager(UWS, long)
 	 */
 	public DefaultUWSBackupManager(final UWS uws){
 		this(uws, DEFAULT_FREQUENCY);
@@ -157,7 +156,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @throws UWSException	If the user identification is disabled (that's to say, if the given UWS has no UserIdentifier) while the parameter <i>byUser</i> is <i>true</i>.
 	 * 
-	 * @see #DefaultBackupManager(UWS, boolean, long)
+	 * @see #DefaultUWSBackupManager(UWS, boolean, long)
 	 */
 	public DefaultUWSBackupManager(final UWS uws, final boolean byUser) throws UWSException{
 		this(uws, byUser, byUser ? AT_USER_ACTION : DEFAULT_FREQUENCY);
@@ -525,7 +524,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * <p>
 	 * 	<i><u>note</u>:
-	 * 	the structure of the returned JSON object is decided by {@link JSONSerializer#getJson(UWSJob)}.
+	 * 	the structure of the returned JSON object is decided by {@link Json4Uws#getJson(UWSJob)}.
 	 * 	Only one attribute is added: "jobListName".
 	 * </i></p>
 	 * 
@@ -1051,7 +1050,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @throws UWSException		If there is an error while restoring one of the result.
 	 * 
-	 * @see {@link #getResult(JSONObject)}
+	 * @see #getResult(JSONObject)
 	 */
 	protected ArrayList<Result> getResults(final JSONArray array) throws UWSException{
 		if (array == null || array.length() == 0)

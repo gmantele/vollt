@@ -323,15 +323,13 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 * @param tableName		ADQL name (and indirectly also the DB name) of the table to create and add.
 	 * @param tableType		Type of the new table. <i>If NULL, "table" will be the type of the created table.</i>
 	 * @param description	Description of the new table. <i>MAY be NULL</i>
-	 * @param unit			Unit of the new table's values. <i>MAY be NULL</i>
-	 * @param ucd			UCD describing the scientific content of the new column. <i>MAY be NULL</i>
 	 * @param utype			UType associating the new column with a data-model. <i>MAY be NULL</i>
 	 * 
 	 * @return	The created and added {@link TAPTable} object,
 	 *        	or NULL if the given name is NULL or an empty string.
 	 * 
-	 * @see TAPTable#TAPTable(String, TableType, String, String, String, String)
-	 * @see #addTable(TAPSchema)
+	 * @see TAPTable#TAPTable(String, TableType, String, String)
+	 * @see #addTable(TAPTable)
 	 */
 	public TAPTable addTable(String tableName, TableType tableType, String description, String utype){
 		if (tableName == null)

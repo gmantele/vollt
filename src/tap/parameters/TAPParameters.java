@@ -75,7 +75,7 @@ public class TAPParameters extends UWSParameters {
 	/**
 	 * Create a {@link TAPParameters} instance whose the parameters are given in parameter.
 	 * 
-	 * @param request	HTTP request containing the parameters to gather inside this class.
+	 * @param service	Description of the TAP service. Limits of the standard TAP parameters are listed in it.
 	 * @param params	List of parameters to load inside this object.
 	 * 
 	 * @throws TAPException	If any error occurs while extracting the DALIParameters OR while setting a parameter.

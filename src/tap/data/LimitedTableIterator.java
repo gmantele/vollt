@@ -76,7 +76,7 @@ public class LimitedTableIterator implements TableIterator {
 	 * Wrap the given {@link TableIterator} so that limiting the number of rows to read.
 	 * 
 	 * @param it		The iterator to wrap. <i>MUST NOT be NULL</i>
-	 * @param maxNbRows	Maximum number of rows that can be read. There is overflow if more than this number of rows is asked. <i>A negative value means "no limit".</i>
+	 * @param nbMaxRows	Maximum number of rows that can be read. There is overflow if more than this number of rows is asked. <i>A negative value means "no limit".</i>
 	 */
 	public LimitedTableIterator(final TableIterator it, final int nbMaxRows) throws DataReadException{
 		if (it == null)

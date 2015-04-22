@@ -83,8 +83,7 @@ import adql.translator.TranslationException;
  * 	                         and that already done modification will remain in the database.</li>
  * 
  * 	<li><b>schemas</b>: when the DBMS does not have the notion of schema (like SQLite), no schema creation or dropping will be obviously processed.
- * 	                    Besides, if not already done, database name of all tables will be prefixed by the schema name.
- * 	                    The prefix to apply is returned by {@link #getTablePrefix(String)}.</li>
+ * 	                    Besides, if not already done, database name of all tables will be prefixed by the schema name.</li>
  * 
  * 	<li><b>batch updates</b>: when not supported, updates will just be done, "normally, one by one.
  * 	                          In one word, there will be merely no optimization.
@@ -247,7 +246,7 @@ public class JDBCConnection implements DBConnection {
 	 * <p><i><b>Warning:</b>
 	 * 	This constructor really creates a new SQL connection. Creating a SQL connection is time consuming!
 	 * 	That's why it is recommended to use a pool of connections. When doing so, you should use the other constructor of this class
-	 * 	({@link #JDBCConnection(Connection, String, TAPLog)}).
+	 * 	({@link #JDBCConnection(Connection, JDBCTranslator, String, TAPLog)}).
 	 * </i></p>
 	 * 
 	 * @param driverPath	Full class name of the JDBC driver.
@@ -523,7 +522,7 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i>Note:
 	 * 	If schemas are not supported by this DBMS connection, the DB name of all tables will be set to NULL
-	 * 	and the DB name of all tables will be prefixed by the ADQL name of their respective schema (using {@link #getTablePrefix(String)}).
+	 * 	and the DB name of all tables will be prefixed by the ADQL name of their respective schema.
 	 * </i></p>
 	 * 
 	 * @see tap.db.DBConnection#getTAPSchema()
@@ -580,7 +579,7 @@ public class JDBCConnection implements DBConnection {
 	 * 	If schemas are not supported by this DBMS connection, the DB name of the loaded schemas is set to NULL.
 	 * </i></p>
 	 * 
-	 * @param tablesDef		Definition of the table TAP_SCHEMA.schemas.
+	 * @param tableDef		Definition of the table TAP_SCHEMA.schemas.
 	 * @param metadata		Metadata to fill with all found schemas.
 	 * @param stmt			Statement to use in order to interact with the database.
 	 * 
@@ -635,19 +634,17 @@ public class JDBCConnection implements DBConnection {
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
-	 * 	If schemas are not supported by this DBMS connection, the DB name of the loaded {@link TAPTable}s is prefixed by the ADQL name of their respective schema.
-	 * 	The table prefix is built by {@link #getTablePrefix(String)}.  
+	 * 	If schemas are not supported by this DBMS connection, the DB name of the loaded
+	 * 	{@link TAPTable}s is prefixed by the ADQL name of their respective schema.  
 	 * </i></p>
 	 * 
-	 * @param tablesDef		Definition of the table TAP_SCHEMA.tables.
+	 * @param tableDef		Definition of the table TAP_SCHEMA.tables.
 	 * @param metadata		Metadata (containing already all schemas listed in TAP_SCHEMA.schemas).
 	 * @param stmt			Statement to use in order to interact with the database.
 	 * 
 	 * @return	The complete list of all loaded tables. <i>note: this list is required by {@link #loadColumns(TAPTable, List, Statement)}.</i> 
 	 * 
 	 * @throws DBException	If a schema can not be found, or if any other error occurs while interacting with the database.
-	 * 
-	 * @see #getTablePrefix(String) 
 	 */
 	protected List<TAPTable> loadTables(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
 		ResultSet rs = null;
@@ -730,7 +727,7 @@ public class JDBCConnection implements DBConnection {
 	 * 	If they can not be found a {@link DBException} is thrown.
 	 * </i></p>
 	 * 
-	 * @param columnsDef	Definition of the table TAP_SCHEMA.columns.
+	 * @param tableDef		Definition of the table TAP_SCHEMA.columns.
 	 * @param lstTables		List of all published tables (= all tables listed in TAP_SCHEMA.tables).
 	 * @param stmt			Statement to use in order to interact with the database.
 	 * 
@@ -996,15 +993,15 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i>Note:
 	 * 	If schemas are not supported by this DBMS connection, the DB name of schemas is set to NULL and
-	 * 	the DB name of tables is prefixed by the schema name (using {@link #getTablePrefix(String)}).
+	 * 	the DB name of tables is prefixed by the schema name.
 	 * </i></p>
 	 * 
 	 * @param metadata	Metadata (with or without TAP_SCHEMA schema or some of its table). <i>Must not be NULL</i>
 	 * 
-	 * @return	The list of all standard TAP_SCHEMA tables, ordered by creation order (see {@link #getCreationOrder(STDTable)}).
+	 * @return	The list of all standard TAP_SCHEMA tables, ordered by creation order (see {@link #getCreationOrder(tap.metadata.TAPMetadata.STDTable)}).
 	 * 
 	 * @see TAPMetadata#resolveStdTable(String)
-	 * @see TAPMetadata#getStdSchema()
+	 * @see TAPMetadata#getStdSchema(boolean)
 	 * @see TAPMetadata#getStdTable(STDTable)
 	 */
 	protected TAPTable[] mergeTAPSchemaDefs(final TAPMetadata metadata){
@@ -1115,7 +1112,7 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @throws SQLException	If any error occurs while querying or updating the database.
 	 * 
-	 * @see ADQLTranslator#isCaseSensitive(IdentifierField)
+	 * @see JDBCTranslator#isCaseSensitive(IdentifierField)
 	 */
 	private void dropTAPSchemaTables(final TAPTable[] stdTables, final Statement stmt, final DatabaseMetaData dbMeta) throws SQLException{
 		String[] stdTablesToDrop = new String[]{null,null,null,null,null};
@@ -1631,8 +1628,8 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i><b>Important note:</b>
 	 * 	This function may modify the given {@link TAPTable} object if schemas are not supported by this connection.
-	 * 	In this case, this function will prefix the table's DB name by the schema's DB name directly inside the given {@link TAPTable} object
-	 * 	(building the prefix with {@link #getTablePrefix(String)}). Then the DB name of the schema will be set to NULL.
+	 * 	In this case, this function will prefix the table's DB name by the schema's DB name directly inside the given
+	 * 	{@link TAPTable} object. Then the DB name of the schema will be set to NULL.
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
@@ -1831,8 +1828,8 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i><b>Important note:</b>
 	 * 	This function may modify the given {@link TAPTable} object if schemas are not supported by this connection.
-	 * 	In this case, this function will prefix the table's DB name by the schema's DB name directly inside the given {@link TAPTable} object
-	 * 	(building the prefix with {@link #getTablePrefix(String)}). Then the DB name of the schema will be set to NULL.
+	 * 	In this case, this function will prefix the table's DB name by the schema's DB name directly inside the given
+	 * 	{@link TAPTable} object. Then the DB name of the schema will be set to NULL.
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
@@ -1894,8 +1891,7 @@ public class JDBCConnection implements DBConnection {
 	 * 	</li>
 	 * 	<li>
 	 * 		If schemas are not supported by this connection, this function will prefix the table DB name by the schema DB name directly
-	 * 		inside the given {@link TAPTable} object (building the prefix with {@link #getTablePrefix(String)}). Then the DB name
-	 * 		of the schema will be set to NULL.
+	 * 		inside the given {@link TAPTable} object. Then the DB name of the schema will be set to NULL.
 	 * 	</li>
 	 * </ul>
 	 * 
@@ -2187,7 +2183,8 @@ public class JDBCConnection implements DBConnection {
 	 * <p>If the given {@link ResultSet} is NULL, nothing (even exception/error) happens.</p>
 	 * 
 	 * <p>
-	 * 	If any {@link SQLException} occurs during this operation, it is caught and just logged (see {@link #log(int, String, Exception)}).
+	 * 	If any {@link SQLException} occurs during this operation, it is caught and just logged
+	 * 	(see {@link TAPLog#logDB(uws.service.log.UWSLog.LogLevel, DBConnection, String, String, Throwable)}).
 	 * 	No error is thrown and nothing else is done.
 	 * </p>
 	 * 
@@ -2209,11 +2206,12 @@ public class JDBCConnection implements DBConnection {
 	 * <p>If the given {@link Statement} is NULL, nothing (even exception/error) happens.</p>
 	 * 
 	 * <p>
-	 * 	If any {@link SQLException} occurs during this operation, it is caught and just logged (see {@link #log(int, String, Exception)}).
+	 * 	If any {@link SQLException} occurs during this operation, it is caught and just logged
+	 * 	(see {@link TAPLog#logDB(uws.service.log.UWSLog.LogLevel, DBConnection, String, String, Throwable)}).
 	 * 	No error is thrown and nothing else is done.
 	 * </p>
 	 * 
-	 * @param rs	{@link Statement} to close.
+	 * @param stmt	{@link Statement} to close.
 	 */
 	protected final void close(final Statement stmt){
 		try{
@@ -2329,7 +2327,7 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i>Note:
 	 * 	Test on the schema name is done considering the case sensitivity indicated by the translator
-	 * 	(see {@link ADQLTranslator#isCaseSensitive(IdentifierField)}).
+	 * 	(see {@link JDBCTranslator#isCaseSensitive(IdentifierField)}).
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
@@ -2369,13 +2367,13 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i><b>Important note:</b>
 	 * 	If schemas are not supported by this connection but a schema name is even though provided in parameter,
-	 * 	the table name will be prefixed by the schema name using {@link #getTablePrefix(String)}.
+	 * 	the table name will be prefixed by the schema name.
 	 * 	The research will then be done with NULL as schema name and this prefixed table name.
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
 	 * 	Test on the schema name is done considering the case sensitivity indicated by the translator
-	 * 	(see {@link ADQLTranslator#isCaseSensitive(IdentifierField)}).
+	 * 	(see {@link JDBCTranslator#isCaseSensitive(IdentifierField)}).
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
@@ -2441,13 +2439,13 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i><b>Important note:</b>
 	 * 	If schemas are not supported by this connection but a schema name is even though provided in parameter,
-	 * 	the table name will be prefixed by the schema name using {@link #getTablePrefix(String)}.
+	 * 	the table name will be prefixed by the schema name.
 	 * 	The research will then be done with NULL as schema name and this prefixed table name.
 	 * </i></p>
 	 * 
 	 * <p><i>Note:
 	 * 	Test on the schema name is done considering the case sensitivity indicated by the translator
-	 * 	(see {@link ADQLTranslator#isCaseSensitive(IdentifierField)}).
+	 * 	(see {@link JDBCTranslator#isCaseSensitive(IdentifierField)}).
 	 * </i></p>
 	 * 
 	 * <p><i>Note:

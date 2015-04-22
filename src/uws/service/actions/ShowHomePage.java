@@ -83,7 +83,7 @@ public class ShowHomePage extends UWSAction {
 	 * <ul>
 	 * 	<li><b>Default home page ({@link UWSService#isDefaultHomePage()} returns <i>true</i>):</b>
 	 * 			write the appropriate (considering the Accept header of the HTTP-Request) serialization of this UWS.</li>
-	 * 	<li><b>Home redirection ({@link UWSService#isHomePageRedirection()} = <i>true</i>):</b> call {@link UWSService#redirect(String, HttpServletRequest, HttpServletResponse)} with the {@link UWSService#getHomePage()} URL.</li>
+	 * 	<li><b>Home redirection ({@link UWSService#isHomePageRedirection()} = <i>true</i>):</b> call {@link UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)} with the {@link UWSService#getHomePage()} URL.</li>
 	 * 	<li><b>Otherwise (({@link UWSService#isHomePageRedirection()} = <i>false</i>)):</b> read the content of the resource at the {@link UWSService#getHomePage()} URL and copy it in the given {@link HttpServletResponse}.</li>
 	 * </ul>
 	 * 
@@ -92,7 +92,7 @@ public class ShowHomePage extends UWSAction {
 	 * @throws IOException	If there is an error while reading at a custom home page URL
 	 * 						or while writing in the given HttpServletResponse.
 	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 * @see UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 */
 	@Override

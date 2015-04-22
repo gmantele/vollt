@@ -30,6 +30,7 @@ import uws.UWSToolBox;
 import uws.job.UWSJob;
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
+import uws.service.UWSFactory;
 import uws.service.UWSService;
 import uws.service.UWSUrl;
 import uws.service.log.UWSLog.LogLevel;
@@ -75,7 +76,7 @@ public class SetJobParam extends UWSAction {
 	 * 	<li>if the HTTP method is HTTP-PUT: there are at least two attributes ({@link UWSJob#PARAM_PARAMETERS}/{parameter_name}) <b>and</b> there are at least two parameters</li>
 	 * </ul>
 	 * 
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
@@ -87,12 +88,11 @@ public class SetJobParam extends UWSAction {
 	 * changes the value of the specified job attribute
 	 * and makes a redirection to the job summary.</p>
 	 * 
-	 * @see #getJob(UWSUrl, String)
-	 * @see UWSService#createUWSParameters(HttpServletRequest)
-	 * @see UWSJob#addOrUpdateParameters(java.util.Map)
+	 * @see #getJob(UWSUrl)
+	 * @see UWSFactory#createUWSParameters(HttpServletRequest)
+	 * @see UWSJob#addOrUpdateParameters(UWSParameters, JobOwner)
 	 * @see UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
-	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{

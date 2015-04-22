@@ -96,7 +96,7 @@ public interface UWSFactory {
 	/**
 	 * Lets extracting all parameters from the given request.
 	 * 
-	 * @param req		The request from which parameters must be extracted.
+	 * @param request	The request from which parameters must be extracted.
 	 * 
 	 * @return			The extracted parameters.
 	 * 

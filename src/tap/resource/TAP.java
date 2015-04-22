@@ -749,17 +749,13 @@ public class TAP implements VOSIResource {
 	 * 
 	 * <h3>Home page</h3>
 	 * <p>
-	 * 	If the appropriate resource is the home page, the request is not propagated and
-	 * 	this class/resource displays directly the home page in the given response by calling {@link #writeHomePage(HttpServletResponse, JobOwner)}.
-	 * 	The default implementation of this function takes 2 cases into account:
+	 * 	If the appropriate resource is the home page, the request is propagated to a {@link TAPResource}
+	 * 	(by default {@link HomePage}) whose the resource name is "HOME PAGE". Once called, this resource
+	 * 	displays directly the home page in the given response by calling.
+	 * 	The default implementation of the default implementation ({@link HomePage}) takes several cases into account.
+	 * 	Those are well documented in the Javadoc of {@link HomePage}. What you should know, is that sometimes it is
+	 * 	using the following attributes of this class: {@link #getHomePage()}, {@link #getHomePageURI()}, {@link #getHomePageMimeType()}.
 	 * </p>
-	 * <ol>
-	 * 	<li><b>A custom home page has been specified</b> using {@link #setHomePageURI(String)}. In this case, the content of the URL or file path will
-	 * 	                                                 be directly copied into the HTTP response. The content type of the response must be specified by
-	 * 	                                                 {@link #setHomePageMimeType(String)} ; by default, it is "text/html".</li>
-	 * 	<li><b>Default home page.</b> When no custom home page has been specified, a default content is displayed. It is an HTML document which merely
-	 * 	                              lists all resources available in this TAP service.</li>
-	 * </ol>
 	 * 
 	 * <h3>Error/Exception management</h3>
 	 * <p>

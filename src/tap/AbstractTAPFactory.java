@@ -86,7 +86,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 
 	 * @throws NullPointerException	If the given {@link ServiceConnection} is NULL.
 	 * 
-	 * @see {@link TAPFactory#TAPFactory(ServiceConnection)}
+	 * @see TAPFactory#TAPFactory(ServiceConnection)
 	 */
 	protected AbstractTAPFactory(final ServiceConnection service, final ServiceErrorWriter errorWriter) throws NullPointerException{
 		super(service);

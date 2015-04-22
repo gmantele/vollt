@@ -165,7 +165,7 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	 * <p>The format is chosen thanks to the Accept header of the HTTP request.
 	 * If unknown, the HTML output is chosen.</p>
 	 * 
-	 * @param t					Exception to format and to write.
+	 * @param message			Error message to write.
 	 * @param type				Type of the error: FATAL or TRANSIENT.
 	 * @param httpErrorCode		HTTP error code (i.e. 404, 500).
 	 * @param reqID				ID of the request at the origin of the specified error.
@@ -176,8 +176,8 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	 * 
 	 * @throws IOException		If there is an error while writing the given exception.
 	 * 
-	 * @see #formatHTMLError(Throwable, boolean, ErrorType, int, String, JobOwner, HttpServletResponse)
-	 * @see #formatJSONError(Throwable, boolean, ErrorType, int, String, JobOwner, HttpServletResponse)
+	 * @see #formatHTMLError(String, ErrorType, int, String, String, JobOwner, HttpServletResponse)
+	 * @see #formatJSONError(String, ErrorType, int, String, String, JobOwner, HttpServletResponse)
 	 */
 	protected void formatError(final String message, final ErrorType type, final int httpErrorCode, final String reqID, final String action, final JobOwner user, final HttpServletResponse response, final String acceptHeader) throws IOException{
 		String format = chooseFormat(acceptHeader);
@@ -191,7 +191,7 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	 * <p>Formats and writes the given error in the HTTP servlet response.</p>
 	 * <p>A full HTML response is printed with: the HTTP error code, the error type, the name of the exception, the message and the full stack trace.</p>
 	 * 
-	 * @param t					Exception to format and to write.
+	 * @param message			Error message to write.
 	 * @param type				Type of the error: FATAL or TRANSIENT.
 	 * @param httpErrorCode		HTTP error code (i.e. 404, 500).
 	 * @param reqID				ID of the request at the origin of the specified error.
@@ -274,7 +274,7 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 	 * <p>Formats and writes the given error in the HTTP servlet response.</p>
 	 * <p>A JSON response is printed with: the HTTP error code, the error type, the name of the exception, the message and the list of all causes' message.</p>
 	 * 
-	 * @param t					Exception to format and to write.
+	 * @param message			Error message to write.
 	 * @param type				Type of the error: FATAL or TRANSIENT.
 	 * @param httpErrorCode		HTTP error code (i.e. 404, 500).
 	 * @param reqID				ID of the request at the origin of the specified error.

@@ -54,7 +54,7 @@ import uws.service.request.UploadFile;
  * 
  * <p>
  * 	The name of the log file, the result files and the backup files may be customized by overriding the following functions:
- * 	{@link #getLogFileName(LogLevel, String)}, {@link #getResultFileName(Result, UWSJob)}, {@link #getBackupFileName(JobOwner)} and {@link #getBackupFileName()}.
+ * 	{@link #getLogFileName(uws.service.log.UWSLog.LogLevel, String)}, {@link #getResultFileName(Result, UWSJob)}, {@link #getBackupFileName(JobOwner)} and {@link #getBackupFileName()}.
  * </p>
  * 
  * <p>
@@ -337,7 +337,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 
 	 * @return	The UWS log file.
 	 * 
-	 * @see #getLogFileName(LogLevel, String)
+	 * @see #getLogFileName(uws.service.log.UWSLog.LogLevel, String)
 	 */
 	protected File getLogFile(final LogLevel level, final String context){
 		return new File(rootDirectory, getLogFileName(level, context));

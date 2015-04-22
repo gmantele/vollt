@@ -554,7 +554,7 @@ public class ADQLExecutor {
 	 * @throws InterruptedException	If the thread has been interrupted.
 	 * @throws TAPException			If the {@link DBConnection} has failed to deal with the given ADQL query.
 	 * 
-	 * @see {@link DBConnection#executeQuery(ADQLQuery)}
+	 * @see DBConnection#executeQuery(ADQLQuery)
 	 */
 	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, TAPException{
 		// Log the start of execution:

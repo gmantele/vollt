@@ -48,7 +48,7 @@ import uws.service.request.UploadFile;
  * <p>
  * 	It is possible to check the value of some or all parameters by calling the function {@link InputParamController#check(Object)}
  * 	of an {@link InputParamController} associated with the name of the parameter. Input parameter controllers can be
- * 	provided at the creation of a {@link UWSParameters}. If none are given, default ones are used (see {@link #getDefaultUWSParamControllers()})
+ * 	provided at the creation of a {@link UWSParameters}. If none are given, default ones are used (see {@link #getDefaultControllers()})
  * 	for the standard UWS parameters (e.g. destruction time, duration, etc...).
  * </p>
  * 
@@ -177,14 +177,14 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	 * <p>Builds an empty list of UWS parameters.</p>
 	 * 
 	 * <p><i><u>note:</u> Even if no controllers is provided, this constructor sets the default
-	 * input parameter controllers (see {@link #getDefaultUWSParamControllers()}).</i></p>
+	 * input parameter controllers (see {@link #getDefaultControllers()}).</i></p>
 	 * 
 	 * @param expectedAdditionalParams	The names of all expected additional parameters (MAY BE NULL).
 	 * 									<i><u>note:</u> they will be identified with no case sensitivity
 	 * 									and stored with the same case as in this collection.</i>
 	 * @param inputParamControllers		Controllers of the input parameters (MAY BE NULL).
 	 * 
-	 * @see #getDefaultUWSParamControllers()
+	 * @see #getDefaultControllers()
 	 */
 	public UWSParameters(final Collection<String> expectedAdditionalParams, final Map<String,InputParamController> inputParamControllers){
 		// Set the input parameter controllers:
@@ -199,7 +199,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	/**
 	 * <p>Extracts and identifies all UWS standard and non-standard parameters from the given {@link HttpServletRequest}.</p>
 	 * 
-	 * <p><i><u>note:</u> The default input parameter controllers are set by default (see {@link #getDefaultUWSParamControllers()}).</i></p>
+	 * <p><i><u>note:</u> The default input parameter controllers are set by default (see {@link #getDefaultControllers()}).</i></p>
 	 * 
 	 * @param request			The request to parse to extract the parameters.
 	 * 
@@ -215,7 +215,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	 * <p>Extracts and identifies all UWS standard and non-standard parameters from the given {@link HttpServletRequest}.</p>
 	 * 
 	 * <p><i><u>note:</u> Even if no controllers is provided, this constructor sets the default
-	 * input parameter controllers (see {@link #getDefaultUWSParamControllers()}).</i></p>
+	 * input parameter controllers (see {@link #getDefaultControllers()}).</i></p>
 	 * 
 	 * @param request					The request to parse to extract the parameters.
 	 * @param expectedAdditionalParams	The names of all expected additional parameters.
@@ -236,7 +236,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	 * 
 	 * <p>
 	 * 	Since the version 4.1, parameters are extracted immediately when the request is received. They are then stored in an attribute
-	 * 	under the name of {@value UWS#REQ_ATTRIBUTE_PARAMETERS}. Thus, the map of parameters can be got in that way. However, if this attribute
+	 * 	under the name of {@link UWS#REQ_ATTRIBUTE_PARAMETERS}. Thus, the map of parameters can be got in that way. However, if this attribute
 	 * 	does not exist, this function will ask for the parameters extracted by {@link HttpServletRequest} ({@link HttpServletRequest#getParameterNames()}
 	 * 	and {@link HttpServletRequest#getParameter(String)}). In this last case only the last non-null occurrence of any parameter will be kept.
 	 * </p>
@@ -284,7 +284,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	/**
 	 * <p>Extracts and identifies all UWS standard and non-standard parameters from the map.</p>
 	 * 
-	 * <p><i><u>note:</u> The default input parameter controllers are set by default (see {@link #getDefaultUWSParamControllers()}).</i></p>
+	 * <p><i><u>note:</u> The default input parameter controllers are set by default (see {@link #getDefaultControllers()}).</i></p>
 	 * 
 	 * @param params			A map of parameters.
 	 * 
@@ -300,7 +300,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	 * <p>Extracts and identifies all UWS standard and non-standard parameters from the map.</p>
 	 * 
 	 * <p><i><u>note:</u> Even if no controllers is provided, this constructor sets the default
-	 * input parameter controllers (see {@link #getDefaultUWSParamControllers()}).</i></p>
+	 * input parameter controllers (see {@link #getDefaultControllers()}).</i></p>
 	 * 
 	 * @param params					A map of parameters.
 	 * @param expectedAdditionalParams	The names of all expected additional parameters.
@@ -341,25 +341,20 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	/**
 	 * <p>Must return the input parameter controller of the specified parameter.</p>
 	 * 
-	 * <p><i><u>note 1:</u> This function is supposed to be case sensitive !</i></p>
-	 * <p><i><u>note 2:</u> By default, this function just asks to the {@link UWS} thanks to the function {@link UWS#getInputParamController(String)}.</i></p>
+	 * <p><i><u>note:</u> This function is supposed to be case sensitive !</i></p>
 	 * 
 	 * @param inputParamName	The name of the parameter whose the controller is asked.
 	 * 
-	 * @return					The corresponding controller or <i>null</i> if there is no controller for the specified parameter
-	 * 							or if this {@link UWSParameters} instance doesn't know a {@link UWS}.
+	 * @return					The corresponding controller or <i>null</i> if there is no controller for the specified parameter.
 	 */
 	protected InputParamController getController(final String inputParamName){
 		return mapParamControllers.get(inputParamName);
 	}
 
 	/**
-	 * <p>Must return the list of all available input parameter controllers.</p>
+	 * Must return the list of all available input parameter controllers.
 	 * 
-	 * <p><i><u>note:</u> By default, this function just asks to the {@link UWS} thanks to the function {@link UWS#getInputParamControllers()}.</i></p>
-	 * 
-	 * @return		The list of all available controllers or <i>null</i> if there is no controller
-	 * 				or if this {@link UWSParameters} instance doesn't know a {@link UWS}.
+	 * @return		An iterator over all available controllers.
 	 */
 	protected Iterator<Entry<String,InputParamController>> getControllers(){
 		return mapParamControllers.entrySet().iterator();

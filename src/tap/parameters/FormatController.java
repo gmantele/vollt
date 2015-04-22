@@ -64,7 +64,7 @@ public class FormatController implements InputParamController {
 	/**
 	 * Lets indicating whether the format parameter can be modified.
 	 * 
-	 * @param allowModification	<i>true</i> if the format can be modified, <i>false</i> otherwise.
+	 * @param allowModif	<i>true</i> if the format can be modified, <i>false</i> otherwise.
 	 */
 	public final void allowModification(final boolean allowModif){
 		this.allowModification = allowModif;

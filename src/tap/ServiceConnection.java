@@ -114,7 +114,7 @@ public interface ServiceConnection {
 		 * 
 		 * @throws TAPException If the two given units are not compatible.
 		 * 
-		 * @see #isCompatibleWith(LimitUnit)
+		 * @see tap.ServiceConnection.LimitUnit#isCompatibleWith(tap.ServiceConnection.LimitUnit)
 		 * @see #bytesFactor()
 		 * @see Integer#compare(int, int)
 		 * @see Long#compare(long, long)
@@ -604,8 +604,9 @@ public interface ServiceConnection {
 	 * 
 	 * <p><i>Piece of advice:
 	 * 	The {@link TAPFactory} is an interface which contains a lot of functions to implement.
-	 * 	It is rather recommended to extend {@link AbstractTAPFactory}: just 3 functions ({@link AbstractTAPFactory#countFreeConnections()},
-	 * 	{@link AbstractTAPFactory#freeConnection()}, {@link AbstractTAPFactory#getConnection(String)}) will have to be implemented. 
+	 * 	It is rather recommended to extend {@link AbstractTAPFactory}: just 2 functions
+	 * 	({@link AbstractTAPFactory#freeConnection(DBConnection)} and {@link AbstractTAPFactory#getConnection(String)})
+	 * 	will have to be implemented. 
 	 * </i></p>
 	 * 
 	 * @return	An instance of {@link TAPFactory}.

@@ -325,7 +325,7 @@ public final class TAPConfiguration {
 	 * 
 	 * @throws TAPException	If the class name is incorrect or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
 	 * 
-	 * @see {@link #isClassName(String)}
+	 * @see #isClassName(String)
 	 */
 	@SuppressWarnings("unchecked")
 	public final static < C > Class<? extends C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws TAPException{
@@ -354,8 +354,8 @@ public final class TAPConfiguration {
 	 * 
 	 * <p>The instance is created using the empty constructor of the specified class.</p>
 	 * 
-	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
-	 * @param propertyName	Name of the property associated with the parameter "value".
+	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
+	 * @param propName		Name of the property associated with the parameter "value".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * 
 	 * @return	The corresponding instance.
@@ -365,7 +365,7 @@ public final class TAPConfiguration {
 	 *                     	or if the specified class has no empty constructor
 	 *                     	or if an error occurred while calling this constructor.
 	 * 
-	 * @see {@link #isClassName(String)}
+	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
 	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType) throws TAPException{
@@ -380,8 +380,8 @@ public final class TAPConfiguration {
 	 * 	The number and types of given parameters MUST match exactly to the list of parameter types.
 	 * </p>
 	 * 
-	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
-	 * @param propertyName	Name of the property associated with the parameter "value".
+	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
+	 * @param propName		Name of the property associated with the parameter "value".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
 	 * @param parameters	List of all constructor parameters. The number of object MUST match exactly the number of classes provided in the parameter pTypes. <i>NULL or empty array if no parameter.</i>
@@ -393,7 +393,7 @@ public final class TAPConfiguration {
 	 *                     	or if the constructor with the specified parameters can not be found
 	 *                     	or if an error occurred while calling this constructor.
 	 * 
-	 * @see {@link #isClassName(String)}
+	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
 	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes, final Object[] parameters) throws TAPException{

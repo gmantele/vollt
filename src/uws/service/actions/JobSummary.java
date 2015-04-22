@@ -76,7 +76,7 @@ public class JobSummary extends UWSAction {
 	 * 	<li>the HTTP method is HTTP-GET.</li>
 	 * </ul>
 	 * 
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
@@ -87,11 +87,11 @@ public class JobSummary extends UWSAction {
 	 * Gets the specified job <i>(and throw an error if not found)</i>,
 	 * chooses the serializer and write the serialization of the job in the given response.
 	 * 
-	 * @see #getJob(UWSUrl, String)
+	 * @see #getJob(UWSUrl)
 	 * @see UWSService#getSerializer(String)
 	 * @see UWSJob#serialize(ServletOutputStream, UWSSerializer)
 	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{

@@ -73,7 +73,7 @@ public class AddJob extends UWSAction {
 	 * 	<li>the UWS URL does not make a reference to a job (so: no job ID),</li>
 	 * 	<li>the HTTP method is HTTP-POST.</li>
 	 * </ul>
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
@@ -86,11 +86,10 @@ public class AddJob extends UWSAction {
 	 * 
 	 * @see #getJobsList(UWSUrl)
 	 * @see uws.service.UWSFactory#createJob(HttpServletRequest, JobOwner)
-	 * @see UWSService#setExecutionManager(uws.job.manager.ExecutionManager)
 	 * @see JobList#addNewJob(UWSJob)
 	 * @see UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
