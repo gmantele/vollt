@@ -16,7 +16,8 @@ package adql.db.exception;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -36,8 +37,8 @@ import adql.parser.ParseException;
  * 	on this {@link UnresolvedIdentifiersException} (method {@link #iterator()}).
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (04/2015)
  * 
  * @see DBChecker
  */
@@ -71,10 +72,10 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 				String tableName = ((UnresolvedTableException)pe).getTableName();
 				if (tableName != null && !tableName.trim().isEmpty())
 					addIdentifierName(tableName + " " + pe.getPosition());
-				/*}else if (pe instanceof UnresolvedFunction){	// TODO MANAGE ALSO THE UNRESOLVED_FUNCTIONs!
-					String fctName = (((UnresolvedFunction)pe).getFunction() == null) ? null : ((UnresolvedFunction)pe).getFunction().getName();
-					if (fctName != null && !fctName.trim().isEmpty())
-						addIdentifierName(fctName + " " + pe.getPosition());*/
+			}else if (pe instanceof UnresolvedFunction){
+				String fctName = (((UnresolvedFunction)pe).getFunction() == null) ? null : ((UnresolvedFunction)pe).getFunction().getName() + "(...)";
+				if (fctName != null && !fctName.trim().isEmpty())
+					addIdentifierName(fctName /*+ " " + pe.getPosition()*/);	// TODO Add the position of the function in the ADQL query!
 			}else if (pe instanceof UnresolvedIdentifiersException)
 				addIdentifierName(((UnresolvedIdentifiersException)pe).unresolvedIdentifiers);
 		}
