@@ -110,7 +110,7 @@
 	</target>
 	
 	<target name="compileJavadoc" depends="cleanJavadoc" description="After 'cleanJavadoc', compile the whole Javadoc.">
-		<javadoc access="protected" author="true" destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.7" splitindex="true" use="true" version="true">
+		<javadoc encoding="utf-8" charset="utf-8" docencoding="utf-8" access="protected" author="true" destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.7" splitindex="true" use="true" version="true">
 			<packageset dir="${srcDir}" includes="${includesList}" />
 			<classpath refid="uws.classpath" />
 		</javadoc>

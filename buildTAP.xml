@@ -12,7 +12,7 @@
 
 	<property name="cosJarName" value="cos-1.5beta.jar" />
 	<property name="cosJar" value="${libDir}/${cosJarName}" />
-	<property name="stilJarName" value="stil3.0-5.jar" />
+	<property name="stilJarName" value="stil_3.0-11.jar" />
 	<property name="stilJar" value="${libDir}/${stilJarName}" />
 		
 	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
@@ -122,6 +122,10 @@
 			<zipfileset src="${stilJar}" excludes="META-INF/*" />
 			<zipfileset dir="src" includes="${licensePath}" />
 		</jar>
+		<jar basedir="${classesDir}" destfile="${libJarFile}2" includes="${includesList}">
+			<zipfileset src="${cosJar}" excludes="META-INF/*" />
+			<zipfileset dir="src" includes="${licensePath}" />
+		</jar>
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>
 	
@@ -130,6 +134,10 @@
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
 			<zipfileset dir="${libDir}" includes="${cosJarName}" fullPath="${cosJar}" />
 			<zipfileset dir="${libDir}" includes="${stilJarName}" fullPath="${stilJar}" />
+		</jar>
+		<jar compress="false" destfile="${srcJarFile}2">
+			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
+			<zipfileset dir="${libDir}" includes="${cosJarName}" fullPath="${cosJar}" />
 		</jar>
 	</target>
 	
@@ -143,7 +151,7 @@
 	</target>
 	
 	<target name="compileJavadoc" depends="cleanJavadoc" description="After 'cleanJavadoc', compile the whole Javadoc.">
-		<javadoc access="protected" author="true" destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.7" splitindex="true" use="true" version="true">
+		<javadoc encoding="utf-8" charset="utf-8" docencoding="utf-8" access="protected" author="true" destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.7" splitindex="true" use="true" version="true">
 			<packageset dir="${srcDir}" includes="${includesList}" />
 			<classpath refid="tap.classpath" />
 		</javadoc>
