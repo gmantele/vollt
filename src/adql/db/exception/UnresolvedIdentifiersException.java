@@ -72,8 +72,8 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 				String tableName = ((UnresolvedTableException)pe).getTableName();
 				if (tableName != null && !tableName.trim().isEmpty())
 					addIdentifierName(tableName + " " + pe.getPosition());
-			}else if (pe instanceof UnresolvedFunction){
-				String fctName = (((UnresolvedFunction)pe).getFunction() == null) ? null : ((UnresolvedFunction)pe).getFunction().getName() + "(...)";
+			}else if (pe instanceof UnresolvedFunctionException){
+				String fctName = (((UnresolvedFunctionException)pe).getFunction() == null) ? null : ((UnresolvedFunctionException)pe).getFunction().getName() + "(...)";
 				if (fctName != null && !fctName.trim().isEmpty())
 					addIdentifierName(fctName /*+ " " + pe.getPosition()*/);	// TODO Add the position of the function in the ADQL query!
 			}else if (pe instanceof UnresolvedIdentifiersException)

@@ -16,7 +16,7 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -30,7 +30,7 @@ import java.util.NoSuchElementException;
 import adql.db.DBColumn;
 import adql.db.DBCommonColumn;
 import adql.db.SearchColumnList;
-import adql.db.exception.UnresolvedJoin;
+import adql.db.exception.UnresolvedJoinException;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ClauseConstraints;
@@ -41,7 +41,7 @@ import adql.query.operand.ADQLColumn;
  * Defines a join between two "tables".
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (11/2013)
+ * @version 1.3 (05/2015)
  */
 public abstract class ADQLJoin implements ADQLObject, FromContent {
 
@@ -340,7 +340,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public SearchColumnList getDBColumns() throws UnresolvedJoin{
+	public SearchColumnList getDBColumns() throws UnresolvedJoinException{
 		SearchColumnList list = new SearchColumnList();
 		SearchColumnList leftList = leftTable.getDBColumns();
 		SearchColumnList rightList = rightTable.getDBColumns();
@@ -408,20 +408,20 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 		}
 	}
 
-	public final static DBColumn findExactlyOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoin{
+	public final static DBColumn findExactlyOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoinException{
 		DBColumn result = findAtMostOneColumn(columnName, caseSensitive, list, leftList);
 		if (result == null)
-			throw new UnresolvedJoin("Column \"" + columnName + "\" specified in USING clause does not exist in " + (leftList ? "left" : "right") + " table!");
+			throw new UnresolvedJoinException("Column \"" + columnName + "\" specified in USING clause does not exist in " + (leftList ? "left" : "right") + " table!");
 		else
 			return result;
 	}
 
-	public final static DBColumn findAtMostOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoin{
+	public final static DBColumn findAtMostOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoinException{
 		ArrayList<DBColumn> result = list.search(null, null, null, columnName, caseSensitive);
 		if (result.isEmpty())
 			return null;
 		else if (result.size() > 1)
-			throw new UnresolvedJoin("Common column name \"" + columnName + "\" appears more than once in " + (leftList ? "left" : "right") + " table!");
+			throw new UnresolvedJoinException("Common column name \"" + columnName + "\" appears more than once in " + (leftList ? "left" : "right") + " table!");
 		else
 			return result.get(0);
 	}

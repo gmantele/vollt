@@ -16,13 +16,13 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import adql.db.exception.UnresolvedJoin;
+import adql.db.exception.UnresolvedJoinException;
 import adql.query.ADQLQuery;
 
 /**
@@ -34,7 +34,7 @@ import adql.query.ADQLQuery;
  * in case of several JOINs.
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.3 (10/2014)
+ * @version 1.3 (05/2015)
  * @since 1.2
  */
 public class DBCommonColumn implements DBColumn {
@@ -56,12 +56,12 @@ public class DBCommonColumn implements DBColumn {
 	 * @param leftCol	Column of the left join table. May be a {@link DBCommonColumn}.
 	 * @param rightCol	Column of the right join table. May be a {@link DBCommonColumn}.
 	 * 
-	 * @throws UnresolvedJoin	If the type of the two given columns are not roughly (just testing numeric, string or geometry) compatible.
+	 * @throws UnresolvedJoinException	If the type of the two given columns are not roughly (just testing numeric, string or geometry) compatible.
 	 */
-	public DBCommonColumn(final DBColumn leftCol, final DBColumn rightCol) throws UnresolvedJoin{
+	public DBCommonColumn(final DBColumn leftCol, final DBColumn rightCol) throws UnresolvedJoinException{
 		// Test whether type of both columns are compatible:
 		if (leftCol.getDatatype() != null && rightCol.getDatatype() != null && !leftCol.getDatatype().isCompatible(rightCol.getDatatype()))
-			throw new UnresolvedJoin("JOIN impossible: incompatible column types when trying to join the columns " + leftCol.getADQLName() + " (" + leftCol.getDatatype() + ") and " + rightCol.getADQLName() + " (" + rightCol.getDatatype() + ")!");
+			throw new UnresolvedJoinException("JOIN impossible: incompatible column types when trying to join the columns " + leftCol.getADQLName() + " (" + leftCol.getDatatype() + ") and " + rightCol.getADQLName() + " (" + rightCol.getDatatype() + ")!");
 
 		// LEFT COLUMN:
 		if (leftCol instanceof DBCommonColumn){

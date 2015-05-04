@@ -16,7 +16,7 @@ package adql.db.exception;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import adql.parser.ParseException;
@@ -26,10 +26,10 @@ import adql.query.operand.function.ADQLFunction;
  * Exception thrown when a function can not be resolved by the library.
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (10/2014)
+ * @version 1.3 (05/2015)
  * @since 1.3
  */
-public class UnresolvedFunction extends ParseException {
+public class UnresolvedFunctionException extends ParseException {
 	private static final long serialVersionUID = 1L;
 
 	/** Function which can not be resolved. */
@@ -40,7 +40,7 @@ public class UnresolvedFunction extends ParseException {
 	 * 
 	 * @param message	Description of the error.
 	 */
-	public UnresolvedFunction(final String message){
+	public UnresolvedFunctionException(final String message){
 		super(message);
 		functionInError = null;
 	}
@@ -51,7 +51,7 @@ public class UnresolvedFunction extends ParseException {
 	 * 
 	 * @param fct	The unresolved function.
 	 */
-	public UnresolvedFunction(final ADQLFunction fct){
+	public UnresolvedFunctionException(final ADQLFunction fct){
 		super("Unresolved function: \"" + fct.toADQL() + "\"! No UDF has been defined or found with the signature: " + getFctSignature(fct) + "."); // TODO Add the position of the function in the ADQL query!
 		functionInError = fct;
 	}
@@ -63,7 +63,7 @@ public class UnresolvedFunction extends ParseException {
 	 * @param message	Description of the error.
 	 * @param fct		The unresolved function.
 	 */
-	public UnresolvedFunction(final String message, final ADQLFunction fct){
+	public UnresolvedFunctionException(final String message, final ADQLFunction fct){
 		super(message); // TODO Add the position of the function in the ADQL query!
 		functionInError = fct;
 	}

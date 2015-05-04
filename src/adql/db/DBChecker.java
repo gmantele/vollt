@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2011,2013-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2011,2013-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                            Astronomisches Rechen Institut (ARI)
  */
 
@@ -34,7 +34,7 @@ import adql.db.STCS.CoordSys;
 import adql.db.STCS.Region;
 import adql.db.STCS.RegionType;
 import adql.db.exception.UnresolvedColumnException;
-import adql.db.exception.UnresolvedFunction;
+import adql.db.exception.UnresolvedFunctionException;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnresolvedTableException;
 import adql.parser.ParseException;
@@ -97,7 +97,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.3 (05/2015)
  */
 public class DBChecker implements QueryChecker {
 
@@ -790,7 +790,7 @@ public class DBChecker implements QueryChecker {
 		// If no UDF are allowed, throw immediately an error:
 		if (allowedUdfs.length == 0){
 			for(ADQLObject result : sHandler)
-				errors.addException(new UnresolvedFunction((UserDefinedFunction)result));
+				errors.addException(new UnresolvedFunctionException((UserDefinedFunction)result));
 		}
 		// 2. Try to resolve all of them:
 		else{
@@ -816,7 +816,7 @@ public class DBChecker implements QueryChecker {
 				if (match < 0){
 					// ...if the type of all parameters is resolved, add an error (no match is possible):
 					if (isAllParamTypesResolved(udf))
-						errors.addException(new UnresolvedFunction(udf));	// TODO Add the ADQLOperand position!
+						errors.addException(new UnresolvedFunctionException(udf));	// TODO Add the ADQLOperand position!
 					// ...otherwise, try to resolved it later (when other UDFs will be mostly resolved):
 					else
 						toResolveLater.add(udf);
@@ -833,7 +833,7 @@ public class DBChecker implements QueryChecker {
 				match = binSearch.search(udf, allowedUdfs);
 				// if no match, add an error:
 				if (match < 0)
-					errors.addException(new UnresolvedFunction(udf));	// TODO Add the ADQLOperand position!
+					errors.addException(new UnresolvedFunctionException(udf));	// TODO Add the ADQLOperand position!
 				// otherwise, metadata may be attached (particularly if the function is built automatically by the syntactic parser):
 				else if (udf instanceof DefaultUDF)
 					((DefaultUDF)udf).setDefinition(allowedUdfs[match]);
@@ -958,7 +958,7 @@ public class DBChecker implements QueryChecker {
 		if (allowedGeo.length != 0)
 			match = binSearch.search(fctName, allowedGeo);
 		if (match < 0)
-			errors.addException(new UnresolvedFunction("The geometrical function \"" + fctName + "\" is not available in this implementation!", fct));
+			errors.addException(new UnresolvedFunctionException("The geometrical function \"" + fctName + "\" is not available in this implementation!", fct));
 	}
 
 	/**
@@ -1093,7 +1093,7 @@ public class DBChecker implements QueryChecker {
 		// Check that the region type is allowed:
 		if (allowedGeo != null){
 			if (allowedGeo.length == 0)
-				errors.addException(new UnresolvedFunction("The region type \"" + r.type + "\" is not available in this implementation!", fct));
+				errors.addException(new UnresolvedFunctionException("The region type \"" + r.type + "\" is not available in this implementation!", fct));
 			else
 				checkGeometryFunction((r.type == RegionType.POSITION) ? "POINT" : r.type.toString(), fct, binSearch, errors);
 		}
@@ -1350,7 +1350,7 @@ public class DBChecker implements QueryChecker {
 			}catch(Exception ex){
 				// IF NO INSTANCE CAN BE CREATED...
 				// ...keep the error for further report:
-				errors.addException(new UnresolvedFunction("Impossible to represent the function \"" + ((DefaultUDF)objToReplace).getName() + "\": the following error occured while creating this representation: \"" + ((ex instanceof InvocationTargetException) ? "[" + ex.getCause().getClass().getSimpleName() + "] " + ex.getCause().getMessage() : ex.getMessage()) + "\"", (DefaultUDF)objToReplace));
+				errors.addException(new UnresolvedFunctionException("Impossible to represent the function \"" + ((DefaultUDF)objToReplace).getName() + "\": the following error occured while creating this representation: \"" + ((ex instanceof InvocationTargetException) ? "[" + ex.getCause().getClass().getSimpleName() + "] " + ex.getCause().getMessage() : ex.getMessage()) + "\"", (DefaultUDF)objToReplace));
 				// ...keep the same object (i.e. no replacement):
 				return objToReplace;
 			}
