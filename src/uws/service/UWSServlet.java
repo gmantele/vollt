@@ -405,15 +405,15 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 					uwsAction = UWSAction.SET_UWS_PARAMETER;
 					doSetUWSParameter(requestUrl, req, resp, user);
 
-				}// SET JOB PARAMETER:
-				else if (requestUrl.hasJobList() && requestUrl.hasJob() && (!requestUrl.hasAttribute() || requestUrl.getAttributes().length == 1 && requestUrl.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)) && UWSToolBox.getNbParameters(req) > 0){
-					uwsAction = UWSAction.SET_JOB_PARAM;
-					doSetJobParam(requestUrl, req, resp, user);
-
 				}// DESTROY JOB:
 				else if (requestUrl.hasJobList() && requestUrl.hasJob() && UWSToolBox.hasParameter(UWSJob.PARAM_ACTION, UWSJob.ACTION_DELETE, req, false)){
 					uwsAction = UWSAction.DESTROY_JOB;
 					doDestroyJob(requestUrl, req, resp, user);
+
+				}// SET JOB PARAMETER:
+				else if (requestUrl.hasJobList() && requestUrl.hasJob() && (!requestUrl.hasAttribute() || requestUrl.getAttributes().length == 1 && requestUrl.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)) && UWSToolBox.getNbParameters(req) > 0){
+					uwsAction = UWSAction.SET_JOB_PARAM;
+					doSetJobParam(requestUrl, req, resp, user);
 
 				}else
 					throw new UWSException(UWSException.NOT_IMPLEMENTED, "Unknown UWS action!");
