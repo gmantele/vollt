@@ -215,7 +215,9 @@ public class DBChecker implements QueryChecker {
 					tmp[cnt++] = udf;
 			}
 			// make a copy of the array:
-			this.allowedUdfs = Arrays.copyOf(tmp, cnt, FunctionDef[].class);
+                        this.allowedUdfs = new FunctionDef[cnt];
+                        System.arraycopy(tmp, 0, this.allowedUdfs, 0, cnt);
+
 			tmp = null;
 			// sort the values:
 			Arrays.sort(this.allowedUdfs);
@@ -318,7 +320,8 @@ public class DBChecker implements QueryChecker {
 		}
 
 		// Make an adjusted array copy:
-		String[] copy = Arrays.copyOf(tmp, cnt);
+		String[] copy = new String[cnt];
+                System.arraycopy(tmp, 0, copy, 0, cnt);
 
 		// Sort the values:
 		Arrays.sort(copy);

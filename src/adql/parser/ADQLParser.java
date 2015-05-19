@@ -398,7 +398,7 @@ public class ADQLParser implements ADQLParserConstants {
 
 		try{
 
-			if (file == null || file.isEmpty())
+			if (file == null || file.length()==0)
 				parser = new ADQLParser(System.in);
 			else if (file.matches(urlRegex))
 				parser = new ADQLParser((new java.net.URL(file)).openStream());

@@ -66,15 +66,15 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 			exceptions.add(pe);
 			if (pe instanceof UnresolvedColumnException){
 				String colName = ((UnresolvedColumnException)pe).getColumnName();
-				if (colName != null && !colName.trim().isEmpty())
+				if (colName != null && colName.trim().length()>0)
 					addIdentifierName(colName + " " + pe.getPosition());
 			}else if (pe instanceof UnresolvedTableException){
 				String tableName = ((UnresolvedTableException)pe).getTableName();
-				if (tableName != null && !tableName.trim().isEmpty())
+				if (tableName != null && tableName.trim().length()>0)
 					addIdentifierName(tableName + " " + pe.getPosition());
 			}else if (pe instanceof UnresolvedFunctionException){
 				String fctName = (((UnresolvedFunctionException)pe).getFunction() == null) ? null : ((UnresolvedFunctionException)pe).getFunction().getName() + "(...)";
-				if (fctName != null && !fctName.trim().isEmpty())
+				if (fctName != null && fctName.trim().length()>0)
 					addIdentifierName(fctName /*+ " " + pe.getPosition()*/);	// TODO Add the position of the function in the ADQL query!
 			}else if (pe instanceof UnresolvedIdentifiersException)
 				addIdentifierName(((UnresolvedIdentifiersException)pe).unresolvedIdentifiers);
@@ -87,7 +87,7 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 	 * @param name	Name (or description) of the identifier to add.
 	 */
 	private final void addIdentifierName(final String name){
-		if (name != null && !name.trim().isEmpty()){
+		if (name != null && name.trim().length()>0){
 			if (unresolvedIdentifiers == null)
 				unresolvedIdentifiers = "";
 			else
