@@ -36,7 +36,7 @@ import tap.backup.DefaultTAPBackupManager;
  * and it must be used only thanks to its static classes and attributes.</i></p> 
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (06/2015)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -416,12 +416,14 @@ public final class TAPConfiguration {
 		}catch(NoSuchMethodException e){
 			// List parameters' type:
 			StringBuffer pTypesStr = new StringBuffer();
-			for(int i = 0; i < pTypes.length; i++){
-				if (pTypesStr.length() > 0)
-					pTypesStr.append(", ");
-				if (pTypes[i] == null)
-					pTypesStr.append("NULL");
-				pTypesStr.append(pTypes[i].getName());
+			if (pTypes != null){
+				for(int i = 0; i < pTypes.length; i++){
+					if (pTypesStr.length() > 0)
+						pTypesStr.append(", ");
+					if (pTypes[i] == null)
+						pTypesStr.append("NULL");
+					pTypesStr.append(pTypes[i].getName());
+				}
 			}
 			// Throw the error:
 			throw new TAPException("Missing constructor " + classObj.getName() + "(" + pTypesStr.toString() + ")! See the value \"" + propValue + "\" of the property \"" + propName + "\".");
