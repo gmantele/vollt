@@ -53,7 +53,7 @@ import adql.db.FunctionDef;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
+ * @version 2.0 (06/2015)
  */
 public class TAP implements VOSIResource {
 

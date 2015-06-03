@@ -56,7 +56,7 @@ import tap.resource.TAPResource;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (04/2015)
+ * @version 2.0 (06/2015)
  * @since 2.0
  */
 public class ConfigurableTAPServlet extends HttpServlet {
@@ -174,8 +174,11 @@ public class ConfigurableTAPServlet extends HttpServlet {
 
 		/* 6. DEFAULT SERVLET INITIALIZATION */
 		super.init(config);
+		
+		/* 7. INITIATILIZE THE TAP SERVICE */
+		tap.init(config);
 
-		/* 7. FINALLY MAKE THE SERVICE AVAILABLE */
+		/* 8. FINALLY MAKE THE SERVICE AVAILABLE */
 		serviceConn.setAvailable(true, "TAP service available.");
 	}
 
