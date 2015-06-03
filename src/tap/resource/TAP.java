@@ -605,12 +605,12 @@ public class TAP implements VOSIResource {
 					if (uploadLimit[0] > -1){
 						long limit = uploadLimit[0] * uploadLimitType[0].bytesFactor();
 						limitType = (uploadLimitType[0] == null || uploadLimitType[0] == LimitUnit.rows) ? LimitUnit.rows.toString() : LimitUnit.bytes.toString();
-						xml.append("\t\t<default ").append(VOSerializer.formatAttribute("unit", limitType)).append("\">").append(limit).append("</default>\n");
+						xml.append("\t\t<default ").append(VOSerializer.formatAttribute("unit", limitType)).append(">").append(limit).append("</default>\n");
 					}
 					if (uploadLimit[1] > -1){
 						long limit = uploadLimit[1] * uploadLimitType[1].bytesFactor();
 						limitType = (uploadLimitType[1] == null || uploadLimitType[1] == LimitUnit.rows) ? LimitUnit.rows.toString() : LimitUnit.bytes.toString();
-						xml.append("\t\t<hard ").append(VOSerializer.formatAttribute("unit", limitType)).append("\">").append(limit).append("</hard>\n");
+						xml.append("\t\t<hard ").append(VOSerializer.formatAttribute("unit", limitType)).append(">").append(limit).append("</hard>\n");
 					}
 					xml.append("\t</uploadLimit>\n");
 				}
