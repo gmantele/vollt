@@ -91,6 +91,7 @@ public class ADQLParser implements ADQLParserConstants {
 	*/
 	public ADQLParser(){
 		this(new java.io.ByteArrayInputStream("".getBytes()));
+		setDebug(false);
 	}
 
 	/**
@@ -135,6 +136,7 @@ public class ADQLParser implements ADQLParserConstants {
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory){
 		this(stream);
+		setDebug(false);
 
 		queryChecker = checker;
 
@@ -172,6 +174,7 @@ public class ADQLParser implements ADQLParserConstants {
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory){
 		this(stream, encoding);
+		setDebug(false);
 
 		queryChecker = checker;
 
@@ -210,6 +213,7 @@ public class ADQLParser implements ADQLParserConstants {
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory){
 		this(reader);
+		setDebug(false);
 
 		queryChecker = checker;
 
@@ -246,6 +250,7 @@ public class ADQLParser implements ADQLParserConstants {
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory){
 		this(tm);
+		setDebug(false);
 
 		queryChecker = checker;
 
@@ -478,1734 +483,243 @@ public class ADQLParser implements ADQLParserConstants {
 	* @throws ParseException	If the query syntax is incorrect.
 	*/
 	final public ADQLQuery Query() throws ParseException{
-		ADQLQuery q = null;
-		q = QueryExpression();
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case 0:
-				jj_consume_token(0);
-				break;
-			case EOQ:
-				jj_consume_token(EOQ);
-				break;
-			default:
-				jj_la1[0] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		// check the query:
-		if (queryChecker != null)
-			queryChecker.check(q);
+		trace_call("Query");
+		try{
+			ADQLQuery q = null;
+			q = QueryExpression();
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case 0:
+					jj_consume_token(0);
+					break;
+				case EOQ:
+					jj_consume_token(EOQ);
+					break;
+				default:
+					jj_la1[0] = jj_gen;
+					jj_consume_token(-1);
+					throw new ParseException();
+			}
+			// check the query:
+			if (queryChecker != null)
+				queryChecker.check(q);
 
-		{
-			if (true)
-				return q;
+			{
+				if (true)
+					return q;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Query");
 		}
-		throw new Error("Missing return statement in function");
 	}
 
 	final public ADQLQuery QueryExpression() throws ParseException{
-		TextPosition endPos = null;
+		trace_call("QueryExpression");
 		try{
-			// create the query:
-			query = queryFactory.createQuery();
-			stackQuery.push(query);
-		}catch(Exception ex){
+			TextPosition endPos = null;
+			try{
+				// create the query:
+				query = queryFactory.createQuery();
+				stackQuery.push(query);
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			Select();
+			From();
+			endPos = query.getFrom().getPosition();
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case WHERE:
+					Where();
+					endPos = query.getWhere().getPosition();
+					break;
+				default:
+					jj_la1[1] = jj_gen;
+					;
+			}
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case GROUP_BY:
+					GroupBy();
+					endPos = query.getGroupBy().getPosition();
+					break;
+				default:
+					jj_la1[2] = jj_gen;
+					;
+			}
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case HAVING:
+					Having();
+					endPos = query.getHaving().getPosition();
+					break;
+				default:
+					jj_la1[3] = jj_gen;
+					;
+			}
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case ORDER_BY:
+					OrderBy();
+					endPos = query.getOrderBy().getPosition();
+					break;
+				default:
+					jj_la1[4] = jj_gen;
+					;
+			}
+			// set the position of the query:
+			query.setPosition(new TextPosition(query.getSelect().getPosition(), endPos));
+
+			// get the previous query (!= null if the current query is a sub-query):
+			ADQLQuery previousQuery = stackQuery.pop();
+			if (stackQuery.isEmpty())
+				query = null;
+			else
+				query = stackQuery.peek();
+
 			{
 				if (true)
-					throw generateParseException(ex);
+					return previousQuery;
 			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("QueryExpression");
 		}
-		Select();
-		From();
-		endPos = query.getFrom().getPosition();
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case WHERE:
-				Where();
-				endPos = query.getWhere().getPosition();
-				break;
-			default:
-				jj_la1[1] = jj_gen;
-				;
-		}
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case GROUP_BY:
-				GroupBy();
-				endPos = query.getGroupBy().getPosition();
-				break;
-			default:
-				jj_la1[2] = jj_gen;
-				;
-		}
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case HAVING:
-				Having();
-				endPos = query.getHaving().getPosition();
-				break;
-			default:
-				jj_la1[3] = jj_gen;
-				;
-		}
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case ORDER_BY:
-				OrderBy();
-				endPos = query.getOrderBy().getPosition();
-				break;
-			default:
-				jj_la1[4] = jj_gen;
-				;
-		}
-		// set the position of the query:
-		query.setPosition(new TextPosition(query.getSelect().getPosition(), endPos));
-
-		// get the previous query (!= null if the current query is a sub-query):
-		ADQLQuery previousQuery = stackQuery.pop();
-		if (stackQuery.isEmpty())
-			query = null;
-		else
-			query = stackQuery.peek();
-
-		{
-			if (true)
-				return previousQuery;
-		}
-		throw new Error("Missing return statement in function");
 	}
 
 	final public ADQLQuery SubQueryExpression() throws ParseException{
-		ADQLQuery q = null;
-		Token start, end;
-		start = jj_consume_token(LEFT_PAR);
-		q = QueryExpression();
-		end = jj_consume_token(RIGHT_PAR);
-		q.setPosition(new TextPosition(start, end));
-		{
-			if (true)
-				return q;
+		trace_call("SubQueryExpression");
+		try{
+			ADQLQuery q = null;
+			Token start, end;
+			start = jj_consume_token(LEFT_PAR);
+			q = QueryExpression();
+			end = jj_consume_token(RIGHT_PAR);
+			q.setPosition(new TextPosition(start, end));
+			{
+				if (true)
+					return q;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("SubQueryExpression");
 		}
-		throw new Error("Missing return statement in function");
 	}
 
 	final public void Select() throws ParseException{
-		ClauseSelect select = query.getSelect();
-		SelectItem item = null;
-		Token start, t = null;
-		start = jj_consume_token(SELECT);
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case QUANTIFIER:
-				t = jj_consume_token(QUANTIFIER);
-				select.setDistinctColumns(t.image.equalsIgnoreCase("DISTINCT"));
-				break;
-			default:
-				jj_la1[5] = jj_gen;
-				;
-		}
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case TOP:
-				jj_consume_token(TOP);
-				t = jj_consume_token(UNSIGNED_INTEGER);
-				try{
-					select.setLimit(Integer.parseInt(t.image));
-				}catch(NumberFormatException nfe){
-					{
-						if (true)
-							throw new ParseException("[l." + t.beginLine + ";c." + t.beginColumn + "] The TOP limit (\u005c"" + t.image + "\u005c") isn't a regular unsigned integer !");
-					}
-				}
-				break;
-			default:
-				jj_la1[6] = jj_gen;
-				;
-		}
-		item = SelectItem();
-		select.add(item);
-		label_1: while(true){
+		trace_call("Select");
+		try{
+			ClauseSelect select = query.getSelect();
+			SelectItem item = null;
+			Token start, t = null;
+			start = jj_consume_token(SELECT);
 			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case COMMA:
-					;
+				case QUANTIFIER:
+					t = jj_consume_token(QUANTIFIER);
+					select.setDistinctColumns(t.image.equalsIgnoreCase("DISTINCT"));
 					break;
 				default:
-					jj_la1[7] = jj_gen;
-					break label_1;
+					jj_la1[5] = jj_gen;
+					;
 			}
-			jj_consume_token(COMMA);
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case TOP:
+					jj_consume_token(TOP);
+					t = jj_consume_token(UNSIGNED_INTEGER);
+					try{
+						select.setLimit(Integer.parseInt(t.image));
+					}catch(NumberFormatException nfe){
+						{
+							if (true)
+								throw new ParseException("[l." + t.beginLine + ";c." + t.beginColumn + "] The TOP limit (\u005c"" + t.image + "\u005c") isn't a regular unsigned integer !");
+						}
+					}
+					break;
+				default:
+					jj_la1[6] = jj_gen;
+					;
+			}
 			item = SelectItem();
 			select.add(item);
-		}
-		TextPosition lastItemPos = query.getSelect().get(query.getSelect().size() - 1).getPosition();
-		select.setPosition(new TextPosition(start.beginLine, start.beginColumn, lastItemPos.endLine, lastItemPos.endColumn));
-	}
-
-	final public SelectItem SelectItem() throws ParseException{
-		IdentifierItems identifiers = new IdentifierItems(true);
-		IdentifierItem id = null, label = null;
-		ADQLOperand op = null;
-		SelectItem item;
-		Token starToken;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case ASTERISK:
-				starToken = jj_consume_token(ASTERISK);
-				item = new SelectAllColumns(query);
-				item.setPosition(new TextPosition(starToken));
-				{
-					if (true)
-						return item;
-				}
-				break;
-			default:
-				jj_la1[11] = jj_gen;
-				if (jj_2_1(7)){
-					id = Identifier();
-					jj_consume_token(DOT);
-					identifiers.append(id);
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-							id = Identifier();
-							jj_consume_token(DOT);
-							identifiers.append(id);
-							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-								case DELIMITED_IDENTIFIER:
-								case REGULAR_IDENTIFIER:
-									id = Identifier();
-									jj_consume_token(DOT);
-									identifiers.append(id);
-									break;
-								default:
-									jj_la1[8] = jj_gen;
-									;
-							}
-							break;
-						default:
-							jj_la1[9] = jj_gen;
-							;
-					}
-					starToken = jj_consume_token(ASTERISK);
-					try{
-						item = new SelectAllColumns(queryFactory.createTable(identifiers, null));
-						TextPosition firstPos = identifiers.get(0).position;
-						item.setPosition(new TextPosition(firstPos.beginLine, firstPos.beginColumn, starToken.endLine, (starToken.endColumn < 0) ? -1 : (starToken.endColumn + 1)));
-						{
-							if (true)
-								return item;
-						}
-					}catch(Exception ex){
-						{
-							if (true)
-								throw generateParseException(ex);
-						}
-					}
-				}else{
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case LEFT_PAR:
-						case PLUS:
-						case MINUS:
-						case AVG:
-						case MAX:
-						case MIN:
-						case SUM:
-						case COUNT:
-						case BOX:
-						case CENTROID:
-						case CIRCLE:
-						case POINT:
-						case POLYGON:
-						case REGION:
-						case CONTAINS:
-						case INTERSECTS:
-						case AREA:
-						case COORD1:
-						case COORD2:
-						case COORDSYS:
-						case DISTANCE:
-						case ABS:
-						case CEILING:
-						case DEGREES:
-						case EXP:
-						case FLOOR:
-						case LOG:
-						case LOG10:
-						case MOD:
-						case PI:
-						case POWER:
-						case RADIANS:
-						case RAND:
-						case ROUND:
-						case SQRT:
-						case TRUNCATE:
-						case ACOS:
-						case ASIN:
-						case ATAN:
-						case ATAN2:
-						case COS:
-						case COT:
-						case SIN:
-						case TAN:
-						case STRING_LITERAL:
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-						case SCIENTIFIC_NUMBER:
-						case UNSIGNED_FLOAT:
-						case UNSIGNED_INTEGER:
-							op = ValueExpression();
-							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-								case AS:
-									jj_consume_token(AS);
-									label = Identifier();
-									break;
-								default:
-									jj_la1[10] = jj_gen;
-									;
-							}
-							break;
-						default:
-							jj_la1[12] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-				}
-		}
-		try{
-			item = queryFactory.createSelectItem(op, (label == null) ? null : label.identifier);
-			if (label != null){
-				item.setCaseSensitive(label.caseSensitivity);
-				item.setPosition(new TextPosition(op.getPosition(), label.position));
-			}else
-				item.setPosition(new TextPosition(op.getPosition()));
-			{
-				if (true)
-					return item;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public void From() throws ParseException{
-		FromContent content = null, content2 = null;
-		try{
-			jj_consume_token(FROM);
-			content = TableRef();
-			label_2: while(true){
+			label_1: while(true){
 				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
 					case COMMA:
 						;
 						break;
 					default:
-						jj_la1[13] = jj_gen;
-						break label_2;
+						jj_la1[7] = jj_gen;
+						break label_1;
 				}
 				jj_consume_token(COMMA);
-				content2 = TableRef();
-				TextPosition startPos = content.getPosition(), endPos = content2.getPosition();
-				content = queryFactory.createJoin(JoinType.CROSS, content, content2);
-				content.setPosition(new TextPosition(startPos, endPos));
+				item = SelectItem();
+				select.add(item);
 			}
-			query.setFrom(content);
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
+			TextPosition lastItemPos = query.getSelect().get(query.getSelect().size() - 1).getPosition();
+			select.setPosition(new TextPosition(start.beginLine, start.beginColumn, lastItemPos.endLine, lastItemPos.endColumn));
+		}finally{
+			trace_return("Select");
 		}
 	}
 
-	final public void Where() throws ParseException{
-		ClauseConstraints where = query.getWhere();
-		ADQLConstraint condition;
-		Token start;
-		start = jj_consume_token(WHERE);
-		ConditionsList(where);
-		TextPosition endPosition = where.getPosition();
-		where.setPosition(new TextPosition(start.beginLine, start.beginColumn, endPosition.endLine, endPosition.endColumn));
-	}
-
-	final public void GroupBy() throws ParseException{
-		ClauseADQL<ColumnReference> groupBy = query.getGroupBy();
-		ColumnReference colRef = null;
-		Token start;
-		start = jj_consume_token(GROUP_BY);
-		colRef = ColumnRef();
-		groupBy.add(colRef);
-		label_3: while(true){
+	final public SelectItem SelectItem() throws ParseException{
+		trace_call("SelectItem");
+		try{
+			IdentifierItems identifiers = new IdentifierItems(true);
+			IdentifierItem id = null, label = null;
+			ADQLOperand op = null;
+			SelectItem item;
+			Token starToken;
 			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case COMMA:
-					;
-					break;
-				default:
-					jj_la1[14] = jj_gen;
-					break label_3;
-			}
-			jj_consume_token(COMMA);
-			colRef = ColumnRef();
-			groupBy.add(colRef);
-		}
-		groupBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, colRef.getPosition().endLine, colRef.getPosition().endColumn));
-	}
-
-	final public void Having() throws ParseException{
-		ClauseConstraints having = query.getHaving();
-		Token start;
-		start = jj_consume_token(HAVING);
-		ConditionsList(having);
-		TextPosition endPosition = having.getPosition();
-		having.setPosition(new TextPosition(start.beginLine, start.beginColumn, endPosition.endLine, endPosition.endColumn));
-	}
-
-	final public void OrderBy() throws ParseException{
-		ClauseADQL<ADQLOrder> orderBy = query.getOrderBy();
-		ADQLOrder order = null;
-		Token start;
-		start = jj_consume_token(ORDER_BY);
-		order = OrderItem();
-		orderBy.add(order);
-		label_4: while(true){
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case COMMA:
-					;
-					break;
-				default:
-					jj_la1[15] = jj_gen;
-					break label_4;
-			}
-			jj_consume_token(COMMA);
-			order = OrderItem();
-			orderBy.add(order);
-		}
-		orderBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, order.getPosition().endLine, order.getPosition().endColumn));
-	}
-
-	/* *************************** */
-	/* COLUMN AND TABLE REFERENCES */
-	/* *************************** */
-	final public IdentifierItem Identifier() throws ParseException{
-		Token t;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case REGULAR_IDENTIFIER:
-				t = jj_consume_token(REGULAR_IDENTIFIER);
-				{
-					if (true)
-						return new IdentifierItem(t, false);
-				}
-				break;
-			case DELIMITED_IDENTIFIER:
-				t = jj_consume_token(DELIMITED_IDENTIFIER);
-				{
-					if (true)
-						return new IdentifierItem(t, true);
-				}
-				break;
-			default:
-				jj_la1[16] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	/**
-	 * Extracts the name of a table with its possible catalog and schema prefixes.
-	 * 
-	 * @return A {@link IdentifierItems} which contains at most three items: catalogName, schemaName and tableName.
-	 */
-	final public IdentifierItems TableName() throws ParseException{
-		IdentifierItems identifiers = new IdentifierItems(true);
-		IdentifierItem id = null;
-		id = Identifier();
-		identifiers.append(id);
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case DOT:
-				jj_consume_token(DOT);
-				id = Identifier();
-				identifiers.append(id);
-				break;
-			default:
-				jj_la1[17] = jj_gen;
-				;
-		}
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case DOT:
-				jj_consume_token(DOT);
-				id = Identifier();
-				identifiers.append(id);
-				break;
-			default:
-				jj_la1[18] = jj_gen;
-				;
-		}
-		{
-			if (true)
-				return identifiers;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	/**
-	 * Extracts the name of a column with its possible catalog, schema and table prefixes.
-	 * 
-	 * @return A {@link IdentifierItems} which contains at most four items: catalogName, schemaName, tableName and columnName.
-	 */
-	final public IdentifierItems ColumnName() throws ParseException{
-		IdentifierItem id;
-		IdentifierItems table = null, identifiers = new IdentifierItems(false);
-		id = Identifier();
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case DOT:
-				jj_consume_token(DOT);
-				table = TableName();
-				break;
-			default:
-				jj_la1[19] = jj_gen;
-				;
-		}
-		identifiers.append(id);
-		if (table != null){
-			for(int i = 0; i < table.size(); i++)
-				identifiers.append(table.get(i));
-		}
-		{
-			if (true)
-				return identifiers;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLColumn Column() throws ParseException{
-		IdentifierItems identifiers;
-		identifiers = ColumnName();
-		try{
-			{
-				if (true)
-					return queryFactory.createColumn(identifiers);
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ColumnReference ColumnRef() throws ParseException{
-		IdentifierItems identifiers = null;
-		Token ind = null;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case DELIMITED_IDENTIFIER:
-			case REGULAR_IDENTIFIER:
-				identifiers = ColumnName();
-				break;
-			case UNSIGNED_INTEGER:
-				ind = jj_consume_token(UNSIGNED_INTEGER);
-				break;
-			default:
-				jj_la1[20] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		try{
-			ColumnReference colRef = null;
-			if (identifiers != null)
-				colRef = queryFactory.createColRef(identifiers);
-			else
-				colRef = queryFactory.createColRef(Integer.parseInt(ind.image), new TextPosition(ind));
-			{
-				if (true)
-					return colRef;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOrder OrderItem() throws ParseException{
-		IdentifierItems identifiers = null;
-		Token ind = null, desc = null;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case DELIMITED_IDENTIFIER:
-			case REGULAR_IDENTIFIER:
-				identifiers = ColumnName();
-				break;
-			case UNSIGNED_INTEGER:
-				ind = jj_consume_token(UNSIGNED_INTEGER);
-				break;
-			default:
-				jj_la1[21] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case ASC:
-			case DESC:
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case ASC:
-						jj_consume_token(ASC);
-						break;
-					case DESC:
-						desc = jj_consume_token(DESC);
-						break;
-					default:
-						jj_la1[22] = jj_gen;
-						jj_consume_token(-1);
-						throw new ParseException();
-				}
-				break;
-			default:
-				jj_la1[23] = jj_gen;
-				;
-		}
-		try{
-			ADQLOrder order = null;
-			if (identifiers != null){
-				order = queryFactory.createOrder(identifiers, desc != null);
-				order.setPosition(identifiers.getPosition());
-			}else{
-				order = queryFactory.createOrder(Integer.parseInt(ind.image), desc != null);
-				order.setPosition(new TextPosition(ind));
-			}
-			{
-				if (true)
-					return order;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public FromContent SimpleTableRef() throws ParseException{
-		IdentifierItem alias = null;
-		IdentifierItems identifiers = null;
-		ADQLQuery subQuery = null;
-		FromContent content = null;
-		Token start, end;
-		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case DELIMITED_IDENTIFIER:
-				case REGULAR_IDENTIFIER:
-					identifiers = TableName();
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case AS:
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-								case AS:
-									jj_consume_token(AS);
-									break;
-								default:
-									jj_la1[24] = jj_gen;
-									;
-							}
-							alias = Identifier();
-							break;
-						default:
-							jj_la1[25] = jj_gen;
-							;
-					}
-					content = queryFactory.createTable(identifiers, alias);
-					if (alias == null)
-						content.setPosition(new TextPosition(identifiers.get(0).position, identifiers.get(identifiers.size() - 1).position));
-					else
-						content.setPosition(new TextPosition(identifiers.get(0).position, alias.position));
+				case ASTERISK:
+					starToken = jj_consume_token(ASTERISK);
+					item = new SelectAllColumns(query);
+					item.setPosition(new TextPosition(starToken));
 					{
 						if (true)
-							return content;
+							return item;
 					}
 					break;
 				default:
-					jj_la1[27] = jj_gen;
-					if (jj_2_2(2)){
-						subQuery = SubQueryExpression();
+					jj_la1[11] = jj_gen;
+					if (jj_2_1(7)){
+						id = Identifier();
+						jj_consume_token(DOT);
+						identifiers.append(id);
 						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-							case AS:
-								jj_consume_token(AS);
-								break;
-							default:
-								jj_la1[26] = jj_gen;
-								;
-						}
-						alias = Identifier();
-						content = queryFactory.createTable(subQuery, alias);
-						if (alias == null)
-							content.setPosition(new TextPosition(subQuery.getPosition()));
-						else
-							content.setPosition(new TextPosition(subQuery.getPosition(), alias.position));
-						{
-							if (true)
-								return content;
-						}
-					}else{
-						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-							case LEFT_PAR:
-								start = jj_consume_token(LEFT_PAR);
-								content = JoinedTable();
-								end = jj_consume_token(RIGHT_PAR);
-								content.setPosition(new TextPosition(start, end));
-								{
-									if (true)
-										return content;
-								}
-								break;
-							default:
-								jj_la1[28] = jj_gen;
-								jj_consume_token(-1);
-								throw new ParseException();
-						}
-					}
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public FromContent TableRef() throws ParseException{
-		FromContent content;
-		content = SimpleTableRef();
-		label_5: while(true){
-			if (jj_2_3(2)){
-				;
-			}else{
-				break label_5;
-			}
-			content = JoinSpecification(content);
-		}
-		{
-			if (true)
-				return content;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public FromContent JoinedTable() throws ParseException{
-		FromContent content;
-		content = SimpleTableRef();
-		label_6: while(true){
-			content = JoinSpecification(content);
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case NATURAL:
-				case INNER:
-				case RIGHT:
-				case LEFT:
-				case FULL:
-				case JOIN:
-					;
-					break;
-				default:
-					jj_la1[29] = jj_gen;
-					break label_6;
-			}
-		}
-		{
-			if (true)
-				return content;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLJoin JoinSpecification(FromContent leftTable) throws ParseException{
-		boolean natural = false;
-		JoinType type = JoinType.INNER;
-		ClauseConstraints condition = new ClauseConstraints("ON");
-		ArrayList<ADQLColumn> lstColumns = new ArrayList<ADQLColumn>();
-		IdentifierItem id;
-		FromContent rightTable;
-		ADQLJoin join;
-		Token lastPar;
-		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case NATURAL:
-					jj_consume_token(NATURAL);
-					natural = true;
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case INNER:
-						case RIGHT:
-						case LEFT:
-						case FULL:
-							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-								case INNER:
-									jj_consume_token(INNER);
-									break;
-								case RIGHT:
-								case LEFT:
-								case FULL:
-									switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-										case LEFT:
-											jj_consume_token(LEFT);
-											type = JoinType.OUTER_LEFT;
-											break;
-										case RIGHT:
-											jj_consume_token(RIGHT);
-											type = JoinType.OUTER_RIGHT;
-											break;
-										case FULL:
-											jj_consume_token(FULL);
-											type = JoinType.OUTER_FULL;
-											break;
-										default:
-											jj_la1[30] = jj_gen;
-											jj_consume_token(-1);
-											throw new ParseException();
-									}
-									switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-										case OUTER:
-											jj_consume_token(OUTER);
-											break;
-										default:
-											jj_la1[31] = jj_gen;
-											;
-									}
-									break;
-								default:
-									jj_la1[32] = jj_gen;
-									jj_consume_token(-1);
-									throw new ParseException();
-							}
-							break;
-						default:
-							jj_la1[33] = jj_gen;
-							;
-					}
-					jj_consume_token(JOIN);
-					rightTable = TableRef();
-					join = queryFactory.createJoin(type, leftTable, rightTable);
-					join.setPosition(new TextPosition(leftTable.getPosition(), rightTable.getPosition()));
-					{
-						if (true)
-							return join;
-					}
-					break;
-				case INNER:
-				case RIGHT:
-				case LEFT:
-				case FULL:
-				case JOIN:
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case INNER:
-						case RIGHT:
-						case LEFT:
-						case FULL:
-							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-								case INNER:
-									jj_consume_token(INNER);
-									break;
-								case RIGHT:
-								case LEFT:
-								case FULL:
-									switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-										case LEFT:
-											jj_consume_token(LEFT);
-											type = JoinType.OUTER_LEFT;
-											break;
-										case RIGHT:
-											jj_consume_token(RIGHT);
-											type = JoinType.OUTER_RIGHT;
-											break;
-										case FULL:
-											jj_consume_token(FULL);
-											type = JoinType.OUTER_FULL;
-											break;
-										default:
-											jj_la1[34] = jj_gen;
-											jj_consume_token(-1);
-											throw new ParseException();
-									}
-									switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-										case OUTER:
-											jj_consume_token(OUTER);
-											break;
-										default:
-											jj_la1[35] = jj_gen;
-											;
-									}
-									break;
-								default:
-									jj_la1[36] = jj_gen;
-									jj_consume_token(-1);
-									throw new ParseException();
-							}
-							break;
-						default:
-							jj_la1[37] = jj_gen;
-							;
-					}
-					jj_consume_token(JOIN);
-					rightTable = TableRef();
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case ON:
-							jj_consume_token(ON);
-							ConditionsList(condition);
-							join = queryFactory.createJoin(type, leftTable, rightTable, condition);
-							join.setPosition(new TextPosition(leftTable.getPosition(), condition.getPosition()));
-							{
-								if (true)
-									return join;
-							}
-							break;
-						case USING:
-							jj_consume_token(USING);
-							jj_consume_token(LEFT_PAR);
-							id = Identifier();
-							lstColumns.add(queryFactory.createColumn(id));
-							label_7: while(true){
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+								id = Identifier();
+								jj_consume_token(DOT);
+								identifiers.append(id);
 								switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-									case COMMA:
-										;
+									case DELIMITED_IDENTIFIER:
+									case REGULAR_IDENTIFIER:
+										id = Identifier();
+										jj_consume_token(DOT);
+										identifiers.append(id);
 										break;
 									default:
-										jj_la1[38] = jj_gen;
-										break label_7;
+										jj_la1[8] = jj_gen;
+										;
 								}
-								jj_consume_token(COMMA);
-								id = Identifier();
-								lstColumns.add(queryFactory.createColumn(id));
-							}
-							lastPar = jj_consume_token(RIGHT_PAR);
-							join = queryFactory.createJoin(type, leftTable, rightTable, lstColumns);
-							join.setPosition(new TextPosition(leftTable.getPosition().beginLine, leftTable.getPosition().beginColumn, lastPar.endLine, (lastPar.endColumn < 0) ? -1 : (lastPar.endColumn + 1)));
+								break;
+							default:
+								jj_la1[9] = jj_gen;
+								;
+						}
+						starToken = jj_consume_token(ASTERISK);
+						try{
+							item = new SelectAllColumns(queryFactory.createTable(identifiers, null));
+							TextPosition firstPos = identifiers.get(0).position;
+							item.setPosition(new TextPosition(firstPos.beginLine, firstPos.beginColumn, starToken.endLine, (starToken.endColumn < 0) ? -1 : (starToken.endColumn + 1)));
 							{
 								if (true)
-									return join;
+									return item;
 							}
-							break;
-						default:
-							jj_la1[39] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-					break;
-				default:
-					jj_la1[40] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	/* ****** */
-	/* STRING */
-	/* ****** */
-	final public StringConstant String() throws ParseException{
-		Token t;
-		String str = "";
-		StringConstant cst;
-		label_8: while(true){
-			t = jj_consume_token(STRING_LITERAL);
-			str += t.image;
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case STRING_LITERAL:
-					;
-					break;
-				default:
-					jj_la1[41] = jj_gen;
-					break label_8;
-			}
-		}
-		try{
-			str = (str != null) ? str.substring(1, str.length() - 1) : str;
-			cst = queryFactory.createStringConstant(str);
-			cst.setPosition(new TextPosition(t));
-			{
-				if (true)
-					return cst;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	/* ************* */
-	/* NUMERIC TYPES */
-	/* ************* */
-	final public NumericConstant UnsignedNumeric() throws ParseException{
-		Token t;
-		NumericConstant cst;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case SCIENTIFIC_NUMBER:
-				t = jj_consume_token(SCIENTIFIC_NUMBER);
-				break;
-			case UNSIGNED_FLOAT:
-				t = jj_consume_token(UNSIGNED_FLOAT);
-				break;
-			case UNSIGNED_INTEGER:
-				t = jj_consume_token(UNSIGNED_INTEGER);
-				break;
-			default:
-				jj_la1[42] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		try{
-			cst = queryFactory.createNumericConstant(t.image);
-			cst.setPosition(new TextPosition(t));
-			{
-				if (true)
-					return cst;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public NumericConstant UnsignedFloat() throws ParseException{
-		Token t;
-		NumericConstant cst;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case UNSIGNED_INTEGER:
-				t = jj_consume_token(UNSIGNED_INTEGER);
-				break;
-			case UNSIGNED_FLOAT:
-				t = jj_consume_token(UNSIGNED_FLOAT);
-				break;
-			default:
-				jj_la1[43] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		try{
-			cst = queryFactory.createNumericConstant(t.image);
-			cst.setPosition(new TextPosition(t));
-			{
-				if (true)
-					return cst;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public NumericConstant SignedInteger() throws ParseException{
-		Token sign = null, number;
-		NumericConstant cst;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case PLUS:
-			case MINUS:
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case PLUS:
-						sign = jj_consume_token(PLUS);
-						break;
-					case MINUS:
-						sign = jj_consume_token(MINUS);
-						break;
-					default:
-						jj_la1[44] = jj_gen;
-						jj_consume_token(-1);
-						throw new ParseException();
-				}
-				break;
-			default:
-				jj_la1[45] = jj_gen;
-				;
-		}
-		number = jj_consume_token(UNSIGNED_INTEGER);
-		try{
-			if (sign == null){
-				cst = queryFactory.createNumericConstant(number.image);
-				cst.setPosition(new TextPosition(number));
-			}else{
-				cst = queryFactory.createNumericConstant(sign.image + number.image);
-				cst.setPosition(new TextPosition(sign, number));
-			}
-			{
-				if (true)
-					return cst;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	/* *********** */
-	/* EXPRESSIONS */
-	/* *********** */
-	final public ADQLOperand NumericValueExpressionPrimary() throws ParseException{
-		String expr;
-		ADQLColumn column;
-		ADQLOperand op;
-		Token left, right;
-		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case SCIENTIFIC_NUMBER:
-				case UNSIGNED_FLOAT:
-				case UNSIGNED_INTEGER:
-					// unsigned_value_specification
-					op = UnsignedNumeric();
-					{
-						if (true)
-							return op;
-					}
-					break;
-				case DELIMITED_IDENTIFIER:
-				case REGULAR_IDENTIFIER:
-					column = Column();
-					column.setExpectedType('N');
-					{
-						if (true)
-							return column;
-					}
-					break;
-				case AVG:
-				case MAX:
-				case MIN:
-				case SUM:
-				case COUNT:
-					op = SqlFunction();
-					{
-						if (true)
-							return op;
-					}
-					break;
-				case LEFT_PAR:
-					left = jj_consume_token(LEFT_PAR);
-					op = NumericExpression();
-					right = jj_consume_token(RIGHT_PAR);
-					WrappedOperand wop = queryFactory.createWrappedOperand(op);
-					wop.setPosition(new TextPosition(left, right));
-					{
-						if (true)
-							return wop;
-					}
-					break;
-				default:
-					jj_la1[46] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand StringValueExpressionPrimary() throws ParseException{
-		StringConstant expr;
-		ADQLColumn column;
-		ADQLOperand op;
-		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case STRING_LITERAL:
-					// string
-					expr = String();
-					{
-						if (true)
-							return expr;
-					}
-					break;
-				case DELIMITED_IDENTIFIER:
-				case REGULAR_IDENTIFIER:
-					column = Column();
-					column.setExpectedType('S');
-					{
-						if (true)
-							return column;
-					}
-					break;
-				case LEFT_PAR:
-					jj_consume_token(LEFT_PAR);
-					op = StringExpression();
-					jj_consume_token(RIGHT_PAR);
-					{
-						if (true)
-							return queryFactory.createWrappedOperand(op);
-					}
-					break;
-				default:
-					jj_la1[47] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand ValueExpression() throws ParseException{
-		ADQLOperand valueExpr = null;
-		try{
-			if (jj_2_4(2147483647)){
-				valueExpr = NumericExpression();
-			}else if (jj_2_5(2147483647)){
-				valueExpr = StringExpression();
-			}else if (jj_2_6(2147483647)){
-				jj_consume_token(LEFT_PAR);
-				valueExpr = ValueExpression();
-				jj_consume_token(RIGHT_PAR);
-				valueExpr = queryFactory.createWrappedOperand(valueExpr);
-			}else if (jj_2_7(2147483647)){
-				valueExpr = UserDefinedFunction();
-			}else{
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case BOX:
-					case CENTROID:
-					case CIRCLE:
-					case POINT:
-					case POLYGON:
-					case REGION:
-						valueExpr = GeometryValueFunction();
-						break;
-					default:
-						jj_la1[48] = jj_gen;
-						if (jj_2_8(2147483647)){
-							valueExpr = Column();
-						}else if (jj_2_9(2147483647)){
-							valueExpr = StringFactor();
-						}else{
-							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-								case LEFT_PAR:
-								case PLUS:
-								case MINUS:
-								case AVG:
-								case MAX:
-								case MIN:
-								case SUM:
-								case COUNT:
-								case CONTAINS:
-								case INTERSECTS:
-								case AREA:
-								case COORD1:
-								case COORD2:
-								case DISTANCE:
-								case ABS:
-								case CEILING:
-								case DEGREES:
-								case EXP:
-								case FLOOR:
-								case LOG:
-								case LOG10:
-								case MOD:
-								case PI:
-								case POWER:
-								case RADIANS:
-								case RAND:
-								case ROUND:
-								case SQRT:
-								case TRUNCATE:
-								case ACOS:
-								case ASIN:
-								case ATAN:
-								case ATAN2:
-								case COS:
-								case COT:
-								case SIN:
-								case TAN:
-								case DELIMITED_IDENTIFIER:
-								case REGULAR_IDENTIFIER:
-								case SCIENTIFIC_NUMBER:
-								case UNSIGNED_FLOAT:
-								case UNSIGNED_INTEGER:
-									valueExpr = Factor();
-									break;
-								default:
-									jj_la1[49] = jj_gen;
-									jj_consume_token(-1);
-									throw new ParseException();
+						}catch(Exception ex){
+							{
+								if (true)
+									throw generateParseException(ex);
 							}
-						}
-				}
-			}
-			{
-				if (true)
-					return valueExpr;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand NumericExpression() throws ParseException{
-		Token sign = null;
-		ADQLOperand leftOp, rightOp = null;
-		leftOp = NumericTerm();
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case PLUS:
-			case MINUS:
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case PLUS:
-						sign = jj_consume_token(PLUS);
-						break;
-					case MINUS:
-						sign = jj_consume_token(MINUS);
-						break;
-					default:
-						jj_la1[50] = jj_gen;
-						jj_consume_token(-1);
-						throw new ParseException();
-				}
-				rightOp = NumericExpression();
-				break;
-			default:
-				jj_la1[51] = jj_gen;
-				;
-		}
-		if (sign == null){
-			if (true)
-				return leftOp;
-		}else{
-			try{
-				Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
-				operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
-				{
-					if (true)
-						return operation;
-				}
-			}catch(Exception ex){
-				{
-					if (true)
-						throw generateParseException(ex);
-				}
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand NumericTerm() throws ParseException{
-		Token sign = null;
-		ADQLOperand leftOp, rightOp = null;
-		leftOp = Factor();
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case ASTERISK:
-			case DIVIDE:
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case ASTERISK:
-						sign = jj_consume_token(ASTERISK);
-						break;
-					case DIVIDE:
-						sign = jj_consume_token(DIVIDE);
-						break;
-					default:
-						jj_la1[52] = jj_gen;
-						jj_consume_token(-1);
-						throw new ParseException();
-				}
-				rightOp = NumericTerm();
-				break;
-			default:
-				jj_la1[53] = jj_gen;
-				;
-		}
-		if (sign == null){
-			if (true)
-				return leftOp;
-		}else{
-			try{
-				Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
-				operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
-				{
-					if (true)
-						return operation;
-				}
-			}catch(Exception ex){
-				{
-					if (true)
-						throw generateParseException(ex);
-				}
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand Factor() throws ParseException{
-		boolean negative = false;
-		Token minusSign = null;
-		ADQLOperand op;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case PLUS:
-			case MINUS:
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case PLUS:
-						jj_consume_token(PLUS);
-						break;
-					case MINUS:
-						jj_consume_token(MINUS);
-						negative = true;
-						break;
-					default:
-						jj_la1[54] = jj_gen;
-						jj_consume_token(-1);
-						throw new ParseException();
-				}
-				break;
-			default:
-				jj_la1[55] = jj_gen;
-				;
-		}
-		if (jj_2_10(2)){
-			op = NumericFunction();
-		}else{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case LEFT_PAR:
-				case AVG:
-				case MAX:
-				case MIN:
-				case SUM:
-				case COUNT:
-				case DELIMITED_IDENTIFIER:
-				case REGULAR_IDENTIFIER:
-				case SCIENTIFIC_NUMBER:
-				case UNSIGNED_FLOAT:
-				case UNSIGNED_INTEGER:
-					op = NumericValueExpressionPrimary();
-					break;
-				default:
-					jj_la1[56] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
-			}
-		}
-		if (negative){
-			try{
-				op = queryFactory.createNegativeOperand(op);
-				NegativeOperand negativeOp = (NegativeOperand)op;
-				negativeOp.setPosition(new TextPosition(minusSign.beginLine, minusSign.beginColumn, negativeOp.getPosition().endLine, negativeOp.getPosition().endColumn));
-			}catch(Exception ex){
-				{
-					if (true)
-						throw generateParseException(ex);
-				}
-			}
-		}
-
-		{
-			if (true)
-				return op;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand StringExpression() throws ParseException{
-		ADQLOperand leftOp;
-		ADQLOperand rightOp = null;
-		leftOp = StringFactor();
-		label_9: while(true){
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case CONCAT:
-					;
-					break;
-				default:
-					jj_la1[57] = jj_gen;
-					break label_9;
-			}
-			jj_consume_token(CONCAT);
-			rightOp = StringFactor();
-			if (!(leftOp instanceof Concatenation)){
-				try{
-					ADQLOperand temp = leftOp;
-					leftOp = queryFactory.createConcatenation();
-					((Concatenation)leftOp).add(temp);
-				}catch(Exception ex){
-					{
-						if (true)
-							throw generateParseException(ex);
-					}
-				}
-			}
-			((Concatenation)leftOp).add(rightOp);
-		}
-		if (leftOp instanceof Concatenation){
-			Concatenation concat = (Concatenation)leftOp;
-			concat.setPosition(new TextPosition(concat.get(0).getPosition(), concat.get(concat.size() - 1).getPosition()));
-		}
-		{
-			if (true)
-				return leftOp;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand StringFactor() throws ParseException{
-		ADQLOperand op;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case COORDSYS:
-				op = ExtractCoordSys();
-				break;
-			default:
-				jj_la1[58] = jj_gen;
-				if (jj_2_11(2)){
-					op = UserDefinedFunction();
-					((UserDefinedFunction)op).setExpectedType('S');
-				}else{
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case LEFT_PAR:
-						case STRING_LITERAL:
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-							op = StringValueExpressionPrimary();
-							break;
-						default:
-							jj_la1[59] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-				}
-		}
-		{
-			if (true)
-				return op;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public GeometryValue<GeometryFunction> GeometryExpression() throws ParseException{
-		ADQLColumn col = null;
-		GeometryFunction gf = null;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case DELIMITED_IDENTIFIER:
-			case REGULAR_IDENTIFIER:
-				col = Column();
-				break;
-			case BOX:
-			case CENTROID:
-			case CIRCLE:
-			case POINT:
-			case POLYGON:
-			case REGION:
-				gf = GeometryValueFunction();
-				break;
-			default:
-				jj_la1[60] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		if (col != null){
-			col.setExpectedType('G');
-			{
-				if (true)
-					return new GeometryValue<GeometryFunction>(col);
-			}
-		}else{
-			if (true)
-				return new GeometryValue<GeometryFunction>(gf);
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	/* ********************************** */
-	/* BOOLEAN EXPRESSIONS (WHERE clause) */
-	/* ********************************** */
-	final public ClauseConstraints ConditionsList(ClauseConstraints clause) throws ParseException{
-		ADQLConstraint constraint = null;
-		Token op = null;
-		boolean notOp = false;
-		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case NOT:
-					op = jj_consume_token(NOT);
-					notOp = true;
-					break;
-				default:
-					jj_la1[61] = jj_gen;
-					;
-			}
-			constraint = Constraint();
-			if (notOp){
-				TextPosition oldPos = constraint.getPosition();
-				constraint = queryFactory.createNot(constraint);
-				((NotConstraint)constraint).setPosition(new TextPosition(op.beginLine, op.beginColumn, oldPos.endLine, oldPos.endColumn));
-			}
-			notOp = false;
-
-			if (clause instanceof ADQLConstraint)
-				clause.add(constraint);
-			else
-				clause.add(constraint);
-			label_10: while(true){
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case AND:
-					case OR:
-						;
-						break;
-					default:
-						jj_la1[62] = jj_gen;
-						break label_10;
-				}
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case AND:
-						op = jj_consume_token(AND);
-						break;
-					case OR:
-						op = jj_consume_token(OR);
-						break;
-					default:
-						jj_la1[63] = jj_gen;
-						jj_consume_token(-1);
-						throw new ParseException();
-				}
-				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-					case NOT:
-						jj_consume_token(NOT);
-						notOp = true;
-						break;
-					default:
-						jj_la1[64] = jj_gen;
-						;
-				}
-				constraint = Constraint();
-				if (notOp){
-					TextPosition oldPos = constraint.getPosition();
-					constraint = queryFactory.createNot(constraint);
-					((NotConstraint)constraint).setPosition(new TextPosition(op.beginLine, op.beginColumn, oldPos.endLine, oldPos.endColumn));
-				}
-				notOp = false;
-
-				if (clause instanceof ADQLConstraint)
-					clause.add(op.image, constraint);
-				else
-					clause.add(op.image, constraint);
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		if (!clause.isEmpty()){
-			TextPosition start = clause.get(0).getPosition();
-			TextPosition end = clause.get(clause.size() - 1).getPosition();
-			clause.setPosition(new TextPosition(start, end));
-		}
-		{
-			if (true)
-				return clause;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLConstraint Constraint() throws ParseException{
-		ADQLConstraint constraint = null;
-		Token start, end;
-		if (jj_2_12(2147483647)){
-			constraint = Predicate();
-		}else{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case LEFT_PAR:
-					start = jj_consume_token(LEFT_PAR);
-					try{
-						constraint = queryFactory.createGroupOfConstraints();
-					}catch(Exception ex){
-						{
-							if (true)
-								throw generateParseException(ex);
-						}
-					}
-					ConditionsList((ConstraintsGroup)constraint);
-					end = jj_consume_token(RIGHT_PAR);
-					((ConstraintsGroup)constraint).setPosition(new TextPosition(start, end));
-					break;
-				default:
-					jj_la1[65] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
-			}
-		}
-		{
-			if (true)
-				return constraint;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLConstraint Predicate() throws ParseException{
-		ADQLQuery q = null;
-		ADQLColumn column = null;
-		ADQLOperand strExpr1 = null, strExpr2 = null;
-		ADQLOperand op;
-		Token start, notToken = null, end;
-		ADQLConstraint constraint = null;
-		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case EXISTS:
-					start = jj_consume_token(EXISTS);
-					q = SubQueryExpression();
-					Exists e = queryFactory.createExists(q);
-					e.setPosition(new TextPosition(start.beginLine, start.beginColumn, q.getPosition().endLine, q.getPosition().endColumn));
-					{
-						if (true)
-							return e;
-					}
-					break;
-				default:
-					jj_la1[70] = jj_gen;
-					if (jj_2_14(2147483647)){
-						column = Column();
-						jj_consume_token(IS);
-						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-							case NOT:
-								notToken = jj_consume_token(NOT);
-								break;
-							default:
-								jj_la1[66] = jj_gen;
-								;
-						}
-						end = jj_consume_token(NULL);
-						IsNull in = queryFactory.createIsNull((notToken != null), column);
-						in.setPosition(new TextPosition(column.getPosition().beginLine, column.getPosition().beginColumn, end.endLine, (end.endColumn < 0) ? -1 : (end.endColumn + 1)));
-						{
-							if (true)
-								return in;
-						}
-					}else if (jj_2_15(2147483647)){
-						strExpr1 = StringExpression();
-						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-							case NOT:
-								notToken = jj_consume_token(NOT);
-								break;
-							default:
-								jj_la1[67] = jj_gen;
-								;
-						}
-						jj_consume_token(LIKE);
-						strExpr2 = StringExpression();
-						Comparison comp = queryFactory.createComparison(strExpr1, (notToken == null) ? ComparisonOperator.LIKE : ComparisonOperator.NOTLIKE, strExpr2);
-						comp.setPosition(new TextPosition(strExpr1.getPosition(), strExpr2.getPosition()));
-						{
-							if (true)
-								return comp;
 						}
 					}else{
 						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
@@ -2261,1097 +775,2838 @@ public class ADQLParser implements ADQLParserConstants {
 							case UNSIGNED_INTEGER:
 								op = ValueExpression();
 								switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-									case EQUAL:
-									case NOT_EQUAL:
-									case LESS_THAN:
-									case LESS_EQUAL_THAN:
-									case GREATER_THAN:
-									case GREATER_EQUAL_THAN:
-										constraint = ComparisonEnd(op);
+									case AS:
+										jj_consume_token(AS);
+										label = Identifier();
 										break;
 									default:
-										jj_la1[68] = jj_gen;
-										if (jj_2_13(2)){
-											constraint = BetweenEnd(op);
-										}else{
-											switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-												case NOT:
-												case IN:
-													constraint = InEnd(op);
-													break;
-												default:
-													jj_la1[69] = jj_gen;
-													jj_consume_token(-1);
-													throw new ParseException();
-											}
-										}
+										jj_la1[10] = jj_gen;
+										;
 								}
 								break;
 							default:
-								jj_la1[71] = jj_gen;
+								jj_la1[12] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
 					}
 			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
+			try{
+				item = queryFactory.createSelectItem(op, (label == null) ? null : label.identifier);
+				if (label != null){
+					item.setCaseSensitive(label.caseSensitivity);
+					item.setPosition(new TextPosition(op.getPosition(), label.position));
+				}else
+					item.setPosition(new TextPosition(op.getPosition()));
+				{
+					if (true)
+						return item;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
 			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("SelectItem");
 		}
-		{
-			if (true)
-				return constraint;
-		}
-		throw new Error("Missing return statement in function");
 	}
 
-	final public Comparison ComparisonEnd(ADQLOperand leftOp) throws ParseException{
-		Token comp;
-		ADQLOperand rightOp;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case EQUAL:
-				comp = jj_consume_token(EQUAL);
-				break;
-			case NOT_EQUAL:
-				comp = jj_consume_token(NOT_EQUAL);
-				break;
-			case LESS_THAN:
-				comp = jj_consume_token(LESS_THAN);
-				break;
-			case LESS_EQUAL_THAN:
-				comp = jj_consume_token(LESS_EQUAL_THAN);
-				break;
-			case GREATER_THAN:
-				comp = jj_consume_token(GREATER_THAN);
-				break;
-			case GREATER_EQUAL_THAN:
-				comp = jj_consume_token(GREATER_EQUAL_THAN);
-				break;
-			default:
-				jj_la1[72] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		rightOp = ValueExpression();
+	final public void From() throws ParseException{
+		trace_call("From");
 		try{
-			Comparison comparison = queryFactory.createComparison(leftOp, ComparisonOperator.getOperator(comp.image), rightOp);
-			comparison.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
-			{
-				if (true)
-					return comparison;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public Between BetweenEnd(ADQLOperand leftOp) throws ParseException{
-		Token start, notToken = null;
-		ADQLOperand min, max;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case NOT:
-				notToken = jj_consume_token(NOT);
-				break;
-			default:
-				jj_la1[73] = jj_gen;
-				;
-		}
-		start = jj_consume_token(BETWEEN);
-		min = ValueExpression();
-		jj_consume_token(AND);
-		max = ValueExpression();
-		try{
-			Between bet = queryFactory.createBetween((notToken != null), leftOp, min, max);
-			if (notToken != null)
-				start = notToken;
-			bet.setPosition(new TextPosition(start.beginLine, start.beginColumn, max.getPosition().endLine, max.getPosition().endColumn));
-			{
-				if (true)
-					return bet;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public In InEnd(ADQLOperand leftOp) throws ParseException{
-		Token not = null, start;
-		ADQLQuery q = null;
-		ADQLOperand item;
-		Vector<ADQLOperand> items = new Vector<ADQLOperand>();
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case NOT:
-				not = jj_consume_token(NOT);
-				break;
-			default:
-				jj_la1[74] = jj_gen;
-				;
-		}
-		start = jj_consume_token(IN);
-		if (jj_2_16(2)){
-			q = SubQueryExpression();
-		}else{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case LEFT_PAR:
-					jj_consume_token(LEFT_PAR);
-					item = ValueExpression();
-					items.add(item);
-					label_11: while(true){
-						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-							case COMMA:
-								;
-								break;
-							default:
-								jj_la1[75] = jj_gen;
-								break label_11;
-						}
-						jj_consume_token(COMMA);
-						item = ValueExpression();
-						items.add(item);
+			FromContent content = null, content2 = null;
+			try{
+				jj_consume_token(FROM);
+				content = TableRef();
+				label_2: while(true){
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case COMMA:
+							;
+							break;
+						default:
+							jj_la1[13] = jj_gen;
+							break label_2;
 					}
-					jj_consume_token(RIGHT_PAR);
+					jj_consume_token(COMMA);
+					content2 = TableRef();
+					TextPosition startPos = content.getPosition(), endPos = content2.getPosition();
+					content = queryFactory.createJoin(JoinType.CROSS, content, content2);
+					content.setPosition(new TextPosition(startPos, endPos));
+				}
+				query.setFrom(content);
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+		}finally{
+			trace_return("From");
+		}
+	}
+
+	final public void Where() throws ParseException{
+		trace_call("Where");
+		try{
+			ClauseConstraints where = query.getWhere();
+			ADQLConstraint condition;
+			Token start;
+			start = jj_consume_token(WHERE);
+			ConditionsList(where);
+			TextPosition endPosition = where.getPosition();
+			where.setPosition(new TextPosition(start.beginLine, start.beginColumn, endPosition.endLine, endPosition.endColumn));
+		}finally{
+			trace_return("Where");
+		}
+	}
+
+	final public void GroupBy() throws ParseException{
+		trace_call("GroupBy");
+		try{
+			ClauseADQL<ColumnReference> groupBy = query.getGroupBy();
+			ColumnReference colRef = null;
+			Token start;
+			start = jj_consume_token(GROUP_BY);
+			colRef = ColumnRef();
+			groupBy.add(colRef);
+			label_3: while(true){
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case COMMA:
+						;
+						break;
+					default:
+						jj_la1[14] = jj_gen;
+						break label_3;
+				}
+				jj_consume_token(COMMA);
+				colRef = ColumnRef();
+				groupBy.add(colRef);
+			}
+			groupBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, colRef.getPosition().endLine, colRef.getPosition().endColumn));
+		}finally{
+			trace_return("GroupBy");
+		}
+	}
+
+	final public void Having() throws ParseException{
+		trace_call("Having");
+		try{
+			ClauseConstraints having = query.getHaving();
+			Token start;
+			start = jj_consume_token(HAVING);
+			ConditionsList(having);
+			TextPosition endPosition = having.getPosition();
+			having.setPosition(new TextPosition(start.beginLine, start.beginColumn, endPosition.endLine, endPosition.endColumn));
+		}finally{
+			trace_return("Having");
+		}
+	}
+
+	final public void OrderBy() throws ParseException{
+		trace_call("OrderBy");
+		try{
+			ClauseADQL<ADQLOrder> orderBy = query.getOrderBy();
+			ADQLOrder order = null;
+			Token start;
+			start = jj_consume_token(ORDER_BY);
+			order = OrderItem();
+			orderBy.add(order);
+			label_4: while(true){
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case COMMA:
+						;
+						break;
+					default:
+						jj_la1[15] = jj_gen;
+						break label_4;
+				}
+				jj_consume_token(COMMA);
+				order = OrderItem();
+				orderBy.add(order);
+			}
+			orderBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, order.getPosition().endLine, order.getPosition().endColumn));
+		}finally{
+			trace_return("OrderBy");
+		}
+	}
+
+	/* *************************** */
+	/* COLUMN AND TABLE REFERENCES */
+	/* *************************** */
+	final public IdentifierItem Identifier() throws ParseException{
+		trace_call("Identifier");
+		try{
+			Token t;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case REGULAR_IDENTIFIER:
+					t = jj_consume_token(REGULAR_IDENTIFIER);
+					{
+						if (true)
+							return new IdentifierItem(t, false);
+					}
+					break;
+				case DELIMITED_IDENTIFIER:
+					t = jj_consume_token(DELIMITED_IDENTIFIER);
+					{
+						if (true)
+							return new IdentifierItem(t, true);
+					}
 					break;
 				default:
-					jj_la1[76] = jj_gen;
+					jj_la1[16] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Identifier");
 		}
+	}
+
+	/**
+	 * Extracts the name of a table with its possible catalog and schema prefixes.
+	 * 
+	 * @return A {@link IdentifierItems} which contains at most three items: catalogName, schemaName and tableName.
+	 */
+	final public IdentifierItems TableName() throws ParseException{
+		trace_call("TableName");
 		try{
-			In in;
-			start = (not != null) ? not : start;
-			if (q != null){
-				in = queryFactory.createIn(leftOp, q, not != null);
-				in.setPosition(new TextPosition(start.beginLine, start.beginColumn, q.getPosition().endLine, q.getPosition().endColumn));
-			}else{
-				ADQLOperand[] list = new ADQLOperand[items.size()];
-				int i = 0;
-				for(ADQLOperand op : items)
-					list[i++] = op;
-				in = queryFactory.createIn(leftOp, list, not != null);
-				in.setPosition(new TextPosition(start.beginLine, start.beginColumn, list[list.length - 1].getPosition().endLine, list[list.length - 1].getPosition().endColumn));
+			IdentifierItems identifiers = new IdentifierItems(true);
+			IdentifierItem id = null;
+			id = Identifier();
+			identifiers.append(id);
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case DOT:
+					jj_consume_token(DOT);
+					id = Identifier();
+					identifiers.append(id);
+					break;
+				default:
+					jj_la1[17] = jj_gen;
+					;
+			}
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case DOT:
+					jj_consume_token(DOT);
+					id = Identifier();
+					identifiers.append(id);
+					break;
+				default:
+					jj_la1[18] = jj_gen;
+					;
 			}
 			{
 				if (true)
-					return in;
+					return identifiers;
 			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("TableName");
 		}
-		throw new Error("Missing return statement in function");
+	}
+
+	/**
+	 * Extracts the name of a column with its possible catalog, schema and table prefixes.
+	 * 
+	 * @return A {@link IdentifierItems} which contains at most four items: catalogName, schemaName, tableName and columnName.
+	 */
+	final public IdentifierItems ColumnName() throws ParseException{
+		trace_call("ColumnName");
+		try{
+			IdentifierItem id;
+			IdentifierItems table = null, identifiers = new IdentifierItems(false);
+			id = Identifier();
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case DOT:
+					jj_consume_token(DOT);
+					table = TableName();
+					break;
+				default:
+					jj_la1[19] = jj_gen;
+					;
+			}
+			identifiers.append(id);
+			if (table != null){
+				for(int i = 0; i < table.size(); i++)
+					identifiers.append(table.get(i));
+			}
+			{
+				if (true)
+					return identifiers;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("ColumnName");
+		}
+	}
+
+	final public ADQLColumn Column() throws ParseException{
+		trace_call("Column");
+		try{
+			IdentifierItems identifiers;
+			identifiers = ColumnName();
+			try{
+				{
+					if (true)
+						return queryFactory.createColumn(identifiers);
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Column");
+		}
+	}
+
+	final public ColumnReference ColumnRef() throws ParseException{
+		trace_call("ColumnRef");
+		try{
+			IdentifierItems identifiers = null;
+			Token ind = null;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case DELIMITED_IDENTIFIER:
+				case REGULAR_IDENTIFIER:
+					identifiers = ColumnName();
+					break;
+				case UNSIGNED_INTEGER:
+					ind = jj_consume_token(UNSIGNED_INTEGER);
+					break;
+				default:
+					jj_la1[20] = jj_gen;
+					jj_consume_token(-1);
+					throw new ParseException();
+			}
+			try{
+				ColumnReference colRef = null;
+				if (identifiers != null)
+					colRef = queryFactory.createColRef(identifiers);
+				else
+					colRef = queryFactory.createColRef(Integer.parseInt(ind.image), new TextPosition(ind));
+				{
+					if (true)
+						return colRef;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("ColumnRef");
+		}
+	}
+
+	final public ADQLOrder OrderItem() throws ParseException{
+		trace_call("OrderItem");
+		try{
+			IdentifierItems identifiers = null;
+			Token ind = null, desc = null;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case DELIMITED_IDENTIFIER:
+				case REGULAR_IDENTIFIER:
+					identifiers = ColumnName();
+					break;
+				case UNSIGNED_INTEGER:
+					ind = jj_consume_token(UNSIGNED_INTEGER);
+					break;
+				default:
+					jj_la1[21] = jj_gen;
+					jj_consume_token(-1);
+					throw new ParseException();
+			}
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case ASC:
+				case DESC:
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case ASC:
+							jj_consume_token(ASC);
+							break;
+						case DESC:
+							desc = jj_consume_token(DESC);
+							break;
+						default:
+							jj_la1[22] = jj_gen;
+							jj_consume_token(-1);
+							throw new ParseException();
+					}
+					break;
+				default:
+					jj_la1[23] = jj_gen;
+					;
+			}
+			try{
+				ADQLOrder order = null;
+				if (identifiers != null){
+					order = queryFactory.createOrder(identifiers, desc != null);
+					order.setPosition(identifiers.getPosition());
+				}else{
+					order = queryFactory.createOrder(Integer.parseInt(ind.image), desc != null);
+					order.setPosition(new TextPosition(ind));
+				}
+				{
+					if (true)
+						return order;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("OrderItem");
+		}
+	}
+
+	final public FromContent SimpleTableRef() throws ParseException{
+		trace_call("SimpleTableRef");
+		try{
+			IdentifierItem alias = null;
+			IdentifierItems identifiers = null;
+			ADQLQuery subQuery = null;
+			FromContent content = null;
+			Token start, end;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case DELIMITED_IDENTIFIER:
+					case REGULAR_IDENTIFIER:
+						identifiers = TableName();
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case AS:
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+								switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+									case AS:
+										jj_consume_token(AS);
+										break;
+									default:
+										jj_la1[24] = jj_gen;
+										;
+								}
+								alias = Identifier();
+								break;
+							default:
+								jj_la1[25] = jj_gen;
+								;
+						}
+						content = queryFactory.createTable(identifiers, alias);
+						if (alias == null)
+							content.setPosition(new TextPosition(identifiers.get(0).position, identifiers.get(identifiers.size() - 1).position));
+						else
+							content.setPosition(new TextPosition(identifiers.get(0).position, alias.position));
+						{
+							if (true)
+								return content;
+						}
+						break;
+					default:
+						jj_la1[27] = jj_gen;
+						if (jj_2_2(2)){
+							subQuery = SubQueryExpression();
+							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+								case AS:
+									jj_consume_token(AS);
+									break;
+								default:
+									jj_la1[26] = jj_gen;
+									;
+							}
+							alias = Identifier();
+							content = queryFactory.createTable(subQuery, alias);
+							if (alias == null)
+								content.setPosition(new TextPosition(subQuery.getPosition()));
+							else
+								content.setPosition(new TextPosition(subQuery.getPosition(), alias.position));
+							{
+								if (true)
+									return content;
+							}
+						}else{
+							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+								case LEFT_PAR:
+									start = jj_consume_token(LEFT_PAR);
+									content = JoinedTable();
+									end = jj_consume_token(RIGHT_PAR);
+									content.setPosition(new TextPosition(start, end));
+									{
+										if (true)
+											return content;
+									}
+									break;
+								default:
+									jj_la1[28] = jj_gen;
+									jj_consume_token(-1);
+									throw new ParseException();
+							}
+						}
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("SimpleTableRef");
+		}
+	}
+
+	final public FromContent TableRef() throws ParseException{
+		trace_call("TableRef");
+		try{
+			FromContent content;
+			content = SimpleTableRef();
+			label_5: while(true){
+				if (jj_2_3(2)){
+					;
+				}else{
+					break label_5;
+				}
+				content = JoinSpecification(content);
+			}
+			{
+				if (true)
+					return content;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("TableRef");
+		}
+	}
+
+	final public FromContent JoinedTable() throws ParseException{
+		trace_call("JoinedTable");
+		try{
+			FromContent content;
+			content = SimpleTableRef();
+			label_6: while(true){
+				content = JoinSpecification(content);
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case NATURAL:
+					case INNER:
+					case RIGHT:
+					case LEFT:
+					case FULL:
+					case JOIN:
+						;
+						break;
+					default:
+						jj_la1[29] = jj_gen;
+						break label_6;
+				}
+			}
+			{
+				if (true)
+					return content;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("JoinedTable");
+		}
+	}
+
+	final public ADQLJoin JoinSpecification(FromContent leftTable) throws ParseException{
+		trace_call("JoinSpecification");
+		try{
+			boolean natural = false;
+			JoinType type = JoinType.INNER;
+			ClauseConstraints condition = new ClauseConstraints("ON");
+			ArrayList<ADQLColumn> lstColumns = new ArrayList<ADQLColumn>();
+			IdentifierItem id;
+			FromContent rightTable;
+			ADQLJoin join;
+			Token lastPar;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case NATURAL:
+						jj_consume_token(NATURAL);
+						natural = true;
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case INNER:
+							case RIGHT:
+							case LEFT:
+							case FULL:
+								switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+									case INNER:
+										jj_consume_token(INNER);
+										break;
+									case RIGHT:
+									case LEFT:
+									case FULL:
+										switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+											case LEFT:
+												jj_consume_token(LEFT);
+												type = JoinType.OUTER_LEFT;
+												break;
+											case RIGHT:
+												jj_consume_token(RIGHT);
+												type = JoinType.OUTER_RIGHT;
+												break;
+											case FULL:
+												jj_consume_token(FULL);
+												type = JoinType.OUTER_FULL;
+												break;
+											default:
+												jj_la1[30] = jj_gen;
+												jj_consume_token(-1);
+												throw new ParseException();
+										}
+										switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+											case OUTER:
+												jj_consume_token(OUTER);
+												break;
+											default:
+												jj_la1[31] = jj_gen;
+												;
+										}
+										break;
+									default:
+										jj_la1[32] = jj_gen;
+										jj_consume_token(-1);
+										throw new ParseException();
+								}
+								break;
+							default:
+								jj_la1[33] = jj_gen;
+								;
+						}
+						jj_consume_token(JOIN);
+						rightTable = TableRef();
+						join = queryFactory.createJoin(type, leftTable, rightTable);
+						join.setPosition(new TextPosition(leftTable.getPosition(), rightTable.getPosition()));
+						{
+							if (true)
+								return join;
+						}
+						break;
+					case INNER:
+					case RIGHT:
+					case LEFT:
+					case FULL:
+					case JOIN:
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case INNER:
+							case RIGHT:
+							case LEFT:
+							case FULL:
+								switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+									case INNER:
+										jj_consume_token(INNER);
+										break;
+									case RIGHT:
+									case LEFT:
+									case FULL:
+										switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+											case LEFT:
+												jj_consume_token(LEFT);
+												type = JoinType.OUTER_LEFT;
+												break;
+											case RIGHT:
+												jj_consume_token(RIGHT);
+												type = JoinType.OUTER_RIGHT;
+												break;
+											case FULL:
+												jj_consume_token(FULL);
+												type = JoinType.OUTER_FULL;
+												break;
+											default:
+												jj_la1[34] = jj_gen;
+												jj_consume_token(-1);
+												throw new ParseException();
+										}
+										switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+											case OUTER:
+												jj_consume_token(OUTER);
+												break;
+											default:
+												jj_la1[35] = jj_gen;
+												;
+										}
+										break;
+									default:
+										jj_la1[36] = jj_gen;
+										jj_consume_token(-1);
+										throw new ParseException();
+								}
+								break;
+							default:
+								jj_la1[37] = jj_gen;
+								;
+						}
+						jj_consume_token(JOIN);
+						rightTable = TableRef();
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case ON:
+								jj_consume_token(ON);
+								ConditionsList(condition);
+								join = queryFactory.createJoin(type, leftTable, rightTable, condition);
+								join.setPosition(new TextPosition(leftTable.getPosition(), condition.getPosition()));
+								{
+									if (true)
+										return join;
+								}
+								break;
+							case USING:
+								jj_consume_token(USING);
+								jj_consume_token(LEFT_PAR);
+								id = Identifier();
+								lstColumns.add(queryFactory.createColumn(id));
+								label_7: while(true){
+									switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+										case COMMA:
+											;
+											break;
+										default:
+											jj_la1[38] = jj_gen;
+											break label_7;
+									}
+									jj_consume_token(COMMA);
+									id = Identifier();
+									lstColumns.add(queryFactory.createColumn(id));
+								}
+								lastPar = jj_consume_token(RIGHT_PAR);
+								join = queryFactory.createJoin(type, leftTable, rightTable, lstColumns);
+								join.setPosition(new TextPosition(leftTable.getPosition().beginLine, leftTable.getPosition().beginColumn, lastPar.endLine, (lastPar.endColumn < 0) ? -1 : (lastPar.endColumn + 1)));
+								{
+									if (true)
+										return join;
+								}
+								break;
+							default:
+								jj_la1[39] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						break;
+					default:
+						jj_la1[40] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("JoinSpecification");
+		}
+	}
+
+	/* ****** */
+	/* STRING */
+	/* ****** */
+	final public StringConstant String() throws ParseException{
+		trace_call("String");
+		try{
+			Token t;
+			String str = "";
+			StringConstant cst;
+			label_8: while(true){
+				t = jj_consume_token(STRING_LITERAL);
+				str += t.image;
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case STRING_LITERAL:
+						;
+						break;
+					default:
+						jj_la1[41] = jj_gen;
+						break label_8;
+				}
+			}
+			try{
+				str = (str != null) ? str.substring(1, str.length() - 1) : str;
+				cst = queryFactory.createStringConstant(str);
+				cst.setPosition(new TextPosition(t));
+				{
+					if (true)
+						return cst;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("String");
+		}
 	}
 
 	/* ************* */
-	/* SQL FUNCTIONS */
+	/* NUMERIC TYPES */
 	/* ************* */
-	final public SQLFunction SqlFunction() throws ParseException{
-		Token fct, all = null, distinct = null, end;
-		ADQLOperand op = null;
-		SQLFunction funct = null;
+	final public NumericConstant UnsignedNumeric() throws ParseException{
+		trace_call("UnsignedNumeric");
 		try{
+			Token t;
+			NumericConstant cst;
 			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case COUNT:
-					fct = jj_consume_token(COUNT);
-					jj_consume_token(LEFT_PAR);
+				case SCIENTIFIC_NUMBER:
+					t = jj_consume_token(SCIENTIFIC_NUMBER);
+					break;
+				case UNSIGNED_FLOAT:
+					t = jj_consume_token(UNSIGNED_FLOAT);
+					break;
+				case UNSIGNED_INTEGER:
+					t = jj_consume_token(UNSIGNED_INTEGER);
+					break;
+				default:
+					jj_la1[42] = jj_gen;
+					jj_consume_token(-1);
+					throw new ParseException();
+			}
+			try{
+				cst = queryFactory.createNumericConstant(t.image);
+				cst.setPosition(new TextPosition(t));
+				{
+					if (true)
+						return cst;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("UnsignedNumeric");
+		}
+	}
+
+	final public NumericConstant UnsignedFloat() throws ParseException{
+		trace_call("UnsignedFloat");
+		try{
+			Token t;
+			NumericConstant cst;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case UNSIGNED_INTEGER:
+					t = jj_consume_token(UNSIGNED_INTEGER);
+					break;
+				case UNSIGNED_FLOAT:
+					t = jj_consume_token(UNSIGNED_FLOAT);
+					break;
+				default:
+					jj_la1[43] = jj_gen;
+					jj_consume_token(-1);
+					throw new ParseException();
+			}
+			try{
+				cst = queryFactory.createNumericConstant(t.image);
+				cst.setPosition(new TextPosition(t));
+				{
+					if (true)
+						return cst;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("UnsignedFloat");
+		}
+	}
+
+	final public NumericConstant SignedInteger() throws ParseException{
+		trace_call("SignedInteger");
+		try{
+			Token sign = null, number;
+			NumericConstant cst;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case PLUS:
+				case MINUS:
 					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case QUANTIFIER:
-							distinct = jj_consume_token(QUANTIFIER);
+						case PLUS:
+							sign = jj_consume_token(PLUS);
+							break;
+						case MINUS:
+							sign = jj_consume_token(MINUS);
 							break;
 						default:
-							jj_la1[77] = jj_gen;
-							;
+							jj_la1[44] = jj_gen;
+							jj_consume_token(-1);
+							throw new ParseException();
 					}
+					break;
+				default:
+					jj_la1[45] = jj_gen;
+					;
+			}
+			number = jj_consume_token(UNSIGNED_INTEGER);
+			try{
+				if (sign == null){
+					cst = queryFactory.createNumericConstant(number.image);
+					cst.setPosition(new TextPosition(number));
+				}else{
+					cst = queryFactory.createNumericConstant(sign.image + number.image);
+					cst.setPosition(new TextPosition(sign, number));
+				}
+				{
+					if (true)
+						return cst;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("SignedInteger");
+		}
+	}
+
+	/* *********** */
+	/* EXPRESSIONS */
+	/* *********** */
+	final public ADQLOperand NumericValueExpressionPrimary() throws ParseException{
+		trace_call("NumericValueExpressionPrimary");
+		try{
+			String expr;
+			ADQLColumn column;
+			ADQLOperand op;
+			Token left, right;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case SCIENTIFIC_NUMBER:
+					case UNSIGNED_FLOAT:
+					case UNSIGNED_INTEGER:
+						// unsigned_value_specification
+						op = UnsignedNumeric();
+						{
+							if (true)
+								return op;
+						}
+						break;
+					case DELIMITED_IDENTIFIER:
+					case REGULAR_IDENTIFIER:
+						column = Column();
+						column.setExpectedType('N');
+						{
+							if (true)
+								return column;
+						}
+						break;
+					case AVG:
+					case MAX:
+					case MIN:
+					case SUM:
+					case COUNT:
+						op = SqlFunction();
+						{
+							if (true)
+								return op;
+						}
+						break;
+					case LEFT_PAR:
+						left = jj_consume_token(LEFT_PAR);
+						op = NumericExpression();
+						right = jj_consume_token(RIGHT_PAR);
+						WrappedOperand wop = queryFactory.createWrappedOperand(op);
+						wop.setPosition(new TextPosition(left, right));
+						{
+							if (true)
+								return wop;
+						}
+						break;
+					default:
+						jj_la1[46] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("NumericValueExpressionPrimary");
+		}
+	}
+
+	final public ADQLOperand StringValueExpressionPrimary() throws ParseException{
+		trace_call("StringValueExpressionPrimary");
+		try{
+			StringConstant expr;
+			ADQLColumn column;
+			ADQLOperand op;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case STRING_LITERAL:
+						// string
+						expr = String();
+						{
+							if (true)
+								return expr;
+						}
+						break;
+					case DELIMITED_IDENTIFIER:
+					case REGULAR_IDENTIFIER:
+						column = Column();
+						column.setExpectedType('S');
+						{
+							if (true)
+								return column;
+						}
+						break;
+					case LEFT_PAR:
+						jj_consume_token(LEFT_PAR);
+						op = StringExpression();
+						jj_consume_token(RIGHT_PAR);
+						{
+							if (true)
+								return queryFactory.createWrappedOperand(op);
+						}
+						break;
+					default:
+						jj_la1[47] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("StringValueExpressionPrimary");
+		}
+	}
+
+	final public ADQLOperand ValueExpression() throws ParseException{
+		trace_call("ValueExpression");
+		try{
+			ADQLOperand valueExpr = null;
+			try{
+				if (jj_2_4(2147483647)){
+					valueExpr = NumericExpression();
+				}else if (jj_2_5(2147483647)){
+					valueExpr = StringExpression();
+				}else if (jj_2_6(2147483647)){
+					jj_consume_token(LEFT_PAR);
+					valueExpr = ValueExpression();
+					jj_consume_token(RIGHT_PAR);
+					valueExpr = queryFactory.createWrappedOperand(valueExpr);
+				}else if (jj_2_7(2147483647)){
+					valueExpr = UserDefinedFunction();
+				}else{
 					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case ASTERISK:
-							all = jj_consume_token(ASTERISK);
-							break;
-						case LEFT_PAR:
-						case PLUS:
-						case MINUS:
-						case AVG:
-						case MAX:
-						case MIN:
-						case SUM:
-						case COUNT:
 						case BOX:
 						case CENTROID:
 						case CIRCLE:
 						case POINT:
 						case POLYGON:
 						case REGION:
-						case CONTAINS:
-						case INTERSECTS:
-						case AREA:
-						case COORD1:
-						case COORD2:
-						case COORDSYS:
-						case DISTANCE:
-						case ABS:
-						case CEILING:
-						case DEGREES:
-						case EXP:
-						case FLOOR:
-						case LOG:
-						case LOG10:
-						case MOD:
-						case PI:
-						case POWER:
-						case RADIANS:
-						case RAND:
-						case ROUND:
-						case SQRT:
-						case TRUNCATE:
-						case ACOS:
-						case ASIN:
-						case ATAN:
-						case ATAN2:
-						case COS:
-						case COT:
-						case SIN:
-						case TAN:
-						case STRING_LITERAL:
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-						case SCIENTIFIC_NUMBER:
-						case UNSIGNED_FLOAT:
-						case UNSIGNED_INTEGER:
-							op = ValueExpression();
+							valueExpr = GeometryValueFunction();
 							break;
 						default:
-							jj_la1[78] = jj_gen;
+							jj_la1[48] = jj_gen;
+							if (jj_2_8(2147483647)){
+								valueExpr = Column();
+							}else if (jj_2_9(2147483647)){
+								valueExpr = StringFactor();
+							}else{
+								switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+									case LEFT_PAR:
+									case PLUS:
+									case MINUS:
+									case AVG:
+									case MAX:
+									case MIN:
+									case SUM:
+									case COUNT:
+									case CONTAINS:
+									case INTERSECTS:
+									case AREA:
+									case COORD1:
+									case COORD2:
+									case DISTANCE:
+									case ABS:
+									case CEILING:
+									case DEGREES:
+									case EXP:
+									case FLOOR:
+									case LOG:
+									case LOG10:
+									case MOD:
+									case PI:
+									case POWER:
+									case RADIANS:
+									case RAND:
+									case ROUND:
+									case SQRT:
+									case TRUNCATE:
+									case ACOS:
+									case ASIN:
+									case ATAN:
+									case ATAN2:
+									case COS:
+									case COT:
+									case SIN:
+									case TAN:
+									case DELIMITED_IDENTIFIER:
+									case REGULAR_IDENTIFIER:
+									case SCIENTIFIC_NUMBER:
+									case UNSIGNED_FLOAT:
+									case UNSIGNED_INTEGER:
+										valueExpr = Factor();
+										break;
+									default:
+										jj_la1[49] = jj_gen;
+										jj_consume_token(-1);
+										throw new ParseException();
+								}
+							}
+					}
+				}
+				{
+					if (true)
+						return valueExpr;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("ValueExpression");
+		}
+	}
+
+	final public ADQLOperand NumericExpression() throws ParseException{
+		trace_call("NumericExpression");
+		try{
+			Token sign = null;
+			ADQLOperand leftOp, rightOp = null;
+			leftOp = NumericTerm();
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case PLUS:
+				case MINUS:
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case PLUS:
+							sign = jj_consume_token(PLUS);
+							break;
+						case MINUS:
+							sign = jj_consume_token(MINUS);
+							break;
+						default:
+							jj_la1[50] = jj_gen;
 							jj_consume_token(-1);
 							throw new ParseException();
 					}
-					end = jj_consume_token(RIGHT_PAR);
-					funct = queryFactory.createSQLFunction((all != null) ? SQLFunctionType.COUNT_ALL : SQLFunctionType.COUNT, op, distinct != null && distinct.image.equalsIgnoreCase("distinct"));
-					funct.setPosition(new TextPosition(fct, end));
-					break;
-				case AVG:
-				case MAX:
-				case MIN:
-				case SUM:
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case AVG:
-							fct = jj_consume_token(AVG);
-							break;
-						case MAX:
-							fct = jj_consume_token(MAX);
-							break;
-						case MIN:
-							fct = jj_consume_token(MIN);
-							break;
-						case SUM:
-							fct = jj_consume_token(SUM);
-							break;
-						default:
-							jj_la1[79] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-					jj_consume_token(LEFT_PAR);
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case QUANTIFIER:
-							distinct = jj_consume_token(QUANTIFIER);
-							break;
-						default:
-							jj_la1[80] = jj_gen;
-							;
-					}
-					op = ValueExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					funct = queryFactory.createSQLFunction(SQLFunctionType.valueOf(fct.image.toUpperCase()), op, distinct != null && distinct.image.equalsIgnoreCase("distinct"));
-					funct.setPosition(new TextPosition(fct, end));
+					rightOp = NumericExpression();
 					break;
 				default:
-					jj_la1[81] = jj_gen;
+					jj_la1[51] = jj_gen;
+					;
+			}
+			if (sign == null){
+				if (true)
+					return leftOp;
+			}else{
+				try{
+					Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+					operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
+					{
+						if (true)
+							return operation;
+					}
+				}catch(Exception ex){
+					{
+						if (true)
+							throw generateParseException(ex);
+					}
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("NumericExpression");
+		}
+	}
+
+	final public ADQLOperand NumericTerm() throws ParseException{
+		trace_call("NumericTerm");
+		try{
+			Token sign = null;
+			ADQLOperand leftOp, rightOp = null;
+			leftOp = Factor();
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case ASTERISK:
+				case DIVIDE:
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case ASTERISK:
+							sign = jj_consume_token(ASTERISK);
+							break;
+						case DIVIDE:
+							sign = jj_consume_token(DIVIDE);
+							break;
+						default:
+							jj_la1[52] = jj_gen;
+							jj_consume_token(-1);
+							throw new ParseException();
+					}
+					rightOp = NumericTerm();
+					break;
+				default:
+					jj_la1[53] = jj_gen;
+					;
+			}
+			if (sign == null){
+				if (true)
+					return leftOp;
+			}else{
+				try{
+					Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+					operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
+					{
+						if (true)
+							return operation;
+					}
+				}catch(Exception ex){
+					{
+						if (true)
+							throw generateParseException(ex);
+					}
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("NumericTerm");
+		}
+	}
+
+	final public ADQLOperand Factor() throws ParseException{
+		trace_call("Factor");
+		try{
+			boolean negative = false;
+			Token minusSign = null;
+			ADQLOperand op;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case PLUS:
+				case MINUS:
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case PLUS:
+							jj_consume_token(PLUS);
+							break;
+						case MINUS:
+							jj_consume_token(MINUS);
+							negative = true;
+							break;
+						default:
+							jj_la1[54] = jj_gen;
+							jj_consume_token(-1);
+							throw new ParseException();
+					}
+					break;
+				default:
+					jj_la1[55] = jj_gen;
+					;
+			}
+			if (jj_2_10(2)){
+				op = NumericFunction();
+			}else{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case LEFT_PAR:
+					case AVG:
+					case MAX:
+					case MIN:
+					case SUM:
+					case COUNT:
+					case DELIMITED_IDENTIFIER:
+					case REGULAR_IDENTIFIER:
+					case SCIENTIFIC_NUMBER:
+					case UNSIGNED_FLOAT:
+					case UNSIGNED_INTEGER:
+						op = NumericValueExpressionPrimary();
+						break;
+					default:
+						jj_la1[56] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}
+			if (negative){
+				try{
+					op = queryFactory.createNegativeOperand(op);
+					NegativeOperand negativeOp = (NegativeOperand)op;
+					negativeOp.setPosition(new TextPosition(minusSign.beginLine, minusSign.beginColumn, negativeOp.getPosition().endLine, negativeOp.getPosition().endColumn));
+				}catch(Exception ex){
+					{
+						if (true)
+							throw generateParseException(ex);
+					}
+				}
+			}
+
+			{
+				if (true)
+					return op;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Factor");
+		}
+	}
+
+	final public ADQLOperand StringExpression() throws ParseException{
+		trace_call("StringExpression");
+		try{
+			ADQLOperand leftOp;
+			ADQLOperand rightOp = null;
+			leftOp = StringFactor();
+			label_9: while(true){
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case CONCAT:
+						;
+						break;
+					default:
+						jj_la1[57] = jj_gen;
+						break label_9;
+				}
+				jj_consume_token(CONCAT);
+				rightOp = StringFactor();
+				if (!(leftOp instanceof Concatenation)){
+					try{
+						ADQLOperand temp = leftOp;
+						leftOp = queryFactory.createConcatenation();
+						((Concatenation)leftOp).add(temp);
+					}catch(Exception ex){
+						{
+							if (true)
+								throw generateParseException(ex);
+						}
+					}
+				}
+				((Concatenation)leftOp).add(rightOp);
+			}
+			if (leftOp instanceof Concatenation){
+				Concatenation concat = (Concatenation)leftOp;
+				concat.setPosition(new TextPosition(concat.get(0).getPosition(), concat.get(concat.size() - 1).getPosition()));
+			}
+			{
+				if (true)
+					return leftOp;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("StringExpression");
+		}
+	}
+
+	final public ADQLOperand StringFactor() throws ParseException{
+		trace_call("StringFactor");
+		try{
+			ADQLOperand op;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case COORDSYS:
+					op = ExtractCoordSys();
+					break;
+				default:
+					jj_la1[58] = jj_gen;
+					if (jj_2_11(2)){
+						op = UserDefinedFunction();
+						((UserDefinedFunction)op).setExpectedType('S');
+					}else{
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case LEFT_PAR:
+							case STRING_LITERAL:
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+								op = StringValueExpressionPrimary();
+								break;
+							default:
+								jj_la1[59] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+					}
+			}
+			{
+				if (true)
+					return op;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("StringFactor");
+		}
+	}
+
+	final public GeometryValue<GeometryFunction> GeometryExpression() throws ParseException{
+		trace_call("GeometryExpression");
+		try{
+			ADQLColumn col = null;
+			GeometryFunction gf = null;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case DELIMITED_IDENTIFIER:
+				case REGULAR_IDENTIFIER:
+					col = Column();
+					break;
+				case BOX:
+				case CENTROID:
+				case CIRCLE:
+				case POINT:
+				case POLYGON:
+				case REGION:
+					gf = GeometryValueFunction();
+					break;
+				default:
+					jj_la1[60] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
-		}catch(Exception ex){
+			if (col != null){
+				col.setExpectedType('G');
+				{
+					if (true)
+						return new GeometryValue<GeometryFunction>(col);
+				}
+			}else{
+				if (true)
+					return new GeometryValue<GeometryFunction>(gf);
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("GeometryExpression");
+		}
+	}
+
+	/* ********************************** */
+	/* BOOLEAN EXPRESSIONS (WHERE clause) */
+	/* ********************************** */
+	final public ClauseConstraints ConditionsList(ClauseConstraints clause) throws ParseException{
+		trace_call("ConditionsList");
+		try{
+			ADQLConstraint constraint = null;
+			Token op = null;
+			boolean notOp = false;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case NOT:
+						op = jj_consume_token(NOT);
+						notOp = true;
+						break;
+					default:
+						jj_la1[61] = jj_gen;
+						;
+				}
+				constraint = Constraint();
+				if (notOp){
+					TextPosition oldPos = constraint.getPosition();
+					constraint = queryFactory.createNot(constraint);
+					((NotConstraint)constraint).setPosition(new TextPosition(op.beginLine, op.beginColumn, oldPos.endLine, oldPos.endColumn));
+				}
+				notOp = false;
+
+				if (clause instanceof ADQLConstraint)
+					clause.add(constraint);
+				else
+					clause.add(constraint);
+				label_10: while(true){
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case AND:
+						case OR:
+							;
+							break;
+						default:
+							jj_la1[62] = jj_gen;
+							break label_10;
+					}
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case AND:
+							op = jj_consume_token(AND);
+							break;
+						case OR:
+							op = jj_consume_token(OR);
+							break;
+						default:
+							jj_la1[63] = jj_gen;
+							jj_consume_token(-1);
+							throw new ParseException();
+					}
+					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+						case NOT:
+							jj_consume_token(NOT);
+							notOp = true;
+							break;
+						default:
+							jj_la1[64] = jj_gen;
+							;
+					}
+					constraint = Constraint();
+					if (notOp){
+						TextPosition oldPos = constraint.getPosition();
+						constraint = queryFactory.createNot(constraint);
+						((NotConstraint)constraint).setPosition(new TextPosition(op.beginLine, op.beginColumn, oldPos.endLine, oldPos.endColumn));
+					}
+					notOp = false;
+
+					if (clause instanceof ADQLConstraint)
+						clause.add(op.image, constraint);
+					else
+						clause.add(op.image, constraint);
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			if (!clause.isEmpty()){
+				TextPosition start = clause.get(0).getPosition();
+				TextPosition end = clause.get(clause.size() - 1).getPosition();
+				clause.setPosition(new TextPosition(start, end));
+			}
 			{
 				if (true)
-					throw generateParseException(ex);
+					return clause;
 			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("ConditionsList");
 		}
-		{
-			if (true)
-				return funct;
+	}
+
+	final public ADQLConstraint Constraint() throws ParseException{
+		trace_call("Constraint");
+		try{
+			ADQLConstraint constraint = null;
+			Token start, end;
+			if (jj_2_12(2147483647)){
+				constraint = Predicate();
+			}else{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case LEFT_PAR:
+						start = jj_consume_token(LEFT_PAR);
+						try{
+							constraint = queryFactory.createGroupOfConstraints();
+						}catch(Exception ex){
+							{
+								if (true)
+									throw generateParseException(ex);
+							}
+						}
+						ConditionsList((ConstraintsGroup)constraint);
+						end = jj_consume_token(RIGHT_PAR);
+						((ConstraintsGroup)constraint).setPosition(new TextPosition(start, end));
+						break;
+					default:
+						jj_la1[65] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}
+			{
+				if (true)
+					return constraint;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Constraint");
 		}
-		throw new Error("Missing return statement in function");
+	}
+
+	final public ADQLConstraint Predicate() throws ParseException{
+		trace_call("Predicate");
+		try{
+			ADQLQuery q = null;
+			ADQLColumn column = null;
+			ADQLOperand strExpr1 = null, strExpr2 = null;
+			ADQLOperand op;
+			Token start, notToken = null, end;
+			ADQLConstraint constraint = null;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case EXISTS:
+						start = jj_consume_token(EXISTS);
+						q = SubQueryExpression();
+						Exists e = queryFactory.createExists(q);
+						e.setPosition(new TextPosition(start.beginLine, start.beginColumn, q.getPosition().endLine, q.getPosition().endColumn));
+						{
+							if (true)
+								return e;
+						}
+						break;
+					default:
+						jj_la1[70] = jj_gen;
+						if (jj_2_14(2147483647)){
+							column = Column();
+							jj_consume_token(IS);
+							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+								case NOT:
+									notToken = jj_consume_token(NOT);
+									break;
+								default:
+									jj_la1[66] = jj_gen;
+									;
+							}
+							end = jj_consume_token(NULL);
+							IsNull in = queryFactory.createIsNull((notToken != null), column);
+							in.setPosition(new TextPosition(column.getPosition().beginLine, column.getPosition().beginColumn, end.endLine, (end.endColumn < 0) ? -1 : (end.endColumn + 1)));
+							{
+								if (true)
+									return in;
+							}
+						}else if (jj_2_15(2147483647)){
+							strExpr1 = StringExpression();
+							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+								case NOT:
+									notToken = jj_consume_token(NOT);
+									break;
+								default:
+									jj_la1[67] = jj_gen;
+									;
+							}
+							jj_consume_token(LIKE);
+							strExpr2 = StringExpression();
+							Comparison comp = queryFactory.createComparison(strExpr1, (notToken == null) ? ComparisonOperator.LIKE : ComparisonOperator.NOTLIKE, strExpr2);
+							comp.setPosition(new TextPosition(strExpr1.getPosition(), strExpr2.getPosition()));
+							{
+								if (true)
+									return comp;
+							}
+						}else{
+							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+								case LEFT_PAR:
+								case PLUS:
+								case MINUS:
+								case AVG:
+								case MAX:
+								case MIN:
+								case SUM:
+								case COUNT:
+								case BOX:
+								case CENTROID:
+								case CIRCLE:
+								case POINT:
+								case POLYGON:
+								case REGION:
+								case CONTAINS:
+								case INTERSECTS:
+								case AREA:
+								case COORD1:
+								case COORD2:
+								case COORDSYS:
+								case DISTANCE:
+								case ABS:
+								case CEILING:
+								case DEGREES:
+								case EXP:
+								case FLOOR:
+								case LOG:
+								case LOG10:
+								case MOD:
+								case PI:
+								case POWER:
+								case RADIANS:
+								case RAND:
+								case ROUND:
+								case SQRT:
+								case TRUNCATE:
+								case ACOS:
+								case ASIN:
+								case ATAN:
+								case ATAN2:
+								case COS:
+								case COT:
+								case SIN:
+								case TAN:
+								case STRING_LITERAL:
+								case DELIMITED_IDENTIFIER:
+								case REGULAR_IDENTIFIER:
+								case SCIENTIFIC_NUMBER:
+								case UNSIGNED_FLOAT:
+								case UNSIGNED_INTEGER:
+									op = ValueExpression();
+									switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+										case EQUAL:
+										case NOT_EQUAL:
+										case LESS_THAN:
+										case LESS_EQUAL_THAN:
+										case GREATER_THAN:
+										case GREATER_EQUAL_THAN:
+											constraint = ComparisonEnd(op);
+											break;
+										default:
+											jj_la1[68] = jj_gen;
+											if (jj_2_13(2)){
+												constraint = BetweenEnd(op);
+											}else{
+												switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+													case NOT:
+													case IN:
+														constraint = InEnd(op);
+														break;
+													default:
+														jj_la1[69] = jj_gen;
+														jj_consume_token(-1);
+														throw new ParseException();
+												}
+											}
+									}
+									break;
+								default:
+									jj_la1[71] = jj_gen;
+									jj_consume_token(-1);
+									throw new ParseException();
+							}
+						}
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			{
+				if (true)
+					return constraint;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Predicate");
+		}
+	}
+
+	final public Comparison ComparisonEnd(ADQLOperand leftOp) throws ParseException{
+		trace_call("ComparisonEnd");
+		try{
+			Token comp;
+			ADQLOperand rightOp;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case EQUAL:
+					comp = jj_consume_token(EQUAL);
+					break;
+				case NOT_EQUAL:
+					comp = jj_consume_token(NOT_EQUAL);
+					break;
+				case LESS_THAN:
+					comp = jj_consume_token(LESS_THAN);
+					break;
+				case LESS_EQUAL_THAN:
+					comp = jj_consume_token(LESS_EQUAL_THAN);
+					break;
+				case GREATER_THAN:
+					comp = jj_consume_token(GREATER_THAN);
+					break;
+				case GREATER_EQUAL_THAN:
+					comp = jj_consume_token(GREATER_EQUAL_THAN);
+					break;
+				default:
+					jj_la1[72] = jj_gen;
+					jj_consume_token(-1);
+					throw new ParseException();
+			}
+			rightOp = ValueExpression();
+			try{
+				Comparison comparison = queryFactory.createComparison(leftOp, ComparisonOperator.getOperator(comp.image), rightOp);
+				comparison.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
+				{
+					if (true)
+						return comparison;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("ComparisonEnd");
+		}
+	}
+
+	final public Between BetweenEnd(ADQLOperand leftOp) throws ParseException{
+		trace_call("BetweenEnd");
+		try{
+			Token start, notToken = null;
+			ADQLOperand min, max;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case NOT:
+					notToken = jj_consume_token(NOT);
+					break;
+				default:
+					jj_la1[73] = jj_gen;
+					;
+			}
+			start = jj_consume_token(BETWEEN);
+			min = ValueExpression();
+			jj_consume_token(AND);
+			max = ValueExpression();
+			try{
+				Between bet = queryFactory.createBetween((notToken != null), leftOp, min, max);
+				if (notToken != null)
+					start = notToken;
+				bet.setPosition(new TextPosition(start.beginLine, start.beginColumn, max.getPosition().endLine, max.getPosition().endColumn));
+				{
+					if (true)
+						return bet;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("BetweenEnd");
+		}
+	}
+
+	final public In InEnd(ADQLOperand leftOp) throws ParseException{
+		trace_call("InEnd");
+		try{
+			Token not = null, start;
+			ADQLQuery q = null;
+			ADQLOperand item;
+			Vector<ADQLOperand> items = new Vector<ADQLOperand>();
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case NOT:
+					not = jj_consume_token(NOT);
+					break;
+				default:
+					jj_la1[74] = jj_gen;
+					;
+			}
+			start = jj_consume_token(IN);
+			if (jj_2_16(2)){
+				q = SubQueryExpression();
+			}else{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case LEFT_PAR:
+						jj_consume_token(LEFT_PAR);
+						item = ValueExpression();
+						items.add(item);
+						label_11: while(true){
+							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+								case COMMA:
+									;
+									break;
+								default:
+									jj_la1[75] = jj_gen;
+									break label_11;
+							}
+							jj_consume_token(COMMA);
+							item = ValueExpression();
+							items.add(item);
+						}
+						jj_consume_token(RIGHT_PAR);
+						break;
+					default:
+						jj_la1[76] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}
+			try{
+				In in;
+				start = (not != null) ? not : start;
+				if (q != null){
+					in = queryFactory.createIn(leftOp, q, not != null);
+					in.setPosition(new TextPosition(start.beginLine, start.beginColumn, q.getPosition().endLine, q.getPosition().endColumn));
+				}else{
+					ADQLOperand[] list = new ADQLOperand[items.size()];
+					int i = 0;
+					for(ADQLOperand op : items)
+						list[i++] = op;
+					in = queryFactory.createIn(leftOp, list, not != null);
+					in.setPosition(new TextPosition(start.beginLine, start.beginColumn, list[list.length - 1].getPosition().endLine, list[list.length - 1].getPosition().endColumn));
+				}
+				{
+					if (true)
+						return in;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("InEnd");
+		}
+	}
+
+	/* ************* */
+	/* SQL FUNCTIONS */
+	/* ************* */
+	final public SQLFunction SqlFunction() throws ParseException{
+		trace_call("SqlFunction");
+		try{
+			Token fct, all = null, distinct = null, end;
+			ADQLOperand op = null;
+			SQLFunction funct = null;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case COUNT:
+						fct = jj_consume_token(COUNT);
+						jj_consume_token(LEFT_PAR);
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case QUANTIFIER:
+								distinct = jj_consume_token(QUANTIFIER);
+								break;
+							default:
+								jj_la1[77] = jj_gen;
+								;
+						}
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case ASTERISK:
+								all = jj_consume_token(ASTERISK);
+								break;
+							case LEFT_PAR:
+							case PLUS:
+							case MINUS:
+							case AVG:
+							case MAX:
+							case MIN:
+							case SUM:
+							case COUNT:
+							case BOX:
+							case CENTROID:
+							case CIRCLE:
+							case POINT:
+							case POLYGON:
+							case REGION:
+							case CONTAINS:
+							case INTERSECTS:
+							case AREA:
+							case COORD1:
+							case COORD2:
+							case COORDSYS:
+							case DISTANCE:
+							case ABS:
+							case CEILING:
+							case DEGREES:
+							case EXP:
+							case FLOOR:
+							case LOG:
+							case LOG10:
+							case MOD:
+							case PI:
+							case POWER:
+							case RADIANS:
+							case RAND:
+							case ROUND:
+							case SQRT:
+							case TRUNCATE:
+							case ACOS:
+							case ASIN:
+							case ATAN:
+							case ATAN2:
+							case COS:
+							case COT:
+							case SIN:
+							case TAN:
+							case STRING_LITERAL:
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+							case SCIENTIFIC_NUMBER:
+							case UNSIGNED_FLOAT:
+							case UNSIGNED_INTEGER:
+								op = ValueExpression();
+								break;
+							default:
+								jj_la1[78] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						funct = queryFactory.createSQLFunction((all != null) ? SQLFunctionType.COUNT_ALL : SQLFunctionType.COUNT, op, distinct != null && distinct.image.equalsIgnoreCase("distinct"));
+						funct.setPosition(new TextPosition(fct, end));
+						break;
+					case AVG:
+					case MAX:
+					case MIN:
+					case SUM:
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case AVG:
+								fct = jj_consume_token(AVG);
+								break;
+							case MAX:
+								fct = jj_consume_token(MAX);
+								break;
+							case MIN:
+								fct = jj_consume_token(MIN);
+								break;
+							case SUM:
+								fct = jj_consume_token(SUM);
+								break;
+							default:
+								jj_la1[79] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						jj_consume_token(LEFT_PAR);
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case QUANTIFIER:
+								distinct = jj_consume_token(QUANTIFIER);
+								break;
+							default:
+								jj_la1[80] = jj_gen;
+								;
+						}
+						op = ValueExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						funct = queryFactory.createSQLFunction(SQLFunctionType.valueOf(fct.image.toUpperCase()), op, distinct != null && distinct.image.equalsIgnoreCase("distinct"));
+						funct.setPosition(new TextPosition(fct, end));
+						break;
+					default:
+						jj_la1[81] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			{
+				if (true)
+					return funct;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("SqlFunction");
+		}
 	}
 
 	/* ************** */
 	/* ADQL FUNCTIONS */
 	/* ************** */
 	final public ADQLOperand[] Coordinates() throws ParseException{
-		ADQLOperand[] ops = new ADQLOperand[2];
-		ops[0] = NumericExpression();
-		jj_consume_token(COMMA);
-		ops[1] = NumericExpression();
-		{
-			if (true)
-				return ops;
+		trace_call("Coordinates");
+		try{
+			ADQLOperand[] ops = new ADQLOperand[2];
+			ops[0] = NumericExpression();
+			jj_consume_token(COMMA);
+			ops[1] = NumericExpression();
+			{
+				if (true)
+					return ops;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Coordinates");
 		}
-		throw new Error("Missing return statement in function");
 	}
 
 	final public GeometryFunction GeometryFunction() throws ParseException{
-		Token fct = null, end;
-		GeometryValue<GeometryFunction> gvf1, gvf2;
-		GeometryValue<PointFunction> gvp1, gvp2;
-		GeometryFunction gf = null;
-		PointFunction p1 = null, p2 = null;
-		ADQLColumn col1 = null, col2 = null;
+		trace_call("GeometryFunction");
 		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case CONTAINS:
-				case INTERSECTS:
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case CONTAINS:
-							fct = jj_consume_token(CONTAINS);
-							break;
-						case INTERSECTS:
-							fct = jj_consume_token(INTERSECTS);
-							break;
-						default:
-							jj_la1[82] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-					jj_consume_token(LEFT_PAR);
-					gvf1 = GeometryExpression();
-					jj_consume_token(COMMA);
-					gvf2 = GeometryExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					if (fct.image.equalsIgnoreCase("contains"))
-						gf = queryFactory.createContains(gvf1, gvf2);
-					else
-						gf = queryFactory.createIntersects(gvf1, gvf2);
-					break;
-				case AREA:
-					fct = jj_consume_token(AREA);
-					jj_consume_token(LEFT_PAR);
-					gvf1 = GeometryExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					gf = queryFactory.createArea(gvf1);
-					break;
-				case COORD1:
-					fct = jj_consume_token(COORD1);
-					jj_consume_token(LEFT_PAR);
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case POINT:
-							p1 = Point();
-							gf = queryFactory.createCoord1(p1);
-							break;
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-							col1 = Column();
-							col1.setExpectedType('G');
-							gf = queryFactory.createCoord1(col1);
-							break;
-						default:
-							jj_la1[83] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-					end = jj_consume_token(RIGHT_PAR);
-					break;
-				case COORD2:
-					fct = jj_consume_token(COORD2);
-					jj_consume_token(LEFT_PAR);
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case POINT:
-							p1 = Point();
-							gf = queryFactory.createCoord2(p1);
-							break;
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-							col1 = Column();
-							col1.setExpectedType('G');
-							gf = queryFactory.createCoord2(col1);
-							break;
-						default:
-							jj_la1[84] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-					end = jj_consume_token(RIGHT_PAR);
-					break;
-				case DISTANCE:
-					fct = jj_consume_token(DISTANCE);
-					jj_consume_token(LEFT_PAR);
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case POINT:
-							p1 = Point();
-							break;
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-							col1 = Column();
-							break;
-						default:
-							jj_la1[85] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-					if (p1 != null)
-						gvp1 = new GeometryValue<PointFunction>(p1);
-					else{
-						col1.setExpectedType('G');
-						gvp1 = new GeometryValue<PointFunction>(col1);
-					}
-					jj_consume_token(COMMA);
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case POINT:
-							p2 = Point();
-							break;
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-							col2 = Column();
-							break;
-						default:
-							jj_la1[86] = jj_gen;
-							jj_consume_token(-1);
-							throw new ParseException();
-					}
-					if (p2 != null)
-						gvp2 = new GeometryValue<PointFunction>(p2);
-					else{
-						col2.setExpectedType('G');
-						gvp2 = new GeometryValue<PointFunction>(col2);
-					}
-					end = jj_consume_token(RIGHT_PAR);
-					gf = queryFactory.createDistance(gvp1, gvp2);
-					break;
-				default:
-					jj_la1[87] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		gf.setPosition(new TextPosition(fct, end));
-		{
-			if (true)
-				return gf;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public ADQLOperand CoordinateSystem() throws ParseException{
-		ADQLOperand coordSys = null;
-		coordSys = StringExpression();
-		{
-			if (true)
-				return coordSys;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public GeometryFunction GeometryValueFunction() throws ParseException{
-		Token fct = null, end = null;
-		ADQLOperand coordSys;
-		ADQLOperand width, height;
-		ADQLOperand[] coords, tmp;
-		Vector<ADQLOperand> vCoords;
-		ADQLOperand op = null;
-		GeometryValue<GeometryFunction> gvf = null;
-		GeometryFunction gf = null;
-		try{
-			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-				case BOX:
-					fct = jj_consume_token(BOX);
-					jj_consume_token(LEFT_PAR);
-					coordSys = CoordinateSystem();
-					jj_consume_token(COMMA);
-					coords = Coordinates();
-					jj_consume_token(COMMA);
-					width = NumericExpression();
-					jj_consume_token(COMMA);
-					height = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					gf = queryFactory.createBox(coordSys, coords[0], coords[1], width, height);
-					break;
-				case CENTROID:
-					fct = jj_consume_token(CENTROID);
-					jj_consume_token(LEFT_PAR);
-					gvf = GeometryExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					gf = queryFactory.createCentroid(gvf);
-					break;
-				case CIRCLE:
-					fct = jj_consume_token(CIRCLE);
-					jj_consume_token(LEFT_PAR);
-					coordSys = CoordinateSystem();
-					jj_consume_token(COMMA);
-					coords = Coordinates();
-					jj_consume_token(COMMA);
-					width = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					gf = queryFactory.createCircle(coordSys, coords[0], coords[1], width);
-					break;
-				case POINT:
-					gf = Point();
-					break;
-				case POLYGON:
-					fct = jj_consume_token(POLYGON);
-					jj_consume_token(LEFT_PAR);
-					coordSys = CoordinateSystem();
-					vCoords = new Vector<ADQLOperand>();
-					jj_consume_token(COMMA);
-					tmp = Coordinates();
-					vCoords.add(tmp[0]);
-					vCoords.add(tmp[1]);
-					jj_consume_token(COMMA);
-					tmp = Coordinates();
-					vCoords.add(tmp[0]);
-					vCoords.add(tmp[1]);
-					jj_consume_token(COMMA);
-					tmp = Coordinates();
-					vCoords.add(tmp[0]);
-					vCoords.add(tmp[1]);
-					label_12: while(true){
+			Token fct = null, end;
+			GeometryValue<GeometryFunction> gvf1, gvf2;
+			GeometryValue<PointFunction> gvp1, gvp2;
+			GeometryFunction gf = null;
+			PointFunction p1 = null, p2 = null;
+			ADQLColumn col1 = null, col2 = null;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case CONTAINS:
+					case INTERSECTS:
 						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-							case COMMA:
-								;
+							case CONTAINS:
+								fct = jj_consume_token(CONTAINS);
+								break;
+							case INTERSECTS:
+								fct = jj_consume_token(INTERSECTS);
 								break;
 							default:
-								jj_la1[88] = jj_gen;
-								break label_12;
+								jj_la1[82] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						jj_consume_token(LEFT_PAR);
+						gvf1 = GeometryExpression();
+						jj_consume_token(COMMA);
+						gvf2 = GeometryExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						if (fct.image.equalsIgnoreCase("contains"))
+							gf = queryFactory.createContains(gvf1, gvf2);
+						else
+							gf = queryFactory.createIntersects(gvf1, gvf2);
+						break;
+					case AREA:
+						fct = jj_consume_token(AREA);
+						jj_consume_token(LEFT_PAR);
+						gvf1 = GeometryExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						gf = queryFactory.createArea(gvf1);
+						break;
+					case COORD1:
+						fct = jj_consume_token(COORD1);
+						jj_consume_token(LEFT_PAR);
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case POINT:
+								p1 = Point();
+								gf = queryFactory.createCoord1(p1);
+								break;
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+								col1 = Column();
+								col1.setExpectedType('G');
+								gf = queryFactory.createCoord1(col1);
+								break;
+							default:
+								jj_la1[83] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case COORD2:
+						fct = jj_consume_token(COORD2);
+						jj_consume_token(LEFT_PAR);
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case POINT:
+								p1 = Point();
+								gf = queryFactory.createCoord2(p1);
+								break;
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+								col1 = Column();
+								col1.setExpectedType('G');
+								gf = queryFactory.createCoord2(col1);
+								break;
+							default:
+								jj_la1[84] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case DISTANCE:
+						fct = jj_consume_token(DISTANCE);
+						jj_consume_token(LEFT_PAR);
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case POINT:
+								p1 = Point();
+								break;
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+								col1 = Column();
+								break;
+							default:
+								jj_la1[85] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						if (p1 != null)
+							gvp1 = new GeometryValue<PointFunction>(p1);
+						else{
+							col1.setExpectedType('G');
+							gvp1 = new GeometryValue<PointFunction>(col1);
 						}
 						jj_consume_token(COMMA);
-						tmp = Coordinates();
-						vCoords.add(tmp[0]);
-						vCoords.add(tmp[1]);
-					}
-					end = jj_consume_token(RIGHT_PAR);
-					gf = queryFactory.createPolygon(coordSys, vCoords);
-					break;
-				case REGION:
-					fct = jj_consume_token(REGION);
-					jj_consume_token(LEFT_PAR);
-					op = StringExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					gf = queryFactory.createRegion(op);
-					break;
-				default:
-					jj_la1[89] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case POINT:
+								p2 = Point();
+								break;
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+								col2 = Column();
+								break;
+							default:
+								jj_la1[86] = jj_gen;
+								jj_consume_token(-1);
+								throw new ParseException();
+						}
+						if (p2 != null)
+							gvp2 = new GeometryValue<PointFunction>(p2);
+						else{
+							col2.setExpectedType('G');
+							gvp2 = new GeometryValue<PointFunction>(col2);
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						gf = queryFactory.createDistance(gvp1, gvp2);
+						break;
+					default:
+						jj_la1[87] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
 			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		if (fct != null && end != null) // = !(gf instanceof Point)
 			gf.setPosition(new TextPosition(fct, end));
-		{
-			if (true)
-				return gf;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public PointFunction Point() throws ParseException{
-		Token start, end;
-		ADQLOperand coordSys;
-		ADQLOperand[] coords;
-		start = jj_consume_token(POINT);
-		jj_consume_token(LEFT_PAR);
-		coordSys = CoordinateSystem();
-		jj_consume_token(COMMA);
-		coords = Coordinates();
-		end = jj_consume_token(RIGHT_PAR);
-		try{
-			PointFunction pf = queryFactory.createPoint(coordSys, coords[0], coords[1]);
-			pf.setPosition(new TextPosition(start, end));
-			{
-				if (true)
-					return pf;
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public GeometryFunction ExtractCoordSys() throws ParseException{
-		Token start, end;
-		GeometryValue<GeometryFunction> gvf;
-		start = jj_consume_token(COORDSYS);
-		jj_consume_token(LEFT_PAR);
-		gvf = GeometryExpression();
-		end = jj_consume_token(RIGHT_PAR);
-		try{
-			GeometryFunction gf = queryFactory.createExtractCoordSys(gvf);
-			gf.setPosition(new TextPosition(start, end));
 			{
 				if (true)
 					return gf;
 			}
-		}catch(Exception ex){
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("GeometryFunction");
+		}
+	}
+
+	final public ADQLOperand CoordinateSystem() throws ParseException{
+		trace_call("CoordinateSystem");
+		try{
+			ADQLOperand coordSys = null;
+			coordSys = StringExpression();
 			{
 				if (true)
-					throw generateParseException(ex);
+					return coordSys;
 			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("CoordinateSystem");
 		}
-		throw new Error("Missing return statement in function");
+	}
+
+	final public GeometryFunction GeometryValueFunction() throws ParseException{
+		trace_call("GeometryValueFunction");
+		try{
+			Token fct = null, end = null;
+			ADQLOperand coordSys;
+			ADQLOperand width, height;
+			ADQLOperand[] coords, tmp;
+			Vector<ADQLOperand> vCoords;
+			ADQLOperand op = null;
+			GeometryValue<GeometryFunction> gvf = null;
+			GeometryFunction gf = null;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case BOX:
+						fct = jj_consume_token(BOX);
+						jj_consume_token(LEFT_PAR);
+						coordSys = CoordinateSystem();
+						jj_consume_token(COMMA);
+						coords = Coordinates();
+						jj_consume_token(COMMA);
+						width = NumericExpression();
+						jj_consume_token(COMMA);
+						height = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						gf = queryFactory.createBox(coordSys, coords[0], coords[1], width, height);
+						break;
+					case CENTROID:
+						fct = jj_consume_token(CENTROID);
+						jj_consume_token(LEFT_PAR);
+						gvf = GeometryExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						gf = queryFactory.createCentroid(gvf);
+						break;
+					case CIRCLE:
+						fct = jj_consume_token(CIRCLE);
+						jj_consume_token(LEFT_PAR);
+						coordSys = CoordinateSystem();
+						jj_consume_token(COMMA);
+						coords = Coordinates();
+						jj_consume_token(COMMA);
+						width = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						gf = queryFactory.createCircle(coordSys, coords[0], coords[1], width);
+						break;
+					case POINT:
+						gf = Point();
+						break;
+					case POLYGON:
+						fct = jj_consume_token(POLYGON);
+						jj_consume_token(LEFT_PAR);
+						coordSys = CoordinateSystem();
+						vCoords = new Vector<ADQLOperand>();
+						jj_consume_token(COMMA);
+						tmp = Coordinates();
+						vCoords.add(tmp[0]);
+						vCoords.add(tmp[1]);
+						jj_consume_token(COMMA);
+						tmp = Coordinates();
+						vCoords.add(tmp[0]);
+						vCoords.add(tmp[1]);
+						jj_consume_token(COMMA);
+						tmp = Coordinates();
+						vCoords.add(tmp[0]);
+						vCoords.add(tmp[1]);
+						label_12: while(true){
+							switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+								case COMMA:
+									;
+									break;
+								default:
+									jj_la1[88] = jj_gen;
+									break label_12;
+							}
+							jj_consume_token(COMMA);
+							tmp = Coordinates();
+							vCoords.add(tmp[0]);
+							vCoords.add(tmp[1]);
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						gf = queryFactory.createPolygon(coordSys, vCoords);
+						break;
+					case REGION:
+						fct = jj_consume_token(REGION);
+						jj_consume_token(LEFT_PAR);
+						op = StringExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						gf = queryFactory.createRegion(op);
+						break;
+					default:
+						jj_la1[89] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			if (fct != null && end != null) // = !(gf instanceof Point)
+				gf.setPosition(new TextPosition(fct, end));
+			{
+				if (true)
+					return gf;
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("GeometryValueFunction");
+		}
+	}
+
+	final public PointFunction Point() throws ParseException{
+		trace_call("Point");
+		try{
+			Token start, end;
+			ADQLOperand coordSys;
+			ADQLOperand[] coords;
+			start = jj_consume_token(POINT);
+			jj_consume_token(LEFT_PAR);
+			coordSys = CoordinateSystem();
+			jj_consume_token(COMMA);
+			coords = Coordinates();
+			end = jj_consume_token(RIGHT_PAR);
+			try{
+				PointFunction pf = queryFactory.createPoint(coordSys, coords[0], coords[1]);
+				pf.setPosition(new TextPosition(start, end));
+				{
+					if (true)
+						return pf;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("Point");
+		}
+	}
+
+	final public GeometryFunction ExtractCoordSys() throws ParseException{
+		trace_call("ExtractCoordSys");
+		try{
+			Token start, end;
+			GeometryValue<GeometryFunction> gvf;
+			start = jj_consume_token(COORDSYS);
+			jj_consume_token(LEFT_PAR);
+			gvf = GeometryExpression();
+			end = jj_consume_token(RIGHT_PAR);
+			try{
+				GeometryFunction gf = queryFactory.createExtractCoordSys(gvf);
+				gf.setPosition(new TextPosition(start, end));
+				{
+					if (true)
+						return gf;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("ExtractCoordSys");
+		}
 	}
 
 	/* ***************** */
 	/* NUMERIC FUNCTIONS */
 	/* ***************** */
 	final public ADQLFunction NumericFunction() throws ParseException{
-		ADQLFunction fct;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case ABS:
-			case CEILING:
-			case DEGREES:
-			case EXP:
-			case FLOOR:
-			case LOG:
-			case LOG10:
-			case MOD:
-			case PI:
-			case POWER:
-			case RADIANS:
-			case RAND:
-			case ROUND:
-			case SQRT:
-			case TRUNCATE:
-				fct = MathFunction();
-				break;
-			case ACOS:
-			case ASIN:
-			case ATAN:
-			case ATAN2:
-			case COS:
-			case COT:
-			case SIN:
-			case TAN:
-				fct = TrigFunction();
-				break;
-			case CONTAINS:
-			case INTERSECTS:
-			case AREA:
-			case COORD1:
-			case COORD2:
-			case DISTANCE:
-				fct = GeometryFunction();
-				break;
-			case REGULAR_IDENTIFIER:
-				fct = UserDefinedFunction();
-				((UserDefinedFunction)fct).setExpectedType('N');
-				break;
-			default:
-				jj_la1[90] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
-		{
-			if (true)
-				return fct;
-		}
-		throw new Error("Missing return statement in function");
-	}
-
-	final public MathFunction MathFunction() throws ParseException{
-		Token fct = null, end;
-		ADQLOperand param1 = null, param2 = null;
-		NumericConstant integerValue = null;
+		trace_call("NumericFunction");
 		try{
+			ADQLFunction fct;
 			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
 				case ABS:
-					fct = jj_consume_token(ABS);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case CEILING:
-					fct = jj_consume_token(CEILING);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case DEGREES:
-					fct = jj_consume_token(DEGREES);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case EXP:
-					fct = jj_consume_token(EXP);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case FLOOR:
-					fct = jj_consume_token(FLOOR);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case LOG:
-					fct = jj_consume_token(LOG);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case LOG10:
-					fct = jj_consume_token(LOG10);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case MOD:
-					fct = jj_consume_token(MOD);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					jj_consume_token(COMMA);
-					param2 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case PI:
-					fct = jj_consume_token(PI);
-					jj_consume_token(LEFT_PAR);
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case POWER:
-					fct = jj_consume_token(POWER);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					jj_consume_token(COMMA);
-					param2 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case RADIANS:
-					fct = jj_consume_token(RADIANS);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case RAND:
-					fct = jj_consume_token(RAND);
-					jj_consume_token(LEFT_PAR);
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case LEFT_PAR:
-						case PLUS:
-						case MINUS:
-						case AVG:
-						case MAX:
-						case MIN:
-						case SUM:
-						case COUNT:
-						case CONTAINS:
-						case INTERSECTS:
-						case AREA:
-						case COORD1:
-						case COORD2:
-						case DISTANCE:
-						case ABS:
-						case CEILING:
-						case DEGREES:
-						case EXP:
-						case FLOOR:
-						case LOG:
-						case LOG10:
-						case MOD:
-						case PI:
-						case POWER:
-						case RADIANS:
-						case RAND:
-						case ROUND:
-						case SQRT:
-						case TRUNCATE:
-						case ACOS:
-						case ASIN:
-						case ATAN:
-						case ATAN2:
-						case COS:
-						case COT:
-						case SIN:
-						case TAN:
-						case DELIMITED_IDENTIFIER:
-						case REGULAR_IDENTIFIER:
-						case SCIENTIFIC_NUMBER:
-						case UNSIGNED_FLOAT:
-						case UNSIGNED_INTEGER:
-							param1 = NumericExpression();
-							break;
-						default:
-							jj_la1[91] = jj_gen;
-							;
-					}
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case ROUND:
-					fct = jj_consume_token(ROUND);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case COMMA:
-							jj_consume_token(COMMA);
-							param2 = SignedInteger();
-							break;
-						default:
-							jj_la1[92] = jj_gen;
-							;
-					}
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case SQRT:
-					fct = jj_consume_token(SQRT);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					end = jj_consume_token(RIGHT_PAR);
-					break;
 				case TRUNCATE:
-					fct = jj_consume_token(TRUNCATE);
-					jj_consume_token(LEFT_PAR);
-					param1 = NumericExpression();
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case COMMA:
-							jj_consume_token(COMMA);
-							param2 = SignedInteger();
-							break;
-						default:
-							jj_la1[93] = jj_gen;
-							;
-					}
-					end = jj_consume_token(RIGHT_PAR);
+					fct = MathFunction();
+					break;
+				case ACOS:
+				case ASIN:
+				case ATAN:
+				case ATAN2:
+				case COS:
+				case COT:
+				case SIN:
+				case TAN:
+					fct = TrigFunction();
+					break;
+				case CONTAINS:
+				case INTERSECTS:
+				case AREA:
+				case COORD1:
+				case COORD2:
+				case DISTANCE:
+					fct = GeometryFunction();
+					break;
+				case REGULAR_IDENTIFIER:
+					fct = UserDefinedFunction();
+					((UserDefinedFunction)fct).setExpectedType('N');
 					break;
 				default:
-					jj_la1[94] = jj_gen;
+					jj_la1[90] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
-			if (param1 != null){
-				MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
-				mf.setPosition(new TextPosition(fct, end));
-				{
-					if (true)
-						return mf;
-				}
-			}else{
-				if (true)
-					return null;
-			}
-		}catch(Exception ex){
 			{
 				if (true)
-					throw generateParseException(ex);
+					return fct;
 			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("NumericFunction");
 		}
-		throw new Error("Missing return statement in function");
+	}
+
+	final public MathFunction MathFunction() throws ParseException{
+		trace_call("MathFunction");
+		try{
+			Token fct = null, end;
+			ADQLOperand param1 = null, param2 = null;
+			NumericConstant integerValue = null;
+			try{
+				switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+					case ABS:
+						fct = jj_consume_token(ABS);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case CEILING:
+						fct = jj_consume_token(CEILING);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case DEGREES:
+						fct = jj_consume_token(DEGREES);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case EXP:
+						fct = jj_consume_token(EXP);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case FLOOR:
+						fct = jj_consume_token(FLOOR);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case LOG:
+						fct = jj_consume_token(LOG);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case LOG10:
+						fct = jj_consume_token(LOG10);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case MOD:
+						fct = jj_consume_token(MOD);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						jj_consume_token(COMMA);
+						param2 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case PI:
+						fct = jj_consume_token(PI);
+						jj_consume_token(LEFT_PAR);
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case POWER:
+						fct = jj_consume_token(POWER);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						jj_consume_token(COMMA);
+						param2 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case RADIANS:
+						fct = jj_consume_token(RADIANS);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case RAND:
+						fct = jj_consume_token(RAND);
+						jj_consume_token(LEFT_PAR);
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case LEFT_PAR:
+							case PLUS:
+							case MINUS:
+							case AVG:
+							case MAX:
+							case MIN:
+							case SUM:
+							case COUNT:
+							case CONTAINS:
+							case INTERSECTS:
+							case AREA:
+							case COORD1:
+							case COORD2:
+							case DISTANCE:
+							case ABS:
+							case CEILING:
+							case DEGREES:
+							case EXP:
+							case FLOOR:
+							case LOG:
+							case LOG10:
+							case MOD:
+							case PI:
+							case POWER:
+							case RADIANS:
+							case RAND:
+							case ROUND:
+							case SQRT:
+							case TRUNCATE:
+							case ACOS:
+							case ASIN:
+							case ATAN:
+							case ATAN2:
+							case COS:
+							case COT:
+							case SIN:
+							case TAN:
+							case DELIMITED_IDENTIFIER:
+							case REGULAR_IDENTIFIER:
+							case SCIENTIFIC_NUMBER:
+							case UNSIGNED_FLOAT:
+							case UNSIGNED_INTEGER:
+								param1 = NumericExpression();
+								break;
+							default:
+								jj_la1[91] = jj_gen;
+								;
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case ROUND:
+						fct = jj_consume_token(ROUND);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case COMMA:
+								jj_consume_token(COMMA);
+								param2 = SignedInteger();
+								break;
+							default:
+								jj_la1[92] = jj_gen;
+								;
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case SQRT:
+						fct = jj_consume_token(SQRT);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					case TRUNCATE:
+						fct = jj_consume_token(TRUNCATE);
+						jj_consume_token(LEFT_PAR);
+						param1 = NumericExpression();
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case COMMA:
+								jj_consume_token(COMMA);
+								param2 = SignedInteger();
+								break;
+							default:
+								jj_la1[93] = jj_gen;
+								;
+						}
+						end = jj_consume_token(RIGHT_PAR);
+						break;
+					default:
+						jj_la1[94] = jj_gen;
+						jj_consume_token(-1);
+						throw new ParseException();
+				}
+				if (param1 != null){
+					MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
+					mf.setPosition(new TextPosition(fct, end));
+					{
+						if (true)
+							return mf;
+					}
+				}else{
+					if (true)
+						return null;
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("MathFunction");
+		}
 	}
 
 	final public MathFunction TrigFunction() throws ParseException{
-		Token fct = null, end;
-		ADQLOperand param1 = null, param2 = null;
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case ACOS:
-				fct = jj_consume_token(ACOS);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			case ASIN:
-				fct = jj_consume_token(ASIN);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			case ATAN:
-				fct = jj_consume_token(ATAN);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			case ATAN2:
-				fct = jj_consume_token(ATAN2);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				jj_consume_token(COMMA);
-				param2 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			case COS:
-				fct = jj_consume_token(COS);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			case COT:
-				fct = jj_consume_token(COT);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			case SIN:
-				fct = jj_consume_token(SIN);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			case TAN:
-				fct = jj_consume_token(TAN);
-				jj_consume_token(LEFT_PAR);
-				param1 = NumericExpression();
-				end = jj_consume_token(RIGHT_PAR);
-				break;
-			default:
-				jj_la1[95] = jj_gen;
-				jj_consume_token(-1);
-				throw new ParseException();
-		}
+		trace_call("TrigFunction");
 		try{
-			if (param1 != null){
-				MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
-				mf.setPosition(new TextPosition(fct, end));
+			Token fct = null, end;
+			ADQLOperand param1 = null, param2 = null;
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case ACOS:
+					fct = jj_consume_token(ACOS);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				case ASIN:
+					fct = jj_consume_token(ASIN);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				case ATAN:
+					fct = jj_consume_token(ATAN);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				case ATAN2:
+					fct = jj_consume_token(ATAN2);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					jj_consume_token(COMMA);
+					param2 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				case COS:
+					fct = jj_consume_token(COS);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				case COT:
+					fct = jj_consume_token(COT);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				case SIN:
+					fct = jj_consume_token(SIN);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				case TAN:
+					fct = jj_consume_token(TAN);
+					jj_consume_token(LEFT_PAR);
+					param1 = NumericExpression();
+					end = jj_consume_token(RIGHT_PAR);
+					break;
+				default:
+					jj_la1[95] = jj_gen;
+					jj_consume_token(-1);
+					throw new ParseException();
+			}
+			try{
+				if (param1 != null){
+					MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
+					mf.setPosition(new TextPosition(fct, end));
+					{
+						if (true)
+							return mf;
+					}
+				}else{
+					if (true)
+						return null;
+				}
+			}catch(Exception ex){
 				{
 					if (true)
-						return mf;
+						throw generateParseException(ex);
 				}
-			}else{
-				if (true)
-					return null;
 			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("TrigFunction");
 		}
-		throw new Error("Missing return statement in function");
 	}
 
 	final public UserDefinedFunction UserDefinedFunction() throws ParseException{
-		Token fct, end;
-		Vector<ADQLOperand> params = new Vector<ADQLOperand>();
-		ADQLOperand op;
-		fct = jj_consume_token(REGULAR_IDENTIFIER);
-		jj_consume_token(LEFT_PAR);
-		switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-			case LEFT_PAR:
-			case PLUS:
-			case MINUS:
-			case AVG:
-			case MAX:
-			case MIN:
-			case SUM:
-			case COUNT:
-			case BOX:
-			case CENTROID:
-			case CIRCLE:
-			case POINT:
-			case POLYGON:
-			case REGION:
-			case CONTAINS:
-			case INTERSECTS:
-			case AREA:
-			case COORD1:
-			case COORD2:
-			case COORDSYS:
-			case DISTANCE:
-			case ABS:
-			case CEILING:
-			case DEGREES:
-			case EXP:
-			case FLOOR:
-			case LOG:
-			case LOG10:
-			case MOD:
-			case PI:
-			case POWER:
-			case RADIANS:
-			case RAND:
-			case ROUND:
-			case SQRT:
-			case TRUNCATE:
-			case ACOS:
-			case ASIN:
-			case ATAN:
-			case ATAN2:
-			case COS:
-			case COT:
-			case SIN:
-			case TAN:
-			case STRING_LITERAL:
-			case DELIMITED_IDENTIFIER:
-			case REGULAR_IDENTIFIER:
-			case SCIENTIFIC_NUMBER:
-			case UNSIGNED_FLOAT:
-			case UNSIGNED_INTEGER:
-				op = ValueExpression();
-				params.add(op);
-				label_13: while(true){
-					switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
-						case COMMA:
-							;
-							break;
-						default:
-							jj_la1[96] = jj_gen;
-							break label_13;
-					}
-					jj_consume_token(COMMA);
+		trace_call("UserDefinedFunction");
+		try{
+			Token fct, end;
+			Vector<ADQLOperand> params = new Vector<ADQLOperand>();
+			ADQLOperand op;
+			fct = jj_consume_token(REGULAR_IDENTIFIER);
+			jj_consume_token(LEFT_PAR);
+			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+				case LEFT_PAR:
+				case PLUS:
+				case MINUS:
+				case AVG:
+				case MAX:
+				case MIN:
+				case SUM:
+				case COUNT:
+				case BOX:
+				case CENTROID:
+				case CIRCLE:
+				case POINT:
+				case POLYGON:
+				case REGION:
+				case CONTAINS:
+				case INTERSECTS:
+				case AREA:
+				case COORD1:
+				case COORD2:
+				case COORDSYS:
+				case DISTANCE:
+				case ABS:
+				case CEILING:
+				case DEGREES:
+				case EXP:
+				case FLOOR:
+				case LOG:
+				case LOG10:
+				case MOD:
+				case PI:
+				case POWER:
+				case RADIANS:
+				case RAND:
+				case ROUND:
+				case SQRT:
+				case TRUNCATE:
+				case ACOS:
+				case ASIN:
+				case ATAN:
+				case ATAN2:
+				case COS:
+				case COT:
+				case SIN:
+				case TAN:
+				case STRING_LITERAL:
+				case DELIMITED_IDENTIFIER:
+				case REGULAR_IDENTIFIER:
+				case SCIENTIFIC_NUMBER:
+				case UNSIGNED_FLOAT:
+				case UNSIGNED_INTEGER:
 					op = ValueExpression();
 					params.add(op);
+					label_13: while(true){
+						switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
+							case COMMA:
+								;
+								break;
+							default:
+								jj_la1[96] = jj_gen;
+								break label_13;
+						}
+						jj_consume_token(COMMA);
+						op = ValueExpression();
+						params.add(op);
+					}
+					break;
+				default:
+					jj_la1[97] = jj_gen;
+					;
+			}
+			end = jj_consume_token(RIGHT_PAR);
+			//System.out.println("INFO [ADQLParser]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
+			try{
+				//  Build the parameters list:
+				ADQLOperand[] parameters = new ADQLOperand[params.size()];
+				for(int i = 0; i < params.size(); i++)
+					parameters[i] = params.get(i);
+				// Create the UDF function:
+				UserDefinedFunction udf = queryFactory.createUserDefinedFunction(fct.image, parameters);
+				udf.setPosition(new TextPosition(fct, end));
+				{
+					if (true)
+						return udf;
 				}
-				break;
-			default:
-				jj_la1[97] = jj_gen;
-				;
+			}catch(UnsupportedOperationException uoe){
+				/* This catch clause is just for backward compatibility:
+				* if the createUserDefinedFunction(...) is overridden and
+				* the function can not be identified a such exception may be thrown). */
+				{
+					if (true)
+						throw new ParseException(uoe.getMessage(), new TextPosition(fct, token));
+				}
+			}catch(Exception ex){
+				{
+					if (true)
+						throw generateParseException(ex);
+				}
+			}
+			throw new Error("Missing return statement in function");
+		}finally{
+			trace_return("UserDefinedFunction");
 		}
-		end = jj_consume_token(RIGHT_PAR);
-		//System.out.println("INFO [ADQLParser]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
-		try{
-			//  Build the parameters list:
-			ADQLOperand[] parameters = new ADQLOperand[params.size()];
-			for(int i = 0; i < params.size(); i++)
-				parameters[i] = params.get(i);
-			// Create the UDF function:
-			UserDefinedFunction udf = queryFactory.createUserDefinedFunction(fct.image, parameters);
-			udf.setPosition(new TextPosition(fct, end));
-			{
-				if (true)
-					return udf;
-			}
-		}catch(UnsupportedOperationException uoe){
-			/* This catch clause is just for backward compatibility:
-			* if the createUserDefinedFunction(...) is overridden and
-			* the function can not be identified a such exception may be thrown). */
-			{
-				if (true)
-					throw new ParseException(uoe.getMessage(), new TextPosition(fct, token));
-			}
-		}catch(Exception ex){
-			{
-				if (true)
-					throw generateParseException(ex);
-			}
-		}
-		throw new Error("Missing return statement in function");
 	}
 
 	private boolean jj_2_1(int xla){
@@ -3544,26 +3799,6 @@ public class ADQLParser implements ADQLParserConstants {
 		}finally{
 			jj_save(15, xla);
 		}
-	}
-
-	private boolean jj_3R_138(){
-		if (jj_scan_token(CIRCLE))
-			return true;
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		if (jj_3R_169())
-			return true;
-		if (jj_scan_token(COMMA))
-			return true;
-		if (jj_3R_170())
-			return true;
-		if (jj_scan_token(COMMA))
-			return true;
-		if (jj_3R_108())
-			return true;
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
 	}
 
 	private boolean jj_3R_126(){
@@ -5819,6 +6054,26 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
+	private boolean jj_3R_138(){
+		if (jj_scan_token(CIRCLE))
+			return true;
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		if (jj_3R_169())
+			return true;
+		if (jj_scan_token(COMMA))
+			return true;
+		if (jj_3R_170())
+			return true;
+		if (jj_scan_token(COMMA))
+			return true;
+		if (jj_3R_108())
+			return true;
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
 	/** Generated Token Manager. */
 	public ADQLParserTokenManager token_source;
 	SimpleCharStream jj_input_stream;
@@ -5976,6 +6231,7 @@ public class ADQLParser implements ADQLParserConstants {
 					}
 				}
 			}
+			trace_token(token, "");
 			return token;
 		}
 		token = oldToken;
@@ -6023,6 +6279,7 @@ public class ADQLParser implements ADQLParserConstants {
 			token = token.next = token_source.getNextToken();
 		jj_ntk = -1;
 		jj_gen++;
+		trace_token(token, " (in getNextToken)");
 		return token;
 	}
 
@@ -6121,11 +6378,64 @@ public class ADQLParser implements ADQLParserConstants {
 		return new ParseException(token, exptokseq, tokenImage);
 	}
 
+	private int trace_indent = 0;
+	private boolean trace_enabled = true;
+
 	/** Enable tracing. */
-	final public void enable_tracing(){}
+	final public void enable_tracing(){
+		trace_enabled = true;
+	}
 
 	/** Disable tracing. */
-	final public void disable_tracing(){}
+	final public void disable_tracing(){
+		trace_enabled = false;
+	}
+
+	private void trace_call(String s){
+		if (trace_enabled){
+			for(int i = 0; i < trace_indent; i++){
+				System.out.print(" ");
+			}
+			System.out.println("Call:   " + s);
+		}
+		trace_indent = trace_indent + 2;
+	}
+
+	private void trace_return(String s){
+		trace_indent = trace_indent - 2;
+		if (trace_enabled){
+			for(int i = 0; i < trace_indent; i++){
+				System.out.print(" ");
+			}
+			System.out.println("Return: " + s);
+		}
+	}
+
+	private void trace_token(Token t, String where){
+		if (trace_enabled){
+			for(int i = 0; i < trace_indent; i++){
+				System.out.print(" ");
+			}
+			System.out.print("Consumed token: <" + tokenImage[t.kind]);
+			if (t.kind != 0 && !tokenImage[t.kind].equals("\"" + t.image + "\"")){
+				System.out.print(": \"" + t.image + "\"");
+			}
+			System.out.println(" at line " + t.beginLine + " column " + t.beginColumn + ">" + where);
+		}
+	}
+
+	private void trace_scan(Token t1, int t2){
+		if (trace_enabled){
+			for(int i = 0; i < trace_indent; i++){
+				System.out.print(" ");
+			}
+			System.out.print("Visited token: <" + tokenImage[t1.kind]);
+			if (t1.kind != 0 && !tokenImage[t1.kind].equals("\"" + t1.image + "\"")){
+				System.out.print(": \"" + t1.image + "\"");
+			}
+			System.out.println(" at line " + t1.beginLine + " column " + t1.beginColumn + ">; Expected token: <" + tokenImage[t2] + ">");
+		}
+	}
 
 	private void jj_rescan_token(){
 		jj_rescan = true;

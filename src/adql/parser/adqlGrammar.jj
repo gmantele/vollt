@@ -35,7 +35,7 @@
 options {
 	STATIC = false;
 	IGNORE_CASE = true;
-	DEBUG_PARSER = false;
+	DEBUG_PARSER = true;
 }
 
 							/* ########## */
@@ -113,6 +113,7 @@ public class ADQLParser {
 	*/
 	public ADQLParser(){
 		this(new java.io.ByteArrayInputStream("".getBytes()));
+		setDebug(false);
 	}
 	
 	/**
@@ -157,6 +158,7 @@ public class ADQLParser {
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
+		setDebug(false);
 		
 		queryChecker = checker;
 		
@@ -194,6 +196,7 @@ public class ADQLParser {
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream, encoding);
+		setDebug(false);
 		
 		queryChecker = checker;
 		
@@ -232,6 +235,7 @@ public class ADQLParser {
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
+		setDebug(false);
 		
 		queryChecker = checker;
 
@@ -268,6 +272,7 @@ public class ADQLParser {
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
+		setDebug(false);
 		
 		queryChecker = checker;
 
