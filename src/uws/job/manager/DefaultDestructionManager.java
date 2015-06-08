@@ -16,11 +16,11 @@ package uws.job.manager;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.Serializable;
-
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Timer;
@@ -34,19 +34,27 @@ import uws.job.UWSJob;
  * 	The default implementation of the {@link DestructionManager} interface.
  * 	Its goal is to manage the automatic destruction any given jobs.
  * </p>
+ * 
  * <p>
  *	Jobs can be added thanks to {@link #update(UWSJob)} and removed with {@link #remove(UWSJob)}.
  *	All added jobs are stored in a {@link TreeSet} which sorts them by ascending destruction time.
  *	The job which must be destroyed in first is used to start a timer.
  *	This one will destroyed the job once its destruction time is reached.
  * </p>
+ * 
  * <p>
  * 	The list of jobs to destroy is supposed to be updated each time the destruction time of a job is changed. This update works only if
  *  the job knows its jobs list ({@link UWSJob#getJobList()} != null) and its jobs list has a destruction manager.
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * <p><i>Note:
+ * 	The {@link #stop()} function lets stop this manager to watch for destructions of job until {@link #refresh()} or
+ * 	{@link #update(UWSJob)} or {@link #remove(UWSJob)} is called. When stopped, the inner timer is canceled and set
+ * 	to NULL ; no more thread resources is used.
+ * </i></p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (12/2014)
  */
 public class DefaultDestructionManager implements DestructionManager {
 	private static final long serialVersionUID = 1L;
@@ -83,7 +91,8 @@ public class DefaultDestructionManager implements DestructionManager {
 	/**
 	 * Stops the timer if running and set to <i>null</i> {@link #timDestruction}, {@link #currentDate} and {@link #currentJob}.
 	 */
-	protected synchronized final void stop(){
+	@Override
+	public synchronized final void stop(){
 		if (timDestruction != null)
 			timDestruction.cancel();
 		timDestruction = null;
@@ -111,18 +120,22 @@ public class DefaultDestructionManager implements DestructionManager {
 	/**
 	 * <p>Returns <i>true</i> if {@link #currentDate} is different from <i>null</i>.</p>
 	 */
+	@Override
 	public final boolean isRunning(){
 		return currentDate != null;
 	}
 
+	@Override
 	public final Date getNextDestruction(){
 		return currentDate;
 	}
 
+	@Override
 	public final String getNextJobToDestroy(){
 		return (currentJob == null) ? null : currentJob.getJobId();
 	}
 
+	@Override
 	public final int getNbJobsToDestroy(){
 		return jobsToDestroy.size() + (isRunning() ? 1 : 0);
 	}
@@ -147,6 +160,7 @@ public class DefaultDestructionManager implements DestructionManager {
 	 * @see #stop()
 	 * @see #destroyJob(UWSJob)
 	 */
+	@Override
 	public synchronized void refresh(){
 		// Finish the current timer if...
 		if (isRunning()){
@@ -196,6 +210,7 @@ public class DefaultDestructionManager implements DestructionManager {
 	 * @see #destroyJob(UWSJob)
 	 * @see #refresh()
 	 */
+	@Override
 	public synchronized void update(UWSJob job){
 		if (job != null && job.getJobList() != null && job.getDestructionTime() != null){
 			if (job.getDestructionTime().before(new Date()))
@@ -217,6 +232,7 @@ public class DefaultDestructionManager implements DestructionManager {
 	 * @see	#stop()
 	 * @see #refresh()
 	 */
+	@Override
 	public synchronized void remove(UWSJob job){
 		if (job == null)
 			return;

@@ -16,8 +16,8 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.NoSuchElementException;
@@ -31,7 +31,7 @@ import adql.query.operand.ADQLOperand;
  * Represents a comparison (numeric or not) between two operands.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  * 
  * @see ComparisonOperator
  */
@@ -47,7 +47,7 @@ public class Comparison implements ADQLConstraint {
 	private ADQLOperand rightOperand;
 
 	/** Position of this {@link Comparison} in the given ADQL query string.
-	 * @since 1.3 */
+	 * @since 1.4 */
 	private TextPosition position = null;
 
 	/**
@@ -173,7 +173,7 @@ public class Comparison implements ADQLConstraint {
 	 * Set the position of this {@link Comparison} in the given ADQL query string.
 	 * 
 	 * @param position	New position of this {@link Comparison}.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){
 		this.position = position;

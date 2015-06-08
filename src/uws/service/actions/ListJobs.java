@@ -16,26 +16,24 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 
 import javax.servlet.ServletOutputStream;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
-
+import uws.UWSToolBox;
 import uws.job.JobList;
-
 import uws.job.serializer.UWSSerializer;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>The "List Jobs" action of a UWS.</p>
@@ -45,8 +43,8 @@ import uws.service.UWSUrl;
  * <p>This action returns the list of jobs contained in the jobs list specified by the URL of the request.
  * This list is serialized by the {@link UWSSerializer} choosed in function of the HTTP Accept header.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (04/2015)
  */
 public class ListJobs extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -77,7 +75,7 @@ public class ListJobs extends UWSAction {
 	 * 	<li>the HTTP method is HTTP-GET.</li>
 	 * </ul>
 	 * 
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
@@ -90,9 +88,9 @@ public class ListJobs extends UWSAction {
 	 * 
 	 * @see #getJobsList(UWSUrl)
 	 * @see UWSService#getSerializer(String)
-	 * @see JobList#serialize(ServletOutputStream, UWSSerializer, String)
+	 * @see JobList#serialize(ServletOutputStream, UWSSerializer, JobOwner)
 	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
@@ -102,7 +100,16 @@ public class ListJobs extends UWSAction {
 		// Write the jobs list:
 		UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));
 		response.setContentType(serializer.getMimeType());
-		jobsList.serialize(response.getOutputStream(), serializer, user);
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+		try{
+			jobsList.serialize(response.getOutputStream(), serializer, user);
+		}catch(Exception e){
+			if (!(e instanceof UWSException)){
+				getLogger().logUWS(LogLevel.ERROR, urlInterpreter, "SERIALIZE", "Can not serialize the jobs list \"" + jobsList.getName() + "\"!", e);
+				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, e, "Can not format properly the jobs list \"" + jobsList.getName() + "\"!");
+			}else
+				throw (UWSException)e;
+		}
 
 		return true;
 	}

@@ -32,7 +32,7 @@ public interface UWSBackupManager {
 	/**
 	 * Enables/Disables the backup of the associated UWS.
 	 * 
-	 * @param enableBackup	<i>true</i> to enable the backup, <i>false</i> otherwise.
+	 * @param enabled	<i>true</i> to enable the backup, <i>false</i> otherwise.
 	 */
 	public void setEnabled(final boolean enabled);
 

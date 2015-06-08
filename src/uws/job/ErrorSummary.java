@@ -16,21 +16,20 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import uws.UWSException;
-
 import uws.job.serializer.UWSSerializer;
-
 import uws.job.user.JobOwner;
 
 /**
  * This class gives a short description of the occurred error (if any) during a job execution.
  * A fuller representation of the error may be retrieved from <i>{jobs}/(job-id)/error</i>.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 02/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public class ErrorSummary extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -132,7 +131,7 @@ public class ErrorSummary extends SerializableUWSObject {
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException{
+	public String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException, Exception{
 		return serializer.getErrorSummary(this, true);
 	}
 

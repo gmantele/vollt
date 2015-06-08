@@ -16,7 +16,8 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLList;
@@ -28,7 +29,6 @@ import adql.query.ClauseSelect;
 import adql.query.ColumnReference;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
-
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
 import adql.query.constraint.Comparison;
@@ -60,11 +60,11 @@ import adql.query.operand.function.geometry.DistanceFunction;
 import adql.query.operand.function.geometry.ExtractCoord;
 import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.GeometryFunction;
+import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
-import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 
 /**
  * Translates ADQL objects into any language (i.e. SQL).

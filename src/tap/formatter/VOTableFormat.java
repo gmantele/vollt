@@ -16,327 +16,697 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.BufferedWriter;
 import java.io.IOException;
-
-import tap.TAPExecutionReport;
-import tap.TAPJob;
-import tap.TAPException;
-
-import uws.job.Result;
-
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-
-import cds.savot.writer.SavotWriter;
+import java.util.Iterator;
+import java.util.Map;
 
 import tap.ServiceConnection;
+import tap.TAPException;
+import tap.TAPExecutionReport;
+import tap.data.DataReadException;
+import tap.data.TableIterator;
+import tap.error.DefaultTAPErrorWriter;
 import tap.metadata.TAPColumn;
 import tap.metadata.VotType;
+import tap.metadata.VotType.VotDatatype;
+import uk.ac.starlink.table.AbstractStarTable;
+import uk.ac.starlink.table.ColumnInfo;
+import uk.ac.starlink.table.DefaultValueInfo;
+import uk.ac.starlink.table.DescribedValue;
+import uk.ac.starlink.table.RowSequence;
+import uk.ac.starlink.table.StarTable;
+import uk.ac.starlink.votable.DataFormat;
+import uk.ac.starlink.votable.VOSerializer;
+import uk.ac.starlink.votable.VOTableVersion;
 import adql.db.DBColumn;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
 /**
- * <p>Formats the given type of query result in VOTable.</p>
+ * <p>Format any given query (table) result into VOTable.</p>
+ * 
  * <p>
- * 	This abstract class is only able to format the skeleton of the VOTable.
- * 	However, it also provides useful methods to format field metadata and field value (including NULL values).
- * </p>
- * <p>
- * 	Attributes of the VOTable node are by default set by this class but can be overridden if necessary thanks to the corresponding class attributes:
- * 	{@link #votTableVersion}, {@link #xmlnsXsi}, {@link #xsiNoNamespaceSchemaLocation}, {@link #xsiSchemaLocation} and
- *  {@link #xmlns}.
- * </p>
- * <p>
- *	When overridding this class, you must implement {@link #writeMetadata(Object, PrintWriter, TAPJob)} and
- *	{@link #writeData(Object, DBColumn[], OutputStream, TAPJob)}.
- *	Both are called by {@link #writeResult(Object, OutputStream, TAPJob)}. Finally you will also have to implement
- *	{@link #writeResult(Object, TAPJob)}, which must format the given result into a VOTable saved in some way accessible
- *	through the returned {@link Result}.
+ * 	Format and version of the resulting VOTable can be provided in parameters at the construction time.
+ * 	This formatter is using STIL. So all formats and versions managed by STIL are also here.
+ * 	Basically, you have the following formats: TABLEDATA, BINARY, BINARY2 (only when using VOTable v1.3) and FITS.
+ * 	The versions are: 1.0, 1.1, 1.2 and 1.3.
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
- *
- * @param <R>	Type of the result to format in VOTable (i.e. {@link java.sql.ResultSet}).
+ * <p>Note: The MIME type is automatically set in function of the given VOTable serialization:</p>
+ * <ul>
+ * 	<li><b>none or unknown</b>: equivalent to BINARY</li>
+ * 	<li><b>BINARY</b>:          "application/x-votable+xml" = "votable"</li>
+ * 	<li><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</li>
+ * 	<li><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</li>
+ * 	<li><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</li>
+ * </ul>
+ * <p>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</p>
  * 
- * @see ResultSet2VotableFormatter
+ * <p>In addition of the INFO elements for QUERY_STATUS="OK" and QUERY_STATUS="OVERFLOW", two additional INFO elements are written:</p>
+ * <ul>
+ * 	<li>PROVIDER = {@link ServiceConnection#getProviderName()} and {@link ServiceConnection#getProviderDescription()}</li>
+ * 	<li>QUERY = the ADQL query at the origin of this result.</li>
+ * </ul>
+ * 
+ * <p>
+ * 	Furthermore, this formatter provides a function to format an error in VOTable: {@link #writeError(String, Map, PrintWriter)}.
+ * 	This is useful for TAP which requires to return in VOTable any error that occurs while any operation.
+ * 	<i>See {@link DefaultTAPErrorWriter} for more details.</i>
+ * </p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (04/2015)
  */
-public abstract class VOTableFormat< R > implements OutputFormat<R> {
-
-	/** Indicates whether a format report (start and end date/time) must be printed in the log output.  */
-	private boolean logFormatReport;
+public class VOTableFormat implements OutputFormat {
 
 	/** The {@link ServiceConnection} to use (for the log and to have some information about the service (particularly: name, description). */
-	protected final ServiceConnection<R> service;
+	protected final ServiceConnection service;
 
-	protected String votTableVersion = "1.2";
-	protected String xmlnsXsi = "http://www.w3.org/2001/XMLSchema-instance";
-	protected String xsiSchemaLocation = "http://www.ivoa.net/xml/VOTable/v1.2";
-	protected String xsiNoNamespaceSchemaLocation = null;
-	protected String xmlns = "http://www.ivoa.net/xml/VOTable/v1.2";
+	/** Format of the VOTable data part in which data must be formatted. Possible values are: TABLEDATA, BINARY, BINARY2 or FITS. By default, it is set to BINARY. */
+	protected final DataFormat votFormat;
+
+	/** VOTable version in which table data must be formatted. By default, it is set to v13. */
+	protected final VOTableVersion votVersion;
+
+	/** MIME type associated with this format. */
+	protected String mimeType;
+
+	/** Short form of the MIME type associated with this format. */
+	protected String shortMimeType;
 
 	/**
-	 * Creates a VOTable formatter without format report.
+	 * <p>Creates a VOTable formatter.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The MIME type is automatically set to "application/x-votable+xml" = "votable".
+	 * 	It is however possible to change this default value thanks to {@link #setMimeType(String, String)}.
+	 * </i></p>
 	 * 
 	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
-	 * 
-	 * @see #VOTableFormat(ServiceConnection, boolean)
 	 */
-	public VOTableFormat(final ServiceConnection<R> service) throws NullPointerException{
-		this(service, false);
+	public VOTableFormat(final ServiceConnection service) throws NullPointerException{
+		this(service, null, null);
 	}
 
 	/**
-	 * Creates a VOTable formatter.
+	 * <p>Creates a VOTable formatter.</p>
+	 * 
+	 * <i>Note: The MIME type is automatically set in function of the given VOTable serialization:</i>
+	 * <ul>
+	 * 	<li><i><b>none or unknown</b>: equivalent to BINARY</i></li>
+	 * 	<li><i><b>BINARY</b>:          "application/x-votable+xml" = "votable"</i></li>
+	 * 	<li><i><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</i></li>
+	 * 	<li><i><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</i></li>
+	 * 	<li><i><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</i></li>
+	 * </ul>
+	 * <p><i>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</i></p>
 	 * 
 	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
-	 * @param logFormatReport		<code>true</code> to append a format report (start and end date/time) in the log output, <code>false</code> otherwise.
+	 * @param votFormat				Serialization of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
 	 * 
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
-	public VOTableFormat(final ServiceConnection<R> service, final boolean logFormatReport) throws NullPointerException{
+	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat) throws NullPointerException{
+		this(service, votFormat, null);
+	}
+
+	/**
+	 * <p>Creates a VOTable formatter.</p>
+	 * 
+	 * <i>Note: The MIME type is automatically set in function of the given VOTable serialization:</i>
+	 * <ul>
+	 * 	<li><i><b>none or unknown</b>: equivalent to BINARY</i></li>
+	 * 	<li><i><b>BINARY</b>:          "application/x-votable+xml" = "votable"</i></li>
+	 * 	<li><i><b>BINARY2</b>:         "application/x-votable+xml;serialization=BINARY2" = "votable/b2"</i></li>
+	 * 	<li><i><b>TABLEDATA</b>:       "application/x-votable+xml;serialization=TABLEDATA" = "votable/td"</i></li>
+	 * 	<li><i><b>FITS</b>:            "application/x-votable+xml;serialization=FITS" = "votable/fits"</i></li>
+	 * </ul>
+	 * <p><i>It is however possible to change these default values thanks to {@link #setMimeType(String, String)}.</i></p>
+	 * 
+	 * @param service				The service to use (for the log and to have some information about the service (particularly: name, description).
+	 * @param votFormat				Serialization of the VOTable data part. (TABLEDATA, BINARY, BINARY2 or FITS).
+	 * @param votVersion			Version of the resulting VOTable.
+	 * 
+	 * @throws NullPointerException	If the given service connection is <code>null</code>.
+	 */
+	public VOTableFormat(final ServiceConnection service, final DataFormat votFormat, final VOTableVersion votVersion) throws NullPointerException{
 		if (service == null)
-			throw new NullPointerException("The given service connection is NULL !");
+			throw new NullPointerException("The given service connection is NULL!");
+
 		this.service = service;
-		this.logFormatReport = logFormatReport;
+
+		// Set the VOTable serialization and version:
+		this.votFormat = (votFormat == null) ? DataFormat.BINARY : votFormat;
+		this.votVersion = (votVersion == null) ? VOTableVersion.V13 : votVersion;
+
+		// Deduce automatically the MIME type and its short expression:
+		if (this.votFormat.equals(DataFormat.BINARY)){
+			this.mimeType = "application/x-votable+xml";
+			this.shortMimeType = "votable";
+		}else if (this.votFormat.equals(DataFormat.BINARY2)){
+			this.mimeType = "application/x-votable+xml;serialization=BINARY2";
+			this.shortMimeType = "votable/b2";
+		}else if (this.votFormat.equals(DataFormat.TABLEDATA)){
+			this.mimeType = "application/x-votable+xml;serialization=TABLEDATA";
+			this.shortMimeType = "votable/td";
+		}else if (this.votFormat.equals(DataFormat.FITS)){
+			this.mimeType = "application/x-votable+xml;serialization=FITS";
+			this.shortMimeType = "votable/fits";
+		}else{
+			this.mimeType = "application/x-votable+xml";
+			this.shortMimeType = "votable";
+		}
 	}
 
+	@Override
 	public final String getMimeType(){
-		return "text/xml";
+		return mimeType;
 	}
 
+	@Override
 	public final String getShortMimeType(){
-		return "votable";
+		return shortMimeType;
 	}
 
+	/**
+	 * <p>Set the MIME type associated with this format.</p>
+	 * 
+	 * <p><i>Note: NULL means no modification of the current value:</i></p>
+	 * 
+	 * @param mimeType	Full MIME type of this VOTable format.	<i>note: if NULL, the MIME type is not modified.</i>
+	 * @param shortForm	Short form of this MIME type. <i>note: if NULL, the short MIME type is not modified.</i>
+	 */
+	public final void setMimeType(final String mimeType, final String shortForm){
+		if (mimeType != null)
+			this.mimeType = mimeType;
+		if (shortForm != null)
+			this.shortMimeType = shortForm;
+	}
+
+	/**
+	 * Get the set VOTable data serialization/format (e.g. BINARY, TABLEDATA).
+	 * 
+	 * @return	The data format.
+	 */
+	public final DataFormat getVotSerialization(){
+		return votFormat;
+	}
+
+	/**
+	 * Get the set VOTable version.
+	 * 
+	 * @return	The VOTable version.
+	 */
+	public final VOTableVersion getVotVersion(){
+		return votVersion;
+	}
+
+	@Override
 	public String getDescription(){
 		return null;
 	}
 
+	@Override
 	public String getFileExtension(){
 		return "xml";
 	}
 
 	/**
-	 * <p>The skeleton of the resulting VOTable is written in this method:</p>
-	 * <ul>
-	 * 	<li>&lt;?xml version="1.0" encoding="UTF-8"&gt;</li>
-	 *	<li><i>{@link #writeHeader(PrintWriter, TAPJob)}</i></li>
-	 *	<li>&lt;TABLE&gt;</li>
-	 *	<li>&lt;DATA&gt;</li>
-	 *	<li><i>{@link #writeData(Object, DBColumn[], OutputStream, TAPJob)}</i></li>
-	 *	<li>&lt;/DATA&gt;</li>
-	 *	<li><i>if (nbRows >= job.getMaxRec()) </i>&lt;INFO name="QUERY_STATUS" value="OVERFLOW" /&gt;</li>
-	 *	<li>&lt;/RESOURCE&gt;</li>
-	 *	<li>&lt;/VOTABLE&gt;</li>
-	 * </ul>
+	 * <p>Write the given error message as VOTable document.</p>
 	 * 
-	 * @see tap.formatter.OutputFormat#writeResult(Object, OutputStream, TAPExecutionReport)
+	 * <p><i>Note:
+	 * 	In the TAP protocol, all errors must be returned as VOTable. The class {@link DefaultTAPErrorWriter} is in charge of the management
+	 * 	and reporting of all errors. It is calling this function while the error message to display to the user is ready and
+	 * 	must be written in the HTTP response.
+	 * </i></p>
+	 * 
+	 * <p>Here is the XML format of this VOTable error:</p>
+	 * <pre>
+	 * 	&lt;VOTABLE version="..." xmlns="..." &gt;
+	 * 		&lt;RESOURCE type="results"&gt;
+	 * 			&lt;INFO name="QUERY_STATUS" value="ERROR&gt;
+	 * 				...
+	 * 			&lt;/INFO&gt;
+	 * 			&lt;INFO name="PROVIDER" value="..."&gt;...&lt;/INFO&gt;
+	 * 			&lt;!-- other optional INFOs (e.g. request parameters) --&gt;
+	 * 		&lt;/RESOURCE&gt;
+	 * 	&lt;/VOTABLE&gt;
+	 * </pre>
+	 * 
+	 * @param message	Error message to display to the user.
+	 * @param otherInfo	List of other additional information to display. <i>optional</i>
+	 * @param writer	Stream in which the VOTable error must be written.
+	 * 
+	 * @throws IOException	If any error occurs while writing in the given output.
+	 * 
+	 * @since 2.0
 	 */
-	public final void writeResult(final R queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, InterruptedException{
-		try{
-			long start = System.currentTimeMillis();
+	public void writeError(final String message, final Map<String,String> otherInfo, final PrintWriter writer) throws IOException{
+		BufferedWriter out = new BufferedWriter(writer);
 
-			PrintWriter out = new PrintWriter(output);
-			out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-			writeHeader(out, execReport);
-			out.println("\t\t<TABLE>");
-			DBColumn[] columns = writeMetadata(queryResult, out, execReport, thread);
-			out.println("\t\t\t<DATA>");
-			out.flush();
-			int nbRows = writeData(queryResult, columns, output, execReport, thread);
-			output.flush();
-			out.println("\t\t\t</DATA>");
-			out.println("\t\t</TABLE>");
-			// OVERFLOW ?
-			if (execReport.parameters.getMaxRec() > 0 && nbRows >= execReport.parameters.getMaxRec())
-				out.println("\t\t<INFO name=\"QUERY_STATUS\" value=\"OVERFLOW\" />");
-			out.println("\t</RESOURCE>");
-			out.println("</VOTABLE>");
-			out.flush();
+		// Set the root VOTABLE node:
+		out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+		out.newLine();
+		out.write("<VOTABLE" + VOSerializer.formatAttribute("version", votVersion.getVersionNumber()) + VOSerializer.formatAttribute("xmlns", votVersion.getXmlNamespace()) + VOSerializer.formatAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance") + VOSerializer.formatAttribute("xsi:schemaLocation", votVersion.getXmlNamespace() + " " + votVersion.getSchemaLocation()) + ">");
+		out.newLine();
 
-			if (logFormatReport)
-				service.getLogger().info("JOB " + execReport.jobID + " WRITTEN\tResult formatted (in VOTable ; " + nbRows + " rows ; " + columns.length + " columns) in " + (System.currentTimeMillis() - start) + " ms !");
-		}catch(IOException ioe){
-			throw new TAPException("Error while writing a query result in VOTable !", ioe);
+		// The RESOURCE note MUST have a type "results":	[REQUIRED]
+		out.write("<RESOURCE type=\"results\">");
+		out.newLine();
+
+		// Indicate that the query has been successfully processed:	[REQUIRED]
+		out.write("<INFO name=\"QUERY_STATUS\" value=\"ERROR\">" + (message == null ? "" : VOSerializer.formatText(message)) + "</INFO>");
+		out.newLine();
+
+		// Append the PROVIDER information (if any):	[OPTIONAL]
+		if (service.getProviderName() != null){
+			out.write("<INFO name=\"PROVIDER\"" + VOSerializer.formatAttribute("value", service.getProviderName()) + ">" + ((service.getProviderDescription() == null) ? "" : VOSerializer.formatText(service.getProviderDescription())) + "</INFO>");
+			out.newLine();
 		}
+
+		// Append the ADQL query at the origin of this result:	[OPTIONAL]
+		if (otherInfo != null){
+			Iterator<Map.Entry<String,String>> it = otherInfo.entrySet().iterator();
+			while(it.hasNext()){
+				Map.Entry<String,String> entry = it.next();
+				if (entry.getValue() != null){
+					if (entry.getValue().startsWith("\n")){
+						int sep = entry.getValue().substring(1).indexOf('\n');
+						if (sep < 0)
+							sep = 0;
+						else
+							sep++;
+						out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + VOSerializer.formatAttribute("value", entry.getValue().substring(1, sep)) + ">\n" + entry.getValue().substring(sep + 1) + "\n</INFO>");
+					}else
+						out.write("<INFO " + VOSerializer.formatAttribute("name", entry.getKey()) + VOSerializer.formatAttribute("value", entry.getValue()) + "/>");
+					out.newLine();
+				}
+			}
+		}
+
+		out.flush();
+
+		/* Write footer. */
+		out.write("</RESOURCE>");
+		out.newLine();
+		out.write("</VOTABLE>");
+		out.newLine();
+
+		out.flush();
+	}
+
+	@Override
+	public final void writeResult(final TableIterator queryResult, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws TAPException, IOException, InterruptedException{
+		ColumnInfo[] colInfos = toColumnInfos(queryResult, execReport, thread);
+
+		/* Turns the result set into a table. */
+		LimitedStarTable table = new LimitedStarTable(queryResult, colInfos, execReport.parameters.getMaxRec());
+
+		/* Prepares the object that will do the serialization work. */
+		VOSerializer voser = VOSerializer.makeSerializer(votFormat, votVersion, table);
+		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(output));
+
+		/* Write header. */
+		writeHeader(votVersion, execReport, out);
+
+		if (thread.isInterrupted())
+			throw new InterruptedException();
+
+		/* Write table element. */
+		voser.writeInlineTableElement(out);
+		execReport.nbRows = table.getNbReadRows();
+		out.flush();
+
+		/* Check for overflow and write INFO if required. */
+		if (table.lastSequenceOverflowed()){
+			out.write("<INFO name=\"QUERY_STATUS\" value=\"OVERFLOW\"/>");
+			out.newLine();
+		}
+
+		/* Write footer. */
+		out.write("</RESOURCE>");
+		out.newLine();
+		out.write("</VOTABLE>");
+		out.newLine();
+
+		out.flush();
 	}
 
 	/**
-	 * <p>Writes the root node of the VOTable: &lt;VOTABLE&gt;.</p>
-	 * <p>
-	 * 	Attributes of this node are written thanks to their corresponding attributes in this class:
-	 * 	{@link #votTableVersion}, {@link #xmlnsXsi}, {@link #xsiNoNamespaceSchemaLocation}, {@link #xsiSchemaLocation} and {@link #xmlns}.
-	 * 	They are written only if different from <code>null</code>.
-	 * </p>
+	 * <p>Writes the first VOTable nodes/elements preceding the data: VOTABLE, RESOURCE and 3 INFOS (QUERY_STATUS, PROVIDER, QUERY).</p>
 	 * 
-	 * @param output		Writer in which the root node must be written.
+	 * @param votVersion	Target VOTable version.
 	 * @param execReport	The report of the query execution.
+	 * @param out			Writer in which the root node must be written.
 	 * 
 	 * @throws IOException	If there is an error while writing the root node in the given Writer.
 	 * @throws TAPException	If there is any other error (by default: never happen).
 	 */
-	protected void writeHeader(final PrintWriter output, final TAPExecutionReport execReport) throws IOException, TAPException{
-		StringBuffer strBuf = new StringBuffer("<VOTABLE");
-		if (votTableVersion != null)
-			strBuf.append(" version=\"").append(SavotWriter.encodeAttribute(votTableVersion)).append('\"');
-		if (xmlnsXsi != null)
-			strBuf.append(" xmlns:xsi=\"").append(SavotWriter.encodeAttribute(xmlnsXsi)).append('\"');
-		if (xsiSchemaLocation != null)
-			strBuf.append(" xsi:schemaLocation=\"").append(SavotWriter.encodeAttribute(xsiSchemaLocation)).append('\"');
-		if (xsiNoNamespaceSchemaLocation != null)
-			strBuf.append(" xsi:noNamespaceSchemaLocation=\"").append(SavotWriter.encodeAttribute(xsiNoNamespaceSchemaLocation)).append('\"');
-		if (xmlns != null)
-			strBuf.append(" xmlns=\"").append(SavotWriter.encodeAttribute(xmlns)).append('\"');
-		strBuf.append('>');
-		output.println(strBuf);
+	protected void writeHeader(final VOTableVersion votVersion, final TAPExecutionReport execReport, final BufferedWriter out) throws IOException, TAPException{
+		// Set the root VOTABLE node:
+		out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+		out.newLine();
+		out.write("<VOTABLE" + VOSerializer.formatAttribute("version", votVersion.getVersionNumber()) + VOSerializer.formatAttribute("xmlns", votVersion.getXmlNamespace()) + VOSerializer.formatAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance") + VOSerializer.formatAttribute("xsi:schemaLocation", votVersion.getXmlNamespace() + " " + votVersion.getSchemaLocation()) + ">");
+		out.newLine();
 
-		output.println("\t<RESOURCE type=\"results\">");
+		// The RESOURCE note MUST have a type "results":	[REQUIRED]
+		out.write("<RESOURCE type=\"results\">");
+		out.newLine();
 
-		// INFO items:
-		output.println("\t\t<INFO name=\"QUERY_STATUS\" value=\"OK\" />");
-		output.println("\t\t<INFO name=\"PROVIDER\" value=\"" + ((service.getProviderName() == null) ? "" : SavotWriter.encodeAttribute(service.getProviderName())) + "\">" + ((service.getProviderDescription() == null) ? "" : SavotWriter.encodeElement(service.getProviderDescription())) + "</INFO>");
-		output.println("\t\t<INFO name=\"QUERY\"><![CDATA[" + execReport.parameters.getQuery() + "]]></INFO>");
+		// Indicate that the query has been successfully processed:	[REQUIRED]
+		out.write("<INFO name=\"QUERY_STATUS\" value=\"OK\"/>");
+		out.newLine();
+
+		// Append the PROVIDER information (if any):	[OPTIONAL]
+		if (service.getProviderName() != null){
+			out.write("<INFO name=\"PROVIDER\"" + VOSerializer.formatAttribute("value", service.getProviderName()) + ">" + ((service.getProviderDescription() == null) ? "" : VOSerializer.formatText(service.getProviderDescription())) + "</INFO>");
+			out.newLine();
+		}
+
+		// Append the ADQL query at the origin of this result:	[OPTIONAL]
+		String adqlQuery = execReport.parameters.getQuery();
+		if (adqlQuery != null){
+			out.write("<INFO name=\"QUERY\"" + VOSerializer.formatAttribute("value", adqlQuery) + "/>");
+			out.newLine();
+		}
+
+		/* TODO Add somewhere in the table header the different Coordinate Systems used in this result!
+		 * 2 ways to do so:
+		 * 	1/ COOSYS (deprecated from VOTable 1.2, but soon un-deprecated)
+		 * 	2/ a GROUP item with the STC expression of the coordinate system. 
+		 */
+
+		out.flush();
 	}
 
 	/**
-	 * <p>Writes fields' metadata of the given query result in the given Writer.</p>
-	 * <p><b><u>Important:</u> To write write metadata of a given field you can use {@link #writeFieldMeta(TAPColumn, PrintWriter)}.</b></p>
+	 * Writes fields' metadata of the given query result.
 	 * 
-	 * @param queryResult	The query result from whose fields' metadata must be written.
-	 * @param output		Writer in which fields' metadata must be written.
+	 * @param result		The query result from whose fields' metadata must be written.
 	 * @param execReport	The report of the query execution.
-	 * @param thread		The thread which asked for the result writting.
+	 * @param thread		The thread which asked for the result writing.
 	 * 
-	 * @return				Extracted field's metadata.
+	 * @return				Extracted field's metadata, or NULL if no metadata have been found (theoretically, it never happens).
 	 * 
-	 * @throws IOException				If there is an error while writing the metadata in the given Writer.
+	 * @throws IOException				If there is an error while writing the metadata.
 	 * @throws TAPException				If there is any other error.
 	 * @throws InterruptedException		If the given thread has been interrupted.
 	 */
-	protected abstract DBColumn[] writeMetadata(final R queryResult, final PrintWriter output, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException;
+	public static final ColumnInfo[] toColumnInfos(final TableIterator result, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException{
+		// Get the metadata extracted/guesses from the ADQL query:
+		DBColumn[] columnsFromQuery = execReport.resultingColumns;
+
+		// Get the metadata extracted from the result:
+		TAPColumn[] columnsFromResult = result.getMetadata();
+
+		int indField = 0;
+		if (columnsFromQuery != null){
+
+			// Initialize the resulting array:
+			ColumnInfo[] colInfos = new ColumnInfo[columnsFromQuery.length];
+
+			// For each column:
+			for(DBColumn field : columnsFromQuery){
+
+				// Try to build/get appropriate metadata for this field/column:
+				TAPColumn colFromResult = (columnsFromResult != null && indField < columnsFromResult.length) ? columnsFromResult[indField] : null;
+				TAPColumn tapCol = getValidColMeta(field, colFromResult);
+
+				// Build the corresponding ColumnInfo object:
+				colInfos[indField] = getColumnInfo(tapCol);
+
+				indField++;
+			}
+
+			return colInfos;
+		}else
+			return null;
+	}
 
 	/**
-	 * <p>Formats in a VOTable field and writes the given {@link TAPColumn} in the given Writer.</p>
+	 * Try to get or otherwise to build appropriate metadata using those extracted from the ADQL query and those extracted from the result.
 	 * 
-	 * <p><i><u>Note:</u> If the VOTable datatype is <code>int</code>, <code>short</code> or <code>long</code> a NULL values is set by adding a node VALUES: &lt;VALUES null="..." /&gt;</i></p>
+	 * @param typeFromQuery		Metadata extracted/guessed from the ADQL query.
+	 * @param typeFromResult	Metadata extracted/guessed from the result.
 	 * 
-	 * @param col				The column metadata to format into a VOTable field.
-	 * @param out				The stream in which the formatted column metadata must be written.
-	 * 
-	 * @throws IOException		If there is an error while writing the field metadata.
-	 * @throws TAPException		If there is any other error (by default: never happen).
+	 * @return	The most appropriate metadata.
 	 */
-	protected void writeFieldMeta(TAPColumn col, PrintWriter out) throws IOException, TAPException{
-		StringBuffer fieldline = new StringBuffer("\t\t\t");
+	protected static final TAPColumn getValidColMeta(final DBColumn typeFromQuery, final TAPColumn typeFromResult){
+		if (typeFromQuery != null && typeFromQuery instanceof TAPColumn)
+			return (TAPColumn)typeFromQuery;
+		else if (typeFromResult != null){
+			if (typeFromQuery != null)
+				return (TAPColumn)typeFromResult.copy(typeFromQuery.getDBName(), typeFromQuery.getADQLName(), null);
+			else
+				return (TAPColumn)typeFromResult.copy();
+		}else
+			return new TAPColumn((typeFromQuery != null) ? typeFromQuery.getADQLName() : "?", new DBType(DBDatatype.VARCHAR), "?");
+	}
 
-		fieldline.append("<FIELD ID=").append('"').append(SavotWriter.encodeAttribute(col.getADQLName())).append('"');
-		fieldline.append(" name=").append('"').append(SavotWriter.encodeAttribute(col.getADQLName())).append('"');
+	/**
+	 * Convert the given {@link TAPColumn} object into a {@link ColumnInfo} object.
+	 * 
+	 * @param tapCol	{@link TAPColumn} to convert into {@link ColumnInfo}.
+	 * 
+	 * @return	The corresponding {@link ColumnInfo}.
+	 */
+	protected static final ColumnInfo getColumnInfo(final TAPColumn tapCol){
+		// Get the VOTable type:
+		VotType votType = new VotType(tapCol.getDatatype());
 
-		VotType type = col.getVotType();
-		String nullVal = getNullValue(type.datatype), description = null;
+		// Build a ColumnInfo with the name, type and description:
+		ColumnInfo colInfo = new ColumnInfo(tapCol.getADQLName(), getDatatypeClass(votType.datatype, votType.arraysize), tapCol.getDescription());
 
-		fieldline.append(' ').append(type.toString());
+		// Set the shape (VOTable arraysize):
+		colInfo.setShape(getShape(votType.arraysize));
 
-		if (col.getUcd() != null && col.getUcd().length() > 0)
-			fieldline.append(" ucd=").append('"').append(SavotWriter.encodeAttribute(col.getUcd())).append('"');
+		// Set this value may be NULL (note: it is not really necessary since STIL set this flag to TRUE by default):
+		colInfo.setNullable(true);
 
-		if (col.getUtype() != null && col.getUtype().length() > 0)
-			fieldline.append(" utype=").append('"').append(SavotWriter.encodeAttribute(col.getUtype())).append('"');
+		// Set the XType (if any):
+		if (votType.xtype != null)
+			colInfo.setAuxDatum(new DescribedValue(new DefaultValueInfo("xtype", String.class, "VOTable xtype attribute"), votType.xtype));
 
-		if (col.getUnit() != null && col.getUnit().length() > 0)
-			fieldline.append(" unit=").append('"').append(SavotWriter.encodeAttribute(col.getUnit())).append('"');
+		// Set the additional information: unit, UCD and UType:
+		colInfo.setUnitString(tapCol.getUnit());
+		colInfo.setUCD(tapCol.getUcd());
+		colInfo.setUtype(tapCol.getUtype());
 
-		if (col.getDescription() != null && !col.getDescription().trim().isEmpty())
-			description = col.getDescription().trim();
-		else
-			description = null;
+		return colInfo;
+	}
 
-		if (nullVal != null || description != null){
-			fieldline.append(">\n");
-			if (nullVal != null)
-				fieldline.append("<VALUES null=\"" + nullVal + "\" />\n");
-			if (description != null)
-				fieldline.append("<DESCRIPTION>").append(SavotWriter.encodeElement(description)).append("</DESCRIPTION>\n");
-			fieldline.append("</FIELD>");
-			out.println(fieldline);
-		}else{
-			fieldline.append("/>");
-			out.println(fieldline);
+	/**
+	 * Convert the VOTable datatype string into a corresponding {@link Class} object.
+	 * 
+	 * @param datatype	Value of the VOTable attribute "datatype". 
+	 * @param arraysize	Value of the VOTable attribute "arraysize".
+	 * 
+	 * @return	The corresponding {@link Class} object.
+	 */
+	protected static final Class<?> getDatatypeClass(final VotDatatype datatype, final String arraysize){
+		// Determine whether this type is an array or not:
+		boolean isScalar = arraysize == null || (arraysize.length() == 1 && arraysize.equals("1"));
+
+		// Guess the corresponding Class object (see section "7.1.4 Data Types" of the STIL documentation): 
+		switch(datatype){
+			case BIT:
+				return boolean[].class;
+			case BOOLEAN:
+				return isScalar ? Boolean.class : boolean[].class;
+			case DOUBLE:
+				return isScalar ? Double.class : double[].class;
+			case DOUBLECOMPLEX:
+				return double[].class;
+			case FLOAT:
+				return isScalar ? Float.class : float[].class;
+			case FLOATCOMPLEX:
+				return float[].class;
+			case INT:
+				return isScalar ? Integer.class : int[].class;
+			case LONG:
+				return isScalar ? Long.class : long[].class;
+			case SHORT:
+				return isScalar ? Short.class : short[].class;
+			case UNSIGNEDBYTE:
+				return isScalar ? Short.class : short[].class;
+			case CHAR:
+			case UNICODECHAR:
+			default: /* If the type is not know (theoretically, never happens), return char[*] by default. */
+				return isScalar ? Character.class : String.class;
 		}
 	}
 
 	/**
-	 * <p>Writes the data of the given query result in the given OutputStream.</p>
-	 * <p><b><u>Important:</u> To write a field value you can use {@link #writeFieldValue(Object, DBColumn, OutputStream)}.</b></p>
+	 * Convert the given VOTable arraysize into a {@link ColumnInfo} shape.
 	 * 
-	 * @param queryResult		The query result which contains the data to write.
-	 * @param selectedColumns	The columns selected by the query.
-	 * @param output			The stream in which the data must be written.
-	 * @param execReport		The report of the query execution.
-	 * @param thread		The thread which asked for the result writting.
+	 * @param arraysize	Value of the VOTable attribute "arraysize".
 	 * 
-	 * @return					The number of written rows. (<i>note: if this number is greater than the value of MAXREC: OVERFLOW</i>)
-	 * 
-	 * @throws IOException				If there is an error while writing the data in the given stream.
-	 * @throws TAPException				If there is any other error.
-	 * @throws InterruptedException		If the given thread has been interrupted.
+	 * @return	The corresponding {@link ColumnInfo} shape.
 	 */
-	protected abstract int writeData(final R queryResult, final DBColumn[] selectedColumns, final OutputStream output, final TAPExecutionReport execReport, final Thread thread) throws IOException, TAPException, InterruptedException;
+	protected static final int[] getShape(final String arraysize){
+		/*
+		 * Note: multi-dimensional arrays are forbidden in the TAP library,
+		 * so no 'nxm...' is possible.
+		 */
 
-	/**
-	 * <p>Writes the given field value in the given OutputStream.</p>
-	 * 
-	 * <p>
-	 * 	The given value will be encoded as an XML element (see {@link SavotWriter#encodeElement(String)}.
-	 * 	Besides, if the given value is <code>null</code> and if the column datatype is <code>int</code>,
-	 * 	<code>short</code> or <code>long</code>, the NULL values declared in the field metadata will be written.</p>
-	 * 
-	 * @param value				The value to write.
-	 * @param column			The corresponding column metadata.
-	 * @param output			The stream in which the field value must be written.
-	 * 
-	 * @throws IOException		If there is an error while writing the given field value in the given stream.
-	 * @throws TAPException		If there is any other error (by default: never happen).
-	 */
-	protected void writeFieldValue(final Object value, final DBColumn column, final OutputStream output) throws IOException, TAPException{
-		String fieldValue = (value == null) ? null : value.toString();
-		if (fieldValue == null && column instanceof TAPColumn)
-			fieldValue = getNullValue(((TAPColumn)column).getVotType().datatype);
-		if (fieldValue != null)
-			output.write(SavotWriter.encodeElement(fieldValue).getBytes());
+		// No arraysize => empty array:
+		if (arraysize == null)
+			return new int[0];
+
+		// '*' or 'n*' => {-1}:
+		else if (arraysize.charAt(arraysize.length() - 1) == '*')
+			return new int[]{-1};
+
+		// 'n' => {n}:
+		else{
+			try{
+				return new int[]{Integer.parseInt(arraysize)};
+			}catch(NumberFormatException nfe){
+				// if the given arraysize is incorrect (theoretically, never happens), it is like no arraysize has been provided:
+				return new int[0];
+			}
+		}
 	}
 
 	/**
-	 * <p>Gets the NULL value corresponding to the given datatype:</p>
-	 * <ul>
-	 * 	<li>for <code>int</code>: {@link Integer#MIN_VALUE}</li>
-	 * 	<li>for <code>short</code>: {@link Short#MIN_VALUE}</li>
-	 * 	<li>for <code>long</code>: {@link Long#MIN_VALUE}</li>
-	 * 	<li>for anything else, <code>null</code> will be returned.</li>
-	 * </ul>
+	 * <p>
+	 * 	Special {@link StarTable} able to read a fixed maximum number of rows {@link TableIterator}.
+	 * 	However, if no limit is provided, all rows are read.
+	 * </p>
 	 * 
-	 * @param datatype	A VOTable datatype.
-	 * 
-	 * @return			The corresponding NULL value, or <code>null</code> if there is none.
+	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
+	 * @version 2.0 (10/2014)
+	 * @since 2.0
 	 */
-	public static final String getNullValue(String datatype){
-		if (datatype == null)
-			return null;
+	public static class LimitedStarTable extends AbstractStarTable {
 
-		datatype = datatype.trim().toLowerCase();
+		/** Number of columns to read. */
+		private final int nbCol;
 
-		if (datatype.equals("short"))
-			return "" + Short.MIN_VALUE;
-		else if (datatype.equals("int"))
-			return "" + Integer.MIN_VALUE;
-		else if (datatype.equals("long"))
-			return "" + Long.MIN_VALUE;
-		else
-			return null;
+		/** Information about all columns to read. */
+		private final ColumnInfo[] columnInfos;
+
+		/** Iterator over the data to read using this special {@link StarTable} */
+		private final TableIterator tableIt;
+
+		/** Limit on the number of rows to read. Over this limit, an "overflow" event occurs and {@link #overflow} is set to TRUE. */
+		private final long maxrec;
+
+		/** Indicates whether the maximum allowed number of rows has already been read or not. When true, no more row can be read. */
+		private boolean overflow;
+
+		/** Last read row. If NULL, no row has been read or no more row is available. */
+		private Object[] row = null;
+
+		/** Number of rows read until now. */
+		private int nbRows;
+
+		/**
+		 * Build this special {@link StarTable}.
+		 * 
+		 * @param tableIt	Data on which to iterate using this special {@link StarTable}.
+		 * @param colInfos	Information about all columns.
+		 * @param maxrec	Limit on the number of rows to read. <i>(if negative, there will be no limit)</i>
+		 */
+		LimitedStarTable(final TableIterator tableIt, final ColumnInfo[] colInfos, final long maxrec){
+			this.tableIt = tableIt;
+			nbCol = colInfos.length;
+			columnInfos = colInfos;
+			this.maxrec = maxrec;
+			overflow = false;
+		}
+
+		/**
+		 * Indicates whether the last row sequence dispensed by
+		 * this table's getRowSequence method was truncated at maxrec rows.
+		 *
+		 * @return   true if the last row sequence overflowed
+		 */
+		public boolean lastSequenceOverflowed(){
+			return overflow;
+		}
+
+		/**
+		 * Get the number of rows that have been successfully read until now.
+		 *
+		 * @return   Number of all read rows.
+		 */
+		public int getNbReadRows(){
+			return nbRows;
+		}
+
+		@Override
+		public int getColumnCount(){
+			return nbCol;
+		}
+
+		@Override
+		public ColumnInfo getColumnInfo(final int colInd){
+			return columnInfos[colInd];
+		}
+
+		@Override
+		public long getRowCount(){
+			return -1;
+		}
+
+		@Override
+		public RowSequence getRowSequence() throws IOException{
+			overflow = false;
+			row = new Object[nbCol];
+
+			return new RowSequence(){
+				long irow = -1;
+
+				@Override
+				public boolean next() throws IOException{
+					irow++;
+					try{
+						if (maxrec < 0 || irow < maxrec){
+							boolean hasNext = tableIt.nextRow();
+							if (hasNext){
+								for(int i = 0; i < nbCol && tableIt.hasNextCol(); i++)
+									row[i] = tableIt.nextCol();
+								nbRows++;
+							}else
+								row = null;
+							return hasNext;
+						}else{
+							overflow = tableIt.nextRow();
+							row = null;
+							return false;
+						}
+					}catch(DataReadException dre){
+						if (dre.getCause() != null && dre.getCause() instanceof IOException)
+							throw (IOException)(dre.getCause());
+						else
+							throw new IOException(dre);
+					}
+				}
+
+				@Override
+				public Object[] getRow() throws IOException{
+					return row;
+				}
+
+				@Override
+				public Object getCell(int cellIndex) throws IOException{
+					return row[cellIndex];
+				}
+
+				@Override
+				public void close() throws IOException{}
+			};
+		}
 	}
 }

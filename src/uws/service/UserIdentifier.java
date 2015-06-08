@@ -22,15 +22,13 @@ package uws.service;
 import java.io.Serializable;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import uws.UWSException;
 import uws.job.user.JobOwner;
-
-import uws.service.UWSUrl;
-
 import uws.service.actions.UWSAction;
 import uws.service.backup.DefaultUWSBackupManager;
-import uws.UWSException;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * <p>Lets defining how identifying a user thanks to a HTTP request.</p>
@@ -67,7 +65,7 @@ public interface UserIdentifier extends Serializable {
 	 * 
 	 * @param id			ID of the user.
 	 * @param pseudo		Pseudo of the user (may be NULL).
-	 * @param otherdata		Other data about the user (may be NULL or empty).
+	 * @param otherData		Other data about the user (may be NULL or empty).
 	 * 
 	 * @return				The corresponding user.
 	 * 

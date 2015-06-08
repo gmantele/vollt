@@ -16,8 +16,8 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLIterator;
@@ -29,12 +29,14 @@ import adql.query.TextPosition;
  * A string constant.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 05/2014
+ * @version 1.4 (06/2015)
  */
 public final class StringConstant implements ADQLOperand {
 
 	private String value;
-	/** Position of this operand. */
+
+	/** Position of this operand.
+	 * @since 1.4 */
 	private TextPosition position = null;
 
 	public StringConstant(String value){
@@ -72,10 +74,15 @@ public final class StringConstant implements ADQLOperand {
 	 * Sets the position at which this {@link StringConstant} has been found in the original ADQL query string.
 	 * 
 	 * @param pos	Position of this {@link StringConstant}.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){
 		this.position = position;
+	}
+
+	@Override
+	public final boolean isGeometry(){
+		return false;
 	}
 
 	@Override
@@ -85,7 +92,7 @@ public final class StringConstant implements ADQLOperand {
 
 	@Override
 	public String getName(){
-		return "'" + value + "'";
+		return toADQL();
 	}
 
 	@Override
@@ -95,7 +102,7 @@ public final class StringConstant implements ADQLOperand {
 
 	@Override
 	public String toADQL(){
-		return "'" + value + "'";
+		return "'" + value.replaceAll("'", "''") + "'";
 	}
 
 }

@@ -16,12 +16,11 @@ package uws.job.manager;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
-
-import uws.UWSException;
 
 import uws.job.ExecutionPhase;
 import uws.job.UWSJob;
@@ -36,8 +35,8 @@ import uws.job.UWSJob;
  *  and to end ({@link #remove(UWSJob)}).
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (12/2014)
  */
 public interface ExecutionManager {
 
@@ -70,31 +69,50 @@ public interface ExecutionManager {
 	public int getNbQueuedJobs();
 
 	/**
-	 * Refreshes the lists of running and queued jobs.
+	 * <p>Refreshes the lists of running and queued jobs.</p>
 	 * 
-	 * @throws UWSException		If there is an error while refreshing this manager.
+	 * <p><i>Note:
+	 * 	If any error occurs while refreshing this manager, it SHOULD be logged using the service logger.
+	 * </i></p>
 	 */
-	public void refresh() throws UWSException;
+	public void refresh();
 
 	/**
 	 * <p>Lets deciding whether the given job can start immediately or whether it must be put in the queue.</p>
 	 * 
+	 * <p><i>Note:
+	 * 	If any error occurs while executing the given job, it SHOULD be logged using the service logger.
+	 * </i></p>
+	 * 
 	 * @param job	The job to execute.
 	 * @return		The resulting execution phase of the given job.
-	 * 
-	 * @throws UWSException	If there is an error while changing the execution phase of the given job or if any other error occurs.
 	 * 
 	 * @see UWSJob#start(boolean)
 	 * @see UWSJob#setPhase(ExecutionPhase)
 	 */
-	public ExecutionPhase execute(final UWSJob job) throws UWSException;
+	public ExecutionPhase execute(final UWSJob job);
 
 	/**
-	 * Removes the job from this manager whatever is its current execution phase.
+	 * <p>Removes the job from this manager whatever is its current execution phase.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If any error occurs while removing a job from this manager, it SHOULD be logged using the service logger.
+	 * </i></p>
 	 * 
 	 * @param jobToRemove		The job to remove.
-	 * 
-	 * @throws UWSException		If there is an error while refreshing the list of running jobs or if any other error occurs.
 	 */
-	public void remove(final UWSJob jobToRemove) throws UWSException;
+	public void remove(final UWSJob jobToRemove);
+
+	/**
+	 * <p>Stop all running jobs. No more job, even the queued ones, must be executed after a call to this function.
+	 * All stopped or aborted queued jobs should be set forcedly back to the PENDING status.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	A call to {@link #execute(UWSJob)} would re-activate this manager. However jobs stopped or
+	 * 	aborted using this function might not be starting again. These behaviors at implementation-dependent.
+	 * </i></p> 
+	 * 
+	 * @since 4.1
+	 */
+	public void stopAll();
 }

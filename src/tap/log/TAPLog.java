@@ -16,59 +16,93 @@ package tap.log;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import tap.TAPExecutionReport;
+import tap.TAPSyncJob;
 import tap.db.DBConnection;
-
-import tap.metadata.TAPMetadata;
-import tap.metadata.TAPTable;
-
+import tap.parameters.TAPParameters;
 import uws.service.log.UWSLog;
 
 /**
- * Lets logging any kind of message about a TAP service.
+ * Let log any kind of message about a TAP service.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (04/2015)
  */
 public interface TAPLog extends UWSLog {
 
-	public void queryFinished(final TAPExecutionReport report);
+	/**
+	 * <p>Log a message and/or an error in the DB (database) context.</p>
+	 * 
+	 * <p>List of all events sent by the library (case sensitive):</p>
+	 * <ul>
+	 * 	<li>CONNECTION_LACK</li>
+	 * 	<li>TRANSLATE</li>
+	 * 	<li>EXECUTE</li>
+	 * 	<li>RESULT</li>
+	 * 	<li>LOAD_TAP_SCHEMA</li>
+	 * 	<li>CLEAN_TAP_SCHEMA</li>
+	 * 	<li>CREATE_TAP_SCHEMA</li>
+	 * 	<li>TABLE_EXIST</li>
+	 * 	<li>COLUMN_EXIST</li>
+	 * 	<li>EXEC_UPDATE</li>
+	 * 	<li>ADD_UPLOAD_TABLE</li>
+	 * 	<li>DROP_UPLOAD_TABLE</li>
+	 * 	<li>START_TRANSACTION</li>
+	 * 	<li>COMMIT</li>
+	 * 	<li>ROLLBACK</li>
+	 * 	<li>END_TRANSACTION</li>
+	 * 	<li>CLOSE</li>
+	 * </ul>
+	 * 
+	 * @param level			Level of the log (info, warning, error, ...). <i>SHOULD NOT be NULL, but if NULL anyway, the level SHOULD be considered as INFO</i>
+	 * @param connection	DB connection from which this log comes. <i>MAY be NULL</i>
+	 * @param event			Event at the origin of this log or action executed by the given database connection while this log is sent. <i>MAY be NULL</i>
+	 * @param message		Message to log. <i>MAY be NULL</i>
+	 * @param error			Error/Exception to log. <i>MAY be NULL</i>
+	 * 
+	 * @since 2.0
+	 */
+	public void logDB(final LogLevel level, final DBConnection connection, final String event, final String message, final Throwable error);
 
-	public void dbInfo(final String message);
-
-	public void dbError(final String message, final Throwable t);
-
-	public void tapMetadataFetched(final TAPMetadata metadata);
-
-	public void tapMetadataLoaded(final TAPMetadata metadata);
-
-	public void connectionOpened(final DBConnection<?> connection, final String dbName);
-
-	public void connectionClosed(final DBConnection<?> connection);
-
-	public void transactionStarted(final DBConnection<?> connection);
-
-	public void transactionCancelled(final DBConnection<?> connection);
-
-	public void transactionEnded(final DBConnection<?> connection);
-
-	public void schemaCreated(final DBConnection<?> connection, final String schema);
-
-	public void schemaDropped(final DBConnection<?> connection, final String schema);
-
-	public void tableCreated(final DBConnection<?> connection, final TAPTable table);
-
-	public void tableDropped(final DBConnection<?> connection, final TAPTable table);
-
-	public void rowsInserted(final DBConnection<?> connection, final TAPTable table, final int nbInsertedRows);
-
-	public void sqlQueryExecuting(final DBConnection<?> connection, final String sql);
-
-	public void sqlQueryError(final DBConnection<?> connection, final String sql, final Throwable t);
-
-	public void sqlQueryExecuted(final DBConnection<?> connection, final String sql);
+	/**
+	 * <p>Log a message and/or an error in the general context of TAP.</p>
+	 * 
+	 * <p>
+	 * 	One of the parameter is of type {@link Object}. This object can be used to provide more information to the log function
+	 * 	in order to describe as much as possible the state and/or result event.
+	 * </p>
+	 * 
+	 * <p>List of all events sent by the library (case sensitive):</p>
+	 * <ul>
+	 * 	<li>IDENT_USER (with a NULL "obj")</li>
+	 * 	<li>SYNC_INIT (with "obj" as an instance of {@link TAPParameters})</li>
+	 * 	<li>ASYNC_INIT (with a NULL "obj")</li>
+	 * 	<li>START (with "obj" as an instance of {@link TAPSyncJob})</li>
+	 * 	<li>UPLOADING (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>PARSING (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>START_DB_EXECUTION (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>WRITING_RESULT (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>RESULT_WRITTEN (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>START_STEP (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>END_EXEC (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>END_DB_EXECUTION (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>DROP_UPLOAD (with "obj" as an instance of {@link TAPExecutionReport})</li>
+	 * 	<li>TIME_OUT (with "obj" as an instance of {@link TAPSyncJob})</li>
+	 * 	<li>END (with "obj" as an instance of {@link TAPSyncJob})</li>
+	 * </ul>
+	 * 
+	 * @param level		Level of the log (info, warning, error, ...). <i>SHOULD NOT be NULL, but if NULL anyway, the level SHOULD be considered as INFO</i>
+	 * @param obj		Object providing more information about the event/object at the origin of this log. <i>MAY be NULL</i>
+	 * @param event		Event at the origin of this log or action currently executed by TAP while this log is sent. <i>MAY be NULL</i>
+	 * @param message	Message to log. <i>MAY be NULL</i>
+	 * @param error		Error/Exception to log. <i>MAY be NULL</i>
+	 * 
+	 * @since 2.0
+	 */
+	public void logTAP(final LogLevel level, final Object obj, final String event, final String message, final Throwable error);
 
 }

@@ -16,7 +16,8 @@ package adql.db.exception;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -36,8 +37,8 @@ import adql.parser.ParseException;
  * 	on this {@link UnresolvedIdentifiersException} (method {@link #iterator()}).
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  * 
  * @see DBChecker
  */
@@ -65,12 +66,16 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 			exceptions.add(pe);
 			if (pe instanceof UnresolvedColumnException){
 				String colName = ((UnresolvedColumnException)pe).getColumnName();
-				if (colName != null && !colName.trim().isEmpty())
+				if (colName != null && colName.trim().length() > 0)
 					addIdentifierName(colName + " " + pe.getPosition());
 			}else if (pe instanceof UnresolvedTableException){
 				String tableName = ((UnresolvedTableException)pe).getTableName();
-				if (tableName != null && !tableName.trim().isEmpty())
+				if (tableName != null && tableName.trim().length() > 0)
 					addIdentifierName(tableName + " " + pe.getPosition());
+			}else if (pe instanceof UnresolvedFunctionException){
+				String fctName = (((UnresolvedFunctionException)pe).getFunction() == null) ? null : ((UnresolvedFunctionException)pe).getFunction().getName() + "(...)";
+				if (fctName != null && fctName.trim().length() > 0)
+					addIdentifierName(fctName + " " + pe.getPosition());
 			}else if (pe instanceof UnresolvedIdentifiersException)
 				addIdentifierName(((UnresolvedIdentifiersException)pe).unresolvedIdentifiers);
 		}
@@ -82,7 +87,7 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 	 * @param name	Name (or description) of the identifier to add.
 	 */
 	private final void addIdentifierName(final String name){
-		if (name != null && !name.trim().isEmpty()){
+		if (name != null && name.trim().length() > 0){
 			if (unresolvedIdentifiers == null)
 				unresolvedIdentifiers = "";
 			else
@@ -109,6 +114,7 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 		return exceptions.iterator();
 	}
 
+	@Override
 	public final Iterator<ParseException> iterator(){
 		return getErrors();
 	}
@@ -120,7 +126,11 @@ public class UnresolvedIdentifiersException extends ParseException implements It
 	 */
 	@Override
 	public String getMessage(){
-		return exceptions.size() + " unresolved identifiers" + ((unresolvedIdentifiers != null) ? (": " + unresolvedIdentifiers) : "") + " !";
+		StringBuffer buf = new StringBuffer();
+		buf.append(exceptions.size()).append(" unresolved identifiers").append(((unresolvedIdentifiers != null) ? (": " + unresolvedIdentifiers) : "")).append('!');
+		for(ParseException pe : exceptions)
+			buf.append("\n  - ").append(pe.getMessage());
+		return buf.toString();
 	}
 
 }

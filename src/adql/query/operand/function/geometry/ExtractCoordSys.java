@@ -16,8 +16,8 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLObject;
@@ -36,7 +36,7 @@ import adql.query.operand.ADQLOperand;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  */
 public class ExtractCoordSys extends GeometryFunction {
 
@@ -83,6 +83,11 @@ public class ExtractCoordSys extends GeometryFunction {
 	@Override
 	public boolean isString(){
 		return true;
+	}
+
+	@Override
+	public boolean isGeometry(){
+		return false;
 	}
 
 	@Override

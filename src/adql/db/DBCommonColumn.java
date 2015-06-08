@@ -16,12 +16,13 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomishes Rechen Institute (ARI)
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import adql.db.exception.UnresolvedJoinException;
 import adql.query.ADQLQuery;
 
 /**
@@ -33,7 +34,7 @@ import adql.query.ADQLQuery;
  * in case of several JOINs.
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.2 (11/2013)
+ * @version 1.3 (05/2015)
  * @since 1.2
  */
 public class DBCommonColumn implements DBColumn {
@@ -54,8 +55,13 @@ public class DBCommonColumn implements DBColumn {
 	 * 
 	 * @param leftCol	Column of the left join table. May be a {@link DBCommonColumn}.
 	 * @param rightCol	Column of the right join table. May be a {@link DBCommonColumn}.
+	 * 
+	 * @throws UnresolvedJoinException	If the type of the two given columns are not roughly (just testing numeric, string or geometry) compatible.
 	 */
-	public DBCommonColumn(final DBColumn leftCol, final DBColumn rightCol){
+	public DBCommonColumn(final DBColumn leftCol, final DBColumn rightCol) throws UnresolvedJoinException{
+		// Test whether type of both columns are compatible:
+		if (leftCol.getDatatype() != null && rightCol.getDatatype() != null && !leftCol.getDatatype().isCompatible(rightCol.getDatatype()))
+			throw new UnresolvedJoinException("JOIN impossible: incompatible column types when trying to join the columns " + leftCol.getADQLName() + " (" + leftCol.getDatatype() + ") and " + rightCol.getADQLName() + " (" + rightCol.getDatatype() + ")!");
 
 		// LEFT COLUMN:
 		if (leftCol instanceof DBCommonColumn){
@@ -83,7 +89,6 @@ public class DBCommonColumn implements DBColumn {
 			// add the table to cover:
 			addCoveredTable(rightCol.getTable());
 		}
-
 	}
 
 	/**
@@ -110,6 +115,11 @@ public class DBCommonColumn implements DBColumn {
 	@Override
 	public final String getDBName(){
 		return generalColumnDesc.getDBName();
+	}
+
+	@Override
+	public final DBType getDatatype(){
+		return generalColumnDesc.getDatatype();
 	}
 
 	@Override

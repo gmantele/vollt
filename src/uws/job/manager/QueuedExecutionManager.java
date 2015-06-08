@@ -16,11 +16,11 @@ package uws.job.manager;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import uws.UWSException;
-
 import uws.job.UWSJob;
 import uws.service.log.UWSLog;
 
@@ -29,11 +29,10 @@ import uws.service.log.UWSLog;
  * if there are more running jobs than a given number, the jobs to execute are put in the queue until a running job stops.
  * The order of queued jobs are preserved: it is implemented by a FIFO queue.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public class QueuedExecutionManager extends AbstractQueuedExecutionManager {
-	private static final long serialVersionUID = 1L;
 
 	/** The maximum number of running jobs. */
 	protected int nbMaxRunningJobs = NO_QUEUE;
@@ -70,11 +69,7 @@ public class QueuedExecutionManager extends AbstractQueuedExecutionManager {
 
 	public final void setNoQueue(){
 		nbMaxRunningJobs = NO_QUEUE;
-		try{
-			refresh();
-		}catch(UWSException ue){
-			logger.error("Impossible to refresh the execution manager !", ue);
-		}
+		refresh();
 	}
 
 	/**
@@ -89,8 +84,10 @@ public class QueuedExecutionManager extends AbstractQueuedExecutionManager {
 	/**
 	 * <p>Sets the maximum number of running jobs.</p>
 	 * 
-	 * <p><i><u>Note:</u> If the new maximum number of running jobs is increasing the list of running jobs is immediately updated
-	 * BUT NOT IF it is decreasing (that is to say, running jobs will not be interrupted to be put in the queue, they continue to run) !</i></p>
+	 * <p><i>Note:
+	 * 	If the new maximum number of running jobs is increasing the list of running jobs is immediately updated
+	 * 	BUT NOT IF it is decreasing (that is to say, running jobs will not be interrupted to be put in the queue, they continue to run) !
+	 * </i></p>
 	 * 
 	 * @param maxRunningJobs	The new maximum number of running jobs ({@link #NO_QUEUE} or a negative value means no maximum number of running jobs: there will be no queue any more).
 	 * 

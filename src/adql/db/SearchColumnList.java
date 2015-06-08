@@ -17,7 +17,7 @@ package adql.db;
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ import cds.utils.TextualSearchList;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (11/2013)
+ * @version 1.3 (02/2015)
  */
 public class SearchColumnList extends TextualSearchList<DBColumn> {
 	private static final long serialVersionUID = 1L;
@@ -284,7 +284,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 					}
 
 					// test the schema name:
-					if (schema != null){
+					if (schema != null && matchTable.getADQLSchemaName() != null){
 						if (IdentifierField.SCHEMA.isCaseSensitive(caseSensitivity)){
 							if (!matchTable.getADQLSchemaName().equals(schema))
 								continue;
@@ -307,7 +307,6 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 
 					// if here, all prefixes are matching and so the column is a good match:
 					DBColumn goodMatch = matchTable.getColumn(match.getADQLName(), true);
-					System.out.println("Good match for \"" + catalog + "." + schema + "." + table + "." + column + "\" found: " + goodMatch);
 					result.add(goodMatch);
 				}
 			}

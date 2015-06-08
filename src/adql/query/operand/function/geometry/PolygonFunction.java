@@ -16,10 +16,11 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.util.Collection;
 import java.util.Vector;
 
 import adql.query.ADQLObject;
@@ -41,7 +42,7 @@ import adql.query.operand.ADQLOperand;
  * according to the STC coordinate system with GEOCENTER reference position.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  */
 public class PolygonFunction extends GeometryFunction {
 
@@ -79,7 +80,7 @@ public class PolygonFunction extends GeometryFunction {
 	 * @throws NullPointerException				If one of the parameters is <i>null</i>.
 	 * @throws Exception						If there is another error.
 	 */
-	public PolygonFunction(ADQLOperand coordSystem, Vector<ADQLOperand> coords) throws UnsupportedOperationException, NullPointerException, Exception{
+	public PolygonFunction(ADQLOperand coordSystem, Collection<? extends ADQLOperand> coords) throws UnsupportedOperationException, NullPointerException, Exception{
 		super(coordSystem);
 		if (coords == null || coords.size() < 6)
 			throw new NullPointerException("A POLYGON function must have at least 3 2-D coordinates !");
@@ -119,6 +120,11 @@ public class PolygonFunction extends GeometryFunction {
 
 	@Override
 	public boolean isString(){
+		return false;
+	}
+
+	@Override
+	public boolean isGeometry(){
 		return true;
 	}
 

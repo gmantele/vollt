@@ -20,8 +20,8 @@ import adql.query.from.ADQLTable;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 /**
@@ -29,7 +29,7 @@ import adql.query.from.ADQLTable;
  * It means: 'select all columns'.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  */
 public final class SelectAllColumns extends SelectItem {
 
@@ -108,7 +108,7 @@ public final class SelectAllColumns extends SelectItem {
 	 * @param table	An {@link ADQLTable} (MUST NOT BE NULL).
 	 */
 	public final void setAdqlTable(final ADQLTable table){
-		if (table == null){
+		if (table != null){
 			adqlTable = table;
 			query = null;
 			setPosition(null);

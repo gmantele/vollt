@@ -17,53 +17,82 @@ package tap.parameters;
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institute (ARI)
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPJob;
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 import uws.job.parameters.InputParamController;
 
 /**
- * The logic of the output limit is set in this class. Here it is:
+ * <p>Let controlling the maximum number of rows that can be output by a TAP service.
+ * The maximum and default values are provided by the service connection.</p>
  * 
- *  - If no value is specified by the TAP client, none is returned.
- *  - If no default value is provided, no default limitation is set (={@link TAPJob#UNLIMITED_MAX_REC}).
- *  - If no maximum value is provided, there is no output limit (={@link TAPJob#UNLIMITED_MAX_REC}).
+ * <p><i>Note:
+ * 	By default, this parameter can be modified by anyone without any limitation.
+ * 	The default and maximum value is set by default to {@link TAPJob#UNLIMITED_MAX_REC}.
+ * </i></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (03/2014)
+ * <p><i>Note:
+ * 	The special value 0 means that just the metadata of the result must be returned.
+ * 	Considering the meaning of this value, it will not be considered as an {@link TAPJob#UNLIMITED_MAX_REC},
+ * 	but like a valid value. The maximum value can then be also 0.
+ * </i></p>
+ * 
+ * <p>The logic of the output limit is set in this class. Here it is:</p>
+ * <ul>
+ * 	<li>If no value is specified by the TAP client, the default value is returned.</li>
+ *  <li>If no default value is provided, the maximum output limit is returned.</li>
+ *  <li>If no maximum value is provided, there is no limit (={@link TAPJob#UNLIMITED_MAX_REC}).</li>
+ * </ul>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (03/2015)
  */
 public class MaxRecController implements InputParamController {
 
-	protected final ServiceConnection<?> service;
+	/** Connection to the service which knows the maximum and default value of this parameter. */
+	protected final ServiceConnection service;
 
 	/** Indicates whether the output limit of jobs can be modified. */
 	protected boolean allowModification = true;
 
-	public MaxRecController(final ServiceConnection<?> service){
+	/**
+	 * Build a controller for the MaxRec parameter.
+	 * 
+	 * @param service	Connection to the TAP service.
+	 */
+	public MaxRecController(final ServiceConnection service){
 		this.service = service;
-		allowModification(allowModification);
 	}
 
 	@Override
 	public final Object getDefault(){
-		// If a default output limit is set by the TAP service connection, return it:
+		// Get the default output limit:
+		int defaultLimit = TAPJob.UNLIMITED_MAX_REC;
 		if (service.getOutputLimit() != null && service.getOutputLimit().length >= 2 && service.getOutputLimitType() != null && service.getOutputLimitType().length == service.getOutputLimit().length){
-			if (service.getOutputLimit()[0] > 0 && service.getOutputLimitType()[0] == LimitUnit.rows)
-				return service.getOutputLimit()[0];
+			if (service.getOutputLimit()[0] >= 0 && service.getOutputLimitType()[0] == LimitUnit.rows)
+				defaultLimit = service.getOutputLimit()[0];
 		}
-		// Otherwise, return no limitation:
-		return TAPJob.UNLIMITED_MAX_REC;
+
+		// Get the maximum output limit, for comparison:
+		int maxLimit = getMaxOutputLimit();
+
+		// Ensure the default limit is less or equal the maximum limit:
+		return (defaultLimit < 0 || (maxLimit >= 0 && defaultLimit > maxLimit)) ? maxLimit : defaultLimit;
 	}
 
+	/**
+	 * Get the maximum number of rows that can be output.
+	 * 
+	 * @return	Maximum output limit.
+	 */
 	public final int getMaxOutputLimit(){
 		// If a maximum output limit is set by the TAP service connection, return it:
 		if (service.getOutputLimit() != null && service.getOutputLimit().length >= 2 && service.getOutputLimitType() != null && service.getOutputLimitType().length == service.getOutputLimit().length){
-			if (service.getOutputLimit()[1] > 0 && service.getOutputLimitType()[1] == LimitUnit.rows)
+			if (service.getOutputLimit()[1] >= 0 && service.getOutputLimitType()[1] == LimitUnit.rows)
 				return service.getOutputLimit()[1];
 		}
 		// Otherwise, there is no limit:
@@ -74,7 +103,7 @@ public class MaxRecController implements InputParamController {
 	public Object check(Object value) throws UWSException{
 		// If no limit is provided by the TAP client, none is returned:
 		if (value == null)
-			return null;
+			return getDefault();
 
 		// Parse the provided limit:
 		int maxOutputLimit = getMaxOutputLimit();
@@ -86,17 +115,17 @@ public class MaxRecController implements InputParamController {
 			try{
 				maxRec = Integer.parseInt(strValue);
 			}catch(NumberFormatException nfe){
-				throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_MAX_REC, strValue, null, "An integer value between " + TAPJob.UNLIMITED_MAX_REC + " and " + maxOutputLimit + " (Default value: " + defaultOutputLimit + ").");
+				throw new UWSException(UWSException.BAD_REQUEST, "Wrong format for the parameter \"maxrec\": \"" + strValue + "\"! It should be a integer value between " + TAPJob.UNLIMITED_MAX_REC + " and " + maxOutputLimit + " (Default value: " + defaultOutputLimit + ").");
 			}
 		}else
-			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_MAX_REC, null, value.getClass().getName(), "An integer value between " + TAPJob.UNLIMITED_MAX_REC + " and " + maxOutputLimit + " (Default value: " + defaultOutputLimit + ").");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"maxrec\": class \"" + value.getClass().getName() + "\"! It should be an integer or a string containing only an integer value.");
 
 		// A negative output limit is considered as an unlimited output limit:
-		if (maxRec < TAPJob.UNLIMITED_MAX_REC)
+		if (maxRec < 0)
 			maxRec = TAPJob.UNLIMITED_MAX_REC;
 
 		// If the limit is greater than the maximum one, an exception is thrown:
-		if (maxRec == TAPJob.UNLIMITED_MAX_REC || maxRec > maxOutputLimit)
+		if (maxRec < 0 || (maxOutputLimit >= 0 && maxRec > maxOutputLimit))
 			maxRec = maxOutputLimit;
 
 		return maxRec;

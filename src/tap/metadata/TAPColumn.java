@@ -16,49 +16,142 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.awt.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 
 import adql.db.DBColumn;
 import adql.db.DBTable;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 
+/**
+ * <p>Represent a column as described by the IVOA standard in the TAP protocol definition.</p>
+ * 
+ * <p>
+ * 	This object representation has exactly the same fields as the column of the table TAP_SCHEMA.columns.
+ * 	But it also provides a way to add other data. For instance, if information not listed in the standard
+ * 	may be stored here, they can be using the function {@link #setOtherData(Object)}. This object can be
+ * 	a single value (integer, string, ...), but also a {@link Map}, {@link List}, etc...
+ * </p>
+ * 
+ * <p><i><b>Important note:</b>
+ * 	A {@link TAPColumn} object MUST always have a DB name. That's why by default, at the creation
+ * 	the DB name is the ADQL name. Once created, it is possible to set the DB name with {@link #setDBName(String)}.
+ * 	This DB name MUST be UNqualified and without double quotes. If a NULL or empty value is provided,
+ * 	nothing is done and the object keeps its former DB name.
+ * </i></p>
+ * 
+ * <h3>Set a table</h3>
+ * 
+ * <p>
+ *	By default a column is detached (not part of a table). To specify the table in which this column is,
+ *	you must use {@link TAPTable#addColumn(TAPColumn)}. By doing this, the table link inside this column
+ *	will be set automatically and you will be able to get the table with {@link #getTable()}. 
+ * </p>
+ * 
+ * <h3>Foreign keys</h3>
+ * 
+ * <p>
+ * 	In case this column is linked to one or several of other tables, it will be possible to list all
+ * 	foreign keys where the target columns is with {@link #getTargets()}. In the same way, it will be
+ * 	possible to list all foreign keys in which this column is a target with {@link #getSources()}.
+ * 	However, in order to ensure the consistency between all metadata, these foreign key's links are
+ * 	set at the table level by the table itself using {@link #addSource(TAPForeignKey)} and
+ * 	{@link #addTarget(TAPForeignKey)}.
+ * </p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (02/2015)
+ */
 public class TAPColumn implements DBColumn {
 
+	/** Name that this column MUST have in ADQL queries. */
 	private final String adqlName;
 
+	/** Name that this column have in the database.
+	 * <i>Note: It CAN NOT be NULL. By default, it is the ADQL name.</i> */
 	private String dbName = null;
 
+	/** Table which owns this column.
+	 * <i>Note: It should be NULL only at the construction or for a quick representation of a column.
+	 * 	Then, this attribute is automatically set by a {@link TAPTable} when adding this column inside it
+	 * 	with {@link TAPTable#addColumn(TAPColumn)}.</i> */
 	private DBTable table = null;
 
+	/** Description of this column.
+	 * <i>Note: Standard TAP column field ; MAY be NULL.</i> */
 	private String description = null;
 
+	/** Unit of this column's values.
+	 * <i>Note: Standard TAP column field ; MAY be NULL.</i> */
 	private String unit = null;
 
+	/** UCD describing the scientific content of this column.
+	 * <i>Note: Standard TAP column field ; MAY be NULL.</i> */
 	private String ucd = null;
 
+	/** UType associating this column with a data-model.
+	 * <i>Note: Standard TAP column field ; MAY be NULL.</i> */
 	private String utype = null;
 
-	private String datatype = null;
+	/** Type of this column.
+	 * <i>Note: Standard TAP column field ; CAN'T be NULL.</i> */
+	private DBType datatype = new DBType(DBDatatype.VARCHAR);
 
-	private int size = TAPTypes.NO_SIZE;
-
-	private VotType votType = null;
-
+	/** Flag indicating whether this column is one of those that should be returned by default.
+	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
 	private boolean principal = false;
 
+	/** Flag indicating whether this column is indexed in the database.
+	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
 	private boolean indexed = false;
 
+	/** Flag indicating whether this column can be set to NULL in the database.
+	 * <i>Note: Standard TAP column field ; FALSE by default.</i>
+	 * @since 2.0 */
+	private boolean nullable = false;
+
+	/** Flag indicating whether this column is defined by a standard.
+	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
 	private boolean std = false;
 
+	/** Let add some information in addition of the ones of the TAP protocol.
+	 * <i>Note: This object can be anything: an {@link Integer}, a {@link String}, a {@link Map}, a {@link List}, ...
+	 * Its content is totally free and never used or checked.</i> */
 	protected Object otherData = null;
 
+	/** List all foreign keys in which this column is a source.
+	 * <p><b>CAUTION: For consistency consideration, this attribute SHOULD never be modified!
+	 * 	It is set by the constructor and filled ONLY by the table.</b></p> */
 	protected final ArrayList<TAPForeignKey> lstTargets;
 
+	/** List all foreign keys in which this column is a target.
+	 * <p><b>CAUTION: For consistency consideration, this attribute SHOULD never be modified!
+	 * 	It is set by the constructor and filled ONLY by the table.</b></p> */
 	protected final ArrayList<TAPForeignKey> lstSources;
 
+	/**
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * 	The datatype is set by default to VARCHAR.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 */
 	public TAPColumn(String columnName){
 		if (columnName == null || columnName.trim().length() == 0)
 			throw new NullPointerException("Missing column name !");
@@ -67,28 +160,199 @@ public class TAPColumn implements DBColumn {
 		dbName = adqlName;
 		lstTargets = new ArrayList<TAPForeignKey>(1);
 		lstSources = new ArrayList<TAPForeignKey>(1);
-		setDefaultType();
 	}
 
-	public TAPColumn(String columnName, String description){
+	/**
+	 * <p>Build a {@link TAPColumn} instance with the given ADQL name and datatype.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does not do
+	 *	anything if the given datatype is NULL.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
+	 * 
+	 * @see #setDatatype(DBType)
+	 */
+	public TAPColumn(String columnName, DBType type){
 		this(columnName);
+		setDatatype(type);
+	}
+
+	/**
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name and description.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 */
+	public TAPColumn(String columnName, String description){
+		this(columnName, (DBType)null, description);
+	}
+
+	/**
+	 * <p>Build a {@link TAPColumn} instance with the given ADQL name, datatype and description.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
+	 *	anything if the given datatype is NULL.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 */
+	public TAPColumn(String columnName, DBType type, String description){
+		this(columnName, type);
 		this.description = description;
 	}
 
+	/**
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name, description and unit.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 */
 	public TAPColumn(String columnName, String description, String unit){
-		this(columnName, description);
+		this(columnName, null, description, unit);
+	}
+
+	/**
+	 * <p>Build a {@link TAPColumn} instance with the given ADQL name, type, description and unit.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
+	 *	anything if the given datatype is NULL.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 */
+	public TAPColumn(String columnName, DBType type, String description, String unit){
+		this(columnName, type, description);
 		this.unit = unit;
 	}
 
+	/**
+	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given fields.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
+	 *	anything if the given datatype is NULL.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 * @param ucd			UCD describing the scientific content of this column.
+	 * @param utype			UType associating this column with a data-model.
+	 */
 	public TAPColumn(String columnName, String description, String unit, String ucd, String utype){
-		this(columnName, description, unit);
+		this(columnName, null, description, unit, ucd, utype);
+	}
+
+	/**
+	 * <p>Build a {@link TAPColumn} instance with the given fields.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The DB name is set by default with the ADQL name. To set the DB name,
+	 * 	you MUST call then {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
+	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * </i></p>
+	 * 
+	 * <p><i>Note:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
+	 *	anything if the given datatype is NULL.
+	 * </i></p>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
+	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 * @param ucd			UCD describing the scientific content of this column.
+	 * @param utype			UType associating this column with a data-model.
+	 */
+	public TAPColumn(String columnName, DBType type, String description, String unit, String ucd, String utype){
+		this(columnName, type, description, unit);
 		this.ucd = ucd;
 		this.utype = utype;
 	}
 
 	/**
-	 * @return The name.
+	 * Get the ADQL name (the name this column MUST have in ADQL queries).
+	 * 
+	 * @return	Its ADQL name.
+	 * @see #getADQLName()
+	 * @deprecated	Does not do anything special: just call {@link #getADQLName()}.
 	 */
+	@Deprecated
 	public final String getName(){
 		return getADQLName();
 	}
@@ -103,255 +367,397 @@ public class TAPColumn implements DBColumn {
 		return dbName;
 	}
 
+	/**
+	 * <p>Change the name that this column MUST have in the database (i.e. in SQL queries).</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given value is NULL or an empty string, nothing is done ; the DB name keeps is former value.
+	 * </i></p>
+	 * 
+	 * @param name	The new database name of this column.
+	 */
 	public final void setDBName(String name){
 		name = (name != null) ? name.trim() : name;
-		dbName = (name == null || name.length() == 0) ? adqlName : name;
+		if (name != null && name.length() > 0)
+			dbName = name;
 	}
 
-	/**
-	 * @return The table.
-	 */
+	@Override
 	public final DBTable getTable(){
 		return table;
 	}
 
 	/**
-	 * @param table The table to set.
+	 * <p>Set the table in which this column is.</p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
+	 * 	that owns this column.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Important note:</b>
+	 * 	If this column was already linked with another {@link TAPTable} object, the previous link is removed
+	 * 	here, but also in the table (by calling {@link TAPTable#removeColumn(String)}).
+	 * </i></p>
+	 * 
+	 * @param table	The table that owns this column.
 	 */
-	public final void setTable(DBTable table){
+	protected final void setTable(final DBTable table){
+		if (this.table != null && this.table instanceof TAPTable && (table == null || !table.equals(this.table)))
+			((TAPTable)this.table).removeColumn(adqlName);
 		this.table = table;
 	}
 
 	/**
-	 * @return The description.
+	 * Get the description of this column.
+	 * 
+	 * @return	Its description. <i>MAY be NULL</i>
 	 */
 	public final String getDescription(){
 		return description;
 	}
 
 	/**
-	 * @param description The description to set.
+	 * Set the description of this column.
+	 * 
+	 * @param description	Its new description. <i>MAY be NULL</i>
 	 */
 	public final void setDescription(String description){
 		this.description = description;
 	}
 
 	/**
-	 * @return The unit.
+	 * Get the unit of the column's values.
+	 * 
+	 * @return	Its unit. <i>MAY be NULL</i>
 	 */
 	public final String getUnit(){
 		return unit;
 	}
 
 	/**
-	 * @param unit The unit to set.
+	 * Set the unit of the column's values.
+	 * 
+	 * @param unit	Its new unit. <i>MAY be NULL</i>
 	 */
 	public final void setUnit(String unit){
 		this.unit = unit;
 	}
 
 	/**
-	 * @return The ucd.
+	 * Get the UCD describing the scientific content of this column.
+	 * 
+	 * @return	Its UCD. <i>MAY be NULL</i>
 	 */
 	public final String getUcd(){
 		return ucd;
 	}
 
 	/**
-	 * @param ucd The ucd to set.
+	 * Set the UCD describing the scientific content of this column.
+	 * 
+	 * @param ucd	Its new UCD. <i>MAY be NULL</i>
 	 */
 	public final void setUcd(String ucd){
 		this.ucd = ucd;
 	}
 
 	/**
-	 * @return The utype.
+	 * Get the UType associating this column with a data-model.
+	 * 
+	 * @return	Its UType. <i>MAY be NULL</i>
 	 */
 	public final String getUtype(){
 		return utype;
 	}
 
 	/**
-	 * @param utype The utype to set.
+	 * Set the UType associating this column with a data-model.
+	 * 
+	 * @param utype	Its new UType. <i>MAY be NULL</i>
 	 */
 	public final void setUtype(String utype){
 		this.utype = utype;
 	}
 
 	/**
-	 * @return The datatype.
+	 * Get the type of the column's values.
+	 * 
+	 * @return	Its datatype. <i>CAN'T be NULL</i>
 	 */
-	public final String getDatatype(){
+	@Override
+	public final DBType getDatatype(){
 		return datatype;
 	}
 
 	/**
-	 * @return Array size (>0 or 2 special values: {@link TAPTypes#NO_SIZE} and {@link TAPTypes#STAR_SIZE}).
-	 */
-	public final int getArraySize(){
-		return size;
-	}
-
-	/**
-	 * <p>Sets the DB datatype, the size and uses these information to set the corresponding VOTable type.</p>
-	 * <b>Important:</b>
-	 * <ul>
-	 * 	<li>If the given datatype is not known according to {@link TAPTypes#getDBType(String)}, the datatype of this column is set to its default value (see {@link #setDefaultType()}),</li>
-	 * 	<li>The VOTable type is set automatically thanks to {@link TAPTypes#getVotType(String, int)}.</li>
-	 * </ul>
+	 * <p>Set the type of the column's values.</p>
 	 * 
-	 * @param datatype 	The datatype to set.
-	 * @param size		Array size (>0 or 2 special values: {@link TAPTypes#NO_SIZE} and {@link TAPTypes#STAR_SIZE}).
+	 * <p><i>Note:
+	 * 	The datatype won't be changed, if the given type is NULL.
+	 * </i></p>
 	 * 
-	 * @see TAPTypes#getDBType(VotType)
-	 * @see TAPTypes#getVotType(String, int)
-	 * @see #setDefaultType()
+	 * @param type	Its new datatype.
 	 */
-	public final void setDatatype(String datatype, int size){
-		this.datatype = TAPTypes.getDBType(datatype);
-		this.size = (size <= 0 && size != TAPTypes.STAR_SIZE) ? TAPTypes.NO_SIZE : size;
-
-		if (this.datatype == null)
-			setDefaultType();
-		else
-			this.votType = TAPTypes.getVotType(this.datatype, this.size);
+	public final void setDatatype(final DBType type){
+		if (type != null)
+			datatype = type;
 	}
 
 	/**
-	 * @return The VOTable type to use.
-	 */
-	public final VotType getVotType(){
-		return votType;
-	}
-
-	/**
-	 * <p>Sets the VOTable type and uses it to set the DB datatype and its size.</p>
-	 * <b>Important:</b>
-	 * <ul>
-	 * 	<li>If the given VOTable type is not known according to {@link TAPTypes#getDBType(VotType)}, the DB datatype of this column and its size are set to the default value (see {@link #setDefaultType()}).</li>
-	 * </ul>
+	 * Tell whether this column is one of those returned by default.
 	 * 
-	 * @param type	A full VOTable type (that's to say: <code>datatype</code>, <code>arraysize</code> and <code>xtype</code>).
-	 * 
-	 * @see TAPTypes#getDBType(VotType)
-	 * @see #setDefaultType()
-	 */
-	public final void setVotType(final VotType type){
-		this.votType = type;
-		this.datatype = TAPTypes.getDBType(type);
-		this.size = type.arraysize;
-
-		if (this.datatype == null)
-			setDefaultType();
-	}
-
-	/**
-	 * Sets the default DB datatype (VARCHAR) and its corresponding VOTable type (char , *).
-	 */
-	protected final void setDefaultType(){
-		datatype = TAPTypes.VARCHAR;
-		size = TAPTypes.STAR_SIZE;
-		votType = TAPTypes.getVotType(datatype, size);
-	}
-
-	/**
-	 * @return The principal.
+	 * @return	<i>true</i> if this column should be returned by default, <i>false</i> otherwise.
 	 */
 	public final boolean isPrincipal(){
 		return principal;
 	}
 
 	/**
-	 * @param principal The principal to set.
+	 * Set whether this column should be one of those returned by default.
+	 * 
+	 * @param  principal	<i>true</i> if this column should be returned by default, <i>false</i> otherwise.
 	 */
 	public final void setPrincipal(boolean principal){
 		this.principal = principal;
 	}
 
 	/**
-	 * @return The indexed.
+	 * Tell whether this column is indexed.
+	 * 
+	 * @return	<i>true</i> if this column is indexed, <i>false</i> otherwise.
 	 */
 	public final boolean isIndexed(){
 		return indexed;
 	}
 
 	/**
-	 * @param indexed The indexed to set.
+	 * Set whether this column is indexed or not.
+	 * 
+	 * @param  indexed	<i>true</i> if this column is indexed, <i>false</i> otherwise.
 	 */
 	public final void setIndexed(boolean indexed){
 		this.indexed = indexed;
 	}
 
 	/**
-	 * @return The std.
+	 * Tell whether this column is nullable.
+	 * 
+	 * @return	<i>true</i> if this column is nullable, <i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final boolean isNullable(){
+		return nullable;
+	}
+
+	/**
+	 * Set whether this column is nullable or not.
+	 * 
+	 * @param  nullable	<i>true</i> if this column is nullable, <i>false</i> otherwise.
+	 * 
+	 * @since 2.0
+	 */
+	public final void setNullable(boolean nullable){
+		this.nullable = nullable;
+	}
+
+	/**
+	 * Tell whether this column is defined by a standard.
+	 * 
+	 * @return	<i>true</i> if this column is defined by a standard, <i>false</i> otherwise.
 	 */
 	public final boolean isStd(){
 		return std;
 	}
 
 	/**
-	 * @param std The std to set.
+	 * Set whether this column is defined by a standard.
+	 * 
+	 * @param  std	<i>true</i> if this column is defined by a standard, <i>false</i> otherwise.
 	 */
 	public final void setStd(boolean std){
 		this.std = std;
 	}
 
+	/**
+	 * <p>Get the other (piece of) information associated with this column.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	By default, NULL is returned, but it may be any kind of value ({@link Integer},
+	 * 	{@link String}, {@link Map}, {@link List}, ...).
+	 * </i></p>
+	 * 
+	 * @return	The other (piece of) information. <i>MAY be NULL</i>
+	 */
 	public Object getOtherData(){
 		return otherData;
 	}
 
+	/**
+	 * Set the other (piece of) information associated with this column.
+	 * 
+	 * @param data	Another information about this column. <i>MAY be NULL</i>
+	 */
 	public void setOtherData(Object data){
 		otherData = data;
 	}
 
+	/**
+	 * <p>Let add a foreign key in which this column is a source (= which is targeting another column).</p>
+	 * 
+	 * <p><i>Note:
+	 * 	Nothing is done if the given value is NULL.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
+	 * 	that owns this column or that is part of the foreign key. 
+	 * </i></p>
+	 * 
+	 * @param key	A foreign key.
+	 */
 	protected void addTarget(TAPForeignKey key){
 		if (key != null)
 			lstTargets.add(key);
 	}
 
-	protected int getNbTargets(){
+	/**
+	 * Get the number of times this column is targeting another column.
+	 * 
+	 * @return	How many this column is source in a foreign key.
+	 */
+	public int getNbTargets(){
 		return lstTargets.size();
 	}
 
-	protected Iterator<TAPForeignKey> getTargets(){
+	/**
+	 * Get the list of foreign keys in which this column is a source (= is targeting another column).
+	 * 
+	 * @return	List of foreign keys in which this column is a source.
+	 */
+	public Iterator<TAPForeignKey> getTargets(){
 		return lstTargets.iterator();
 	}
 
+	/**
+	 * <p>Remove the fact that this column is a source (= is targeting another column)
+	 * in the given foreign key.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	Nothing is done if the given value is NULL.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
+	 * 	that owns this column or that is part of the foreign key. 
+	 * </i></p>
+	 * 
+	 * @param key	Foreign key in which this column was targeting another column.
+	 */
 	protected void removeTarget(TAPForeignKey key){
-		lstTargets.remove(key);
+		if (key != null)
+			lstTargets.remove(key);
 	}
 
+	/**
+	 * <p>Remove the fact that this column is a source (= is targeting another column)
+	 * in any foreign key in which it was.</p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
+	 * 	that owns this column or that is part of the foreign key. 
+	 * </i></p>
+	 */
 	protected void removeAllTargets(){
 		lstTargets.clear();
 	}
 
+	/**
+	 * <p>Let add a foreign key in which this column is a target (= which is targeted by another column).</p>
+	 * 
+	 * <p><i>Note:
+	 * 	Nothing is done if the given value is NULL.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
+	 * 	that owns this column or that is part of the foreign key. 
+	 * </i></p>
+	 * 
+	 * @param key	A foreign key.
+	 */
 	protected void addSource(TAPForeignKey key){
 		if (key != null)
 			lstSources.add(key);
 	}
 
-	protected int getNbSources(){
+	/**
+	 * Get the number of times this column is targeted by another column.
+	 * 
+	 * @return	How many this column is target in a foreign key.
+	 */
+	public int getNbSources(){
 		return lstSources.size();
 	}
 
-	protected Iterator<TAPForeignKey> getSources(){
+	/**
+	 * Get the list of foreign keys in which this column is a target (= is targeted another column).
+	 * 
+	 * @return	List of foreign keys in which this column is a target.
+	 */
+	public Iterator<TAPForeignKey> getSources(){
 		return lstSources.iterator();
 	}
 
+	/**
+	 * <p>Remove the fact that this column is a target (= is targeted by another column)
+	 * in the given foreign key.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	Nothing is done if the given value is NULL.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
+	 * 	that owns this column or that is part of the foreign key. 
+	 * </i></p>
+	 * 
+	 * @param key	Foreign key in which this column was targeted by another column.
+	 */
 	protected void removeSource(TAPForeignKey key){
 		lstSources.remove(key);
 	}
 
+	/**
+	 * <p>Remove the fact that this column is a target (= is targeted by another column)
+	 * in any foreign key in which it was.</p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
+	 * 	that owns this column or that is part of the foreign key. 
+	 * </i></p>
+	 */
 	protected void removeAllSources(){
 		lstSources.clear();
 	}
 
+	/**
+	 * <p><i><b>Warning:</b>
+	 * 	Since the type of the other data is not known, the copy of its value
+	 * 	can not be done properly. So, this column and its copy will share the same other data object.
+	 * 	If it is also needed to make a deep copy of this other data object, this function MUST be
+	 * 	overridden.
+	 * </i></b>
+	 * 
+	 * @see adql.db.DBColumn#copy(java.lang.String, java.lang.String, adql.db.DBTable)
+	 */
+	@Override
 	public DBColumn copy(final String dbName, final String adqlName, final DBTable dbTable){
-		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, description, unit, ucd, utype);
+		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, datatype, description, unit, ucd, utype);
 		copy.setDBName((dbName == null) ? this.dbName : dbName);
 		copy.setTable(dbTable);
 
-		copy.setDatatype(datatype, size);
 		copy.setIndexed(indexed);
 		copy.setPrincipal(principal);
 		copy.setStd(std);
@@ -360,11 +766,22 @@ public class TAPColumn implements DBColumn {
 		return copy;
 	}
 
+	/**
+	 * <p>Provide a deep copy (included the other data) of this column.</p>
+	 * 
+	 * <p><i><b>Warning:</b>
+	 * 	Since the type of the other data is not known, the copy of its value
+	 * 	can not be done properly. So, this column and its copy will share the same other data object.
+	 * 	If it is also needed to make a deep copy of this other data object, this function MUST be
+	 * 	overridden.
+	 * </i></b>
+	 * 
+	 * @return	The deep copy of this column.
+	 */
 	public DBColumn copy(){
-		TAPColumn copy = new TAPColumn(adqlName, description, unit, ucd, utype);
+		TAPColumn copy = new TAPColumn(adqlName, datatype, description, unit, ucd, utype);
 		copy.setDBName(dbName);
 		copy.setTable(table);
-		copy.setDatatype(datatype, size);
 		copy.setIndexed(indexed);
 		copy.setPrincipal(principal);
 		copy.setStd(std);
@@ -378,7 +795,7 @@ public class TAPColumn implements DBColumn {
 			return false;
 
 		TAPColumn col = (TAPColumn)obj;
-		return col.getTable().equals(table) && col.getName().equals(adqlName);
+		return col.getTable().equals(table) && col.getADQLName().equals(adqlName);
 	}
 
 	@Override

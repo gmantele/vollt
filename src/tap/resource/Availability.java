@@ -16,7 +16,8 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -28,23 +29,42 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
+import tap.TAPException;
+import uk.ac.starlink.votable.VOSerializer;
+import uws.UWSToolBox;
 
+/**
+ * <p>TAP resource describing the availability of a TAP service.</p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (04/2015)
+ */
 public class Availability implements TAPResource, VOSIResource {
 
+	/** Name of this TAP resource. */
 	public static final String RESOURCE_NAME = "availability";
 
-	private final ServiceConnection<?> service;
+	/** Description of the TAP service owning this resource. */
+	protected final ServiceConnection service;
+
+	/** <p>URL toward this TAP resource.
+	 * This URL is particularly important for its declaration in the capabilities of the TAP service.</p>
+	 * 
+	 * <p><i>Note: By default, it is just the name of this resource. It is updated after initialization of the service
+	 * when the TAP service base URL is communicated to its resources. Then, it is: baseTAPURL + "/" + RESOURCE_NAME.</i></p> */
 	protected String accessURL = getName();
 
-	protected Availability(ServiceConnection<?> service){
+	/**
+	 * Build a "availability" resource.
+	 * 
+	 * @param service	Description of the TAP service which will own this resource.
+	 */
+	protected Availability(final ServiceConnection service){
 		this.service = service;
 	}
 
-	public ServiceConnection<?> getService(){
-		return service;
-	}
-
-	public final void setTAPBaseURL(String baseURL){
+	@Override
+	public final void setTAPBaseURL(final String baseURL){
 		accessURL = ((baseURL == null) ? "" : (baseURL + "/")) + getName();
 	}
 
@@ -69,7 +89,7 @@ public class Availability implements TAPResource, VOSIResource {
 	}
 
 	@Override
-	public void init(ServletConfig config) throws ServletException{
+	public void init(final ServletConfig config) throws ServletException{
 		;
 	}
 
@@ -79,19 +99,40 @@ public class Availability implements TAPResource, VOSIResource {
 	}
 
 	@Override
-	public boolean executeResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
-		if (!request.getMethod().equalsIgnoreCase("GET"))	// ERREUR 405 selon VOSI (cf p.4)
-			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "The AVAILABILITY resource is only accessible in HTTP-GET !");
+	public boolean executeResource(final HttpServletRequest request, final HttpServletResponse response) throws IOException, TAPException{
+		/* "In the REST binding, the support interfaces shall have distinct URLs in the HTTP scheme and shall be accessible by the GET operation in the HTTP protocol.
+		 * The response to an HTTP POST, PUT or DELETE to these resources is not defined by this specification. However, if an implementation has no special action
+		 * to perform for these requests, the normal response would be a 405 "Method not allowed" error."
+		 * (Extract of the VOSI definition: http://www.ivoa.net/documents/VOSI/20100311/PR-VOSI-1.0-20100311.html#sec2) */
+		if (!request.getMethod().equalsIgnoreCase("GET"))
+			throw new TAPException("The AVAILABILITY resource is only accessible in HTTP-GET! No special action can be perfomed with another HTTP method.", HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 
+		// Set the response MIME type (XML):
 		response.setContentType("text/xml");
 
-		String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-		xml += "<availability xmlns=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0 http://www.ivoa.net/xml/VOSIAvailability/v1.0\">\n";
-		xml += "\t<available>" + service.isAvailable() + "</available>\n\t<note>" + service.getAvailability() + "</note>\n";
-		xml += "</availability>";
+		// Set the character encoding:
+		response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
+		// Get the output stream:
 		PrintWriter pw = response.getWriter();
-		pw.print(xml);
+
+		// ...And write the XML document describing the availability of the TAP service:
+		pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+		pw.println("<availability xmlns=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0 http://www.ivoa.net/xml/VOSIAvailability/v1.0\">");
+
+		// available ? (true or false)
+		pw.print("\t<available>");
+		pw.print(service.isAvailable());
+		pw.println("</available>");
+
+		// reason/description of the (non-)availability:
+		pw.print("\t<note>");
+		if (service.getAvailability() != null)
+			pw.print(VOSerializer.formatText(service.getAvailability()));
+		pw.println("</note>");
+
+		pw.println("</availability>");
+
 		pw.flush();
 
 		return true;

@@ -16,16 +16,15 @@ package uws.job.manager;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.Serializable;
-
 import java.util.Date;
 
 import uws.job.JobList;
 import uws.job.UWSJob;
-
 import uws.service.UWS;
 
 /**
@@ -50,8 +49,8 @@ import uws.service.UWS;
  * 	</i>
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (12/2014)
  * 
  * @see DefaultDestructionManager
  */
@@ -114,4 +113,15 @@ public interface DestructionManager extends Serializable {
 	 * @param job	The job to remove.
 	 */
 	public void remove(UWSJob job);
+
+	/**
+	 * <p>Stop watching the destruction of jobs.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	A subsequent call to {@link #update(UWSJob)} may enable again this manager.
+	 * </i></p>
+	 * 
+	 * @since 4.1
+	 */
+	public void stop();
 }

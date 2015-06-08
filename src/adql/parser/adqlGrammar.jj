@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de DonnM-CM-)es astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.2 (03/2014)
+*  Version: 1.4 (06/2015)
 */
 
 							/* ########### */
@@ -35,7 +35,7 @@
 options {
 	STATIC = false;
 	IGNORE_CASE = true;
-	DEBUG_PARSER = true;
+	DEBUG_PARSER = false;
 }
 
 							/* ########## */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.2 (03/2014)
+* @version 1.4 (06/2015)
 */
 public class ADQLParser {
 	
@@ -107,9 +107,6 @@ public class ADQLParser {
 	
 	/** The first token of a table/column name. This token is extracted by {@link #Identifier()}. */
 	private Token currentIdentifierToken = null;
-	
-	/** List of all allowed coordinate systems. */
-	private ArrayList<String> allowedCoordSys = new ArrayList<String>();
 	
 	/**
 	* Builds an ADQL parser without a query to parse.
@@ -346,24 +343,6 @@ public class ADQLParser {
 		query = null;
 		ReInit(stream);
 		return Query();
-	}
-	
-	public final void addCoordinateSystem(final String coordSys){
-		allowedCoordSys.add(coordSys);
-	}
-	
-	public final void setCoordinateSystems(final Collection<String> coordSys){
-		allowedCoordSys.clear();
-		if (coordSys != null)
-			allowedCoordSys.addAll(coordSys);
-	}
-	
-	public final boolean isAllowedCoordSys(final String coordSys) {
-		for(String cs : allowedCoordSys){
-			if (cs.equalsIgnoreCase(coordSys))
-				return true;
-		}
-		return false;
 	}
 	
 	public final void setDebug(boolean debug){
@@ -1114,29 +1093,48 @@ NumericConstant SignedInteger(): {Token sign=null, number; NumericConstant cst;}
 /* *********** */
 /* EXPRESSIONS */
 /* *********** */
-ADQLOperand ValueExpressionPrimary(): {ADQLColumn column; ADQLOperand op; Token left,right;} {
-  	try{
+ADQLOperand NumericValueExpressionPrimary(): {String expr; ADQLColumn column; ADQLOperand op; Token left, right;} {
+	try{
 		(// unsigned_value_specification
 		  op=UnsignedNumeric() {return op;}
-		// string
-		| op=String() {return op;}
 		// column_reference
-		| column=Column() {return column;}
+		| column=Column() {column.setExpectedType('N'); return column;}
 		// set_function_specification
 		| op=SqlFunction() {return op;}
 		// LEFT_PAR value_expression RIGHT_PAR
-		| (left=<LEFT_PAR> op=ValueExpression() right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop;})
-	}catch(Exception ex){		throw generateParseException(ex);
+		| (left=<LEFT_PAR> op=NumericExpression() right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop;})
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+}
+
+ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn column; ADQLOperand op;} {
+	try{
+		(// string
+		  expr=String() {return expr;}
+		// column_reference
+		| column=Column() {column.setExpectedType('S'); return column;}
+		// LEFT_PAR value_expression RIGHT_PAR
+		| (<LEFT_PAR> (op=StringExpression()) <RIGHT_PAR>) {return queryFactory.createWrappedOperand(op);})
+	}catch(Exception ex){
+		throw generateParseException(ex);
 	}
 }
 
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {
-	(valueExpr=GeometryValueFunction()
-	| LOOKAHEAD(<PLUS> | <MINUS>) valueExpr=NumericExpression()
-	| LOOKAHEAD(<COORDSYS>) valueExpr=StringExpression()
-	| LOOKAHEAD(StringFactor() <CONCAT>) valueExpr=StringExpression()
-	| valueExpr=NumericExpression())
-	{return valueExpr;}
+	try{
+		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
+		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
+		| LOOKAHEAD(<LEFT_PAR>) <LEFT_PAR> valueExpr=ValueExpression() <RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); }
+		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
+		| valueExpr=GeometryValueFunction()
+		| LOOKAHEAD(Column()) valueExpr=Column()
+		| LOOKAHEAD(String()) valueExpr=StringFactor()
+		| valueExpr=Factor())
+		{return valueExpr;}
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
 }
 
 ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
@@ -1175,8 +1173,8 @@ ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} 
 
 ADQLOperand Factor(): {boolean negative = false; Token minusSign = null; ADQLOperand op;} {
 	(
-		(<PLUS> | (minusSign=<MINUS> {negative = true;}))?
-		(LOOKAHEAD(2) op=NumericFunction() | op=ValueExpressionPrimary())
+		(<PLUS> | (<MINUS> {negative = true;}))?
+		(LOOKAHEAD(2) op=NumericFunction() | op=NumericValueExpressionPrimary())
 	)
 	
 	{
@@ -1222,17 +1220,17 @@ ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;
 
 ADQLOperand StringFactor(): {ADQLOperand op;} {
 	(op=ExtractCoordSys()
-	| LOOKAHEAD(2) op=UserDefinedFunction()
-	| op=ValueExpressionPrimary())
+	| LOOKAHEAD(2) op=UserDefinedFunction() { ((UserDefinedFunction)op).setExpectedType('S'); }
+	| op=StringValueExpressionPrimary())
 	{return op;}
 }
 
 GeometryValue<GeometryFunction> GeometryExpression(): {ADQLColumn col = null; GeometryFunction gf = null;} {
 	(col=Column() | gf=GeometryValueFunction())
 	{
-		if (col != null)
+		if (col != null){		  	col.setExpectedType('G');
 			return new GeometryValue<GeometryFunction>(col);
-		else
+		}else
 			return new GeometryValue<GeometryFunction>(gf);
 	}
 }
@@ -1444,24 +1442,26 @@ GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<Geometr
 			})
 		// non_predicate_geometry_function
 		|	(fct=<AREA> <LEFT_PAR> gvf1=GeometryExpression() end=<RIGHT_PAR>) {gf = queryFactory.createArea(gvf1);}
-		|	(fct=<COORD1> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord1(p1);} | col1=Column() {gf = queryFactory.createCoord1(col1);}) end=<RIGHT_PAR>)
-		|	(fct=<COORD2> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord2(p1);} | col1=Column() {gf = queryFactory.createCoord2(col1);}) end=<RIGHT_PAR>)
+		|	(fct=<COORD1> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord1(p1);} | col1=Column() {col1.setExpectedType('G'); gf = queryFactory.createCoord1(col1);}) end=<RIGHT_PAR>)
+		|	(fct=<COORD2> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord2(p1);} | col1=Column() {col1.setExpectedType('G'); gf = queryFactory.createCoord2(col1);}) end=<RIGHT_PAR>)
 		|	(fct=<DISTANCE>
 				<LEFT_PAR>
 				(p1=Point()|col1=Column()) 
 				{
 					if (p1 != null)
 						gvp1 = new GeometryValue<PointFunction>(p1);
-					else
+					else{						col1.setExpectedType('G');
 						gvp1 = new GeometryValue<PointFunction>(col1);
+					}
 				}
 				<COMMA>
 				(p2=Point()|col2=Column())
 				{
 					if (p2 != null)
 						gvp2 = new GeometryValue<PointFunction>(p2);
-					else
+					else{						col2.setExpectedType('G');
 						gvp2 = new GeometryValue<PointFunction>(col2);
+					}
 				} 
 				end=<RIGHT_PAR>
 				{gf = queryFactory.createDistance(gvp1, gvp2);}
@@ -1477,19 +1477,9 @@ GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<Geometr
 	}
 }
 
-ADQLOperand CoordinateSystem(): { Token oldToken = token; ADQLOperand coordSys=null;}{
+ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null;}{
 	coordSys=StringExpression()
-	{
-		if (allowedCoordSys.size() > 0){
-			TextPosition position = new TextPosition(oldToken.next, token);
-			if (coordSys == null)
-				throw new ParseException("A coordinate system must always be provided !", position);
-			if (coordSys instanceof StringConstant && !isAllowedCoordSys(((StringConstant)coordSys).getValue()))
-				throw new ParseException("\""+coordSys.toADQL()+"\" is not an allowed coordinate systems !", position);
-		}
-			
-		return coordSys;
-	}
+	{ return coordSys; }
 }
 
 GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand coordSys; ADQLOperand width, height; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; ADQLOperand op=null; GeometryValue<GeometryFunction> gvf = null; GeometryFunction gf = null;} {
@@ -1569,7 +1559,7 @@ ADQLFunction NumericFunction(): {ADQLFunction fct;} {
 	(fct=MathFunction()
 	| fct=TrigFunction()
 	| fct=GeometryFunction()
-	| fct=UserDefinedFunction())
+	| fct=UserDefinedFunction() { ((UserDefinedFunction)fct).setExpectedType('N'); })
 	{return fct;}
 }
 
@@ -1624,19 +1614,23 @@ MathFunction TrigFunction(): {Token fct=null, end; ADQLOperand param1=null, para
 	}
 }
 
-/* /!\ WARNING: The function name may be prefixed by "udf_" but there is no way to check it here ! */
 UserDefinedFunction UserDefinedFunction(): {Token fct, end; Vector<ADQLOperand> params = new Vector<ADQLOperand>(); ADQLOperand op;} {
 	fct=<REGULAR_IDENTIFIER> <LEFT_PAR> (op=ValueExpression() {params.add(op);} (<COMMA> op=ValueExpression() {params.add(op);})*)? end=<RIGHT_PAR>
 	{
 		//System.out.println("INFO [ADQLParser]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
 		try{
+			//  Build the parameters list:
 			ADQLOperand[] parameters = new ADQLOperand[params.size()];
 			for(int i=0; i<params.size(); i++)
 				parameters[i] = params.get(i);
+			// Create the UDF function:
 			UserDefinedFunction udf = queryFactory.createUserDefinedFunction(fct.image, parameters);
 			udf.setPosition(new TextPosition(fct, end));
 			return udf;
 		}catch(UnsupportedOperationException uoe){
+		  	/* This catch clause is just for backward compatibility:
+		  	 * if the createUserDefinedFunction(...) is overridden and
+		  	 * the function can not be identified a such exception may be thrown). */
 			throw new ParseException(uoe.getMessage(), new TextPosition(fct, token));
 		}catch(Exception ex){
 			throw generateParseException(ex);

@@ -16,13 +16,13 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Collection;
-import java.util.Vector;
 
+import adql.db.FunctionDef;
 import adql.parser.IdentifierItems.IdentifierItem;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
@@ -83,24 +83,27 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <p>To customize the object representation you merely have to extends the appropriate functions of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  * 
  * @see ADQLParser
  */
 public class ADQLQueryFactory {
 
-	protected boolean allowUnknownFunctions = false;
-
+	/**
+	 * Type of table JOIN.
+	 * 
+	 * @author Gr&eacute;gory Mantelet (CDS)
+	 * @version 1.0 (08/2011)
+	 */
 	public static enum JoinType{
 		CROSS, INNER, OUTER_LEFT, OUTER_RIGHT, OUTER_FULL;
 	}
 
+	/**
+	 * Create a query factory.
+	 */
 	public ADQLQueryFactory(){
 		;
-	}
-
-	public ADQLQueryFactory(boolean allowUnknownFunctions){
-		this.allowUnknownFunctions = allowUnknownFunctions;
 	}
 
 	public ADQLQuery createQuery() throws Exception{
@@ -268,21 +271,29 @@ public class ADQLQueryFactory {
 
 	/**
 	 * <p>Creates the user defined functions called as the given name and with the given parameters.</p>
-	 * <p><b>IMPORTANT: This function must be overridden if some user defined functions are available.</b></p>
+	 * 
+	 * <p>
+	 * 	By default, this function returns a {@link DefaultUDF} instance. It is generic enough to cover every kind of functions.
+	 * 	But you can of course override this function in order to return your own instance of {@link UserDefinedFunction}.
+	 * 	In this case, you may not forget to call the super function (super.createUserDefinedFunction(name, params)) so that
+	 * 	all other unknown functions are still returned as {@link DefaultUDF} instances.
+	 * </p>
+	 * 
+	 * <p><i><b>IMPORTANT:</b>
+	 * 	The tests done to check whether a user defined function is allowed/managed in this implementation, is done later by the parser.
+	 * 	Only declared UDF will pass the test of the parser. For that, you should give it a list of allowed UDFs (each UDF will be then
+	 * 	represented by a {@link FunctionDef} object). 
+	 * </i></p>
 	 * 
 	 * @param name			Name of the user defined function to create.
 	 * @param params		Parameters of the user defined function to create.
 	 * 
-	 * @return				The corresponding user defined function.
+	 * @return				The corresponding user defined function (by default an instance of {@link DefaultUDF}).
 	 * 
-	 * @throws Exception	An {@link UnsupportedOperationException} by default, otherwise any other type of error may be
-	 * 						thrown if there is a problem while creating the function.
+	 * @throws Exception	If there is a problem while creating the function.
 	 */
 	public UserDefinedFunction createUserDefinedFunction(String name, ADQLOperand[] params) throws Exception{
-		if (allowUnknownFunctions)
-			return new DefaultUDF(name, params);
-		else
-			throw new UnsupportedOperationException("No ADQL function called \"" + name + "\" !");
+		return new DefaultUDF(name, params);
 	}
 
 	public DistanceFunction createDistance(PointFunction point1, PointFunction point2) throws Exception{
@@ -317,7 +328,7 @@ public class ADQLQueryFactory {
 		return new RegionFunction(param);
 	}
 
-	public PolygonFunction createPolygon(ADQLOperand coordSys, Vector<ADQLOperand> coords) throws Exception{
+	public PolygonFunction createPolygon(ADQLOperand coordSys, Collection<? extends ADQLOperand> coords) throws Exception{
 		return new PolygonFunction(coordSys, coords);
 	}
 
@@ -375,14 +386,14 @@ public class ADQLQueryFactory {
 
 	/**
 	 * Replace {@link #createOrder(int, boolean, TextPosition)}.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public ADQLOrder createOrder(final int ind, final boolean desc) throws Exception{
 		return new ADQLOrder(ind, desc);
 	}
 
 	/**
-	 * @deprecated since 1.3 ; Replaced by {@link #createOrder(int, boolean)}
+	 * @deprecated since 1.4 ; Replaced by {@link #createOrder(int, boolean)}
 	 */
 	@Deprecated
 	public ADQLOrder createOrder(final int ind, final boolean desc, final TextPosition position) throws Exception{

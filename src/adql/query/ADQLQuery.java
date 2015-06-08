@@ -16,8 +16,8 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ import adql.search.ISearchHandler;
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -61,7 +61,7 @@ public class ADQLQuery implements ADQLObject {
 	private ClauseADQL<ADQLOrder> orderBy;
 
 	/** Position of this Query (or sub-query) inside the whole given ADQL query string.
-	 * @since 1.3*/
+	 * @since 1.4 */
 	private TextPosition position = null;
 
 	/**
@@ -271,7 +271,7 @@ public class ADQLQuery implements ADQLObject {
 	 * Set the position of this {@link ADQLQuery} (or sub-query) inside the whole given ADQL query string.
 	 * 
 	 * @param position New position of this {@link ADQLQuery}.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){
 		this.position = position;
@@ -301,7 +301,12 @@ public class ADQLQuery implements ADQLObject {
 			ADQLOperand operand = item.getOperand();
 			if (item instanceof SelectAllColumns){
 				try{
-					columns.addAll(from.getDBColumns());
+					// If "{table}.*", add all columns of the specified table:
+					if (((SelectAllColumns)item).getAdqlTable() != null)
+						columns.addAll(((SelectAllColumns)item).getAdqlTable().getDBColumns());
+					// Otherwise ("*"), add all columns of all selected tables:
+					else
+						columns.addAll(from.getDBColumns());
 				}catch(ParseException pe){
 					// Here, this error should not occur any more, since it must have been caught by the DBChecker!
 				}

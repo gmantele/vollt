@@ -16,7 +16,8 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
@@ -27,8 +28,8 @@ import java.util.Vector;
  * 
  * <p>Since it is a list, it is possible to add, remove, modify and iterate on a such object.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  * 
  * @see ClauseADQL
  * @see ClauseConstraints
@@ -44,7 +45,7 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	private final Vector<T> list = new Vector<T>();
 
 	/** Position inside an ADQL query string.
-	 * @since 1.3 */
+	 * @since 1.4 */
 	private TextPosition position = null;
 
 	/**
@@ -195,7 +196,7 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	 * Sets the position at which this {@link ADQLList} has been found in the original ADQL query string.
 	 * 
 	 * @param pos	Position of this {@link ADQLList}.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){
 		this.position = position;
@@ -203,12 +204,15 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 
 	@Override
 	public String toADQL(){
-		String adql = (getName() == null) ? "" : (getName() + " ");
+		StringBuffer adql = new StringBuffer((getName() == null) ? "" : (getName() + " "));
 
-		for(int i = 0; i < size(); i++)
-			adql += ((i == 0) ? "" : (" " + getSeparator(i) + " ")) + get(i).toADQL();
+		for(int i = 0; i < size(); i++){
+			if (i > 0)
+				adql.append(" " + getSeparator(i) + " ");
+			adql.append(get(i).toADQL());
+		}
 
-		return adql;
+		return adql.toString();
 	}
 
 	@Override

@@ -25,6 +25,7 @@ import uws.UWSException;
  * <p>Lets controlling an input parameter of a UWS job.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS)
+ * @version 4.0
  */
 public interface InputParamController {
 

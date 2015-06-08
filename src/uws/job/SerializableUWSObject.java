@@ -16,7 +16,8 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -25,7 +26,6 @@ import java.io.Serializable;
 import javax.servlet.ServletOutputStream;
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 import uws.job.serializer.UWSSerializer;
 import uws.job.serializer.XMLSerializer;
 import uws.job.user.JobOwner;
@@ -36,8 +36,8 @@ import uws.job.user.JobOwner;
  * <P>The {@link SerializableUWSObject#serialize(UWSSerializer, JobOwner)} method must be implemented. It is the most important method of this class
  * because it returns a serialized representation of this UWS object.</P>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  */
 public abstract class SerializableUWSObject implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -49,11 +49,11 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @return				The serialized representation of this object.
 	 * 
-	 * @throws UWSException	If there is an error during the serialization.
+	 * @throws Exception	If there is an unexpected error during the serialization.
 	 * 
-	 * @see #serialize(UWSSerializer, String)
+	 * @see #serialize(UWSSerializer, JobOwner)
 	 */
-	public String serialize(UWSSerializer serializer) throws UWSException{
+	public String serialize(UWSSerializer serializer) throws Exception{
 		return serialize(serializer, null);
 	}
 
@@ -66,9 +66,10 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @return					The serialized representation of this object.
 	 * 
-	 * @throws UWSException		If there is an error during the serialization.
+	 * @throws UWSException		If the owner is not allowed to see the content of the serializable object. 
+	 * @throws Exception		If there is any other error during the serialization.
 	 */
-	public abstract String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException;
+	public abstract String serialize(UWSSerializer serializer, JobOwner owner) throws UWSException, Exception;
 
 	/**
 	 * Serializes the whole object in the given output stream and thanks to the given serializer.
@@ -78,9 +79,9 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @throws UWSException	If there is an error during the serialization.
 	 * 
-	 * @see #serialize(ServletOutputStream, UWSSerializer, String)
+	 * @see #serialize(ServletOutputStream, UWSSerializer, JobOwner)
 	 */
-	public void serialize(ServletOutputStream output, UWSSerializer serializer) throws UWSException{
+	public void serialize(ServletOutputStream output, UWSSerializer serializer) throws Exception{
 		serialize(output, serializer, null);
 	}
 
@@ -90,27 +91,23 @@ public abstract class SerializableUWSObject implements Serializable {
 	 * 
 	 * @param output		The ouput stream in which this object must be serialized.
 	 * @param serializer	The serializer to use.
-	 * @param ownerId		The ID of the current ID.
+	 * @param owner			The user who asks for the serialization.
 	 * 
-	 * @throws UWSException	If the given ouput stream is <i>null</i>,
-	 * 						or if there is an error during the serialization,
-	 * 						or if there is an error while writing in the given stream.
+	 * @throws UWSException		If the owner is not allowed to see the content of the serializable object.
+	 * @throws IOException		If there is an error while writing in the given stream. 
+	 * @throws Exception		If there is any other error during the serialization.
 	 * 
-	 * @see #serialize(UWSSerializer, String)
+	 * @see #serialize(UWSSerializer, JobOwner)
 	 */
-	public void serialize(ServletOutputStream output, UWSSerializer serializer, JobOwner owner) throws UWSException{
+	public void serialize(ServletOutputStream output, UWSSerializer serializer, JobOwner owner) throws UWSException, IOException, Exception{
 		if (output == null)
-			throw UWSExceptionFactory.missingOutputStream("impossible to serialize {" + toString() + "}.");
+			throw new NullPointerException("Missing serialization output stream!");
 
-		try{
-			String serialization = serialize(serializer, owner);
-			if (serialization != null){
-				output.print(serialization);
-				output.flush();
-			}else
-				throw UWSExceptionFactory.incorrectSerialization("NULL", "{" + toString() + "}");
-		}catch(IOException ex){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ex, "IOException => impossible to serialize {" + toString() + "} !");
-		}
+		String serialization = serialize(serializer, owner);
+		if (serialization != null){
+			output.print(serialization);
+			output.flush();
+		}else
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Incorrect serialization value (=NULL) ! => impossible to serialize " + toString() + ".");
 	}
 }

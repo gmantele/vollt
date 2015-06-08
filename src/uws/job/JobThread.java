@@ -16,7 +16,8 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -25,7 +26,10 @@ import java.util.Date;
 
 import uws.UWSException;
 import uws.UWSToolBox;
+import uws.service.error.ServiceErrorWriter;
 import uws.service.file.UWSFileManager;
+import uws.service.log.UWSLog;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <P>An instance of this class is a thread dedicated to a job execution.</P>
@@ -55,8 +59,8 @@ import uws.service.file.UWSFileManager;
  * 	<li>an {@link InterruptedException}: the method {@link UWSJob#abort()} is called.</li>
  * </ul>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (04/2015)
  * 
  * @see UWSJob#start()
  * @see UWSJob#abort()
@@ -71,44 +75,91 @@ public abstract class JobThread extends Thread {
 	/** The last error which has occurred during the execution of this thread. */
 	protected UWSException lastError = null;
 
-	/** Indicates whether the {@link UWSJob#jobWork()} has been called and finished, or not. */
+	/** Indicate whether the exception stored in the attribute {@link #lastError} should be considered as a grave error or not.
+	 * By default, {@link #lastError} is a "normal" error.
+	 * @since 4.1 */
+	protected boolean fatalError = false;
+
+	/** Indicates whether the {@link #jobWork()} has been called and finished, or not. */
 	protected boolean finished = false;
 
 	/** Description of what is done by this thread. */
 	protected final String taskDescription;
 
+	/**
+	 * Object to use in order to write the content of an error/exception in any output stream.
+	 * If NULL, the content will be written by {@link UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)}
+	 * (in text/plain with stack-trace).
+	 * Otherwise the content and the MIME type are determined by the error writer.
+	 * @since 4.1
+	 */
+	protected final ServiceErrorWriter errorWriter;
+
+	/** Group of threads in which this job thread will run. */
 	public final static ThreadGroup tg = new ThreadGroup("UWS_GROUP");
 
 	/**
 	 * Builds the JobThread instance which will be used by the given job to execute its task.
 	 * 
 	 * @param j				The associated job.
-	 * @param fileManager	An object to get access to UWS files (particularly: error and results file).
 	 * 
-	 * @throws UWSException	If the given job or the given file manager is null.
+	 * @throws NullPointerException	If the given job or the given file manager is null.
 	 * 
 	 * @see #getDefaultTaskDescription(UWSJob)
 	 */
-	public JobThread(UWSJob j) throws UWSException{
-		this(j, getDefaultTaskDescription(j));
+	public JobThread(final UWSJob j) throws NullPointerException{
+		this(j, getDefaultTaskDescription(j), null);
 	}
 
 	/**
 	 * Builds the JobThread instance which will be used by the given job to execute its task.
 	 * 
 	 * @param j				The associated job.
-	 * @param fileManager	An object to get access to UWS files (particularly: error and results file).
+	 * @param errorWriter	Object to use in case of error in order to format the details of the error for the .../error/details parameter.
+	 * 
+	 * @throws NullPointerException	If the given job is null.
+	 * 
+	 * @see #getDefaultTaskDescription(UWSJob)
+	 * 
+	 * @since 4.1
+	 */
+	public JobThread(final UWSJob j, final ServiceErrorWriter errorWriter) throws NullPointerException{
+		this(j, getDefaultTaskDescription(j), errorWriter);
+	}
+
+	/**
+	 * Builds the JobThread instance which will be used by the given job to execute its task.
+	 * 
+	 * @param j				The associated job.
 	 * @param task			Description of the task executed by this thread.
 	 * 
-	 * @throws UWSException	If the given job or the given file manager is null.
+	 * @throws NullPointerException	If the given job is null.
 	 */
-	public JobThread(UWSJob j, String task) throws UWSException{
+	public JobThread(final UWSJob j, final String task) throws NullPointerException{
 		super(tg, j.getJobId());
-		if (j == null)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing job instance ! => impossible to build a JobThread instance.");
 
 		job = j;
 		taskDescription = task;
+		errorWriter = null;
+	}
+
+	/**
+	 * Builds the JobThread instance which will be used by the given job to execute its task.
+	 * 
+	 * @param j				The associated job.
+	 * @param task			Description of the task executed by this thread.
+	 * @param errorWriter	Object to use in case of error in order to format the details of the error for the .../error/details parameter.
+	 * 
+	 * @throws NullPointerException	If the given job is null.
+	 * 
+	 * @since 4.1
+	 */
+	public JobThread(final UWSJob j, final String task, final ServiceErrorWriter errorWriter) throws NullPointerException{
+		super(tg, j.getJobId());
+
+		job = j;
+		taskDescription = task;
+		this.errorWriter = errorWriter;
 	}
 
 	/**
@@ -158,7 +209,7 @@ public abstract class JobThread extends Thread {
 	}
 
 	/**
-	 * Indicates whether the {@link UWSJob#jobWork()} method has been called or not.
+	 * Indicates whether the {@link #jobWork()} method has been called or not.
 	 * 
 	 * @return	<i>true</i> if the job work is done, <i>false</i> otherwise.
 	 */
@@ -189,7 +240,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @throws UWSException	If there is an error while publishing the error.
 	 * 
-	 * @see {@link UWSJob#error(ErrorSummary)}
+	 * @see UWSJob#error(ErrorSummary)
 	 */
 	public void setError(final ErrorSummary error) throws UWSException{
 		job.error(error);
@@ -210,30 +261,39 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @throws UWSException		If there is an error while publishing the given exception.
 	 * 
-	 * {@link UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)}
+	 * @see #setError(ErrorSummary)
+	 * @see UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)
 	 */
 	public void setError(final UWSException ue) throws UWSException{
 		if (ue == null)
 			return;
 
 		try{
+			// Set the error summary:
 			ErrorSummary error = new ErrorSummary(ue, ue.getUWSErrorType(), job.getUrl() + "/" + UWSJob.PARAM_ERROR_SUMMARY + "/details");
+
+			// Prepare the output stream:
 			OutputStream output = getFileManager().getErrorOutput(error, job);
 
-			UWSToolBox.writeErrorFile(ue, error, job, output);
+			// Format and write the error...
+			// ...using the error writer, if any:
+			if (errorWriter != null)
+				errorWriter.writeError(ue, error, job, output);
+			// ...or write a default output:
+			else
+				UWSToolBox.writeErrorFile(ue, error, job, output);
 
+			// Set the error summary inside the job:
 			setError(error);
 
 		}catch(IOException ioe){
-			job.getLogger().error("The stack trace of a UWSException (job ID: " + job.getJobId() + " ; error message: \"" + ue.getMessage() + "\") had not been written !", ioe);
+			job.getLogger().logThread(LogLevel.ERROR, this, "SET_ERROR", "The stack trace of a UWSException had not been written!", ioe);
 			setError(new ErrorSummary(ue.getMessage(), ue.getUWSErrorType()));
 		}
 	}
 
 	/**
 	 * Creates a default result description.
-	 * 
-	 * @param job	The job which will contains this result.
 	 * 
 	 * @return		The created result.
 	 * 
@@ -256,7 +316,6 @@ public abstract class JobThread extends Thread {
 	/**
 	 * Creates a default result description but by precising its name/ID.
 	 * 
-	 * @param job	The job which will contains this result.
 	 * @param name	The name/ID of the result to create.
 	 * 
 	 * @return		The created result.
@@ -305,7 +364,7 @@ public abstract class JobThread extends Thread {
 	 * 
 	 * @throws IOException	If there is an error while getting the result file size.
 	 * 
-	 * @see {@link UWSFileManager#getResultSize(Result, UWSJob)}
+	 * @see UWSFileManager#getResultSize(Result, UWSJob)
 	 */
 	public long getResultSize(final Result result) throws IOException{
 		return getFileManager().getResultSize(result, job);
@@ -318,14 +377,14 @@ public abstract class JobThread extends Thread {
 	 * <ul>
 	 * 	<li>This method does the job work but it MUST also fill the associated job with the execution results and/or errors.</li>
 	 * 	<li>Do not forget to check the interrupted flag of the thread ({@link Thread#isInterrupted()}) and then to send an {@link InterruptedException}.
-	 * 		Otherwise the {@link UWSJob#stop()} method will have no effect, as for {@link #abort()} and {@link #error(ErrorSummary)}.</li>
+	 * 		Otherwise the {@link UWSJob#stop()} method will have no effect, as for {@link UWSJob#abort()} and {@link #setError(ErrorSummary)}.</li>
 	 * </ul></b></p>
 	 * 
 	 * <p><i><u>Notes</u>:
 	 * <ul>
 	 * 	<li>The "setPhase(COMPLETED)" and the "endTime=new Date()" are automatically applied just after the call to jobWork.</li>
-	 * 	<li>If an {@link UWSException} is thrown the {@link JobThread} will automatically publish the exception in this job
-	 * 		thanks to the {@link UWSJob#error(UWSException)} method or the {@link #setErrorSummary(ErrorSummary)} method,
+	 * 	<li>If a {@link UWSException} is thrown the {@link JobThread} will automatically publish the exception in this job
+	 * 		thanks to the {@link UWSJob#error(ErrorSummary)} method or the {@link UWSJob#setErrorSummary(ErrorSummary)} method,
 	 * 		and so it will set its phase to {@link ExecutionPhase#ERROR}.</li>
 	 * 	<li>If an {@link InterruptedException} is thrown the {@link JobThread} will automatically set the phase to {@link ExecutionPhase#ABORTED}</li>
 	 * </ul></i></p>
@@ -338,19 +397,19 @@ public abstract class JobThread extends Thread {
 	/**
 	 * <ol>
 	 * 	<li>Tests the execution phase of the job: if not {@link ExecutionPhase#EXECUTING EXECUTING}, nothing is done...the thread ends immediately.</li>
-	 * 	<li>Calls the {@link UWSJob#jobWork()} method.</li>
+	 * 	<li>Calls the {@link #jobWork()} method.</li>
 	 * 	<li>Sets the <i>finished</i> flag to <i>true</i>.</li>
 	 * 	<li>Changes the job phase to {@link ExecutionPhase#COMPLETED COMPLETED} if not interrupted, else {@link ExecutionPhase#ABORTED ABORTED}.
 	 * </ol>
 	 * <P>If any {@link InterruptedException} occurs the job phase is only set to {@link ExecutionPhase#ABORTED ABORTED}.</P>
 	 * <P>If any {@link UWSException} occurs while the phase is {@link ExecutionPhase#EXECUTING EXECUTING} the job phase
 	 * is set to {@link ExecutionPhase#ERROR ERROR} and an error  summary is created.</P>
-	 * <P>Whatever is the exception, it will always be available thanks to the {@link JobThread#getError()} after execution.</P>
+	 * <P>Whatever is the exception, it will always be available thanks to the {@link #getError()} after execution.</P>
 	 * 
-	 * @see UWSJob#jobWork()
+	 * @see #jobWork()
 	 * @see UWSJob#setPhase(ExecutionPhase)
-	 * @see UWSJob#publishExecutionError(UWSException)
-	 * @see UWSToolBox#publishErrorSummary(UWSJob, String, ErrorType)
+	 * @see #setError(UWSException)
+	 * @see #setError(ErrorSummary)
 	 */
 	@Override
 	public final void run(){
@@ -361,63 +420,79 @@ public abstract class JobThread extends Thread {
 			finished = false;
 		}
 
+		UWSLog logger = job.getLogger();
+
 		// Log the start of this thread:
-		job.getLogger().threadStarted(this, taskDescription);
+		logger.logThread(LogLevel.INFO, this, "START", "Thread \"" + getName() + "\" started.", null);
 
 		try{
-			try{
-				// Execute the task:
-				jobWork();
+			// Execute the task:
+			jobWork();
 
-				// Change the phase to COMPLETED:
-				finished = true;
-				complete();
-			}catch(InterruptedException ex){
-				// Abort:
-				finished = true;
-				if (!job.stopping)
+			// Change the phase to COMPLETED:
+			finished = true;
+			complete();
+			logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" successfully ended.", null);
+
+		}catch(InterruptedException ex){
+			/* CASE: ABORTION
+			 *   In case of abortion, the thread just stops normally, just logging an INFO saying that the thread has been cancelled.
+			 * Since it is not an abnormal behavior there is no reason to keep a trace of the interrupted exception. */
+			finished = true;
+			// Abort:
+			if (!job.stopping){
+				try{
 					job.abort();
-				// Log the abortion:
-				job.getLogger().threadInterrupted(this, taskDescription, ex);
+				}catch(UWSException ue){
+					/* Should not happen since the reason of a such exception would be that the thread can not be stopped...
+					 * ...but we are already in the thread and it is stopping. */
+					logger.logJob(LogLevel.WARNING, job, "ABORT", "Can not put the job in its ABORTED phase!", ue);
+				}
 			}
-			return;
+			// Log the abortion:
+			logger.logThread(LogLevel.INFO, this, "END", "Thread \"" + getName() + "\" cancelled.", null);
 
 		}catch(UWSException ue){
-			// Save the error:
+			/* CASE: ERROR for a known reason
+			 *   A such error is just a "normal" error, in the sense its cause is known and in a way supported or expected in
+			 * a special configuration or parameters. Thus, the error is kept and will logged with a stack trace afterwards.*/
 			lastError = ue;
 
 		}catch(Throwable t){
-			// Build the error:
-			if (t.getMessage() == null || t.getMessage().trim().isEmpty())
-				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t.getClass().getName(), ErrorType.FATAL);
+			/* DEFAULT: FATAL error
+			 *   Any other error is considered as FATAL because it was not expected or supported at a given point.
+			 * It is generally a bug or a forgiven thing in the code of the library. As for "normal" errors, this error
+			 * is kept and will logged with stack trace afterwards. */
+			fatalError = true;
+			if (t instanceof Error)
+				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, "A FATAL DEEP ERROR OCCURED WHILE EXECUTING THIS QUERY! This error is reported in the service logs.", ErrorType.FATAL);
+			else if (t.getMessage() == null || t.getMessage().trim().isEmpty())
+				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, t.getClass().getName(), ErrorType.FATAL);
 			else
 				lastError = new UWSException(UWSException.INTERNAL_SERVER_ERROR, t, ErrorType.FATAL);
 
 		}finally{
 			finished = true;
 
-			// Publish the error if any has occurred:
+			/* PUBLISH THE ERROR if any has occurred */
 			if (lastError != null){
 				// Log the error:
-				job.getLogger().threadInterrupted(this, taskDescription, lastError);
+				LogLevel logLevel = fatalError ? LogLevel.FATAL : LogLevel.ERROR;
+				logger.logJob(logLevel, job, "END", "The following " + (fatalError ? "GRAVE" : "") + " error interrupted the execution of the job " + job.getJobId() + ".", lastError);
+				logger.logThread(logLevel, this, "END", "Thread \"" + getName() + "\" ended with an error.", null);
 				// Set the error into the job:
 				try{
 					setError(lastError);
 				}catch(UWSException ue){
 					try{
-						job.getLogger().error("[JobThread] LEVEL 1 -> Problem in JobThread.setError(UWSException), while setting the execution error of the job " + job.getJobId(), ue);
+						logger.logThread(logLevel, this, "SET_ERROR", "[1st Attempt] Problem in JobThread.setError(UWSException), while setting the execution error of the job " + job.getJobId() + ". A last attempt will be done.", ue);
 						setError(new ErrorSummary((lastError.getCause() != null) ? lastError.getCause().getMessage() : lastError.getMessage(), lastError.getUWSErrorType()));
 					}catch(UWSException ue2){
-						job.getLogger().error("[JobThread] LEVEL 2 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId(), ue2);
-						try{
-							setError(new ErrorSummary(lastError.getMessage(), ErrorType.FATAL));
-						}catch(UWSException ue3){
-							job.getLogger().error("[JobThread] LEVEL 3 -> Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId(), ue3);
-						}
+						logger.logThread(logLevel, this, "SET_ERROR", "[2nd and last Attempt] Problem in JobThread.setError(ErrorSummary), while setting the execution error of the job " + job.getJobId() + ". This error can not be reported to the user, but it will be reported in the log in the JOB context.", ue2);
+						// Note: no need of a level 3: if the second attempt fails, it means the job is in a wrong phase and no error summary can never be set ; further attempt won't change anything!
 					}
 				}
-			}else
-				job.getLogger().threadFinished(this, taskDescription);
+			}
 		}
 	}
 }

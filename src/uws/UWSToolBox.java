@@ -16,7 +16,8 @@ package uws;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.File;
@@ -24,35 +25,43 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.ServletOutputStream;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import uws.job.ErrorSummary;
 import uws.job.UWSJob;
-
+import uws.job.user.JobOwner;
+import uws.service.UWS;
 import uws.service.UWSUrl;
-
+import uws.service.UserIdentifier;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
+import uws.service.request.RequestParser;
+import uws.service.request.UploadFile;
 
 /**
  * Some useful functions for the managing of a UWS service.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (04/2015)
  */
 public class UWSToolBox {
+
+	/**
+	 * Default character encoding for all HTTP response sent by this library.
+	 * @since 4.1 */
+	public final static String DEFAULT_CHAR_ENCODING = "UTF-8";
 
 	private static UWSLog defaultLogger = null;
 
@@ -111,9 +120,15 @@ public class UWSToolBox {
 	/**
 	 * <p>Builds a map of strings with all parameters of the given HTTP request.</p>
 	 * 
-	 * <p><i>NOTE:
-	 * 		it converts the Map&lt;String, <b>String[]</b>&gt; returned by {@link HttpServletRequest#getParameterMap()}
-	 * 		into a Map&lt;String, <b>String</b>&gt; (the key is put in lower case).
+	 * <p><i>Note:
+	 * 	If the request attribute {@link UWS#REQ_ATTRIBUTE_PARAMETERS} has been already set by the UWS library,
+	 * 	this map (after conversion into a Map<String,String>) is returned.
+	 * 	Otherwise, the parameters identified automatically by the Servlet are returned (just the last occurrence of each parameter is kept).
+	 * </i></p>
+	 * 
+	 * <p><i><b>WARNING:</b>
+	 * 	This function does not extract directly the parameters from the request content. It is just returning those already extracted
+	 * 	either by the Servlet or by a {@link RequestParser}.
 	 * </i></p>
 	 * 
 	 * @param req	The HTTP request which contains the parameters to extract.
@@ -121,25 +136,58 @@ public class UWSToolBox {
 	 * @return		The corresponding map of string.
 	 */
 	@SuppressWarnings("unchecked")
-	public static final HashMap<String,String> getParamsMap(HttpServletRequest req){
-		HashMap<String,String> params = new HashMap<String,String>(req.getParameterMap().size());
+	public static final HashMap<String,String> getParamsMap(final HttpServletRequest req){
+		HashMap<String,String> map = new HashMap<String,String>();
 
-		Enumeration<String> e = req.getParameterNames();
-		while(e.hasMoreElements()){
-			String name = e.nextElement();
-			params.put(name.toLowerCase(), req.getParameter(name));
+		/* If the attribute "PARAMETERS" has been already set by the UWS library,
+		 * return it by casting it from Map<String,Object> into Map<String,String>: */
+		if (req.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) != null){
+			try{
+				// Get the extracted parameters:
+				Map<String,Object> params = (Map<String,Object>)req.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS);
+
+				// Transform the map of Objects into a map of Strings:
+				for(Map.Entry<String,Object> e : params.entrySet()){
+					if (e.getValue() != null)
+						map.put(e.getKey(), e.getValue().toString());
+				}
+
+				// Return the fetched map:
+				return map;
+
+			}catch(Exception ex){
+				map.clear();
+			}
 		}
 
-		return params;
+		/* If there is no "PARAMETERS" attribute or if an error occurs while reading it,
+		 * return all the parameters fetched by the Servlet: */
+		Enumeration<String> names = req.getParameterNames();
+		int i;
+		String n;
+		String[] values;
+		while(names.hasMoreElements()){
+			n = names.nextElement();
+			values = req.getParameterValues(n);
+			// search for the last non-null occurrence:
+			i = values.length - 1;
+			while(i >= 0 && values[i] == null)
+				i--;
+			// if there is one, keep it:
+			if (i >= 0)
+				map.put(n.toLowerCase(), values[i]);
+		}
+		return map;
 	}
 
 	/**
 	 * Converts map of UWS parameters into a string corresponding to the query part of a HTTP-GET URL (i.e. ?EXECUTIONDURATION=60&DESTRUCTION=2010-09-01T13:58:00:000-0200).
 	 * 
 	 * @param parameters	A Map of parameters.
+	 * 
 	 * @return				The corresponding query part of an HTTP-GET URL (all keys have been set in upper case).
 	 */
-	public final static String getQueryPart(Map<String,String> parameters){
+	public final static String getQueryPart(final Map<String,String> parameters){
 		if (parameters == null || parameters.isEmpty())
 			return "";
 
@@ -154,8 +202,10 @@ public class UWSToolBox {
 				val = val.trim();
 
 			if (key != null && !key.isEmpty() && val != null && !val.isEmpty()){
-				queryPart.append(e.getKey() + "=" + val);
-				queryPart.append("&");
+				try{
+					queryPart.append(URLEncoder.encode(e.getKey(), "UTF-8") + "=" + URLEncoder.encode(val, "UTF-8"));
+					queryPart.append("&");
+				}catch(UnsupportedEncodingException uee){}
 			}
 		}
 
@@ -166,6 +216,7 @@ public class UWSToolBox {
 	 * Converts the given query part of a HTTP-GET URL to a map of parameters.
 	 * 
 	 * @param queryPart		A query part of a HTTP-GET URL.
+	 * 
 	 * @return				The corresponding map of parameters (all keys have been set in lower case).
 	 */
 	public final static Map<String,String> getParameters(String queryPart){
@@ -180,14 +231,211 @@ public class UWSToolBox {
 					if (keyValue.length == 2){
 						keyValue[0] = keyValue[0].trim().toLowerCase();
 						keyValue[1] = keyValue[1].trim();
-						if (!keyValue[0].isEmpty() && !keyValue[1].isEmpty())
-							parameters.put(keyValue[0].trim(), keyValue[1].trim());
+						if (!keyValue[0].isEmpty() && !keyValue[1].isEmpty()){
+							try{
+								parameters.put(URLDecoder.decode(keyValue[0], "UTF-8"), URLDecoder.decode(keyValue[1], "UTF-8"));
+							}catch(UnsupportedEncodingException uee){}
+						}
 					}
 				}
 			}
 		}
 
 		return parameters;
+	}
+
+	/**
+	 * <p>Extract only the GET parameters from the given HTTP request and add them inside the given map.</p>
+	 * 
+	 * <p><b>Warning</b>:
+	 * 	If entries with the same key already exist in the map, they will overwritten.
+	 * </p>
+	 * 
+	 * @param req			The HTTP request whose the GET parameters must be extracted.
+	 * @param parameters	List of parameters to update.
+	 * 
+	 * @return	The same given parameters map (but updated with all found GET parameters).
+	 * 
+	 * @since 4.1
+	 */
+	public static final Map<String,Object> addGETParameters(final HttpServletRequest req, final Map<String,Object> parameters){
+		String queryString = req.getQueryString();
+		if (queryString != null){
+			String[] params = queryString.split("&");
+			int indSep;
+			for(String p : params){
+				indSep = p.indexOf('=');
+				if (indSep >= 0){
+					try{
+						parameters.put(URLDecoder.decode(p.substring(0, indSep), "UTF-8"), URLDecoder.decode(p.substring(indSep + 1), "UTF-8"));
+					}catch(UnsupportedEncodingException uee){}
+				}
+			}
+		}
+		return parameters;
+	}
+
+	/**
+	 * Get the number of parameters submitted in the given HTTP request.
+	 * 
+	 * @param request	An HTTP request;
+	 * 
+	 * @return	The number of submitted parameters.
+	 * 
+	 * @since 4.1
+	 */
+	@SuppressWarnings("unchecked")
+	public static final int getNbParameters(final HttpServletRequest request){
+		if (request == null)
+			return 0;
+		try{
+			return ((Map<String,Object>)request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS)).size();
+		}catch(Exception ex){
+			return request.getParameterMap().size();
+		}
+	}
+
+	/**
+	 * Check whether a parameter has been submitted with the given name.
+	 * 
+	 * @param name				Name of the parameter to search. <b>The case is important!</b>
+	 * @param request			HTTP request in which the specified parameter must be searched.
+	 * @param caseSensitive		<i>true</i> to perform the research case-sensitively,
+	 *                     		<i>false</i> for a case INsensitive research.
+	 * 
+	 * @return	<i>true</i> if the specified parameter has been found, <i>false</i> otherwise.
+	 * 
+	 * @since 4.1
+	 */
+	public static final boolean hasParameter(final String name, final HttpServletRequest request, final boolean caseSensitive){
+		return getParameter(name, request, caseSensitive) != null;
+	}
+
+	/**
+	 * Check whether the parameter specified with the given pair (name,value) exists in the given HTTP request. 
+	 * 
+	 * @param name				Name of the parameter to search.
+	 * @param value				Expected value of the parameter.
+	 * @param request			HTTP request in which the given pair must be searched.
+	 * @param caseSensitive		<i>true</i> to perform the research (on name AND value) case-sensitively,
+	 *                     		<i>false</i> for a case INsensitive research.
+	 * 
+	 * @return	<i>true</i> if the specified parameter has been found with the given value in the given HTTP request,
+	 *        	<i>false</i> otherwise.
+	 * 
+	 * @since 4.1
+	 */
+	public static final boolean hasParameter(final String name, final String value, final HttpServletRequest request, final boolean caseSensitive){
+		Object found = getParameter(name, request, caseSensitive);
+		if (value == null)
+			return found != null;
+		else{
+			if (found == null || !(found instanceof String))
+				return false;
+			else
+				return (caseSensitive && ((String)found).equals(value)) || (!caseSensitive && ((String)found).equalsIgnoreCase(value));
+		}
+	}
+
+	/**
+	 * Get the parameter specified by the given name from the given HTTP request. 
+	 * 
+	 * @param name				Name of the parameter to search.
+	 * @param request			HTTP request in which the given pair must be searched.
+	 * @param caseSensitive		<i>true</i> to perform the research case-sensitively,
+	 *                     		<i>false</i> for a case INsensitive research.
+	 * 
+	 * @return	Value of the parameter.
+	 * 
+	 * @since 4.1
+	 */
+	@SuppressWarnings("unchecked")
+	public static final Object getParameter(final String name, final HttpServletRequest request, final boolean caseSensitive){
+		try{
+			// Get the extracted parameters:
+			Map<String,Object> params = (Map<String,Object>)request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS);
+
+			// Search case IN-sensitively the given pair (name, value):
+			for(Map.Entry<String,Object> e : params.entrySet()){
+				if ((!caseSensitive && e.getKey().equalsIgnoreCase(name)) || (caseSensitive && e.getKey().equals(name)))
+					return (e.getValue() != null) ? e.getValue() : null;
+			}
+		}catch(Exception ex){}
+		return null;
+	}
+
+	/**
+	 * <p>Delete all unused uploaded files of the given request.</p>
+	 * 
+	 * <p>
+	 * 	These files have been stored on the file system
+	 * 	if there is a request attribute named {@link UWS#REQ_ATTRIBUTE_PARAMETERS}.
+	 * </p>
+	 * 
+	 * @param req	Request in which files have been uploaded.
+	 * 
+	 * @return	The number of deleted files.
+	 * 
+	 * @see UploadFile#isUsed()
+	 * 
+	 * @since 4.1
+	 */
+	@SuppressWarnings("unchecked")
+	public static final int deleteUploads(final HttpServletRequest req){
+		int cnt = 0;
+		Object attribute = req.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS);
+		// If there is the request attribute "UWS_PARAMETERS":
+		if (attribute != null && attribute instanceof Map){
+			Map<String,Object> params = (Map<String,Object>)attribute;
+			// For each parameter...
+			for(Map.Entry<String,Object> e : params.entrySet()){
+				// ...delete physically the uploaded file ONLY IF not used AND IF it is an uploaded file:
+				if (e.getValue() != null && e.getValue() instanceof UploadFile && !((UploadFile)e.getValue()).isUsed()){
+					try{
+						((UploadFile)e.getValue()).deleteFile();
+						cnt++;
+					}catch(IOException ioe){}
+				}
+			}
+		}
+		return cnt;
+	}
+
+	/* *************** */
+	/* USER EXTRACTION */
+	/* *************** */
+	/**
+	 * <p>Extract the user/job owner from the given HTTP request.</p>
+	 * 
+	 * Two cases are supported:
+	 * <ol>
+	 * 	<li><b>The user has already been identified and is stored in the HTTP attribute {@link UWS#REQ_ATTRIBUTE_USER}</b> => the stored value is returned.</li>
+	 * 	<li><b>No HTTP attribute and a {@link UserIdentifier} is provided</b> => the user is identified with the given {@link UserIdentifier} and stored in the HTTP attribute {@link UWS#REQ_ATTRIBUTE_USER} before being returned.</li>
+	 * </ol>
+	 * 
+	 * <p>In any other case, NULL is returned.</p>
+	 * 
+	 * @param request			The HTTP request from which the user must be extracted. <i>note: if NULL, NULL will be returned.</i>
+	 * @param userIdentifier	The method to use in order to extract a user from the given request. <i>note: if NULL, NULL is returned IF no HTTP attribute {@link UWS#REQ_ATTRIBUTE_USER} can be found.</i>
+	 * 
+	 * @return	The identified user. <i>MAY be NULL</i>
+	 * 
+	 * @throws NullPointerException	If an error occurs while extracting a {@link UWSUrl} from the given {@link HttpServletRequest}.
+	 * @throws UWSException			If any error occurs while extracting a user from the given {@link HttpServletRequest}.
+	 * 
+	 * @since 4.1
+	 */
+	public static final JobOwner getUser(final HttpServletRequest request, final UserIdentifier userIdentifier) throws NullPointerException, UWSException{
+		if (request == null)
+			return null;
+		else if (request.getAttribute(UWS.REQ_ATTRIBUTE_USER) != null)
+			return (JobOwner)request.getAttribute(UWS.REQ_ATTRIBUTE_USER);
+		else if (userIdentifier != null){
+			JobOwner user = userIdentifier.extractUserId(new UWSUrl(request), request);
+			request.setAttribute(UWS.REQ_ATTRIBUTE_USER, user);
+			return user;
+		}else
+			return null;
 	}
 
 	/* **************************** */
@@ -220,6 +468,30 @@ public class UWSToolBox {
 	/* *************************** */
 	/* RESPONSE MANAGEMENT METHODS */
 	/* *************************** */
+
+	/**
+	 * <p>Flush the buffer of the given {@link PrintWriter}.</p>
+	 * 
+	 * <p>
+	 * 	This function aims to be used if the given {@link PrintWriter} has been provided by an {@link HttpServletResponse}.
+	 * 	In such case, a call to its flush() function may generate a silent error which could only mean that
+	 * 	the connection with the HTTP client has been closed.
+	 * </p>
+	 * 
+	 * @param writer	The writer to flush.
+	 * 
+	 * @throws ClientAbortException		If the connection with the HTTP client is closed.
+	 * 
+	 * @see PrintWriter#flush()
+	 * 
+	 * @since 4.1
+	 */
+	public static final void flush(final PrintWriter writer) throws ClientAbortException{
+		writer.flush();
+		if (writer.checkError())
+			throw new ClientAbortException();
+	}
+
 	/**
 	 * Copies the content of the given input stream in the given HTTP response.
 	 * 
@@ -237,6 +509,9 @@ public class UWSToolBox {
 			if (mimeType != null)
 				response.setContentType(mimeType);
 
+			// Set the character encoding:
+			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
 			// Set the HTTP content length:
 			if (contentSize > 0)
 				response.setContentLength((int)contentSize);
@@ -246,7 +521,7 @@ public class UWSToolBox {
 			byte[] buffer = new byte[1024];
 			int length;
 			while((length = input.read(buffer)) > 0)
-				output.print(new String(buffer, 0, length));
+				output.write(buffer, 0, length);
 		}finally{
 			if (output != null)
 				output.flush();
@@ -256,7 +531,7 @@ public class UWSToolBox {
 	/**
 	 * Writes the stack trace of the given exception in the file whose the name and the parent directory are given in parameters.
 	 * If the specified file already exists, it will be overwritten if the parameter <i>overwrite</i> is equal to <i>true</i>, otherwise
-	 * no file will not be changed <i>(default behavior of {@link UWSToolBox#writeErrorFile(Exception, String, String)})</i>.
+	 * no file will not be changed <i>(default behavior of {@link UWSToolBox#writeErrorFile(Exception, ErrorSummary, UWSJob, OutputStream)})</i>.
 	 * 
 	 * @param ex				The exception which has to be used to generate the error file.
 	 * @param error				The error description.
@@ -385,7 +660,7 @@ public class UWSToolBox {
 	/**
 	 * Gets the file extension corresponding to the given MIME type.
 	 * 
-	 * @param MIME type		A MIME type (i.e. text/plain, application/json, application/xml, text/xml, application/x-votable+xml, ....)
+	 * @param mimeType		A MIME type (i.e. text/plain, application/json, application/xml, text/xml, application/x-votable+xml, ....)
 	 * 
 	 * @return				The corresponding file extension or <i>null</i> if not known.
 	 */

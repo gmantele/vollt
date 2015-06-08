@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>TAP configuration file</title>
+		<style type="text/css">
+			p { text-align: justify; text-indent: 1em; }
+			table {
+				font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+				width:100%;
+				border-collapse:collapse;
+			}
+			td, th {
+				font-size:1em;
+				border:1px solid #084B8A;
+				padding:3px 7px 2px 7px;
+				color: black;
+				background-color: #EFF5FB;
+			}
+			th, td[colspan="5"] {
+				font-size:1em;
+				text-align: left;
+				padding-top:5px;
+				padding-bottom:4px;
+				background-color:#045FB4;
+				color:#ffffff;
+			}
+			td[colspan="5"] {
+				font-style: italic;
+			}
+			tr.mandatory td {
+				color: black;
+				background-color: #CEE3F6;
+			}
+			th:nth-child(2), td:nth-child(2) {
+				text-align: center;
+				max-width: 2em;
+			}
+			tr.mandatory td:nth-child(2):after{
+				color: red;
+				font-weight: bold;
+				content: "M";
+			}
+			td:nth-child(5) {
+				font-family: monospace;
+			}
+			table ul  { list-style-position:inside; padding: 0; margin: 0; }
+			table p   { margin: 0; padding: 0; text-align: left; text-indent: 0; }
+			table p+p { padding-top: .5em; }
+			
+			/* JUST FOR DEVELOPMENT GUIDELINE */
+			.done, .mandatory .done { color: green; }
+			.later, .mandatory .later { color: orange; }
+			.todo, .mandatory .todo {color: red; }
+			
+		</style>
+		<script type="text/javascript">
+			function toggleOptional(){
+				var button = document.getElementById("toggleOptional");
+				var display = (button.value == "hide") ? 'none' : '';
+				var lines = document.querySelectorAll("tr.optional");
+				for(var i=0 ; i<lines.length ; i++)
+					lines[i].style.display = display;
+				button.value = (display == '') ? 'hide' : 'show';
+				button.textContent = (display == '') ? 'Hide optional' : 'Show optional';
+			}
+		</script>
+	</head>
+	<body>
+		<h1>TAP Configuration File</h1>
+		<p>
+			All properties listed in the below table are all the possible TAP configuration properties.
+			Some of them are mandatory. If one of these properties is missing, the TAP Service will not able to start:
+			an error will be displayed immediately in the application server log and a HTTP 503 error will be sent when accessing the TAP URL.
+		</p>
+		<p>Besides, you should know that any property key not listed in this table will be ignored without error or warning message.</p>
+		<p>
+			However, any not allowed property value will generate a warning message in the application server log and the default value will be kept.
+			Thus, the TAP Service will be started and available but the desired configuration value will not be set. So, you should take a look
+			at the application server log every times you start the TAP Service!
+		</p>
+		
+		<p>Here is an empty minimum TAP configuration file: <a href="tap_min.properties">tap_min.properties</a> and a complete one: <a href="tap_full.properties">tap_full.properties</a>.</p>
+		
+		
+		<p><b>Important note:</b> Any limit value is an integer and so can be at most: 2<sup>31</sup>-1 bytes/rows = 2147483647B/R (or also for the byte unit: = 2147483kB = 2147MB = 2GB).
+		Otherwise, you should use the null value 0 to raise the limit constraint.</p>
+		
+		<p><i><u>Legend:</u> <b style="color:red">M</b> means that the property is mandatory. If nothing is written for the second column, the property is optional.</i></p>
+		
+		<button id="toggleOptional" value="hide" onClick="toggleOptional();">Hide optional</button> <i><span id="nbMandatory"></span>/<span id="nbTotal"></span> mandatory properties</i>
+		<br /><br/>
+		<table>
+			<tr>
+				<th>Property</th>
+				<th></th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Example</th>
+			</tr>
+			
+			<tr><td colspan="5">General</td></tr>
+			<tr class="optional">
+				<td class="done">home_page</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>This property lets set a custom home page. 4 different kinds of value are accepted:</p>
+					<ul>
+						<li><u>nothing (default)</u>: the default home page provided by the library (just a simple HTML page displaying a list of all available TAP resources).</li>
+						<li><u>name or relative path of a file</u>: this method MUST be chosen if the new home page is a JSP file. This file MUST be inside the directory WebContent of your web application.</li>
+						<li><u>a URI starting with <code>file://</code></u>: in this method the local file pointed by the URI will be merely returned when the home page will be requested.</li>
+						<li><u>a URL</u>: here, a redirection toward this URL will be made at each request on the home page</li>
+						<li><u>a class name</u>: the class name of an extension of tap.resource.HomePage which must replace the default home page resource. This class MUST have at least one constructor with exactly one parameter not NULL of type tap.resource.TAP.</li>
+					</ul>
+					<p><em>By default, the default home page provided by the library is used.</em></p>
+				</td>
+				<td><ul><li>my_tap_homepage.jsp</li><li>jsp/my_tap_homepage.jsp</li><li>file:///home/foo/customHomePage.html</li><li>http://...</li><li>{aPackage.NewHomePage}</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">home_page_mime_type</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>MIME type of the service home page.</p>
+					<p>This property is used only if the specified "home_page" is a local file path (i.e. if "home_page=file://...").</p>
+					<p>If no value is provided "text/html" will be set by default.</p>
+					<p><em>Default: <code>text/html</code></em></p>
+				</td>
+				<td><ul><li>text/html <em>(default)</em></li><li>text/plain</li><li>application/xml</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Provider</td></tr>
+			<tr class="optional">
+				<td class="done">provider_name</td>
+				<td></td>
+				<td>text</td>
+				<td>Name of the provider of the TAP Service.</td>
+				<td></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">service_description</td>
+				<td></td>
+				<td>text</td>
+				<td>Description of the TAP Service.</td>
+				<td></td>
+			</tr>
+			
+			<tr><td colspan="5">Database (only if tap_factory = ø)</td></tr>
+			<tr class="mandatory">
+				<td class="done">database_access</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Method to use in order to create database connections.</p>
+					<p>Only two values are supported:</p>
+					<ul>
+						<li><code>jndi</code>: database connections will be supplied by a Datasource whose the JNDI name must be given. This method may propose connection pooling in function of the datasource configuration.</li>
+						<li><code>jdbc</code>: the library will create itself connections when they will be needed thanks to the below JDBC parameters. This method does not propose any connection pooling.</li>
+					</ul>
+				</td>
+				<td><ul><li>jdbc</li><li>jndi</li></ul></td>
+			</tr>
+			<tr class="mandatory">
+				<td class="done">sql_translator</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
+					<p>The TAP library supports only Postgresql (without spatial extension) and PgSphere for the moment. But you can provide your own SQL translator
+					(even if it does not have spatial features), by providing the name of a class (within brackets: {...}) that implements ADQLTranslator and which have at least an empty constructor.</p>
+				</td>
+				<td><ul><li>postgres</li><li>pgsphere</li><li>{apackage.MyADQLTranslator}</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">sync_fetch_size</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Size of result blocks to fetch from the database when a ADQL query is executed in <em>Synchronous mode</em>.</p>
+					<p>Rather than fetching a query result in a whole, it may be possible to specify to the database
+	 				that results may be retrieved by blocks whose the size can be specified with this property.
+	 				If supported by the DBMS and the JDBC driver, this feature may help sparing memory and avoid
+	 				too much waiting time from the TAP /sync users (and thus, avoiding some HTTP client timeouts).</p>
+	 				<p>A negative or null value means that the default value of the JDBC driver will be used. Generally,
+	 				it means that the database must wait to have collected all data before sending them to the library.</p>
+					<p><em>Default: <code>sync_fetch_size=10000</code></em></p>
+				</td>
+				<td><ul><li>10000 <em>(default)</em><li>0 <em>(wait for the the whole result)</em></li><li>100000</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">async_fetch_size</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Size of result blocks to fetch from the database when an ADQL query is executed in <em>Asynchronous mode</em>.</p>
+					<p>Rather than fetching a query result in a whole, it may be possible to specify to the database
+	 				that results may be retrieved by blocks whose the size can be specified with this property.
+	 				If supported by the DBMS and the JDBC driver, this feature may help sparing memory.</p>
+	 				<p>A negative or null value means that the default value of the JDBC driver will be used. Generally,
+	 				it means that the database must wait to have collected all data before sending them to the library.</p>
+					<p><em>Default: <code>async_fetch_size=100000</code></em></p>
+				</td>
+				<td><ul><li>100000 <em>(default)</em><li>0 <em>(wait for the the whole result)</em></li><li>1000000</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">&#10551; JNDI datasource <i>(only if database_access=jndi)</i></td></tr>
+			<tr class="mandatory">
+				<td class="done">datasource_jndi_name</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>JNDI name of the datasource. It should be defined in the web application (e.g. in the META-INF/context.xml file in tomcat).</p>
+				</td>
+				<td><ul><li>jdbc/postgres</li><li>jdbc/mydatasource</li><li>mydatasource</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">&#10551; JDBC parameters <i>(only if database_access=jdbc)</i></td></tr>
+			<tr class="optional">
+				<td class="done">jdbc_driver</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>JDBC driver path. By default, it is guessed in function of the database name provided
+					in the jdbc_url property. It <strong>MUST be provided if</strong> another DBMS is used or if the JDBC driver path
+					does not match the following ones:</p>
+					<ul>
+						<li><u>Oracle    :</u> oracle.jdbc.OracleDriver</li>
+						<li><u>PostgreSQL:</u> org.postgresql.Driver</li>
+						<li><u>MySQL     :</u> com.mysql.jdbc.Driver</li>
+						<li><u>SQLite    :</u> org.sqlite.JDBC</li>
+					</ul>
+				</td>
+				<td>oracle.jdbc.driver.OracleDriver</td>
+			</tr>
+			<tr class="mandatory">
+				<td class="done">jdbc_url</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>It must be a JDBC driver URL.</p>
+					<p><em><u>Note:</u> The username, password or other parameters may be included in it, but in this case, the corresponding properties
+					should leave empty or not provided at all.</em></p>
+				</td>
+				<td><ul><li>jdbc:postgresql:mydb</li><li>jdbc:postgresql://myserver:1234/mydb</li><li>jdbc:sqlite:Database.db</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">db_username</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> the username is not already provided in jdbc_url</p>
+					<p>Username used to access to the database.</p>
+				</td>
+				<td></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">db_password</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> the password is not already provided in jdbc_url</p>
+					<p>Password used by db_username to access to the database.</p>
+					<p><em><u>Warning:</u> No password encryption can be done in this configuration file for the moment.</em></p>
+				</td>
+				<td></td>
+			</tr>
+			
+			<tr><td colspan="5">Metadata</td></tr>
+			<tr class="mandatory">
+				<td class="done">metadata</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Define the way the library must get the list of all schemas, tables and columns to publish and all their metadata (e.g. utype, description, type, ...)</p>
+					<p>In its current state, the library proposes three methods:</p>
+					<ol>
+						<li>Parse a TableSet XML document and load its content into the database schema TAP_SCHEMA (note: this schema is first erased and rebuilt by the library).</li>
+						<li>Get all metadata from the database schema TAP_SCHEMA.</li>
+						<li>Build yourself the metadata of your service by creating an extension of tap.metadata.TAPMetadata. This extension must have either an empty constructor
+							or a constructor with exactly 3 parameters of type UWSFileManager, TAPFactory and TAPLog ; if both constructor are provided, only the one with parameters will be used.</li>
+					</ol>
+				</td>
+				<td><ul><li>xml</li><li>db</li><li>{apackage.MyTAPMetadata}</li></ul>
+			</tr>
+			<tr class="optional">
+				<td class="done">metadata_file</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Mandatory if</strong> the value of "metadata" is "xml".</p>
+					<p>Local file path to the TableSet XML document.</p>
+					<p>The XML document must implement the schema TableSet defined by <a href="http://www.ivoa.net/xml/VODataService/v1.1">VODataService</a>.</p>
+					<p>The file path must be either an absolute local file path or a file path relative to WebContent
+					(i.e. the web application directory in which there are WEB-INF and META-INF).</p>
+				</td>
+				<td><ul><li>/home/foo/my_metadata.xml</li><li>my_metadata.xml</li><li>WEB-INF/my_metadata.xml</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Files</td></tr>
+			<tr class="mandatory">
+				<td class="done">file_manager</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Type of the file manager.</p>
+					<p>Accepted values are: local (to manage files on the local system).
+					You can also add another way to manage files by providing the name (within brackets: {...}) of a class implementing TAPFileManager and having at least one constructor with only a java.util.Properties parameter.</p>
+				</td>
+				<td><ul><li>local</li><li>{apackage.MyTAPFileManager}</li></ul></td>
+			</tr>
+			<tr class="mandatory">
+				<td class="done">file_root_path</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Local file path of the directory in which all TAP files (logs, errors, job results, backup, ...) must be.</p>
+					<p>The file path must be either an absolute local directory path or a directory path relative to WebContent
+					(i.e. the web application directory in which there are WEB-INF and META-INF).</p>
+				</td>	
+				<td><ul><li>/home/my_home_dir/tapFiles</li><li>tapFiles</li><li>WEB-INF/tapFiles</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">directory_per_user</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>Tells whether a directory should be created for each user. If yes, the user directory will be named with the user ID. In this directory, there will be error files, job results
+					and it may be the backup file of the user.</p>
+					<p><em>Default: <code>true</code></em></p>
+				</td>
+				<td><ul><li>true <i>(default)</i></li><li>false</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">group_user_directories</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>Tells whether user directories must be grouped. If yes, directories are grouped by the first letter found in the user ID.</p>
+					<p><em>Default: <code>false</code></em></p>
+				</td>
+				<td><ul><li>true</li><li>false <i>(default)</i></li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">default_retention_period</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>The default period (in seconds) to keep query results. The prefix "default" means here that this value is put by default by the TAP Service
+					if the client does not provide a value for it.</p>
+					<p>The default period MUST be less or equals to the maximum retention period. If this rule is not respected, the default retention period is set immediately
+					 to the maximum retention period.</p>
+					<p>A negative or null value means there is no restriction on the default retention period: job results will be kept forever. Float values are not allowed.</p>
+					<p><em>By default query results are kept forever: <code>default_retention_period=0</code>.</em></p></td>
+				<td>86400 <em>(1 day)</em></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">max_retention_period</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>The maximum period (in seconds) to keep query results. The prefix "max" means here that the client can not set a retention period greater than this one.</p>
+					<p>The maximum period MUST be greater or equals to the default retention period. If this rule is not respected, the default retention period is set immediately
+					 to the maximum retention period.</p>
+					<p>A negative or null value means there is no restriction on the maximum retention period: the job results will be kept forever. Float values are not allowed.</p>
+					<p><em>Default: <code>max_retention_period=0</code> (results kept for ever)</em></p></td>
+				<td>604800 <em>(1 week)</em></td>
+			</tr>
+			
+			<tr><td colspan="5">Log files</td></tr>
+			<tr class="optional">
+				<td class="done">min_log_level</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Minimum level that a message must have in order to be logged.</p>
+					<p>5 possible values:</p>p>
+	 				<ul>
+	 					<li><b>DEBUG</b>: every messages are logged.</li>
+	 					<li><b>INFO</b>: every messages EXCEPT DEBUG are logged.</li>
+	 					<li><b>WARNING</b>: every messages EXCEPT DEBUG and INFO are logged.</li>
+	 					<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
+	 					<li><b>FATAL</b>: only FATAL messages are logged.</li>
+	 				</ul>
+	 				<p><em>Default: <code>DEBUG</code> (every messages are logged)</em></p>
+				</td>
+				<td><ul><li>DEBUG</li><li>INFO</li><li>WANRING</li><li>ERROR</li><li>FATAL</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">log_rotation</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Frequency of the log file rotation. That's to say, logs will be written in a new file after this period. This avoid having too big log files.
+					Old log files are renamed so that highlighting its logging period.</p>
+					<p>The frequency string must respect the following syntax:</p>
+	 				<ul>
+	 					<li><b>'D' hh mm</b>: daily schedule at hh:mm</li>
+	 					<li><b>'W' dd hh mm</b>: weekly schedule at the given day of the week (1:sunday, 2:monday, ..., 7:saturday) at hh:mm</li>
+	 					<li><b>'M' dd hh mm</b>: monthly schedule at the given day of the month at hh:mm</li>
+	 					<li><b>'h' mm</b>: hourly schedule at the given minute</li>
+	 					<li><b>'m'</b>: scheduled every minute (for completness :-))</li>
+	 				</ul>
+	 				<p><em>Where: hh = integer between 0 and 23, mm = integer between 0 and 59, dd (for 'W') = integer between 1 and 7 (1:sunday, 2:monday, ..., 7:saturday),
+	 				dd (for 'M') = integer between 1 and 31.</em></p>
+	 				<p><em><b>Warning:</b>
+	 					The frequency type is case sensitive! Then you should particularly pay attention at the case
+	 					when using the frequency types 'M' (monthly) and 'm' (every minute).
+	 				</em></p>
+	 				<p><em>Default: <code>D 0 0</code> (daily at midnight)</em></p>
+				</td>
+				<td><ul><li>D 6 30</li><li>W 2 6 30</li><li>M 2 6 30</li><li>H 10</li><li>m</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">UWS Backup (only if tap_factory = ø)</td></tr>
+			<tr class="optional">
+				<td class="done">backup_frequency</td>
+				<td></td>
+				<td>text or integer</td>
+				<td>
+					<p>Frequency at which the UWS service (that's to say, all its users and jobs) must be backuped.</p>
+					<p>Allowed values are: <code>never</code> (no backup will never be done), <code>user_action</code> (each time a user does a writing action, like creating or execution a job), a time (must be positive and not null) in milliseconds.</p>
+					<p><em>The value <code>user_action</code> can be used ONLY IF <code>backup_mode=true</code>.</em></p>
+					<p><em>Default: <code>backup_frequency=never</code> (no backup)</em></p>
+				</td>
+				<td><ul><li>never <em>(default)</em></li><li>user_action</li><li>3600000 <em>(1 hour)</em></li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">backup_by_user</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Tells whether the backup must be one file for every user (<code>false</code>), or one file for each user (<code>true</code>). This second option should be chosen if your TAP Service is organizing its files by user directories ; see the property <em>directory_per_user</em>.</p>
+					<p>This option can be enabled ONLY IF a user identification method is provided ; see property <code>user_identifier</code>.</p>
+					<p><em>Default: <code>false</code></em></p>
+				</td>
+				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Asynchronous jobs management</td></tr>
+			<tr class="optional">
+				<td class="done">max_async_jobs</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Maximum number of asynchronous jobs that can run simultaneously.</p>
+					<p>A negative or null value means there is no restriction on the number of running asynchronous jobs.</p>
+					<p><em>Default: <code>max_async_jobs=0</code> (no restriction)</em></p>
+				</td>
+				<td><ul><li>0 <em>(default)</em></li><li>10</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Query Execution</td></tr>
+			<tr class="optional">
+				<td class="done">default_execution_duration</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Default time (in milliseconds) for query execution. The prefix "default" means here that the execution duration will be this one if the client does not set one.</p>
+					<p>The default duration MUST be less or equals to the maximum execution duration. If this rule is not respected, the default execution duration is set immediately
+					 to the maximum execution duration.</p>
+					<p>A negative or null value means there is no restriction on the default execution duration: the execution could never end. Float values are not allowed.</p>
+					<p><em>Default: <code>default_execution_duration=0</code> (no restriction)</em></p>
+				</td>
+				<td>600000 <em>(10 minutes)</em></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">max_execution_duration</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Maximum time (in milliseconds) for query execution. The prefix "max" means here that the client can not set a time greater than this one.</p>
+					<p>The maximum duration MUST be greater or equals to the default execution duration. If this rule is not respected, the default execution duration is set immediately
+					 to the maximum execution duration.</p>
+					<p>A negative or null value means there is no restriction on the maximum execution duration: the execution could never end. Float values are not allowed.</p>
+					<p><em>Default: <code>max_execution_duration=0</code> (no restriction)</em></p>
+				</td>
+				<td>3600000 <em>(1 hour)</em></td>
+			</tr>
+			
+			<tr><td colspan="5">Output</td></tr>
+			<tr class="optional">
+				<td class="done">output_formats</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma separated list of output formats for query results.</p>
+					<p>Allowed values are: votable (or 'vot'), fits, text, csv, tsv, json and html.</p>
+					<p>The special value "ALL" will select all formats provided by the library.</p>
+					<p>The VOTable format may be more detailed with the following syntax: (<code>serialization</code>,<code>version</code>):<code>mime_type</code>:<code>short_mime_type</code>.
+					The MIME type part and the parameters part may be omitted (e.g. votable:application/xml:votable , votable(td,1.3)]).
+					Empty string values are allowed for each values (e.g. votable():: , votable(td)::votable).</p>
+					<p>It is also possible to define a custom Separated Value format, different from CSV and TSV, thanks to the following syntax: sv(<code>separator</code>):<code>mime_type</code>:<code>short_mime_type</code>.
+					On the contrary to the VOTable syntax, the parameter (i.e. separator) MUST BE provided. The MIME type part may be omitted ; then the MIME type will be set by default to text/plain.</p>
+					<p>There is finally a last possible value: a class name of a class implementing OutputFormat and having at least one constructor with exactly one parameter of type tap.ServiceConnection.</p>
+					<p><em>Default: <code>ALL</code></em></p>
+				</td>
+				<td><ul><li>votable</li><li>vot</li><li>vot(td,1.2)::votable</li><li>json,html ,csv, text</li><li>sv(|):text/psv:psv</li><li>sv([])</li><li>{apackage.FooOutputFormat}</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">output_default_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Default limit for the result output. The prefix "default" means here that this value will be set if the client does not provide one.</p>
+					<p>This limit can be expressed in only one unit: rows.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
+					<p>Obviously this limit MUST be less or equal than output_max_limit.</p>
+					<p><em>Default: <code>output_default_limit=-1</code> (no restriction)</em></p>
+				</td>
+				<td><ul><li>-1 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">output_max_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Maximum limit for the result output. The prefix "max" means here that the client can not set a limit greater than this one.</p>
+					<p>This limit can be expressed in only one unit: rows.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
+					<p>Obviously this limit MUST be greater or equal than output_default_limit.</p>
+					<p><em>Default: <code>output_max_limit=-1</code> (no restriction)</em></p>
+				</td>
+				<td><ul><li>-1 <em>(default)</em></li><li>1000</li><li>10000r</li><li>10000R</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Upload</td></tr>
+			<tr class="optional">
+				<td class="done">upload_enabled</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>Tells whether the Upload must be enabled. If enabled, files can be uploaded in the file_root_path, 
+					the corresponding tables can be added inside the UPLOAD_SCHEMA of the database, queried and then deleted.</p>
+					<p><i>By default, the Upload is disabled: upload_enabled=false.</i></p>
+				</td>
+				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">upload_default_db_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Default limit for the number of uploaded records that can be inserted inside the database. The prefix "default" means here that this value will be set if the client does not provide one.</p>
+					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case)
+					or by nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
+					Here, unit is case sensitive. No other storage unit is allowed.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
+					<p><b>Warning!</b> Obviously this limit MUST be less or equal than upload_max_db_limit, and MUST be of the same type as it.
+					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
+					<p><em>Default: <code>upload_default_db_limit=-1</code> (no restriction)</em></p>
+				</td>
+				<td><ul><li>-1 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">upload_max_db_limit</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Maximum limit for the number of uploaded records that can be inserted inside the database. The prefix "max" means here that the client can not set a limit greater than this one.</p>
+					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
+					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
+					Here, unit is case sensitive. No other storage unit is allowed.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
+					<p><b>Warning!</b> Obviously this limit MUST be greater or equal than upload_default_db_limit, and MUST be of the same type as it.
+					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
+					<p><em>Default: <code>upload_max_db_limit=-1</code> (no restriction)</em></p>
+				</td>
+				<td><ul><li>-1 <em>(default)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">upload_max_file_size</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Maximum allowed size for the uploaded file.</p>
+					<p>This limit MUST be expressed in bytes. Thus, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
+					Here, unit is case sensitive. No other storage unit is allowed.</p>
+					<p><b>Warning!</b> When the upload is enabled, there must be a maximum file size. Here, no "unlimited" value is possible ; 0 and any negative value are not allowed.</p>
+					<p><b>Warning!</b> In function of the chosen upload_max_db_limit type, upload_max_file_size MUST be greater in order to figure out the file metadata part.</p>
+					<p><em>Default: <code>upload_max_file_size=2147483647B</code> (~2GB ; maximum possible value)</em></p>
+				</td>
+				<td><ul><li>2147483647B <em>(default)</em></li><li>2MB</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">User identification</td></tr>
+			<tr class="optional">
+				<td class="done">user_identifier</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Class to use in order to identify a user of the TAP service. The same instance of this class will be used for every request sent to the service.</p>
+					<p>
+						The value of this property MUST be a class name (with brackets: {...}) of a class implementing the interface uws.service.UserIdentifier.
+						This class MUST have one of its constructors with no parameter.
+					</p>
+					<p><em>By default, no identification is performed ; all users are then anonymous and their jobs can be seen by everybody.</em></p>
+				</td>
+				<td>{apackage.FooUserIdentifier}</td>
+			</tr>
+			
+			<tr><td colspan="5">ADQL restrictions</td></tr>
+			<tr class="optional">
+				<td class="done">coordinate_systems</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma-separated list of all allowed coordinate systems.</p>
+					<p>
+						Each item of the list be a kind of regular expression respecting the following syntax:
+						<code><i>Frame</i> <i>RefPos</i> <i>Flavor</i></code>. In other words, it must be a string of exactly
+						3 parts. Each of this part is a single value, a list of allowed values or a <code>*</code> meaning all
+						values. A list of values must be indicated between parenthesis and values must be separated by a pipe.
+					</p>
+					<p>Allowed values for <code>Frame</code> are: <code>ICRS</code>, <code>FK4</code>,
+						<code>FK5</code>, <code>ECLIPTIC</code>, <code>GALACTIC</code> and <code>UNKNOWNFRAME</code>.</p>
+					<p>Allowed values for <code>RefPos</code> are:  <code>BARYCENTER</code>, <code>GEOCENTER</code>,
+						<code>HELIOCENTER</code>, <code>LSR</code>, <code>TOPOCENTER</code>, <code>RELOCATABLE</code>
+						and <code>UNKNOWNREFPOS</code>.</p>
+					<p>Allowed values for <code>Flavor</code> are: <code>CARTESIAN2</code>, <code>CARTESIAN3</code> and
+						<code>SPHERICAL2</code>.</p>
+					<p>
+						If the special value <em>NONE</em> is given instead of a list of allowed coordinate systems,
+						no coordinate system will be allowed. And if the list is empty, any coordinate system will be allowed.
+					</p>
+					<p><em>By default, any coordinate system is allowed.</em></p>
+				</td>
+				<td><ul><li>ø <em>(default)</em></li><li>NONE</li><li>ICRS * *</li><li>ICRS * *, ECLIPTIC * (CARTESIAN2 | SPHERICAL2)</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">geometries</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma-separated list of all allowed geometries.</p>
+					<p>
+						Each item of the list must be the name (whatever is the case) of an ADQL geometrical function (e.g. INTERSECTS, COORDSYS, POINT) to allow.
+						If the list is empty (no item), all functions are allowed. And if the special value <em>NONE</em> is given, no ADQL function will be allowed.
+					</p>
+					<p><em>By default, all ADQL geometrical functions are allowed.</em></p>
+				</td>
+				<td><ul><li>ø <em>(default)</em></li><li>NONE</li><li>CONTAINS, intersects, Point, Box, CIRCLE</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">udfs</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma-separated list of all allowed UDFs (User Defined Functions).</p>
+					<p>
+						Each item of the list must have the following syntax: <code>[fct_signature]</code> or <code>[fct_signature, className]</code>.
+						<i>fct_function</i> is the function signature. Its syntax is the same as in <a href="http://www.ivoa.net/documents/TAPRegExt/20120827/REC-TAPRegExt-1.0.html#langs">TAPRegExt</a>.
+						<i>className</i> is the name of a class extending UserDefinedFunction. An instance of this class will replace any reference of a UDF
+						written in an ADQL function with the associated signature. A class name must be specified if the function to represent has a signature
+						(and more particularly a name) different in ADQL and in SQL.
+					</p>
+					<p>
+						If the list is empty (no item), all unknown functions are forbidden. And if the special value <em>ANY</em> is given, any unknown function is allowed ;
+						consequently the unknown ADQL functions will be translated into SQL as they are in ADQL.
+					</p>
+					<p><em>By default, no unknown function is allowed.</em></p>
+				</td>
+				<td><ul><li>ø <em>(default)</em></li><li>ANY</li><li>[trim(txt String) -&gt; String], [random() -&gt; DOUBLE]</li><li>[newFct(x double)-&gt;double, {apackage.MyNewFunction}]</li></ul></td>
+			</tr>
+			
+			<tr><td colspan="5">Additional TAP Resources</td></tr>
+			<tr class="optional">
+				<td class="done">additional_resources</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Comma-separated list of additional TAP resources/end-point.</p>
+					<p>
+						By default, the following standard TAP resources are already existing: /sync, /async, /tables, /capabilities and /availability.
+						With this property, you can add a custom resource to your TAP service (e.g. /adqlValidator, /admin).
+					</p>
+					<p>
+						Each item of the list MUST be the name of a class implementing tap.resource.TAPResource. This class MUST have at least one constructor
+						with exactly one parameter of type tap.resource.TAP.
+					</p>
+					<p>
+						The string returned by tap.resource.TAPResource.getName() will be the resource name, following the root TAP service URL (e.g. if getName()
+						returns "foo", then its access URL will "{tapRoot}/foo"). Then, it is possible to replace TAP resources already existing by using the same
+						name (e.g. if getName() returns "sync", the /sync resource won't be anymore the default Sync resource of this library but your new resource).
+					</p>
+					<p><em>By default, this list is empty ; only the standard TAP resources exist.</em></p>
+				</td>
+				<td>{aPackage.QuickADQLValidator}</td>
+			</tr>
+			
+			<tr><td colspan="5">Custom TAP Factory</td></tr>
+			<tr class="optional">
+				<td class="done">tap_factory</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Class to use in replacement of the default TAPFactory.</p>
+					<p>
+						This property must be a class name (given between {...}). It must reference an implementation of TAPFactory.
+						This implementation must have at least one constructor with exactly one parameter of type ServiceConnection.
+					</p>
+					<p>
+						It is recommended to extend an existing implementation such as:
+						tap.AbstractTAPFactory or tap.config.ConfigurableTAPFactory.
+					</p>
+					<p><em>By default, the default TAPFactory (tap.config.ConfigurableTAPFactory) is used and may use all properties related to the backup management,
+					the database access and the ADQL translation.</em></p>
+				</td>
+				<td>{aPackage.MyTAPFactory}</td>
+			</tr>
+			
+		</table>
+		<script type="text/javascript">
+			var nb = document.getElementsByClassName("mandatory").length;
+			document.getElementById("nbMandatory").textContent = nb;
+			nb += document.getElementsByClassName("optional").length;
+			document.getElementById("nbTotal").textContent = nb;
+		</script>
+	</body>
+</html>

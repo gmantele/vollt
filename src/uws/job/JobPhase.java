@@ -16,7 +16,8 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.Serializable;
@@ -28,8 +29,8 @@ import uws.UWSExceptionFactory;
  * An instance of this class represents the current execution phase of a given job,
  * and it describes the transitions between the different phases.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (08/2014)
  * 
  * @see ExecutionPhase
  * @see UWSJob
@@ -48,11 +49,11 @@ public class JobPhase implements Serializable {
 	 * 
 	 * @param j				The job whose the execution phase must be represented by the built JobPhase instance.
 	 * 
-	 * @throws UWSException	If the given job is <i>null</i>.
+	 * @throws NullPointerException	If the given job is <i>null</i>.
 	 */
-	public JobPhase(UWSJob j) throws UWSException{
+	public JobPhase(UWSJob j) throws NullPointerException{
 		if (j == null)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Missing job instance ! => impossible to build a JobPhase instance.");
+			throw new NullPointerException("Missing job instance ! => impossible to build a JobPhase instance.");
 		job = j;
 	}
 
@@ -88,12 +89,16 @@ public class JobPhase implements Serializable {
 	}
 
 	/**
-	 * Lets changing the current phase of the associated job considering or not the order of execution phases.
+	 * <p>Lets changing the current phase of the associated job considering or not the order of execution phases.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	If the given phase is <i>null</i>, nothing is done.
+	 * </i></p>
 	 * 
 	 * @param p				The new phase.
 	 * @param force			<i>true</i> to ignore the phases order, <i>false</i> otherwise.
 	 * 
-	 * @throws UWSException	If the given phase is <i>null</i> or if the phase transition is forbidden.
+	 * @throws UWSException	If the phase transition is forbidden.
 	 * 
 	 * @see #setPendingPhase(boolean)
 	 * @see #setQueuedPhase(boolean)
@@ -107,7 +112,7 @@ public class JobPhase implements Serializable {
 	 */
 	public void setPhase(ExecutionPhase p, boolean force) throws UWSException{
 		if (p == null)
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Incorrect phase ! => The phase of a job can not be set to NULL !");
+			return;
 
 		// Check that the given phase follows the imposed phases order:
 		switch(p){
@@ -151,7 +156,7 @@ public class JobPhase implements Serializable {
 	 */
 	protected void setPendingPhase(boolean force) throws UWSException{
 		if (!force && phase != ExecutionPhase.PENDING && phase != ExecutionPhase.UNKNOWN)
-			throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.PENDING);
+			throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.PENDING));
 
 		phase = ExecutionPhase.PENDING;
 	}
@@ -168,7 +173,7 @@ public class JobPhase implements Serializable {
 			phase = ExecutionPhase.QUEUED;
 		else{
 			if (phase != ExecutionPhase.QUEUED && phase != ExecutionPhase.HELD && phase != ExecutionPhase.PENDING && phase != ExecutionPhase.UNKNOWN)
-				throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.QUEUED);
+				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.QUEUED));
 
 			phase = ExecutionPhase.QUEUED;
 		}
@@ -186,7 +191,7 @@ public class JobPhase implements Serializable {
 			phase = ExecutionPhase.EXECUTING;
 		else{
 			if (phase != ExecutionPhase.EXECUTING && phase != ExecutionPhase.SUSPENDED && phase != ExecutionPhase.PENDING && phase != ExecutionPhase.QUEUED && phase != ExecutionPhase.UNKNOWN)
-				throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.EXECUTING);
+				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.EXECUTING));
 
 			phase = ExecutionPhase.EXECUTING;
 		}
@@ -204,7 +209,7 @@ public class JobPhase implements Serializable {
 			phase = ExecutionPhase.COMPLETED;
 		else{
 			if (phase != ExecutionPhase.COMPLETED && phase != ExecutionPhase.EXECUTING && phase != ExecutionPhase.UNKNOWN)
-				throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.COMPLETED);
+				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.COMPLETED));
 
 			phase = ExecutionPhase.COMPLETED;
 		}
@@ -222,7 +227,7 @@ public class JobPhase implements Serializable {
 			phase = ExecutionPhase.ABORTED;
 		else{
 			if (phase == ExecutionPhase.COMPLETED || phase == ExecutionPhase.ERROR)
-				throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.ABORTED);
+				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.ABORTED));
 
 			phase = ExecutionPhase.ABORTED;
 		}
@@ -240,7 +245,7 @@ public class JobPhase implements Serializable {
 			phase = ExecutionPhase.ERROR;
 		else{
 			if (phase == ExecutionPhase.COMPLETED || phase == ExecutionPhase.ABORTED)
-				throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.ERROR);
+				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.ERROR));
 
 			phase = ExecutionPhase.ERROR;
 		}
@@ -255,7 +260,7 @@ public class JobPhase implements Serializable {
 	 */
 	protected void setHeldPhase(boolean force) throws UWSException{
 		if (!force && phase != ExecutionPhase.HELD && phase != ExecutionPhase.PENDING && phase != ExecutionPhase.UNKNOWN)
-			throw UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.HELD);
+			throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(job.getJobId(), phase, ExecutionPhase.HELD));
 		phase = ExecutionPhase.HELD;
 	}
 

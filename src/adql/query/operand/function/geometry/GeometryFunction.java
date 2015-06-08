@@ -16,22 +16,24 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
+import adql.parser.ParseException;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.TextPosition;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
 
 /**
  * <p>It represents any geometric function of ADQL.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  */
 public abstract class GeometryFunction extends ADQLFunction {
 
@@ -83,13 +85,13 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * @param coordSys							Its new coordinate system.
 	 * @throws UnsupportedOperationException	If this function is not associated with a coordinate system.
 	 * @throws NullPointerException				If the given operand is <i>null</i>.
-	 * @throws Exception						If the given operand is not a string.
+	 * @throws ParseException					If the given operand is not a string.
 	 */
-	public void setCoordinateSystem(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, Exception{
+	public void setCoordinateSystem(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, ParseException{
 		if (coordSys == null)
-			throw new NullPointerException("");
+			this.coordSys = new StringConstant("");
 		else if (!coordSys.isString())
-			throw new Exception("A coordinate system must be a string literal: \"" + coordSys.toADQL() + "\" is not a string operand !");
+			throw new ParseException("A coordinate system must be a string literal: \"" + coordSys.toADQL() + "\" is not a string operand!");
 		else{
 			this.coordSys = coordSys;
 			setPosition(null);
@@ -101,13 +103,13 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * which, in general, is either a GeometryFunction or a Column.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 05/2014
+	 * @version 1.4 (06/2015)
 	 */
 	public static final class GeometryValue< F extends GeometryFunction > implements ADQLOperand {
 		private ADQLColumn column;
 		private F geomFunct;
 		/** Position of this {@link GeometryValue} in the ADQL query string.
-		 * @since 1.3 */
+		 * @since 1.4 */
 		private TextPosition position = null;
 
 		public GeometryValue(ADQLColumn col) throws NullPointerException{
@@ -170,6 +172,11 @@ public abstract class GeometryFunction extends ADQLFunction {
 		@Override
 		public TextPosition getPosition(){
 			return position;
+		}
+
+		@Override
+		public boolean isGeometry(){
+			return getValue().isGeometry();
 		}
 
 		@Override

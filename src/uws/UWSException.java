@@ -16,23 +16,30 @@ package uws;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import uws.job.ErrorType;
 
 /**
- * Any exception returned by a class of the UWS pattern may be associated with
- * an HTTP error code (like: 404, 303, 500) and a UWS error type.
+ * <p>Any exception returned by a class of the UWS pattern may be associated with
+ * an HTTP error code (like: 404, 303, 500) and a UWS error type.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 12/2010
+ * <p>
+ * 	Any error reported with this kind of exception will (in the most of cases) interrupt a UWS action,
+ * 	by reporting an error related with the UWS usage.
+ * </p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class UWSException extends Exception {
 	private static final long serialVersionUID = 1L;
 
 	// SUCCESS codes:
 	public final static int OK = 200;
+	public final static int ACCEPTED_BUT_NOT_COMPLETE = 202;
 	public final static int NO_CONTENT = 204;
 
 	// REDIRECTION codes:
@@ -61,69 +68,136 @@ public class UWSException extends Exception {
 	/* ************ */
 	/* CONSTRUCTORS */
 	/* ************ */
+	/**
+	 * Exception in the general context of UWS.
+	 * 
+	 * @param msg	Error message to display.
+	 */
 	public UWSException(String msg){
-		this(msg, ErrorType.FATAL);
+		this(msg, null);
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS, and with the specified error type (FATAL or TRANSIENT). 
+	 * 
+	 * @param msg		Error message to display.
+	 * @param type		Type of the error (FATAL or TRANSIENT). <i>Note: If NULL, it will be considered as FATAL.</i>
+	 */
 	public UWSException(String msg, ErrorType type){
 		super(msg);
-		if (type != null)
-			errorType = type;
+		this.errorType = (type == null) ? ErrorType.FATAL : type;
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS because the given exception has been thrown.
+	 * 
+	 * @param t	The thrown (and so caught) exception.
+	 */
 	public UWSException(Throwable t){
-		this(t, ErrorType.FATAL);
+		this(t, null);
 	}
 
+	/**
+	 * Exception with the given type that occurs in the general context of UWS
+	 * because the given exception has been thrown.
+	 * 
+	 * @param t			The thrown (and so caught) exception.
+	 * @param type		Type of the error (FATAL or TRANSIENT). <i>Note: If NULL, it will be considered as FATAL.</i>
+	 */
 	public UWSException(Throwable t, ErrorType type){
 		super(t);
-		if (type != null)
-			errorType = type;
+		this.errorType = (type == null) ? ErrorType.FATAL : type;
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS and which should return the given HTTP error code.
+	 * 
+	 * @param httpError	HTTP error code to return.
+	 * @param msg		Error message to display.
+	 */
 	public UWSException(int httpError, String msg){
-		this(msg);
-		if (httpError >= 0)
-			httpErrorCode = httpError;
+		this(httpError, msg, null);
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS, with the given type and which should return the given HTTP error code.
+	 * 
+	 * @param httpError	HTTP error code to return.
+	 * @param msg		Error message to display.
+	 * @param type		Type of the error (FATAL or TRANSIENT). <i>Note: If NULL, it will be considered as FATAL.</i>
+	 */
 	public UWSException(int httpError, String msg, ErrorType type){
 		this(msg, type);
-		if (httpError >= 0)
-			httpErrorCode = httpError;
+		this.httpErrorCode = (httpError < 0) ? NOT_FOUND : httpError;
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS,
+	 * because the given exception has been thrown and that which should return the given HTTP error status.
+	 * 
+	 * @param httpError	HTTP error code to return.
+	 * @param t			The thrown (and so caught) exception.
+	 */
 	public UWSException(int httpError, Throwable t){
-		this(t);
-		if (httpError >= 0)
-			httpErrorCode = httpError;
+		this(httpError, t, (t != null) ? t.getMessage() : null, null);
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS with the given error type,
+	 * because the given exception has been thrown and that which should return the given HTTP error status.
+	 * 
+	 * @param httpError	HTTP error code to return.
+	 * @param t			The thrown (and so caught) exception.
+	 * @param type		Type of the error (FATAL or TRANSIENT). <i>Note: If NULL, it will be considered as FATAL.</i>
+	 */
 	public UWSException(int httpError, Throwable t, ErrorType type){
-		this(t, type);
-		if (httpError >= 0)
-			httpErrorCode = httpError;
+		this(httpError, t, (t != null) ? t.getMessage() : null, type);
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS,
+	 * because the given exception has been thrown and that which should return the given HTTP error status.
+	 * 
+	 * @param httpError	HTTP error code to return.
+	 * @param t			The thrown (and so caught) exception.
+	 * @param msg		Error message to display.
+	 */
 	public UWSException(int httpError, Throwable t, String msg){
-		this(httpError, t, msg, ErrorType.FATAL);
+		this(httpError, t, msg, null);
 	}
 
+	/**
+	 * Exception that occurs in the general context of UWS,
+	 * because the given exception has been thrown and that which should return the given HTTP error status.
+	 * 
+	 * @param httpError	HTTP error code to return.
+	 * @param t			The thrown (and so caught) exception.
+	 * @param msg		Error message to display.
+	 * @param type		Type of the error (FATAL or TRANSIENT). <i>Note: If NULL, it will be considered as FATAL.</i>
+	 */
 	public UWSException(int httpError, Throwable t, String msg, ErrorType type){
 		super(msg, t);
-		if (httpError >= 0)
-			httpErrorCode = httpError;
-		if (type != null)
-			errorType = type;
+		this.httpErrorCode = (httpError < 0) ? NOT_FOUND : httpError;
+		this.errorType = (type == null) ? ErrorType.FATAL : type;
 	}
 
 	/* ******* */
 	/* GETTERS */
 	/* ******* */
+	/**
+	 * Get the HTTP error code that should be returned.
+	 * 
+	 * @return	The corresponding HTTP error code.
+	 */
 	public int getHttpErrorCode(){
 		return httpErrorCode;
 	}
 
+	/**
+	 * Get the type of this error (from the UWS point of view ; FATAL or TRANSIENT).
+	 * 
+	 * @return	Type of this error.
+	 */
 	public ErrorType getUWSErrorType(){
 		return errorType;
 	}

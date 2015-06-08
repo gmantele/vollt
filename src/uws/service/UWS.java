@@ -16,19 +16,18 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import uws.UWSException;
-
 import uws.job.JobList;
-
 import uws.job.serializer.UWSSerializer;
-
 import uws.service.backup.UWSBackupManager;
 import uws.service.file.UWSFileManager;
-
 import uws.service.log.UWSLog;
+import uws.service.request.RequestParser;
+import uws.service.request.UWSRequestParser;
 
 /**
  * <p>
@@ -59,10 +58,27 @@ import uws.service.log.UWSLog;
  * 	the UWS and the servlet.
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * <p><b>IMPORTANT:
+ * 	All implementations of this interface should implement properly the function {@link #destroy()} and should call it
+ * 	when the JVM or the HTTP server application is closing.
+ * </b></p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (02/2015)
  */
 public interface UWS extends Iterable<JobList> {
+
+	/** Attribute of the HttpServletRequest to set and to get in order to access the request ID set by the UWS library.
+	 * @since 4.1 */
+	public static final String REQ_ATTRIBUTE_ID = "UWS_REQUEST_ID";
+
+	/** Attribute of the HttpServletRequest to set and to get in order to access the parameters extracted by the UWS library (using a RequestParser).
+	 * @since 4.1 */
+	public static final String REQ_ATTRIBUTE_PARAMETERS = "UWS_PARAMETERS";
+
+	/** Attribute of the HttpServletRequest to set and to get in order to access the user at the origin of the HTTP request.
+	 * @since 4.1 */
+	public static final String REQ_ATTRIBUTE_USER = "UWS_USER";
 
 	/**
 	 * Gets the name of this UWS.
@@ -78,6 +94,28 @@ public interface UWS extends Iterable<JobList> {
 	 */
 	public String getDescription();
 
+	/* ***************** */
+	/* RESOURCES RELEASE */
+	/* ***************** */
+
+	/**
+	 * <p>
+	 * 	End properly this UWS: jobs should be backuped (if this feature is enable), timers and threads should be stopped,
+	 * 	open files and database connections should be closed, etc...
+	 * 	In brief, this function should release all used resources.
+	 * </p>
+	 * 
+	 * <p><b>IMPORTANT: This function should be called only when the JVM or the Web Application Server is stopping.</b></p> 
+	 * 
+	 * <p><i>Note:
+	 * 	A call to this function may prevent this instance of {@link UWS} to execute any subsequent HTTP request, or the behavior
+	 * 	would be unpredictable.
+	 * </i></p>
+	 * 
+	 * @since 4.1
+	 */
+	public void destroy();
+
 	/* ******************* */
 	/* JOB LIST MANAGEMENT */
 	/* ******************* */
@@ -85,7 +123,7 @@ public interface UWS extends Iterable<JobList> {
 	/**
 	 * Adds a jobs list to this UWS.
 	 * 
-	 * @param jl	The jobs list to add.
+	 * @param newJL	The jobs list to add.
 	 * 
 	 * @return		<i>true</i> if the jobs list has been successfully added,
 	 * 				<i>false</i> if the given jobs list is <i>null</i> or if a jobs list with this name already exists
@@ -109,17 +147,6 @@ public interface UWS extends Iterable<JobList> {
 	 * @return	The number of jobs lists.
 	 */
 	public int getNbJobList();
-
-	/*
-	 * <p>Removes the specified jobs list.</p>
-	 * <p><i><u>note:</u> After the call of this function, the UWS reference of the given jobs list should be removed (see {@link JobList#setUWS(UWS)}).</i></p>
-	 * 
-	 * @param name	Name of the jobs list to remove.
-	 * 
-	 * @return		The removed jobs list
-	 * 				or <i>null</i> if no jobs list with the given name has been found.
-	 *
-	public JobList removeJobList(final String name) throws UWSException;*/
 
 	/**
 	 * <p>Destroys the specified jobs list.</p>
@@ -183,8 +210,9 @@ public interface UWS extends Iterable<JobList> {
 	/* ******************* */
 
 	/**
+	 * Gets the object which is able to identify a user from an HTTP request.
 	 * 
-	 * @return
+	 * @return	Its user identifier.
 	 */
 	public UserIdentifier getUserIdentifier();
 
@@ -201,6 +229,22 @@ public interface UWS extends Iterable<JobList> {
 	 * @return Its job factory.
 	 */
 	public UWSFactory getFactory();
+
+	/* ******************** */
+	/* HTTP REQUEST PARSING */
+	/* ******************** */
+
+	/**
+	 * <p>Get its HTTP request parser.</p>
+	 * <p><i><u>note:</u> This parser is the only one to be able to extract UWS and TAP parameters from any HTTP request.
+	 * Its behavior is adapted in function of the used HTTP method and of the content-type. A default implementation is
+	 * provided by the UWS library: {@link UWSRequestParser}.</i></p>
+	 * 
+	 * @return	Its request parser.
+	 * 
+	 * @since 4.1
+	 */
+	public RequestParser getRequestParser();
 
 	/* *************** */
 	/* FILE MANAGEMENT */

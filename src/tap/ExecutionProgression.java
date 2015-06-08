@@ -16,9 +16,16 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
+/**
+ * Let describe the current status of a job execution.
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (07/2014)
+ */
 public enum ExecutionProgression{
-	PENDING, UPLOADING, PARSING, TRANSLATING, EXECUTING_SQL, WRITING_RESULT, FINISHED;
+	PENDING, UPLOADING, PARSING, EXECUTING_ADQL, WRITING_RESULT, FINISHED;
 }

@@ -16,22 +16,42 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLObject;
 
 /**
  * <p>Any ADQL operand (an operation, a constant, a column name, a function, ...) must implement this interface
- * and indicates whether it corresponds to a numeric or a string value.</p>
+ * and indicates whether it corresponds to a numeric, a string or a geometrical region value.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 11/2010
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public interface ADQLOperand extends ADQLObject {
 
+	/**
+	 * Tell whether this operand is numeric or not.
+	 * 
+	 * @return	<i>true</i> if this operand is numeric, <i>false</i> otherwise.
+	 */
 	public boolean isNumeric();
 
+	/**
+	 * Tell whether this operand is a string or not.
+	 * 
+	 * @return	<i>true</i> if this operand is a string, <i>false</i> otherwise.
+	 */
 	public boolean isString();
+
+	/**
+	 * Tell whether this operand is a geometrical region or not.
+	 * 
+	 * @return	<i>true</i> if this operand is a geometry, <i>false</i> otherwise.
+	 * 
+	 * @since 1.3
+	 */
+	public boolean isGeometry();
 
 }

@@ -16,17 +16,17 @@ package uws.job.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 
 /**
- * Lets controlling a String parameter.
+ * Let controlling a String parameter.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (09/2014)
  */
 public class StringParamController implements InputParamController {
 
@@ -133,11 +133,11 @@ public class StringParamController implements InputParamController {
 					if (strValue.equalsIgnoreCase(v))
 						return v;
 				}
-				throw UWSExceptionFactory.badFormat(null, paramName, strValue, null, getExpectedFormat());
+				throw new UWSException(UWSException.BAD_REQUEST, "Unknown value for the parameter \"" + paramName + "\": \"" + strValue + "\". It should be " + getExpectedFormat());
 			}else
 				return strValue;
 		}else
-			throw UWSExceptionFactory.badFormat(null, paramName, value.toString(), value.getClass().getName(), getExpectedFormat());
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"" + paramName + "\": \"" + value.getClass().getName() + "\"! It should be a String.");
 	}
 
 	/**
@@ -146,13 +146,13 @@ public class StringParamController implements InputParamController {
 	 * @return	A string which describes the format expected by this controller.
 	 */
 	protected final String getExpectedFormat(){
-		if (possibleValues == null || possibleValues.length == 0){
-			StringBuffer buffer = new StringBuffer("A String value among: ");
+		if (possibleValues != null && possibleValues.length > 0){
+			StringBuffer buffer = new StringBuffer("a String value among: ");
 			for(int i = 0; i < possibleValues.length; i++)
 				buffer.append((i == 0) ? "" : ", ").append(possibleValues[i]);
 			return buffer.toString();
 		}else
-			return "A String value.";
+			return "a String value.";
 	}
 
 	@Override

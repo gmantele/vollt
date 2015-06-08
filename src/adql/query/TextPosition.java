@@ -16,8 +16,8 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import adql.parser.Token;
@@ -27,7 +27,7 @@ import adql.parser.Token;
  * It is particularly used to localize columns and tables in the original ADQL query.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 05/2014
+ * @version 1.4 (06/2015)
  */
 public class TextPosition {
 
@@ -94,7 +94,7 @@ public class TextPosition {
 	 * Builds a copy of the given position.
 	 * 
 	 * @param positionToCopy	Position to copy.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public TextPosition(final TextPosition positionToCopy){
 		this(positionToCopy.beginLine, positionToCopy.beginColumn, positionToCopy.endLine, positionToCopy.endColumn);
@@ -105,7 +105,7 @@ public class TextPosition {
 	 * 
 	 * @param startPos	Start position (only beginLine and beginColumn will be used).
 	 * @param endPos	End position (only endLine and endColumn will be used).
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public TextPosition(final TextPosition startPos, final TextPosition endPos){
 		this(startPos.beginLine, startPos.beginColumn, endPos.endLine, endPos.endColumn);

@@ -16,7 +16,8 @@ package tap.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
@@ -25,15 +26,33 @@ import tap.ServiceConnection;
 import tap.TAPJob;
 import tap.formatter.OutputFormat;
 import uws.UWSException;
-import uws.UWSExceptionFactory;
 import uws.job.parameters.InputParamController;
 
-public class FormatController< R > implements InputParamController {
+/**
+ * <p>Let controlling the format of all job result in a TAP service.
+ * The default values are provided by the service connection.</p>
+ * 
+ * <p><i>Note:
+ * 	By default, the format can be modified by anyone without any limitation.
+ * </i></p>
+ * 
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.0 (09/2014)
+ */
+public class FormatController implements InputParamController {
 
-	protected final ServiceConnection<R> service;
+	/** Connection to the service which knows the maximum and default value of this parameter. */
+	protected final ServiceConnection service;
+
+	/** Indicates whether the output limit of jobs can be modified. */
 	protected boolean allowModification = true;
 
-	public FormatController(final ServiceConnection<R> service){
+	/**
+	 * Build a controller for the Format parameter.
+	 * 
+	 * @param service	Connection to the TAP service.
+	 */
+	public FormatController(final ServiceConnection service){
 		this.service = service;
 	}
 
@@ -42,6 +61,11 @@ public class FormatController< R > implements InputParamController {
 		return allowModification;
 	}
 
+	/**
+	 * Lets indicating whether the format parameter can be modified.
+	 * 
+	 * @param allowModif	<i>true</i> if the format can be modified, <i>false</i> otherwise.
+	 */
 	public final void allowModification(final boolean allowModif){
 		this.allowModification = allowModif;
 	}
@@ -54,7 +78,7 @@ public class FormatController< R > implements InputParamController {
 	@Override
 	public Object check(Object format) throws UWSException{
 		if (format == null)
-			return null;
+			return getDefault();
 
 		if (format instanceof String){
 			String strFormat = ((String)format).trim();
@@ -62,18 +86,24 @@ public class FormatController< R > implements InputParamController {
 				return getDefault();
 
 			if (service.getOutputFormat(strFormat) == null)
-				throw new UWSException(UWSException.BAD_REQUEST, "Unknown output format (=" + strFormat + ") ! This TAP service can format query results ONLY in the following formats:" + getAllowedFormats() + ".");
+				throw new UWSException(UWSException.BAD_REQUEST, "Unknown value for the parameter \"format\": \"" + strFormat + "\". It should be " + getAllowedFormats());
 			else
 				return strFormat;
 		}else
-			throw UWSExceptionFactory.badFormat(null, TAPJob.PARAM_FORMAT, format.toString(), format.getClass().getName(), "A String equals to one of the following values: " + getAllowedFormats() + ".");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Wrong type for the parameter \"format\": class \"" + format.getClass().getName() + "\"! It should be a String.");
 	}
 
-	public final String getAllowedFormats(){
-		Iterator<OutputFormat<R>> itFormats = service.getOutputFormats();
-		StringBuffer allowedFormats = new StringBuffer();
+	/**
+	 * Get a list of all allowed output formats (for each, the main MIME type
+	 * but also the short type representation are given).
+	 * 
+	 * @return	List of all output formats.
+	 */
+	protected final String getAllowedFormats(){
+		Iterator<OutputFormat> itFormats = service.getOutputFormats();
+		StringBuffer allowedFormats = new StringBuffer("a String value among: ");
 		int i = 0;
-		OutputFormat<R> formatter;
+		OutputFormat formatter;
 		while(itFormats.hasNext()){
 			formatter = itFormats.next();
 			allowedFormats.append((i == 0) ? "" : ", ").append(formatter.getMimeType());
@@ -81,7 +111,10 @@ public class FormatController< R > implements InputParamController {
 				allowedFormats.append(" (or ").append(formatter.getShortMimeType()).append(')');
 			i++;
 		}
-		return allowedFormats.toString();
+		if (i > 0)
+			return allowedFormats.toString();
+		else
+			return "a String value.";
 	}
 
 }

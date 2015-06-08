@@ -16,7 +16,8 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -26,14 +27,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
 import uws.UWSExceptionFactory;
-
 import uws.job.JobList;
 import uws.job.UWSJob;
-
 import uws.job.user.JobOwner;
-
 import uws.service.UWSService;
 import uws.service.UWSUrl;
+import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>The "Add Job" action of a UWS.</p>
@@ -43,8 +42,8 @@ import uws.service.UWSUrl;
  * <p>This action creates a new job and adds it to the specified jobs list.
  * The response of this action is a redirection to the new job resource (that is to say: a redirection to the job summary of the new job).</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 05/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.1 (04/2015)
  */
 public class AddJob extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -74,7 +73,7 @@ public class AddJob extends UWSAction {
 	 * 	<li>the UWS URL does not make a reference to a job (so: no job ID),</li>
 	 * 	<li>the HTTP method is HTTP-POST.</li>
 	 * </ul>
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{
@@ -87,11 +86,10 @@ public class AddJob extends UWSAction {
 	 * 
 	 * @see #getJobsList(UWSUrl)
 	 * @see uws.service.UWSFactory#createJob(HttpServletRequest, JobOwner)
-	 * @see UWSService#setExecutionManager(uws.job.manager.ExecutionManager)
 	 * @see JobList#addNewJob(UWSJob)
 	 * @see UWSService#redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * 
-	 * @see uws.service.actions.UWSAction#apply(uws.service.UWSUrl, java.lang.String, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
 	@Override
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
@@ -100,10 +98,16 @@ public class AddJob extends UWSAction {
 
 		// Forbids the job creation if the user has not the WRITE permission for the specified jobs list:
 		if (user != null && !user.hasWritePermission(jobsList))
-			throw UWSExceptionFactory.writePermissionDenied(user, true, jobsList.getName());
+			throw new UWSException(UWSException.PERMISSION_DENIED, UWSExceptionFactory.writePermissionDenied(user, true, jobsList.getName()));
 
 		// Create the job:
-		UWSJob newJob = uws.getFactory().createJob(request, user);
+		UWSJob newJob;
+		try{
+			newJob = uws.getFactory().createJob(request, user);
+		}catch(UWSException ue){
+			getLogger().logUWS(LogLevel.ERROR, urlInterpreter, "ADD_JOB", "Can not create a new job!", ue);
+			throw ue;
+		}
 
 		// Add it to the jobs list:
 		if (jobsList.addNewJob(newJob) != null){
@@ -113,7 +117,7 @@ public class AddJob extends UWSAction {
 
 			return true;
 		}else
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Unable to add the new job to the jobs list. (ID of the new job = \"" + newJob.getJobId() + "\" ; ID already used = " + (jobsList.getJob(newJob.getJobId()) != null) + ")");
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Unable to add the new job to the jobs list for an unknown reason. (ID of the new job = \"" + newJob.getJobId() + "\" ; ID already used = " + (jobsList.getJob(newJob.getJobId()) != null) + ")");
 	}
 
 }

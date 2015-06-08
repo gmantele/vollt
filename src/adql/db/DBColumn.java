@@ -16,7 +16,8 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2011 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2011,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 /**
@@ -27,8 +28,8 @@ package adql.db;
  * 	and corresponds to a real column in the "database" with its DB name ({@link #getDBName()}).
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.3 (10/2014)
  */
 public interface DBColumn {
 
@@ -45,6 +46,19 @@ public interface DBColumn {
 	 * @return	Its DB name.
 	 */
 	public String getDBName();
+
+	/**
+	 * <p>Get the type of this column (as closed as possible from the "database" type).</p>
+	 * 
+	 * <p><i>Note:
+	 * 	The returned type should be as closed as possible from a type listed by the IVOA in the TAP protocol description into the section UPLOAD.
+	 * </i></p>
+	 * 
+	 * @return	Its type.
+	 * 
+	 * @since 1.3
+	 */
+	public DBType getDatatype();
 
 	/**
 	 * Gets the table which contains this {@link DBColumn}.

@@ -18,8 +18,8 @@ import adql.search.ISearchHandler;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomishes Rechen Institute (ARI)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 /**
@@ -33,7 +33,7 @@ import adql.search.ISearchHandler;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2014)
+ * @version 1.4 (06/2015)
  */
 public interface ADQLObject {
 
@@ -51,7 +51,7 @@ public interface ADQLObject {
 	 * @return	Position of this ADQL item in the ADQL query,
 	 *          or NULL if not written originally in the query (for example, if added afterwards.
 	 * 
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	public TextPosition getPosition();
 
