@@ -854,7 +854,7 @@ void Having(): {ClauseConstraints having = query.getHaving(); Token start;} {
 void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder order = null; Token start;} {
 	start=<ORDER_BY> order=OrderItem() {orderBy.add(order);}
 	( <COMMA> order=OrderItem() {orderBy.add(order);} )*
-	{ orderBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, order.getPosition().endLine, order.getPosition().endColumn)); }
+	{ orderBy.setPosition(new TextPosition(start, token)); }
 }
 
 /* *************************** */
@@ -1034,13 +1034,18 @@ ADQLJoin JoinSpecification(FromContent leftTable): { boolean natural = false; Jo
 /* ****** */
 /* STRING */
 /* ****** */
-StringConstant String(): {Token t; String str=""; StringConstant cst;} {
-	(t=<STRING_LITERAL> {str += t.image;})+
+StringConstant String(): {Token t, start=null; String str=""; StringConstant cst;} {
+	(t=<STRING_LITERAL>
+	 {
+	   	str += t.image.substring(1, t.image.length()-1).replaceAll("''", "'");
+	   	if (start == null)
+	   		start = t;
+	 }
+	)+
 	{
 		try{
-		  str = (str!=null)?str.substring(1,str.length()-1):str;
 		  cst = queryFactory.createStringConstant(str);
-		  cst.setPosition(new TextPosition(t));
+		  cst.setPosition(new TextPosition(start, t));
 		  return cst;
 		}catch(Exception ex){
 			throw generateParseException(ex);
@@ -1107,30 +1112,30 @@ ADQLOperand NumericValueExpressionPrimary(): {String expr; ADQLColumn column; AD
 		// set_function_specification
 		| op=SqlFunction() {return op;}
 		// LEFT_PAR value_expression RIGHT_PAR
-		| (left=<LEFT_PAR> op=NumericExpression() right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop;})
+		| (left=<LEFT_PAR> op=NumericExpression() right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop; })
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
 }
 
-ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn column; ADQLOperand op;} {
+ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn column; ADQLOperand op; Token left, right;} {
 	try{
 		(// string
 		  expr=String() {return expr;}
 		// column_reference
 		| column=Column() {column.setExpectedType('S'); return column;}
 		// LEFT_PAR value_expression RIGHT_PAR
-		| (<LEFT_PAR> (op=StringExpression()) <RIGHT_PAR>) {return queryFactory.createWrappedOperand(op);})
+		| (left=<LEFT_PAR> (op=StringExpression()) right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop; })
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
 }
 
-ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {
+ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right; } {
 	try{
 		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
-		| LOOKAHEAD(<LEFT_PAR>) <LEFT_PAR> valueExpr=ValueExpression() <RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); }
+		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
 		| valueExpr=GeometryValueFunction()
 		| LOOKAHEAD(Column()) valueExpr=Column()
@@ -1178,16 +1183,20 @@ ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} 
 
 ADQLOperand Factor(): {boolean negative = false; Token minusSign = null; ADQLOperand op;} {
 	(
-		(<PLUS> | (<MINUS> {negative = true;}))?
+		(<PLUS> | (minusSign=<MINUS> {negative = true;}))?
 		(LOOKAHEAD(2) op=NumericFunction() | op=NumericValueExpressionPrimary())
 	)
 	
 	{
 		if (negative){
 			try{
+			  	TextPosition position = op.getPosition();
 				op = queryFactory.createNegativeOperand(op);
 				NegativeOperand negativeOp = (NegativeOperand)op;
-				negativeOp.setPosition(new TextPosition(minusSign.beginLine, minusSign.beginColumn, negativeOp.getPosition().endLine, negativeOp.getPosition().endColumn));
+				if (minusSign != null)
+					negativeOp.setPosition(new TextPosition(minusSign.beginLine, minusSign.beginColumn, position.endLine, position.endColumn));
+				else
+					negativeOp.setPosition(position);
 			}catch(Exception ex){
 				throw generateParseException(ex);
 			}
@@ -1290,7 +1299,7 @@ ClauseConstraints ConditionsList(ClauseConstraints clause): {ADQLConstraint cons
 }
 
 ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, end;} {
-	(LOOKAHEAD(Predicate()) constraint=Predicate()
+	(LOOKAHEAD(<EXISTS> | ValueExpression()) constraint=Predicate()
 	| (
 		start=<LEFT_PAR>
 		{
@@ -1310,12 +1319,14 @@ ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, en
 ADQLConstraint Predicate(): {ADQLQuery q=null; ADQLColumn column=null; ADQLOperand strExpr1=null, strExpr2=null; ADQLOperand op; Token start, notToken = null, end; ADQLConstraint constraint = null;} {
 	try{
 		// exists_predicate
-		((start=<EXISTS> q=SubQueryExpression())
-		 {
-		   Exists e = queryFactory.createExists(q);
-		   e.setPosition(new TextPosition(start.beginLine, start.beginColumn, q.getPosition().endLine, q.getPosition().endColumn));
-		   return e;
-		 }
+		(
+		  (start=<EXISTS> q=SubQueryExpression()
+			{
+			  Exists e = queryFactory.createExists(q);
+			  e.setPosition(new TextPosition(start.beginLine, start.beginColumn, q.getPosition().endLine, q.getPosition().endColumn));
+			  return e;
+			}
+		  )
 		// null_predicate
 		| LOOKAHEAD(Column() <IS>)(column=Column() <IS> [notToken=<NOT>] end=<NULL>
 		    {
@@ -1340,7 +1351,8 @@ ADQLConstraint Predicate(): {ADQLQuery q=null; ADQLColumn column=null; ADQLOpera
 			// in_predicate
 			| constraint=InEnd(op)
 			)
-		))
+		  )
+		)
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
