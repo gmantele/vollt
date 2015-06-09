@@ -97,7 +97,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2015)
+ * @version 1.4 (06/2015)
  */
 public class DBChecker implements QueryChecker {
 
@@ -215,8 +215,8 @@ public class DBChecker implements QueryChecker {
 					tmp[cnt++] = udf;
 			}
 			// make a copy of the array:
-                        this.allowedUdfs = new FunctionDef[cnt];
-                        System.arraycopy(tmp, 0, this.allowedUdfs, 0, cnt);
+			this.allowedUdfs = new FunctionDef[cnt];
+			System.arraycopy(tmp, 0, this.allowedUdfs, 0, cnt);
 
 			tmp = null;
 			// sort the values:
@@ -321,7 +321,7 @@ public class DBChecker implements QueryChecker {
 
 		// Make an adjusted array copy:
 		String[] copy = new String[cnt];
-                System.arraycopy(tmp, 0, copy, 0, cnt);
+		System.arraycopy(tmp, 0, copy, 0, cnt);
 
 		// Sort the values:
 		Arrays.sort(copy);
@@ -819,7 +819,7 @@ public class DBChecker implements QueryChecker {
 				if (match < 0){
 					// ...if the type of all parameters is resolved, add an error (no match is possible):
 					if (isAllParamTypesResolved(udf))
-						errors.addException(new UnresolvedFunctionException(udf));	// TODO Add the ADQLOperand position!
+						errors.addException(new UnresolvedFunctionException(udf));
 					// ...otherwise, try to resolved it later (when other UDFs will be mostly resolved):
 					else
 						toResolveLater.add(udf);
@@ -836,7 +836,7 @@ public class DBChecker implements QueryChecker {
 				match = binSearch.search(udf, allowedUdfs);
 				// if no match, add an error:
 				if (match < 0)
-					errors.addException(new UnresolvedFunctionException(udf));	// TODO Add the ADQLOperand position!
+					errors.addException(new UnresolvedFunctionException(udf));
 				// otherwise, metadata may be attached (particularly if the function is built automatically by the syntactic parser):
 				else if (udf instanceof DefaultUDF)
 					((DefaultUDF)udf).setDefinition(allowedUdfs[match]);
@@ -1003,7 +1003,7 @@ public class DBChecker implements QueryChecker {
 		try{
 			checkCoordinateSystem(STCS.parseCoordSys(coordSysStr), adqlCoordSys, errors);
 		}catch(ParseException pe){
-			errors.addException(new ParseException(pe.getMessage())); // TODO Missing object position!
+			errors.addException(new ParseException(pe.getMessage(), adqlCoordSys.getPosition()));
 		}
 	}
 
@@ -1017,8 +1017,21 @@ public class DBChecker implements QueryChecker {
 	 * @since 1.3
 	 */
 	protected void checkCoordinateSystem(final CoordSys coordSys, final ADQLOperand operand, final UnresolvedIdentifiersException errors){
-		if (coordSysRegExp != null && coordSys != null && !coordSys.toFullSTCS().matches(coordSysRegExp))
-			errors.addException(new ParseException("Coordinate system \"" + ((operand instanceof StringConstant) ? ((StringConstant)operand).getValue() : coordSys.toString()) + "\" (= \"" + coordSys.toFullSTCS() + "\") not allowed in this implementation."));	// TODO Missing object position! + List of accepted coordinate systems
+		if (coordSysRegExp != null && coordSys != null && !coordSys.toFullSTCS().matches(coordSysRegExp)){
+			StringBuffer buf = new StringBuffer();
+			if (allowedCoordSys != null){
+				for(String cs : allowedCoordSys){
+					if (buf.length() > 0)
+						buf.append(", ");
+					buf.append(cs);
+				}
+			}
+			if (buf.length() == 0)
+				buf.append("No coordinate system is allowed!");
+			else
+				buf.insert(0, "Allowed coordinate systems are: ");
+			errors.addException(new ParseException("Coordinate system \"" + ((operand instanceof StringConstant) ? ((StringConstant)operand).getValue() : coordSys.toString()) + "\" (= \"" + coordSys.toFullSTCS() + "\") not allowed in this implementation. " + buf.toString(), operand.getPosition()));
+		}
 	}
 
 	/**
@@ -1060,7 +1073,7 @@ public class DBChecker implements QueryChecker {
 				// check whether the regions (this one + the possible inner ones) and the coordinate systems are allowed:
 				checkRegion(region, (RegionFunction)result, binSearch, errors);
 			}catch(ParseException pe){
-				errors.addException(new ParseException(pe.getMessage())); // TODO Missing object position!
+				errors.addException(new ParseException(pe.getMessage(), result.getPosition()));
 			}
 		}
 	}
@@ -1155,17 +1168,17 @@ public class DBChecker implements QueryChecker {
 				case 'G':
 				case 'g':
 					if (!unknown.isGeometry())
-						errors.addException(new ParseException("Type mismatch! A geometry was expected instead of \"" + unknown.toADQL() + "\"."));	// TODO Add the ADQLOperand position!
+						errors.addException(new ParseException("Type mismatch! A geometry was expected instead of \"" + unknown.toADQL() + "\".", result.getPosition()));
 					break;
 				case 'N':
 				case 'n':
 					if (!unknown.isNumeric())
-						errors.addException(new ParseException("Type mismatch! A numeric value was expected instead of \"" + unknown.toADQL() + "\"."));	// TODO Add the ADQLOperand position!
+						errors.addException(new ParseException("Type mismatch! A numeric value was expected instead of \"" + unknown.toADQL() + "\".", result.getPosition()));
 					break;
 				case 'S':
 				case 's':
 					if (!unknown.isString())
-						errors.addException(new ParseException("Type mismatch! A string value was expected instead of \"" + unknown.toADQL() + "\"."));	// TODO Add the ADQLOperand position!
+						errors.addException(new ParseException("Type mismatch! A string value was expected instead of \"" + unknown.toADQL() + "\".", result.getPosition()));
 					break;
 			}
 		}

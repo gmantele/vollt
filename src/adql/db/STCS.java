@@ -1395,7 +1395,7 @@ public final class STCS {
 			if (nextToken().matches(numericRegExp))
 				return Double.parseDouble(token);
 			else
-				throw new ParseException("a numeric was expected!", new TextPosition(1, pos - token.length(), 1, pos));	// TODO Check the begin and end!
+				throw new ParseException("a numeric was expected!", new TextPosition(1, pos - token.length(), 1, pos));
 		}
 
 		/**
@@ -1415,7 +1415,7 @@ public final class STCS {
 				if (pe instanceof EOEException)
 					throw pe;
 				else
-					throw new ParseException("a coordinates pair (2 numerics separated by one or more spaces) was expected!", new TextPosition(1, startPos, 1, pos));	// TODO Check the begin and end!
+					throw new ParseException("a coordinates pair (2 numerics separated by one or more spaces) was expected!", new TextPosition(1, startPos, 1, pos));
 			}
 		}
 

@@ -364,64 +364,69 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 
 	@Override
 	public SearchColumnList getDBColumns() throws UnresolvedJoinException{
-		SearchColumnList list = new SearchColumnList();
-		SearchColumnList leftList = leftTable.getDBColumns();
-		SearchColumnList rightList = rightTable.getDBColumns();
+		try{
+			SearchColumnList list = new SearchColumnList();
+			SearchColumnList leftList = leftTable.getDBColumns();
+			SearchColumnList rightList = rightTable.getDBColumns();
 
-		/* 1. Figure out duplicated columns */
-		HashMap<String,DBCommonColumn> mapDuplicated = new HashMap<String,DBCommonColumn>();
-		// CASE: NATURAL
-		if (natural){
-			// Find duplicated items between the two lists and add one common column in mapDuplicated for each
-			DBColumn rightCol;
-			for(DBColumn leftCol : leftList){
-				// search for at most one column with the same name in the RIGHT list
-				// and throw an exception is there are several matches:
-				rightCol = findAtMostOneColumn(leftCol.getADQLName(), (byte)0, rightList, false);
-				// if there is one...
-				if (rightCol != null){
-					// ...check there is only one column with this name in the LEFT list,
-					// and throw an exception if it is not the case:
-					findExactlyOneColumn(leftCol.getADQLName(), (byte)0, leftList, true);
-					// ...create a common column:
-					mapDuplicated.put(leftCol.getADQLName().toLowerCase(), new DBCommonColumn(leftCol, rightCol));
+			/* 1. Figure out duplicated columns */
+			HashMap<String,DBCommonColumn> mapDuplicated = new HashMap<String,DBCommonColumn>();
+			// CASE: NATURAL
+			if (natural){
+				// Find duplicated items between the two lists and add one common column in mapDuplicated for each
+				DBColumn rightCol;
+				for(DBColumn leftCol : leftList){
+					// search for at most one column with the same name in the RIGHT list
+					// and throw an exception is there are several matches:
+					rightCol = findAtMostOneColumn(leftCol.getADQLName(), (byte)0, rightList, false);
+					// if there is one...
+					if (rightCol != null){
+						// ...check there is only one column with this name in the LEFT list,
+						// and throw an exception if it is not the case:
+						findExactlyOneColumn(leftCol.getADQLName(), (byte)0, leftList, true);
+						// ...create a common column:
+						mapDuplicated.put(leftCol.getADQLName().toLowerCase(), new DBCommonColumn(leftCol, rightCol));
+					}
 				}
+
+			}
+			// CASE: USING
+			else if (lstColumns != null && !lstColumns.isEmpty()){
+				// For each columns of usingList, check there is in each list exactly one matching column, and then, add it in mapDuplicated
+				DBColumn leftCol, rightCol;
+				for(ADQLColumn usingCol : lstColumns){
+					// search for exactly one column with the same name in the LEFT list
+					// and throw an exception if there is none, or if there are several matches:
+					leftCol = findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), leftList, true);
+					// idem in the RIGHT list:
+					rightCol = findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), rightList, false);
+					// create a common column:
+					mapDuplicated.put((usingCol.isCaseSensitive(IdentifierField.COLUMN) ? ("\"" + usingCol.getColumnName() + "\"") : usingCol.getColumnName().toLowerCase()), new DBCommonColumn(leftCol, rightCol));
+				}
+
+			}
+			// CASE: NO DUPLICATION TO FIGURE OUT
+			else{
+				// Return the union of both lists:
+				list.addAll(leftList);
+				list.addAll(rightList);
+				return list;
 			}
 
-		}
-		// CASE: USING
-		else if (lstColumns != null && !lstColumns.isEmpty()){
-			// For each columns of usingList, check there is in each list exactly one matching column, and then, add it in mapDuplicated
-			DBColumn leftCol, rightCol;
-			for(ADQLColumn usingCol : lstColumns){
-				// search for exactly one column with the same name in the LEFT list
-				// and throw an exception if there is none, or if there are several matches:
-				leftCol = findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), leftList, true);
-				// idem in the RIGHT list:
-				rightCol = findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), rightList, false);
-				// create a common column:
-				mapDuplicated.put((usingCol.isCaseSensitive(IdentifierField.COLUMN) ? ("\"" + usingCol.getColumnName() + "\"") : usingCol.getColumnName().toLowerCase()), new DBCommonColumn(leftCol, rightCol));
-			}
+			/* 2. Add all columns of the left list except the ones identified as duplications */
+			addAllExcept(leftList, list, mapDuplicated);
 
-		}
-		// CASE: NO DUPLICATION TO FIGURE OUT
-		else{
-			// Return the union of both lists:
-			list.addAll(leftList);
-			list.addAll(rightList);
+			/* 3. Add all columns of the right list except the ones identified as duplications */
+			addAllExcept(rightList, list, mapDuplicated);
+
+			/* 4. Add all common columns of mapDuplicated */
+			list.addAll(mapDuplicated.values());
+
 			return list;
+		}catch(UnresolvedJoinException uje){
+			uje.setPosition(position);
+			throw uje;
 		}
-
-		/* 2. Add all columns of the left list except the ones identified as duplications */
-		addAllExcept(leftList, list, mapDuplicated);
-
-		/* 3. Add all columns of the right list except the ones identified as duplications */
-		addAllExcept(rightList, list, mapDuplicated);
-
-		/* 4. Add all common columns of mapDuplicated */
-		list.addAll(mapDuplicated.values());
-
-		return list;
 	}
 
 	public final static void addAllExcept(final SearchColumnList itemsToAdd, final SearchColumnList target, final Map<String,DBCommonColumn> exception){
