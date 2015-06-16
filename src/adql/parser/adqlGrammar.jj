@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.3 (10/2014)
+*  Version: 1.4 (06/2015)
 */
 
 							/* ########### */
@@ -35,7 +35,7 @@
 options {
 	STATIC = false;
 	IGNORE_CASE = true;
-	DEBUG_PARSER = false;
+	DEBUG_PARSER = true;
 }
 
 							/* ########## */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.3 (10/2014)
+* @version 1.4 (06/2015)
 */
 public class ADQLParser {
 	
@@ -113,6 +113,7 @@ public class ADQLParser {
 	*/
 	public ADQLParser(){
 		this(new java.io.ByteArrayInputStream("".getBytes()));
+		setDebug(false);
 	}
 	
 	/**
@@ -157,6 +158,8 @@ public class ADQLParser {
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
+		
+		setDebug(false);
 		
 		queryChecker = checker;
 		
@@ -233,6 +236,8 @@ public class ADQLParser {
 	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
 		
+		setDebug(false);
+		
 		queryChecker = checker;
 
 		if (factory != null)
@@ -268,6 +273,8 @@ public class ADQLParser {
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
+		
+		setDebug(false);
 		
 		queryChecker = checker;
 

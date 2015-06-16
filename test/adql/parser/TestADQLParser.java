@@ -26,6 +26,18 @@ public class TestADQLParser {
 
 	@After
 	public void tearDown() throws Exception{}
+	
+	@Test
+	public void testDelimitedIdentifiersWithDot(){
+		ADQLParser parser = new ADQLParser();
+		try{
+			ADQLQuery query = parser.parseQuery("SELECT * FROM \"B/avo.rad/catalog\";");
+			assertEquals("B/avo.rad/catalog", query.getFrom().getTables().get(0).getTableName());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
+			fail("The ADQL query is strictly correct! No error should have occured. (see stdout for more details)");
+		}
+	}
 
 	@Test
 	public void test(){
