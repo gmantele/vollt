@@ -144,7 +144,7 @@ import adql.translator.TranslationException;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
+ * @version 2.0 (06/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -432,9 +432,9 @@ public class JDBCConnection implements DBConnection {
 			}
 
 			// 3. Execute the SQL query:
-			result = stmt.executeQuery(sql);
 			if (logger != null)
 				logger.logDB(LogLevel.INFO, this, "EXECUTE", "SQL query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
+			result = stmt.executeQuery(sql);
 
 			// 4. Return the result through a TableIterator object:
 			if (logger != null)
