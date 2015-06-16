@@ -16,7 +16,8 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -37,8 +38,8 @@ import adql.query.TextPosition;
  * It represents any item of the clause FROM: a table name or a sub-query.<br />
  * A table reference may have an alias (MUST if it is a sub-query).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 06/2015
  */
 public class ADQLTable implements ADQLObject, FromContent {
 
@@ -83,7 +84,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * @param table		Name of the table.
 	 */
 	public ADQLTable(String schema, String table){
-		this(table);
+		setTableName(table);
 		setSchemaName(schema);
 	}
 
