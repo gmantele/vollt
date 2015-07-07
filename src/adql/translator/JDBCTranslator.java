@@ -767,7 +767,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * 
 	 * @throws TranslationException	If there is an error during the translation.
 	 */
-	protected final String getDefaultADQLFunction(ADQLFunction fct) throws TranslationException{
+	protected String getDefaultADQLFunction(ADQLFunction fct) throws TranslationException{
 		String sql = fct.getName() + "(";
 
 		for(int i = 0; i < fct.getNbParameters(); i++)
