@@ -180,7 +180,19 @@ public final class NumericConstant implements ADQLOperand {
 	public String getName(){
 		return value;
 	}
-
+	
+    /**
+     * Get the Numeric Constant as LONG
+     * @return long LONG value of Numeric constant
+     */
+	public long getIntegerValue() {
+        try{
+            return Long.parseLong(value);
+        } catch(NumberFormatException nfe){
+            return 0L;
+        }
+    }
+	
 	@Override
 	public ADQLIterator adqlIterator(){
 		return new NullADQLIterator();
