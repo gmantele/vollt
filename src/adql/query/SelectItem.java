@@ -157,9 +157,25 @@ public class SelectItem implements ADQLObject {
 		return new SelectItem(this);
 	}
 
-	public String getName(){
-		return hasAlias() ? alias : operand.getName();
-	}
+
+	public String getName() {
+
+    	if (hasAlias())
+    	    {
+    	    return getAlias();
+    	    }
+        else {
+            if (operand instanceof Operation)
+                {
+                Operation op = (Operation) operand;
+                return op.getOperation().name();
+                }
+            else {
+                return operand.getName();
+                }
+    	    }
+    	}
+
 
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
