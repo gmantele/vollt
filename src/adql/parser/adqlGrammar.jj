@@ -636,6 +636,8 @@ TOKEN : {
 |	< MOD: "MOD" >
 |	< PI: "PI" >
 |	< POWER: "POWER" >
+|	< SQUARE: "SQUARE" >
+|	< SIGN: "SIGN" >
 |	< RADIANS: "RADIANS" >
 |	< RAND: "RAND" >
 |	< ROUND: "ROUND" >
@@ -1447,6 +1449,8 @@ MathFunction MathFunction(): {Token fct=null; ADQLOperand param1=null, param2=nu
 		| (fct=<LOG10> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
 		| (fct=<MOD> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
 		| (fct=<PI> <LEFT_PAR><RIGHT_PAR>)
+		| (fct=<SQUARE> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<SIGN> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
 		| (fct=<POWER> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
 		| (fct=<RADIANS> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
 		| (fct=<RAND> <LEFT_PAR> (param1=NumericExpression())? <RIGHT_PAR>)

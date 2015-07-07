@@ -165,53 +165,57 @@ public interface ADQLParserConstants {
   /** RegularExpression Id. */
   int POWER = 78;
   /** RegularExpression Id. */
-  int RADIANS = 79;
+  int SQUARE = 79;
   /** RegularExpression Id. */
-  int RAND = 80;
+  int SIGN = 80;
   /** RegularExpression Id. */
-  int ROUND = 81;
+  int RADIANS = 81;
   /** RegularExpression Id. */
-  int SQRT = 82;
+  int RAND = 82;
   /** RegularExpression Id. */
-  int TRUNCATE = 83;
+  int ROUND = 83;
   /** RegularExpression Id. */
-  int ACOS = 84;
+  int SQRT = 84;
   /** RegularExpression Id. */
-  int ASIN = 85;
+  int TRUNCATE = 85;
   /** RegularExpression Id. */
-  int ATAN = 86;
+  int ACOS = 86;
   /** RegularExpression Id. */
-  int ATAN2 = 87;
+  int ASIN = 87;
   /** RegularExpression Id. */
-  int COS = 88;
+  int ATAN = 88;
   /** RegularExpression Id. */
-  int COT = 89;
+  int ATAN2 = 89;
   /** RegularExpression Id. */
-  int SIN = 90;
+  int COS = 90;
   /** RegularExpression Id. */
-  int TAN = 91;
+  int COT = 91;
   /** RegularExpression Id. */
-  int STRING_LITERAL = 97;
+  int SIN = 92;
   /** RegularExpression Id. */
-  int DELIMITED_IDENTIFIER = 100;
+  int TAN = 93;
   /** RegularExpression Id. */
-  int REGULAR_IDENTIFIER = 101;
+  int STRING_LITERAL = 99;
   /** RegularExpression Id. */
-  int Letter = 102;
+  int DELIMITED_IDENTIFIER = 102;
   /** RegularExpression Id. */
-  int SCIENTIFIC_NUMBER = 103;
+  int REGULAR_IDENTIFIER = 103;
   /** RegularExpression Id. */
-  int UNSIGNED_FLOAT = 104;
+  int Letter = 104;
   /** RegularExpression Id. */
-  int UNSIGNED_INTEGER = 105;
+  int SCIENTIFIC_NUMBER = 105;
   /** RegularExpression Id. */
-  int DIGIT = 106;
+  int UNSIGNED_FLOAT = 106;
   /** RegularExpression Id. */
-  int HEX_PREFIX = 107;
+  int UNSIGNED_INTEGER = 107;
   /** RegularExpression Id. */
-  int HEX_INTEGER = 108;
+  int DIGIT = 108;
   /** RegularExpression Id. */
-  int HEX_DIGIT = 109;
+  int HEX_PREFIX = 109;
+  /** RegularExpression Id. */
+  int HEX_INTEGER = 110;
+  /** RegularExpression Id. */
+  int HEX_DIGIT = 111;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -303,6 +307,8 @@ public interface ADQLParserConstants {
     "\"MOD\"",
     "\"PI\"",
     "\"POWER\"",
+    "\"SQUARE\"",
+    "\"SIGN\"",
     "\"RADIANS\"",
     "\"RAND\"",
     "\"ROUND\"",
@@ -316,14 +322,14 @@ public interface ADQLParserConstants {
     "\"COT\"",
     "\"SIN\"",
     "\"TAN\"",
-    "<token of kind 92>",
-    "<token of kind 93>",
     "<token of kind 94>",
-    "\"\\\'\"",
+    "<token of kind 95>",
     "<token of kind 96>",
     "\"\\\'\"",
+    "<token of kind 98>",
+    "\"\\\'\"",
     "\"\\\"\"",
-    "<token of kind 99>",
+    "<token of kind 101>",
     "\"\\\"\"",
     "<REGULAR_IDENTIFIER>",
     "<Letter>",

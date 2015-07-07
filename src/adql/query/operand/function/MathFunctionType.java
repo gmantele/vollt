@@ -30,7 +30,7 @@ package adql.query.operand.function;
 public enum MathFunctionType{
 	ABS(1), CEILING(1), DEGREES(1), EXP(1), FLOOR(1), LOG(1),		// returns the natural logarithm (base e) of a double value.
 	LOG10(1),	// returns the base 10 logarithm of a double value.
-	MOD(2), PI(0), POWER(2), RADIANS(1), SQRT(1), RAND(0,1), ROUND(1,2), TRUNCATE(1,2),
+	MOD(2), PI(0), POWER(2), RADIANS(1), SQRT(1), RAND(0,1), ROUND(1,2), TRUNCATE(1,2), SQUARE(1), SIGN(1),
 
 	ACOS(1), ASIN(1), ATAN(1), ATAN2(2), COS(1), COT(1), SIN(1), TAN(1);
 
