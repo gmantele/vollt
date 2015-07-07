@@ -1038,7 +1038,7 @@ ADQLOperand StringValueExpressionPrimary(): {String expr; ADQLColumn column; ADQ
 
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {
 	try{
-		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
+		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>)) | (BinaryExpression())) valueExpr=NumericExpression()
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) <LEFT_PAR> valueExpr=ValueExpression() <RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
@@ -1068,7 +1068,22 @@ ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=n
 }
 
 ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
-	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=NumericTerm())?)
+	(leftOp=BinaryExpression() ((sign=<ASTERISK> | sign=<DIVIDE> | sign=<MODULO>) rightOp=NumericTerm())?)
+	{
+	if (sign == null)
+		return leftOp;
+	else{
+		try{
+			return queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+	}
+}
+
+ADQLOperand BinaryExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
+	(leftOp=Factor() ((sign=<BIT_AND> | sign=<BIT_OR> | sign=<BIT_XOR>) rightOp=BinaryExpression())?)
 	{
 	if (sign == null)
 		return leftOp;
