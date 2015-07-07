@@ -513,6 +513,7 @@ TOKEN : {
 |	< MINUS: "-" >
 |	< ASTERISK: "*" >
 |	< DIVIDE: "/" >
+|	< MODULO: "%" >
 }
 
 /* ******************** */
@@ -1131,7 +1132,8 @@ ADQLOperand StringFactor(): {ADQLOperand op;} {
 GeometryValue<GeometryFunction> GeometryExpression(): {ADQLColumn col = null; GeometryFunction gf = null;} {
 	(col=Column() | gf=GeometryValueFunction())
 	{
-		if (col != null){		  	col.setExpectedType('G');
+		if (col != null){
+		  	col.setExpectedType('G');
 			return new GeometryValue<GeometryFunction>(col);
 		}else
 			return new GeometryValue<GeometryFunction>(gf);
@@ -1304,7 +1306,8 @@ GeometryFunction GeometryFunction(): {Token t=null; GeometryValue<GeometryFuncti
 				{
 					if (p1 != null)
 						gvp1 = new GeometryValue<PointFunction>(p1);
-					else{						col1.setExpectedType('G');
+					else{
+						col1.setExpectedType('G');
 						gvp1 = new GeometryValue<PointFunction>(col1);
 					}
 				}
@@ -1313,7 +1316,8 @@ GeometryFunction GeometryFunction(): {Token t=null; GeometryValue<GeometryFuncti
 				{
 					if (p2 != null)
 						gvp2 = new GeometryValue<PointFunction>(p2);
-					else{						col2.setExpectedType('G');
+					else{
+						col2.setExpectedType('G');
 						gvp2 = new GeometryValue<PointFunction>(col2);
 					}
 				} 

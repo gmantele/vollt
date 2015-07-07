@@ -31,7 +31,7 @@ public enum OperationType{
 	SUM, SUB, MULT, DIV, BIT_OR, BIT_AND, BIT_XOR;
 
 	public static String[] getOperators(){
-		return new String[]{SUM.toString(),SUB.toString(),MULT.toString(),DIV.toString(),BIT_OR.toString(), BIT_AND.toString(), BIT_XOR.toString() };
+		return new String[]{SUM.toString(),SUB.toString(),MULT.toString(),DIV.toString(), MOD.toString(), BIT_OR.toString(), BIT_AND.toString(), BIT_XOR.toString() };
 	}
 
 	public static OperationType getOperator(String str) throws UnsupportedOperationException{
@@ -43,6 +43,8 @@ public enum OperationType{
 			return MULT;
 		else if (str.equalsIgnoreCase("/"))
 			return DIV;
+	    else if (str.equalsIgnoreCase("%"))
+            return MOD;
         else if (str.equalsIgnoreCase("|"))
             return BIT_OR;
         else if (str.equalsIgnoreCase("&"))
@@ -68,6 +70,8 @@ public enum OperationType{
 				return "*";
 			case DIV:
 				return "/";
+		   case MOD:
+	            return "%";
 	        case BIT_OR:
 	            return "|";
 	        case BIT_AND:
