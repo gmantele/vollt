@@ -187,9 +187,8 @@ public class Operation implements ADQLOperand {
 		return new Operation(this);
 	}
 
-	@Override
-	public String getName(){
-		return operation.toString();
+	public String getName() {
+		return operation.name();
 	}
 
 	@Override
