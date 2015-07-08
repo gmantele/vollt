@@ -28,7 +28,7 @@ package adql.query.operand;
  * @see Operation
  */
 public enum OperationType{
-	SUM, SUB, MULT, DIV, BIT_OR, BIT_AND, BIT_XOR;
+	SUM, SUB, MULT, DIV, BIT_OR, BIT_AND, BIT_XOR, MOD;
 
 	public static String[] getOperators(){
 		return new String[]{SUM.toString(),SUB.toString(),MULT.toString(),DIV.toString(), MOD.toString(), BIT_OR.toString(), BIT_AND.toString(), BIT_XOR.toString() };
