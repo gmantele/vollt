@@ -2,7 +2,7 @@
 <!DOCTYPE project>
 <project name="tap" basedir="." default="buildLib">
 	
-	<property name="version" value="2.0beta" />
+	<property name="version" value="2.1" />
 
 	<property name="srcDir" value="src" />
 	<property name="libDir" value="lib" />
@@ -22,7 +22,9 @@
 	<property name="includesList" value="${tapPath},${jsonPath},${extLibsPath}" />
 
 	<property name="jarDest" value="." />
+	<property name="libJarFileWithSTIL" value="${jarDest}/tap_${version}_withSTIL.jar" />
 	<property name="libJarFile" value="${jarDest}/tap_${version}.jar" />
+	<property name="srcJarFileWithSTIL" value="${jarDest}/tap_src_${version}_withSTIL.jar" />
 	<property name="srcJarFile" value="${jarDest}/tap_src_${version}.jar" />
 	<property name="javadocJarFile" value="${jarDest}/tap_javadoc_${version}.jar" />
 	
@@ -117,12 +119,12 @@
 	
 	<target name="buildLib" depends="compileLib" description="After 'clean', build the library JAR (only classes).">
 		<echo>Generate the library:</echo>
-		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
+		<jar basedir="${classesDir}" destfile="${libJarFileWithSTIL}" includes="${includesList}">
 			<zipfileset src="${cosJar}" excludes="META-INF/*" />
 			<zipfileset src="${stilJar}" excludes="META-INF/*" />
 			<zipfileset dir="src" includes="${licensePath}" />
 		</jar>
-		<jar basedir="${classesDir}" destfile="${libJarFile}2" includes="${includesList}">
+		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
 			<zipfileset src="${cosJar}" excludes="META-INF/*" />
 			<zipfileset dir="src" includes="${licensePath}" />
 		</jar>
@@ -130,12 +132,12 @@
 	</target>
 	
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
-		<jar compress="false" destfile="${srcJarFile}">
+		<jar compress="false" destfile="${srcJarFileWithSTIL}">
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
 			<zipfileset dir="${libDir}" includes="${cosJarName}" fullPath="${cosJar}" />
 			<zipfileset dir="${libDir}" includes="${stilJarName}" fullPath="${stilJar}" />
 		</jar>
-		<jar compress="false" destfile="${srcJarFile}2">
+		<jar compress="false" destfile="${srcJarFile}">
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
 			<zipfileset dir="${libDir}" includes="${cosJarName}" fullPath="${cosJar}" />
 		</jar>
