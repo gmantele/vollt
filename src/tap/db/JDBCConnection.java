@@ -144,7 +144,7 @@ import adql.translator.TranslationException;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (06/2015)
+ * @version 2.1 (07/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -1805,6 +1805,9 @@ public class JDBCConnection implements DBConnection {
 						/* BOOLEAN CASE (more generally, type incompatibility) */
 						else if (val != null && cols[c - 1].getDatatype().type == DBDatatype.SMALLINT && val instanceof Boolean)
 							val = ((Boolean)val) ? (short)1 : (short)0;
+						/* NULL CHARACTER CASE (JUST FOR POSTGRESQL) */
+						else if ((dbms == null || dbms.equalsIgnoreCase(DBMS_POSTGRES)) && val instanceof Character && (Character)val == 0x00)
+							val = null;
 					}
 					stmt.setObject(c++, val);
 				}
