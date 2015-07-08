@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -54,7 +55,7 @@ import uws.service.request.UploadFile;
  * Some useful functions for the managing of a UWS service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (04/2015)
+ * @version 4.2 (07/2015)
  */
 public class UWSToolBox {
 
@@ -148,8 +149,20 @@ public class UWSToolBox {
 
 				// Transform the map of Objects into a map of Strings:
 				for(Map.Entry<String,Object> e : params.entrySet()){
-					if (e.getValue() != null)
-						map.put(e.getKey(), e.getValue().toString());
+					if (e.getValue() != null){
+						if (e.getValue().getClass().isArray()){
+							StringBuffer str = new StringBuffer();
+							Object array = e.getValue();
+							int length = Array.getLength(array);
+							for(int i = 0; i < length; i++){
+								if (i > 0)
+									str.append(';');
+								str.append(Array.get(array, i));
+							}
+							map.put(e.getKey(), str.toString());
+						}else
+							map.put(e.getKey(), e.getValue().toString());
+					}
 				}
 
 				// Return the fetched map:

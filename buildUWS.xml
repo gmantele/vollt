@@ -2,7 +2,7 @@
 <!DOCTYPE project>
 <project name="uws" basedir="." default="buildLib">
 	
-	<property name="version" value="4.1" />
+	<property name="version" value="4.2" />
 
 	<property name="srcDir" value="src" />
 	<property name="libDir" value="lib" />
