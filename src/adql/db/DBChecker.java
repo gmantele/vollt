@@ -102,7 +102,7 @@ import adql.search.SimpleSearchHandler;
 public class DBChecker implements QueryChecker {
 
 	/** List of all available tables ({@link DBTable}). */
-	protected SearchTableList lstTables;
+	protected SearchTableApi lstTables;
 
 	/** <p>List of all allowed geometrical functions (i.e. CONTAINS, REGION, POINT, COORD2, ...).</p>
 	 * <p>
@@ -369,7 +369,7 @@ public class DBChecker implements QueryChecker {
 	 * @see #check(ADQLQuery, Stack)
 	 */
 	@Override
-	public final void check(final ADQLQuery query) throws ParseException{
+	public void check(final ADQLQuery query) throws ParseException{
 		check(query, null);
 	}
 
@@ -574,7 +574,7 @@ public class DBChecker implements QueryChecker {
 	 * @throws ParseException	An {@link UnresolvedTableException} if the given table can't be resolved.
 	 */
 	protected DBTable resolveTable(final ADQLTable table) throws ParseException{
-		ArrayList<DBTable> tables = lstTables.search(table);
+		List<DBTable> tables = lstTables.search(table);
 
 		// good if only one table has been found:
 		if (tables.size() == 1)

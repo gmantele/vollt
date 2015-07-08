@@ -89,14 +89,14 @@ import adql.query.operand.function.geometry.RegionFunction;
  */
 public class ADQLQueryFactory {
 
-	/**
-	 * Type of table JOIN.
-	 * 
-	 * @author Gr&eacute;gory Mantelet (CDS)
-	 * @version 1.0 (08/2011)
-	 */
-	public static enum JoinType{
-		CROSS, INNER, OUTER_LEFT, OUTER_RIGHT, OUTER_FULL;
+	protected boolean allowUnknownFunctions = true;
+
+	public static enum JoinType {
+		CROSS,
+		INNER,
+		OUTER_LEFT,
+		OUTER_RIGHT,
+		OUTER_FULL;
 	}
 
 	/**
@@ -106,6 +106,9 @@ public class ADQLQueryFactory {
 		;
 	}
 
+	public ADQLQueryFactory(boolean allowUnknownFunctions){
+		this.allowUnknownFunctions = allowUnknownFunctions;
+	}
 	public ADQLQuery createQuery() throws Exception{
 		return new ADQLQuery();
 	}
@@ -295,8 +298,11 @@ public class ADQLQueryFactory {
 	 * 
 	 * @throws Exception	If there is a problem while creating the function.
 	 */
-	public UserDefinedFunction createUserDefinedFunction(String name, ADQLOperand[] params) throws Exception{
-		return new DefaultUDF(name, params);
+	public UserDefinedFunction createUserDefinedFunction(String name, ADQLOperand[] params) throws Exception {
+		if (allowUnknownFunctions)
+			return new DefaultUDF(name, params);
+		else
+			throw new UnsupportedOperationException("No ADQL function called \""+name+"\" !");
 	}
 
 	public DistanceFunction createDistance(PointFunction point1, PointFunction point2) throws Exception{

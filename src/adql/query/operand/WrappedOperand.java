@@ -78,9 +78,8 @@ public class WrappedOperand implements ADQLOperand {
 		return new WrappedOperand((ADQLOperand)operand.getCopy());
 	}
 
-	@Override
-	public String getName(){
-		return "(" + operand.getName() + ")";
+	public String getName() {
+		return operand.getName();
 	}
 
 	@Override
