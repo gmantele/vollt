@@ -18,7 +18,8 @@ import adql.search.ISearchHandler;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 /**
@@ -26,12 +27,13 @@ import adql.search.ISearchHandler;
  * <ul>
  * 	<li>to have a name in ADQL</i>
  * 	<li>to be written in ADQL</li>
- * 	<li>to offer a way to search any ADQL item <i>(included itself)</i>.</li>
+ * 	<li>to offer a way to search any ADQL item <i>(included itself)</i></li>
+ * 	<li>to get its position in the original ADQL query.</li>
  * </ul>
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  */
 public interface ADQLObject {
 
@@ -41,6 +43,17 @@ public interface ADQLObject {
 	 * @return	The name of this ADQL object.
 	 */
 	public String getName();
+
+	/**
+	 * <p>Gets the position of this object/token in the ADQL query.</p>
+	 * <p><i>By default, no position should be set.</i></p>
+	 * 
+	 * @return	Position of this ADQL item in the ADQL query,
+	 *          or NULL if not written originally in the query (for example, if added afterwards.
+	 * 
+	 * @since 1.4
+	 */
+	public TextPosition getPosition();
 
 	/**
 	 * Gets the ADQL expression of this object.

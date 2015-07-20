@@ -16,7 +16,7 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,7 +38,7 @@ import adql.search.ISearchHandler;
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (09/2014)
+ * @version 1.4 (06/2015)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -59,6 +59,10 @@ public class ADQLQuery implements ADQLObject {
 
 	/** The ADQL clause ORDER BY. */
 	private ClauseADQL<ADQLOrder> orderBy;
+
+	/** Position of this Query (or sub-query) inside the whole given ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
 
 	/**
 	 * Builds an empty ADQL query.
@@ -86,6 +90,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy = (ClauseADQL<ColumnReference>)toCopy.groupBy.getCopy();
 		having = (ClauseConstraints)toCopy.having.getCopy();
 		orderBy = (ClauseADQL<ADQLOrder>)toCopy.orderBy.getCopy();
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/**
@@ -101,6 +106,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy.clear();
 		having.clear();
 		orderBy.clear();
+		position = null;
 	}
 
 	/**
@@ -113,7 +119,9 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Replaces its SELECT clause by the given one.
+	 * <p>Replaces its SELECT clause by the given one.</p>
+	 * 
+	 * <p><i>note: the position of the query is erased.</i></p>
 	 * 
 	 * @param newSelect					The new SELECT clause.
 	 * 
@@ -124,6 +132,7 @@ public class ADQLQuery implements ADQLObject {
 			throw new NullPointerException("Impossible to replace the SELECT clause of a query by NULL !");
 		else
 			select = newSelect;
+		position = null;
 	}
 
 	/**
@@ -136,7 +145,9 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Replaces its FROM clause by the given one.
+	 * <p>Replaces its FROM clause by the given one.</p>
+	 * 
+	 * <p><i>note: the position of the query is erased.</i></p>
 	 * 
 	 * @param newFrom					The new FROM clause.
 	 * 
@@ -147,6 +158,7 @@ public class ADQLQuery implements ADQLObject {
 			throw new NullPointerException("Impossible to replace the FROM clause of a query by NULL !");
 		else
 			from = newFrom;
+		position = null;
 	}
 
 	/**
@@ -159,7 +171,9 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Replaces its WHERE clause by the given one.
+	 * <p>Replaces its WHERE clause by the given one.</p>
+	 * 
+	 * <p><i>note: the position of the query is erased.</i></p>
 	 * 
 	 * @param newWhere					The new WHERE clause.
 	 * 
@@ -170,6 +184,7 @@ public class ADQLQuery implements ADQLObject {
 			where.clear();
 		else
 			where = newWhere;
+		position = null;
 	}
 
 	/**
@@ -182,7 +197,9 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Replaces its GROUP BY clause by the given one.
+	 * <p>Replaces its GROUP BY clause by the given one.</p>
+	 * 
+	 * <p><i>note: the position of the query is erased.</i></p>
 	 * 
 	 * @param newGroupBy				The new GROUP BY clause.
 	 * @throws NullPointerException		If the given GROUP BY clause is <i>null</i>.
@@ -192,6 +209,7 @@ public class ADQLQuery implements ADQLObject {
 			groupBy.clear();
 		else
 			groupBy = newGroupBy;
+		position = null;
 	}
 
 	/**
@@ -204,7 +222,9 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Replaces its HAVING clause by the given one.
+	 * <p>Replaces its HAVING clause by the given one.</p>
+	 * 
+	 * <p><i>note: the position of the query is erased.</i></p>
 	 * 
 	 * @param newHaving					The new HAVING clause.
 	 * @throws NullPointerException		If the given HAVING clause is <i>null</i>.
@@ -214,6 +234,7 @@ public class ADQLQuery implements ADQLObject {
 			having.clear();
 		else
 			having = newHaving;
+		position = null;
 	}
 
 	/**
@@ -226,7 +247,9 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Replaces its ORDER BY clause by the given one.
+	 * <p>Replaces its ORDER BY clause by the given one.</p>
+	 * 
+	 * <p><i>note: the position of the query is erased.</i></p>
 	 * 
 	 * @param newOrderBy				The new ORDER BY clause.
 	 * @throws NullPointerException		If the given ORDER BY clause is <i>null</i>.
@@ -236,6 +259,22 @@ public class ADQLQuery implements ADQLObject {
 			orderBy.clear();
 		else
 			orderBy = newOrderBy;
+		position = null;
+	}
+
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	/**
+	 * Set the position of this {@link ADQLQuery} (or sub-query) inside the whole given ADQL query string.
+	 * 
+	 * @param position New position of this {@link ADQLQuery}.
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
 	}
 
 	@Override
@@ -392,6 +431,7 @@ public class ADQLQuery implements ADQLObject {
 								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + orderBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 							break;
 					}
+					position = null;
 				}
 			}
 
@@ -402,8 +442,10 @@ public class ADQLQuery implements ADQLObject {
 
 				if (index == 0 || index == 1)
 					throw new UnsupportedOperationException("Impossible to remove a " + ((index == 0) ? "SELECT" : "FROM") + " clause from a query !");
-				else
+				else{
 					currentClause.clear();
+					position = null;
+				}
 			}
 		};
 	}

@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -39,7 +39,7 @@ import adql.query.operand.ADQLOperand;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (06/2015)
  */
 public class BoxFunction extends GeometryFunction {
 
@@ -133,6 +133,7 @@ public class BoxFunction extends GeometryFunction {
 	 */
 	public final void setCoord1(ADQLOperand coord1){
 		this.coord1 = coord1;
+		setPosition(null);
 	}
 
 	/**
@@ -151,6 +152,7 @@ public class BoxFunction extends GeometryFunction {
 	 */
 	public final void setCoord2(ADQLOperand coord2){
 		this.coord2 = coord2;
+		setPosition(null);
 	}
 
 	/**
@@ -169,6 +171,7 @@ public class BoxFunction extends GeometryFunction {
 	 */
 	public final void setWidth(ADQLOperand width){
 		this.width = width;
+		setPosition(null);
 	}
 
 	/**
@@ -187,6 +190,7 @@ public class BoxFunction extends GeometryFunction {
 	 */
 	public final void setHeight(ADQLOperand height){
 		this.height = height;
+		setPosition(null);
 	}
 
 	@Override
@@ -249,6 +253,7 @@ public class BoxFunction extends GeometryFunction {
 			default:
 				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 		}
+		setPosition(null);
 		return replaced;
 	}
 

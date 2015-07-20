@@ -20,13 +20,14 @@ package adql.db.exception;
  */
 
 import adql.parser.ParseException;
+import adql.query.TextPosition;
 import adql.query.operand.function.ADQLFunction;
 
 /**
  * Exception thrown when a function can not be resolved by the library.
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (05/2015)
+ * @version 1.4 (06/2015)
  * @since 1.3
  */
 public class UnresolvedFunctionException extends ParseException {
@@ -41,7 +42,19 @@ public class UnresolvedFunctionException extends ParseException {
 	 * @param message	Description of the error.
 	 */
 	public UnresolvedFunctionException(final String message){
-		super(message);
+		this(message, (TextPosition)null);
+	}
+
+	/**
+	 * Build the exception with just a message.
+	 * 
+	 * @param message	Description of the error.
+	 * @param pos		Position of the unresolved function inside the ADQL query.
+	 * 
+	 * @since 1.4
+	 */
+	public UnresolvedFunctionException(final String message, final TextPosition pos){
+		super(message, pos);
 		functionInError = null;
 	}
 
@@ -52,7 +65,7 @@ public class UnresolvedFunctionException extends ParseException {
 	 * @param fct	The unresolved function.
 	 */
 	public UnresolvedFunctionException(final ADQLFunction fct){
-		super("Unresolved function: \"" + fct.toADQL() + "\"! No UDF has been defined or found with the signature: " + getFctSignature(fct) + "."); // TODO Add the position of the function in the ADQL query!
+		super("Unresolved function: \"" + fct.toADQL() + "\"! No UDF has been defined or found with the signature: " + getFctSignature(fct) + ".", fct.getPosition());
 		functionInError = fct;
 	}
 
@@ -64,7 +77,7 @@ public class UnresolvedFunctionException extends ParseException {
 	 * @param fct		The unresolved function.
 	 */
 	public UnresolvedFunctionException(final String message, final ADQLFunction fct){
-		super(message); // TODO Add the position of the function in the ADQL query!
+		super(message, (fct == null) ? null : fct.getPosition());
 		functionInError = fct;
 	}
 

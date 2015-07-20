@@ -16,7 +16,8 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import adql.parser.Token;
@@ -25,8 +26,8 @@ import adql.parser.Token;
  * Indicates a simple position or a token/string position in a text.
  * It is particularly used to localize columns and tables in the original ADQL query.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  */
 public class TextPosition {
 
@@ -71,7 +72,7 @@ public class TextPosition {
 	}
 
 	/**
-	 * Builds a position whose the end line and column are unknown => a simple position.
+	 * Builds a position defining the region delimited by the given token.
 	 * 
 	 * @param token	The position will be the one of this token.
 	 */
@@ -87,6 +88,27 @@ public class TextPosition {
 	 */
 	public TextPosition(final Token beginToken, final Token endToken){
 		this(beginToken.beginLine, beginToken.beginColumn, endToken.endLine, (endToken.endColumn < 0) ? -1 : (endToken.endColumn + 1));
+	}
+
+	/**
+	 * Builds a copy of the given position.
+	 * 
+	 * @param positionToCopy	Position to copy.
+	 * @since 1.4
+	 */
+	public TextPosition(final TextPosition positionToCopy){
+		this(positionToCopy.beginLine, positionToCopy.beginColumn, positionToCopy.endLine, positionToCopy.endColumn);
+	}
+
+	/**
+	 * Builds a position whose the start is the start position of the first parameter and the end is the end position of the second parameter.
+	 * 
+	 * @param startPos	Start position (only beginLine and beginColumn will be used).
+	 * @param endPos	End position (only endLine and endColumn will be used).
+	 * @since 1.4
+	 */
+	public TextPosition(final TextPosition startPos, final TextPosition endPos){
+		this(startPos.beginLine, startPos.beginColumn, endPos.endLine, endPos.endColumn);
 	}
 
 	@Override

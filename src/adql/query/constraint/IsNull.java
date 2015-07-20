@@ -16,20 +16,22 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.NoSuchElementException;
 
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
+import adql.query.TextPosition;
 import adql.query.operand.ADQLColumn;
 
 /**
  * Represents a comparison between a column to the NULL value.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  */
 public class IsNull implements ADQLConstraint {
 
@@ -38,6 +40,10 @@ public class IsNull implements ADQLConstraint {
 
 	/** Indicates whether the predicate IS NOT NULL must be used rather than IS NULL. */
 	private boolean isNotNull = false;
+
+	/** Position of this {@link IsNull} in the given ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
 
 	/**
 	 * Builds a comparison between the given column and NULL.
@@ -70,6 +76,7 @@ public class IsNull implements ADQLConstraint {
 	public IsNull(IsNull toCopy) throws Exception{
 		column = (ADQLColumn)toCopy.column.getCopy();
 		isNotNull = toCopy.isNotNull;
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/**
@@ -90,8 +97,10 @@ public class IsNull implements ADQLConstraint {
 	public final void setColumn(ADQLColumn column) throws NullPointerException{
 		if (column == null)
 			throw new NullPointerException("Impossible to compare nothing to NULL: no column has been given to build a IsNull constraint !");
-		else
+		else{
 			this.column = column;
+			position = null;
+		}
 	}
 
 	/**
@@ -110,21 +119,41 @@ public class IsNull implements ADQLConstraint {
 	 */
 	public final void setNotNull(boolean notNull){
 		isNotNull = notNull;
+		position = null;
 	}
 
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	/**
+	 * Set the position of this {@link IsNull} in the given ADQL query string.
+	 * 
+	 * @param position	New position of this {@link IsNull}.
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
+	}
+
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new IsNull(this);
 	}
 
+	@Override
 	public String getName(){
 		return "IS" + (isNotNull ? " NOT " : " ") + "NULL";
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private boolean columnGot = (column == null);
 
+			@Override
 			public ADQLObject next(){
 				if (columnGot)
 					throw new NoSuchElementException();
@@ -132,22 +161,26 @@ public class IsNull implements ADQLConstraint {
 				return column;
 			}
 
+			@Override
 			public boolean hasNext(){
 				return !columnGot;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (!columnGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 
 				if (replacer == null)
 					remove();
-				else if (replacer instanceof ADQLColumn)
+				else if (replacer instanceof ADQLColumn){
 					column = (ADQLColumn)replacer;
-				else
+					position = null;
+				}else
 					throw new UnsupportedOperationException("Impossible to replace a column (" + column.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") in a IsNull constraint (" + toADQL() + ") !");
 			}
 
+			@Override
 			public void remove(){
 				if (!columnGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -157,6 +190,7 @@ public class IsNull implements ADQLConstraint {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		return column.toADQL() + " " + getName();
 	}

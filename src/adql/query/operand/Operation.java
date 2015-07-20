@@ -16,7 +16,7 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -24,12 +24,13 @@ import java.util.NoSuchElementException;
 
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
+import adql.query.TextPosition;
 
 /**
  * It represents a simple numeric operation (sum, difference, multiplication and division).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (06/2015)
  * 
  * @see OperationType
  */
@@ -46,6 +47,10 @@ public class Operation implements ADQLOperand {
 
 	/** Part of the operation at the right of the operator. */
 	private ADQLOperand rightOperand;
+
+	/** Position of the operation in the ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
 
 	/**
 	 * Builds an operation.
@@ -69,6 +74,8 @@ public class Operation implements ADQLOperand {
 			operation = op;
 
 		setRightOperand(rightOp);
+
+		position = null;
 	}
 
 	/**
@@ -82,6 +89,7 @@ public class Operation implements ADQLOperand {
 		leftOperand = (ADQLOperand)toCopy.leftOperand.getCopy();
 		operation = toCopy.operation;
 		rightOperand = (ADQLOperand)toCopy.rightOperand.getCopy();
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/**
@@ -108,6 +116,8 @@ public class Operation implements ADQLOperand {
 			throw new UnsupportedOperationException("Impossible to update an Operation because the left operand is not numeric (" + newLeftOperand.toADQL() + ") !");
 
 		leftOperand = newLeftOperand;
+
+		position = null;
 	}
 
 	/**
@@ -156,6 +166,8 @@ public class Operation implements ADQLOperand {
 			throw new UnsupportedOperationException("Impossible to update an Operation because the right operand is not numeric (" + newRightOperand.toADQL() + ") !");
 
 		rightOperand = newRightOperand;
+
+		position = null;
 	}
 
 	/** Always returns <i>true</i>.
@@ -172,6 +184,21 @@ public class Operation implements ADQLOperand {
 	@Override
 	public final boolean isString(){
 		return false;
+	}
+
+	@Override
+	public final TextPosition getPosition(){
+		return this.position;
+	}
+
+	/**
+	 * Sets the position at which this {@link WrappedOperand} has been found in the original ADQL query string.
+	 * 
+	 * @param pos	Position of this {@link WrappedOperand}.
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
 	}
 
 	/** Always returns <i>false</i>.
@@ -230,6 +257,7 @@ public class Operation implements ADQLOperand {
 							leftOperand = (ADQLOperand)replacer;
 						else if (index == 1)
 							rightOperand = (ADQLOperand)replacer;
+						position = null;
 					}else
 						throw new UnsupportedOperationException("Impossible to replace the operand \"" + operand.toADQL() + "\" by \"" + replacer.toADQL() + "\" in the operation \"" + toADQL() + "\" because the replacer is not an ADQLOperand or is not numeric !");
 				}

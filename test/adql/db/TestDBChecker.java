@@ -315,7 +315,7 @@ public class TestDBChecker {
 			assertTrue(pe instanceof UnresolvedIdentifiersException);
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 			assertEquals(1, ex.getNbErrors());
-			assertEquals("Coordinate system \"fk5 geocenter\" (= \"FK5 GEOCENTER SPHERICAL2\") not allowed in this implementation.", ex.getErrors().next().getMessage());
+			assertEquals("Coordinate system \"fk5 geocenter\" (= \"FK5 GEOCENTER SPHERICAL2\") not allowed in this implementation. Allowed coordinate systems are: fk4 geocenter *, galactic * spherical2, icrs * *", ex.getErrors().next().getMessage());
 		}
 		try{
 			parser.parseQuery("SELECT Region('not(position fk5 heliocenter 1 2)') FROM foo;");
@@ -324,7 +324,7 @@ public class TestDBChecker {
 			assertTrue(pe instanceof UnresolvedIdentifiersException);
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 			assertEquals(1, ex.getNbErrors());
-			assertEquals("Coordinate system \"FK5 HELIOCENTER\" (= \"FK5 HELIOCENTER SPHERICAL2\") not allowed in this implementation.", ex.getErrors().next().getMessage());
+			assertEquals("Coordinate system \"FK5 HELIOCENTER\" (= \"FK5 HELIOCENTER SPHERICAL2\") not allowed in this implementation. Allowed coordinate systems are: fk4 geocenter *, galactic * spherical2, icrs * *", ex.getErrors().next().getMessage());
 		}
 
 		// Test with a coordinate system while none is allowed:
@@ -345,8 +345,8 @@ public class TestDBChecker {
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 			assertEquals(2, ex.getNbErrors());
 			Iterator<ParseException> itErrors = ex.getErrors();
-			assertEquals("Coordinate system \"ICRS SPHERICAL2\" (= \"ICRS UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation.", itErrors.next().getMessage());
-			assertEquals("Coordinate system \"icrs\" (= \"ICRS UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation.", itErrors.next().getMessage());
+			assertEquals("Coordinate system \"ICRS SPHERICAL2\" (= \"ICRS UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation. No coordinate system is allowed!", itErrors.next().getMessage());
+			assertEquals("Coordinate system \"icrs\" (= \"ICRS UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation. No coordinate system is allowed!", itErrors.next().getMessage());
 		}
 		try{
 			parser.parseQuery("SELECT Region('not(position fk4 1 2)') FROM foo;");
@@ -355,7 +355,7 @@ public class TestDBChecker {
 			assertTrue(pe instanceof UnresolvedIdentifiersException);
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 			assertEquals(1, ex.getNbErrors());
-			assertEquals("Coordinate system \"FK4\" (= \"FK4 UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation.", ex.getErrors().next().getMessage());
+			assertEquals("Coordinate system \"FK4\" (= \"FK4 UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation. No coordinate system is allowed!", ex.getErrors().next().getMessage());
 		}
 	}
 

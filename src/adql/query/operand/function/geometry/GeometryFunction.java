@@ -16,13 +16,14 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.parser.ParseException;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
+import adql.query.TextPosition;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
@@ -32,7 +33,7 @@ import adql.query.operand.function.ADQLFunction;
  * <p>It represents any geometric function of ADQL.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (06/2015)
  */
 public abstract class GeometryFunction extends ADQLFunction {
 
@@ -66,6 +67,7 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 */
 	protected GeometryFunction(GeometryFunction toCopy) throws Exception{
 		coordSys = (ADQLOperand)(toCopy.coordSys.getCopy());
+		setPosition((toCopy.getPosition() == null) ? null : new TextPosition(toCopy.getPosition()));
 	}
 
 	/**
@@ -90,8 +92,10 @@ public abstract class GeometryFunction extends ADQLFunction {
 			this.coordSys = new StringConstant("");
 		else if (!coordSys.isString())
 			throw new ParseException("A coordinate system must be a string literal: \"" + coordSys.toADQL() + "\" is not a string operand!");
-		else
+		else{
 			this.coordSys = coordSys;
+			setPosition(null);
+		}
 	}
 
 	/**
@@ -99,34 +103,43 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * which, in general, is either a GeometryFunction or a Column.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 1.3 (10/2014)
+	 * @version 1.4 (06/2015)
 	 */
 	public static final class GeometryValue< F extends GeometryFunction > implements ADQLOperand {
 		private ADQLColumn column;
 		private F geomFunct;
+		/** Position of this {@link GeometryValue} in the ADQL query string.
+		 * @since 1.4 */
+		private TextPosition position = null;
 
 		public GeometryValue(ADQLColumn col) throws NullPointerException{
 			if (col == null)
 				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function !");
 			setColumn(col);
+			if (col.getPosition() != null)
+				position = col.getPosition();
 		}
 
 		public GeometryValue(F geometry) throws NullPointerException{
 			if (geometry == null)
 				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function !");
 			setGeometry(geometry);
+			if (geometry.getPosition() != null)
+				position = geometry.getPosition();
 		}
 
 		@SuppressWarnings("unchecked")
 		public GeometryValue(GeometryValue<F> toCopy) throws Exception{
 			column = (toCopy.column == null) ? null : ((ADQLColumn)(toCopy.column.getCopy()));
 			geomFunct = (toCopy.geomFunct == null) ? null : ((F)(toCopy.geomFunct.getCopy()));
+			position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 		}
 
 		public void setColumn(ADQLColumn col){
 			if (col != null){
 				geomFunct = null;
 				column = col;
+				position = (column.getPosition() != null) ? column.getPosition() : null;
 			}
 		}
 
@@ -134,6 +147,7 @@ public abstract class GeometryFunction extends ADQLFunction {
 			if (geometry != null){
 				column = null;
 				geomFunct = geometry;
+				position = (geomFunct.getPosition() != null) ? geomFunct.getPosition() : null;
 			}
 		}
 
@@ -153,6 +167,11 @@ public abstract class GeometryFunction extends ADQLFunction {
 		@Override
 		public boolean isString(){
 			return getValue().isString();
+		}
+
+		@Override
+		public TextPosition getPosition(){
+			return position;
 		}
 
 		@Override

@@ -16,7 +16,7 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,7 +29,7 @@ import java.util.Vector;
  * <p>Since it is a list, it is possible to add, remove, modify and iterate on a such object.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.2 (10/2014)
+ * @version 1.4 (06/2015)
  * 
  * @see ClauseADQL
  * @see ClauseConstraints
@@ -43,6 +43,10 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 
 	/** List of ADQL items. */
 	private final Vector<T> list = new Vector<T>();
+
+	/** Position inside an ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
 
 	/**
 	 * Builds an ADQLList with only its name. This name will always prefix the list.
@@ -71,6 +75,7 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 		this(toCopy.getName());
 		for(T obj : toCopy)
 			add((T)obj.getCopy());
+		position = (toCopy.position != null) ? new TextPosition(toCopy.position) : null;
 	}
 
 	/**
@@ -83,8 +88,13 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	public boolean add(T item) throws NullPointerException{
 		if (item == null)
 			throw new NullPointerException("It is impossible to add NULL items to an ADQL clause !");
-		else
-			return list.add(item);
+		else{
+			if (list.add(item)){
+				position = null;
+				return true;
+			}else
+				return false;
+		}
 	}
 
 	/**
@@ -96,9 +106,10 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
 	public void add(int index, T item) throws NullPointerException, ArrayIndexOutOfBoundsException{
-		if (item != null)
+		if (item != null){
 			list.add(index, item);
-		else
+			position = null;
+		}else
 			throw new NullPointerException("It is impossible to add NULL items to an ADQL clause !");
 	}
 
@@ -112,9 +123,11 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
 	public T set(int index, T item) throws NullPointerException, ArrayIndexOutOfBoundsException{
-		if (item != null)
-			return list.set(index, item);
-		else
+		if (item != null){
+			T removed = list.set(index, item);
+			position = null;
+			return removed;
+		}else
 			throw new NullPointerException("It is impossible to replace an ADQL item by a NULL item into an ADQL clause !");
 	}
 
@@ -137,7 +150,10 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	 * @throws ArrayIndexOutOfBoundsException	If the index is out of range (index < 0 || index > size()).
 	 */
 	public T remove(int index) throws ArrayIndexOutOfBoundsException{
-		return list.remove(index);
+		T removed = list.remove(index);
+		if (removed != null)
+			position = null;
+		return removed;
 	}
 
 	/**
@@ -145,6 +161,7 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	 */
 	public void clear(){
 		list.clear();
+		position = null;
 	}
 
 	/**
@@ -168,6 +185,21 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	@Override
 	public String getName(){
 		return name;
+	}
+
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	/**
+	 * Sets the position at which this {@link ADQLList} has been found in the original ADQL query string.
+	 * 
+	 * @param pos	Position of this {@link ADQLList}.
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
 	}
 
 	@Override

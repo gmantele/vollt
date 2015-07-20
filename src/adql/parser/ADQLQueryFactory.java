@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -83,7 +83,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <p>To customize the object representation you merely have to extends the appropriate functions of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (06/2015)
  * 
  * @see ADQLParser
  */
@@ -122,9 +122,6 @@ public class ADQLQueryFactory {
 		if (alias != null)
 			caseSensitivity = IdentifierField.ALIAS.setCaseSensitive(caseSensitivity, alias.caseSensitivity);
 		t.setCaseSensitive(caseSensitivity);
-
-		// Set the position in the query:
-		t.setPosition(idItems.getPosition());
 
 		return t;
 	}
@@ -387,6 +384,18 @@ public class ADQLQueryFactory {
 		return new IntersectsFunction(left, right);
 	}
 
+	/**
+	 * Replace {@link #createOrder(int, boolean, TextPosition)}.
+	 * @since 1.4
+	 */
+	public ADQLOrder createOrder(final int ind, final boolean desc) throws Exception{
+		return new ADQLOrder(ind, desc);
+	}
+
+	/**
+	 * @deprecated since 1.4 ; Replaced by {@link #createOrder(int, boolean)}
+	 */
+	@Deprecated
 	public ADQLOrder createOrder(final int ind, final boolean desc, final TextPosition position) throws Exception{
 		ADQLOrder order = new ADQLOrder(ind, desc);
 		if (order != null)
@@ -396,10 +405,8 @@ public class ADQLQueryFactory {
 
 	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception{
 		ADQLOrder order = new ADQLOrder(idItems.join("."), desc);
-		if (order != null){
-			order.setPosition(idItems.getPosition());
+		if (order != null)
 			order.setCaseSensitive(idItems.getColumnCaseSensitivity());
-		}
 		return order;
 	}
 

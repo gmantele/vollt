@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -35,7 +35,7 @@ import adql.query.operand.ADQLOperand;
  * coordinate system with GEOCENTER reference position.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (06/2015)
  */
 public class DistanceFunction extends GeometryFunction {
 
@@ -120,6 +120,7 @@ public class DistanceFunction extends GeometryFunction {
 	 */
 	public final void setP1(GeometryValue<PointFunction> p1){
 		this.p1 = p1;
+		setPosition(null);
 	}
 
 	/**
@@ -138,6 +139,7 @@ public class DistanceFunction extends GeometryFunction {
 	 */
 	public final void setP2(GeometryValue<PointFunction> p2){
 		this.p2 = p2;
+		setPosition(null);
 	}
 
 	@Override
@@ -197,6 +199,8 @@ public class DistanceFunction extends GeometryFunction {
 			else if (replacer instanceof PointFunction)
 				toUpdate.setGeometry((PointFunction)replacer);
 		}
+
+		setPosition(null);
 
 		return replaced;
 	}

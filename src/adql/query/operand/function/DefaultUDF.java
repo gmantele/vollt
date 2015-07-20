@@ -24,6 +24,7 @@ import adql.db.FunctionDef;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ClauseADQL;
+import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 import adql.translator.ADQLTranslator;
 import adql.translator.TranslationException;
@@ -32,7 +33,7 @@ import adql.translator.TranslationException;
  * It represents any function which is not managed by ADQL.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (02/2015)
+ * @version 1.4 (06/2015)
  */
 public final class DefaultUDF extends UserDefinedFunction {
 
@@ -69,6 +70,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	public DefaultUDF(final DefaultUDF toCopy) throws Exception{
 		functionName = toCopy.functionName;
 		parameters = (ADQLList<ADQLOperand>)(toCopy.parameters.getCopy());
+		setPosition((toCopy.getPosition() == null) ? null : new TextPosition(toCopy.getPosition()));;
 	}
 
 	/**
@@ -156,7 +158,9 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 */
 	@Override
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception{
-		return parameters.set(index, replacer);
+		ADQLOperand oldParam = parameters.set(index, replacer);
+		setPosition(null);
+		return oldParam;
 	}
 
 	@Override

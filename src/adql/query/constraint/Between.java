@@ -16,14 +16,15 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.NoSuchElementException;
 
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
-
+import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 
 /**
@@ -32,8 +33,8 @@ import adql.query.operand.ADQLOperand;
  * <p>This predicate returns <i>true</i> if the value of the left operand is
  * between the value of the two other operands, else it returns <i>false</i>.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  */
 public class Between implements ADQLConstraint {
 
@@ -48,6 +49,10 @@ public class Between implements ADQLConstraint {
 
 	/** Indicates which predicate must be used: BETWEEN (<i>false</i>) or NOT BETWEEN (<i>true</i>). */
 	private boolean notBetween = false;
+
+	/** Position of this {@link Between} in the given ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
 
 	/**
 	 * Builds a BETWEEN constraints.
@@ -87,6 +92,7 @@ public class Between implements ADQLConstraint {
 		setLeftOperand((ADQLOperand)toCopy.leftOperand.getCopy());
 		setMinOperand((ADQLOperand)toCopy.minOperand.getCopy());
 		setMaxOperand((ADQLOperand)toCopy.maxOperand.getCopy());
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/**
@@ -106,6 +112,7 @@ public class Between implements ADQLConstraint {
 	 */
 	public void setLeftOperand(ADQLOperand leftOperand) throws NullPointerException{
 		this.leftOperand = leftOperand;
+		position = null;
 	}
 
 	/**
@@ -125,6 +132,7 @@ public class Between implements ADQLConstraint {
 	 */
 	public void setMinOperand(ADQLOperand minOperand) throws NullPointerException{
 		this.minOperand = minOperand;
+		position = null;
 	}
 
 	/**
@@ -144,6 +152,7 @@ public class Between implements ADQLConstraint {
 	 */
 	public void setMaxOperand(ADQLOperand maxOperand) throws NullPointerException{
 		this.maxOperand = maxOperand;
+		position = null;
 	}
 
 	/**
@@ -162,21 +171,41 @@ public class Between implements ADQLConstraint {
 	 */
 	public void setNotBetween(boolean notBetween){
 		this.notBetween = notBetween;
+		position = null;
 	}
 
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	/**
+	 * Set the position of this {@link Between} in the given ADQL query string.
+	 * 
+	 * @param position	New position of this {@link Between}.
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
+	}
+
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new Between(this);
 	}
 
+	@Override
 	public String getName(){
 		return (isNotBetween() ? "NOT " : "") + "BETWEEN";
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private int index = -1;
 
+			@Override
 			public ADQLObject next(){
 				switch(++index){
 					case 0:
@@ -190,10 +219,12 @@ public class Between implements ADQLConstraint {
 				}
 			}
 
+			@Override
 			public boolean hasNext(){
 				return index + 1 < 3;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -212,10 +243,12 @@ public class Between implements ADQLConstraint {
 							maxOperand = (ADQLOperand)replacer;
 							break;
 					}
+					position = null;
 				}else
 					throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -225,6 +258,7 @@ public class Between implements ADQLConstraint {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		return leftOperand.toADQL() + " " + getName() + " " + minOperand.toADQL() + " AND " + maxOperand.toADQL();
 	}

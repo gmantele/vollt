@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -43,7 +43,7 @@ import adql.query.operand.ADQLOperand;
  * </b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (06/2015)
  */
 public class IntersectsFunction extends GeometryFunction {
 
@@ -118,8 +118,10 @@ public class IntersectsFunction extends GeometryFunction {
 	 * @param leftParam The leftParam to set.
 	 */
 	public final void setLeftParam(GeometryValue<GeometryFunction> leftParam){
-		if (leftParam != null)
+		if (leftParam != null){
 			this.leftParam = leftParam;
+			setPosition(null);
+		}
 	}
 
 	/**
@@ -133,8 +135,10 @@ public class IntersectsFunction extends GeometryFunction {
 	 * @param rightParam The rightParam to set.
 	 */
 	public final void setRightParam(GeometryValue<GeometryFunction> rightParam){
-		if (rightParam != null)
+		if (rightParam != null){
 			this.rightParam = rightParam;
+			setPosition(null);
+		}
 	}
 
 	@Override
@@ -184,6 +188,7 @@ public class IntersectsFunction extends GeometryFunction {
 				rightParam.setGeometry((GeometryFunction)replacer);
 		}else
 			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
+		setPosition(null);
 		return replaced;
 	}
 

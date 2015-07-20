@@ -26,8 +26,8 @@ import adql.query.TextPosition;
  * This exception is thrown when a table between 2 tables can not be resolved,
  * and particularly because of the join condition (i.e. column names not found, ...).
  * 
- * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.3 (05/2015)
+ * @author Gr&eacute;gory Mantelet (ARI)
+ * @version 1.4 (06/2015)
  * @since 1.2
  */
 public class UnresolvedJoinException extends ParseException {
@@ -51,6 +51,17 @@ public class UnresolvedJoinException extends ParseException {
 	 */
 	public UnresolvedJoinException(String message, TextPosition errorPosition){
 		super(message, errorPosition);
+	}
+
+	/**
+	 * Set the position of the invalid JOIN.
+	 * 
+	 * @param pos	Position of the concerned JOIN inside the ADQL query.
+	 * 
+	 * @since 1.4
+	 */
+	public void setPosition(final TextPosition pos){
+		this.position = pos;
 	}
 
 }

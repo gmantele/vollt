@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -35,7 +35,7 @@ import adql.query.operand.ADQLOperand;
  * to the ICRS coordinate system with GEOCENTER reference position.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (06/2015)
  */
 public class PointFunction extends GeometryFunction {
 
@@ -98,8 +98,10 @@ public class PointFunction extends GeometryFunction {
 			throw new NullPointerException("The first coordinate of a POINT function must be different from NULL !");
 		else if (!coord1.isNumeric())
 			throw new Exception("Coordinates of a POINT function must be numeric !");
-		else
+		else{
 			this.coord1 = coord1;
+			setPosition(null);
+		}
 	}
 
 	/**
@@ -123,8 +125,10 @@ public class PointFunction extends GeometryFunction {
 			throw new NullPointerException("The second coordinate of a POINT function must be different from NULL !");
 		else if (!coord2.isNumeric())
 			throw new Exception("Coordinates of a POINT function must be numeric !");
-		else
+		else{
 			this.coord2 = coord2;
+			setPosition(null);
+		}
 	}
 
 	@Override
@@ -198,6 +202,8 @@ public class PointFunction extends GeometryFunction {
 			default:
 				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\" !");
 		}
+
+		setPosition(null);
 
 		return replaced;
 	}

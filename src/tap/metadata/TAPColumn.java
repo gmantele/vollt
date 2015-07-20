@@ -494,7 +494,7 @@ public class TAPColumn implements DBColumn {
 	 * <p>Set the type of the column's values.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	If the given type is NULL, a {@link DBDatatype#UNKNOWN UNKNOWN} type will be set instead.
+	 * 	If the given type is NULL, an {@link DBDatatype#UNKNOWN UNKNOWN} type will be set instead.
 	 * </i></p>
 	 * 
 	 * @param type	Its new datatype.

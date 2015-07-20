@@ -16,7 +16,8 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.Iterator;
@@ -24,16 +25,35 @@ import java.util.NoSuchElementException;
 
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
-
+import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 
 /**
  * Represents any kind of function.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  */
 public abstract class ADQLFunction implements ADQLOperand {
+
+	/** Position of this {@link ADQLFunction} in the ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
+
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	/**
+	 * Set the position of this {@link ADQLFunction} in the ADQL query string.
+	 * 
+	 * @param position	New position of this {@link ADQLFunction}
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
+	}
 
 	/**
 	 * Gets the number of parameters this function has.
@@ -82,11 +102,13 @@ public abstract class ADQLFunction implements ADQLOperand {
 		return new ParameterIterator(this);
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private int index = -1;
 
+			@Override
 			public ADQLObject next(){
 				try{
 					return getParameter(++index);
@@ -95,10 +117,12 @@ public abstract class ADQLFunction implements ADQLOperand {
 				}
 			}
 
+			@Override
 			public boolean hasNext(){
 				return index + 1 < getNbParameters();
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -116,6 +140,7 @@ public abstract class ADQLFunction implements ADQLOperand {
 					throw new UnsupportedOperationException("Impossible to replace the " + index + "-th parameter of \"" + toADQL() + "\" by an object whose the class (" + replacer.getClass().getName() + ") is not ADQLOperand !");
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -125,6 +150,7 @@ public abstract class ADQLFunction implements ADQLOperand {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		String adql = getName() + "(";
 
@@ -152,15 +178,18 @@ public abstract class ADQLFunction implements ADQLOperand {
 				function = fct;
 		}
 
+		@Override
 		public boolean hasNext(){
 			return (index + 1) < function.getNbParameters();
 		}
 
+		@Override
 		public ADQLOperand next(){
 			index++;
 			return function.getParameter(index);
 		}
 
+		@Override
 		public void remove() throws UnsupportedOperationException{
 			try{
 				function.setParameter(index, null);

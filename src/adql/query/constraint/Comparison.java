@@ -16,20 +16,22 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.NoSuchElementException;
 
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
+import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 
 /**
  * Represents a comparison (numeric or not) between two operands.
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  * 
  * @see ComparisonOperator
  */
@@ -43,6 +45,10 @@ public class Comparison implements ADQLConstraint {
 
 	/** The right part of the comparison. */
 	private ADQLOperand rightOperand;
+
+	/** Position of this {@link Comparison} in the given ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
 
 	/**
 	 * Creates a comparison between two operands.
@@ -73,6 +79,7 @@ public class Comparison implements ADQLConstraint {
 		leftOperand = (ADQLOperand)toCopy.leftOperand.getCopy();
 		compOperator = toCopy.compOperator;
 		rightOperand = (ADQLOperand)toCopy.rightOperand.getCopy();
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/**
@@ -100,6 +107,7 @@ public class Comparison implements ADQLConstraint {
 			throw new UnsupportedOperationException("Impossible to update the left operand of the comparison (" + toADQL() + ") with \"" + newLeftOperand.toADQL() + "\" because the comparison operator " + compOperator.toADQL() + " is not applicable on numeric operands !");
 
 		leftOperand = newLeftOperand;
+		position = null;
 	}
 
 	/**
@@ -125,6 +133,7 @@ public class Comparison implements ADQLConstraint {
 			throw new UnsupportedOperationException("Impossible to update the comparison operator" + ((compOperator != null) ? (" (" + compOperator.toADQL() + ")") : "") + " by " + newOperation.toADQL() + " because the two operands (\"" + leftOperand.toADQL() + "\" & \"" + rightOperand.toADQL() + "\") are not all Strings !");
 
 		compOperator = newOperation;
+		position = null;
 	}
 
 	/**
@@ -152,21 +161,41 @@ public class Comparison implements ADQLConstraint {
 			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison (" + toADQL() + ") with \"" + newRightOperand.toADQL() + "\" because the comparison operator " + compOperator.toADQL() + " is not applicable on numeric operands !");
 
 		rightOperand = newRightOperand;
+		position = null;
 	}
 
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	/**
+	 * Set the position of this {@link Comparison} in the given ADQL query string.
+	 * 
+	 * @param position	New position of this {@link Comparison}.
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
+	}
+
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new Comparison(this);
 	}
 
+	@Override
 	public String getName(){
 		return compOperator.toADQL();
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private int index = -1;
 
+			@Override
 			public ADQLObject next(){
 				index++;
 				if (index == 0)
@@ -177,10 +206,12 @@ public class Comparison implements ADQLConstraint {
 					throw new NoSuchElementException();
 			}
 
+			@Override
 			public boolean hasNext(){
 				return index + 1 < 2;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -188,14 +219,18 @@ public class Comparison implements ADQLConstraint {
 				if (replacer == null)
 					remove();
 				else if (replacer instanceof ADQLOperand){
-					if (index == 0)
+					if (index == 0){
 						leftOperand = (ADQLOperand)replacer;
-					else if (index == 1)
+						position = null;
+					}else if (index == 1){
 						rightOperand = (ADQLOperand)replacer;
+						position = null;
+					}
 				}else
 					throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " in a comparison !");
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -205,6 +240,7 @@ public class Comparison implements ADQLConstraint {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		return ((leftOperand == null) ? "NULL" : leftOperand.toADQL()) + " " + ((compOperator == null) ? "NULL" : compOperator.toADQL()) + " " + ((rightOperand == null) ? "NULL" : rightOperand.toADQL());
 	}

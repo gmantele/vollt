@@ -16,7 +16,8 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.NoSuchElementException;
@@ -26,7 +27,7 @@ import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
-
+import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 
 /**
@@ -35,8 +36,8 @@ import adql.query.operand.ADQLOperand;
  * <p>This predicate returns <i>true</i> if the value of the given operand is
  * either in the given values list or in the results of the given sub-query, else it returns <i>false</i>.</p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (06/2015)
  */
 public class In implements ADQLConstraint {
 
@@ -51,6 +52,10 @@ public class In implements ADQLConstraint {
 
 	/** IN or NOT IN ? */
 	private boolean notIn = false;
+
+	/** Position of this {@link In} in the given ADQL query string.
+	 * @since 1.4 */
+	private TextPosition position = null;
 
 	/**
 	 * Builds an IN constraint with a sub-query.
@@ -141,6 +146,7 @@ public class In implements ADQLConstraint {
 		else
 			setValuesList((ADQLList<ADQLOperand>)toCopy.list.getCopy());
 		notIn = toCopy.notIn;
+		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	/**
@@ -161,8 +167,10 @@ public class In implements ADQLConstraint {
 	public void setOperand(ADQLOperand newLeftOp) throws NullPointerException{
 		if (newLeftOp == null)
 			throw new NullPointerException("Impossible to set a left operand NULL in an IN constraint !");
-		else
+		else{
 			leftOp = newLeftOp;
+			position = null;
+		}
 	}
 
 	/**
@@ -195,6 +203,7 @@ public class In implements ADQLConstraint {
 		else{
 			list = null;
 			subQuery = newSubQuery;
+			position = null;
 		}
 	}
 
@@ -221,6 +230,7 @@ public class In implements ADQLConstraint {
 			list = new ClauseADQL<ADQLOperand>();
 			for(int i = 0; i < valuesList.length; i++)
 				list.add(valuesList[i]);
+			position = null;
 		}
 	}
 
@@ -236,6 +246,7 @@ public class In implements ADQLConstraint {
 		else{
 			subQuery = null;
 			list = valuesList;
+			position = null;
 		}
 	}
 
@@ -255,21 +266,41 @@ public class In implements ADQLConstraint {
 	 */
 	public void setNotIn(boolean notIn){
 		this.notIn = notIn;
+		position = null;
 	}
 
+	@Override
+	public final TextPosition getPosition(){
+		return position;
+	}
+
+	/**
+	 * Set the position of this {@link In} in the given ADQL query string.
+	 * 
+	 * @param position	New position of this {@link In}.
+	 * @since 1.4
+	 */
+	public final void setPosition(final TextPosition position){
+		this.position = position;
+	}
+
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new In(this);
 	}
 
+	@Override
 	public String getName(){
 		return notIn ? "NOT IN" : "IN";
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private int index = -1;
 
+			@Override
 			public ADQLObject next(){
 				index++;
 				if (index == 0)
@@ -280,10 +311,12 @@ public class In implements ADQLConstraint {
 					throw new NoSuchElementException();
 			}
 
+			@Override
 			public boolean hasNext(){
 				return index + 1 < 2;
 			}
 
+			@Override
 			@SuppressWarnings("unchecked")
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (index <= -1)
@@ -293,20 +326,24 @@ public class In implements ADQLConstraint {
 					remove();
 
 				if (index == 0){
-					if (replacer instanceof ADQLOperand)
+					if (replacer instanceof ADQLOperand){
 						leftOp = (ADQLOperand)replacer;
-					else
+						position = null;
+					}else
 						throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 				}else if (index == 1){
-					if (hasSubQuery() && replacer instanceof ADQLQuery)
+					if (hasSubQuery() && replacer instanceof ADQLQuery){
 						subQuery = (ADQLQuery)replacer;
-					else if (!hasSubQuery() && replacer instanceof ADQLList)
+						position = null;
+					}else if (!hasSubQuery() && replacer instanceof ADQLList){
 						list = (ADQLList<ADQLOperand>)replacer;
-					else
+						position = null;
+					}else
 						throw new UnsupportedOperationException("Impossible to replace an " + (hasSubQuery() ? "ADQLQuery" : "ADQLList<ADQLOperand>") + " by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 				}
 			}
 
+			@Override
 			public void remove(){
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -319,6 +356,7 @@ public class In implements ADQLConstraint {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		return leftOp.toADQL() + " " + getName() + " (" + (hasSubQuery() ? subQuery.toADQL() : list.toADQL()) + ")";
 	}

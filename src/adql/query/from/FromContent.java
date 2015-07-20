@@ -26,13 +26,14 @@ import adql.db.DBColumn;
 import adql.db.SearchColumnList;
 import adql.db.exception.UnresolvedJoinException;
 import adql.query.ADQLObject;
+import adql.query.TextPosition;
 
 /**
  * Represents the content of the whole or a part of the clause FROM.
  * It could be either a table ({@link ADQLTable}) or a join ({@link ADQLJoin}).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (05/2015)
+ * @version 1.4 (06/2015)
  */
 public interface FromContent extends ADQLObject {
 
@@ -66,5 +67,13 @@ public interface FromContent extends ADQLObject {
 	 * @return	The list of all tables found.
 	 */
 	public ArrayList<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive);
+
+	/**
+	 * Set the position of this {@link FromContent} in the given ADQL query string.
+	 * 
+	 * @param position	New position of this {@link FromContent}.
+	 * @since 1.4
+	 */
+	public void setPosition(final TextPosition position);
 
 }

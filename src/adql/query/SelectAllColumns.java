@@ -20,7 +20,7 @@ import adql.query.from.ADQLTable;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,7 +29,7 @@ import adql.query.from.ADQLTable;
  * It means: 'select all columns'.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (09/2014)
+ * @version 1.4 (06/2015)
  */
 public final class SelectAllColumns extends SelectItem {
 
@@ -88,6 +88,7 @@ public final class SelectAllColumns extends SelectItem {
 		if (query != null){
 			this.query = query;
 			adqlTable = null;
+			setPosition(null);
 		}
 	}
 
@@ -110,6 +111,7 @@ public final class SelectAllColumns extends SelectItem {
 		if (table != null){
 			adqlTable = table;
 			query = null;
+			setPosition(null);
 		}
 	}
 
@@ -150,8 +152,10 @@ public final class SelectAllColumns extends SelectItem {
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
 				else if (!(replacer instanceof ADQLTable))
 					throw new IllegalStateException("Impossible to replace an ADQLTable by a " + replacer.getClass().getName() + " !");
-				else
+				else{
 					adqlTable = (ADQLTable)replacer;
+					setPosition(null);
+				}
 			}
 
 			@Override
