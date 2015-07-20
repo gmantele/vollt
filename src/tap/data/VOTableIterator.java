@@ -42,7 +42,7 @@ import adql.db.DBType;
  * <p>{@link #getColType()} will return TAP type based on the type declared in the VOTable metadata part.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (07/2015)
  * @since 2.0
  */
 public class VOTableIterator implements TableIterator {
@@ -460,14 +460,14 @@ public class VOTableIterator implements TableIterator {
 	 * @param arraysize		Attribute value of VOTable corresponding to the arraysize.
 	 * @param xtype			Attribute value of VOTable corresponding to the xtype.
 	 * 
-	 * @return	The resolved VOTable field type, or a CHAR(*) type if the specified type can not be resolved.
+	 * @return	The resolved VOTable field type.
 	 * 
-	 * @throws DataReadException	If a field datatype is unknown.
+	 * @throws DataReadException	If a field datatype is unknown or missing.
 	 */
 	public static VotType resolveVotType(final String datatype, final String arraysize, final String xtype) throws DataReadException{
 		// If no datatype is specified, return immediately a CHAR(*) type:
 		if (datatype == null || datatype.trim().length() == 0)
-			return new VotType(VotDatatype.CHAR, "*");
+			throw new DataReadException("missing VOTable required field: \"datatype\"!");
 
 		// Identify the specified datatype:
 		VotDatatype votdatatype;

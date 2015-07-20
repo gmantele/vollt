@@ -42,7 +42,7 @@ import adql.db.DBType.DBDatatype;
  * Format any given query (table) result into JSON.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (07/2015)
  */
 public class JSONFormat implements OutputFormat {
 
@@ -178,9 +178,12 @@ public class JSONFormat implements OutputFormat {
 	 * @return	The most appropriate metadata.
 	 */
 	protected TAPColumn getValidColMeta(final DBColumn typeFromQuery, final TAPColumn typeFromResult){
-		if (typeFromQuery != null && typeFromQuery instanceof TAPColumn)
-			return (TAPColumn)typeFromQuery;
-		else if (typeFromResult != null){
+		if (typeFromQuery != null && typeFromQuery instanceof TAPColumn){
+			TAPColumn colMeta = (TAPColumn)typeFromQuery;
+			if (colMeta.getDatatype().type == DBDatatype.UNKNOWN && typeFromResult != null && typeFromResult.getDatatype().type != DBDatatype.UNKNOWN)
+				colMeta.setDatatype(typeFromResult.getDatatype());
+			return colMeta;
+		}else if (typeFromResult != null){
 			if (typeFromQuery != null)
 				return (TAPColumn)typeFromResult.copy(typeFromQuery.getDBName(), typeFromQuery.getADQLName(), null);
 			else

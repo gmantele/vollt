@@ -49,7 +49,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (02/2015)
+ * @version 1.4 (07/2015)
  * 
  * @since 1.3
  */
@@ -86,6 +86,14 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	protected final boolean isNumeric;
 	/** Indicate whether the return type is a geometry. */
 	protected final boolean isGeometry;
+	/** Indicate whether the return type is an unknown type.
+	 * <p><i><u>Note:</u>
+	 * 	If <code>true</code>, {@link #isString}, {@link #isNumeric}
+	 * 	and {@link #isGeometry} are <code>false</code>. Otherwise,
+	 * 	at least one of these attributes is set to <code>true</code>.
+	 * </i></p>
+	 * @since 1.4 */
+	protected final boolean isUnknown;
 
 	/** Total number of parameters. */
 	public final int nbParams;
@@ -122,7 +130,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * <p>This definition is composed of two items: the name and the type of the parameter.</p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.3 (10/2014)
+	 * @version 1.4 (07/2015)
 	 * @since 1.3
 	 */
 	public static final class FunctionParam {
@@ -135,15 +143,13 @@ public class FunctionDef implements Comparable<FunctionDef> {
 		 * Create a function parameter.
 		 * 
 		 * @param paramName	Name of the parameter to create. <i>MUST NOT be NULL</i>
-		 * @param paramType	Type of the parameter to create. <i>MUST NOT be NULL</i>
+		 * @param paramType	Type of the parameter to create. <i>If NULL, an {@link DBDatatype#UNKNOWN UNKNOWN} type will be created and set instead.</i>
 		 */
 		public FunctionParam(final String paramName, final DBType paramType){
 			if (paramName == null)
 				throw new NullPointerException("Missing name! The function parameter can not be created.");
-			if (paramType == null)
-				throw new NullPointerException("Missing type! The function parameter can not be created.");
 			this.name = paramName;
-			this.type = paramType;
+			this.type = (paramType == null) ? new DBType(DBDatatype.UNKNOWN) : paramType;
 		}
 	}
 
@@ -193,13 +199,11 @@ public class FunctionDef implements Comparable<FunctionDef> {
 		this.nbParams = (params == null) ? 0 : params.length;
 
 		// Set the return type;
-		this.returnType = returnType;
-		if (returnType != null){
-			isNumeric = returnType.isNumeric();
-			isString = returnType.isString();
-			isGeometry = returnType.isGeometry();
-		}else
-			isNumeric = isString = isGeometry = false;
+		this.returnType = (returnType != null) ? returnType : new DBType(DBDatatype.UNKNOWN);
+		isUnknown = this.returnType.isUnknown();
+		isNumeric = isUnknown || this.returnType.isNumeric();
+		isString = isUnknown || this.returnType.isString();
+		isGeometry = isUnknown || this.returnType.isGeometry();
 
 		// Serialize in Strings (serializedForm and compareForm) this function definition:
 		StringBuffer bufSer = new StringBuffer(name), bufCmp = new StringBuffer(name.toLowerCase());
@@ -242,6 +246,20 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 */
 	public final boolean isGeometry(){
 		return isGeometry;
+	}
+
+	/**
+	 * <p>Tell whether this function returns an unknown type.</p>
+	 * 
+	 * <p>
+	 * 	If this function returns <code>true</code>, {@link #isNumeric()}, {@link #isString()} and {@link #isGeometry()}
+	 * 	<b>MUST ALL</b> return <code>false</code>. Otherwise, one of these 3 last functions MUST return <code>true</code>.
+	 * </p> 
+	 * 
+	 * @return	<i>true</i> if this function returns an unknown/unresolved/unsupported type, <i>false</i> otherwise.
+	 */
+	public final boolean isUnknown(){
+		return isUnknown;
 	}
 
 	/**
@@ -357,8 +375,10 @@ public class FunctionDef implements Comparable<FunctionDef> {
 			DBType returnType = null;
 			if (m.group(3) != null){
 				returnType = parseType(m.group(5), (m.group(7) == null) ? DBType.NO_LENGTH : Integer.parseInt(m.group(7)));
-				if (returnType == null)
-					throw new ParseException("Unknown return type: \"" + m.group(4).trim() + "\"!");
+				if (returnType == null){
+					returnType = new DBType(DBDatatype.UNKNOWN);
+					returnType.type.setCustomType(m.group(4));
+				}
 			}
 
 			// Get the parameters, if any:
@@ -384,10 +404,11 @@ public class FunctionDef implements Comparable<FunctionDef> {
 						paramType = parseType(m.group(2), (m.group(4) == null) ? DBType.NO_LENGTH : Integer.parseInt(m.group(4)));
 
 						// ...build the parameter definition object:
-						if (paramType == null)
-							throw new ParseException("Unknown type for the parameter \"" + m.group(1) + "\": \"" + m.group(2) + ((m.group(3) == null) ? "" : m.group(3)) + "\"!");
-						else
-							params[i] = new FunctionParam(m.group(1), paramType);
+						if (paramType == null){
+							paramType = new DBType(DBDatatype.UNKNOWN);
+							paramType.type.setCustomType(m.group(2) + ((m.group(3) == null) ? "" : m.group(3)));
+						}
+						params[i] = new FunctionParam(m.group(1), paramType);
 					}else
 						// note: should never happen because we have already check the syntax of the whole parameters list before parsing each individual parameter.
 						throw new ParseException("Wrong syntax for the " + (i + 1) + "-th parameter: \"" + paramsSplit[i].trim() + "\"! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"");
@@ -410,7 +431,8 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 *              	<i>Note: This length will be used only for binary (BINARY and VARBINARY)
 	 *              	and character (CHAR and VARCHAR) types.</i> 
 	 * 
-	 * @return	The object representation of the specified datatype.
+	 * @return	The object representation of the specified datatype
+	 *        	or NULL if the specified datatype can not be resolved.
 	 */
 	private static DBType parseType(String datatype, int length){
 		if (datatype == null)
@@ -519,7 +541,9 @@ public class FunctionDef implements Comparable<FunctionDef> {
 		// If equals, compare the parameters' type:
 		if (comp == 0){
 			for(int i = 0; comp == 0 && i < nbParams && i < fct.getNbParameters(); i++){
-				if (params[i].type.isNumeric() == fct.getParameter(i).isNumeric()){
+				if (fct.getParameter(i).isNumeric() && fct.getParameter(i).isString() && fct.getParameter(i).isGeometry())
+					comp = 0;
+				else if (params[i].type.isNumeric() == fct.getParameter(i).isNumeric()){
 					if (params[i].type.isString() == fct.getParameter(i).isString()){
 						if (params[i].type.isGeometry() == fct.getParameter(i).isGeometry())
 							comp = 0;

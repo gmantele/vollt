@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
  */
 
 /**
@@ -32,7 +32,7 @@ package adql.db;
  * It is used to set the attribute type/datatype of this class.</p>
  *  
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (07/2015)
  * @since 1.3
  */
 public class DBType {
@@ -41,11 +41,40 @@ public class DBType {
 	 * List of all datatypes declared in the IVOA recommendation of TAP (in the section UPLOAD).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.3 (10/2014)
+	 * @version 1.4 (06/2015)
 	 * @since 1.3
 	 */
 	public static enum DBDatatype{
-		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, REGION;
+		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, REGION,
+		/** @since 1.4 */
+		UNKNOWN;
+
+		/** String to return when {@link #toString()} is called.
+		 * @since 1.4*/
+		private String strExp = this.name();
+
+		@Override
+		public String toString(){
+			return strExp;
+		}
+
+		/**
+		 * <p>This function lets define the name of the type as provided
+		 * <b>ONLY FOR {@link #UNKNOWN} {@link DBDatatype}</b>.</p>
+		 * 
+		 * <p><i><b>Important:</b>
+		 * 	If this {@link DBDatatype} is not {@link #UNKNOWN} or if the given name is NULL or empty,
+		 * 	this function has no effect.
+		 * </i></p>
+		 * 
+		 * @param typeName	User type name.
+		 * 
+		 * @since 1.4
+		 */
+		public void setCustomType(final String typeName){
+			if (this == UNKNOWN && typeName != null && typeName.trim().length() > 0)
+				strExp = "?" + typeName.trim() + "?";
+		}
 	}
 
 	/** Special value in case no length/size is specified. */
@@ -79,6 +108,23 @@ public class DBType {
 		this.length = length;
 	}
 
+	/**
+	 * <p>Tells whether this type is a numeric.</p>
+	 * 
+	 * <p><i>Concerned types:
+	 * 	{@link DBDatatype#SMALLINT SMALLINT}, {@link DBDatatype#INTEGER INTEGER}, {@link DBDatatype#BIGINT BIGINT},
+	 * 	{@link DBDatatype#REAL REAL}, {@link DBDatatype#DOUBLE DOUBLE}, {@link DBDatatype#BINARY BINARY},
+	 * 	{@link DBDatatype#VARBINARY VARBINARY} and {@link DBDatatype#BLOB BLOB}.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Important note</b>:
+	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
+	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * </i></p>
+	 * 
+	 * @return	<code>true</code> if this type is a numeric, <code>false</code> otherwise.
+	 */
 	public boolean isNumeric(){
 		switch(type){
 			case SMALLINT:
@@ -91,42 +137,121 @@ public class DBType {
 			case BINARY:
 			case VARBINARY:
 			case BLOB:
+			case UNKNOWN:
 				return true;
 			default:
 				return false;
 		}
 	}
 
+	/**
+	 * <p>Tells whether this type is a list of bytes.</p>
+	 * 
+	 * <p><i>Concerned types:
+	 * 	{@link DBDatatype#BINARY BINARY}, {@link DBDatatype#VARBINARY VARBINARY} and {@link DBDatatype#BLOB BLOB}.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Important note</b>:
+	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
+	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * </i></p>
+	 * 
+	 * @return	<code>true</code> if this type is a binary, <code>false</code> otherwise.
+	 */
 	public boolean isBinary(){
 		switch(type){
 			case BINARY:
 			case VARBINARY:
 			case BLOB:
+			case UNKNOWN:
 				return true;
 			default:
 				return false;
 		}
 	}
 
+	/**
+	 * <p>Tells whether this type is about characters.</p>
+	 * 
+	 * <p><i>Concerned types:
+	 * 	{@link DBDatatype#CHAR CHAR}, {@link DBDatatype#VARCHAR VARCHAR}, {@link DBDatatype#CLOB CLOB}
+	 * 	and {@link DBDatatype#TIMESTAMP TIMESTAMP}.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Important note</b>:
+	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
+	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * </i></p>
+	 * 
+	 * @return	<code>true</code> if this type is a string, <code>false</code> otherwise.
+	 */
 	public boolean isString(){
 		switch(type){
 			case CHAR:
 			case VARCHAR:
 			case CLOB:
 			case TIMESTAMP:
+			case UNKNOWN:
 				return true;
 			default:
 				return false;
 		}
 	}
 
+	/**
+	 * <p>Tells whether this type is a geometrical region.</p>
+	 * 
+	 * <p><i>Concerned types:
+	 * 	{@link DBDatatype#POINT POINT} and {@link DBDatatype#REGION REGION}.
+	 * </i></p>
+	 * 
+	 * <p><i><b>Important note</b>:
+	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
+	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * </i></p>
+	 * 
+	 * @return	<code>true</code> if this type is a geometry, <code>false</code> otherwise.
+	 */
 	public boolean isGeometry(){
-		return (type == DBDatatype.POINT || type == DBDatatype.REGION);
+		return (type == DBDatatype.POINT || type == DBDatatype.REGION || type == DBDatatype.UNKNOWN);
 	}
 
+	/**
+	 * <p>Tell whether this type has been resolved or not.</p>
+	 * 
+	 * <p><i>Concerned type:
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * </i></p>
+	 * 
+	 * @return	<code>true</code> if this type has NOT been resolved, <code>false</code> otherwise.
+	 * 
+	 * @since 1.4
+	 */
+	public boolean isUnknown(){
+		return type == DBDatatype.UNKNOWN;
+	}
+
+	/**
+	 * <p>Tell whether this {@link DBType} is compatible with the given one.</p>
+	 * 
+	 * <p>
+	 * 	Two {@link DBType}s are said compatible if they are both binary, numeric, geometric or string.
+	 * 	If one of the two types is {@link DBDatatype#UNKNOWN unknown}, this function will consider them
+	 * 	as compatible and will return <code>true</code>.
+	 * </p>
+	 * 
+	 * @param t	The type to compare to.
+	 * 
+	 * @return	<code>true</code> if this type is compatible with the given one, <code>false</code> otherwise.
+	 */
 	public boolean isCompatible(final DBType t){
 		if (t == null)
 			return false;
+		else if (isUnknown() || t.isUnknown())
+			return true;
 		else if (isBinary() == t.isBinary())
 			return (type == DBDatatype.BLOB && t.type == DBDatatype.BLOB) || (type != DBDatatype.BLOB && t.type != DBDatatype.BLOB);
 		else if (isNumeric() == t.isNumeric())

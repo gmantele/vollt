@@ -784,7 +784,7 @@ public class JDBCConnection implements DBConnection {
 				// ...build the column type:
 				DBType type;
 				if (tapDatatype == null)
-					type = new DBType(DBDatatype.VARCHAR);
+					type = new DBType(DBDatatype.UNKNOWN);
 				else
 					type = new DBType(tapDatatype, size);
 
@@ -1960,7 +1960,7 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @param datatype	Column TAP type.
 	 * 
-	 * @return	The corresponding DB type, or NULL if the given type is not managed or is NULL.
+	 * @return	The corresponding DB type, or VARCHAR if the given type is not managed or is NULL.
 	 */
 	protected String defaultTypeConversion(DBType datatype){
 		if (datatype == null)

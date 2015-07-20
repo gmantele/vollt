@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -67,7 +67,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.1 (07/2015)
  */
 public class TAPColumn implements DBColumn {
 
@@ -102,7 +102,7 @@ public class TAPColumn implements DBColumn {
 
 	/** Type of this column.
 	 * <i>Note: Standard TAP column field ; CAN'T be NULL.</i> */
-	private DBType datatype = new DBType(DBDatatype.VARCHAR);
+	private DBType datatype = new DBType(DBDatatype.UNKNOWN);
 
 	/** Flag indicating whether this column is one of those that should be returned by default.
 	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
@@ -494,7 +494,7 @@ public class TAPColumn implements DBColumn {
 	 * <p>Set the type of the column's values.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	The datatype won't be changed, if the given type is NULL.
+	 * 	If the given type is NULL, a {@link DBDatatype#UNKNOWN UNKNOWN} type will be set instead.
 	 * </i></p>
 	 * 
 	 * @param type	Its new datatype.
@@ -502,6 +502,8 @@ public class TAPColumn implements DBColumn {
 	public final void setDatatype(final DBType type){
 		if (type != null)
 			datatype = type;
+		else
+			datatype = new DBType(DBDatatype.UNKNOWN);
 	}
 
 	/**

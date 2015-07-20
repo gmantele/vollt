@@ -27,6 +27,7 @@ public class TestFunctionDef {
 				case VARCHAR:
 				case TIMESTAMP:
 				case CLOB:
+				case UNKNOWN:
 					assertTrue(new FunctionDef("foo", new DBType(type)).isString);
 					break;
 				default:
@@ -41,6 +42,7 @@ public class TestFunctionDef {
 			switch(type){
 				case POINT:
 				case REGION:
+				case UNKNOWN:
 					assertTrue(new FunctionDef("foo", new DBType(type)).isGeometry);
 					break;
 				default:
@@ -170,18 +172,26 @@ public class TestFunctionDef {
 			assertEquals("Wrong syntax for the 1-th parameter: \"param\"! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"", ex.getMessage());
 		}
 		try{
-			FunctionDef.parse("foo()->aType");
-			fail("Wrong (return) type!");
+			FunctionDef fct = FunctionDef.parse("foo()->aType");
+			assertTrue(fct.isUnknown);
+			assertTrue(fct.isString);
+			assertTrue(fct.isNumeric);
+			assertTrue(fct.isGeometry);
+			assertEquals("?aType?", fct.returnType.type.toString());
 		}catch(Exception ex){
-			assertTrue(ex instanceof ParseException);
-			assertEquals("Unknown return type: \"aType\"!", ex.getMessage());
+			ex.printStackTrace(System.err);
+			fail("Unknown types MUST be allowed!");
 		}
 		try{
-			FunctionDef.parse("foo()->aType(10)");
-			fail("Wrong (return) type!");
+			FunctionDef fct = FunctionDef.parse("foo()->aType(10)");
+			assertTrue(fct.isUnknown);
+			assertTrue(fct.isString);
+			assertTrue(fct.isNumeric);
+			assertTrue(fct.isGeometry);
+			assertEquals("?aType(10)?", fct.returnType.type.toString());
 		}catch(Exception ex){
-			assertTrue(ex instanceof ParseException);
-			assertEquals("Unknown return type: \"aType(10)\"!", ex.getMessage());
+			ex.printStackTrace(System.err);
+			fail("Unknown types MUST be allowed!");
 		}
 		try{
 			FunctionDef.parse("foo() -> ");
@@ -205,18 +215,26 @@ public class TestFunctionDef {
 			assertEquals(WRONG_PARAM_SYNTAX, ex.getMessage());
 		}
 		try{
-			FunctionDef.parse("foo(param1 aType)");
-			fail("Wrong parameter type!");
+			FunctionDef fct = FunctionDef.parse("foo(param1 aType)");
+			assertTrue(fct.getParam(0).type.isUnknown());
+			assertTrue(fct.getParam(0).type.isString());
+			assertTrue(fct.getParam(0).type.isNumeric());
+			assertTrue(fct.getParam(0).type.isGeometry());
+			assertEquals("?aType?", fct.getParam(0).type.toString());
 		}catch(Exception ex){
-			assertTrue(ex instanceof ParseException);
-			assertEquals("Unknown type for the parameter \"param1\": \"aType\"!", ex.getMessage());
+			ex.printStackTrace(System.err);
+			fail("Unknown types MUST be allowed!");
 		}
 		try{
-			FunctionDef.parse("foo(param1 aType(10))");
-			fail("Wrong parameter type!");
+			FunctionDef fct = FunctionDef.parse("foo(param1 aType(10))");
+			assertTrue(fct.getParam(0).type.isUnknown());
+			assertTrue(fct.getParam(0).type.isString());
+			assertTrue(fct.getParam(0).type.isNumeric());
+			assertTrue(fct.getParam(0).type.isGeometry());
+			assertEquals("?aType(10)?", fct.getParam(0).type.toString());
 		}catch(Exception ex){
-			assertTrue(ex instanceof ParseException);
-			assertEquals("Unknown type for the parameter \"param1\": \"aType(10)\"!", ex.getMessage());
+			ex.printStackTrace(System.err);
+			fail("Unknown types MUST be allowed!");
 		}
 	}
 

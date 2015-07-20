@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -48,7 +48,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * The other functions are managed by {@link PostgreSQLTranslator}.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (11/2014)
+ * @version 1.4 (07/2015)
  */
 public class PgSphereTranslator extends PostgreSQLTranslator {
 
@@ -202,7 +202,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
 		// If no type is provided return VARCHAR:
 		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
-			return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
+			return null;
 
 		// Put the dbmsTypeName in lower case for the following comparisons:
 		dbmsTypeName = dbmsTypeName.toLowerCase();

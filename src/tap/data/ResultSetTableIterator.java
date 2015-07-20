@@ -16,7 +16,7 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.sql.ResultSet;
@@ -42,7 +42,7 @@ import adql.translator.JDBCTranslator;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (11/2014)
+ * @version 2.1 (07/2015)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -363,7 +363,7 @@ public class ResultSetTableIterator implements TableIterator {
 				if (o instanceof Timestamp)
 					o = ISO8601Format.format(((Timestamp)o).getTime());
 				// if the column value is a geometrical object, it must be serialized in STC-S:
-				else if (translator != null && colType.isGeometry()){
+				else if (translator != null && colType != null && colType.isGeometry()){
 					Region region = translator.translateGeometryFromDB(o);
 					if (region != null)
 						o = region.toSTCS();
@@ -409,7 +409,8 @@ public class ResultSetTableIterator implements TableIterator {
 	 * @param dbmsType	DBMS column data-type name.
 	 * @param dbms		Lower-case string which indicates which DBMS the ResultSet is coming from. <i>note: MAY be NULL.</i>
 	 * 
-	 * @return	The best suited {@link DBType} object.
+	 * @return	The best suited {@link DBType} object,
+	 *        	or an {@link DBDatatype#UNKNOWN UNKNOWN} type if none can be found.
 	 * 
 	 * @see JDBCTranslator#convertTypeFromDB(int, String, String, String[])
 	 * @see #defaultTypeConversion(String, String[], String)
@@ -417,7 +418,7 @@ public class ResultSetTableIterator implements TableIterator {
 	protected DBType convertType(final int dbmsType, String dbmsTypeName, final String dbms) throws DataReadException{
 		// If no type is provided return VARCHAR:
 		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
-			return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
+			return new DBType(DBDatatype.UNKNOWN);
 
 		// Extract the type prefix and lower-case it:
 		int startParamIndex = dbmsTypeName.indexOf('('), endParamIndex = dbmsTypeName.indexOf(')');
@@ -468,7 +469,8 @@ public class ResultSetTableIterator implements TableIterator {
 	 * @param params		The eventual type parameters (e.g. char string length).
 	 * @param dbms			The targeted DBMS.
 	 * 
-	 * @return	The corresponding ADQL/TAP type. <i>NEVER NULL</i>
+	 * @return	The corresponding ADQL/TAP type. <i>NEVER NULL ;
+	 *        	an {@link DBDatatype#UNKNOWN UNKNOWN} type is returned in case no match can be found.</i>
 	 */
 	protected final DBType defaultTypeConversion(final String dbmsTypeName, final String[] params, final String dbms){
 		// Get the length parameter (always in first position):
@@ -495,7 +497,7 @@ public class ResultSetTableIterator implements TableIterator {
 				return new DBType(DBDatatype.BLOB);
 			// Default:
 			else
-				return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
+				return new DBType(DBDatatype.UNKNOWN);
 		}
 		// CASE: OTHER DBMS
 		else{
@@ -537,7 +539,7 @@ public class ResultSetTableIterator implements TableIterator {
 				return new DBType(DBDatatype.TIMESTAMP);
 			// Default:
 			else
-				return new DBType(DBDatatype.VARCHAR, DBType.NO_LENGTH);
+				return new DBType(DBDatatype.UNKNOWN);
 		}
 	}
 
