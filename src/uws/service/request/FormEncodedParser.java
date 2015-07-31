@@ -16,7 +16,7 @@ package uws.service.request;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -51,7 +51,7 @@ import uws.UWSException;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.1 (11/2014)
+ * @version 4.2 (07/2015)
  * @since 4.1
  */
 public class FormEncodedParser implements RequestParser {
@@ -169,7 +169,7 @@ public class FormEncodedParser implements RequestParser {
 		String contentType = request.getContentType();
 		if (contentType == null)
 			return false;
-		else if (contentType.toLowerCase().equals(EXPECTED_CONTENT_TYPE))
+		else if (contentType.toLowerCase().startsWith(EXPECTED_CONTENT_TYPE))
 			return true;
 		else
 			return false;
