@@ -27,7 +27,7 @@ import adql.query.operand.function.ADQLFunction;
  * Exception thrown when a function can not be resolved by the library.
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (08/2015)
  * @since 1.3
  */
 public class UnresolvedFunctionException extends ParseException {
@@ -100,7 +100,8 @@ public class UnresolvedFunctionException extends ParseException {
 	 * 
 	 * <p><i>Note 1:
 	 * 	A parameter type can be either "NUMERIC", "STRING" or "GEOMETRY". In order to be the most generic has possible,
-	 * 	no more precision about a type is returned here. If the parameter is none of these type kinds, "???" is returned.
+	 * 	no more precision about a type is returned here. If the parameter is none of these type kinds, "param" suffixed
+	 * 	by the parameter index (e.g. "param1") is returned.
 	 * </i></p>
 	 * 
 	 * <p><i>Note 2:
@@ -118,14 +119,16 @@ public class UnresolvedFunctionException extends ParseException {
 		StringBuffer buf = new StringBuffer(fct.getName().toLowerCase());
 		buf.append('(');
 		for(int i = 0; i < fct.getNbParameters(); i++){
-			if (fct.getParameter(i).isNumeric())
+			if (fct.getParameter(i).isNumeric() && fct.getParameter(i).isString() && fct.getParameter(i).isGeometry())
+				buf.append("param").append(i + 1);
+			else if (fct.getParameter(i).isNumeric())
 				buf.append("NUMERIC");
 			else if (fct.getParameter(i).isString())
 				buf.append("STRING");
 			else if (fct.getParameter(i).isGeometry())
 				buf.append("GEOMETRY");
 			else
-				buf.append("???");
+				buf.append("param").append(i + 1);
 
 			if ((i + 1) < fct.getNbParameters())
 				buf.append(", ");

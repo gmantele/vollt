@@ -135,6 +135,20 @@ public class TestFunctionDef {
 			fail("Wrong type parsing!");
 		}
 
+		// TYPE WITH SPACES AND/OR PARAMETER test:
+		try{
+			assertEquals("foo() -> DOUBLE", FunctionDef.parse("foo() -> double precision").toString());
+			assertEquals("foo(bar DOUBLE)", FunctionDef.parse("foo(bar   DOUBLE  Precision  )").toString());
+			assertEquals("foo() -> VARCHAR", FunctionDef.parse("foo() -> character varying").toString());
+			assertEquals("foo(bar VARBINARY)", FunctionDef.parse("foo(bar bit   varying)").toString());
+			assertEquals("foo(bar VARCHAR(12))", FunctionDef.parse("foo(bar varchar  (12))").toString());
+			assertEquals("foo(bar VARCHAR(12))", FunctionDef.parse("foo(bar character varying (12))").toString());
+			assertEquals("foo() -> DOUBLE", FunctionDef.parse("foo() -> double precision (2)").toString());
+		}catch(Exception ex){
+			ex.printStackTrace(System.err);
+			fail("Wrong type parsing!");
+		}
+
 		// WRONG string definitions:
 		try{
 			FunctionDef.parse("123()");

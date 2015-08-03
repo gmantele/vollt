@@ -49,7 +49,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (07/2015)
+ * @version 1.4 (08/2015)
  * 
  * @since 1.3
  */
@@ -59,7 +59,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	/** Rough regular expression for a function return type or a parameter type.
 	 * The exact type is not checked here ; just the type name syntax is tested, not its value.
 	 * This regular expression allows a type to have exactly one parameter (which is generally the length of a character or binary string. */
-	protected final static String typeRegExp = "([a-zA-Z]+[0-9a-zA-Z]*)(\\(\\s*([0-9]+)\\s*\\))?";
+	protected final static String typeRegExp = "([a-zA-Z]+[ 0-9a-zA-Z]*)(\\(\\s*([0-9]+)\\s*\\))?";
 	/** Rough regular expression for a function parameters' list. */
 	protected final static String fctParamsRegExp = "\\s*[^,]+\\s*(,\\s*[^,]+\\s*)*";
 	/** Rough regular expression for a function parameter: a name (see {@link #regularIdentifierRegExp}) and a type (see {@link #typeRegExp}). */
@@ -348,10 +348,12 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * <pre>{fctName}([{param1Name} {param1Type}, ...])[ -> {returnType}]</pre>
 	 * 
 	 * <p>
-	 * 	Allowed parameter types and return types should be one the types listed by the UPLOAD section of the TAP recommendation document.
+	 * 	<em>This function must be able to parse functions as defined by TAPRegExt (section 2.3).</em>
+	 * 	Hence, allowed parameter types and return types should be one of the types listed by the UPLOAD section of the TAP recommendation document.
 	 * 	These types are listed in the enumeration object {@link DBType}.
 	 * 	However, other types should be accepted like the common database types...but it should be better to not rely on that
-	 * 	since the conversion of those types to TAP types should not be exactly what is expected.
+	 * 	since the conversion of those types to TAP types should not be exactly what is expected (because depending from the used DBMS);
+	 *  a default interpretation of database types is nevertheless processed by this parser.
 	 * </p>
 	 * 
 	 * @param strDefinition	Serialized function definition to parse.
@@ -426,7 +428,8 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 
 	 * @param datatype	String representation of a datatype.
 	 *                	<i>Note: This string must not contain the length parameter or any other parameter.
-	 *                	These latter should have been separated from the datatype before calling this function.</i>
+	 *                	These latter should have been separated from the datatype before calling this function.
+	 *                	It can however contain space(s) in first, last or intern position.</i>
 	 * @param length	Length of this datatype.
 	 *              	<i>Note: This length will be used only for binary (BINARY and VARBINARY)
 	 *              	and character (CHAR and VARCHAR) types.</i> 
@@ -437,6 +440,9 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	private static DBType parseType(String datatype, int length){
 		if (datatype == null)
 			return null;
+
+		// Remove leading and trailing spaces and replace each inner serie of spaces by just one space:
+		datatype = datatype.trim().replaceAll(" +", " ");
 
 		try{
 			// Try to find a corresponding DBType item:
@@ -456,31 +462,29 @@ public class FunctionDef implements Comparable<FunctionDef> {
 		}catch(IllegalArgumentException iae){
 			// If there's no corresponding DBType item, try to find a match among the most used DB types:
 			datatype = datatype.toLowerCase();
-			if (datatype.equals("bool") || datatype.equals("boolean") || datatype.equals("short"))
+			if (datatype.equals("bool") || datatype.equals("boolean") || datatype.equals("short") || datatype.equals("int2") || datatype.equals("smallserial") || datatype.equals("serial2"))
 				return new DBType(DBDatatype.SMALLINT);
-			else if (datatype.equals("int2"))
-				return new DBType(DBDatatype.SMALLINT);
-			else if (datatype.equals("int") || datatype.equals("int4"))
+			else if (datatype.equals("int") || datatype.equals("int4") || datatype.equals("serial") || datatype.equals("serial4"))
 				return new DBType(DBDatatype.INTEGER);
-			else if (datatype.equals("long") || datatype.equals("number") || datatype.equals("bigint") || datatype.equals("int8"))
+			else if (datatype.equals("long") || datatype.equals("number") || datatype.equals("int8") || datatype.equals("bigserial") || datatype.equals("bigserial8"))
 				return new DBType(DBDatatype.BIGINT);
 			else if (datatype.equals("float") || datatype.equals("float4"))
 				return new DBType(DBDatatype.REAL);
-			else if (datatype.equals("numeric") || datatype.equals("float8"))
+			else if (datatype.equals("numeric") || datatype.equals("float8") || datatype.equals("double precision"))
 				return new DBType(DBDatatype.DOUBLE);
-			else if (datatype.equals("byte") || datatype.equals("raw"))
+			else if (datatype.equals("bit") || datatype.equals("byte") || datatype.equals("raw"))
 				return new DBType(DBDatatype.BINARY, length);
-			else if (datatype.equals("unsignedByte"))
+			else if (datatype.equals("unsignedByte") || datatype.equals("bit varying") || datatype.equals("varbit"))
 				return new DBType(DBDatatype.VARBINARY, length);
 			else if (datatype.equals("character"))
 				return new DBType(DBDatatype.CHAR, length);
-			else if (datatype.equals("string") || datatype.equals("varchar2"))
+			else if (datatype.equals("string") || datatype.equals("varchar2") || datatype.equals("character varying"))
 				return new DBType(DBDatatype.VARCHAR, length);
 			else if (datatype.equals("bytea"))
 				return new DBType(DBDatatype.BLOB);
 			else if (datatype.equals("text"))
 				return new DBType(DBDatatype.CLOB);
-			else if (datatype.equals("date") || datatype.equals("time"))
+			else if (datatype.equals("date") || datatype.equals("time") || datatype.equals("timetz") || datatype.equals("timestamptz"))
 				return new DBType(DBDatatype.TIMESTAMP);
 			else if (datatype.equals("position"))
 				return new DBType(DBDatatype.POINT);

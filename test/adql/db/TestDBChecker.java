@@ -155,6 +155,30 @@ public class TestDBChecker {
 			assertEquals("Unresolved function: \"toto('blabla')\"! No UDF has been defined or found with the signature: toto(STRING).", ex.getErrors().next().getMessage());
 		}
 
+		// Test but with at least one column parameter:
+		try{
+			parser.parseQuery("SELECT toto(colS) FROM foo;");
+			fail("This query contains an unknown UDF signature (the fct toto is declared with no parameter): this test should have failed!");
+		}catch(ParseException e){
+			assertTrue(e instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Unresolved function: \"toto(colS)\"! No UDF has been defined or found with the signature: toto(STRING).", ex.getErrors().next().getMessage());
+		}
+
+		// Test but with at least one unknown column parameter:
+		try{
+			parser.parseQuery("SELECT toto(whatami) FROM foo;");
+			fail("This query contains an unknown UDF signature (the fct toto is declared with no parameter): this test should have failed!");
+		}catch(ParseException e){
+			assertTrue(e instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
+			assertEquals(2, ex.getNbErrors());
+			Iterator<ParseException> errors = ex.getErrors();
+			assertEquals("Unknown column \"whatami\" !", errors.next().getMessage());
+			assertEquals("Unresolved function: \"toto(whatami)\"! No UDF has been defined or found with the signature: toto(param1).", errors.next().getMessage());
+		}
+
 		// Test with a UDF whose the class is specified ; the corresponding object in the ADQL tree must be replace by an instance of this class:
 		udfs = new FunctionDef[]{new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("txt", new DBType(DBDatatype.VARCHAR))})};
 		udfs[0].setUDFClass(UDFToto.class);
