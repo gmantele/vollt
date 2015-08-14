@@ -828,8 +828,7 @@ public class JDBCConnection implements DBConnection {
 		try{
 			// Prepare the query to get the columns of each key:
 			StringBuffer sqlBuf = new StringBuffer("SELECT ");
-			sqlBuf.append(translator.getColumnName(keyColumnsDef.getColumn("key_id")));
-			sqlBuf.append(", ").append(translator.getColumnName(keyColumnsDef.getColumn("from_column")));
+			sqlBuf.append(translator.getColumnName(keyColumnsDef.getColumn("from_column")));
 			sqlBuf.append(", ").append(translator.getColumnName(keyColumnsDef.getColumn("target_column")));
 			sqlBuf.append(" FROM ").append(translator.getTableName(keyColumnsDef, supportsSchema));
 			sqlBuf.append(" WHERE ").append(translator.getColumnName(keyColumnsDef.getColumn("key_id"))).append(" = ?").append(';');

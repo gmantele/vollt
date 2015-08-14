@@ -513,7 +513,18 @@ TOKEN : {
 |	< MINUS: "-" >
 |	< ASTERISK: "*" >
 |	< DIVIDE: "/" >
+|	< MODULO: "%" >
 }
+
+/* ******************** */
+/* Binary operators     */
+/* ******************** */
+TOKEN : {
+	< BIT_AND: "&" >
+|	< BIT_OR:  "|" >
+|	< BIT_XOR: "^" >
+}
+
 
 /* ******************** */
 /* Comparison operators */
@@ -625,6 +636,8 @@ TOKEN : {
 |	< MOD: "MOD" >
 |	< PI: "PI" >
 |	< POWER: "POWER" >
+|	< SQUARE: "SQUARE" >
+|	< SIGN: "SIGN" >
 |	< RADIANS: "RADIANS" >
 |	< RAND: "RAND" >
 |	< ROUND: "ROUND" >
@@ -645,6 +658,16 @@ TOKEN : {
 |	< SIN: "SIN" >
 |	< TAN: "TAN" >
 }
+
+
+/* *************** */
+/* CAST            */
+/* *************** */
+TOKEN : {
+    < CAST: "CAST" >
+|   < CAST_TYPE : "SMALLINT"| "SHORT" | "INT" | "INTEGER" | "BIGINT" | "LONG" | "FLOAT" | "DOUBLE" >
+}
+
 
 /* ******* */
 /* Comment */
@@ -681,6 +704,16 @@ TOKEN : {
 |	< UNSIGNED_INTEGER: (<DIGIT>)+ >
 |	< #DIGIT: ["0"-"9"] >
 }
+
+/* *************** */
+/* Hexadecimal numbers */
+/* *************** */
+TOKEN : {
+	< HEX_PREFIX: "0x" >
+|	< HEX_INTEGER: (<HEX_PREFIX>(<HEX_DIGIT>)+) >
+|	< #HEX_DIGIT: ["0"-"9","a"-"f","A"-"F"] >
+}
+
 
 							/* ########## */
 							/* # SYNTAX # */
@@ -979,7 +1012,8 @@ String String(): {Token t; String str="";} {
 String UnsignedNumeric(): {Token t;} {
 	(t=<SCIENTIFIC_NUMBER>
 	| t=<UNSIGNED_FLOAT>
-	| t=<UNSIGNED_INTEGER>)
+	| t=<UNSIGNED_INTEGER>
+	| t=<HEX_INTEGER>)
 	{return t.image;}
 }
 
@@ -1005,6 +1039,7 @@ ADQLOperand NumericValueExpressionPrimary(): {String expr; ADQLColumn column; AD
 		| column=Column() {column.setExpectedType('N'); return column;}
 		// set_function_specification
 		| op=SqlFunction() {return op;}
+		| op=CastFunction() {return op;}
 		// LEFT_PAR value_expression RIGHT_PAR
 		| (<LEFT_PAR> op=NumericExpression() <RIGHT_PAR>) {return queryFactory.createWrappedOperand(op);})
 	}catch(Exception ex){
@@ -1027,7 +1062,7 @@ ADQLOperand StringValueExpressionPrimary(): {String expr; ADQLColumn column; ADQ
 
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; } {
 	try{
-		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
+		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>)) | (BinaryExpression())) valueExpr=NumericExpression()
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) <LEFT_PAR> valueExpr=ValueExpression() <RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
@@ -1057,7 +1092,22 @@ ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=n
 }
 
 ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
-	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=NumericTerm())?)
+	(leftOp=BinaryExpression() ((sign=<ASTERISK> | sign=<DIVIDE> | sign=<MODULO>) rightOp=NumericTerm())?)
+	{
+	if (sign == null)
+		return leftOp;
+	else{
+		try{
+			return queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+	}
+}
+
+ADQLOperand BinaryExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
+	(leftOp=Factor() ((sign=<BIT_AND> | sign=<BIT_OR> | sign=<BIT_XOR>) rightOp=BinaryExpression())?)
 	{
 	if (sign == null)
 		return leftOp;
@@ -1121,7 +1171,8 @@ ADQLOperand StringFactor(): {ADQLOperand op;} {
 GeometryValue<GeometryFunction> GeometryExpression(): {ADQLColumn col = null; GeometryFunction gf = null;} {
 	(col=Column() | gf=GeometryValueFunction())
 	{
-		if (col != null){		  	col.setExpectedType('G');
+		if (col != null){
+		  	col.setExpectedType('G');
 			return new GeometryValue<GeometryFunction>(col);
 		}else
 			return new GeometryValue<GeometryFunction>(gf);
@@ -1264,6 +1315,23 @@ SQLFunction SqlFunction(): {Token fct, all=null, distinct=null; ADQLOperand op=n
 	{ return funct; }
 }
 
+/* ************* */
+/* CAST FUNCTION */
+/* ************* */
+CastFunction CastFunction(): {Token type; ADQLOperand oper = null; CastFunction funct = null;}{
+    try {
+		(
+	        ( <CAST> <LEFT_PAR> oper = ValueExpression() <AS> type = <CAST_TYPE> <RIGHT_PAR>
+            { funct = queryFactory.createCastFunction(type, oper); } )
+		)
+	    }
+	catch(Exception ex)
+	    {
+		throw generateParseException(ex);
+	    }
+	{ return funct; }
+    }
+
 
 /* ************** */
 /* ADQL FUNCTIONS */
@@ -1294,7 +1362,8 @@ GeometryFunction GeometryFunction(): {Token t=null; GeometryValue<GeometryFuncti
 				{
 					if (p1 != null)
 						gvp1 = new GeometryValue<PointFunction>(p1);
-					else{						col1.setExpectedType('G');
+					else{
+						col1.setExpectedType('G');
 						gvp1 = new GeometryValue<PointFunction>(col1);
 					}
 				}
@@ -1303,7 +1372,8 @@ GeometryFunction GeometryFunction(): {Token t=null; GeometryValue<GeometryFuncti
 				{
 					if (p2 != null)
 						gvp2 = new GeometryValue<PointFunction>(p2);
-					else{						col2.setExpectedType('G');
+					else{
+						col2.setExpectedType('G');
 						gvp2 = new GeometryValue<PointFunction>(col2);
 					}
 				} 
@@ -1407,6 +1477,8 @@ MathFunction MathFunction(): {Token fct=null; ADQLOperand param1=null, param2=nu
 		| (fct=<LOG10> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
 		| (fct=<MOD> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
 		| (fct=<PI> <LEFT_PAR><RIGHT_PAR>)
+		| (fct=<SQUARE> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
+		| (fct=<SIGN> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
 		| (fct=<POWER> <LEFT_PAR> param1=NumericExpression() <COMMA> param2=NumericExpression() <RIGHT_PAR>)
 		| (fct=<RADIANS> <LEFT_PAR> param1=NumericExpression() <RIGHT_PAR>)
 		| (fct=<RAND> <LEFT_PAR> (param1=NumericExpression())? <RIGHT_PAR>)

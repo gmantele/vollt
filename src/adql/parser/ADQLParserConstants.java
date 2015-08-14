@@ -31,173 +31,195 @@ public interface ADQLParserConstants {
   /** RegularExpression Id. */
   int DIVIDE = 11;
   /** RegularExpression Id. */
-  int EQUAL = 12;
+  int MODULO = 12;
   /** RegularExpression Id. */
-  int NOT_EQUAL = 13;
+  int BIT_AND = 13;
   /** RegularExpression Id. */
-  int LESS_THAN = 14;
+  int BIT_OR = 14;
   /** RegularExpression Id. */
-  int LESS_EQUAL_THAN = 15;
+  int BIT_XOR = 15;
   /** RegularExpression Id. */
-  int GREATER_THAN = 16;
+  int EQUAL = 16;
   /** RegularExpression Id. */
-  int GREATER_EQUAL_THAN = 17;
+  int NOT_EQUAL = 17;
   /** RegularExpression Id. */
-  int SELECT = 18;
+  int LESS_THAN = 18;
   /** RegularExpression Id. */
-  int QUANTIFIER = 19;
+  int LESS_EQUAL_THAN = 19;
   /** RegularExpression Id. */
-  int TOP = 20;
+  int GREATER_THAN = 20;
   /** RegularExpression Id. */
-  int FROM = 21;
+  int GREATER_EQUAL_THAN = 21;
   /** RegularExpression Id. */
-  int AS = 22;
+  int SELECT = 22;
   /** RegularExpression Id. */
-  int NATURAL = 23;
+  int QUANTIFIER = 23;
   /** RegularExpression Id. */
-  int INNER = 24;
+  int TOP = 24;
   /** RegularExpression Id. */
-  int OUTER = 25;
+  int FROM = 25;
   /** RegularExpression Id. */
-  int RIGHT = 26;
+  int AS = 26;
   /** RegularExpression Id. */
-  int LEFT = 27;
+  int NATURAL = 27;
   /** RegularExpression Id. */
-  int FULL = 28;
+  int INNER = 28;
   /** RegularExpression Id. */
-  int JOIN = 29;
+  int OUTER = 29;
   /** RegularExpression Id. */
-  int ON = 30;
+  int RIGHT = 30;
   /** RegularExpression Id. */
-  int USING = 31;
+  int LEFT = 31;
   /** RegularExpression Id. */
-  int WHERE = 32;
+  int FULL = 32;
   /** RegularExpression Id. */
-  int AND = 33;
+  int JOIN = 33;
   /** RegularExpression Id. */
-  int OR = 34;
+  int ON = 34;
   /** RegularExpression Id. */
-  int NOT = 35;
+  int USING = 35;
   /** RegularExpression Id. */
-  int IS = 36;
+  int WHERE = 36;
   /** RegularExpression Id. */
-  int NULL = 37;
+  int AND = 37;
   /** RegularExpression Id. */
-  int BETWEEN = 38;
+  int OR = 38;
   /** RegularExpression Id. */
-  int LIKE = 39;
+  int NOT = 39;
   /** RegularExpression Id. */
-  int IN = 40;
+  int IS = 40;
   /** RegularExpression Id. */
-  int EXISTS = 41;
+  int NULL = 41;
   /** RegularExpression Id. */
-  int GROUP_BY = 42;
+  int BETWEEN = 42;
   /** RegularExpression Id. */
-  int HAVING = 43;
+  int LIKE = 43;
   /** RegularExpression Id. */
-  int ORDER_BY = 44;
+  int IN = 44;
   /** RegularExpression Id. */
-  int ASC = 45;
+  int EXISTS = 45;
   /** RegularExpression Id. */
-  int DESC = 46;
+  int GROUP_BY = 46;
   /** RegularExpression Id. */
-  int AVG = 47;
+  int HAVING = 47;
   /** RegularExpression Id. */
-  int MAX = 48;
+  int ORDER_BY = 48;
   /** RegularExpression Id. */
-  int MIN = 49;
+  int ASC = 49;
   /** RegularExpression Id. */
-  int SUM = 50;
+  int DESC = 50;
   /** RegularExpression Id. */
-  int COUNT = 51;
+  int AVG = 51;
   /** RegularExpression Id. */
-  int BOX = 52;
+  int MAX = 52;
   /** RegularExpression Id. */
-  int CENTROID = 53;
+  int MIN = 53;
   /** RegularExpression Id. */
-  int CIRCLE = 54;
+  int SUM = 54;
   /** RegularExpression Id. */
-  int POINT = 55;
+  int COUNT = 55;
   /** RegularExpression Id. */
-  int POLYGON = 56;
+  int BOX = 56;
   /** RegularExpression Id. */
-  int REGION = 57;
+  int CENTROID = 57;
   /** RegularExpression Id. */
-  int CONTAINS = 58;
+  int CIRCLE = 58;
   /** RegularExpression Id. */
-  int INTERSECTS = 59;
+  int POINT = 59;
   /** RegularExpression Id. */
-  int AREA = 60;
+  int POLYGON = 60;
   /** RegularExpression Id. */
-  int COORD1 = 61;
+  int REGION = 61;
   /** RegularExpression Id. */
-  int COORD2 = 62;
+  int CONTAINS = 62;
   /** RegularExpression Id. */
-  int COORDSYS = 63;
+  int INTERSECTS = 63;
   /** RegularExpression Id. */
-  int DISTANCE = 64;
+  int AREA = 64;
   /** RegularExpression Id. */
-  int ABS = 65;
+  int COORD1 = 65;
   /** RegularExpression Id. */
-  int CEILING = 66;
+  int COORD2 = 66;
   /** RegularExpression Id. */
-  int DEGREES = 67;
+  int COORDSYS = 67;
   /** RegularExpression Id. */
-  int EXP = 68;
+  int DISTANCE = 68;
   /** RegularExpression Id. */
-  int FLOOR = 69;
+  int ABS = 69;
   /** RegularExpression Id. */
-  int LOG = 70;
+  int CEILING = 70;
   /** RegularExpression Id. */
-  int LOG10 = 71;
+  int DEGREES = 71;
   /** RegularExpression Id. */
-  int MOD = 72;
+  int EXP = 72;
   /** RegularExpression Id. */
-  int PI = 73;
+  int FLOOR = 73;
   /** RegularExpression Id. */
-  int POWER = 74;
+  int LOG = 74;
   /** RegularExpression Id. */
-  int RADIANS = 75;
+  int LOG10 = 75;
   /** RegularExpression Id. */
-  int RAND = 76;
+  int MOD = 76;
   /** RegularExpression Id. */
-  int ROUND = 77;
+  int PI = 77;
   /** RegularExpression Id. */
-  int SQRT = 78;
+  int POWER = 78;
   /** RegularExpression Id. */
-  int TRUNCATE = 79;
+  int SQUARE = 79;
   /** RegularExpression Id. */
-  int ACOS = 80;
+  int SIGN = 80;
   /** RegularExpression Id. */
-  int ASIN = 81;
+  int RADIANS = 81;
   /** RegularExpression Id. */
-  int ATAN = 82;
+  int RAND = 82;
   /** RegularExpression Id. */
-  int ATAN2 = 83;
+  int ROUND = 83;
   /** RegularExpression Id. */
-  int COS = 84;
+  int SQRT = 84;
   /** RegularExpression Id. */
-  int COT = 85;
+  int TRUNCATE = 85;
   /** RegularExpression Id. */
-  int SIN = 86;
+  int ACOS = 86;
   /** RegularExpression Id. */
-  int TAN = 87;
+  int ASIN = 87;
   /** RegularExpression Id. */
-  int STRING_LITERAL = 93;
+  int ATAN = 88;
   /** RegularExpression Id. */
-  int DELIMITED_IDENTIFIER = 96;
+  int ATAN2 = 89;
   /** RegularExpression Id. */
-  int REGULAR_IDENTIFIER = 97;
+  int COS = 90;
   /** RegularExpression Id. */
-  int Letter = 98;
+  int COT = 91;
   /** RegularExpression Id. */
-  int SCIENTIFIC_NUMBER = 99;
+  int SIN = 92;
   /** RegularExpression Id. */
-  int UNSIGNED_FLOAT = 100;
+  int TAN = 93;
   /** RegularExpression Id. */
-  int UNSIGNED_INTEGER = 101;
+  int CAST = 94;
   /** RegularExpression Id. */
-  int DIGIT = 102;
+  int CAST_TYPE = 95;
+  /** RegularExpression Id. */
+  int STRING_LITERAL = 101;
+  /** RegularExpression Id. */
+  int DELIMITED_IDENTIFIER = 104;
+  /** RegularExpression Id. */
+  int REGULAR_IDENTIFIER = 105;
+  /** RegularExpression Id. */
+  int Letter = 106;
+  /** RegularExpression Id. */
+  int SCIENTIFIC_NUMBER = 107;
+  /** RegularExpression Id. */
+  int UNSIGNED_FLOAT = 108;
+  /** RegularExpression Id. */
+  int UNSIGNED_INTEGER = 109;
+  /** RegularExpression Id. */
+  int DIGIT = 110;
+  /** RegularExpression Id. */
+  int HEX_PREFIX = 111;
+  /** RegularExpression Id. */
+  int HEX_INTEGER = 112;
+  /** RegularExpression Id. */
+  int HEX_DIGIT = 113;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -222,6 +244,10 @@ public interface ADQLParserConstants {
     "\"-\"",
     "\"*\"",
     "\"/\"",
+    "\"%\"",
+    "\"&\"",
+    "\"|\"",
+    "\"^\"",
     "\"=\"",
     "<NOT_EQUAL>",
     "\"<\"",
@@ -285,6 +311,8 @@ public interface ADQLParserConstants {
     "\"MOD\"",
     "\"PI\"",
     "\"POWER\"",
+    "\"SQUARE\"",
+    "\"SIGN\"",
     "\"RADIANS\"",
     "\"RAND\"",
     "\"ROUND\"",
@@ -298,14 +326,16 @@ public interface ADQLParserConstants {
     "\"COT\"",
     "\"SIN\"",
     "\"TAN\"",
-    "<token of kind 88>",
-    "<token of kind 89>",
-    "<token of kind 90>",
+    "\"CAST\"",
+    "<CAST_TYPE>",
+    "<token of kind 96>",
+    "<token of kind 97>",
+    "<token of kind 98>",
     "\"\\\'\"",
-    "<token of kind 92>",
+    "<token of kind 100>",
     "\"\\\'\"",
     "\"\\\"\"",
-    "<token of kind 95>",
+    "<token of kind 103>",
     "\"\\\"\"",
     "<REGULAR_IDENTIFIER>",
     "<Letter>",
@@ -313,6 +343,9 @@ public interface ADQLParserConstants {
     "<UNSIGNED_FLOAT>",
     "<UNSIGNED_INTEGER>",
     "<DIGIT>",
+    "\"0x\"",
+    "<HEX_INTEGER>",
+    "<HEX_DIGIT>",
   };
 
 }
