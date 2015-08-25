@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,7 +29,7 @@ import java.util.Map;
  * Default implementation of {@link DBTable}.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (11/2014)
+ * @version 1.4 (08/2015)
  */
 public class DefaultDBTable implements DBTable {
 
@@ -107,10 +107,13 @@ public class DefaultDBTable implements DBTable {
 	 * 
 	 * @param dbCatName		Database catalog name.
 	 * @param adqlCatName	Catalog name used in ADQL queries.
+	 *                   	<em>If NULL, it will be set to dbCatName.</em>
 	 * @param dbSchemName	Database schema name.
 	 * @param adqlSchemName	Schema name used in ADQL queries.
+	 *                   	<em>If NULL, it will be set to dbSchemName.</em>
 	 * @param dbName		Database table name.
 	 * @param adqlName		Table name used in ADQL queries.
+	 *                   	<em>If NULL, it will be set to dbName.</em>
 	 */
 	public DefaultDBTable(final String dbCatName, final String adqlCatName, final String dbSchemName, final String adqlSchemName, final String dbName, final String adqlName){
 
@@ -118,13 +121,13 @@ public class DefaultDBTable implements DBTable {
 			throw new NullPointerException("Missing DB name !");
 
 		this.dbName = dbName;
-		this.adqlName = adqlName;
+		this.adqlName = (adqlName == null) ? dbName : adqlName;
 
 		dbSchemaName = dbSchemName;
-		adqlSchemaName = adqlSchemName;
+		adqlSchemaName = (adqlSchemName == null) ? dbSchemName : adqlSchemName;
 
 		dbCatalogName = dbCatName;
-		adqlCatalogName = adqlCatName;
+		adqlCatalogName = (adqlCatName == null) ? dbCatName : adqlCatName;
 	}
 
 	@Override

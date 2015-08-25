@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -46,7 +46,7 @@ import cds.utils.TextualSearchList;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (02/2015)
+ * @version 1.4 (08/2015)
  */
 public class SearchColumnList extends TextualSearchList<DBColumn> {
 	private static final long serialVersionUID = 1L;
@@ -284,7 +284,10 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 					}
 
 					// test the schema name:
-					if (schema != null && matchTable.getADQLSchemaName() != null){
+					if (schema != null){
+						// No schema name (<=> no schema), then this table can not be a good match:
+						if (matchTable.getADQLSchemaName() == null)
+							continue;
 						if (IdentifierField.SCHEMA.isCaseSensitive(caseSensitivity)){
 							if (!matchTable.getADQLSchemaName().equals(schema))
 								continue;
@@ -295,6 +298,9 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 
 						// test the catalog name:
 						if (catalog != null){
+							// No catalog name (<=> no catalog), then this table can not be a good match:
+							if (matchTable.getADQLCatalogName() == null)
+								continue;
 							if (IdentifierField.CATALOG.isCaseSensitive(caseSensitivity)){
 								if (!matchTable.getADQLCatalogName().equals(catalog))
 									continue;

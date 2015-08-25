@@ -42,7 +42,7 @@ public class TestDBChecker {
 	public static void setUpBeforeClass() throws Exception{
 		tables = new ArrayList<DBTable>();
 
-		DefaultDBTable fooTable = new DefaultDBTable("foo");
+		DefaultDBTable fooTable = new DefaultDBTable(null, "aschema", "foo");
 		DBColumn col = new DefaultDBColumn("colS", new DBType(DBDatatype.VARCHAR), fooTable);
 		fooTable.addColumn(col);
 		col = new DefaultDBColumn("colI", new DBType(DBDatatype.INTEGER), fooTable);
@@ -51,6 +51,12 @@ public class TestDBChecker {
 		fooTable.addColumn(col);
 
 		tables.add(fooTable);
+
+		DefaultDBTable fooTable2 = new DefaultDBTable(null, null, "foo2");
+		col = new DefaultDBColumn("oid", new DBType(DBDatatype.BIGINT), fooTable2);
+		fooTable2.addColumn(col);
+
+		tables.add(fooTable2);
 	}
 
 	@AfterClass
@@ -61,6 +67,73 @@ public class TestDBChecker {
 
 	@After
 	public void tearDown() throws Exception{}
+
+	@Test
+	public void testSplitTableName(){
+		String[] names = DefaultDBTable.splitTableName("foo");
+		String[] expected = new String[]{null,null,"foo"};
+		assertEquals(expected.length, names.length);
+		for(int i = 0; i < names.length; i++)
+			assertEquals(expected[i], names[i]);
+
+		names = DefaultDBTable.splitTableName("aschema.foo");
+		expected = new String[]{null,"aschema","foo"};
+		assertEquals(expected.length, names.length);
+		for(int i = 0; i < names.length; i++)
+			assertEquals(expected[i], names[i]);
+
+		names = DefaultDBTable.splitTableName("acat.aschema.foo");
+		expected = new String[]{"acat","aschema","foo"};
+		assertEquals(expected.length, names.length);
+		for(int i = 0; i < names.length; i++)
+			assertEquals(expected[i], names[i]);
+
+		names = DefaultDBTable.splitTableName("weird.acat.aschema.foo");
+		expected = new String[]{"weird.acat","aschema","foo"};
+		assertEquals(expected.length, names.length);
+		for(int i = 0; i < names.length; i++)
+			assertEquals(expected[i], names[i]);
+	}
+
+	@Test
+	public void testQualifiedName(){
+		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
+		try{
+			// Tests with a table whose the schema is specified:
+			parser.parseQuery("SELECT * FROM foo;");
+			parser.parseQuery("SELECT * FROM aschema.foo;");
+			parser.parseQuery("SELECT foo.* FROM foo;");
+			parser.parseQuery("SELECT aschema.foo.* FROM foo;");
+			parser.parseQuery("SELECT aschema.foo.* FROM aschema.foo;");
+			parser.parseQuery("SELECT \"colS\" FROM foo;");
+			parser.parseQuery("SELECT foo.\"colS\" FROM foo;");
+			parser.parseQuery("SELECT foo.\"colS\" FROM aschema.\"foo\";");
+			parser.parseQuery("SELECT \"aschema\".\"foo\".\"colS\" FROM foo;");
+
+			// Tests with a table without schema:
+			parser.parseQuery("SELECT * FROM foo2;");
+			parser.parseQuery("SELECT foo2.* FROM foo2;");
+			parser.parseQuery("SELECT foo2.* FROM \"foo2\";");
+			parser.parseQuery("SELECT \"foo2\".* FROM \"foo2\";");
+			parser.parseQuery("SELECT oid FROM foo2;");
+			parser.parseQuery("SELECT \"oid\" FROM \"foo2\";");
+			parser.parseQuery("SELECT foo2.oid FROM foo2;");
+			parser.parseQuery("SELECT \"foo2\".\"oid\" FROM \"foo2\";");
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail();
+		}
+
+		// If no schema is specified, then the table is not part of a schema and so, there is no reason a table with a fake schema prefix should work:
+		try{
+			parser.parseQuery("SELECT * FROM noschema.foo2;");
+			fail("The table \"foo2\" has no schema specified and so, is not part of a schema. A fake schema prefix should then be forbidden!");
+		}catch(ParseException pe){}
+		try{
+			parser.parseQuery("SELECT noschema.foo2.* FROM foo2;");
+			fail("The table \"foo2\" has no schema specified and so, is not part of a schema. A fake schema prefix should then be forbidden!");
+		}catch(ParseException pe){}
+	}
 
 	@Test
 	public void testNumericOrStringValueExpressionPrimary(){

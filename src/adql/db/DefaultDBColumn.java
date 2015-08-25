@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012,2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -24,7 +24,7 @@ package adql.db;
  * Default implementation of {@link DBColumn}.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (08/2015)
  */
 public class DefaultDBColumn implements DBColumn {
 
@@ -96,9 +96,11 @@ public class DefaultDBColumn implements DBColumn {
 	 * @param dbName	Database column name.
 	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
 	 * 					if a whole column reference is given, no split will be done.</b>
+	 *              	<b>REQUIRED parameter: it must be not NULL.</b> 
 	 * @param adqlName	Column name used in ADQL queries.
 	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
 	 * 					if a whole column reference is given, no split will be done.</b>
+	 *                	<em>If NULL, it will be set to dbName.</em>
 	 * @param type		Type of the column.
 	 *            		<i>Note: there is no default value. Consequently if this parameter is NULL,
 	 *            		the type should be considered as unknown. It means that any comparison with
@@ -108,8 +110,13 @@ public class DefaultDBColumn implements DBColumn {
 	 * @since 1.3
 	 */
 	public DefaultDBColumn(final String dbName, final String adqlName, final DBType type, final DBTable table){
+
+		if (dbName == null || dbName.length() == 0)
+			throw new NullPointerException("Missing DB name!");
+
 		this.dbName = dbName;
-		this.adqlName = adqlName;
+		this.adqlName = (adqlName == null) ? dbName : adqlName;
+
 		this.type = type;
 		this.table = table;
 	}

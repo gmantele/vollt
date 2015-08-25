@@ -97,7 +97,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (08/2015)
  */
 public class DBChecker implements QueryChecker {
 
@@ -581,7 +581,7 @@ public class DBChecker implements QueryChecker {
 			return tables.get(0);
 		// but if more than one: ambiguous table name !
 		else if (tables.size() > 1)
-			throw new UnresolvedTableException(table, tables.get(0).getADQLSchemaName() + "." + tables.get(0).getADQLName(), tables.get(1).getADQLSchemaName() + "." + tables.get(1).getADQLName());
+			throw new UnresolvedTableException(table, (tables.get(0).getADQLSchemaName() == null ? "" : tables.get(0).getADQLSchemaName() + ".") + tables.get(0).getADQLName(), (tables.get(1).getADQLSchemaName() == null ? "" : tables.get(1).getADQLSchemaName() + ".") + tables.get(1).getADQLName());
 		// otherwise (no match): unknown table !
 		else
 			throw new UnresolvedTableException(table);
