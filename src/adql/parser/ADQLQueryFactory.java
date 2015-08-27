@@ -83,7 +83,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <p>To customize the object representation you merely have to extends the appropriate functions of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (08/2015)
  * 
  * @see ADQLParser
  */
@@ -403,6 +403,17 @@ public class ADQLQueryFactory {
 		return order;
 	}
 
+	public ADQLOrder createOrder(final IdentifierItem colName, final boolean desc) throws Exception{
+		ADQLOrder order = new ADQLOrder(colName.identifier, desc);
+		if (order != null)
+			order.setCaseSensitive(colName.caseSensitivity);
+		return order;
+	}
+
+	/**
+	 * @deprecated since 1.4 ; Former version's mistake: an ORDER BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createOrder(Identifier, boolean)} ; This function is no longer used by ADQLParser. 
+	 */
+	@Deprecated
 	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception{
 		ADQLOrder order = new ADQLOrder(idItems.join("."), desc);
 		if (order != null)
@@ -410,6 +421,19 @@ public class ADQLQueryFactory {
 		return order;
 	}
 
+	public ColumnReference createColRef(final IdentifierItem idItem) throws Exception{
+		ColumnReference colRef = new ColumnReference(idItem.identifier);
+		if (colRef != null){
+			colRef.setPosition(idItem.position);
+			colRef.setCaseSensitive(idItem.caseSensitivity);
+		}
+		return colRef;
+	}
+
+	/**
+	 * @deprecated since 1.4 ; Former version's mistake: a GROUP BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createColRef(Identifier)} ; This function is no longer used by ADQLParser.
+	 */
+	@Deprecated
 	public ColumnReference createColRef(final IdentifierItems idItems) throws Exception{
 		ColumnReference colRef = new ColumnReference(idItems.join("."));
 		if (colRef != null){

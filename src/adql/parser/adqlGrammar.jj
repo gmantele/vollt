@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (06/2015)
+*  Version: 1.4 (08/2015)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (06/2015)
+* @version 1.4 (08/2015)
 */
 public class ADQLParser {
 	
@@ -918,13 +918,13 @@ ADQLColumn Column(): {IdentifierItems identifiers;} {
 	}
 }
 
-ColumnReference ColumnRef(): {IdentifierItems identifiers = null; Token ind = null;}{
-	( identifiers=ColumnName() | ind=<UNSIGNED_INTEGER> )
+ColumnReference ColumnRef(): {IdentifierItem identifier = null; Token ind = null;}{
+	( identifier=Identifier() | ind=<UNSIGNED_INTEGER> )
 	{
 		try{
 			ColumnReference colRef = null;
-			if (identifiers != null)
-				colRef = queryFactory.createColRef(identifiers);
+			if (identifier != null)
+				colRef = queryFactory.createColRef(identifier);
 			else
 				colRef = queryFactory.createColRef(Integer.parseInt(ind.image), new TextPosition(ind));
 			return colRef;
@@ -934,14 +934,14 @@ ColumnReference ColumnRef(): {IdentifierItems identifiers = null; Token ind = nu
 	}
 }
 
-ADQLOrder OrderItem(): {IdentifierItems identifiers = null; Token ind = null, desc = null;}{
-	(identifiers=ColumnName() | ind=<UNSIGNED_INTEGER>) (<ASC> | desc=<DESC>)?
+ADQLOrder OrderItem(): {IdentifierItem identifier = null; Token ind = null, desc = null;}{
+	(identifier=Identifier() | ind=<UNSIGNED_INTEGER>) (<ASC> | desc=<DESC>)?
 	{
 		try{
 			ADQLOrder order = null;
-			if (identifiers != null){
-				order = queryFactory.createOrder(identifiers, desc!=null);
-				order.setPosition(identifiers.getPosition());
+			if (identifier != null){
+				order = queryFactory.createOrder(identifier, desc!=null);
+				order.setPosition(identifier.position);
 			}else{
 				order = queryFactory.createOrder(Integer.parseInt(ind.image), desc!=null);
 				order.setPosition(new TextPosition(ind));

@@ -67,7 +67,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (06/2015)
+* @version 1.4 (08/2015)
 */
 public class ADQLParser implements ADQLParserConstants {
 
@@ -1074,12 +1074,12 @@ public class ADQLParser implements ADQLParserConstants {
 	final public ColumnReference ColumnRef() throws ParseException{
 		trace_call("ColumnRef");
 		try{
-			IdentifierItems identifiers = null;
+			IdentifierItem identifier = null;
 			Token ind = null;
 			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
 				case DELIMITED_IDENTIFIER:
 				case REGULAR_IDENTIFIER:
-					identifiers = ColumnName();
+					identifier = Identifier();
 					break;
 				case UNSIGNED_INTEGER:
 					ind = jj_consume_token(UNSIGNED_INTEGER);
@@ -1091,8 +1091,8 @@ public class ADQLParser implements ADQLParserConstants {
 			}
 			try{
 				ColumnReference colRef = null;
-				if (identifiers != null)
-					colRef = queryFactory.createColRef(identifiers);
+				if (identifier != null)
+					colRef = queryFactory.createColRef(identifier);
 				else
 					colRef = queryFactory.createColRef(Integer.parseInt(ind.image), new TextPosition(ind));
 				{
@@ -1114,12 +1114,12 @@ public class ADQLParser implements ADQLParserConstants {
 	final public ADQLOrder OrderItem() throws ParseException{
 		trace_call("OrderItem");
 		try{
-			IdentifierItems identifiers = null;
+			IdentifierItem identifier = null;
 			Token ind = null, desc = null;
 			switch((jj_ntk == -1) ? jj_ntk() : jj_ntk){
 				case DELIMITED_IDENTIFIER:
 				case REGULAR_IDENTIFIER:
-					identifiers = ColumnName();
+					identifier = Identifier();
 					break;
 				case UNSIGNED_INTEGER:
 					ind = jj_consume_token(UNSIGNED_INTEGER);
@@ -1151,9 +1151,9 @@ public class ADQLParser implements ADQLParserConstants {
 			}
 			try{
 				ADQLOrder order = null;
-				if (identifiers != null){
-					order = queryFactory.createOrder(identifiers, desc != null);
-					order.setPosition(identifiers.getPosition());
+				if (identifier != null){
+					order = queryFactory.createOrder(identifier, desc != null);
+					order.setPosition(identifier.position);
 				}else{
 					order = queryFactory.createOrder(Integer.parseInt(ind.image), desc != null);
 					order.setPosition(new TextPosition(ind));
