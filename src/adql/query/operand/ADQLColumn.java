@@ -469,17 +469,17 @@ public class ADQLColumn implements ADQLOperand, UnknownType {
 
 	@Override
 	public boolean isNumeric(){
-		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isNumeric());
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isUnknown() || dbLink.getDatatype().isNumeric());
 	}
 
 	@Override
 	public boolean isString(){
-		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isString());
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isUnknown() || dbLink.getDatatype().isString());
 	}
 
 	@Override
 	public boolean isGeometry(){
-		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isGeometry());
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isUnknown() || dbLink.getDatatype().isGeometry());
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package adql.parser;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -44,9 +45,9 @@ public class UnknownTypes {
 		try{
 			FunctionDef fct = FunctionDef.parse("foo()->aType");
 			assertTrue(fct.isUnknown());
-			assertTrue(fct.isString());
-			assertTrue(fct.isNumeric());
-			assertTrue(fct.isGeometry());
+			assertFalse(fct.isString());
+			assertFalse(fct.isNumeric());
+			assertFalse(fct.isGeometry());
 			assertEquals("?aType?", fct.returnType.type.toString());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
@@ -57,9 +58,9 @@ public class UnknownTypes {
 		try{
 			FunctionDef fct = FunctionDef.parse("foo(param1 aType)");
 			assertTrue(fct.getParam(0).type.isUnknown());
-			assertTrue(fct.getParam(0).type.isString());
-			assertTrue(fct.getParam(0).type.isNumeric());
-			assertTrue(fct.getParam(0).type.isGeometry());
+			assertFalse(fct.getParam(0).type.isString());
+			assertFalse(fct.getParam(0).type.isNumeric());
+			assertFalse(fct.getParam(0).type.isGeometry());
 			assertEquals("?aType?", fct.getParam(0).type.toString());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
@@ -69,7 +70,7 @@ public class UnknownTypes {
 
 	@Test
 	public void testForColumns(){
-		final String QUERY_TXT = "SELECT FOO(C1), FOO(C2) FROM T1";
+		final String QUERY_TXT = "SELECT FOO(C1), FOO(C2), C1, C2, C3 FROM T1";
 
 		try{
 			// Create the parser:
@@ -79,6 +80,7 @@ public class UnknownTypes {
 			DefaultDBTable table1 = new DefaultDBTable("T1");
 			table1.addColumn(new DefaultDBColumn("C1", table1));
 			table1.addColumn(new DefaultDBColumn("C2", new DBType(DBDatatype.UNKNOWN), table1));
+			table1.addColumn(new DefaultDBColumn("C3", new DBType(DBDatatype.VARCHAR), table1));
 			Collection<DBTable> tList = Arrays.asList(new DBTable[]{table1});
 
 			// Check the type of the column T1.C1:
@@ -91,9 +93,9 @@ public class UnknownTypes {
 			assertNotNull(col);
 			assertNotNull(col.getDatatype());
 			assertTrue(col.getDatatype().isUnknown());
-			assertTrue(col.getDatatype().isNumeric());
-			assertTrue(col.getDatatype().isString());
-			assertTrue(col.getDatatype().isGeometry());
+			assertFalse(col.getDatatype().isNumeric());
+			assertFalse(col.getDatatype().isString());
+			assertFalse(col.getDatatype().isGeometry());
 			assertEquals("UNKNOWN", col.getDatatype().toString());
 
 			// Define a UDF, and allow all geometrical functions and coordinate systems:
@@ -110,6 +112,28 @@ public class UnknownTypes {
 
 			// Check the parsed query:
 			checker.check(pq);
+
+			/* Ensure the type of every ADQLColumn is as expected: */
+			// isNumeric() = true for FOO(C1), but false for the others
+			assertTrue(pq.getSelect().get(0).getOperand().isNumeric());
+			assertFalse(pq.getSelect().get(0).getOperand().isString());
+			assertFalse(pq.getSelect().get(0).getOperand().isGeometry());
+			// isNumeric() = true for FOO(C2), but false for the others
+			assertTrue(pq.getSelect().get(1).getOperand().isNumeric());
+			assertFalse(pq.getSelect().get(1).getOperand().isString());
+			assertFalse(pq.getSelect().get(1).getOperand().isGeometry());
+			// isNumeric() = isString() = isGeometry() for C1
+			assertTrue(pq.getSelect().get(2).getOperand().isNumeric());
+			assertTrue(pq.getSelect().get(2).getOperand().isString());
+			assertTrue(pq.getSelect().get(2).getOperand().isGeometry());
+			// isNumeric() = isString() = isGeometry() for C2
+			assertTrue(pq.getSelect().get(3).getOperand().isNumeric());
+			assertTrue(pq.getSelect().get(3).getOperand().isString());
+			assertTrue(pq.getSelect().get(3).getOperand().isGeometry());
+			// isString() = true for C3, but false for the others
+			assertFalse(pq.getSelect().get(4).getOperand().isNumeric());
+			assertTrue(pq.getSelect().get(4).getOperand().isString());
+			assertFalse(pq.getSelect().get(4).getOperand().isGeometry());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
 			fail("The construction, configuration and usage of the parser are correct. Nothing should have failed here. (see console for more details)");

@@ -27,7 +27,6 @@ public class TestFunctionDef {
 				case VARCHAR:
 				case TIMESTAMP:
 				case CLOB:
-				case UNKNOWN:
 					assertTrue(new FunctionDef("foo", new DBType(type)).isString);
 					break;
 				default:
@@ -42,7 +41,6 @@ public class TestFunctionDef {
 			switch(type){
 				case POINT:
 				case REGION:
-				case UNKNOWN:
 					assertTrue(new FunctionDef("foo", new DBType(type)).isGeometry);
 					break;
 				default:
@@ -61,6 +59,7 @@ public class TestFunctionDef {
 				case POINT:
 				case REGION:
 				case CLOB:
+				case UNKNOWN:
 					assertFalse(new FunctionDef("foo", new DBType(type)).isNumeric);
 					break;
 				default:
@@ -188,9 +187,9 @@ public class TestFunctionDef {
 		try{
 			FunctionDef fct = FunctionDef.parse("foo()->aType");
 			assertTrue(fct.isUnknown);
-			assertTrue(fct.isString);
-			assertTrue(fct.isNumeric);
-			assertTrue(fct.isGeometry);
+			assertFalse(fct.isString);
+			assertFalse(fct.isNumeric);
+			assertFalse(fct.isGeometry);
 			assertEquals("?aType?", fct.returnType.type.toString());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
@@ -199,9 +198,9 @@ public class TestFunctionDef {
 		try{
 			FunctionDef fct = FunctionDef.parse("foo()->aType(10)");
 			assertTrue(fct.isUnknown);
-			assertTrue(fct.isString);
-			assertTrue(fct.isNumeric);
-			assertTrue(fct.isGeometry);
+			assertFalse(fct.isString);
+			assertFalse(fct.isNumeric);
+			assertFalse(fct.isGeometry);
 			assertEquals("?aType(10)?", fct.returnType.type.toString());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
@@ -231,9 +230,9 @@ public class TestFunctionDef {
 		try{
 			FunctionDef fct = FunctionDef.parse("foo(param1 aType)");
 			assertTrue(fct.getParam(0).type.isUnknown());
-			assertTrue(fct.getParam(0).type.isString());
-			assertTrue(fct.getParam(0).type.isNumeric());
-			assertTrue(fct.getParam(0).type.isGeometry());
+			assertFalse(fct.getParam(0).type.isString());
+			assertFalse(fct.getParam(0).type.isNumeric());
+			assertFalse(fct.getParam(0).type.isGeometry());
 			assertEquals("?aType?", fct.getParam(0).type.toString());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
@@ -242,9 +241,9 @@ public class TestFunctionDef {
 		try{
 			FunctionDef fct = FunctionDef.parse("foo(param1 aType(10))");
 			assertTrue(fct.getParam(0).type.isUnknown());
-			assertTrue(fct.getParam(0).type.isString());
-			assertTrue(fct.getParam(0).type.isNumeric());
-			assertTrue(fct.getParam(0).type.isGeometry());
+			assertFalse(fct.getParam(0).type.isString());
+			assertFalse(fct.getParam(0).type.isNumeric());
+			assertFalse(fct.getParam(0).type.isGeometry());
 			assertEquals("?aType(10)?", fct.getParam(0).type.toString());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);

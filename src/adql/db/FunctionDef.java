@@ -201,9 +201,9 @@ public class FunctionDef implements Comparable<FunctionDef> {
 		// Set the return type;
 		this.returnType = (returnType != null) ? returnType : new DBType(DBDatatype.UNKNOWN);
 		isUnknown = this.returnType.isUnknown();
-		isNumeric = isUnknown || this.returnType.isNumeric();
-		isString = isUnknown || this.returnType.isString();
-		isGeometry = isUnknown || this.returnType.isGeometry();
+		isNumeric = this.returnType.isNumeric();
+		isString = this.returnType.isString();
+		isGeometry = this.returnType.isGeometry();
 
 		// Serialize in Strings (serializedForm and compareForm) this function definition:
 		StringBuffer bufSer = new StringBuffer(name), bufCmp = new StringBuffer(name.toLowerCase());
@@ -515,7 +515,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 	not part of a function signature.
 	 * </p>
 	 * 
-	 * <p>The notion of "greater" and "less" are defined here according to the three following test steps:</p>
+	 * <p>The notions of "greater" and "less" are defined here according to the three following test steps:</p>
 	 * <ol>
 	 * 	<li><b>Name test:</b> if the name of both function are equals, next steps are evaluated, otherwise the standard string comparison (case insensitive) result is returned.</li>
 	 * 	<li><b>Parameters test:</b> parameters are compared individually. Each time parameters (at the same position in both functions) are equals the next parameter can be tested,
@@ -529,10 +529,19 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 	                                      returned. Otherwise a negative value will be returned, or 0 if the number of parameters is the same.</li>
 	 * </ol>
 	 * 
+	 * <p><i><b>Note:</b>
+	 * 	If one of the tested types (i.e. parameters types) is unknown, the match should return 0 (i.e. equality).
+	 * 	The notion of "unknown" is different in function of the tested item. A {@link DBType} is unknown if its function
+	 * 	{@link DBType#isUnknown()} returns <code>true</code> ; thus, its other functions such as {@link DBType#isNumeric()} will
+	 * 	return <code>false</code>. On the contrary, an {@link ADQLOperand} does not have any isUnknown()
+	 * 	function. However, when the type of a such is unknown, all its functions isNumeric(), isString() and isGeometry() return
+	 * 	<code>true</code>.
+	 * </i></p>
+	 * 
 	 * @param fct	ADQL function item to compare with this function definition.
 	 * 
 	 * @return	A positive value if this function definition is "greater" than the given {@link ADQLFunction},
-	 * 			0 if they are perfectly matching,
+	 * 			0 if they are perfectly matching or one of the tested types (i.e. parameters types) is unknown,
 	 * 			or a negative value if this function definition is "less" than the given {@link ADQLFunction}.
 	 */
 	public int compareTo(final ADQLFunction fct){
@@ -545,8 +554,10 @@ public class FunctionDef implements Comparable<FunctionDef> {
 		// If equals, compare the parameters' type:
 		if (comp == 0){
 			for(int i = 0; comp == 0 && i < nbParams && i < fct.getNbParameters(); i++){
-				if (fct.getParameter(i).isNumeric() && fct.getParameter(i).isString() && fct.getParameter(i).isGeometry())
+				// if one of the types is unknown, the comparison should return true:
+				if (params[i].type.isUnknown() || (fct.getParameter(i).isNumeric() && fct.getParameter(i).isString() && fct.getParameter(i).isGeometry()))
 					comp = 0;
+				// otherwise, just compare each kind of type for an exact match:
 				else if (params[i].type.isNumeric() == fct.getParameter(i).isNumeric()){
 					if (params[i].type.isString() == fct.getParameter(i).isString()){
 						if (params[i].type.isGeometry() == fct.getParameter(i).isGeometry())

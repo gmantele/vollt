@@ -32,7 +32,7 @@ package adql.db;
  * It is used to set the attribute type/datatype of this class.</p>
  *  
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (07/2015)
+ * @version 1.4 (08/2015)
  * @since 1.3
  */
 public class DBType {
@@ -119,7 +119,8 @@ public class DBType {
 	 * 
 	 * <p><i><b>Important note</b>:
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
-	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	But, in order to avoid incorrect operation while expecting a numeric although the type is unknown
+	 * 	and is in fact not really a numeric, this function will return <code>false</code> if the type is
 	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
 	 * </i></p>
 	 * 
@@ -137,7 +138,6 @@ public class DBType {
 			case BINARY:
 			case VARBINARY:
 			case BLOB:
-			case UNKNOWN:
 				return true;
 			default:
 				return false;
@@ -153,7 +153,8 @@ public class DBType {
 	 * 
 	 * <p><i><b>Important note</b>:
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
-	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	But, in order to avoid incorrect operation while expecting a binary although the type is unknown
+	 * 	and is in fact not really a binary, this function will return <code>false</code> if the type is
 	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
 	 * </i></p>
 	 * 
@@ -164,7 +165,6 @@ public class DBType {
 			case BINARY:
 			case VARBINARY:
 			case BLOB:
-			case UNKNOWN:
 				return true;
 			default:
 				return false;
@@ -181,7 +181,8 @@ public class DBType {
 	 * 
 	 * <p><i><b>Important note</b>:
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
-	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	But, in order to avoid incorrect operation while expecting a string although the type is unknown
+	 * 	and is in fact not really a string, this function will return <code>false</code> if the type is
 	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
 	 * </i></p>
 	 * 
@@ -193,7 +194,6 @@ public class DBType {
 			case VARCHAR:
 			case CLOB:
 			case TIMESTAMP:
-			case UNKNOWN:
 				return true;
 			default:
 				return false;
@@ -209,14 +209,15 @@ public class DBType {
 	 * 
 	 * <p><i><b>Important note</b>:
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
-	 * 	That's why, this function will also returned <code>true</code> if the type is
+	 * 	But, in order to avoid incorrect operation while expecting a geometry although the type is unknown
+	 * 	and is in fact not really a geometry, this function will return <code>false</code> if the type is
 	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
 	 * </i></p>
 	 * 
 	 * @return	<code>true</code> if this type is a geometry, <code>false</code> otherwise.
 	 */
 	public boolean isGeometry(){
-		return (type == DBDatatype.POINT || type == DBDatatype.REGION || type == DBDatatype.UNKNOWN);
+		return (type == DBDatatype.POINT || type == DBDatatype.REGION);
 	}
 
 	/**

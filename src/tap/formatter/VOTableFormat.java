@@ -464,7 +464,7 @@ public class VOTableFormat implements OutputFormat {
 	protected static final TAPColumn getValidColMeta(final DBColumn typeFromQuery, final TAPColumn typeFromResult){
 		if (typeFromQuery != null && typeFromQuery instanceof TAPColumn){
 			TAPColumn colMeta = (TAPColumn)typeFromQuery;
-			if (colMeta.getDatatype().type == DBDatatype.UNKNOWN && typeFromResult != null && typeFromResult.getDatatype().type != DBDatatype.UNKNOWN)
+			if (colMeta.getDatatype().isUnknown() && typeFromResult != null && !typeFromResult.getDatatype().isUnknown())
 				colMeta.setDatatype(typeFromResult.getDatatype());
 			return colMeta;
 		}else if (typeFromResult != null){
