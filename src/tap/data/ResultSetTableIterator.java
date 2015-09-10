@@ -42,7 +42,7 @@ import adql.translator.JDBCTranslator;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (07/2015)
+ * @version 2.1 (09/2015)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -362,6 +362,9 @@ public class ResultSetTableIterator implements TableIterator {
 				// if the column value is a Timestamp object, format it in ISO8601:
 				if (o instanceof Timestamp)
 					o = ISO8601Format.format(((Timestamp)o).getTime());
+				// if the column should be only a character:
+				else if (colType != null && o != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && o instanceof String)
+					o = ((String)o).charAt(0);
 				// if the column value is a geometrical object, it must be serialized in STC-S:
 				else if (translator != null && colType != null && colType.isGeometry()){
 					Region region = translator.translateGeometryFromDB(o);
