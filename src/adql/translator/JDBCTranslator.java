@@ -167,8 +167,8 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (05/2015)
- * @since 1.3
+ * @version 1.4 (09/2015)
+ * @since 1.4
  * 
  * @see PostgreSQLTranslator
  * @see PgSphereTranslator
@@ -677,7 +677,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(StringConstant strConst) throws TranslationException{
-		return "'" + strConst.getValue() + "'";
+		return "'" + strConst.getValue().replaceAll("'", "''") + "'";
 	}
 
 	@Override
