@@ -42,7 +42,7 @@ import adql.translator.JDBCTranslator;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (09/2015)
+ * @version 2.1 (10/2015)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -348,6 +348,20 @@ public class ResultSetTableIterator implements TableIterator {
 		return (colIndex < nbColumns);
 	}
 
+	/**
+	 * <p>Return the value of the next column and format it (see {@link #formatColValue(Object)}).</p>
+	 * 
+	 * <p><i>Note: The column type can be fetched using {@link #getColType()} <b>after</b> a call to {@link #nextCol()}.</i></p>
+	 * 
+	 * @return	Get the value of the next column.
+	 * 
+	 * @throws NoSuchElementException	If no more column value is available.
+	 * @throws IllegalStateException	If {@link #nextRow()} has not yet been called.
+	 * @throws DataReadException	If an error occurs while reading the table dataset.
+	 * 
+	 * @see tap.data.TableIterator#nextCol()
+	 * @see #formatColValue(Object)
+	 */
 	@Override
 	public Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException{
 		// Check the read state and ensure there is still at least one column to read:
@@ -357,27 +371,56 @@ public class ResultSetTableIterator implements TableIterator {
 		// Get the column value:
 		try{
 			Object o = data.getObject(++colIndex);
-			if (o != null){
-				DBType colType = getColType();
-				// if the column value is a Timestamp object, format it in ISO8601:
-				if (o instanceof Timestamp)
-					o = ISO8601Format.format(((Timestamp)o).getTime());
-				// if the column should be only a character:
-				else if (colType != null && o != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && o instanceof String)
-					o = ((String)o).charAt(0);
-				// if the column value is a geometrical object, it must be serialized in STC-S:
-				else if (translator != null && colType != null && colType.isGeometry()){
-					Region region = translator.translateGeometryFromDB(o);
-					if (region != null)
-						o = region.toSTCS();
-				}
-			}
-			return o;
+			return formatColValue(o);
 		}catch(SQLException se){
 			throw new DataReadException("Can not read the value of the " + colIndex + "-th column!", se);
-		}catch(ParseException pe){
-			throw new DataReadException(pe.getMessage());
 		}
+	}
+
+	/**
+	 * <p>Format the given column value.</p>
+	 * 
+	 * <p>
+	 * 	This function should be overwritten if a different or additional formatting
+	 * 	should be performed before, after or instead of the one implemented here by default.
+	 * </p>
+	 * 
+	 * <p>By default, the following function performs the following formatting:</p>
+	 * <ul>
+	 * 	<li><b>If {@link Timestamp}:</b> the date-time is converted into a string with the ISO8601 format (see {@link ISO8601Format}).</li>
+	 * 	<li><b>If a single CHAR is declared and a String is given:</b> only the first character is returned as a {@link Character} object.</li>
+	 * 	<li><b>If the value is declared as a Geometry:</b> the geometry is formatted as a STC-S expression.</li>
+	 * </ul>
+	 * 
+	 * @param colValue	A column value as provided by a {@link ResultSet}.
+	 * 
+	 * @return	The formatted column value.
+	 * 
+	 * @throws DataReadException	In case a formatting can not be performed.
+	 * 
+	 * @since 2.1
+	 */
+	protected Object formatColValue(Object colValue) throws DataReadException{
+		if (colValue != null){
+			DBType colType = getColType();
+			// if the column value is a Timestamp object, format it in ISO8601:
+			if (colValue instanceof Timestamp)
+				colValue = ISO8601Format.format(((Timestamp)colValue).getTime());
+			// if the column should be only a character:
+			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)
+				colValue = ((String)colValue).charAt(0);
+			// if the column value is a geometrical object, it must be serialized in STC-S:
+			else if (translator != null && colType != null && colType.isGeometry()){
+				try{
+					Region region = translator.translateGeometryFromDB(colValue);
+					if (region != null)
+						colValue = region.toSTCS();
+				}catch(ParseException pe){
+					throw new DataReadException(pe.getMessage());
+				}
+			}
+		}
+		return colValue;
 	}
 
 	@Override
