@@ -94,7 +94,7 @@ public class TestTAPDestructionTimeController {
 		// With a destruction interval of 100 minutes:
 		Calendar calendar = Calendar.getInstance();
 		service.setRetentionPeriod(6000, -1);
-		calendar.add(Calendar.MINUTE, 100);
+		calendar.add(Calendar.SECOND, 6000);	// note: in seconds rather than minutes, in order to take into account the time shift if any
 		checkDate(calendar.getTime(), controller.getDefault());
 
 		// With a destruction interval of 100 seconds:
@@ -106,7 +106,7 @@ public class TestTAPDestructionTimeController {
 		// With a destruction interval of 1 week:
 		service.setRetentionPeriod(7 * 24 * 3600, -1);
 		calendar = Calendar.getInstance();
-		calendar.add(Calendar.DAY_OF_MONTH, 7);
+		calendar.add(Calendar.SECOND, 7 * 24 * 3600);	// note: in seconds rather than days, in order to take into account the time shift if any
 		checkDate(calendar.getTime(), controller.getDefault());
 	}
 
@@ -129,7 +129,7 @@ public class TestTAPDestructionTimeController {
 		// With a destruction interval of 100 minutes:
 		Calendar calendar = Calendar.getInstance();
 		service.setRetentionPeriod(-1, 6000);
-		calendar.add(Calendar.MINUTE, 100);
+		calendar.add(Calendar.SECOND, 6000);	// note: in seconds rather than minutes, in order to take into account the time shift if any
 		checkDate(calendar.getTime(), controller.getMaxDestructionTime());
 
 		// With a destruction interval of 100 seconds:
@@ -141,7 +141,7 @@ public class TestTAPDestructionTimeController {
 		// With a destruction interval of 1 week:
 		service.setRetentionPeriod(-1, 7 * 24 * 3600);
 		calendar = Calendar.getInstance();
-		calendar.add(Calendar.DAY_OF_MONTH, 7);
+		calendar.add(Calendar.SECOND, 7 * 24 * 3600);	// note: in seconds rather than days, in order to take into account the time shift if any
 		checkDate(calendar.getTime(), controller.getMaxDestructionTime());
 	}
 
