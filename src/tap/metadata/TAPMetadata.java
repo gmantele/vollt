@@ -64,7 +64,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (03/2015)
+ * @version 2.1 (10/2015)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -514,7 +514,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 
 	 * @see #writeTable(TAPTable, PrintWriter)
 	 */
-	private void writeSchema(TAPSchema s, PrintWriter writer) throws IOException{
+	protected void writeSchema(TAPSchema s, PrintWriter writer) throws IOException{
 		final String prefix = "\t\t";
 		writer.println("\t<schema>");
 
@@ -577,7 +577,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 
 	 * @return	The total number of written columns.
 	 */
-	private int writeTable(TAPTable t, PrintWriter writer){
+	protected int writeTable(TAPTable t, PrintWriter writer){
 		final String prefix = "\t\t\t";
 
 		writer.print("\t\t<table");
@@ -635,7 +635,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * @param c			The column to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given column must be written.
 	 */
-	private void writeColumn(TAPColumn c, PrintWriter writer){
+	protected void writeColumn(TAPColumn c, PrintWriter writer){
 		final String prefix = "\t\t\t\t";
 
 		writer.print("\t\t\t<column");
@@ -696,7 +696,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * @param fk		The foreign key to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given foreign key must be written.
 	 */
-	private void writeForeignKey(TAPForeignKey fk, PrintWriter writer){
+	protected void writeForeignKey(TAPForeignKey fk, PrintWriter writer){
 		final String prefix = "\t\t\t\t";
 
 		writer.println("\t\t\t<foreignKey>");
@@ -728,7 +728,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 *                      	<i>false</i> otherwise (here, if the value is NULL or an empty string, the XML item will be written with an empty string as value). 
 	 * @param writer			Output in which the XML node must be written.
 	 */
-	private void writeAtt(String prefix, String attributeName, String attributeValue, boolean isOptionalAttr, PrintWriter writer){
+	protected final void writeAtt(String prefix, String attributeName, String attributeValue, boolean isOptionalAttr, PrintWriter writer){
 		if (attributeValue != null && attributeValue.trim().length() > 0){
 			StringBuffer xml = new StringBuffer(prefix);
 			xml.append('<').append(attributeName).append('>').append(VOSerializer.formatText(attributeValue)).append("</").append(attributeName).append('>');

@@ -59,6 +59,8 @@ import tap.db.DBException;
 import tap.db.JDBCConnection;
 import tap.formatter.OutputFormat;
 import tap.formatter.VOTableFormat;
+import tap.metadata.TAPMetadata;
+import tap.metadata.TAPSchema;
 import uk.ac.starlink.votable.DataFormat;
 import uk.ac.starlink.votable.VOTableVersion;
 import uws.UWSException;
@@ -82,27 +84,28 @@ public class TestConfigurableServiceConnection {
 
 	private static Properties validProp, noFmProp, fmClassNameProp,
 			incorrectFmProp, correctLogProp, incorrectLogLevelProp,
-			incorrectLogRotationProp, xmlMetaProp, wrongManualMetaProp,
-			missingMetaProp, missingMetaFileProp, wrongMetaProp,
-			wrongMetaFileProp, validFormatsProp, validVOTableFormatsProp,
-			badSVFormat1Prop, badSVFormat2Prop, badVotFormat1Prop,
-			badVotFormat2Prop, badVotFormat3Prop, badVotFormat4Prop,
-			badVotFormat5Prop, badVotFormat6Prop, unknownFormatProp,
-			maxAsyncProp, negativeMaxAsyncProp, notIntMaxAsyncProp,
-			defaultOutputLimitProp, maxOutputLimitProp,
-			bothOutputLimitGoodProp, bothOutputLimitBadProp, syncFetchSizeProp,
-			notIntSyncFetchSizeProp, negativeSyncFetchSizeProp,
-			notIntAsyncFetchSizeProp, negativeAsyncFetchSizeProp,
-			asyncFetchSizeProp, userIdentProp, notClassPathUserIdentProp,
-			coordSysProp, noneCoordSysProp, anyCoordSysProp,
-			noneInsideCoordSysProp, unknownCoordSysProp, geometriesProp,
-			noneGeomProp, anyGeomProp, noneInsideGeomProp, unknownGeomProp,
-			anyUdfsProp, noneUdfsProp, udfsProp, udfsWithClassNameProp,
-			udfsListWithNONEorANYProp, udfsWithWrongParamLengthProp,
-			udfsWithMissingBracketsProp, udfsWithMissingDefProp1,
-			udfsWithMissingDefProp2, emptyUdfItemProp1, emptyUdfItemProp2,
-			udfWithMissingEndBracketProp, customFactoryProp,
-			badCustomFactoryProp;
+			incorrectLogRotationProp, xmlMetaProp,
+			xmlMetaPropWithCustomMetaClass, xmlMetaPropWithBadCustomMetaClass,
+			xmlMetaPropWithANonMetaClass, wrongManualMetaProp, missingMetaProp,
+			missingMetaFileProp, wrongMetaProp, wrongMetaFileProp,
+			validFormatsProp, validVOTableFormatsProp, badSVFormat1Prop,
+			badSVFormat2Prop, badVotFormat1Prop, badVotFormat2Prop,
+			badVotFormat3Prop, badVotFormat4Prop, badVotFormat5Prop,
+			badVotFormat6Prop, unknownFormatProp, maxAsyncProp,
+			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
+			maxOutputLimitProp, bothOutputLimitGoodProp,
+			bothOutputLimitBadProp, syncFetchSizeProp, notIntSyncFetchSizeProp,
+			negativeSyncFetchSizeProp, notIntAsyncFetchSizeProp,
+			negativeAsyncFetchSizeProp, asyncFetchSizeProp, userIdentProp,
+			notClassPathUserIdentProp, coordSysProp, noneCoordSysProp,
+			anyCoordSysProp, noneInsideCoordSysProp, unknownCoordSysProp,
+			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
+			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
+			udfsWithClassNameProp, udfsListWithNONEorANYProp,
+			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
+			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
+			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp,
+			customFactoryProp, badCustomFactoryProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
@@ -131,6 +134,18 @@ public class TestConfigurableServiceConnection {
 		xmlMetaProp = (Properties)validProp.clone();
 		xmlMetaProp.setProperty(KEY_METADATA, VALUE_XML);
 		xmlMetaProp.setProperty(KEY_METADATA_FILE, XML_FILE);
+
+		xmlMetaPropWithCustomMetaClass = (Properties)validProp.clone();
+		xmlMetaPropWithCustomMetaClass.setProperty(KEY_METADATA, VALUE_XML + " {tap.config.TestConfigurableServiceConnection$MyCustomTAPMetadata}");
+		xmlMetaPropWithCustomMetaClass.setProperty(KEY_METADATA_FILE, XML_FILE);
+
+		xmlMetaPropWithBadCustomMetaClass = (Properties)validProp.clone();
+		xmlMetaPropWithBadCustomMetaClass.setProperty(KEY_METADATA, VALUE_XML + " {tap.config.TestConfigurableServiceConnection$MyBadCustomTAPMetadata}");
+		xmlMetaPropWithBadCustomMetaClass.setProperty(KEY_METADATA_FILE, XML_FILE);
+
+		xmlMetaPropWithANonMetaClass = (Properties)validProp.clone();
+		xmlMetaPropWithANonMetaClass.setProperty(KEY_METADATA, VALUE_XML + " MyCustomTAPMetadata");
+		xmlMetaPropWithANonMetaClass.setProperty(KEY_METADATA_FILE, XML_FILE);
 
 		wrongManualMetaProp = (Properties)validProp.clone();
 		wrongManualMetaProp.setProperty(KEY_METADATA, "{tap.metadata.TAPMetadata}");
@@ -395,7 +410,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because the property 'metadata' is missing!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Three possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document), " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA) or the name (between {}) of a class extending TAPMetadata.", e.getMessage());
+			assertEquals("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Three possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document), " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA) or the name (between {}) of a class extending TAPMetadata. Only " + VALUE_XML + " and " + VALUE_DB + " can be followed by the path of a class extending TAPMetadata.", e.getMessage());
 		}
 
 		// Missing metadata_file property:
@@ -413,7 +428,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because the property 'metadata' has a wrong value!");
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Unsupported value for the property \"" + KEY_METADATA + "\": \"foo\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).", e.getMessage());
+			assertEquals("Unsupported value for the property \"" + KEY_METADATA + "\": \"foo\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA). Only " + VALUE_XML + " and " + VALUE_DB + " can be followed by the path of a class extending TAPMetadata.", e.getMessage());
 		}
 
 		// Wrong MANUAL metadata:
@@ -423,6 +438,33 @@ public class TestConfigurableServiceConnection {
 		}catch(Exception e){
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("Wrong class for the property \"" + KEY_METADATA + "\": \"tap.metadata.TAPMetadata\"! The class provided in this property MUST EXTEND tap.metadata.TAPMetadata.", e.getMessage());
+		}
+
+		// XML metadata method WITH a custom TAPMetadata class:
+		try{
+			ServiceConnection sConn = new ConfigurableServiceConnection(xmlMetaPropWithCustomMetaClass);
+			assertEquals(MyCustomTAPMetadata.class, sConn.getTAPMetadata().getClass());
+		}catch(Exception e){
+			e.printStackTrace();
+			fail("This MUST have succeeded because the property 'metadata' is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// XML metadata method WITH a BAD custom TAPMetadata class:
+		try{
+			new ConfigurableServiceConnection(xmlMetaPropWithBadCustomMetaClass);
+			fail("This MUST have failed because the custom class specified in the property 'metadata' does not have any of the required constructor!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Missing constructor by copy tap.metadata.TAPMetadata(tap.metadata.TAPMetadata) or tap.metadata.TAPMetadata(tap.metadata.TAPMetadata, uws.service.file.UWSFileManager, tap.TAPFactory, tap.log.TAPLog)! See the value \"xml\" of the property \"" + KEY_METADATA + "\".", e.getMessage());
+		}
+
+		// XML metadata method WITH a BAD custom TAPMetadata class:
+		try{
+			new ConfigurableServiceConnection(xmlMetaPropWithANonMetaClass);
+			fail("This MUST have failed because the class specified in the property 'metadata' is not a class name!");
+		}catch(Exception e){
+			assertEquals(TAPException.class, e.getClass());
+			assertEquals("Unexpected string after the fetching method \"xml\": \"MyCustomTAPMetadata\"! The full name of a class extending TAPMetadata was expected. If it is a class name, then it must be specified between {}.", e.getMessage());
 		}
 
 		// Wrong metadata_file property:
@@ -1195,6 +1237,36 @@ public class TestConfigurableServiceConnection {
 		@Override
 		public void destroy(){}
 
+	}
+
+	/**
+	 * TAPMetadata extension just to test whether it is possible to customize the output class of ConfigurableServiceConnection with the
+	 * metadata fetching methods "db" and "xml".
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 08/2015
+	 */
+	private static class MyCustomTAPMetadata extends TAPMetadata {
+		public MyCustomTAPMetadata(TAPMetadata meta){
+			for(TAPSchema s : meta){
+				this.addSchema(s);
+			}
+		}
+	}
+
+	/**
+	 * TAPMetadata extension just to test whether it is possible to customize the output class of ConfigurableServiceConnection with the
+	 * metadata fetching methods "db" and "xml".
+	 * 
+	 * <strong>This extension is however bad because it does not have any of the required constructor.</strong>
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 08/2015
+	 */
+	private static class MyBadCustomTAPMetadata extends TAPMetadata {
+		public MyBadCustomTAPMetadata(){
+
+		}
 	}
 
 }

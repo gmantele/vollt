@@ -280,8 +280,14 @@
 						<li>Build yourself the metadata of your service by creating an extension of tap.metadata.TAPMetadata. This extension must have either an empty constructor
 							or a constructor with exactly 3 parameters of type UWSFileManager, TAPFactory and TAPLog ; if both constructor are provided, only the one with parameters will be used.</li>
 					</ol>
+					<p>
+						For the two first methods, it is also possible to specify an extension of tap.metadata.TAPMetadata which will wrap a default TAPMetadata objects created using the specified
+						methods (i.e. XML tableset or TAP_SCHEMA). In this way, it is possible to get the "default" metadata from an XML file or the database
+						and then add/remove/modify some of them, or to change the output of the 'tables' resource. The extension of tap.metadata.TAPMetadata must have at least
+						one constructor with the following parameters: (TAPMetadata) or (TAPMetadata, UWSFileManager, TAPFactory, TAPLog).
+					</p>
 				</td>
-				<td><ul><li>xml</li><li>db</li><li>{apackage.MyTAPMetadata}</li></ul>
+				<td><ul><li>xml</li><li>xml {myTAPMetadata}</li><li>db</li><li>db {myTAPMetadata}</li><li>{apackage.MyTAPMetadata}</li></ul>
 			</tr>
 			<tr class="optional">
 				<td class="done">metadata_file</td>

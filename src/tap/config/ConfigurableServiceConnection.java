@@ -124,7 +124,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (10/2015)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -435,7 +435,19 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// Get the fetching method to use:
 		String metaFetchType = getProperty(tapConfig, KEY_METADATA);
 		if (metaFetchType == null)
-			throw new TAPException("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Three possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document), " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA) or the name (between {}) of a class extending TAPMetadata.");
+			throw new TAPException("The property \"" + KEY_METADATA + "\" is missing! It is required to create a TAP Service. Three possible values: " + VALUE_XML + " (to get metadata from a TableSet XML document), " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA) or the name (between {}) of a class extending TAPMetadata. Only " + VALUE_XML + " and " + VALUE_DB + " can be followed by the path of a class extending TAPMetadata.");
+
+		// Extract a custom class suffix if any for XML and DB options:
+		String customMetaClass = null;
+		if (metaFetchType.toLowerCase().matches("(" + VALUE_XML + "|" + VALUE_DB + ").*")){
+			int indSep = metaFetchType.toLowerCase().startsWith(VALUE_XML) ? 3 : 2;
+			customMetaClass = metaFetchType.substring(indSep).trim();
+			metaFetchType = metaFetchType.substring(0, indSep);
+			if (customMetaClass.length() == 0)
+				customMetaClass = null;
+			else if (!isClassName(customMetaClass))
+				throw new TAPException("Unexpected string after the fetching method \"" + metaFetchType + "\": \"" + customMetaClass + "\"! The full name of a class extending TAPMetadata was expected. If it is a class name, then it must be specified between {}.");
+		}
 
 		TAPMetadata metadata = null;
 
@@ -522,7 +534,43 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		}
 		// INCORRECT VALUE => ERROR!
 		else
-			throw new TAPException("Unsupported value for the property \"" + KEY_METADATA + "\": \"" + metaFetchType + "\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA).");
+			throw new TAPException("Unsupported value for the property \"" + KEY_METADATA + "\": \"" + metaFetchType + "\"! Only two values are allowed: " + VALUE_XML + " (to get metadata from a TableSet XML document) or " + VALUE_DB + " (to fetch metadata from the database schema TAP_SCHEMA). Only " + VALUE_XML + " and " + VALUE_DB + " can be followed by the path of a class extending TAPMetadata.");
+
+		// Create the custom TAPMetadata extension if any is provided (THEORETICALLY, JUST FOR XML and DB):
+		if (customMetaClass != null){
+			// get the class:
+			Class<? extends TAPMetadata> metaClass = fetchClass(customMetaClass, KEY_METADATA, TAPMetadata.class);
+			if (metaClass == TAPMetadata.class)
+				throw new TAPException("Wrong class for the property \"" + KEY_METADATA + "\": \"" + metaClass.getName() + "\"! The class provided in this property MUST EXTEND tap.metadata.TAPMetadata.");
+			try{
+				// get one of the expected constructors:
+				try{
+					// (TAPMetadata, UWSFileManager, TAPFactory, TAPLog):
+					Constructor<? extends TAPMetadata> constructor = metaClass.getConstructor(TAPMetadata.class, UWSFileManager.class, TAPFactory.class, TAPLog.class);
+					// create the TAP metadata:
+					metadata = constructor.newInstance(metadata, fileManager, tapFactory, logger);
+				}catch(NoSuchMethodException nsme){
+					// (TAPMetadata):
+					Constructor<? extends TAPMetadata> constructor = metaClass.getConstructor(TAPMetadata.class);
+					// create the TAP metadata:
+					metadata = constructor.newInstance(metadata);
+				}
+			}catch(NoSuchMethodException nsme){
+				throw new TAPException("Missing constructor by copy tap.metadata.TAPMetadata(tap.metadata.TAPMetadata) or tap.metadata.TAPMetadata(tap.metadata.TAPMetadata, uws.service.file.UWSFileManager, tap.TAPFactory, tap.log.TAPLog)! See the value \"" + metaFetchType + "\" of the property \"" + KEY_METADATA + "\".");
+			}catch(InstantiationException ie){
+				throw new TAPException("Impossible to create an instance of an abstract class: \"" + metaClass.getName() + "\"! See the value \"" + metaFetchType + "\" of the property \"" + KEY_METADATA + "\".");
+			}catch(InvocationTargetException ite){
+				if (ite.getCause() != null){
+					if (ite.getCause() instanceof TAPException)
+						throw (TAPException)ite.getCause();
+					else
+						throw new TAPException(ite.getCause());
+				}else
+					throw new TAPException(ite);
+			}catch(Exception ex){
+				throw new TAPException("Impossible to create an instance of tap.metadata.TAPMetadata as specified in the property \"" + KEY_METADATA + "\": \"" + metaFetchType + "\"!", ex);
+			}
+		}
 
 		return metadata;
 	}
