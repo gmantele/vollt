@@ -112,7 +112,7 @@
 	
 	<target name="compileLib" depends="clean,junitValidation" description="Build all the classes of the TAP library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
-		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8">
+		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" debug="true">
 			<classpath refid="tap.classpath" />
 		</javac>
 	</target>
