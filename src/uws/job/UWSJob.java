@@ -1320,7 +1320,7 @@ public class UWSJob extends SerializableUWSObject {
 
 				// Set the end time:
 				setEndTime(new Date());
-			}else if (thread == null || (thread != null && !thread.isAlive()))
+			}else if ((thread == null || (thread != null && !thread.isAlive())) && phase.getPhase() != ExecutionPhase.ABORTED)
 				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(getJobId(), phase.getPhase(), ExecutionPhase.ABORTED));
 		}else
 			getLogger().logJob(LogLevel.WARNING, this, "ABORT", "Abortion of the job \"" + getJobId() + "\" asked but not yet effective (after having waited " + waitForStop + "ms)!", null);
@@ -1391,12 +1391,20 @@ public class UWSJob extends SerializableUWSObject {
 	}
 
 	/**
-	 * Tells whether the thread is different from <i>null</i>, is not alive, is interrupted or is finished (see {@link JobThread#isFinished()}).
+	 * <p>Tells whether the thread is different from <i>null</i>, is not alive or is finished (see {@link JobThread#isFinished()}).</p>
+	 * 
+	 * <p><i><b>Important note:</b>
+	 * 	Having the interrupted flag set to <code>true</code> is not enough to consider the job as stopped.
+	 * 	So, if the job has been interrupted but is still running, it should mean that the {@link JobThread#jobWork()} does not
+	 * 	check the interrupted flag of the thread often enough or not at the right moments. In such case, the job can not be
+	 * 	considered as stopped/aborted - so the phase stays {@link ExecutionPhase#EXECUTING EXECUTING} - until the thread is "unblocked"
+	 * 	and the interruption is detected.
+	 * </i></p>
 	 * 
 	 * @return	<i>true</i> if the thread is not still running, <i>false</i> otherwise.
 	 */
 	protected final boolean isStopped(){
-		return thread == null || !thread.isAlive() || thread.isInterrupted() || thread.isFinished();
+		return thread == null || !thread.isAlive() || thread.isFinished();
 	}
 
 	/**

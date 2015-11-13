@@ -104,7 +104,7 @@ import adql.query.ADQLQuery;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (11/2015)
  */
 public class ADQLExecutor {
 
@@ -224,9 +224,20 @@ public class ADQLExecutor {
 		try{
 			return start();
 		}catch(IOException ioe){
-			throw new UWSException(ioe);
+			if (thread.isInterrupted())
+				return report;
+			else
+				throw new UWSException(ioe);
 		}catch(TAPException te){
-			throw new UWSException(te.getHttpErrorCode(), te);
+			if (thread.isInterrupted())
+				return report;
+			else
+				throw new UWSException(te.getHttpErrorCode(), te);
+		}catch(UWSException ue){
+			if (thread.isInterrupted())
+				return report;
+			else
+				throw ue;
 		}
 	}
 
@@ -247,6 +258,17 @@ public class ADQLExecutor {
 	public final void initDBConnection(final String jobID) throws TAPException{
 		if (dbConn == null)
 			dbConn = service.getFactory().getConnection(jobID);
+	}
+
+	/** 
+	 * Cancel the current SQL query execution or result set fetching if any is currently running.
+	 * If no such process is on going, this function has no effect.
+	 * 
+	 * @since 2.1
+	 */
+	public final void cancelQuery(){
+		if (dbConn != null && progression == ExecutionProgression.EXECUTING_ADQL)
+			dbConn.cancel(true);
 	}
 
 	/**
@@ -625,12 +647,14 @@ public class ADQLExecutor {
 		}
 		// CASE ASYNCHRONOUS:
 		else{
+			boolean completed = false;
 			long start = -1, end = -1;
+			Result result = null;
+			JobThread jobThread = (JobThread)thread;
 			try{
 				// Create a UWS Result object to store the result
 				// (the result will be stored in a file and this object is the association between the job and the result file):
-				JobThread jobThread = (JobThread)thread;
-				Result result = jobThread.createResult();
+				result = jobThread.createResult();
 
 				// Set the MIME type of the result format in the result description:
 				result.setMimeType(formatter.getMimeType());
@@ -646,10 +670,25 @@ public class ADQLExecutor {
 				// Add the result description and link in the job description:
 				jobThread.publishResult(result);
 
+				completed = true;
+
 				logger.logTAP(LogLevel.INFO, report, "RESULT_WRITTEN", "Result formatted (in " + formatter.getMimeType() + " ; " + (report.nbRows < 0 ? "?" : report.nbRows) + " rows ; " + ((report.resultingColumns == null) ? "?" : report.resultingColumns.length) + " columns) in " + ((start <= 0 || end <= 0) ? "?" : (end - start)) + "ms!", null);
 
 			}catch(IOException ioe){
+				// Propagate the exception:
 				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to write in the file into the result of the job " + report.jobID + " must be written!");
+			}finally{
+				if (!completed){
+					// Delete the result file (it is either incomplete or incorrect ;
+					// it is then not reliable and is anyway not associated with the job and so could not be later deleted when the job will be):
+					if (result != null){
+						try{
+							service.getFileManager().deleteResult(result, jobThread.getJob());
+						}catch(IOException ioe){
+							logger.logTAP(LogLevel.ERROR, report, "WRITING_RESULT", "The result writting has failed and the produced partial result must be deleted, but this deletion also failed! (job: " + report.jobID + ")", ioe);
+						}
+					}
+				}
 			}
 		}
 	}

@@ -45,7 +45,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (11/2015)
  */
 public class TAPJob extends UWSJob {
 	private static final long serialVersionUID = 1L;
@@ -338,6 +338,31 @@ public class TAPJob extends UWSJob {
 
 			// Log the start of this job:
 			getLogger().logJob(LogLevel.INFO, this, "START", "Job \"" + jobId + "\" started.", null);
+		}
+	}
+
+	/** @since 2.1 */
+	@Override
+	protected void stop(){
+		if (!isStopped()){
+			synchronized(thread){
+				stopping = true;
+
+				// Interrupts the thread:
+				thread.interrupt();
+
+				// Cancel the query execution if any currently running:
+				((AsyncThread)thread).executor.cancelQuery();
+
+				// Wait a little for its end:
+				if (waitForStop > 0){
+					try{
+						thread.join(waitForStop);
+					}catch(InterruptedException ie){
+						getLogger().logJob(LogLevel.WARNING, this, "END", "Unexpected InterruptedException while waiting for the end of the execution of the job \"" + jobId + "\" (thread ID: " + thread.getId() + ")!", ie);
+					}
+				}
+			}
 		}
 	}
 

@@ -27,6 +27,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.ParseException;
@@ -70,6 +71,29 @@ import adql.translator.TranslationException;
  * 	Then it has been really tested successfully with Postgres and SQLite.
  * </i></p>
  * 
+ * 
+ * <h3>Only one query executed at a time!</h3>
+ * 
+ * <p>
+ * 	With a single instance of {@link JDBCConnection} it is possible to execute only one query (whatever the type: SELECT, UPDATE, DELETE, ...)
+ * 	at a time. This is indeed the simple way chosen with this implementation in order to allow the cancellation of any query by managing only
+ * 	one {@link Statement}. Indeed, only a {@link Statement} has a cancel function able to stop any query execution on the database.
+ * 	So all queries are executed with the same {@link Statement}. Thus, allowing the execution of one query at a time lets
+ * 	abort only one query rather than several in once (though just one should have been stopped).
+ * </p>
+ * 
+ * <p>
+ * 	All the following functions are synchronized in order to prevent parallel execution of them by several threads:
+ * 	{@link #addUploadedTable(TAPTable, TableIterator)}, {@link #dropUploadedTable(TAPTable)}, {@link #executeQuery(ADQLQuery)},
+ * 	{@link #getTAPSchema()} and {@link #setTAPSchema(TAPMetadata)}.
+ * </p>
+ * 
+ * <p>
+ * 	To cancel a query execution the function {@link #cancel(boolean)} must be called. No error is returned by this function in case
+ * 	no query is currently executing.
+ * </p>
+ * 
+ * 
  * <h3>Deal with different DBMS features</h3>
  * 
  * <p>Update queries are taking into account whether the following features are supported by the DBMS:</p>
@@ -99,6 +123,7 @@ import adql.translator.TranslationException;
  * 	All these features have no impact at all on ADQL query executions ({@link #executeQuery(ADQLQuery)}).
  * </i></p>
  * 
+ * 
  * <h3>Datatypes</h3>
  * 
  * <p>
@@ -118,6 +143,7 @@ import adql.translator.TranslationException;
  * 	(POINT and REGION). That's why it is recommended to use a translator in which the geometrical types are supported
  * 	and managed.
  * </p>
+ * 
  * 
  * <h3>Fetch size</h3>
  * 
@@ -144,7 +170,7 @@ import adql.translator.TranslationException;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2015)
+ * @version 2.1 (11/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -169,6 +195,31 @@ public class JDBCConnection implements DBConnection {
 
 	/** JDBC connection (created and initialized at the creation of this {@link JDBCConnection} instance). */
 	protected final Connection connection;
+
+	/** <p>The only {@link Statement} instance that should be used in this {@link JDBCConnection}.
+	 * Having the same {@link Statement} for all the interactions with the database lets cancel any when needed (e.g. when the execution is too long).</p>
+	 * <p>This statement is by default NULL ; it must be initialized by the function {@link #getStatement()}.</p>
+	 * @since 2.1 */
+	protected Statement stmt = null;
+
+	/**
+	 * <p>It <code>true</code>, this flag indicates that the function {@link #cancel(boolean)} has been called successfully.</p>
+	 * 
+	 * <p>{@link #cancel(boolean)} sets this flag to <code>true</code>.</p>
+	 * <p>
+	 * 	All functions executing any kind of query on the database MUST set this flag to <code>false</code> before doing anything
+	 * 	by calling the function {@link #resetCancel()}.
+	 * </p>
+	 * <p>
+	 * 	This flag is particularly useful for debugging: when an exception is detected inside a function executing a query,
+	 * 	this flag is used to know whether the exception should be ignored for logging (if <code>true</code>) or not.
+	 * </p>
+	 * <p>
+	 * 	Any access (write AND read) to this flag MUST be synchronized on it using one of the following functions:
+	 * 	{@link #cancel(boolean)}, {@link #resetCancel()} and {@link #isCancelled()}.
+	 * </p>
+	 * @since 2.1 */
+	private Boolean cancelled = false;
 
 	/** The translator this connection must use to translate ADQL into SQL. It is also used to get information about the case sensitivity of all types of identifier (schema, table, column). */
 	protected final JDBCTranslator translator;
@@ -197,6 +248,13 @@ public class JDBCConnection implements DBConnection {
 
 	/** Indicate whether the DBMS has the notion of SCHEMA. Most of the DBMS has it, but not SQLite for instance. <i>note: If not supported, the DB table name will be prefixed by the DB schema name followed by the character "_". Nevertheless, if the DB schema name is NULL, the DB table name will never be prefixed.</i> */
 	protected boolean supportsSchema;
+
+	/** <p>Indicate whether a DBMS statement is able to cancel a query execution.</p>
+	 * <p> Since this information is not provided by {@link DatabaseMetaData} a first attempt is always performed.
+	 * In case a {@link SQLFeatureNotSupportedException} is caught, this flag is set to false preventing any further
+	 * attempt of canceling a query.</p>
+	 * @since 2.1 */
+	protected boolean supportsCancel = true;
 
 	/* CASE SENSITIVITY SUPPORT */
 
@@ -397,11 +455,196 @@ public class JDBCConnection implements DBConnection {
 		return connection;
 	}
 
+	/**
+	 * <p>Get the only statement associated with this {@link JDBCConnection}.</p>
+	 * 
+	 * <p>
+	 * 	If no {@link Statement} is yet existing, one is created, stored in this {@link JDBCConnection} (for further uses)
+	 * 	and then returned.
+	 * </p>
+	 * 
+	 * @return	The {@link Statement} instance associated with this {@link JDBCConnection}. <i>Never NULL</i>
+	 * 
+	 * @throws SQLException	In case a {@link Statement} can not be created.
+	 * 
+	 * @since 2.1
+	 */
+	protected Statement getStatement() throws SQLException{
+		if (stmt == null || stmt.isClosed())
+			return (stmt = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
+		else
+			return stmt;
+	}
+
+	/**
+	 * Close the only statement associated with this {@link JDBCConnection}.
+	 * 
+	 * @since 2.1
+	 */
+	protected void closeStatement(){
+		close(stmt);
+		stmt = null;
+	}
+
+	/**
+	 * <p>Cancel (and rollback when possible) the currently running query of this {@link JDBCConnection} instance.</p>
+	 * 
+	 * <p><b>Important note:</b>
+	 * 	This function is effective only if the JDBC driver and DBMS both support
+	 * 	this operation.
+	 * </p>
+	 * <p>
+	 * 	If a call of this function fails the flag {@link #supportsCancel} is set to false
+	 * 	so that any subsequent call of this function for this instance of {@link JDBCConnection}
+	 * 	does not try any other cancellation attempt.
+	 * </p>
+	 * 
+	 * <p><i>Note 1: 
+	 * 	A failure of a rollback is not considered as a not supported cancellation feature by the JDBC driver or the DBMS.
+	 * 	So if the cancellation succeeds but a rollback fails, a next call of this function will still try cancelling the given statement.
+	 * </i></p>
+	 * 
+	 * <p><i>Note 2:
+	 * 	In case of cancellation success, the flag {@link #cancelled} is set to <code>true</code>.
+	 * 	Thus, the function executing a query can know that if any SQL exception is thrown, it will be due to the cancellation and
+	 * 	should not be then considered as a real error (=> exception not logged but anyway propagated in order to stop any processing).
+	 * </i></p></p>
+	 * 
+	 * <p><i>Note 3:
+	 * 	This function is synchronized on the {@link #cancelled} flag.
+	 * 	Thus, it may block until another synchronized block on this same flag is finished.
+	 * </i></p>
+	 * 
+	 * @param rollback	The statement to cancel. <i>Note: if closed or NULL, nothing will be done and no exception will be thrown.</i>
+	 * 
+	 * @see DBConnection#cancel(boolean)
+	 * @see #cancel(Statement, boolean)
+	 * 
+	 * @since 2.1
+	 */
+	@Override
+	public final void cancel(final boolean rollback){
+		if (supportsCancel && stmt != null){
+			synchronized(cancelled){
+				cancelled = cancel(stmt, rollback);
+				// Log the success of the cancellation:
+				if (cancelled && logger != null)
+					logger.logDB(LogLevel.INFO, this, "CANCEL", "Query execution successfully stopped!", null);
+			}
+		}
+	}
+
+	/**
+	 * <p>Cancel (and rollback when asked and if possible) the given statement.</p>
+	 * 
+	 * <p><b>Important note:</b>
+	 * 	This function is effective only if the JDBC driver and DBMS both support
+	 * 	this operation.
+	 * </p>
+	 * <p>
+	 * 	If a call of this function fails the flag {@link #supportsCancel} is set to false
+	 * 	so that any subsequent call of this function for this instance of {@link JDBCConnection}
+	 * 	does not try any other cancellation attempt.
+	 * </p>
+	 * 
+	 * <p><i>Note: 
+	 * 	A failure of a rollback is not considered as a not supported cancellation feature by the JDBC driver or the DBMS.
+	 * 	So if the cancellation succeeds but a rollback fails, a next call of this function will still try canceling the given statement.
+	 * </i></p>
+	 * 
+	 * @param stmt		The statement to cancel. <i>Note: if closed or NULL, nothing will be done and no exception will be thrown.</i>
+	 * @param rollback	<code>true</code> to cancel the statement AND rollback the current connection transaction,
+	 *                	<code>false</code> to just cancel the statement.
+	 * 
+	 * @return	<code>true</code> if the cancellation succeeded (or none was running),
+	 *        	<code>false</code> otherwise (and especially if the "cancel" operation is not supported).
+	 * 
+	 * @since 2.1
+	 */
+	protected boolean cancel(final Statement stmt, final boolean rollback){
+		// Not supported "cancel" operation => fail!
+		if (!supportsCancel)
+			return false;
+
+		// No statement => "cancellation" successful!
+		if (stmt == null)
+			return true;
+
+		// If the statement is not already closed, cancel its current query execution:
+		try{
+			if (!stmt.isClosed()){
+				// Cancel the query execution:
+				stmt.cancel();
+				// Rollback all executed operations (only if in a transaction ; that's to say if AutoCommit = false):
+				if (rollback && supportsTransaction){
+					try{
+						if (!connection.getAutoCommit())
+							connection.rollback();
+					}catch(SQLException se){
+						if (logger != null)
+							logger.logDB(LogLevel.ERROR, this, "CANCEL", "Query execution successfully stopped BUT the rollback fails!", se);
+					}
+				}
+			}
+			return true;
+		}catch(SQLFeatureNotSupportedException sfnse){
+			// prevent further cancel attempts:
+			supportsCancel = false;
+			// log a warning:
+			if (logger != null)
+				logger.logDB(LogLevel.WARNING, this, "CANCEL", "This JDBC driver does not support Statement.cancel(). No further cancel attempt will be performed with this JDBCConnection instance.", sfnse);
+			return false;
+
+		}catch(SQLException se){
+			if (logger != null)
+				logger.logDB(LogLevel.ERROR, this, "CANCEL", "Abortion of the current query apparently fails! The query may still run on the database server.", se);
+			return false;
+		}
+	}
+
+	/**
+	 * <p>Tell whether the last query execution has been canceled.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function is synchronized on the {@link #cancelled} flag.
+	 * 	Thus, it may block until another synchronized block on this same flag is finished.
+	 * </i></p>
+	 * 
+	 * @return	<code>true</code> if the last query execution has been cancelled,
+	 *        	<code>false</code> otherwise.
+	 * 
+	 * @since 2.1
+	 */
+	protected final boolean isCancelled(){
+		synchronized(cancelled){
+			return cancelled;
+		}
+	}
+
+	/**
+	 * <p>Reset the {@link #cancelled} flag to <code>false</code>.</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function is synchronized on the {@link #cancelled} flag.
+	 * 	Thus, it may block until another synchronized block on this same flag is finished.
+	 * </i></p>
+	 * 
+	 * @since 2.1
+	 */
+	protected final void resetCancel(){
+		synchronized(cancelled){
+			cancelled = false;
+		}
+	}
+
 	/* ********************* */
 	/* INTERROGATION METHODS */
 	/* ********************* */
 	@Override
-	public TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException{
+	public synchronized TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException{
+		// Starting of new query execution => disable the cancel flag: 
+		resetCancel();
+
 		String sql = null;
 		ResultSet result = null;
 		try{
@@ -415,19 +658,25 @@ public class JDBCConnection implements DBConnection {
 				try{
 					connection.setAutoCommit(false);
 				}catch(SQLException se){
-					supportsFetchSize = false;
-					if (logger != null)
-						logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
+					if (!isCancelled()){
+						supportsFetchSize = false;
+						if (logger != null)
+							logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
+					}
 				}
 			}
-			Statement stmt = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+
+			getStatement();
+
 			if (supportsFetchSize){
 				try{
 					stmt.setFetchSize(fetchSize);
 				}catch(SQLException se){
-					supportsFetchSize = false;
-					if (logger != null)
-						logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
+					if (!isCancelled()){
+						supportsFetchSize = false;
+						if (logger != null)
+							logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
+					}
 				}
 			}
 
@@ -443,16 +692,19 @@ public class JDBCConnection implements DBConnection {
 
 		}catch(SQLException se){
 			close(result);
-			if (logger != null)
+			closeStatement();
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "EXECUTE", "Unexpected error while EXECUTING SQL query!", null);
 			throw new DBException("Unexpected error while executing a SQL query: " + se.getMessage(), se);
 		}catch(TranslationException te){
 			close(result);
+			closeStatement();
 			if (logger != null)
 				logger.logDB(LogLevel.ERROR, this, "TRANSLATE", "Unexpected error while TRANSLATING ADQL into SQL!", null);
 			throw new DBException("Unexpected error while translating ADQL into SQL: " + te.getMessage(), te);
 		}catch(DataReadException dre){
 			close(result);
+			closeStatement();
 			if (logger != null)
 				logger.logDB(LogLevel.ERROR, this, "RESULT", "Unexpected error while reading the query result!", null);
 			throw new DBException("Impossible to read the query result, because: " + dre.getMessage(), dre);
@@ -460,7 +712,19 @@ public class JDBCConnection implements DBConnection {
 	}
 
 	/**
-	 * Create a {@link TableIterator} instance which lets reading the given result table.
+	 * <p>Create a {@link TableIterator} instance which lets reading the given result table.</p>
+	 * 
+	 * <p><b>Important note 1:</b>
+	 * 	This function also set to NULL the statement of this {@link JDBCConnection} instance: {@link #stmt}.
+	 * 	However, the statement is not closed ; it is just given to a {@link ResultSetTableIterator} iterator
+	 * 	which will close it in the same time as the given {@link ResultSet}, when its function
+	 * 	{@link ResultSetTableIterator#close()} is called.
+	 * </p>
+	 * 
+	 * <p><b>Important note 2:</b>
+	 * 	In case an exception occurs within this function, the {@link ResultSet} and the {@link Statement}
+	 * 	are <b>immediately closed</b> before propagating the exception.
+	 * </p>
 	 * 
 	 * @param rs				Result of an SQL query.
 	 * @param resultingColumns	Metadata corresponding to each columns of the result.
@@ -471,7 +735,19 @@ public class JDBCConnection implements DBConnection {
 	 *                          	or if any other error occurs.
 	 */
 	protected TableIterator createTableIterator(final ResultSet rs, final DBColumn[] resultingColumns) throws DataReadException{
-		return new ResultSetTableIterator(rs, translator, dbms, resultingColumns);
+		// Dis-associate the current Statement from this JDBCConnection instance:
+		Statement itStmt = stmt;
+		stmt = null;
+		// Return a TableIterator wrapping the given ResultSet:
+		try{
+			return new ResultSetTableIterator(itStmt, rs, translator, dbms, resultingColumns);
+		}catch(Throwable t){
+			// In case of any kind of exception, the ResultSet and the Statement MUST be closed in order to save resources:
+			close(rs);
+			close(itStmt);
+			// Then, the caught exception can be thrown:
+			throw (t instanceof DataReadException) ? (DataReadException)t : new DataReadException(t);
+		}
 	}
 
 	/* *********************** */
@@ -528,7 +804,10 @@ public class JDBCConnection implements DBConnection {
 	 * @see tap.db.DBConnection#getTAPSchema()
 	 */
 	@Override
-	public TAPMetadata getTAPSchema() throws DBException{
+	public synchronized TAPMetadata getTAPSchema() throws DBException{
+		// Starting of new query execution => disable the cancel flag: 
+		resetCancel();
+
 		// Build a virgin TAP metadata:
 		TAPMetadata metadata = new TAPMetadata();
 
@@ -536,10 +815,9 @@ public class JDBCConnection implements DBConnection {
 		TAPSchema tap_schema = TAPMetadata.getStdSchema(supportsSchema);
 
 		// LOAD ALL METADATA FROM THE STANDARD TAP TABLES:
-		Statement stmt = null;
 		try{
 			// create a common statement for all loading functions:
-			stmt = connection.createStatement();
+			getStatement();
 
 			// load all schemas from TAP_SCHEMA.schemas:
 			if (logger != null)
@@ -562,11 +840,11 @@ public class JDBCConnection implements DBConnection {
 			loadKeys(tap_schema.getTable(STDTable.KEYS.label), tap_schema.getTable(STDTable.KEY_COLUMNS.label), lstTables, stmt);
 
 		}catch(SQLException se){
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create a Statement!", se);
 			throw new DBException("Can not create a Statement!", se);
 		}finally{
-			close(stmt);
+			closeStatement();
 		}
 
 		return metadata;
@@ -617,7 +895,7 @@ public class JDBCConnection implements DBConnection {
 				metadata.addSchema(newSchema);
 			}
 		}catch(SQLException se){
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load schemas from TAP_SCHEMA.schemas!", se);
 			throw new DBException("Impossible to load schemas from TAP_SCHEMA.schemas!", se);
 		}finally{
@@ -711,7 +989,7 @@ public class JDBCConnection implements DBConnection {
 
 			return lstTables;
 		}catch(SQLException se){
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load tables from TAP_SCHEMA.tables!", se);
 			throw new DBException("Impossible to load tables from TAP_SCHEMA.tables!", se);
 		}finally{
@@ -799,7 +1077,7 @@ public class JDBCConnection implements DBConnection {
 				table.addColumn(newColumn);
 			}
 		}catch(SQLException se){
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
 			throw new DBException("Impossible to load columns from TAP_SCHEMA.columns!", se);
 		}finally{
@@ -873,7 +1151,7 @@ public class JDBCConnection implements DBConnection {
 					while(rsKeyCols.next())
 						columns.put(rsKeyCols.getString(1), rsKeyCols.getString(2));
 				}catch(SQLException se){
-					if (logger != null)
+					if (!isCancelled() && logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load key columns from TAP_SCHEMA.key_columns for the foreign key: \"" + key_id + "\"!", se);
 					throw new DBException("Impossible to load key columns from TAP_SCHEMA.key_columns for the foreign key: \"" + key_id + "\"!", se);
 				}finally{
@@ -884,13 +1162,13 @@ public class JDBCConnection implements DBConnection {
 				try{
 					sourceTable.addForeignKey(key_id, targetTable, columns, nullifyIfNeeded(description), nullifyIfNeeded(utype));
 				}catch(Exception ex){
-					if (logger != null)
+					if ((ex instanceof SQLException && !isCancelled()) && logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create the foreign key \"" + key_id + "\" because: " + ex.getMessage(), ex);
 					throw new DBException("Impossible to create the foreign key \"" + key_id + "\" because: " + ex.getMessage(), ex);
 				}
 			}
 		}catch(SQLException se){
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
 			throw new DBException("Impossible to load columns from TAP_SCHEMA.columns!", se);
 		}finally{
@@ -924,8 +1202,9 @@ public class JDBCConnection implements DBConnection {
 	 * @see tap.db.DBConnection#setTAPSchema(tap.metadata.TAPMetadata)
 	 */
 	@Override
-	public void setTAPSchema(final TAPMetadata metadata) throws DBException{
-		Statement stmt = null;
+	public synchronized void setTAPSchema(final TAPMetadata metadata) throws DBException{
+		// Starting of new query execution => disable the cancel flag: 
+		resetCancel();
 
 		try{
 			// A. GET THE DEFINITION OF ALL STANDARD TAP TABLES:
@@ -934,7 +1213,7 @@ public class JDBCConnection implements DBConnection {
 			startTransaction();
 
 			// B. RE-CREATE THE STANDARD TAP_SCHEMA TABLES:
-			stmt = connection.createStatement();
+			getStatement();
 
 			// 1. Ensure TAP_SCHEMA exists and drop all its standard TAP tables:
 			if (logger != null)
@@ -960,12 +1239,12 @@ public class JDBCConnection implements DBConnection {
 
 			commit();
 		}catch(SQLException se){
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "CREATE_TAP_SCHEMA", "Impossible to SET TAP_SCHEMA in DB!", se);
 			rollback();
 			throw new DBException("Impossible to SET TAP_SCHEMA in DB!", se);
 		}finally{
-			close(stmt);
+			closeStatement();
 			endTransaction();
 		}
 	}
@@ -1639,21 +1918,23 @@ public class JDBCConnection implements DBConnection {
 	 * @see #checkUploadedTableDef(TAPTable)
 	 */
 	@Override
-	public boolean addUploadedTable(TAPTable tableDef, TableIterator data) throws DBException, DataReadException{
+	public synchronized boolean addUploadedTable(TAPTable tableDef, TableIterator data) throws DBException, DataReadException{
 		// If no table to upload, consider it has been dropped and return TRUE:
 		if (tableDef == null)
 			return true;
 
+		// Starting of new query execution => disable the cancel flag: 
+		resetCancel();
+
 		// Check the table is well defined (and particularly the schema is well set with an ADQL name = TAP_UPLOAD):
 		checkUploadedTableDef(tableDef);
 
-		Statement stmt = null;
 		try{
 
 			// Start a transaction:
 			startTransaction();
 			// ...create a statement:
-			stmt = connection.createStatement();
+			getStatement();
 
 			DatabaseMetaData dbMeta = connection.getMetaData();
 
@@ -1704,7 +1985,7 @@ public class JDBCConnection implements DBConnection {
 
 		}catch(SQLException se){
 			rollback();
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.WARNING, this, "ADD_UPLOAD_TABLE", "Impossible to create the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 			throw new DBException("Impossible to create the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 		}catch(DBException de){
@@ -1714,7 +1995,7 @@ public class JDBCConnection implements DBConnection {
 			rollback();
 			throw dre;
 		}finally{
-			close(stmt);
+			closeStatement();
 			endTransaction();
 		}
 	}
@@ -1843,15 +2124,17 @@ public class JDBCConnection implements DBConnection {
 	 * @see #checkUploadedTableDef(TAPTable)
 	 */
 	@Override
-	public boolean dropUploadedTable(final TAPTable tableDef) throws DBException{
+	public synchronized boolean dropUploadedTable(final TAPTable tableDef) throws DBException{
 		// If no table to upload, consider it has been dropped and return TRUE:
 		if (tableDef == null)
 			return true;
 
+		// Starting of new query execution => disable the cancel flag: 
+		resetCancel();
+
 		// Check the table is well defined (and particularly the schema is well set with an ADQL name = TAP_UPLOAD):
 		checkUploadedTableDef(tableDef);
 
-		Statement stmt = null;
 		try{
 
 			// Check the existence of the table to drop:
@@ -1859,8 +2142,7 @@ public class JDBCConnection implements DBConnection {
 				return true;
 
 			// Execute the update:
-			stmt = connection.createStatement();
-			int cnt = stmt.executeUpdate("DROP TABLE " + translator.getTableName(tableDef, supportsSchema) + ";");
+			int cnt = getStatement().executeUpdate("DROP TABLE " + translator.getTableName(tableDef, supportsSchema) + ";");
 
 			// Log the end:
 			if (logger != null){
@@ -1874,11 +2156,11 @@ public class JDBCConnection implements DBConnection {
 			return (cnt >= 0);
 
 		}catch(SQLException se){
-			if (logger != null)
+			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.WARNING, this, "DROP_UPLOAD_TABLE", "Impossible to drop the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 			throw new DBException("Impossible to drop the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 		}finally{
-			close(stmt);
+			closeStatement();
 		}
 	}
 
@@ -2208,17 +2490,32 @@ public class JDBCConnection implements DBConnection {
 	 * <p>If the given {@link Statement} is NULL, nothing (even exception/error) happens.</p>
 	 * 
 	 * <p>
+	 * 	The given statement is explicitly canceled by this function before being closed.
+	 * 	Thus the corresponding DBMS process is ensured to be stopped. Of course, this
+	 * 	cancellation is effective only if this operation is supported by the JDBC driver
+	 * 	and the DBMS.
+	 * </p>
+	 * 
+	 * <p><b>Important note:</b>
+	 * 	In case of cancellation, <b>NO</b> rollback is performed.
+	 * </p>
+	 * 
+	 * <p>
 	 * 	If any {@link SQLException} occurs during this operation, it is caught and just logged
 	 * 	(see {@link TAPLog#logDB(uws.service.log.UWSLog.LogLevel, DBConnection, String, String, Throwable)}).
 	 * 	No error is thrown and nothing else is done.
 	 * </p>
 	 * 
 	 * @param stmt	{@link Statement} to close.
+	 * 
+	 * @see #cancel(Statement, boolean)
 	 */
 	protected final void close(final Statement stmt){
 		try{
-			if (stmt != null)
+			if (stmt != null){
+				cancel(stmt, false);
 				stmt.close();
+			}
 		}catch(SQLException se){
 			if (logger != null)
 				logger.logDB(LogLevel.WARNING, this, "CLOSE", "Can not close a Statement!", null);
@@ -2624,7 +2921,8 @@ public class JDBCConnection implements DBConnection {
 			try{
 				stmt.addBatch();
 			}catch(SQLException se){
-				supportsBatchUpdates = false;
+				if (!isCancelled())
+					supportsBatchUpdates = false;
 				/*
 				 * If the error happens for the first row, it is still possible to insert all rows
 				 * with the non-batch function - executeUpdate().
@@ -2633,10 +2931,10 @@ public class JDBCConnection implements DBConnection {
 				 * and must stop the whole TAP_SCHEMA initialization.
 				 */
 				if (indRow == 1){
-					if (logger != null)
+					if (!isCancelled() && logger != null)
 						logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "BATCH query impossible => TRYING AGAIN IN A NORMAL EXECUTION (executeUpdate())!", se);
 				}else{
-					if (logger != null)
+					if (!isCancelled() && logger != null)
 						logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH query impossible!", se);
 					throw new DBException("BATCH query impossible!", se);
 				}
@@ -2689,9 +2987,11 @@ public class JDBCConnection implements DBConnection {
 			try{
 				rows = stmt.executeBatch();
 			}catch(SQLException se){
-				supportsBatchUpdates = false;
-				if (logger != null)
-					logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH execution impossible!", se);
+				if (!isCancelled()){
+					supportsBatchUpdates = false;
+					if (logger != null)
+						logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH execution impossible!", se);
+				}
 				throw new DBException("BATCH execution impossible!", se);
 			}
 
@@ -2699,7 +2999,7 @@ public class JDBCConnection implements DBConnection {
 			try{
 				stmt.clearBatch();
 			}catch(SQLException se){
-				if (logger != null)
+				if (!isCancelled() && logger != null)
 					logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "CLEAR BATCH impossible!", se);
 			}
 

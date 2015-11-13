@@ -42,7 +42,7 @@ import adql.query.ADQLQuery;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (03/2015)
+ * @version 2.1 (11/2015)
  */
 public interface DBConnection {
 
@@ -267,5 +267,32 @@ public interface DBConnection {
 	 * @since 2.0
 	 */
 	public void setFetchSize(final int size);
+
+	/**
+	 * <p>Stop the execution of the current query.</p>
+	 * 
+	 * <p>
+	 * 	If asked. a rollback of the current transaction can also be performed
+	 * 	after the cancellation (if successful) of the query.
+	 * </p>
+	 * 
+	 * <p>
+	 * 	This function should <b>never</b> return any kind of exception. This is particularly important
+	 * 	in the following cases:
+	 * </p>
+	 * <ul>
+	 * 	<li>this function is not implemented</li>
+	 * 	<li>the database driver or another API used to interact with a "database" does not support the cancel operation</li>
+	 * 	<li>no query is currently running</li>
+	 * 	<li>a rollback is not possible or failed</li>
+	 * </ul>
+	 * <p>However, if an exception occurs it may be directly logged at least as a WARNING.</p>
+	 * 
+	 * @param rollback	<code>true</code> to cancel the statement AND rollback the current connection transaction,
+	 *                	<code>false</code> to just cancel the statement.
+	 * 
+	 * @since 2.1
+	 */
+	public void cancel(final boolean rollback);
 
 }

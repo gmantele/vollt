@@ -36,7 +36,7 @@ import uk.ac.starlink.table.StoragePolicy;
  * Format any given query (table) result into FITS.
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (11/2015)
  * @since 2.0
  */
 public class FITSFormat implements OutputFormat {
@@ -84,14 +84,20 @@ public class FITSFormat implements OutputFormat {
 		ColumnInfo[] colInfos = VOTableFormat.toColumnInfos(result, execReport, thread);
 
 		// Turns the result set into a table:
-		LimitedStarTable table = new LimitedStarTable(result, colInfos, execReport.parameters.getMaxRec());
+		LimitedStarTable table = new LimitedStarTable(result, colInfos, execReport.parameters.getMaxRec(), thread);
 
 		// Copy the table on disk (or in memory if the table is short):
 		StarTable copyTable = StoragePolicy.PREFER_DISK.copyTable(table);
 
+		if (thread.isInterrupted())
+			throw new InterruptedException();
+
 		/* Format the table in FITS (2 passes are needed for that, hence the copy on disk),
 		 * and write it in the given output stream: */
 		new FitsTableWriter().writeStarTable(copyTable, output);
+
+		if (thread.isInterrupted())
+			throw new InterruptedException();
 
 		execReport.nbRows = table.getNbReadRows();
 

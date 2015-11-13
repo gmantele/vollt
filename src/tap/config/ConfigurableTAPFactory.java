@@ -74,7 +74,7 @@ import adql.translator.PostgreSQLTranslator;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (11/2015)
  * @since 2.0
  */
 public final class ConfigurableTAPFactory extends AbstractTAPFactory {
@@ -281,6 +281,9 @@ public final class ConfigurableTAPFactory extends AbstractTAPFactory {
 	@Override
 	public void freeConnection(DBConnection conn){
 		try{
+			// Cancel any possible query that could be running:
+			conn.cancel(false);
+			// Close the connection (if a connection pool is used, the connection is not really closed but is freed and kept in the pool for further usage):
 			((JDBCConnection)conn).getInnerConnection().close();
 		}catch(SQLException se){
 			service.getLogger().error("Can not close properly the connection \"" + conn.getID() + "\"!", se);

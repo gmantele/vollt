@@ -83,7 +83,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2015)
+ * @version 2.1 (11/2015)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -330,7 +330,7 @@ public class VOTableFormat implements OutputFormat {
 		ColumnInfo[] colInfos = toColumnInfos(queryResult, execReport, thread);
 
 		/* Turns the result set into a table. */
-		LimitedStarTable table = new LimitedStarTable(queryResult, colInfos, execReport.parameters.getMaxRec());
+		LimitedStarTable table = new LimitedStarTable(queryResult, colInfos, execReport.parameters.getMaxRec(), thread);
 
 		/* Prepares the object that will do the serialization work. */
 		VOSerializer voser = VOSerializer.makeSerializer(votFormat, votVersion, table);
@@ -346,6 +346,9 @@ public class VOTableFormat implements OutputFormat {
 		voser.writeInlineTableElement(out);
 		execReport.nbRows = table.getNbReadRows();
 		out.flush();
+
+		if (thread.isInterrupted())
+			throw new InterruptedException();
 
 		/* Check for overflow and write INFO if required. */
 		if (table.lastSequenceOverflowed()){
@@ -588,7 +591,7 @@ public class VOTableFormat implements OutputFormat {
 	 * </p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (10/2014)
+	 * @version 2.1 (11/2015)
 	 * @since 2.0
 	 */
 	public static class LimitedStarTable extends AbstractStarTable {
@@ -601,6 +604,10 @@ public class VOTableFormat implements OutputFormat {
 
 		/** Iterator over the data to read using this special {@link StarTable} */
 		private final TableIterator tableIt;
+
+		/** Thread covering this execution. If it is interrupted, the writing must stop as soon as possible.
+		 * @since 2.1 */
+		private final Thread threadToWatch;
 
 		/** Limit on the number of rows to read. Over this limit, an "overflow" event occurs and {@link #overflow} is set to TRUE. */
 		private final long maxrec;
@@ -620,9 +627,11 @@ public class VOTableFormat implements OutputFormat {
 		 * @param tableIt	Data on which to iterate using this special {@link StarTable}.
 		 * @param colInfos	Information about all columns.
 		 * @param maxrec	Limit on the number of rows to read. <i>(if negative, there will be no limit)</i>
+		 * @param thread	Parent thread. When an interruption is detected the writing must stop as soon as possible.
 		 */
-		LimitedStarTable(final TableIterator tableIt, final ColumnInfo[] colInfos, final long maxrec){
+		LimitedStarTable(final TableIterator tableIt, final ColumnInfo[] colInfos, final long maxrec, final Thread thread){
 			this.tableIt = tableIt;
+			this.threadToWatch = thread;
 			nbCol = colInfos.length;
 			columnInfos = colInfos;
 			this.maxrec = maxrec;
@@ -675,7 +684,7 @@ public class VOTableFormat implements OutputFormat {
 				public boolean next() throws IOException{
 					irow++;
 					try{
-						if (maxrec < 0 || irow < maxrec){
+						if (!threadToWatch.isInterrupted() && (maxrec < 0 || irow < maxrec)){
 							boolean hasNext = tableIt.nextRow();
 							if (hasNext){
 								for(int i = 0; i < nbCol && tableIt.hasNextCol(); i++)
