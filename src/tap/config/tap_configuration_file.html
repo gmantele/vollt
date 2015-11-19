@@ -671,6 +671,34 @@
 			
 			<tr><td colspan="5">Additional TAP Resources</td></tr>
 			<tr class="optional">
+				<td class="done">examples</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>This property lets add an <code>/examples</code> endpoint by specifying an XHTML-RDFa
+						document listing TAP query examples using the syntax specified by
+						<a href="www.ivoa.net/documents/Notes/TAPNotes/20131213/NOTE-TAPNotes-1.0-20131213.html#tf-examples">TAPNotes 1.0</a>
+						or <a href="www.ivoa.net/documents/DALI/20131129/REC-DALI-1.0-20131129.html">DALI 1.0</a>.
+					</p>
+					<p>3 different kinds of value are accepted:</p>
+					<ul>
+						<li><u>nothing (default)</u>: no <code>/examples</code> endpoint.</li>
+						<li><u>name or relative path of a file</u>: this method MUST be chosen if the endpoint content is a JSP file. This file MUST be inside the directory WebContent of your web application.</li>
+						<li><u>a URI starting with <code>file://</code></u>: in this method the local file pointed by the URI will be merely returned when the endpoint will be requested.</li>
+						<li><u>a URL</u>: here, a redirection toward this URL will be made at each request on the endpoint</li>
+					</ul>
+					<p><em>Note:
+						If you want a custom <code>/examples</code> endpoint (i.e. you do not)
+						want to forward/redirect to a file/URL), you can create a class which implements
+						TAPResource AND VOSIResource. The function <code>getName()</code> must return
+						<code>examples</code>. Then, just append the classpath to the property <code>additional_resources</code>
+						of the TAP configuration file.
+					</em></p>
+					<p><em>By default, the TAP service does not have any <code>/examples</code> endpoint.</em></p>
+				</td>
+				<td><ul><li>my_examples.jsp</li><li>jsp/my_examples.jsp</li><li>file:///home/foo/my_examples.html</li><li>http://...</li></ul></td>
+			</tr>
+			<tr class="optional">
 				<td class="done">additional_resources</td>
 				<td></td>
 				<td>text</td>

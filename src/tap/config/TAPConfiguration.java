@@ -36,7 +36,7 @@ import tap.backup.DefaultTAPBackupManager;
  * and it must be used only thanks to its static classes and attributes.</i></p> 
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (06/2015)
+ * @version 2.1 (11/2015)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -187,6 +187,15 @@ public final class TAPConfiguration {
 	/** Name/Key of the property specifying the MIME type of the set home page.
 	 * By default, "text/html" is set. */
 	public final static String KEY_HOME_PAGE_MIME_TYPE = "home_page_mime_type";
+	
+	/* EXAMPLES KEY */
+	/** <p>Name/Key of the property specifying the content of the <code>/examples</code> endpoint.
+	 * It can be a file or a URL. If null, the TAP service will not have any
+	 * <code>/examples</code> endpoint (which is optional in the TAP 1.1 standard.</p>
+	 * <p><i>Note: The specified content must be an XHTML+RDFa document whose the expected syntax is
+	 * defined either by TAPNotes 1.0 or DALI 1.0.</i></p>
+	 * @since 2.1 */
+	public final static String KEY_EXAMPLES = "examples";
 
 	/* PROVIDER KEYS */
 	/** Name/Key of the property specifying the name of the organization/person providing the TAP service. */

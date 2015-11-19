@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.1//EN"
+    "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-2.dtd">
+<html version="XHTML+RDFa 1.1"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en" lang="en">
+	<head>
+		<title>TAP examples - TAPNotes</title>
+		<meta name="content-language"
+		      content="en" />
+		<meta http-equiv="Content-Type"
+		      content="application/xhtml+xml; charset=utf-8" />
+	</head>
+	<body>
+		<h1>TAP Examples - TAPNotes</h1>
+		
+		<p>
+			A <code>/examples</code> endpoint is an RDFa document. Basically, it
+			is an XHTML document whose some nodes have specific attributes.
+			These attributes aim to help client automatic processing. Thus,
+			clients like <a href="www.star.bris.ac.uk/~mbt/topcat/">TOPCAT</a>
+			are able to retrieve the list of examples that a TAP service
+			provides (see <a href="http://www.star.bris.ac.uk/~mbt/topcat/sun253/TapTableLoadDialog_query.html">
+			TOPCAT documentation</a> for a more specific illustration).
+		</p>
+		
+		<h2>TAPNotes syntax</h2>
+		
+		<img src="Examples_TAPNotes.png"
+		     alt="UML diagram of the structure described by TAPNotes1.0." />
+		
+		<p><em>(see <a href="http://www.ivoa.net/documents/Notes/TAPNotes/20131213/NOTE-TAPNotes-1.0-20131213.html#tf-examples">
+		TAPNotes 1.0</a> for more details)</em></p>
+		
+		<h2>Example</h2>
+		
+		<p>
+			Here is a simple example of a such examples list. This list is
+			actually included hidden in this XHTML page ; so, if a client like
+			<a href="www.star.bris.ac.uk/~mbt/topcat/">TOPCAT</a> can read this
+			document and extract this example.
+		</p>
+		
+		<pre>&lt;div vocab="ivo://ivoa.net/std/DALI-examples"&gt;
+	&lt;div typeof="example" id="Example1" resource="#Example1"&gt;
+		&lt;h2 property="name"&gt;List all tables&lt;/h2&gt;
+		&lt;span property="table"&gt;TAP_SCHEMA.tables&lt;/span&gt;
+		&lt;pre property="query"&gt;SELECT *
+FROM TAP_SCHEMA.tables
+WHERE schema_name &lt;&gt; 'TAP_SCHEMA'&lt;/pre&gt;
+	&lt;/div&gt;
+&lt;/div&gt;</pre>
+		
+		<p>
+			Note that you can set the <code>vocab</code> attribute to any XHTML
+			node that can have children, including <code>body</code>.
+		</p>
+		
+		<p>
+			You should also note that since the ADQL query is written in an
+			XHTML document, any <code>&lt;</code> and <code>&gt;</code> should
+			be encoded as the XML entities: <code>&amp;lt;</code> and
+			<code>&amp;gt;</code>.
+		</p>
+		
+		<!-- List of examples (note: this list may be the "body" node just by
+		     moving the "vocab" attribute to the body node ; warning: only one
+		     node with a "vocab" attribute must be found in the whole XHTML
+		     document). -->
+		<div vocab="ivo://ivoa.net/std/DALI-examples" style="display: none">
+			<div typeof="example" id="Example1" resource="#Example1">
+				<!-- MANDATORY - Name of the example -->
+				<h2 property="name">List all tables</h2>
+				<!-- OPTIONAL - Table queried in the example ADQL query -->
+				<span property="table">TAP_SCHEMA.tables</span>
+				<!-- MANDATORY - ADQL Query -->
+				<pre property="query">SELECT *
+FROM TAP_SCHEMA.tables
+WHERE schema_name &lt;&gt; 'TAP_SCHEMA'</pre>
+			</div>
+		</div>
+	</body>
+</html>
+

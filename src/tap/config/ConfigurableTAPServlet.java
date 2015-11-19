@@ -21,6 +21,7 @@ package tap.config;
 
 import static tap.config.TAPConfiguration.DEFAULT_TAP_CONF_FILE;
 import static tap.config.TAPConfiguration.KEY_ADD_TAP_RESOURCES;
+import static tap.config.TAPConfiguration.KEY_EXAMPLES;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE_MIME_TYPE;
 import static tap.config.TAPConfiguration.TAP_CONF_PARAMETER;
@@ -42,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
 import tap.TAPException;
+import tap.resource.Examples;
 import tap.resource.HomePage;
 import tap.resource.TAP;
 import tap.resource.TAPResource;
@@ -56,7 +58,7 @@ import tap.resource.TAPResource;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (06/2015)
+ * @version 2.1 (11/2015)
  * @since 2.0
  */
 public class ConfigurableTAPServlet extends HttpServlet {
@@ -148,6 +150,11 @@ public class ConfigurableTAPServlet extends HttpServlet {
 					tap.setHomePageMimeType(propValue);
 			}
 		}
+		
+		/* 4Ter. SET THE EXAMPLES ENDPOINT (if any) */
+		propValue = getProperty(tapConf, KEY_EXAMPLES);
+		if (propValue != null)
+			tap.addResource(new Examples(tap, propValue));
 
 		/* 5. SET ADDITIONAL TAP RESOURCES */
 		propValue = getProperty(tapConf, KEY_ADD_TAP_RESOURCES);
