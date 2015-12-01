@@ -50,7 +50,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (07/2015)
+ * @version 1.4 (12/2015)
  * 
  * @see PgSphereTranslator
  */
@@ -120,15 +120,34 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	public String translate(MathFunction fct) throws TranslationException{
 		switch(fct.getType()){
 			case LOG:
-				return "ln(" + ((fct.getNbParameters() >= 1) ? translate(fct.getParameter(0)) : "") + ")";
+				return "ln(" + ((fct.getNbParameters() >= 1) ? "CAST(" + translate(fct.getParameter(0)) + " AS numeric)" : "") + ")";
 			case LOG10:
-				return "log(10, " + ((fct.getNbParameters() >= 1) ? translate(fct.getParameter(0)) : "") + ")";
+				return "log(10, " + ((fct.getNbParameters() >= 1) ? "CAST(" + translate(fct.getParameter(0)) + " AS numeric)" : "") + ")";
 			case RAND:
 				return "random()";
 			case TRUNCATE:
-				return "trunc(" + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "") + ")";
-			default:
+				if (fct.getNbParameters() >= 2)
+					return "trunc(CAST(" + translate(fct.getParameter(0)) + " AS numeric), " + translate(fct.getParameter(1)) + ")";
+				else if (fct.getNbParameters() >= 1)
+					return "trunc(CAST(" + translate(fct.getParameter(0)) + " AS numeric)" + ")";
+				else
+					return "trunc()";
+			case ROUND:
+				if (fct.getNbParameters() >= 2)
+					return "round(CAST(" + translate(fct.getParameter(0)) + " AS numeric), " + translate(fct.getParameter(1)) + ")";
+				else if (fct.getNbParameters() >= 1)
+					return "round(CAST(" + translate(fct.getParameter(0)) + " AS numeric))";
+				else
+					return "round()";
+			case PI:
 				return getDefaultADQLFunction(fct);
+			default:
+				String sql = fct.getName() + "(";
+
+				for(int i = 0; i < fct.getNbParameters(); i++)
+					sql += ((i == 0) ? "" : ", ") + "CAST(" + translate(fct.getParameter(i)) + " AS numeric)";
+
+				return sql + ")";
 		}
 	}
 
