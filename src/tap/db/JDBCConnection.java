@@ -170,7 +170,7 @@ import adql.translator.TranslationException;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (12/2015)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -654,7 +654,7 @@ public class JDBCConnection implements DBConnection {
 			sql = translator.translate(adqlQuery);
 
 			// 2. Create the statement and if needed, configure it for the given fetch size:
-			if (supportsFetchSize && fetchSize > 0){
+			if (supportsTransaction && supportsFetchSize && fetchSize > 0){
 				try{
 					connection.setAutoCommit(false);
 				}catch(SQLException se){
@@ -708,6 +708,16 @@ public class JDBCConnection implements DBConnection {
 			if (logger != null)
 				logger.logDB(LogLevel.ERROR, this, "RESULT", "Unexpected error while reading the query result!", null);
 			throw new DBException("Impossible to read the query result, because: " + dre.getMessage(), dre);
+		}finally{
+			/* End the "transaction" eventually started when setting the fetch size (see 2. above).
+			 * Note: this is particularly important when the query fails and the connection
+			 *       is reused just after ; in this case, the failed query is not rollbacked/committed
+			 *       and the following query fails before even starting because
+			 *       the transaction is not ended. Some users got problem without this. */
+			if (supportsFetchSize && fetchSize > 0){
+				rollback();
+				endTransaction();
+			}
 		}
 	}
 
