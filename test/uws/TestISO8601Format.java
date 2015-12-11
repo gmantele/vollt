@@ -15,6 +15,7 @@ public class TestISO8601Format {
 
 	private final long date = 1411737870325L;		// Fri Sep 26 15:24:30 CEST 2014 = 2014-09-26T15:24:30.325+02:00 = 1411737870325 ms
 	private final long dateAlone = 1411689600000L;
+	private final long dateWithNoTime = 1449792000000L; // Fri Dec 11 2015 = 2015-12-11 = 1449792000000 ms 
 
 	private final long oldDate = -3506029200000L;	// Thu Nov 25 00:00:00 CET 1858 = 1858-11-25T00:00:00+01:00 = -3506029200000 ms
 
@@ -115,6 +116,14 @@ public class TestISO8601Format {
 			assertEquals(oldDate, ISO8601Format.parse("1858-11-25T00:00:00+01:00"));
 			assertEquals(oldDate, ISO8601Format.parse("1858-11-24T23:00:00Z"));
 
+			// Test with a date expressed in weeks:
+			assertEquals(dateWithNoTime, ISO8601Format.parse("2015-W50-5"));
+			assertEquals(dateWithNoTime, ISO8601Format.parse("2015W505"));
+
+			// Test with a date expressed in days of year:
+			assertEquals(dateWithNoTime, ISO8601Format.parse("2015-345"));
+			assertEquals(dateWithNoTime, ISO8601Format.parse("2015345"));
+
 			// Test with a perfectly valid date in ISO8601: 
 			assertEquals(dateAlone, ISO8601Format.parse("2014-09-26"));
 			assertEquals(date, ISO8601Format.parse("2014-09-26T15:24:30.325+02:00"));
@@ -155,9 +164,58 @@ public class TestISO8601Format {
 			assertEquals(date, ISO8601Format.parse("2014-09-26 13:24:30.325"));
 			assertEquals(date - 325, ISO8601Format.parse("2014-09-26 13:24:30"));
 
-		}catch(ParseException ex){
+			// Test with only the year: YYYY
+			assertEquals(0, ISO8601Format.parse("1970"));
+
+			// Test with only the year and month: YYYY-MM
+			assertEquals(0, ISO8601Format.parse("1970-01"));
+
+			// Test with a complete date: YYYY-MM-DD
+			assertEquals(0, ISO8601Format.parse("1970-01-01"));
+
+			// Test with a complete date: YYYY-'W'ww-D
+			assertEquals(0, ISO8601Format.parse("1970-W01-4"));
+
+			// Test with a complete date plus hours: YYYY-MM-DDThh:mmTZD
+			// ...with no time zone information:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00"));
+			// ...with Z:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00Z"));
+			// ...with time zone:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00+00:00"));
+
+			// Test with a complete date plus hours and minutes: YYYY-MM-DDThh:mmTZD
+			// ...with no time zone information:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00"));
+			// ...with Z:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00Z"));
+			// ...with time zone:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00+00"));
+
+			// Test with a complete date plus hours, minutes and seconds: YYYY-MM-DDThh:mm:ssTZD
+			// ...with no time zone information:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00:00"));
+			// ...with Z:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00:00Z"));
+			// ...with time zone:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00:00-0000"));
+
+			// Test with a complete date plus hours, minutes, seconds and a decimal fraction of a second: YYYY-MM-DDThh:mm:ss.sTZD
+			// ...with no time zone information:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00:00.0"));
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00:00.0000000"));
+			// ...with Z:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00:00.0Z"));
+			// ...with time zone:
+			assertEquals(0, ISO8601Format.parse("1970-01-01 00:00:00.0-00"));
+			assertEquals(0, ISO8601Format.parse("1970-01-01 03:00:00.0+03"));
+			assertEquals(0, ISO8601Format.parse("1970-01-01 03:00:00.0+03:00"));
+
+		}catch(Exception ex){
 			ex.printStackTrace(System.err);
+			fail("No error should have occured here! All date expressions are correct.");
 		}
+
 	}
 
 }

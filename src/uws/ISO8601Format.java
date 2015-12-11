@@ -1,5 +1,24 @@
 package uws;
 
+/*
+ * This file is part of UWSLibrary.
+ * 
+ * UWSLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * UWSLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
+ */
+
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.Calendar;
@@ -32,16 +51,51 @@ import java.util.regex.Pattern;
  * 	{@link TimeZone#getAvailableIDs()}.
  * </p>
  * 
- *  <h3>Date parsing</h3>
+ * <h3>Date parsing</h3>
  *  
- *  <p>
- *    This class is able to parse dates - with the function {@link #parse(String)} - formatted strictly in ISO8601
- *    but is also more permissive. Particularly, separators (like '-' and ':') are optional. The date and time separator
- *    ('T') can be replaced by a space.
- *  </p>
+ * <p>
+ * 	This class is able to parse dates - with the function {@link #parse(String)} - formatted in ISO-8601.
+ * 	This parser allows the following general syntaxes:
+ * </p>
+ * <ul>
+ * 	<li>YYYY (e.g. 2015)</li>
+ * 	<li>YYYY-MM (e.g. 2015-12)</li>
+ * 	<li>YYYY-MM-DD (e.g. 2015-12-11)</li>
+ * 	<li>YYYY-MM-DD'T'hh:mmTZD (e.g. 2015-12-11T20:28+01:00 or 2015-12-11T19:28Z)</li>
+ * 	<li>YYYY-MM-DD'T'hh:mm:ssTZD (e.g. 2015-12-11T20:28:30+01:00 or 2015-12-11T19:28:30Z)</li>
+ * 	<li>YYYY-MM-DD'T'hh:mm:ss.sTZD (e.g. 2015-12-11T20:28:30.45+01:00 or 2015-12-11T19:28:30.45Z)</li>
+ * </ul>
+ * <p>Where:</p>
+ * <ul>
+ * 	<li>YYYY = four-digit year</li>
+ * 	<li>MM   = two-digit month (01=January, etc.)</li>
+ * 	<li>DD   = two-digit day of month (01 through 31)</li>
+ * 	<li>hh   = two digits of hour (00 through 23) (am/pm NOT allowed)</li>
+ * 	<li>mm   = two digits of minute (00 through 59)</li>
+ * 	<li>ss   = two digits of second (00 through 59)</li>
+ * 	<li>s    = one or more digits representing a decimal fraction of a second (i.e. milliseconds)</li>
+ * 	<li>TZD  = time zone designator (Z or +hh:mm or -hh:mm)</li>
+ * </ul>
+ * 
+ * <p>
+ * 	It is also possible to express the date in weeks with the following syntax: YYYY-'W'ww-D
+ * 	(e.g. 2015-W50, 2015-W50-5, 2015-W50-5T20:28:30.45+01:00). <code>ww</code> must a 2 digits number between
+ * 	1 and the number of weeks available in the chosen year. <code>D</code> corresponds to the day
+ * 	of the week: Monday = 1, Tuesday = 2, ..., Sunday = 7.
+ * </p>
+ * 
+ * <p>
+ * 	A last representation of the date is possible: in days of year: YYYY-DDD
+ * 	(e.g. 2015-345, 2015-345T20:28:30.45+01:00). <code>DDD</code> must be a value between 1 and the number of
+ * 	days there is in the chosen year.
+ * </p>
+ * 
+ * <p>
+ * 	Separators (like '-', ':' and '.') are optional. The date and time separator ('T') may be replaced by a space.
+ * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (10/2014)
+ * @version 4.2 (12/2015)
  * @since 4.1
  */
 public class ISO8601Format {
@@ -53,6 +107,9 @@ public class ISO8601Format {
 	/** Indicate the time zone in which the date and time should be formatted (whatever is the time zone of the given date). */
 	public static String targetTimeZone = "UTC"; // for the local time zone: TimeZone.getDefault().getID();
 
+	/** Object to use to format numbers with one digit (ie. 1, 2, 0).
+	 * @since 4.2 */
+	protected final static DecimalFormat oneDigitFmt = new DecimalFormat("0");
 	/** Object to use to format numbers with two digits (ie. 12, 02, 00). */
 	protected final static DecimalFormat twoDigitsFmt = new DecimalFormat("00");
 	/** Object to use to format numbers with three digits (ie. 001, 000, 123). */
@@ -230,23 +287,109 @@ public class ISO8601Format {
 		return new Date(parse(strDate));
 	}
 
+	public final static void main(final String[] args) throws Throwable{
+		System.out.println("Date in millis: " + ISO8601Format.parse("2015-12-11"));
+	}
+
+	/**
+	 * <p>Regular expression of the Time part of the ISO-8601 representation.</p>
+	 * 
+	 * <p>Indexes of the identified groups in this regular expression.</p><pre>
+	 * ( 0: everything)
+	 * ( 1: T or space)
+	 *   2: hours (hh)
+	 * ( 3: minutes + seconds + milliseconds)
+	 *   4: minutes (mm)
+	 * ( 5: seconds + milliseconds)
+	 *   6: seconds (ss)
+	 * ( 7: '.' + milliseconds)
+	 *   8: milliseconds (s...)
+	 * ( 9: full time zone: 'Z' or hours:minutes)
+	 *  10: sign (+ or -)
+	 *  11: hours offset (hh)
+	 * (12: ':' + minutes offset)
+	 *  13: minutes offset (mm)</pre>
+	 *  
+	 * @since 4.2
+	 */
+	private final static String ISO8601_TIME_REGEX = "((T| )(\\d{2})(:?(\\d{2})(:?(\\d{2})(\\.?(\\d{1,}))?)?)?(Z|(\\+|-)(\\d{2})(:?(\\d{2}))?)?)?";
+
+	/**
+	 * <p>{@link Pattern} object implementing the ISO-8601 representation.</p>
+	 * 
+	 * <p>The regular expression used in this {@link Pattern} identifies the following groups:</p><pre>
+	 * (    0: everything)
+	 *      1: year (yyyy)
+	 * (    2: '-' and the rest of the date (may include the time))
+	 * (    3: the rest of the date (may include the time))
+	 *      4: month (MM)
+	 * (    5: '-' and the day of the month)
+	 *      6: day of the month (dd)
+	 *   7-20: TIME
+	 *     21: day of the year (ddd)
+	 *  22-35: TIME
+	 *     36: week of the year (ww)
+	 * (   37: '-' and the day of the week)
+	 *     38: the day of the week (d)
+	 *  39-52: TIME</pre>
+	 * 
+	 * <p>All groups named <code>TIME</code> refer to {@link #ISO8601_TIME_REGEX}.</p>
+	 *  
+	 * <p>Groups in parenthesis should be ignored ; but an exception must be done for the 9th of {@link #ISO8601_TIME_REGEX} which may contain 'Z' meaning a UTC time zone.</p>
+	 * 
+	 * <p>Separator characters ('-', '.' and ':') are optional. The separator 'T' may be replaced by a ' '.</p>
+	 *  
+	 * @since 4.2
+	 */
+	private final static Pattern ISO8601_PATTERN = Pattern.compile("(\\d{4})(-?((\\d{2})(-?(\\d{2})" + ISO8601_TIME_REGEX + ")?|(\\d{3})" + ISO8601_TIME_REGEX + "|W(\\d{2})(-?(\\d)" + ISO8601_TIME_REGEX + ")?))?");
+
 	/**
 	 * <p>Parse the given date expressed using the ISO8601 format ("yyyy-MM-dd'T'hh:mm:ss.sssZ"
 	 * or "yyyy-MM-dd'T'hh:mm:ss.sssZ[+|-]hh:mm:ss").</p>
 	 * 
 	 * <p>
-	 * 	The syntax of the given date may be more or less strict. Particularly, separators like '-' and ':' are optional.
-	 * 	Besides the date and time separator ('T') may be replaced by a space.
+	 * 	This parser allows the following general syntaxes:
+	 * </p>
+	 * <ul>
+	 * 	<li>YYYY (e.g. 2015)</li>
+	 * 	<li>YYYY-MM (e.g. 2015-12)</li>
+	 * 	<li>YYYY-MM-DD (e.g. 2015-12-11)</li>
+	 * 	<li>YYYY-MM-DD'T'hh:mmTZD (e.g. 2015-12-11T20:28+01:00 or 2015-12-11T19:28Z)</li>
+	 * 	<li>YYYY-MM-DD'T'hh:mm:ssTZD (e.g. 2015-12-11T20:28:30+01:00 or 2015-12-11T19:28:30Z)</li>
+	 * 	<li>YYYY-MM-DD'T'hh:mm:ss.sTZD (e.g. 2015-12-11T20:28:30.45+01:00 or 2015-12-11T19:28:30.45Z)</li>
+	 * </ul>
+	 * <p>Where:</p>
+	 * <ul>
+	 * 	<li>YYYY = four-digit year</li>
+	 * 	<li>MM   = two-digit month (01=January, etc.)</li>
+	 * 	<li>DD   = two-digit day of month (01 through 31)</li>
+	 * 	<li>hh   = two digits of hour (00 through 23) (am/pm NOT allowed)</li>
+	 * 	<li>mm   = two digits of minute (00 through 59)</li>
+	 * 	<li>ss   = two digits of second (00 through 59)</li>
+	 * 	<li>s    = one or more digits representing a decimal fraction of a second (i.e. milliseconds)</li>
+	 * 	<li>TZD  = time zone designator (Z or +hh:mm or -hh:mm)</li>
+	 * </ul>
+	 * 
+	 * <p>
+	 * 	It is also possible to express the date in weeks with the following syntax: YYYY-'W'ww-D
+	 * 	(e.g. 2015-W50, 2015-W50-5, 2015-W50-5T20:28:30.45+01:00). <code>ww</code> must a 2 digits number between
+	 * 	1 and the number of weeks available in the chosen year. <code>D</code> corresponds to the day
+	 * 	of the week: Monday = 1, Tuesday = 2, ..., Sunday = 7.
 	 * </p>
 	 * 
 	 * <p>
-	 * 	The minimum allowed string is the date: "yyyy-MM-dd". All other date-time fields are optional,
-	 * 	BUT, the time zone can be given without the time.
+	 * 	A last representation of the date is possible: in days of year: YYYY-DDD
+	 * 	(e.g. 2015-345, 2015-345T20:28:30.45+01:00). <code>DDD</code> must be a value between 1 and the number of
+	 * 	days there is in the chosen year.
 	 * </p>
 	 * 
 	 * <p>
 	 * 	If no time zone is specified (by a 'Z' or a time offset), the time zone in which the date is expressed
 	 * 	is supposed to be the local one.
+	 * </p>
+	 * 
+	 * <p>
+	 * 	Separators (like '-', ':' and '.') are optional. The date and time separator ('T') may be replaced by a space.
 	 * </p> 
 	 * 
 	 * @param strDate	Date expressed as a string in ISO8601 format.
@@ -257,40 +400,12 @@ public class ISO8601Format {
 	 * @throws ParseException	If the given date is not expressed in ISO8601 format or is not merely parseable with this implementation.
 	 */
 	public static long parse(final String strDate) throws ParseException{
-		Pattern p = Pattern.compile("(\\d{4})-?(\\d{2})-?(\\d{2})([T| ](\\d{2}):?(\\d{2}):?(\\d{2})(\\.(\\d+))?(Z|([\\+|\\-])(\\d{2}):?(\\d{2})(:?(\\d{2}))?)?)?");
-		/*
-		 * With this regular expression, we will get the following groups:
-		 * 
-		 * 	( 0: everything)
-		 * 	  1: year  (yyyy)
-		 * 	  2: month (MM)
-		 * 	  3: day   (dd)
-		 * 	( 4: the full time part)
-		 * 	  5: hours        (hh)
-		 * 	  6: minutes      (mm)
-		 * 	  7: seconds      (ss)
-		 * 	( 8: the full ms part)
-		 * 	  9: milliseconds (sss)
-		 * 	(10: the full time zone part: 'Z' or the applied time offset)
-		 * 	 11: sign of the offset ('+' if an addition was applied, '-' if it was a subtraction)
-		 * 	 12: applied hours offset   (hh)
-		 * 	 13: applied minutes offset (mm)
-		 * 	(14: the full seconds offset)
-		 * 	 15: applied seconds offset (ss)
-		 * 
-		 * Groups in parenthesis should be ignored ; but an exception must be done for the 10th which may contain 'Z' meaning a UTC time zone.
-		 * 
-		 * All groups from the 4th (included) are optional. If not filled, an optional group is set to NULL.
-		 * 
-		 * This regular expression is more permissive than the strict definition of the ISO8601 format. Particularly, separator characters
-		 * ('-', 'T' and ':') are optional and it is possible to specify seconds in the time zone offset.
-		 */
-
-		Matcher m = p.matcher(strDate);
+		Matcher m = ISO8601_PATTERN.matcher(strDate);
 		if (m.matches()){
-			Calendar cal = new GregorianCalendar();
+			GregorianCalendar cal = new GregorianCalendar();
+			int timeGroupInd = -1;
 
-			// Set the time zone:
+			// SET THE TIME ZONE:
 			/* 
 			 * Note: In this library, we suppose that any date provided without specified time zone, is in UTC.
 			 * 
@@ -305,20 +420,56 @@ public class ISO8601Format {
 			 */
 			cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-			// Set the date:
-			cal.set(Calendar.DAY_OF_MONTH, twoDigitsFmt.parse(m.group(3)).intValue());
-			cal.set(Calendar.MONTH, twoDigitsFmt.parse(m.group(2)).intValue() - 1);
+			// SET THE DATE:
 			cal.set(Calendar.YEAR, Integer.parseInt(m.group(1)));
-
-			// Set the time:
+			// ...month based:
 			if (m.group(4) != null){
-				cal.set(Calendar.HOUR_OF_DAY, twoDigitsFmt.parse(m.group(5)).intValue());
-				cal.set(Calendar.MINUTE, twoDigitsFmt.parse(m.group(6)).intValue());
-				cal.set(Calendar.SECOND, twoDigitsFmt.parse(m.group(7)).intValue());
-				if (m.group(9) != null)
-					cal.set(Calendar.MILLISECOND, twoDigitsFmt.parse(m.group(9)).intValue());
+				cal.set(Calendar.MONTH, getMonth(m.group(4)));
+				if (m.group(5) != null)
+					cal.set(Calendar.DAY_OF_MONTH, getDayOfMonth(m.group(6), cal));
 				else
+					cal.set(Calendar.DAY_OF_MONTH, 1);
+				timeGroupInd = 7;
+			}
+			// ...day based:
+			else if (m.group(21) != null){
+				cal.set(Calendar.DAY_OF_YEAR, getDayOfYear(m.group(21), cal));
+				timeGroupInd = 22;
+			}
+			// ...week based:
+			else if (m.group(36) != null){
+				cal.set(Calendar.WEEK_OF_YEAR, getWeekOfYear(m.group(36), cal));
+				if (m.group(37) != null)
+					cal.set(Calendar.DAY_OF_WEEK, getDayOfWeek(m.group(38)));
+				// set the index of the time group:
+				timeGroupInd = 39;
+			}
+			// ...no month & day specified:
+			else{
+				cal.set(Calendar.MONTH, 0);
+				cal.set(Calendar.DAY_OF_MONTH, 1);
+			}
+
+			// SET THE TIME:
+			if (timeGroupInd > 0 && m.group(timeGroupInd) != null){
+				cal.set(Calendar.HOUR_OF_DAY, getHours(m.group(timeGroupInd + 2)));
+				if (m.group(timeGroupInd + 3) != null){
+					cal.set(Calendar.MINUTE, getMinutes(m.group(timeGroupInd + 4)));
+					if (m.group(timeGroupInd + 5) != null){
+						cal.set(Calendar.SECOND, getSeconds(m.group(timeGroupInd + 6)));
+						if (m.group(timeGroupInd + 7) != null)
+							cal.set(Calendar.MILLISECOND, twoDigitsFmt.parse(m.group(timeGroupInd + 8)).intValue());
+						else
+							cal.set(Calendar.MILLISECOND, 0);
+					}else{
+						cal.set(Calendar.SECOND, 0);
+						cal.set(Calendar.MILLISECOND, 0);
+					}
+				}else{
+					cal.set(Calendar.MINUTE, 0);
+					cal.set(Calendar.SECOND, 0);
 					cal.set(Calendar.MILLISECOND, 0);
+				}
 			}else{
 				cal.set(Calendar.HOUR_OF_DAY, 0);
 				cal.set(Calendar.MINUTE, 0);
@@ -326,17 +477,205 @@ public class ISO8601Format {
 				cal.set(Calendar.MILLISECOND, 0);
 			}
 
-			// Compute and apply the offset:
-			if (m.group(10) != null && !m.group(10).equals("Z")){
-				int sign = (m.group(11).equals("-") ? 1 : -1);
-				cal.add(Calendar.HOUR_OF_DAY, sign * twoDigitsFmt.parse(m.group(12)).intValue());
-				cal.add(Calendar.MINUTE, sign * twoDigitsFmt.parse(m.group(13)).intValue());
-				if (m.group(15) != null)
-					cal.add(Calendar.SECOND, sign * twoDigitsFmt.parse(m.group(15)).intValue());
+			// COMPUTE AND APPLY THE OFFSET (if any is specified):
+			if (timeGroupInd > 0 && m.group(timeGroupInd + 9) != null && !m.group(timeGroupInd + 9).equals("Z")){
+				int sign = (m.group(timeGroupInd + 10).equals("-") ? 1 : -1);
+				cal.add(Calendar.HOUR_OF_DAY, sign * getHours(m.group(timeGroupInd + 11)));
+				if (m.group(timeGroupInd + 12) != null)
+					cal.add(Calendar.MINUTE, sign * getMinutes(m.group(timeGroupInd + 13)));
 			}
 
 			return cal.getTimeInMillis();
 		}else
 			throw new ParseException("Invalid date format: \"" + strDate + "\"! An ISO8601 date was expected.", 0);
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 day of year value into a Java day of year value.</p>
+	 * 
+	 * <i>Note: Same representation in ISO-8601 and Java.</i>
+	 * 
+	 * @param str	Textual representation of the day of year in ISO-8601.
+	 * @param cal	The calendar in which the year has already been set.
+	 *           	<i>Note: This parameter is used to know the maximum number of days there are for the set year.
+	 *           	(see {@link GregorianCalendar#getActualMaximum(int)})</i>
+	 * 
+	 * @return	The corresponding Java day of year.
+	 * 
+	 * @throws ParseException	If the given day of year is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getDayOfYear(final String str, final GregorianCalendar cal) throws ParseException{
+		/* A day of year can only be between 1 and 365 (or 366 in leap year). */
+		int dayOfYear = threeDigitsFmt.parse(str).intValue();
+		if (dayOfYear < 1 || dayOfYear > cal.getActualMaximum(Calendar.DAY_OF_YEAR))
+			throw new ParseException("Incorrect day of year: " + dayOfYear + "! An integer between 1 and " + cal.getActualMaximum(Calendar.DAY_OF_YEAR) + " was expected.", -1);
+		return dayOfYear;
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 day of month value into a Java day of month value.</p>
+	 * 
+	 * <i>Note: Same representation in ISO-8601 and Java.</i>
+	 * 
+	 * @param str	Textual representation of the day of month in ISO-8601.
+	 * @param cal	The calendar in which the year and the month has already been set.
+	 *           	<i>Note: This parameter is used to know the maximum number of days there are for the set month and year.
+	 *           	(see {@link GregorianCalendar#getActualMaximum(int)})</i>
+	 * 
+	 * @return	The corresponding Java day of month.
+	 * 
+	 * @throws ParseException	If the given day of month is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getDayOfMonth(final String str, final GregorianCalendar cal) throws ParseException{
+		int dayOfMonth = twoDigitsFmt.parse(str).intValue();
+		if (dayOfMonth < 1 || dayOfMonth > cal.getActualMaximum(Calendar.DAY_OF_MONTH))
+			throw new ParseException("Incorrect day of month: " + dayOfMonth + "! An integer between 1 and " + cal.getActualMaximum(Calendar.DAY_OF_MONTH) + " was expected.", -1);
+		return dayOfMonth;
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 day of week value into a Java day of week value.</p>
+	 * 
+	 * <ul>
+	 * 	<li><u>In ISO-8601</u>: Monday = 1, Tuesday = 2, ..., Saturday = 6, Sunday = 7.</li>
+	 * 	<li><u>In Java</u>    : Monday = 2, Tuesday = 3, ..., Saturday = 7, Sunday = 1.</li>
+	 * </ul>
+	 * 
+	 * @param str	Textual representation of the day of week in ISO-8601.
+	 * 
+	 * @return	The corresponding Java day of week.
+	 * 
+	 * @throws ParseException	If the given day of week is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getDayOfWeek(final String str) throws ParseException{
+		int dayOfWeek = oneDigitFmt.parse(str).intValue();
+		if (dayOfWeek < 1 || dayOfWeek > 7)
+			throw new ParseException("Incorrect day of week: " + dayOfWeek + "! An integer between 1 (for Monday) and 7 (for Sunday) was expected.", -1);
+		else if (dayOfWeek == 7)
+			dayOfWeek = 1;
+		else
+			dayOfWeek++;
+		return dayOfWeek;
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 week of year value into a Java week of year value.</p>
+	 * 
+	 * <i>Note: Same representation in ISO-8601 and Java.</i>
+	 * 
+	 * @param str	Textual representation of the week of year value in ISO-8601.
+	 * @param cal	The calendar in which the year has already been set.
+	 *           	<i>Note: This parameter is used to know the maximum number of weeks there are for the set year.
+	 *           	(see {@link GregorianCalendar#getActualMaximum(int)})</i>
+	 * 
+	 * @return	The corresponding Java week of year value.
+	 * 
+	 * @throws ParseException	If the given week of year value is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getWeekOfYear(final String str, final GregorianCalendar cal) throws ParseException{
+		int weekOfYear = twoDigitsFmt.parse(str).intValue();
+		if (weekOfYear < 1 || weekOfYear > cal.getActualMaximum(Calendar.WEEK_OF_YEAR))
+			throw new ParseException("Incorrect week of year value: " + weekOfYear + "! An integer between 1 and " + cal.getActualMaximum(Calendar.WEEK_OF_YEAR) + " was expected.", -1);
+		return weekOfYear;
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 month index into a Java index.</p>
+	 * 
+	 * <ul>
+	 * 	<li><u>In ISO-8601</u>: January = 1, February = 2, ..., December = 12.</li>
+	 * 	<li><u>In Java</u>    : January = 0, February = 1, ..., December = 11.</li>
+	 * </ul>
+	 * 
+	 * @param str	Textual representation of the month index in ISO-8601.
+	 * 
+	 * @return	The corresponding Java month index.
+	 * 
+	 * @throws ParseException	If the given month index is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getMonth(final String str) throws ParseException{
+		int month = twoDigitsFmt.parse(str).intValue();
+		if (month < 1 || month > 12)
+			throw new ParseException("Incorrect month value: " + month + "! An integer between 1 and 12 was expected.", -1);
+		return month - 1;
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 hours value into a Java hours value.</p>
+	 * 
+	 * <ul>
+	 * 	<li><u>In ISO-8601</u>: 0 -&gt; 24.</li>
+	 * 	<li><u>In Java</u>    : Calendar.HOUR_OF_DAY for 0 -&gt; 24.</li>
+	 * </ul>
+	 * 
+	 * @param str	Textual representation of the hours value in ISO-8601.
+	 * 
+	 * @return	The corresponding Java hours value.
+	 * 
+	 * @throws ParseException	If the given hours value is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getHours(final String str) throws ParseException{
+		int hours = twoDigitsFmt.parse(str).intValue();
+		if (hours < 0 || hours > 24)
+			throw new ParseException("Incorrect hour value: " + hours + "! An integer between 0 and 24 was expected.", -1);
+		return hours;
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 minutes value into a Java minutes value.</p>
+	 * 
+	 * <ul>
+	 * 	<li><u>In ISO-8601</u>: 0 -&gt; 60.</li>
+	 * 	<li><u>In Java</u>    : 0 -&gt; 60.</li>
+	 * </ul>
+	 * 
+	 * @param str	Textual representation of the minutes value in ISO-8601.
+	 * 
+	 * @return	The corresponding Java minutes value.
+	 * 
+	 * @throws ParseException	If the given minutes value is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getMinutes(final String str) throws ParseException{
+		int minutes = twoDigitsFmt.parse(str).intValue();
+		if (minutes < 0 || minutes > 60)
+			throw new ParseException("Incorrect minute value: " + minutes + "! An integer between 0 and 60 was expected.", -1);
+		return minutes;
+	}
+
+	/**
+	 * <p>Convert the given ISO-8601 seconds value into a Java seconds value.</p>
+	 * 
+	 * <ul>
+	 * 	<li><u>In ISO-8601</u>: 0 -&gt; 60.</li>
+	 * 	<li><u>In Java</u>    : 0 -&gt; 60.</li>
+	 * </ul>
+	 * 
+	 * @param str	Textual representation of the seconds value in ISO-8601.
+	 * 
+	 * @return	The corresponding Java seconds value.
+	 * 
+	 * @throws ParseException	If the given seconds value is incorrect according to ISO-8601.
+	 * 
+	 * @since 4.2
+	 */
+	private static final int getSeconds(final String str) throws ParseException{
+		int seconds = twoDigitsFmt.parse(str).intValue();
+		if (seconds < 0 || seconds > 60)
+			throw new ParseException("Incorrect second value: " + seconds + "! An integer between 0 and 60 was expected.", -1);
+		return seconds;
 	}
 }
