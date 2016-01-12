@@ -16,7 +16,7 @@ package uws;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.text.DecimalFormat;
@@ -95,16 +95,17 @@ import java.util.regex.Pattern;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (12/2015)
+ * @version 4.2 (01/2016)
  * @since 4.1
  */
 public class ISO8601Format {
 
 	/** Indicate whether any date formatted with this class displays the time zone. */
-	public static boolean displayTimeZone = false;
+	public static boolean displayTimeZone = true;
 	/** Indicate whether any date formatted with this class displays the milliseconds. */
 	public static boolean displayMilliseconds = false;
-	/** Indicate the time zone in which the date and time should be formatted (whatever is the time zone of the given date). */
+	/** Indicate the time zone in which the date and time should be formatted (whatever is the time zone of the given date).
+	 * Note: for the local time zone, this attribute could be set to <code>TimeZone.getDefault().getID()</code>. */
 	public static String targetTimeZone = "UTC"; // for the local time zone: TimeZone.getDefault().getID();
 
 	/** Object to use to format numbers with one digit (ie. 1, 2, 0).
