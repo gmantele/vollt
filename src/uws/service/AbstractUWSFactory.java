@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -48,7 +48,7 @@ import uws.service.request.UWSRequestParser;
  * Only the function which creates a {@link JobThread} from a {@link UWSJob} needs to be implemented.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (11/2014)
+ * @version 4.2 (01/2016)
  */
 public abstract class AbstractUWSFactory implements UWSFactory {
 
@@ -84,7 +84,13 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 
 	@Override
 	public UWSJob createJob(final HttpServletRequest request, final JobOwner user) throws UWSException{
-		return new UWSJob(user, createUWSParameters(request));
+		// Extract the HTTP request ID (the job ID should be the same, if not already used by another job): 
+		String requestID = null;
+		if (request != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) instanceof String)
+			requestID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID).toString();
+
+		// Create the job:
+		return new UWSJob(user, createUWSParameters(request), requestID);
 	}
 
 	@Override

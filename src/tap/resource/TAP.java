@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -53,7 +53,7 @@ import adql.db.FunctionDef;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (06/2015)
+ * @version 2.1 (01/2016)
  */
 public class TAP implements VOSIResource {
 
@@ -737,8 +737,9 @@ public class TAP implements VOSIResource {
 	 */
 	protected synchronized String generateRequestID(final HttpServletRequest request){
 		String id;
+		String prefix = (request != null && request.getRequestURI() != null && request.getRequestURI().contains("/sync") ? "S" : "");
 		do{
-			id = System.currentTimeMillis() + "";
+			id = prefix + System.currentTimeMillis() + "";
 		}while(lastRequestID != null && lastRequestID.startsWith(id));
 		lastRequestID = id;
 		return id;

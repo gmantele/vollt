@@ -16,7 +16,7 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -89,7 +89,8 @@ import uws.service.request.UploadFile;
  * 		<b>{@link #generateJobId()}:</b>
  * 					This function is called at the construction of any {@link UWSJob}. It allows to generate a unique job ID.
  * 					By default: time (in milliseconds) + a upper-case letter (A, B, C, ....).
- * 					<u>If you want customizing the job ID of your jobs</u>, you need to override this function.
+ * 					<u>If you want customizing the job ID of your jobs</u>, you need to override this function or to use the new function
+ * 	                {@link #UWSJob(JobOwner, UWSParameters, String)}.
  * 	</li>
  * 	<br />
  * 	<li>
@@ -113,7 +114,7 @@ import uws.service.request.UploadFile;
  * </ul>
  * 
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.1 (12/2014)
+ * @version	4.2 (01/2016)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -311,6 +312,52 @@ public class UWSJob extends SerializableUWSObject {
 	}
 
 	/**
+	 * <p>Builds a job of the given owner and from a map of all parameters (UWS and additional parameters).
+	 * The given HTTP request ID will be used as Job ID if not already used by another job.</p>
+	 * 
+	 * <p><i><u>Note:</u> if the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the value {@link #PHASE_RUN}
+	 * the job execution starts immediately after the job has been added to a job list or after {@link #applyPhaseParam(JobOwner)} is called.</i></p>
+	 * 
+	 * @param owner		Job.owner ({@link #PARAM_OWNER}).
+	 * @param params	UWS standard and non-standard parameters.
+	 * @param requestID	ID of the HTTP request which has initiated the creation of this job.
+	 *                 	<i>Note: if NULL, empty or already used, a job ID will be generated thanks to {@link #generateJobId()}.</i>
+	 * 
+	 * @see UWSParameters#init()
+	 * 
+	 * @since 4.2
+	 */
+	public UWSJob(JobOwner owner, final UWSParameters params, final String requestID){
+		this.owner = owner;
+
+		phase = new JobPhase(this);
+
+		results = new HashMap<String,Result>();
+
+		inputParams = params;
+		inputParams.init();
+
+		// Set the Job ID with the value of the HTTP request ID (if not already used by a job):
+		synchronized(lastId){
+			if (requestID == null || requestID.trim().length() == 0 || lastId.equals(requestID))
+				jobId = generateJobId();
+			else{
+				jobId = requestID;
+				lastId = requestID;
+			}
+		}
+		restorationDate = null;
+
+		// Move all uploaded files in a location related with this job:
+		Iterator<UploadFile> files = inputParams.getFiles();
+		while(files.hasNext()){
+			try{
+				files.next().move(this);
+			}catch(IOException ioe){}
+		}
+	}
+
+	/**
 	 * <p><b>CONSTRUCTOR TO USE TO RESTORE A JOB whatever is its phase.</b></p>
 	 * 
 	 * <p>Builds a job of the given owner with all the given parameter.</p>
@@ -383,7 +430,7 @@ public class UWSJob extends SerializableUWSObject {
 	/**
 	 * <p>This function lets generating a unique ID.</p>
 	 * 
-	 * <p><i><b>By default:</b> System.currentTimeMillis()+UpperCharacter (UpperCharacter: one upper-case character: A, B, C, ....)</i></p>
+	 * <p><i><b>By default:</b> System.currentTimeMillis()+UpperCharacter (UpperCharacter: one upper-case character chosen in order to guarantee the unicity of the ID: A, B, C, ....)</i></p>
 	 * 
 	 * <p><i><u>note: </u> DO NOT USE in this function any of the following functions: {@link #getLogger()},
 	 * {@link #getFileManager()} and {@link #getFactory()}. All of them will return NULL, because this job does not

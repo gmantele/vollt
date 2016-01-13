@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -39,6 +39,7 @@ import uws.UWSException;
 import uws.job.ErrorSummary;
 import uws.job.Result;
 import uws.job.user.JobOwner;
+import uws.service.UWS;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
@@ -54,7 +55,7 @@ import adql.query.ADQLQuery;
  * Only the functions related with the database connection stay abstract.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
+ * @version 2.1 (01/2016)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
@@ -256,8 +257,16 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	@Override
 	protected TAPJob createTAPJob(final HttpServletRequest request, final JobOwner owner) throws UWSException{
 		try{
+			// Extract the HTTP request ID (the job ID should be the same, if not already used by another job): 
+			String requestID = null;
+			if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) instanceof String)
+				requestID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID).toString();
+
+			// Extract the TAP parameters from the HTTP request:
 			TAPParameters tapParams = createTAPParameters(request);
-			return new TAPJob(owner, tapParams);
+
+			// Create the job:
+			return new TAPJob(owner, tapParams, requestID);
 		}catch(TAPException te){
 			if (te.getCause() != null && te.getCause() instanceof UWSException)
 				throw (UWSException)te.getCause();

@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -45,7 +45,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (01/2016)
  */
 public class TAPJob extends UWSJob {
 	private static final long serialVersionUID = 1L;
@@ -107,6 +107,28 @@ public class TAPJob extends UWSJob {
 	 */
 	public TAPJob(final JobOwner owner, final TAPParameters tapParams) throws TAPException{
 		super(owner, tapParams);
+		this.tapParams = tapParams;
+		tapParams.check();
+	}
+
+	/**
+	 * <p>Build a pending TAP job with the given parameters.
+	 * The given HTTP request ID will be used as Job ID if not already used by another job.</p>
+	 * 
+	 * <p><i><u>Note:</u> if the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the value {@link #PHASE_RUN}
+	 * the job execution starts immediately after the job has been added to a job list or after {@link #applyPhaseParam(JobOwner)} is called.</i></p>
+	 * 
+	 * @param owner		User who owns this job. <i>MAY BE NULL</i>
+	 * @param tapParams	Set of parameters.
+	 * @param requestID	ID of the HTTP request which has initiated the creation of this job.
+	 *                 	<i>Note: if NULL, empty or already used, a job ID will be generated thanks to {@link #generateJobId()}.</i>
+	 * 
+	 * @throws TAPException	If one of the given parameters has a forbidden or wrong value.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPJob(final JobOwner owner, final TAPParameters tapParams, final String requestID) throws TAPException{
+		super(owner, tapParams, requestID);
 		this.tapParams = tapParams;
 		tapParams.check();
 	}

@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -33,6 +33,7 @@ import tap.TAPJob;
 import tap.TAPSyncJob;
 import tap.parameters.TAPParameters;
 import uws.UWSException;
+import uws.service.UWS;
 
 /**
  * <p>Synchronous resource of a TAP service.</p>
@@ -44,7 +45,7 @@ import uws.UWSException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2014)
+ * @version 2.1 (01/2016)
  */
 public class Sync implements TAPResource {
 
@@ -105,8 +106,13 @@ public class Sync implements TAPResource {
 		if (!service.isAvailable())
 			throw new TAPException("Can not execute a query: this TAP service is not available! " + service.getAvailability(), UWSException.SERVICE_UNAVAILABLE);
 
+		// Extract the HTTP request ID (if any):
+		String requestID = null;
+		if (request != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) instanceof String)
+			requestID = (String)request.getAttribute(UWS.REQ_ATTRIBUTE_ID);
+
 		// Execute synchronously the given job:
-		TAPSyncJob syncJob = new TAPSyncJob(service, params);
+		TAPSyncJob syncJob = new TAPSyncJob(service, params, requestID);
 		syncJob.start(response);
 
 		return true;
