@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -137,7 +137,7 @@ import uws.service.request.RequestParser;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (04/2015)
+ * @version 4.2 (01/2016)
  */
 public class UWSService implements UWS {
 
@@ -1044,7 +1044,7 @@ public class UWSService implements UWS {
 			return false;
 
 		// Generate a unique ID for this request execution (for log purpose only):
-		final String reqID = generateRequestID(request);
+		final String reqID = (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null ? generateRequestID(request) : request.getAttribute(UWS.REQ_ATTRIBUTE_ID).toString());
 		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
 			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
