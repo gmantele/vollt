@@ -194,7 +194,7 @@ public class Operation implements ADQLOperand {
 	/**
 	 * Sets the position at which this {@link WrappedOperand} has been found in the original ADQL query string.
 	 * 
-	 * @param pos	Position of this {@link WrappedOperand}.
+	 * @param position	Position of this {@link WrappedOperand}.
 	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){

@@ -676,7 +676,7 @@ public class ADQLExecutor {
 
 			}catch(IOException ioe){
 				// Propagate the exception:
-				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to write in the file into the result of the job " + report.jobID + " must be written!");
+				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to write in the file into which the result of the job " + report.jobID + " must be written!");
 			}finally{
 				if (!completed){
 					// Delete the result file (it is either incomplete or incorrect ;

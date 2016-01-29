@@ -93,7 +93,7 @@ public final class NegativeOperand implements ADQLOperand {
 	/**
 	 * Sets the position at which this {@link NegativeOperand} has been found in the original ADQL query string.
 	 * 
-	 * @param pos	Position of this {@link NegativeOperand}.
+	 * @param position	Position of this {@link NegativeOperand}.
 	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){

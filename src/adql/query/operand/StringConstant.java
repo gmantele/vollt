@@ -73,7 +73,7 @@ public final class StringConstant implements ADQLOperand {
 	/**
 	 * Sets the position at which this {@link StringConstant} has been found in the original ADQL query string.
 	 * 
-	 * @param pos	Position of this {@link StringConstant}.
+	 * @param position	Position of this {@link StringConstant}.
 	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){

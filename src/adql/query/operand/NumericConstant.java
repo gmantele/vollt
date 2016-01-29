@@ -176,7 +176,7 @@ public final class NumericConstant implements ADQLOperand {
 	/**
 	 * Sets the position at which this {@link NumericConstant} has been found in the original ADQL query string.
 	 * 
-	 * @param pos	Position of this {@link NumericConstant}.
+	 * @param position	Position of this {@link NumericConstant}.
 	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){

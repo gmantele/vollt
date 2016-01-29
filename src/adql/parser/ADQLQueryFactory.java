@@ -411,7 +411,7 @@ public class ADQLQueryFactory {
 	}
 
 	/**
-	 * @deprecated since 1.4 ; Former version's mistake: an ORDER BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createOrder(Identifier, boolean)} ; This function is no longer used by ADQLParser. 
+	 * @deprecated since 1.4 ; Former version's mistake: an ORDER BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createOrder(IdentifierItem, boolean)} ; This function is no longer used by ADQLParser. 
 	 */
 	@Deprecated
 	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception{
@@ -431,7 +431,7 @@ public class ADQLQueryFactory {
 	}
 
 	/**
-	 * @deprecated since 1.4 ; Former version's mistake: a GROUP BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createColRef(Identifier)} ; This function is no longer used by ADQLParser.
+	 * @deprecated since 1.4 ; Former version's mistake: a GROUP BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createColRef(IdentifierItem)} ; This function is no longer used by ADQLParser.
 	 */
 	@Deprecated
 	public ColumnReference createColRef(final IdentifierItems idItems) throws Exception{

@@ -195,7 +195,7 @@ public abstract class ADQLList< T extends ADQLObject > implements ADQLObject, It
 	/**
 	 * Sets the position at which this {@link ADQLList} has been found in the original ADQL query string.
 	 * 
-	 * @param pos	Position of this {@link ADQLList}.
+	 * @param position	Position of this {@link ADQLList}.
 	 * @since 1.4
 	 */
 	public final void setPosition(final TextPosition position){
