@@ -1982,14 +1982,14 @@ public class JDBCConnection implements DBConnection {
 			stmt.executeUpdate(sqlBuf.toString());
 
 			// 3. Fill the table:
-			fillUploadedTable(tableDef, data);
+			int nbUploadedRows = fillUploadedTable(tableDef, data);
 
 			// Commit the transaction:
 			commit();
 
 			// Log the end:
 			if (logger != null)
-				logger.logDB(LogLevel.INFO, this, "TABLE_CREATED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") created.", null);
+				logger.logDB(LogLevel.INFO, this, "TABLE_CREATED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") created (" + nbUploadedRows + " rows).", null);
 
 			return true;
 
