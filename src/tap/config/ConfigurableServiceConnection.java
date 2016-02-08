@@ -16,7 +16,7 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
@@ -73,6 +73,7 @@ import static tap.config.TAPConfiguration.VALUE_VOTABLE;
 import static tap.config.TAPConfiguration.VALUE_XML;
 import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.getProperty;
+import static tap.config.TAPConfiguration.hasConstructor;
 import static tap.config.TAPConfiguration.isClassName;
 import static tap.config.TAPConfiguration.newInstance;
 import static tap.config.TAPConfiguration.parseLimit;
@@ -124,7 +125,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (10/2015)
+ * @version 2.1 (02/2016)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -412,6 +413,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		String propValue = getProperty(tapConfig, KEY_TAP_FACTORY);
 		if (propValue == null)
 			tapFactory = new ConfigurableTAPFactory(this, tapConfig);
+		else if (hasConstructor(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class,Properties.class}))
+			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class,Properties.class}, new Object[]{this,tapConfig});
 		else
 			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class}, new Object[]{this});
 	}

@@ -187,7 +187,7 @@ public final class TAPConfiguration {
 	/** Name/Key of the property specifying the MIME type of the set home page.
 	 * By default, "text/html" is set. */
 	public final static String KEY_HOME_PAGE_MIME_TYPE = "home_page_mime_type";
-	
+
 	/* EXAMPLES KEY */
 	/** <p>Name/Key of the property specifying the content of the <code>/examples</code> endpoint.
 	 * It can be a file or a URL. If null, the TAP service will not have any
@@ -332,7 +332,8 @@ public final class TAPConfiguration {
 	 * 
 	 * @return	The corresponding Class object.
 	 * 
-	 * @throws TAPException	If the class name is incorrect or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
+	 * @throws TAPException	If the class name is incorrect
+	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
 	 * 
 	 * @see #isClassName(String)
 	 */
@@ -359,12 +360,47 @@ public final class TAPConfiguration {
 	}
 
 	/**
+	 * Test whether the specified class has a constructor with the specified parameters.
+	 * 
+	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
+	 * @param propName		Name of the property associated with the parameter "propValue".
+	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
+	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
+	 * 
+	 * @return	<code>true</code> if the specified class has a constructor with the specified parameters,
+	 *        	<code>false</code> otherwise.
+	 * 
+	 * @throws TAPException	If the class name is incorrect
+	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
+	 * 
+	 * @since 2.1
+	 */
+	public final static < C > boolean hasConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws TAPException{
+		// Ensure the given name is a class name specification:
+		if (!isClassName(propValue))
+			throw new TAPException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
+
+		// Fetch the class object:
+		Class<? extends C> classObj = fetchClass(propValue, propName, expectedType);
+		try{
+
+			// Get a constructor matching the given parameters list:
+			classObj.getConstructor((pTypes == null) ? new Class<?>[0] : pTypes);
+
+			return true;
+
+		}catch(Exception e){
+			return false;
+		}
+	}
+
+	/**
 	 * <p>Create an instance of the specified class. The class name is expected to be surrounded by {} in the given value.</p>
 	 * 
 	 * <p>The instance is created using the empty constructor of the specified class.</p>
 	 * 
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
-	 * @param propName		Name of the property associated with the parameter "value".
+	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * 
 	 * @return	The corresponding instance.
@@ -390,7 +426,7 @@ public final class TAPConfiguration {
 	 * </p>
 	 * 
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
-	 * @param propName		Name of the property associated with the parameter "value".
+	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
 	 * @param parameters	List of all constructor parameters. The number of object MUST match exactly the number of classes provided in the parameter pTypes. <i>NULL or empty array if no parameter.</i>
