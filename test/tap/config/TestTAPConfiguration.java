@@ -9,7 +9,9 @@ import static org.junit.Assert.fail;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.fetchClass;
+import static tap.config.TAPConfiguration.hasConstructor;
 import static tap.config.TAPConfiguration.isClassName;
 import static tap.config.TAPConfiguration.newInstance;
 import static tap.config.TAPConfiguration.parseLimit;
@@ -19,12 +21,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Properties;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
+import tap.TAPFactory;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPSchema;
 import adql.query.ColumnReference;
@@ -65,13 +70,13 @@ public class TestTAPConfiguration {
 	}
 
 	/**
-	 * TEST getClass(String,String,String):
+	 * TEST getClass(String,String,Class):
 	 * 	- null, "", "{}", "an incorrect syntax", "{ }", "{ 	}" 						=> NULL must be returned
 	 * 	- "{java.lang.String}", "{ java.lang.String	}"								=> a valid DefaultServiceConnection must be returned
 	 * 	- "{mypackage.foo}", "{java.util.ArrayList}" (while a String is expected)	=> a TAPException must be thrown
 	 */
 	@Test
-	public void testGetClassStringStringString(){
+	public void testGetClassStringStringClass(){
 		// NULL and EMPTY:
 		try{
 			assertNull(fetchClass(null, KEY_FILE_MANAGER, String.class));
@@ -145,6 +150,70 @@ public class TestTAPConfiguration {
 			assertEquals(classObject.getName(), "java.lang.String");
 		}catch(TAPException e){
 			fail("If a VALID class name is provided: getClass(...) MUST return a Class object of the wanted type!\nCaught exception: " + getPertinentMessage(e));
+		}
+	}
+
+	/**
+	 * TEST hasConstructor(String,String,Class,Class[]):
+	 * 	(tests already performed by {@link #testGetClassStringStringClass()})
+	 * 	- null, "", "{}", "an incorrect syntax", "{ }", "{ 	}" 						=> must fail with a TAPException
+	 * 	- "{java.lang.String}", "{ java.lang.String	}"								=> a valid DefaultServiceConnection must be returned
+	 * 	- "{mypackage.foo}", "{java.util.ArrayList}" (while a String is expected)	=> a TAPException must be thrown
+	 * 	(new tests)
+	 * 	- if the specified constructor exists return <code>true</code>, else <code>false</code> must be returned.
+	 */
+	@Test
+	public void testHasConstructor(){
+		/* hasConstructor(...) must throw an exception if the specification of the class (1st and 3rd parameters)
+		 * is wrong. But that is performed by fetchClass(...) which is called at the beginning of the function
+		 * and is not surrounded by a try-catch. So all these tests are already done by testGetClassStringStringClass(). */
+
+		// With a missing list of parameters:
+		try{
+			assertTrue(hasConstructor("{java.lang.String}", "STRING", String.class, null));
+		}catch(TAPException te){
+			te.printStackTrace();
+			fail("\"No list of parameters\" MUST be interpreted as the specification of a constructor with no parameter! This test has failed.");
+		}
+
+		// With an empty list of parameters
+		try{
+			assertTrue(hasConstructor("{java.lang.String}", "STRING", String.class, new Class[0]));
+		}catch(TAPException te){
+			te.printStackTrace();
+			fail("\"An empty list of parameters\" MUST be interpreted as the specification of a constructor with no parameter! This test has failed.");
+		}
+
+		// With a wrong list of parameters - 1
+		try{
+			assertFalse(hasConstructor("{tap.config.ConfigurableTAPFactory}", KEY_TAP_FACTORY, TAPFactory.class, new Class[]{}));
+		}catch(TAPException te){
+			te.printStackTrace();
+			fail("ConfigurableTAPFactory does not have an empty constructor ; this test should have failed!");
+		}
+
+		// With a wrong list of parameters - 2
+		try{
+			assertFalse(hasConstructor("{tap.config.ConfigurableTAPFactory}", KEY_TAP_FACTORY, TAPFactory.class, new Class[]{String.class,String.class}));
+		}catch(TAPException te){
+			te.printStackTrace();
+			fail("ConfigurableTAPFactory does not have a constructor with 2 Strings as parameter ; this test should have failed!");
+		}
+
+		// With a good list of parameters - 1
+		try{
+			assertTrue(hasConstructor("{tap.config.ConfigurableTAPFactory}", KEY_TAP_FACTORY, TAPFactory.class, new Class[]{ServiceConnection.class,Properties.class}));
+		}catch(TAPException te){
+			te.printStackTrace();
+			fail("ConfigurableTAPFactory has a constructor with a ServiceConnection and a Properties in parameters ; this test should have failed!");
+		}
+
+		// With a good list of parameters - 2
+		try{
+			assertTrue(hasConstructor("{java.lang.String}", "STRING", String.class, new Class[]{String.class}));
+		}catch(TAPException te){
+			te.printStackTrace();
+			fail("String has a constructor with a String as parameter ; this test should have failed!");
 		}
 	}
 

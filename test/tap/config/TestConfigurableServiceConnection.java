@@ -105,7 +105,8 @@ public class TestConfigurableServiceConnection {
 			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
 			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
 			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp,
-			customFactoryProp, badCustomFactoryProp;
+			customFactoryProp, customConfigurableFactoryProp,
+			badCustomFactoryProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
@@ -312,6 +313,9 @@ public class TestConfigurableServiceConnection {
 
 		customFactoryProp = (Properties)validProp.clone();
 		customFactoryProp.setProperty(KEY_TAP_FACTORY, "{tap.config.TestConfigurableServiceConnection$CustomTAPFactory}");
+
+		customConfigurableFactoryProp = (Properties)validProp.clone();
+		customConfigurableFactoryProp.setProperty(KEY_TAP_FACTORY, "{tap.config.TestConfigurableServiceConnection$CustomConfigurableTAPFactory}");
 
 		badCustomFactoryProp = (Properties)validProp.clone();
 		badCustomFactoryProp.setProperty(KEY_TAP_FACTORY, "{tap.config.TestConfigurableServiceConnection$BadCustomTAPFactory}");
@@ -1077,7 +1081,16 @@ public class TestConfigurableServiceConnection {
 			assertNotNull(connection.getFactory());
 			assertEquals(CustomTAPFactory.class, connection.getFactory().getClass());
 		}catch(Exception e){
-			fail("This MUST have succeeded because the given custom TAPFactory exists and have the required constructor! \nCaught exception: " + getPertinentMessage(e));
+			fail("This MUST have succeeded because the given custom TAPFactory exists and have the required constructor (ServiceConnection)! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Valid custom "configurable" TAPFactory:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(customConfigurableFactoryProp);
+			assertNotNull(connection.getFactory());
+			assertEquals(CustomConfigurableTAPFactory.class, connection.getFactory().getClass());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the given custom configurable TAPFactory exists and have the required constructor (ServiceConnection, Properties)! \nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// Bad custom TAPFactory (required constructor missing):
@@ -1193,6 +1206,39 @@ public class TestConfigurableServiceConnection {
 		private final JDBCConnection dbConn;
 
 		public CustomTAPFactory(final ServiceConnection conn) throws DBException{
+			super(conn);
+			dbConn = new JDBCConnection("", "jdbc:postgresql:gmantele", "gmantele", null, new PostgreSQLTranslator(), "TheOnlyConnection", conn.getLogger());
+		}
+
+		@Override
+		public DBConnection getConnection(final String jobID) throws TAPException{
+			return dbConn;
+		}
+
+		@Override
+		public void freeConnection(final DBConnection conn){}
+
+		@Override
+		public void destroy(){
+			try{
+				dbConn.getInnerConnection().close();
+			}catch(Exception ex){}
+		}
+
+	}
+
+	/**
+	 * ConfigurableTAPFactory just to test whether the property tap_factory allows TAPFactory
+	 * with a constructor (ServiceConnection, Properties).
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 02/2015
+	 */
+	private static class CustomConfigurableTAPFactory extends AbstractTAPFactory {
+
+		private final JDBCConnection dbConn;
+
+		public CustomConfigurableTAPFactory(final ServiceConnection conn, final Properties prop) throws DBException{
 			super(conn);
 			dbConn = new JDBCConnection("", "jdbc:postgresql:gmantele", "gmantele", null, new PostgreSQLTranslator(), "TheOnlyConnection", conn.getLogger());
 		}
