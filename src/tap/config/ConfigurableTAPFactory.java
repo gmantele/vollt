@@ -16,7 +16,7 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_BACKUP_BY_USER;
@@ -74,40 +74,40 @@ import adql.translator.PostgreSQLTranslator;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (02/2016)
  * @since 2.0
  */
-public final class ConfigurableTAPFactory extends AbstractTAPFactory {
+public class ConfigurableTAPFactory extends AbstractTAPFactory {
 
 	/* ADQL to SQL translation: */
 	/** The {@link JDBCTranslator} to use when a ADQL query must be executed in the database.
 	 * This translator is also used to convert ADQL types into database types. */
-	private Class<? extends JDBCTranslator> translator;
+	protected Class<? extends JDBCTranslator> translator;
 
 	/* JNDI DB access: */
 	/** The {@link DataSource} to use in order to access the database.
 	 * <em>This attribute is actually used only if the chosen database access method is JNDI.</em> */
-	private final DataSource datasource;
+	protected final DataSource datasource;
 
 	/* Simple JDBC access: */
 	/** Classpath of the JDBC driver to use in order to access the database.
 	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
-	private final String driverPath;
+	protected final String driverPath;
 	/** JDBC URL of the database to access.
 	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
-	private final String dbUrl;
+	protected final String dbUrl;
 	/** Name of the database user to use in order to access the database.
 	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
-	private final String dbUser;
+	protected final String dbUser;
 	/** Password of the database user to use in order to access the database.
 	 * <em>This attribute is actually used only if the chosen database access method is JDBC.</em> */
-	private final String dbPassword;
+	protected final String dbPassword;
 
 	/* UWS's jobs backup: */
 	/** Indicate whether the jobs must be backuped gathered by user or just all mixed together. */
-	private boolean backupByUser;
+	protected boolean backupByUser;
 	/** Frequency at which the jobs must be backuped. */
-	private long backupFrequency;
+	protected long backupFrequency;
 
 	/**
 	 * Build a {@link TAPFactory} using the given TAP service description and TAP configuration file.
