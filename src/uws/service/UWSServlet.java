@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -149,7 +149,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (04/2015)
+ * @version 4.2 (02/2016)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -213,12 +213,9 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		// Set the file manager to use:
 		try{
 			fileManager = createFileManager();
-			if (fileManager == null){
-				logger.logUWS(LogLevel.FATAL, null, "INIT", "Missing file manager! The function createFileManager() MUST return a valid instanceof UWSFileManager!", null);
+			if (fileManager == null)
 				throw new ServletException(INIT_ERROR_MSG);
-			}
 		}catch(UWSException ue){
-			logger.logUWS(LogLevel.FATAL, null, "INIT", "Can't create a file manager!", ue);
 			throw new ServletException(INIT_ERROR_MSG, ue);
 		}
 
