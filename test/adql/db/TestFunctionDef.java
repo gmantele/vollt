@@ -10,6 +10,7 @@ import org.junit.Test;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef.FunctionParam;
 import adql.parser.ParseException;
+import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.NumericConstant;
 import adql.query.operand.StringConstant;
@@ -62,6 +63,7 @@ public class TestFunctionDef {
 				case UNKNOWN:
 					assertFalse(new FunctionDef("foo", new DBType(type)).isNumeric);
 					break;
+				case UNKNOWN_NUMERIC:
 				default:
 					assertTrue(new FunctionDef("foo", new DBType(type)).isNumeric);
 			}
@@ -338,6 +340,18 @@ public class TestFunctionDef {
 			e.printStackTrace();
 			fail();
 		}
+
+		// Test with an UNKNOWN numeric type:
+		// TEST :: "fct0(foo)", where foo is a simple UNKNOWN [EQUAL]
+		FunctionDef def0 = new FunctionDef("fct0", null, new FunctionParam[]{new FunctionParam("whatever", new DBType(DBDatatype.VARCHAR))});
+		DefaultDBColumn dbcol = new DefaultDBColumn("foo", new DefaultDBTable("toto"));
+		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN));
+		ADQLColumn col = new ADQLColumn("foo");
+		col.setDBLink(dbcol);
+		assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
+		// TEST :: "fct0(foo)", where foo is an UNKNOWN NUMERIC [LESS]
+		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN_NUMERIC));
+		assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
 	}
 
 }

@@ -16,7 +16,7 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -25,12 +25,20 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import adql.db.DBColumn;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import adql.db.DefaultDBColumn;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.geometry.BoxFunction;
+import adql.query.operand.function.geometry.CircleFunction;
+import adql.query.operand.function.geometry.PointFunction;
+import adql.query.operand.function.geometry.PolygonFunction;
+import adql.query.operand.function.geometry.RegionFunction;
 import adql.search.ISearchHandler;
 
 /**
@@ -38,7 +46,7 @@ import adql.search.ISearchHandler;
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (03/2016)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -311,19 +319,50 @@ public class ADQLQuery implements ADQLObject {
 					// Here, this error should not occur any more, since it must have been caught by the DBChecker!
 				}
 			}else{
+				// Create the DBColumn:
 				DBColumn col = null;
+				// ...whose the name will be set with the SELECT item's alias: 
 				if (item.hasAlias()){
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null){
 						col = ((ADQLColumn)operand).getDBLink();
 						col = col.copy(col.getDBName(), item.getAlias(), col.getTable());
 					}else
 						col = new DefaultDBColumn(item.getAlias(), null);
-				}else{
+				}
+				// ...or whose the name will be the name of the SELECT item:
+				else{
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null)
 						col = ((ADQLColumn)operand).getDBLink();
 					if (col == null)
 						col = new DefaultDBColumn(item.getName(), null);
 				}
+
+				/* For columns created by default (from functions and operations generally), 
+				 * set the adequate type if known: */
+				// CASE: Well-defined UDF
+				if (operand instanceof DefaultUDF && ((DefaultUDF)operand).getDefinition() != null){
+					DBType type = ((DefaultUDF)operand).getDefinition().returnType;
+					((DefaultDBColumn)col).setDatatype(type);
+				}
+				// CASE: Point type:
+				else if (operand instanceof PointFunction)
+					((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.POINT));
+				// CASE: Region type:
+				else if (operand instanceof RegionFunction || operand instanceof CircleFunction || operand instanceof BoxFunction || operand instanceof PolygonFunction)
+					((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.REGION));
+				// CASE: String and numeric types
+				else if (col instanceof DefaultDBColumn && col.getDatatype() == null && operand.isNumeric() != operand.isString()){
+					// CASE: String types
+					if (operand.isString())
+						((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.VARCHAR));
+					// CASE: Numeric types:
+					/* Note: a little special case here since a numeric could be a real, double, integer, or anything
+					 *       else and that we don't know precisely here. So we set the special UNKNOWN NUMERIC type. */
+					else
+						((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.UNKNOWN_NUMERIC));
+				}
+
+				// Add the new column to the list:
 				columns.add(col);
 			}
 		}

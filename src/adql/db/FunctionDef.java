@@ -59,7 +59,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	/** Rough regular expression for a function return type or a parameter type.
 	 * The exact type is not checked here ; just the type name syntax is tested, not its value.
 	 * This regular expression allows a type to have exactly one parameter (which is generally the length of a character or binary string. */
-	protected final static String typeRegExp = "([a-zA-Z]+[ 0-9a-zA-Z]*)(\\(\\s*([0-9]+)\\s*\\))?";
+	protected final static String typeRegExp = "([a-zA-Z_]+[ 0-9a-zA-Z_]*)(\\(\\s*([0-9]+)\\s*\\))?";
 	/** Rough regular expression for a function parameters' list. */
 	protected final static String fctParamsRegExp = "\\s*[^,]+\\s*(,\\s*[^,]+\\s*)*";
 	/** Rough regular expression for a function parameter: a name (see {@link #regularIdentifierRegExp}) and a type (see {@link #typeRegExp}). */
@@ -350,7 +350,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * <p>
 	 * 	<em>This function must be able to parse functions as defined by TAPRegExt (section 2.3).</em>
 	 * 	Hence, allowed parameter types and return types should be one of the types listed by the UPLOAD section of the TAP recommendation document.
-	 * 	These types are listed in the enumeration object {@link DBType}.
+	 * 	These types are listed in the enumeration object {@link DBDatatype}.
 	 * 	However, other types should be accepted like the common database types...but it should be better to not rely on that
 	 * 	since the conversion of those types to TAP types should not be exactly what is expected (because depending from the used DBMS);
 	 *  a default interpretation of database types is nevertheless processed by this parser.

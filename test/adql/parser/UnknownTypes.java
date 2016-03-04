@@ -70,7 +70,7 @@ public class UnknownTypes {
 
 	@Test
 	public void testForColumns(){
-		final String QUERY_TXT = "SELECT FOO(C1), FOO(C2), C1, C2, C3 FROM T1";
+		final String QUERY_TXT = "SELECT FOO(C1), FOO(C2), FOO(C4), C1, C2, C3, C4 FROM T1";
 
 		try{
 			// Create the parser:
@@ -81,6 +81,7 @@ public class UnknownTypes {
 			table1.addColumn(new DefaultDBColumn("C1", table1));
 			table1.addColumn(new DefaultDBColumn("C2", new DBType(DBDatatype.UNKNOWN), table1));
 			table1.addColumn(new DefaultDBColumn("C3", new DBType(DBDatatype.VARCHAR), table1));
+			table1.addColumn(new DefaultDBColumn("C4", new DBType(DBDatatype.UNKNOWN_NUMERIC), table1));
 			Collection<DBTable> tList = Arrays.asList(new DBTable[]{table1});
 
 			// Check the type of the column T1.C1:
@@ -97,6 +98,16 @@ public class UnknownTypes {
 			assertFalse(col.getDatatype().isString());
 			assertFalse(col.getDatatype().isGeometry());
 			assertEquals("UNKNOWN", col.getDatatype().toString());
+
+			// Check the type of the column T1.C4:
+			col = table1.getColumn("C4", true);
+			assertNotNull(col);
+			assertNotNull(col.getDatatype());
+			assertTrue(col.getDatatype().isUnknown());
+			assertTrue(col.getDatatype().isNumeric());
+			assertFalse(col.getDatatype().isString());
+			assertFalse(col.getDatatype().isGeometry());
+			assertEquals("UNKNOWN_NUMERIC", col.getDatatype().toString());
 
 			// Define a UDF, and allow all geometrical functions and coordinate systems:
 			FunctionDef udf1 = FunctionDef.parse("FOO(x INTEGER) -> INTEGER");
@@ -122,18 +133,26 @@ public class UnknownTypes {
 			assertTrue(pq.getSelect().get(1).getOperand().isNumeric());
 			assertFalse(pq.getSelect().get(1).getOperand().isString());
 			assertFalse(pq.getSelect().get(1).getOperand().isGeometry());
-			// isNumeric() = isString() = isGeometry() for C1
+			// isNumeric() = true for FOO(C4), but false for the others
 			assertTrue(pq.getSelect().get(2).getOperand().isNumeric());
-			assertTrue(pq.getSelect().get(2).getOperand().isString());
-			assertTrue(pq.getSelect().get(2).getOperand().isGeometry());
-			// isNumeric() = isString() = isGeometry() for C2
+			assertFalse(pq.getSelect().get(2).getOperand().isString());
+			assertFalse(pq.getSelect().get(2).getOperand().isGeometry());
+			// isNumeric() = isString() = isGeometry() for C1
 			assertTrue(pq.getSelect().get(3).getOperand().isNumeric());
 			assertTrue(pq.getSelect().get(3).getOperand().isString());
 			assertTrue(pq.getSelect().get(3).getOperand().isGeometry());
-			// isString() = true for C3, but false for the others
-			assertFalse(pq.getSelect().get(4).getOperand().isNumeric());
+			// isNumeric() = isString() = isGeometry() for C2
+			assertTrue(pq.getSelect().get(4).getOperand().isNumeric());
 			assertTrue(pq.getSelect().get(4).getOperand().isString());
-			assertFalse(pq.getSelect().get(4).getOperand().isGeometry());
+			assertTrue(pq.getSelect().get(4).getOperand().isGeometry());
+			// isString() = true for C3, but false for the others
+			assertFalse(pq.getSelect().get(5).getOperand().isNumeric());
+			assertTrue(pq.getSelect().get(5).getOperand().isString());
+			assertFalse(pq.getSelect().get(5).getOperand().isGeometry());
+			// isString() = true for C4, but false for the others
+			assertTrue(pq.getSelect().get(6).getOperand().isNumeric());
+			assertFalse(pq.getSelect().get(6).getOperand().isString());
+			assertFalse(pq.getSelect().get(6).getOperand().isGeometry());
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
 			fail("The construction, configuration and usage of the parser are correct. Nothing should have failed here. (see console for more details)");

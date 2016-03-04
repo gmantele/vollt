@@ -16,7 +16,7 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -32,7 +32,7 @@ import adql.query.from.ADQLTable;
  * Represents the complete (literal) reference to a column ({schema(s)}.{table}.{column}).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (03/2016)
  */
 public class ADQLColumn implements ADQLOperand, UnknownType {
 
@@ -469,17 +469,17 @@ public class ADQLColumn implements ADQLOperand, UnknownType {
 
 	@Override
 	public boolean isNumeric(){
-		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isUnknown() || dbLink.getDatatype().isNumeric());
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isNumeric() || dbLink.getDatatype().isUnknown());
 	}
 
 	@Override
 	public boolean isString(){
-		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isUnknown() || dbLink.getDatatype().isString());
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isString() || (dbLink.getDatatype().isUnknown() && !dbLink.getDatatype().isNumeric()));
 	}
 
 	@Override
 	public boolean isGeometry(){
-		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isUnknown() || dbLink.getDatatype().isGeometry());
+		return (dbLink == null || dbLink.getDatatype() == null || dbLink.getDatatype().isGeometry() || (dbLink.getDatatype().isUnknown() && !dbLink.getDatatype().isNumeric()));
 	}
 
 	@Override

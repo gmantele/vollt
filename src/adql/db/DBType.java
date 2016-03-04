@@ -16,11 +16,10 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 /**
- * 
  * <p>
  * 	Describe a full column type as it is described in the IVOA document of TAP.
  * 	Thus, this object contains 2 attributes: <code>type</code> (or datatype) and <code>length</code> (or size).
@@ -32,7 +31,7 @@ package adql.db;
  * It is used to set the attribute type/datatype of this class.</p>
  *  
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (08/2015)
+ * @version 1.4 (03/2016)
  * @since 1.3
  */
 public class DBType {
@@ -41,13 +40,21 @@ public class DBType {
 	 * List of all datatypes declared in the IVOA recommendation of TAP (in the section UPLOAD).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.4 (06/2015)
+	 * @version 1.4 (03/2016)
 	 * @since 1.3
 	 */
 	public static enum DBDatatype{
 		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, REGION,
-		/** @since 1.4 */
-		UNKNOWN;
+		/** Type to use when the precise datatype is unknown. 
+		 * @since 1.4 */
+		UNKNOWN,
+		/** <p>Type to use when the type is known as numeric but there is no precise datatype
+		 * (e.g. double, float, integer, ...).</p>
+		 * <p>It is particularly used when creating a {@link DefaultDBColumn} from an ADQL function
+		 * or operation while listing resulting columns of a sub-query.</p>
+		 * <p>This type is similar to {@link #UNKNOWN}.</p>
+		 * @since 1.4 */
+		UNKNOWN_NUMERIC;
 
 		/** String to return when {@link #toString()} is called.
 		 * @since 1.4*/
@@ -60,11 +67,11 @@ public class DBType {
 
 		/**
 		 * <p>This function lets define the name of the type as provided
-		 * <b>ONLY FOR {@link #UNKNOWN} {@link DBDatatype}</b>.</p>
+		 * <b>ONLY FOR {@link #UNKNOWN} and {@link #UNKNOWN_NUMERIC} {@link DBDatatype}s</b>.</p>
 		 * 
 		 * <p><i><b>Important:</b>
-		 * 	If this {@link DBDatatype} is not {@link #UNKNOWN} or if the given name is NULL or empty,
-		 * 	this function has no effect.
+		 * 	If this {@link DBDatatype} is not {@link #UNKNOWN} or {@link #UNKNOWN_NUMERIC} or
+		 * 	if the given name is NULL or empty, this function has no effect.
 		 * </i></p>
 		 * 
 		 * @param typeName	User type name.
@@ -72,7 +79,7 @@ public class DBType {
 		 * @since 1.4
 		 */
 		public void setCustomType(final String typeName){
-			if (this == UNKNOWN && typeName != null && typeName.trim().length() > 0)
+			if ((this == UNKNOWN || this == UNKNOWN_NUMERIC) && typeName != null && typeName.trim().length() > 0)
 				strExp = "?" + typeName.trim() + "?";
 		}
 	}
@@ -121,7 +128,8 @@ public class DBType {
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
 	 * 	But, in order to avoid incorrect operation while expecting a numeric although the type is unknown
 	 * 	and is in fact not really a numeric, this function will return <code>false</code> if the type is
-	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN} <b>BUT</b> <code>true</code> if
+	 * 	{@link DBDatatype#UNKNOWN_NUMERIC UNKNOWN_NUMERIC}.
 	 * </i></p>
 	 * 
 	 * @return	<code>true</code> if this type is a numeric, <code>false</code> otherwise.
@@ -138,6 +146,7 @@ public class DBType {
 			case BINARY:
 			case VARBINARY:
 			case BLOB:
+			case UNKNOWN_NUMERIC:
 				return true;
 			default:
 				return false;
@@ -155,7 +164,7 @@ public class DBType {
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
 	 * 	But, in order to avoid incorrect operation while expecting a binary although the type is unknown
 	 * 	and is in fact not really a binary, this function will return <code>false</code> if the type is
-	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN} or {@link DBDatatype#UNKNOWN_NUMERIC UNKNOWN_NUMERIC}.
 	 * </i></p>
 	 * 
 	 * @return	<code>true</code> if this type is a binary, <code>false</code> otherwise.
@@ -183,7 +192,7 @@ public class DBType {
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
 	 * 	But, in order to avoid incorrect operation while expecting a string although the type is unknown
 	 * 	and is in fact not really a string, this function will return <code>false</code> if the type is
-	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN} or {@link DBDatatype#UNKNOWN_NUMERIC UNKNOWN_NUMERIC}
 	 * </i></p>
 	 * 
 	 * @return	<code>true</code> if this type is a string, <code>false</code> otherwise.
@@ -211,7 +220,7 @@ public class DBType {
 	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
 	 * 	But, in order to avoid incorrect operation while expecting a geometry although the type is unknown
 	 * 	and is in fact not really a geometry, this function will return <code>false</code> if the type is
-	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN} or {@link DBDatatype#UNKNOWN_NUMERIC UNKNOWN_NUMERIC}.
 	 * </i></p>
 	 * 
 	 * @return	<code>true</code> if this type is a geometry, <code>false</code> otherwise.
@@ -223,8 +232,8 @@ public class DBType {
 	/**
 	 * <p>Tell whether this type has been resolved or not.</p>
 	 * 
-	 * <p><i>Concerned type:
-	 * 	{@link DBDatatype#UNKNOWN UNKNOWN}.
+	 * <p><i>Concerned types:
+	 * 	{@link DBDatatype#UNKNOWN UNKNOWN} and {@link DBDatatype#UNKNOWN_NUMERIC UNKNOWN_NUMERIC}.
 	 * </i></p>
 	 * 
 	 * @return	<code>true</code> if this type has NOT been resolved, <code>false</code> otherwise.
@@ -232,7 +241,7 @@ public class DBType {
 	 * @since 1.4
 	 */
 	public boolean isUnknown(){
-		return type == DBDatatype.UNKNOWN;
+		return type == DBDatatype.UNKNOWN || type == DBDatatype.UNKNOWN_NUMERIC;
 	}
 
 	/**
@@ -240,8 +249,8 @@ public class DBType {
 	 * 
 	 * <p>
 	 * 	Two {@link DBType}s are said compatible if they are both binary, numeric, geometric or string.
-	 * 	If one of the two types is {@link DBDatatype#UNKNOWN unknown}, this function will consider them
-	 * 	as compatible and will return <code>true</code>.
+	 * 	If one of the two types is {@link DBDatatype#UNKNOWN unknown} or {@link DBDatatype#UNKNOWN_NUMERIC unknown_numeric},
+	 * 	this function will consider them as compatible and will return <code>true</code>.
 	 * </p>
 	 * 
 	 * @param t	The type to compare to.
