@@ -16,8 +16,8 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2011,2013-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                            Astronomisches Rechen Institut (ARI)
+ * Copyright 2011-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.lang.reflect.Constructor;
@@ -97,7 +97,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2015)
+ * @version 1.4 (03/2016)
  */
 public class DBChecker implements QueryChecker {
 
@@ -813,24 +813,26 @@ public class DBChecker implements QueryChecker {
 			 *       for a later resolution try. */
 			for(ADQLObject result : sHandler){
 				udf = (UserDefinedFunction)result;
-				// search for a match:
-				match = binSearch.search(udf, allowedUdfs);
-				// if no match...
-				if (match < 0){
-					// ...if the type of all parameters is resolved, add an error (no match is possible):
-					if (isAllParamTypesResolved(udf))
+				// if the type of not all parameters are resolved, postpone the resolution:
+				if (!isAllParamTypesResolved(udf))
+					toResolveLater.add(udf);
+				// otherwise:
+				else{
+					// search for a match:
+					match = binSearch.search(udf, allowedUdfs);
+					// if no match...
+					if (match < 0)
 						errors.addException(new UnresolvedFunctionException(udf));
-					// ...otherwise, try to resolved it later (when other UDFs will be mostly resolved):
-					else
-						toResolveLater.add(udf);
+					// if there is a match, metadata may be attached (particularly if the function is built automatically by the syntactic parser):
+					else if (udf instanceof DefaultUDF)
+						((DefaultUDF)udf).setDefinition(allowedUdfs[match]);
 				}
-				// if there is a match, metadata may be attached (particularly if the function is built automatically by the syntactic parser):
-				else if (udf instanceof DefaultUDF)
-					((DefaultUDF)udf).setDefinition(allowedUdfs[match]);
 			}
 
 			// Try to resolve UDFs whose some parameter types are depending of other UDFs:
-			for(int i = 0; i < toResolveLater.size(); i++){
+			/* Note: we need to iterate from the end in order to resolve first the most wrapped functions
+			 *       (e.g. fct1(fct2(...)) ; fct2 must be resolved before fct1). */
+			for(int i = toResolveLater.size() - 1; i >= 0; i--){
 				udf = toResolveLater.get(i);
 				// search for a match:
 				match = binSearch.search(udf, allowedUdfs);
@@ -866,7 +868,7 @@ public class DBChecker implements QueryChecker {
 	 */
 	protected final boolean isAllParamTypesResolved(final ADQLFunction fct){
 		for(ADQLOperand op : fct.getParameters()){
-			if (op.isNumeric() == op.isString())
+			if (op.isGeometry() == op.isNumeric() && op.isNumeric() == op.isString())
 				return false;
 		}
 		return true;

@@ -675,6 +675,31 @@ public class TestDBChecker {
 			assertEquals("Type mismatch! A numeric value was expected instead of \"titi()\".", ex.getErrors().next().getMessage());
 		}
 
+		// Try with functions wrapped on 2 levels:
+		// i.e. fct1('blabla', fct2(fct3('blabla')))
+		FunctionDef[] complexFcts = new FunctionDef[3];
+		complexFcts[0] = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("str", new DBType(DBDatatype.VARCHAR)),new FunctionParam("num", new DBType(DBDatatype.INTEGER))});
+		complexFcts[1] = new FunctionDef("fct2", new DBType(DBDatatype.INTEGER), new FunctionParam[]{new FunctionParam("str", new DBType(DBDatatype.VARCHAR))});
+		complexFcts[2] = new FunctionDef("fct3", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("str", new DBType(DBDatatype.VARCHAR))});
+		parser = new ADQLParser(new DBChecker(tables, Arrays.asList(complexFcts)));
+		// With parameters of the good type:
+		try{
+			assertNotNull(parser.parseQuery("SELECT fct1('blabla', fct2(fct3('blabla'))) FROM foo"));
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail("Types are matching: this test should have succeeded!");
+		}
+		// With parameters of the bad type:
+		try{
+			parser.parseQuery("SELECT fct2(fct1('blabla', fct3('blabla'))) FROM foo");
+			fail("Parameters types are not matching: the parsing should have failed!");
+		}catch(ParseException pe){
+			assertEquals(UnresolvedIdentifiersException.class, pe.getClass());
+			assertEquals(1, ((UnresolvedIdentifiersException)pe).getNbErrors());
+			ParseException innerPe = ((UnresolvedIdentifiersException)pe).getErrors().next();
+			assertEquals("Unresolved function: \"fct1('blabla', fct3('blabla'))\"! No UDF has been defined or found with the signature: fct1(STRING, STRING).", innerPe.getMessage());
+		}
+
 		// CLEAR ALL UDFs AND ALLOW UNKNOWN FUNCTION:
 		parser = new ADQLParser(new DBChecker(tables, null));
 
