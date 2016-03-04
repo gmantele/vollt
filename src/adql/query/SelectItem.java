@@ -16,13 +16,14 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
 import java.util.NoSuchElementException;
 
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.Concatenation;
 
 /**
  * <p>Represents an item of a SELECT clause.</p>
@@ -30,7 +31,7 @@ import adql.query.operand.ADQLOperand;
  * <p>It merely encapsulates an operand and allows to associate to it an alias (according to the following syntax: "SELECT operand AS alias").</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (03/2016)
  * 
  * @see ClauseSelect
  */
@@ -185,7 +186,12 @@ public class SelectItem implements ADQLObject {
 
 	@Override
 	public String getName(){
-		return hasAlias() ? alias : operand.getName();
+		if (hasAlias())
+			return alias;
+		else if (operand instanceof Concatenation)
+			return "concat";
+		else
+			return operand.getName();
 	}
 
 	@Override
