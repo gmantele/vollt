@@ -16,7 +16,7 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -42,7 +42,7 @@ import adql.query.operand.ADQLColumn;
  * Defines a join between two "tables".
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (03/2016)
  */
 public abstract class ADQLJoin implements ADQLObject, FromContent {
 
@@ -420,7 +420,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			addAllExcept(rightList, list, mapDuplicated);
 
 			/* 4. Add all common columns of mapDuplicated */
-			list.addAll(mapDuplicated.values());
+			list.addAll(0, mapDuplicated.values());
 
 			return list;
 		}catch(UnresolvedJoinException uje){
