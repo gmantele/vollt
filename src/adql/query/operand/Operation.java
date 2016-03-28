@@ -216,7 +216,7 @@ public class Operation implements ADQLOperand {
 
 	@Override
 	public String getName(){
-		return operation.toString();
+		return operation.name();
 	}
 
 	@Override
