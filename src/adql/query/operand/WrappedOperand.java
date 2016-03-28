@@ -99,7 +99,7 @@ public class WrappedOperand implements ADQLOperand {
 
 	@Override
 	public String getName(){
-		return "(" + operand.getName() + ")";
+		return operand.getName();
 	}
 
 	@Override
