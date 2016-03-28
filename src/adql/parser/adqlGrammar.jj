@@ -1612,12 +1612,13 @@ MathFunction MathFunction(): {Token fct=null, end; ADQLOperand param1=null, para
 		| (fct=<SQRT> <LEFT_PAR> param1=NumericExpression() end=<RIGHT_PAR>)
 		| (fct=<TRUNCATE> <LEFT_PAR> param1=NumericExpression() (<COMMA> param2=SignedInteger())? end=<RIGHT_PAR>))
 		{
-			if (param1 != null){
+			if (param1 != null || MathFunctionType.valueOf(fct.image.toUpperCase()).equals(MathFunctionType.PI) || MathFunctionType.valueOf(fct.image.toUpperCase()).equals(MathFunctionType.RAND)){
 			  	MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
 			  	mf.setPosition(new TextPosition(fct, end));
 				return mf;
-			}else
+			} else {
 				return null;
+			}	
 		}
 	}catch(Exception ex){
 		throw generateParseException(ex);

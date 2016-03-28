@@ -3020,12 +3020,13 @@ public class ADQLParser implements ADQLParserConstants {
           jj_consume_token(-1);
           throw new ParseException();
         }
-                        if (param1 != null){
+                        if (param1 != null || MathFunctionType.valueOf(fct.image.toUpperCase()).equals(MathFunctionType.PI) || MathFunctionType.valueOf(fct.image.toUpperCase()).equals(MathFunctionType.RAND)){
                                 MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
                                 mf.setPosition(new TextPosition(fct, end));
                                 {if (true) return mf;}
-                        }else
+                        } else {
                                 {if (true) return null;}
+                        }
       } catch (Exception ex) {
                 {if (true) throw generateParseException(ex);}
       }
@@ -3898,11 +3899,6 @@ public class ADQLParser implements ADQLParserConstants {
     return false;
   }
 
-  private boolean jj_3R_132() {
-    if (jj_3R_101()) return true;
-    return false;
-  }
-
   private boolean jj_3R_24() {
     if (jj_scan_token(REGULAR_IDENTIFIER)) return true;
     if (jj_scan_token(LEFT_PAR)) return true;
@@ -3910,6 +3906,11 @@ public class ADQLParser implements ADQLParserConstants {
     xsp = jj_scanpos;
     if (jj_3R_115()) jj_scanpos = xsp;
     if (jj_scan_token(RIGHT_PAR)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_132() {
+    if (jj_3R_101()) return true;
     return false;
   }
 
@@ -3946,13 +3947,21 @@ public class ADQLParser implements ADQLParserConstants {
     return false;
   }
 
+  private boolean jj_3R_93() {
+    if (jj_scan_token(SIN)) return true;
+    if (jj_scan_token(LEFT_PAR)) return true;
+    if (jj_3R_100()) return true;
+    if (jj_scan_token(RIGHT_PAR)) return true;
+    return false;
+  }
+
   private boolean jj_3R_131() {
     if (jj_3R_21()) return true;
     return false;
   }
 
-  private boolean jj_3R_93() {
-    if (jj_scan_token(SIN)) return true;
+  private boolean jj_3R_92() {
+    if (jj_scan_token(COT)) return true;
     if (jj_scan_token(LEFT_PAR)) return true;
     if (jj_3R_100()) return true;
     if (jj_scan_token(RIGHT_PAR)) return true;
@@ -3966,14 +3975,6 @@ public class ADQLParser implements ADQLParserConstants {
     jj_scanpos = xsp;
     if (jj_3R_132()) return true;
     }
-    return false;
-  }
-
-  private boolean jj_3R_92() {
-    if (jj_scan_token(COT)) return true;
-    if (jj_scan_token(LEFT_PAR)) return true;
-    if (jj_3R_100()) return true;
-    if (jj_scan_token(RIGHT_PAR)) return true;
     return false;
   }
 
@@ -3995,11 +3996,6 @@ public class ADQLParser implements ADQLParserConstants {
     return false;
   }
 
-  private boolean jj_3R_51() {
-    if (jj_3R_70()) return true;
-    return false;
-  }
-
   private boolean jj_3R_89() {
     if (jj_scan_token(ATAN)) return true;
     if (jj_scan_token(LEFT_PAR)) return true;
@@ -4008,8 +4004,8 @@ public class ADQLParser implements ADQLParserConstants {
     return false;
   }
 
-  private boolean jj_3_11() {
-    if (jj_3R_24()) return true;
+  private boolean jj_3R_51() {
+    if (jj_3R_70()) return true;
     return false;
   }
 
@@ -4021,8 +4017,8 @@ public class ADQLParser implements ADQLParserConstants {
     return false;
   }
 
-  private boolean jj_3R_50() {
-    if (jj_3R_69()) return true;
+  private boolean jj_3_11() {
+    if (jj_3R_24()) return true;
     return false;
   }
 
@@ -4034,16 +4030,8 @@ public class ADQLParser implements ADQLParserConstants {
     return false;
   }
 
-  private boolean jj_3R_35() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_50()) {
-    jj_scanpos = xsp;
-    if (jj_3_11()) {
-    jj_scanpos = xsp;
-    if (jj_3R_51()) return true;
-    }
-    }
+  private boolean jj_3R_50() {
+    if (jj_3R_69()) return true;
     return false;
   }
 
@@ -4070,6 +4058,19 @@ public class ADQLParser implements ADQLParserConstants {
     }
     }
     }
+    }
+    }
+    return false;
+  }
+
+  private boolean jj_3R_35() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_50()) {
+    jj_scanpos = xsp;
+    if (jj_3_11()) {
+    jj_scanpos = xsp;
+    if (jj_3R_51()) return true;
     }
     }
     return false;
