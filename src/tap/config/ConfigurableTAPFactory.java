@@ -49,6 +49,9 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import adql.translator.JDBCTranslator;
+import adql.translator.PgSphereTranslator;
+import adql.translator.PostgreSQLTranslator;
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
 import tap.TAPException;
@@ -60,9 +63,6 @@ import uws.UWSException;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import uws.service.log.UWSLog.LogLevel;
-import adql.translator.JDBCTranslator;
-import adql.translator.PgSphereTranslator;
-import adql.translator.PostgreSQLTranslator;
 
 /**
  * <p>Concrete implementation of a {@link TAPFactory} which is parameterized by a TAP configuration file.</p>
@@ -74,7 +74,7 @@ import adql.translator.PostgreSQLTranslator;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (02/2016)
+ * @version 2.1 (04/2016)
  * @since 2.0
  */
 public class ConfigurableTAPFactory extends AbstractTAPFactory {
@@ -282,7 +282,7 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 	public void freeConnection(DBConnection conn){
 		try{
 			// Cancel any possible query that could be running:
-			conn.cancel(false);
+			conn.cancel(true);
 			// Close the connection (if a connection pool is used, the connection is not really closed but is freed and kept in the pool for further usage):
 			((JDBCConnection)conn).getInnerConnection().close();
 		}catch(SQLException se){

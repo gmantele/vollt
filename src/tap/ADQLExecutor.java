@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -25,6 +25,10 @@ import java.io.OutputStream;
 
 import javax.servlet.http.HttpServletResponse;
 
+import adql.parser.ADQLParser;
+import adql.parser.ADQLQueryFactory;
+import adql.parser.ParseException;
+import adql.query.ADQLQuery;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
 import tap.db.DBConnection;
@@ -41,10 +45,6 @@ import uws.UWSToolBox;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.service.log.UWSLog.LogLevel;
-import adql.parser.ADQLParser;
-import adql.parser.ADQLQueryFactory;
-import adql.parser.ParseException;
-import adql.query.ADQLQuery;
 
 /**
  * <p>Let process completely an ADQL query.</p>
@@ -86,7 +86,7 @@ import adql.query.ADQLQuery;
  * <p><i>Note:
  * 	{@link #start()} is using the Template Method Design Pattern: it defines the skeleton/algorithm of the processing, and defers some steps
  * 	to other functions.
- * </i></p> 
+ * </i></p>
  * 
  * <p>
  * 	So, you are able to customize almost all individual steps of the ADQL query processing: {@link #parseADQL()}, {@link #executeADQL(ADQLQuery)} and
@@ -104,7 +104,7 @@ import adql.query.ADQLQuery;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (04/2016)
  */
 public class ADQLExecutor {
 
@@ -260,7 +260,7 @@ public class ADQLExecutor {
 			dbConn = service.getFactory().getConnection(jobID);
 	}
 
-	/** 
+	/**
 	 * Cancel the current SQL query execution or result set fetching if any is currently running.
 	 * If no such process is on going, this function has no effect.
 	 * 
@@ -324,7 +324,7 @@ public class ADQLExecutor {
 	 * 	notify the user of the progression of the query execution. This parameter is removed at the end of the execution if it is successful.
 	 * </p>
 	 * 
-	 * <p>The "interrupted" flag of the associated thread is often tested so that stopping the execution as soon as possible.</p> 
+	 * <p>The "interrupted" flag of the associated thread is often tested so that stopping the execution as soon as possible.</p>
 	 * 
 	 * @return	The updated execution report.
 	 * 
@@ -419,6 +419,9 @@ public class ADQLExecutor {
 
 			// Free the connection (so that giving it back to a pool, if any, otherwise, just free resources):
 			if (dbConn != null){
+				// be sure no query is still processing and that any open transaction is rollbacked and ended:
+				dbConn.cancel(true);
+				// free the connection:
 				service.getFactory().freeConnection(dbConn);
 				dbConn = null;
 			}

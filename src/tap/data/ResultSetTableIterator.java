@@ -16,7 +16,7 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.sql.ResultSet;
@@ -26,14 +26,14 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 
-import tap.metadata.TAPColumn;
-import uws.ISO8601Format;
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
 import adql.parser.ParseException;
 import adql.translator.JDBCTranslator;
+import tap.metadata.TAPColumn;
+import uws.ISO8601Format;
 
 /**
  * <p>{@link TableIterator} which lets iterate over a SQL {@link ResultSet}.</p>
@@ -43,7 +43,7 @@ import adql.translator.JDBCTranslator;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (04/2016)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -154,7 +154,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	The second parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
-	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
@@ -191,7 +191,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	The second parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
-	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
@@ -229,7 +229,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
-	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * 
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
@@ -261,7 +261,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
-	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * 
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
@@ -297,12 +297,12 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
-	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
-	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
 	 * 
 	 * @throws NullPointerException	If NULL is given in parameter.
@@ -337,12 +337,12 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
-	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
-	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
 	 * 
 	 * @throws NullPointerException	If NULL is given in parameter.
@@ -395,12 +395,12 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
-	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
-	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
 	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
 	 * 
@@ -452,12 +452,12 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
-	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable! 
+	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
 	 * 
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
-	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i> 
+	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
 	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
 	 * 
@@ -688,7 +688,8 @@ public class ResultSetTableIterator implements TableIterator {
 			return new DBType(DBDatatype.UNKNOWN);
 
 		// Extract the type prefix and lower-case it:
-		int startParamIndex = dbmsTypeName.indexOf('('), endParamIndex = dbmsTypeName.indexOf(')');
+		int startParamIndex = dbmsTypeName.indexOf('('),
+				endParamIndex = dbmsTypeName.indexOf(')');
 		String dbmsTypePrefix = (startParamIndex <= 0) ? dbmsTypeName : dbmsTypeName.substring(0, endParamIndex);
 		dbmsTypePrefix = dbmsTypePrefix.trim().toLowerCase();
 		String[] typeParams = (startParamIndex <= 0) ? null : dbmsTypeName.substring(startParamIndex + 1, endParamIndex).split(",");
