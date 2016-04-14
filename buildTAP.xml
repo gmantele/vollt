@@ -12,7 +12,7 @@
 
 	<property name="cosJarName" value="cos-1.5beta.jar" />
 	<property name="cosJar" value="${libDir}/${cosJarName}" />
-	<property name="stilJarName" value="stil_3.0-11.jar" />
+	<property name="stilJarName" value="stil_3.1.jar" />
 	<property name="stilJar" value="${libDir}/${stilJarName}" />
 		
 	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
