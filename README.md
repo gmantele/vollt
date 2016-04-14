@@ -33,18 +33,48 @@ Each library has its own package (`adql` for ADQL, `uws` for UWS and `tap` for T
 
 ### Dependencies
 Below are summed up the dependencies of each library:
-* ADQL: `adql`, `cds.utils`, `org.postgresql` *(for adql.translator.PgSphereTranslator only)*
-* UWS: `uws`, `org.json`, HTTP Multipart lib. (`com.oreilly.servlet`)
-* TAP: `adql`, `uws`, `cds.*`, `org.json`, `org.postgresql` *(for adql.translator.PgSphereTranslator only)*, HTTP Multipart lib. (`com.oreilly.servlet`), STIL (`nom.tap`, `org.apache.tools.bzip2`, `uk.ac.starlink`)
+
+|                        | ADQL | UWS | TAP |
+|------------------------|:----:|:---:|:---:|
+| Package `adql`         |  X   |     |  X  |
+| Package `cds.utils`    |  X   |     |  X  |
+| Postgres JDBC Driver   |  X   |     |  X  |
+| Package `uws`          |      |  X  |  X  |
+| Package `org.json`     |      |  X  |  X  |
+| HTTP Servlet API       |      |  X  |  X  |
+| HTTP Multipart Library |      |  X  |  X  |
+| Packages `cds.*`       |      |     |  X  |
+| STIL Library           |      |     |  X  |
 
 In the `lib` directory, you will find 2 JAR files:
-* `cos-1.5beta.jar` to deal with HTTP multipart requests
-* `stil3.0-5.jar` for [STIL](http://www.star.bris.ac.uk/~mbt/stil/) (VOTable and other formats support)
+* The *HTTP Multipart Library*: `cos-1.5beta.jar` (i.e. package `com.oreilly.servlet`). This library helps dealing with uploads.
+* The *[STIL Library](http://www.star.bris.ac.uk/~mbt/stil/)*: `stil3.1.jar` (i.e. packages `nom.tap`, `org.apache.tools.bzip2`, `uk.ac.starlink`). This library helps supporting VOTable (read and write) and some other output formats. 
+
+The *Postgres JDBC Driver* is needed ONLY IF you want to use (and keep) `adql.translator.PgSphereTranslator`. You can get this driver on the [PostgreSQL website](https://jdbc.postgresql.org/download.html). The required package for the ADQL and TAP libraries is `org.postgresql` (and particularly the class `org.postgresql.Driver`).
+
+The *HTTP Servlet API* is generally available in the libraries coming along the Web Application Server you are using. For instance, for Tomcat, it is in the directory `lib` (or `/var/lib/tomcat-x/lib` if installed with Aptitude on a Linux system ; `x` is the version number of Tomcat). The required package for the UWS and TAP library is `javax.servlet`.
+
+### JUnit
+
+The sources of these three libraries come with some JUnit test files. You can find them in the `test` directory.
+
+If you are using Eclipse (or maybe also with another Integrated Development Environment), JUnit is generally already available. Then you can directly execute and compile the provided JUnit test files.
+
+Otherwise, you will need to get the JUnit library. Generally it is provided with the JDK, but you can find the corresponding JAR also on the [JUnit website](https://github.com/junit-team/junit4/wiki/Download-and-Install). You may also need another library called `hamcrest`. You can find this one on its [Maven repository](http://search.maven.org/#search|ga|1|g%3Aorg.hamcrest) ; just to be sure to have everything needed, just take `hamcrest-all` as a JAR.
+
 
 ### ANT scripts
 At the root of the repository, there are 3 ANT scripts. Each is dedicated to one library. They are able to generate JAR for sources, binaries and Javadoc.
 
-3 properties must be set before using one of these scripts:
-* `POSTGRES`: a path toward a JAR or a binary directory containing all org.postgresql.* - [https://jdbc.postgresql.org/download.html](JDBC Postgres driver) - **(ONLY for ADQL and TAP if you want to keep adql.translator.PgSphereTranslator)**
-* `SERVLET-API`: a path toward a JAR or a binary directory containing all javax.servlet.*
-* (`JUNIT-API` *not required before the version 2.0 of the tap library OR if you are not interested by the `test` directory (JUnit tests)*: a path toward one or several JARs or binary directories containing all classes to use JUnit.)
+4 properties must be set before using one of these scripts:
+* `POSTGRES` *only for ADQL and TAP if you want to keep adql.translator.PgSphereTranslator*: a path toward a JAR or a binary directory containing all `org.postgresql.*` - [https://jdbc.postgresql.org/download.html](JDBC Postgres driver)
+* `SERVLET-API`: a path toward a JAR or a binary directory containing all `javax.servlet.*`
+* `JUNIT-API` *not required if you are not interested by running the JUnit tests*: a path toward one or several JARs or binary directories containing all classes to use JUnit.
+* `JNDI-API` *not required if you are not interested by running the JUnit tests*: a path toward one or several JARs or binary directories containing all classes to run a JNDI. Several libraries exist for that ; [Simple-JNDI](https://code.google.com/archive/p/osjava/wikis/SimpleJNDI.wiki) is very simple and is used by the libraries developer to run the related JUnit tests.
+
+All of these ANT scripts have the following main targets:
+* `junitValidation`: Executes all JUnit tests related to the target library and stop ANT at any error. If the target library is TAP, the JUnit tests of the three libraries are run.
+* `buildLib`: run the JUnit tests and if they are all successful, compile the target library's classes and build a JAR file with them and their dependencies.
+* `buildLibAndSrc`: same as `buildLib` + building of a JAR file containing all the sources and the required libraries.
+* `buildJavadoc`: generate a JAR containing the Javadoc of the target library's classes.
+* `buildAll`: equivalent of `buildLibAndSrc` and `buildJavadoc` together. The result is 3 JARs: one with the compiled classes, one with the corresponding sources and the last one with the Javadoc.
