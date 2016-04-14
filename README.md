@@ -54,14 +54,19 @@ The *Postgres JDBC Driver* is needed ONLY IF you want to use (and keep) `adql.tr
 
 The *HTTP Servlet API* is generally available in the libraries coming along the Web Application Server you are using. For instance, for Tomcat, it is in the directory `lib` (or `/var/lib/tomcat-x/lib` if installed with Aptitude on a Linux system ; `x` is the version number of Tomcat). The required package for the UWS and TAP library is `javax.servlet`.
 
+*__Note:__ The Postgres JDBC Driver and the HTTP Servlet API are not provided in this Git repository in order to avoid version incompatibility with the host system (i.e. your machine when you checkout/clone/fork this repository).*
+
 ### JUnit
 
 The sources of these three libraries come with some JUnit test files. You can find them in the `test` directory.
 
-If you are using Eclipse (or maybe also with another Integrated Development Environment), JUnit is generally already available. Then you can directly execute and compile the provided JUnit test files.
+If you are using Eclipse (or maybe also with another Integrated Development Environment), JUnit is generally already available. Then you can directly execute and compile the provided JUnit test files. So you do not need the two libraries mentionned just below.
 
-Otherwise, you will need to get the JUnit library. Generally it is provided with the JDK, but you can find the corresponding JAR also on the [JUnit website](https://github.com/junit-team/junit4/wiki/Download-and-Install). You may also need another library called `hamcrest`. You can find this one on its [Maven repository](http://search.maven.org/#search|ga|1|g%3Aorg.hamcrest) ; just to be sure to have everything needed, just take `hamcrest-all` as a JAR.
+Otherwise, you will need to get the JUnit library. Generally it is provided with the JDK, but you can find the corresponding JAR also on the [JUnit website](https://github.com/junit-team/junit4/wiki/Download-and-Install).
 
+You may also need another library called `hamcrest`. You can find this one on its [Maven repository](http://search.maven.org/#search|ga|1|g%3Aorg.hamcrest) ; just to be sure to have everything needed, just take `hamcrest-all` as a JAR.
+
+*__Note:__ The JUnit and Hamcrest libraries are not provided in this Git repository in order to avoid version incompatibility with the host system (i.e. your machine when you checkout/clone/fork this repository).*
 
 ### ANT scripts
 At the root of the repository, there are 3 ANT scripts. Each is dedicated to one library. They are able to generate JAR for sources, binaries and Javadoc.
@@ -72,9 +77,11 @@ At the root of the repository, there are 3 ANT scripts. Each is dedicated to one
 * `JUNIT-API` *not required if you are not interested by running the JUnit tests*: a path toward one or several JARs or binary directories containing all classes to use JUnit.
 * `JNDI-API` *not required if you are not interested by running the JUnit tests*: a path toward one or several JARs or binary directories containing all classes to run a JNDI. Several libraries exist for that ; [Simple-JNDI](https://code.google.com/archive/p/osjava/wikis/SimpleJNDI.wiki) is very simple and is used by the libraries developer to run the related JUnit tests.
 
+*__Note:__ No JNDI library is provided in this Git repository because any JNDI Library may work and there is no reason to impose a specific one. Besides, similarly as the other libraries required to compile the sources, it lets avoiding version incompatibility with the host system (i.e. your machine when you checkout/clone/fork this repository).*
+
 All of these ANT scripts have the following main targets:
 * `junitValidation`: Executes all JUnit tests related to the target library and stop ANT at any error. If the target library is TAP, the JUnit tests of the three libraries are run.
-* `buildLib`: run the JUnit tests and if they are all successful, compile the target library's classes and build a JAR file with them and their dependencies.
+* `buildLib` *DEFAULT*: run the JUnit tests and if they are all successful, compile the target library's classes and build a JAR file with them and their dependencies.
 * `buildLibAndSrc`: same as `buildLib` + building of a JAR file containing all the sources and the required libraries.
 * `buildJavadoc`: generate a JAR containing the Javadoc of the target library's classes.
 * `buildAll`: equivalent of `buildLibAndSrc` and `buildJavadoc` together. The result is 3 JARs: one with the compiled classes, one with the corresponding sources and the last one with the Javadoc.
