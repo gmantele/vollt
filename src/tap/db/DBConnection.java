@@ -16,17 +16,20 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import adql.query.ADQLQuery;
 import tap.TAPFactory;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPTable;
-import adql.query.ADQLQuery;
 
 /**
  * <p>Connection to the "database" (whatever is the type or whether it is linked to a true DBMS connection).</p>
@@ -42,7 +45,7 @@ import adql.query.ADQLQuery;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (04/2016)
  */
 public interface DBConnection {
 
@@ -107,7 +110,7 @@ public interface DBConnection {
 	 * 
 	 * <h3>TAP_SCHEMA CREATION</h3>
 	 * <p>
-	 * 	This function is MAY drop and then re-create the schema TAP_SCHEMA and all
+	 * 	This function MAY drop and then re-create the schema TAP_SCHEMA and all
 	 * 	its tables listed in the TAP standard (TAP_SCHEMA.schemas, .tables, .columns, .keys and .key_columns).
 	 * 	<i>All other tables inside TAP_SCHEMA SHOULD NOT be modified!</i>
 	 * </p>
@@ -115,7 +118,7 @@ public interface DBConnection {
 	 * <p>
 	 * 	The schema and the tables MUST be created using either the <b>standard definition</b> or the
 	 * 	<b>definition provided in the {@link TAPMetadata} object</b> (if provided). Indeed, if your definition of these TAP tables
-	 * 	is different from the standard (the standard + new elements), you MUST provide your modifications in parameter
+	 * 	is different from the standard (i.e. the standard + new elements), you MUST provide your modifications in parameter
 	 *	through the {@link TAPMetadata} object so that they can be applied and taken into account in TAP_SCHEMA.
 	 * </p>
 	 * 
@@ -138,7 +141,7 @@ public interface DBConnection {
 	 * 		<li><b>(a) if TAP_SCHEMA tables are NOT provided</b>:
 	 * 			this function SHOULD consider their definition as exactly the one provided by
 	 * 			the TAP standard/protocol. If so, the standard definition MUST be automatically added
-	 * 			into the {@link TAPMetadata} object AND into TAP_SCHEMA. 
+	 * 			into the {@link TAPMetadata} object AND into TAP_SCHEMA.
 	 * 		</li>
 	 * 		<li><b>(b) if TAP_SCHEMA tables ARE provided</b>:
 	 * 			the definition of all given elements will be taken into account while updating the TAP_SCHEMA.
@@ -220,8 +223,17 @@ public interface DBConnection {
 	 * 
 	 * <p>The result of this query must be formatted as a table, and so must be iterable using a {@link TableIterator}.</p>
 	 * 
-	 * <p><i>note: the interpretation of the ADQL query is up to the implementation. In most of the case, it is just needed
+	 * <p><i>note: the interpretation of the ADQL query is up to the implementation. In most of the cases, it is just needed
 	 * to translate this ADQL query into an SQL query (understandable by the chosen DBMS).</i></p>
+	 * 
+	 * <p><b>IMPORTANT:</b>
+	 * 	A {@link DBConnection} implementation may open resources to perform the query and get the result,
+	 * 	but it may especially KEEP them OPENED in order to let the returned {@link TableIterator} iterates on
+	 * 	the result set. So that closing these resources, the function {@link #endQuery()} should be called
+	 * 	when the result is no longer needed. A good implementation of {@link TableIterator} SHOULD call this
+	 * 	function when {@link TableIterator#close()} is called. <b>So, do not forget to call {@link TableIterator#close()}
+	 * 	when you do not need any more the query result.</b>
+	 * </p>
 	 * 
 	 * @param adqlQuery	ADQL query to execute.
 	 * 
@@ -230,6 +242,9 @@ public interface DBConnection {
 	 * @throws DBException	If any errors occurs while executing the query.
 	 * 
 	 * @since 2.0
+	 * 
+	 * @see #endQuery()
+	 * @see TableIterator#close()
 	 */
 	public TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException;
 
@@ -272,12 +287,14 @@ public interface DBConnection {
 	 * <p>Stop the execution of the current query.</p>
 	 * 
 	 * <p>
-	 * 	If asked. a rollback of the current transaction can also be performed
-	 * 	after the cancellation (if successful) of the query.
+	 * 	If asked, a rollback of the current transaction can also be performed
+	 * 	before the function returns. This rollback operation is totally independent
+	 * 	from the cancellation. It means that the rollback is always performed whatever
+	 * 	is the cancellation result (or whatever the cancellation can be performed or not).
 	 * </p>
 	 * 
 	 * <p>
-	 * 	This function should <b>never</b> return any kind of exception. This is particularly important
+	 * 	This function should <b>never</b> throw any kind of exception. This is particularly important
 	 * 	in the following cases:
 	 * </p>
 	 * <ul>
@@ -286,7 +303,7 @@ public interface DBConnection {
 	 * 	<li>no query is currently running</li>
 	 * 	<li>a rollback is not possible or failed</li>
 	 * </ul>
-	 * <p>However, if an exception occurs it may be directly logged at least as a WARNING.</p>
+	 * <p>However, if an exception occurs it should be directly logged at least as a WARNING.</p>
 	 * 
 	 * @param rollback	<code>true</code> to cancel the statement AND rollback the current connection transaction,
 	 *                	<code>false</code> to just cancel the statement.
@@ -294,5 +311,37 @@ public interface DBConnection {
 	 * @since 2.1
 	 */
 	public void cancel(final boolean rollback);
+
+	/**
+	 * <p>End the last query performed by this {@link DBConnection} and free some associated resources
+	 * opened just for this last query.</p>
+	 * 
+	 * <p>
+	 * 	Originally, this function aims to be called when the result of {@link #executeQuery(ADQLQuery)}
+	 * 	is no longer needed, in order to clean/free what the {@link DBConnection} needed to keep this
+	 * 	result set open. In other words, if we take the example of a JDBC connection, this function will
+	 * 	close the {@link ResultSet}, the {@link Statement} and will end any transaction eventually opened
+	 * 	by the {@link DBConnection} (for instance if a fetchSize is set).
+	 * </p>
+	 * 
+	 * <p>
+	 * 	However, this function could also be used after any other operation performed by the {@link DBConnection}.
+	 * 	You should just be aware that, depending of the implementation, if a transaction has been opened, this
+	 * 	function may end it, which means generally that a rollback is performed.
+	 * </p>
+	 * 
+	 * <p>
+	 * 	Similarly, since it is supposed to end any query lastly performed, this function must also cancel
+	 * 	any processing. So, the function {@link #cancel(boolean)} should be called.
+	 * </p>
+	 * 
+	 * <p>
+	 * 	Finally, like {@link #cancel(boolean)}, this function should <b>never</b> throw any kind of exception.
+	 * 	If internally an exception occurs, it should be directly logged at least as a WARNING.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 */
+	public void endQuery();
 
 }

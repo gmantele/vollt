@@ -169,6 +169,13 @@ import uws.service.log.UWSLog.LogLevel;
  * 	To enable it, a simple call to {@link #setFetchSize(int)} is enough, whatever is the given value.
  * </i></p>
  * 
+ * <p><i>Note 3:
+ * 	Generally set a fetch size starts a transaction in the database. So, after the result of the fetched query
+ * 	is not needed any more, do not forget to call {@link #endQuery()} in order to end the implicitly opened transaction.
+ * 	However, generally closing the returned {@link TableIterator} is fully enough (see the sources of
+ * 	{@link ResultSetTableIterator#close()} for more details).
+ * </i></p>
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.1 (04/2016)
  * @since 2.0
@@ -516,7 +523,7 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * <p><i>Note 1:
 	 * 	A failure of a rollback is not considered as a not supported cancellation feature by the JDBC driver or the DBMS.
-	 * 	So if the cancellation succeeds but a rollback fails, a next call of this function will still try cancelling the given statement.
+	 * 	So if the cancellation succeeds but a rollback fails, a next call of this function will still try canceling the given statement.
 	 * 	In case of a rollback failure, only a WARNING is written in the log file ; no exception is thrown.
 	 * </i></p>
 	 * 
@@ -541,13 +548,11 @@ public class JDBCConnection implements DBConnection {
 	 */
 	@Override
 	public final void cancel(final boolean rollback){
-		if (supportsCancel && stmt != null){
-			synchronized(cancelled){
-				cancelled = cancel(stmt, rollback);
-				// Log the success of the cancellation:
-				if (cancelled && logger != null)
-					logger.logDB(LogLevel.INFO, this, "CANCEL", "Query execution successfully stopped!", null);
-			}
+		synchronized(cancelled){
+			cancelled = cancel(stmt, rollback);
+			// Log the success of the cancellation:
+			if (cancelled && logger != null)
+				logger.logDB(LogLevel.INFO, this, "CANCEL", "Query execution successfully stopped!", null);
 		}
 	}
 
@@ -604,17 +609,8 @@ public class JDBCConnection implements DBConnection {
 		}
 		// Whatever happens, rollback all executed operations (only if rollback=true and if in a transaction ; that's to say if AutoCommit = false):
 		finally{
-			if (rollback && supportsTransaction){
-				try{
-					if (!connection.getAutoCommit()){
-						connection.rollback();
-						connection.setAutoCommit(true);
-					}
-				}catch(SQLException se){
-					if (logger != null)
-						logger.logDB(LogLevel.ERROR, this, "CANCEL", "Query execution successfully stopped BUT the rollback fails!", se);
-				}
-			}
+			if (rollback && supportsTransaction)
+				rollback();
 		}
 	}
 
@@ -651,6 +647,18 @@ public class JDBCConnection implements DBConnection {
 		synchronized(cancelled){
 			cancelled = false;
 		}
+	}
+
+	@Override
+	public void endQuery(){
+		// Cancel the last query processing, if still running:
+		cancel(stmt, false);  // note: this function is called instead of cancel(false) in order to avoid a log message about the cancellation operation result.
+		// Close the statement, if still opened:
+		closeStatement();
+		// Rollback the transaction, if one has been opened:
+		rollback(false);
+		// End the transaction (i.e. go back to autocommit=true), if one has been opened:
+		endTransaction(false);
 	}
 
 	/* ********************* */
@@ -709,13 +717,8 @@ public class JDBCConnection implements DBConnection {
 		}catch(Exception ex){
 			// Close the ResultSet, if one was open:
 			close(result);
-			// Ensure the query is not running anymore and rollback the transaction:
-			cancel(true);
-			// If still not canceled, log this fact as an error:
-			if (!isCancelled() && logger != null)
-				logger.logDB(LogLevel.ERROR, this, "EXECUTE", "Unexpected error while EXECUTING SQL query!", null);
-			// Close the open statement, if one was open:
-			closeStatement();
+			// End properly the query:
+			endQuery();
 			// Propagate the exception with an appropriate error message:
 			if (ex instanceof SQLException)
 				throw new DBException("Unexpected error while executing a SQL query: " + ex.getMessage(), ex);
@@ -731,12 +734,13 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Create a {@link TableIterator} instance which lets reading the given result table.</p>
 	 * 
-	 * <p><b>Important note:</b>
-	 * 	This function also set to NULL the statement of this {@link JDBCConnection} instance: {@link #stmt}.
-	 * 	However, the statement is not closed ; it is just given to a {@link ResultSetTableIterator} iterator
-	 * 	which will close it in the same time as the given {@link ResultSet}, when its function
-	 * 	{@link ResultSetTableIterator#close()} is called.
-	 * </p>
+	 * <p><i>Note:
+	 * 	The statement currently opened is not closed by this function. Actually, it is still associated with
+	 * 	this {@link JDBCConnection}. However, this latter is provided to the {@link TableIterator} returned by
+	 * 	this function. Thus, when the {@link TableIterator#close()} is called, the function {@link #endQuery()}
+	 * 	will be called. It will then close the {@link ResultSet}, the {@link Statement} and end any opened
+	 * 	transaction (with rollback). See {@link #endQuery()} for more details.
+	 * </i></p>
 	 * 
 	 * @param rs				Result of an SQL query.
 	 * @param resultingColumns	Metadata corresponding to each columns of the result.
@@ -745,14 +749,12 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @throws DataReadException	If the metadata (columns count and types) can not be fetched
 	 *                          	or if any other error occurs.
+	 * 
+	 * @see ResultSetTableIterator#ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
 	 */
 	protected TableIterator createTableIterator(final ResultSet rs, final DBColumn[] resultingColumns) throws DataReadException{
-		// Dis-associate the current Statement from this JDBCConnection instance:
-		Statement itStmt = stmt;
-		stmt = null;
-		// Return a TableIterator wrapping the given ResultSet:
 		try{
-			return new ResultSetTableIterator(itStmt, rs, translator, dbms, resultingColumns);
+			return new ResultSetTableIterator(this, rs, resultingColumns, translator, dbms);
 		}catch(Throwable t){
 			throw (t instanceof DataReadException) ? (DataReadException)t : new DataReadException(t);
 		}
@@ -852,7 +854,7 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create a Statement!", se);
 			throw new DBException("Can not create a Statement!", se);
 		}finally{
-			cancel(true);
+			cancel(stmt, true); // note: this function is called instead of cancel(true) in order to avoid a log message about the cancellation operation result.
 			closeStatement();
 		}
 
@@ -2424,7 +2426,8 @@ public class JDBCConnection implements DBConnection {
 	}
 
 	/**
-	 * <p>Rollback the current transaction.</p>
+	 * <p>Rollback the current transaction.
+	 * The success or the failure of the rollback operation is always logged (except if no logger is available).</p>
 	 * 
 	 * <p>
 	 * 	{@link #startTransaction()} must have been called before. If it's not the case the connection
@@ -2440,19 +2443,72 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @throws DBException	If it is impossible to rollback a transaction though transactions are supported by this connection..
 	 *                    	If these are not supported, this error can never be thrown.
+	 * 
+	 * @see #rollback(boolean)
 	 */
-	protected void rollback(){
+	protected final void rollback(){
+		rollback(true);
+	}
+
+	/**
+	 * <p>Rollback the current transaction.</p>
+	 * 
+	 * <p>
+	 * 	{@link #startTransaction()} must have been called before. If it's not the case the connection
+	 * 	may throw a {@link SQLException} which will be transformed into a {@link DBException} here.
+	 * </p>
+	 * 
+	 * <p>If transactions are not supported by this connection, nothing is done.</p>
+	 * 
+	 * <p><b><i>Important note:</b>
+	 * 	If any error interrupts the ROLLBACK operation, transactions will considered afterwards as not supported by this connection.
+	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
+	 * </i></p>
+	 * 
+	 * @param log	<code>true</code> to log the success/failure of the rollback operation,
+	 *           	<code>false</code> to be quiet whatever happens.
+	 * 
+	 * @throws DBException	If it is impossible to rollback a transaction though transactions are supported by this connection..
+	 *                    	If these are not supported, this error can never be thrown.
+	 * 
+	 * @since 2.1
+	 */
+	protected void rollback(final boolean log){
 		try{
-			if (supportsTransaction){
+			if (supportsTransaction && !connection.getAutoCommit()){
 				connection.rollback();
-				if (logger != null)
+				if (log && logger != null)
 					logger.logDB(LogLevel.INFO, this, "ROLLBACK", "Transaction ROLLBACKED.", null);
 			}
 		}catch(SQLException se){
 			supportsTransaction = false;
-			if (logger != null)
+			if (log && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "ROLLBACK", "Transaction ROLLBACK impossible!", se);
 		}
+	}
+
+	/**
+	 * <p>End the current transaction.
+	 * The success or the failure of the transaction ending operation is always logged (except if no logger is available).</p>
+	 * 
+	 * <p>
+	 * 	Basically, if transactions are supported by this connection, the flag AutoCommit is just turned on.
+	 * </p>
+	 * 
+	 * <p>If transactions are not supported by this connection, nothing is done.</p>
+	 * 
+	 * <p><b><i>Important note:</b>
+	 * 	If any error interrupts the END TRANSACTION operation, transactions will be afterwards considered as not supported by this connection.
+	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
+	 * </i></p>
+	 * 
+	 * @throws DBException	If it is impossible to end a transaction though transactions are supported by this connection.
+	 *                    	If these are not supported, this error can never be thrown.
+	 * 
+	 * @see #endTransaction(boolean)
+	 */
+	protected final void endTransaction(){
+		endTransaction(true);
 	}
 
 	/**
@@ -2469,19 +2525,24 @@ public class JDBCConnection implements DBConnection {
 	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
 	 * </i></p>
 	 * 
+	 * @param log	<code>true</code> to log the success/failure of the transaction ending operation,
+	 *           	<code>false</code> to be quiet whatever happens.
+	 * 
 	 * @throws DBException	If it is impossible to end a transaction though transactions are supported by this connection.
 	 *                    	If these are not supported, this error can never be thrown.
+	 * 
+	 * @since 2.1
 	 */
-	protected void endTransaction(){
+	protected void endTransaction(final boolean log){
 		try{
 			if (supportsTransaction){
 				connection.setAutoCommit(true);
-				if (logger != null)
+				if (log && logger != null)
 					logger.logDB(LogLevel.INFO, this, "END_TRANSACTION", "Transaction ENDED.", null);
 			}
 		}catch(SQLException se){
 			supportsTransaction = false;
-			if (logger != null)
+			if (log && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "END_TRANSACTION", "Transaction ENDing impossible!", se);
 		}
 	}

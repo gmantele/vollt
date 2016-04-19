@@ -417,11 +417,8 @@ public class ADQLExecutor {
 				logger.logTAP(LogLevel.WARNING, report, "END_EXEC", "Can not drop the uploaded tables from the database!", e);
 			}
 
-			// Free the connection (so that giving it back to a pool, if any, otherwise, just free resources):
+			// Free the connection (so that giving it back to a pool if any, otherwise just free resources):
 			if (dbConn != null){
-				// be sure no query is still processing and that any open transaction is rollbacked and ended:
-				dbConn.cancel(true);
-				// free the connection:
 				service.getFactory().freeConnection(dbConn);
 				dbConn = null;
 			}

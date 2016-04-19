@@ -281,8 +281,8 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 	@Override
 	public void freeConnection(DBConnection conn){
 		try{
-			// Cancel any possible query that could be running:
-			conn.cancel(true);
+			// End properly any query that is not yet stopped and cleaned (i.e. no more transaction opened):
+			conn.endQuery();
 			// Close the connection (if a connection pool is used, the connection is not really closed but is freed and kept in the pool for further usage):
 			((JDBCConnection)conn).getInnerConnection().close();
 		}catch(SQLException se){
