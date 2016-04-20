@@ -60,7 +60,7 @@ public class ADQLQuery implements ADQLObject {
 	private ClauseConstraints where;
 
 	/** The ADQL clause GROUP BY. */
-	private ClauseADQL<ColumnReference> groupBy;
+	private ClauseADQL<ADQLOperand> groupBy;
 
 	/** The ADQL clause HAVING. */
 	private ClauseConstraints having;
@@ -79,7 +79,7 @@ public class ADQLQuery implements ADQLObject {
 		select = new ClauseSelect();
 		from = null;
 		where = new ClauseConstraints("WHERE");
-		groupBy = new ClauseADQL<ColumnReference>("GROUP BY");
+		groupBy = new ClauseADQL<ADQLOperand>("GROUP BY");
 		having = new ClauseConstraints("HAVING");
 		orderBy = new ClauseADQL<ADQLOrder>("ORDER BY");
 	}
@@ -95,7 +95,7 @@ public class ADQLQuery implements ADQLObject {
 		select = (ClauseSelect)toCopy.select.getCopy();
 		from = (FromContent)toCopy.from.getCopy();
 		where = (ClauseConstraints)toCopy.where.getCopy();
-		groupBy = (ClauseADQL<ColumnReference>)toCopy.groupBy.getCopy();
+		groupBy = (ClauseADQL<ADQLOperand>)toCopy.groupBy.getCopy();
 		having = (ClauseConstraints)toCopy.having.getCopy();
 		orderBy = (ClauseADQL<ADQLOrder>)toCopy.orderBy.getCopy();
 		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
@@ -200,7 +200,7 @@ public class ADQLQuery implements ADQLObject {
 	 * 
 	 * @return	Its GROUP BY clause.
 	 */
-	public final ClauseADQL<ColumnReference> getGroupBy(){
+	public final ClauseADQL<ADQLOperand> getGroupBy(){
 		return groupBy;
 	}
 
@@ -212,7 +212,7 @@ public class ADQLQuery implements ADQLObject {
 	 * @param newGroupBy				The new GROUP BY clause.
 	 * @throws NullPointerException		If the given GROUP BY clause is <i>null</i>.
 	 */
-	public void setGroupBy(ClauseADQL<ColumnReference> newGroupBy) throws NullPointerException{
+	public void setGroupBy(ClauseADQL<ADQLOperand> newGroupBy) throws NullPointerException{
 		if (newGroupBy == null)
 			groupBy.clear();
 		else
@@ -453,7 +453,7 @@ public class ADQLQuery implements ADQLObject {
 							break;
 						case 3:
 							if (replacer instanceof ClauseADQL)
-								groupBy = (ClauseADQL<ColumnReference>)replacer;
+								groupBy = (ClauseADQL<ADQLOperand>)replacer;
 							else
 								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + groupBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 							break;
