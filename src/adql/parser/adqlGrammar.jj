@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (08/2015)
+*  Version: 1.4 (04/2016)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (08/2015)
+* @version 1.4 (04/2016)
 */
 public class ADQLParser {
 	
@@ -1604,11 +1604,9 @@ MathFunction MathFunction(): {Token fct=null, end; ADQLOperand param1=null, para
 		| (fct=<SQRT> <LEFT_PAR> param1=NumericExpression() end=<RIGHT_PAR>)
 		| (fct=<TRUNCATE> <LEFT_PAR> param1=NumericExpression() (<COMMA> param2=SignedInteger())? end=<RIGHT_PAR>))
 		{
-			if (param1 != null){			  	MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
-			  	mf.setPosition(new TextPosition(fct, end));
-				return mf;
-			}else
-				return null;
+			MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
+			mf.setPosition(new TextPosition(fct, end));
+			return mf;
 		}
 	}catch(Exception ex){
 		throw generateParseException(ex);
@@ -1626,11 +1624,9 @@ MathFunction TrigFunction(): {Token fct=null, end; ADQLOperand param1=null, para
 	| (fct=<TAN> <LEFT_PAR> param1=NumericExpression() end=<RIGHT_PAR>))
 	{
 		try{
-			if (param1 != null){			  	MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
-			  	mf.setPosition(new TextPosition(fct, end));
-			  	return mf;
-			}else
-				return null;
+			MathFunction mf = queryFactory.createMathFunction(MathFunctionType.valueOf(fct.image.toUpperCase()), param1, param2);
+			mf.setPosition(new TextPosition(fct, end));
+			return mf;
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}
