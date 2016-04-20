@@ -40,7 +40,6 @@ public class TestADQLParser {
 			parser.parseQuery("SELECT * FROM cat ORDER BY 1 DESC;");
 			// GROUP BY
 			parser.parseQuery("SELECT * FROM cat GROUP BY oid;");
-			parser.parseQuery("SELECT * FROM cat GROUP BY 1;");
 			// JOIN ... USING(...)
 			parser.parseQuery("SELECT * FROM cat JOIN cat2 USING(oid);");
 		}catch(Exception e){
@@ -67,12 +66,21 @@ public class TestADQLParser {
 		}
 
 		try{
-			// GROUP BY
+			// GROUP BY with a qualified column name
 			parser.parseQuery("SELECT * FROM cat GROUP BY cat.oid;");
-			fail("A qualified column name is forbidden in ORDER BY! This test should have failed.");
+			fail("A qualified column name is forbidden in GROUP BY! This test should have failed.");
 		}catch(Exception e){
 			assertEquals(ParseException.class, e.getClass());
 			assertEquals(" Encountered \".\". Was expecting one of: <EOF> \",\" \";\" \"HAVING\" \"ORDER BY\" ", e.getMessage());
+		}
+
+		try{
+			// GROUP BY with a SELECT item index
+			parser.parseQuery("SELECT * FROM cat GROUP BY 1;");
+			fail("A SELECT item index is forbidden in GROUP BY! This test should have failed.");
+		}catch(Exception e){
+			assertEquals(ParseException.class, e.getClass());
+			assertEquals(" Encountered \"1\". Was expecting one of: \"\\\"\" <REGULAR_IDENTIFIER> ", e.getMessage());
 		}
 
 		try{
