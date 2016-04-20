@@ -1088,31 +1088,11 @@ public class ADQLParser implements ADQLParserConstants {
 		trace_call("ColumnRef");
 		try{
 			IdentifierItem identifier = null;
-			Token ind = null;
-			switch((jj_ntk == -1) ? jj_ntk_f() : jj_ntk){
-				case DELIMITED_IDENTIFIER:
-				case REGULAR_IDENTIFIER:{
-					identifier = Identifier();
-					break;
-				}
-				case UNSIGNED_INTEGER:{
-					ind = jj_consume_token(UNSIGNED_INTEGER);
-					break;
-				}
-				default:
-					jj_la1[20] = jj_gen;
-					jj_consume_token(-1);
-					throw new ParseException();
-			}
+			identifier = Identifier();
 			try{
-				ColumnReference colRef = null;
-				if (identifier != null)
-					colRef = queryFactory.createColRef(identifier);
-				else
-					colRef = queryFactory.createColRef(Integer.parseInt(ind.image), new TextPosition(ind));
 				{
 					if ("" != null)
-						return colRef;
+						return queryFactory.createColRef(identifier);
 				}
 			}catch(Exception ex){
 				{
@@ -1142,7 +1122,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[21] = jj_gen;
+					jj_la1[20] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
@@ -1159,14 +1139,14 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[22] = jj_gen;
+							jj_la1[21] = jj_gen;
 							jj_consume_token(-1);
 							throw new ParseException();
 					}
 					break;
 				}
 				default:
-					jj_la1[23] = jj_gen;;
+					jj_la1[22] = jj_gen;;
 			}
 			try{
 				ADQLOrder order = null;
@@ -1216,13 +1196,13 @@ public class ADQLParser implements ADQLParserConstants {
 										break;
 									}
 									default:
-										jj_la1[24] = jj_gen;;
+										jj_la1[23] = jj_gen;;
 								}
 								alias = Identifier();
 								break;
 							}
 							default:
-								jj_la1[25] = jj_gen;;
+								jj_la1[24] = jj_gen;;
 						}
 						content = queryFactory.createTable(identifiers, alias);
 						if (alias == null)
@@ -1236,7 +1216,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[27] = jj_gen;
+						jj_la1[26] = jj_gen;
 						if (jj_2_2(2)){
 							subQuery = SubQueryExpression();
 							switch((jj_ntk == -1) ? jj_ntk_f() : jj_ntk){
@@ -1245,7 +1225,7 @@ public class ADQLParser implements ADQLParserConstants {
 									break;
 								}
 								default:
-									jj_la1[26] = jj_gen;;
+									jj_la1[25] = jj_gen;;
 							}
 							alias = Identifier();
 							content = queryFactory.createTable(subQuery, alias);
@@ -1271,7 +1251,7 @@ public class ADQLParser implements ADQLParserConstants {
 									break;
 								}
 								default:
-									jj_la1[28] = jj_gen;
+									jj_la1[27] = jj_gen;
 									jj_consume_token(-1);
 									throw new ParseException();
 							}
@@ -1330,7 +1310,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[29] = jj_gen;
+						jj_la1[28] = jj_gen;
 						break label_6;
 				}
 			}
@@ -1390,7 +1370,7 @@ public class ADQLParser implements ADQLParserConstants {
 												break;
 											}
 											default:
-												jj_la1[30] = jj_gen;
+												jj_la1[29] = jj_gen;
 												jj_consume_token(-1);
 												throw new ParseException();
 										}
@@ -1400,19 +1380,19 @@ public class ADQLParser implements ADQLParserConstants {
 												break;
 											}
 											default:
-												jj_la1[31] = jj_gen;;
+												jj_la1[30] = jj_gen;;
 										}
 										break;
 									}
 									default:
-										jj_la1[32] = jj_gen;
+										jj_la1[31] = jj_gen;
 										jj_consume_token(-1);
 										throw new ParseException();
 								}
 								break;
 							}
 							default:
-								jj_la1[33] = jj_gen;;
+								jj_la1[32] = jj_gen;;
 						}
 						jj_consume_token(JOIN);
 						rightTable = TableRef();
@@ -1459,7 +1439,7 @@ public class ADQLParser implements ADQLParserConstants {
 												break;
 											}
 											default:
-												jj_la1[34] = jj_gen;
+												jj_la1[33] = jj_gen;
 												jj_consume_token(-1);
 												throw new ParseException();
 										}
@@ -1469,19 +1449,19 @@ public class ADQLParser implements ADQLParserConstants {
 												break;
 											}
 											default:
-												jj_la1[35] = jj_gen;;
+												jj_la1[34] = jj_gen;;
 										}
 										break;
 									}
 									default:
-										jj_la1[36] = jj_gen;
+										jj_la1[35] = jj_gen;
 										jj_consume_token(-1);
 										throw new ParseException();
 								}
 								break;
 							}
 							default:
-								jj_la1[37] = jj_gen;;
+								jj_la1[36] = jj_gen;;
 						}
 						jj_consume_token(JOIN);
 						rightTable = TableRef();
@@ -1509,7 +1489,7 @@ public class ADQLParser implements ADQLParserConstants {
 											break;
 										}
 										default:
-											jj_la1[38] = jj_gen;
+											jj_la1[37] = jj_gen;
 											break label_7;
 									}
 									jj_consume_token(COMMA);
@@ -1526,14 +1506,14 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[39] = jj_gen;
+								jj_la1[38] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
 						break;
 					}
 					default:
-						jj_la1[40] = jj_gen;
+						jj_la1[39] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -1569,7 +1549,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[41] = jj_gen;
+						jj_la1[40] = jj_gen;
 						break label_8;
 				}
 			}
@@ -1614,7 +1594,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[42] = jj_gen;
+					jj_la1[41] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
@@ -1652,7 +1632,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[43] = jj_gen;
+					jj_la1[42] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
@@ -1693,14 +1673,14 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[44] = jj_gen;
+							jj_la1[43] = jj_gen;
 							jj_consume_token(-1);
 							throw new ParseException();
 					}
 					break;
 				}
 				default:
-					jj_la1[45] = jj_gen;;
+					jj_la1[44] = jj_gen;;
 			}
 			number = jj_consume_token(UNSIGNED_INTEGER);
 			try{
@@ -1784,7 +1764,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[46] = jj_gen;
+						jj_la1[45] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -1841,7 +1821,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[47] = jj_gen;
+						jj_la1[46] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -1887,7 +1867,7 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[48] = jj_gen;
+							jj_la1[47] = jj_gen;
 							if (jj_2_8(2147483647)){
 								valueExpr = Column();
 							}else if (jj_2_9(2147483647)){
@@ -1940,7 +1920,7 @@ public class ADQLParser implements ADQLParserConstants {
 										break;
 									}
 									default:
-										jj_la1[49] = jj_gen;
+										jj_la1[48] = jj_gen;
 										jj_consume_token(-1);
 										throw new ParseException();
 								}
@@ -1982,7 +1962,7 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[50] = jj_gen;
+							jj_la1[49] = jj_gen;
 							jj_consume_token(-1);
 							throw new ParseException();
 					}
@@ -1990,7 +1970,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[51] = jj_gen;;
+					jj_la1[50] = jj_gen;;
 			}
 			if (sign == null){
 				if ("" != null)
@@ -2035,7 +2015,7 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[52] = jj_gen;
+							jj_la1[51] = jj_gen;
 							jj_consume_token(-1);
 							throw new ParseException();
 					}
@@ -2043,7 +2023,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[53] = jj_gen;;
+					jj_la1[52] = jj_gen;;
 			}
 			if (sign == null){
 				if ("" != null)
@@ -2089,14 +2069,14 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[54] = jj_gen;
+							jj_la1[53] = jj_gen;
 							jj_consume_token(-1);
 							throw new ParseException();
 					}
 					break;
 				}
 				default:
-					jj_la1[55] = jj_gen;;
+					jj_la1[54] = jj_gen;;
 			}
 			if (jj_2_10(2)){
 				op = NumericFunction();
@@ -2117,7 +2097,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[56] = jj_gen;
+						jj_la1[55] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -2162,7 +2142,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[57] = jj_gen;
+						jj_la1[56] = jj_gen;
 						break label_9;
 				}
 				jj_consume_token(CONCAT);
@@ -2205,7 +2185,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[58] = jj_gen;
+					jj_la1[57] = jj_gen;
 					if (jj_2_11(2)){
 						op = UserDefinedFunction();
 						((UserDefinedFunction)op).setExpectedType('S');
@@ -2219,7 +2199,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[59] = jj_gen;
+								jj_la1[58] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -2256,7 +2236,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[60] = jj_gen;
+					jj_la1[59] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
@@ -2293,7 +2273,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[61] = jj_gen;;
+						jj_la1[60] = jj_gen;;
 				}
 				constraint = Constraint();
 				if (notOp){
@@ -2315,7 +2295,7 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[62] = jj_gen;
+							jj_la1[61] = jj_gen;
 							break label_10;
 					}
 					switch((jj_ntk == -1) ? jj_ntk_f() : jj_ntk){
@@ -2328,7 +2308,7 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[63] = jj_gen;
+							jj_la1[62] = jj_gen;
 							jj_consume_token(-1);
 							throw new ParseException();
 					}
@@ -2339,7 +2319,7 @@ public class ADQLParser implements ADQLParserConstants {
 							break;
 						}
 						default:
-							jj_la1[64] = jj_gen;;
+							jj_la1[63] = jj_gen;;
 					}
 					constraint = Constraint();
 					if (notOp){
@@ -2400,7 +2380,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[65] = jj_gen;
+						jj_la1[64] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -2438,7 +2418,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[70] = jj_gen;
+						jj_la1[69] = jj_gen;
 						if (jj_2_14(2147483647)){
 							column = Column();
 							jj_consume_token(IS);
@@ -2448,7 +2428,7 @@ public class ADQLParser implements ADQLParserConstants {
 									break;
 								}
 								default:
-									jj_la1[66] = jj_gen;;
+									jj_la1[65] = jj_gen;;
 							}
 							end = jj_consume_token(NULL);
 							IsNull in = queryFactory.createIsNull((notToken != null), column);
@@ -2465,7 +2445,7 @@ public class ADQLParser implements ADQLParserConstants {
 									break;
 								}
 								default:
-									jj_la1[67] = jj_gen;;
+									jj_la1[66] = jj_gen;;
 							}
 							jj_consume_token(LIKE);
 							strExpr2 = StringExpression();
@@ -2539,7 +2519,7 @@ public class ADQLParser implements ADQLParserConstants {
 											break;
 										}
 										default:
-											jj_la1[68] = jj_gen;
+											jj_la1[67] = jj_gen;
 											if (jj_2_13(2)){
 												constraint = BetweenEnd(op);
 											}else{
@@ -2550,7 +2530,7 @@ public class ADQLParser implements ADQLParserConstants {
 														break;
 													}
 													default:
-														jj_la1[69] = jj_gen;
+														jj_la1[68] = jj_gen;
 														jj_consume_token(-1);
 														throw new ParseException();
 												}
@@ -2559,7 +2539,7 @@ public class ADQLParser implements ADQLParserConstants {
 									break;
 								}
 								default:
-									jj_la1[71] = jj_gen;
+									jj_la1[70] = jj_gen;
 									jj_consume_token(-1);
 									throw new ParseException();
 							}
@@ -2612,7 +2592,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[72] = jj_gen;
+					jj_la1[71] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
@@ -2647,7 +2627,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[73] = jj_gen;;
+					jj_la1[72] = jj_gen;;
 			}
 			start = jj_consume_token(BETWEEN);
 			min = ValueExpression();
@@ -2687,7 +2667,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[74] = jj_gen;;
+					jj_la1[73] = jj_gen;;
 			}
 			start = jj_consume_token(IN);
 			if (jj_2_16(2)){
@@ -2705,7 +2685,7 @@ public class ADQLParser implements ADQLParserConstants {
 									break;
 								}
 								default:
-									jj_la1[75] = jj_gen;
+									jj_la1[74] = jj_gen;
 									break label_11;
 							}
 							jj_consume_token(COMMA);
@@ -2716,7 +2696,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[76] = jj_gen;
+						jj_la1[75] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -2771,7 +2751,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[77] = jj_gen;;
+								jj_la1[76] = jj_gen;;
 						}
 						switch((jj_ntk == -1) ? jj_ntk_f() : jj_ntk){
 							case ASTERISK:{
@@ -2832,7 +2812,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[78] = jj_gen;
+								jj_la1[77] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -2863,7 +2843,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[79] = jj_gen;
+								jj_la1[78] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -2874,7 +2854,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[80] = jj_gen;;
+								jj_la1[79] = jj_gen;;
 						}
 						op = ValueExpression();
 						end = jj_consume_token(RIGHT_PAR);
@@ -2883,7 +2863,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[81] = jj_gen;
+						jj_la1[80] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -2946,7 +2926,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[82] = jj_gen;
+								jj_la1[81] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -2986,7 +2966,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[83] = jj_gen;
+								jj_la1[82] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -3010,7 +2990,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[84] = jj_gen;
+								jj_la1[83] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -3031,7 +3011,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[85] = jj_gen;
+								jj_la1[84] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -3053,7 +3033,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[86] = jj_gen;
+								jj_la1[85] = jj_gen;
 								jj_consume_token(-1);
 								throw new ParseException();
 						}
@@ -3068,7 +3048,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[87] = jj_gen;
+						jj_la1[86] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -3179,7 +3159,7 @@ public class ADQLParser implements ADQLParserConstants {
 									break;
 								}
 								default:
-									jj_la1[88] = jj_gen;
+									jj_la1[87] = jj_gen;
 									break label_12;
 							}
 							jj_consume_token(COMMA);
@@ -3200,7 +3180,7 @@ public class ADQLParser implements ADQLParserConstants {
 						break;
 					}
 					default:
-						jj_la1[89] = jj_gen;
+						jj_la1[88] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -3333,7 +3313,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[90] = jj_gen;
+					jj_la1[89] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
@@ -3485,7 +3465,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[91] = jj_gen;;
+								jj_la1[90] = jj_gen;;
 						}
 						end = jj_consume_token(RIGHT_PAR);
 						break;
@@ -3501,7 +3481,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[92] = jj_gen;;
+								jj_la1[91] = jj_gen;;
 						}
 						end = jj_consume_token(RIGHT_PAR);
 						break;
@@ -3524,13 +3504,13 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[93] = jj_gen;;
+								jj_la1[92] = jj_gen;;
 						}
 						end = jj_consume_token(RIGHT_PAR);
 						break;
 					}
 					default:
-						jj_la1[94] = jj_gen;
+						jj_la1[93] = jj_gen;
 						jj_consume_token(-1);
 						throw new ParseException();
 				}
@@ -3617,7 +3597,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[95] = jj_gen;
+					jj_la1[94] = jj_gen;
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
@@ -3708,7 +3688,7 @@ public class ADQLParser implements ADQLParserConstants {
 								break;
 							}
 							default:
-								jj_la1[96] = jj_gen;
+								jj_la1[95] = jj_gen;
 								break label_13;
 						}
 						jj_consume_token(COMMA);
@@ -3718,7 +3698,7 @@ public class ADQLParser implements ADQLParserConstants {
 					break;
 				}
 				default:
-					jj_la1[97] = jj_gen;;
+					jj_la1[96] = jj_gen;;
 			}
 			end = jj_consume_token(RIGHT_PAR);
 			//System.out.println("INFO [ADQLParser]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
@@ -3946,8 +3926,43 @@ public class ADQLParser implements ADQLParserConstants {
 		}
 	}
 
-	private boolean jj_3R_104(){
-		if (jj_scan_token(FULL))
+	private boolean jj_3R_117(){
+		if (jj_3R_21())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_42(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_56()){
+			jj_scanpos = xsp;
+			if (jj_3R_57()){
+				jj_scanpos = xsp;
+				if (jj_3R_58()){
+					jj_scanpos = xsp;
+					if (jj_3R_59()){
+						jj_scanpos = xsp;
+						if (jj_3R_60()){
+							jj_scanpos = xsp;
+							if (jj_3R_61()){
+								jj_scanpos = xsp;
+								if (jj_3R_62()){
+									jj_scanpos = xsp;
+									if (jj_3R_63())
+										return true;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean jj_3R_116(){
+		if (jj_3R_22())
 			return true;
 		return false;
 	}
@@ -3958,8 +3973,28 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
+	private boolean jj_3R_151(){
+		if (jj_3R_21())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_104(){
+		if (jj_scan_token(FULL))
+			return true;
+		return false;
+	}
+
 	private boolean jj_3R_146(){
 		if (jj_3R_137())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_16(){
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		if (jj_3R_31())
 			return true;
 		return false;
 	}
@@ -4038,14 +4073,6 @@ public class ADQLParser implements ADQLParserConstants {
 					return true;
 			}
 		}
-		return false;
-	}
-
-	private boolean jj_3R_16(){
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		if (jj_3R_31())
-			return true;
 		return false;
 	}
 
@@ -4167,6 +4194,12 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
+	private boolean jj_3R_31(){
+		if (jj_3R_44())
+			return true;
+		return false;
+	}
+
 	private boolean jj_3R_103(){
 		if (jj_scan_token(RIGHT))
 			return true;
@@ -4181,12 +4214,6 @@ public class ADQLParser implements ADQLParserConstants {
 			if (jj_scan_token(9))
 				return true;
 		}
-		return false;
-	}
-
-	private boolean jj_3R_31(){
-		if (jj_3R_44())
-			return true;
 		return false;
 	}
 
@@ -4569,6 +4596,12 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
+	private boolean jj_3R_21(){
+		if (jj_3R_36())
+			return true;
+		return false;
+	}
+
 	private boolean jj_3R_115(){
 		if (jj_3R_42())
 			return true;
@@ -4580,12 +4613,6 @@ public class ADQLParser implements ADQLParserConstants {
 				break;
 			}
 		}
-		return false;
-	}
-
-	private boolean jj_3R_21(){
-		if (jj_3R_36())
-			return true;
 		return false;
 	}
 
@@ -4644,12 +4671,6 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
-	private boolean jj_3R_132(){
-		if (jj_3R_101())
-			return true;
-		return false;
-	}
-
 	private boolean jj_3R_29(){
 		if (jj_scan_token(DELIMITED_IDENTIFIER))
 			return true;
@@ -4658,6 +4679,12 @@ public class ADQLParser implements ADQLParserConstants {
 
 	private boolean jj_3R_28(){
 		if (jj_scan_token(REGULAR_IDENTIFIER))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_132(){
+		if (jj_3R_101())
 			return true;
 		return false;
 	}
@@ -5169,6 +5196,14 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
+	private boolean jj_3R_30(){
+		if (jj_3R_14())
+			return true;
+		if (jj_scan_token(DOT))
+			return true;
+		return false;
+	}
+
 	private boolean jj_3R_38(){
 		if (jj_3R_53())
 			return true;
@@ -5189,14 +5224,6 @@ public class ADQLParser implements ADQLParserConstants {
 				}
 			}
 		}
-		return false;
-	}
-
-	private boolean jj_3R_30(){
-		if (jj_3R_14())
-			return true;
-		if (jj_scan_token(DOT))
-			return true;
 		return false;
 	}
 
@@ -5366,18 +5393,6 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
-	private boolean jj_3_9(){
-		if (jj_3R_22())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3_8(){
-		if (jj_3R_21())
-			return true;
-		return false;
-	}
-
 	private boolean jj_3_1(){
 		if (jj_3R_14())
 			return true;
@@ -5388,6 +5403,18 @@ public class ADQLParser implements ADQLParserConstants {
 		if (jj_3R_15())
 			jj_scanpos = xsp;
 		if (jj_scan_token(ASTERISK))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3_9(){
+		if (jj_3R_22())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3_8(){
+		if (jj_3R_21())
 			return true;
 		return false;
 	}
@@ -5605,53 +5632,6 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
-	private boolean jj_3R_117(){
-		if (jj_3R_21())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_42(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_56()){
-			jj_scanpos = xsp;
-			if (jj_3R_57()){
-				jj_scanpos = xsp;
-				if (jj_3R_58()){
-					jj_scanpos = xsp;
-					if (jj_3R_59()){
-						jj_scanpos = xsp;
-						if (jj_3R_60()){
-							jj_scanpos = xsp;
-							if (jj_3R_61()){
-								jj_scanpos = xsp;
-								if (jj_3R_62()){
-									jj_scanpos = xsp;
-									if (jj_3R_63())
-										return true;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	private boolean jj_3R_116(){
-		if (jj_3R_22())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_151(){
-		if (jj_3R_21())
-			return true;
-		return false;
-	}
-
 	/** Generated Token Manager. */
 	public ADQLParserTokenManager token_source;
 	SimpleCharStream jj_input_stream;
@@ -5663,7 +5643,7 @@ public class ADQLParser implements ADQLParserConstants {
 	private Token jj_scanpos, jj_lastpos;
 	private int jj_la;
 	private int jj_gen;
-	final private int[] jj_la1 = new int[98];
+	final private int[] jj_la1 = new int[97];
 	static private int[] jj_la1_0;
 	static private int[] jj_la1_1;
 	static private int[] jj_la1_2;
@@ -5676,19 +5656,19 @@ public class ADQLParser implements ADQLParserConstants {
 	}
 
 	private static void jj_la1_init_0(){
-		jj_la1_0 = new int[]{0x41,0x0,0x0,0x0,0x0,0x80000,0x100000,0x20,0x0,0x0,0x400000,0x400,0x304,0x20,0x20,0x20,0x0,0x10,0x10,0x10,0x0,0x0,0x0,0x0,0x400000,0x400000,0x400000,0x0,0x4,0x3d800000,0x1c000000,0x2000000,0x1d000000,0x1d000000,0x1c000000,0x2000000,0x1d000000,0x1d000000,0x20,0xc0000000,0x3d800000,0x0,0x0,0x0,0x300,0x300,0x4,0x4,0x0,0x304,0x300,0x300,0xc00,0xc00,0x300,0x300,0x4,0x80,0x0,0x4,0x0,0x0,0x0,0x0,0x0,0x4,0x0,0x0,0x3f000,0x0,0x0,0x304,0x3f000,0x0,0x0,0x20,0x4,0x80000,0x704,0x0,0x80000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20,0x0,0x0,0x304,0x20,0x20,0x0,0x0,0x20,0x304,};
+		jj_la1_0 = new int[]{0x41,0x0,0x0,0x0,0x0,0x80000,0x100000,0x20,0x0,0x0,0x400000,0x400,0x304,0x20,0x20,0x20,0x0,0x10,0x10,0x10,0x0,0x0,0x0,0x400000,0x400000,0x400000,0x0,0x4,0x3d800000,0x1c000000,0x2000000,0x1d000000,0x1d000000,0x1c000000,0x2000000,0x1d000000,0x1d000000,0x20,0xc0000000,0x3d800000,0x0,0x0,0x0,0x300,0x300,0x4,0x4,0x0,0x304,0x300,0x300,0xc00,0xc00,0x300,0x300,0x4,0x80,0x0,0x4,0x0,0x0,0x0,0x0,0x0,0x4,0x0,0x0,0x3f000,0x0,0x0,0x304,0x3f000,0x0,0x0,0x20,0x4,0x80000,0x704,0x0,0x80000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20,0x0,0x0,0x304,0x20,0x20,0x0,0x0,0x20,0x304,};
 	}
 
 	private static void jj_la1_init_1(){
-		jj_la1_1 = new int[]{0x0,0x1,0x400,0x800,0x1000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xffff8000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x6000,0x6000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xf8000,0x0,0x3f00000,0x7c0f8000,0x0,0x0,0x0,0x0,0x0,0x0,0xf8000,0x0,0x80000000,0x0,0x3f00000,0x8,0x6,0x6,0x8,0x0,0x8,0x8,0x0,0x108,0x200,0xffff8000,0x0,0x8,0x8,0x0,0x0,0x0,0xffff8000,0x78000,0x0,0xf8000,0xc000000,0x800000,0x800000,0x800000,0x800000,0x7c000000,0x0,0x3f00000,0x7c000000,0x7c0f8000,0x0,0x0,0x0,0x0,0x0,0xffff8000,};
+		jj_la1_1 = new int[]{0x0,0x1,0x400,0x800,0x1000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xffff8000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x6000,0x6000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xf8000,0x0,0x3f00000,0x7c0f8000,0x0,0x0,0x0,0x0,0x0,0x0,0xf8000,0x0,0x80000000,0x0,0x3f00000,0x8,0x6,0x6,0x8,0x0,0x8,0x8,0x0,0x108,0x200,0xffff8000,0x0,0x8,0x8,0x0,0x0,0x0,0xffff8000,0x78000,0x0,0xf8000,0xc000000,0x800000,0x800000,0x800000,0x800000,0x7c000000,0x0,0x3f00000,0x7c000000,0x7c0f8000,0x0,0x0,0x0,0x0,0x0,0xffff8000,};
 	}
 
 	private static void jj_la1_init_2(){
-		jj_la1_2 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20000000,0x0,0x0,0x0,0x0,0x0,0x20000000,0x0,0xffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20000000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x20ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x0,0xffffff,0xffffff,0x0,0x0,0xfffe,0xff0000,0x0,0x20ffffff,};
+		jj_la1_2 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20000000,0x0,0x0,0x0,0x0,0x0,0x20000000,0x0,0xffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20000000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x20ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x20ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x0,0xffffff,0xffffff,0x0,0x0,0xfffe,0xff0000,0x0,0x20ffffff,};
 	}
 
 	private static void jj_la1_init_3(){
-		jj_la1_3 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x3,0x3,0x0,0x0,0x3b,0x0,0x0,0x0,0x3,0x0,0x0,0x0,0x23,0x23,0x0,0x0,0x0,0x3,0x0,0x3,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x38,0x30,0x0,0x0,0x3b,0x3,0x0,0x3b,0x0,0x0,0x0,0x0,0x0,0x0,0x3b,0x0,0x0,0x3,0x3,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x3b,0x0,0x0,0x0,0x0,0x0,0x0,0x3b,0x0,0x0,0x0,0x0,0x3,0x3,0x3,0x3,0x0,0x0,0x0,0x2,0x3b,0x0,0x0,0x0,0x0,0x0,0x3b,};
+		jj_la1_3 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x3,0x3,0x0,0x0,0x3b,0x0,0x0,0x0,0x3,0x0,0x0,0x0,0x23,0x0,0x0,0x0,0x3,0x0,0x3,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x38,0x30,0x0,0x0,0x3b,0x3,0x0,0x3b,0x0,0x0,0x0,0x0,0x0,0x0,0x3b,0x0,0x0,0x3,0x3,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x3b,0x0,0x0,0x0,0x0,0x0,0x0,0x3b,0x0,0x0,0x0,0x0,0x3,0x3,0x3,0x3,0x0,0x0,0x0,0x2,0x3b,0x0,0x0,0x0,0x0,0x0,0x3b,};
 	}
 
 	final private JJCalls[] jj_2_rtns = new JJCalls[16];
@@ -5711,7 +5691,7 @@ public class ADQLParser implements ADQLParserConstants {
 		token = new Token();
 		jj_ntk = -1;
 		jj_gen = 0;
-		for(int i = 0; i < 98; i++)
+		for(int i = 0; i < 97; i++)
 			jj_la1[i] = -1;
 		for(int i = 0; i < jj_2_rtns.length; i++)
 			jj_2_rtns[i] = new JJCalls();
@@ -5733,7 +5713,7 @@ public class ADQLParser implements ADQLParserConstants {
 		token = new Token();
 		jj_ntk = -1;
 		jj_gen = 0;
-		for(int i = 0; i < 98; i++)
+		for(int i = 0; i < 97; i++)
 			jj_la1[i] = -1;
 		for(int i = 0; i < jj_2_rtns.length; i++)
 			jj_2_rtns[i] = new JJCalls();
@@ -5746,7 +5726,7 @@ public class ADQLParser implements ADQLParserConstants {
 		token = new Token();
 		jj_ntk = -1;
 		jj_gen = 0;
-		for(int i = 0; i < 98; i++)
+		for(int i = 0; i < 97; i++)
 			jj_la1[i] = -1;
 		for(int i = 0; i < jj_2_rtns.length; i++)
 			jj_2_rtns[i] = new JJCalls();
@@ -5759,7 +5739,7 @@ public class ADQLParser implements ADQLParserConstants {
 		token = new Token();
 		jj_ntk = -1;
 		jj_gen = 0;
-		for(int i = 0; i < 98; i++)
+		for(int i = 0; i < 97; i++)
 			jj_la1[i] = -1;
 		for(int i = 0; i < jj_2_rtns.length; i++)
 			jj_2_rtns[i] = new JJCalls();
@@ -5771,7 +5751,7 @@ public class ADQLParser implements ADQLParserConstants {
 		token = new Token();
 		jj_ntk = -1;
 		jj_gen = 0;
-		for(int i = 0; i < 98; i++)
+		for(int i = 0; i < 97; i++)
 			jj_la1[i] = -1;
 		for(int i = 0; i < jj_2_rtns.length; i++)
 			jj_2_rtns[i] = new JJCalls();
@@ -5783,7 +5763,7 @@ public class ADQLParser implements ADQLParserConstants {
 		token = new Token();
 		jj_ntk = -1;
 		jj_gen = 0;
-		for(int i = 0; i < 98; i++)
+		for(int i = 0; i < 97; i++)
 			jj_la1[i] = -1;
 		for(int i = 0; i < jj_2_rtns.length; i++)
 			jj_2_rtns[i] = new JJCalls();
@@ -5922,7 +5902,7 @@ public class ADQLParser implements ADQLParserConstants {
 			la1tokens[jj_kind] = true;
 			jj_kind = -1;
 		}
-		for(int i = 0; i < 98; i++){
+		for(int i = 0; i < 97; i++){
 			if (jj_la1[i] == jj_gen){
 				for(int j = 0; j < 32; j++){
 					if ((jj_la1_0[i] & (1 << j)) != 0){

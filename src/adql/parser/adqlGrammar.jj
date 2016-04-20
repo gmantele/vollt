@@ -918,16 +918,11 @@ ADQLColumn Column(): {IdentifierItems identifiers;} {
 	}
 }
 
-ColumnReference ColumnRef(): {IdentifierItem identifier = null; Token ind = null;}{
-	( identifier=Identifier() | ind=<UNSIGNED_INTEGER> )
+ColumnReference ColumnRef(): {IdentifierItem identifier = null;}{
+	identifier=Identifier()
 	{
 		try{
-			ColumnReference colRef = null;
-			if (identifier != null)
-				colRef = queryFactory.createColRef(identifier);
-			else
-				colRef = queryFactory.createColRef(Integer.parseInt(ind.image), new TextPosition(ind));
-			return colRef;
+			return queryFactory.createColRef(identifier);
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}
