@@ -16,14 +16,13 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import tap.data.DataReadException;
 import adql.db.DBColumn;
 import adql.db.DBTable;
 import adql.db.DBType;
@@ -78,6 +77,7 @@ import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
+import tap.data.DataReadException;
 
 /**
  * <p>Implementation of {@link ADQLTranslator} which translates ADQL queries in SQL queries.</p>
@@ -128,7 +128,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <p>
  * 	The default behavior of this translator is to translate the ADQL "TOP" into the SQL "LIMIT" at the end of the query.
  * 	This is ok for some DBMS, but not all. So, if your DBMS does not know the "LIMIT" keyword, you should override the function
- * 	translating the whole query: {@link #translate(ADQLQuery)}. Here is its current implementation: 
+ * 	translating the whole query: {@link #translate(ADQLQuery)}. Here is its current implementation:
  * </p>
  * <pre>
  * 	StringBuffer sql = new StringBuffer(translate(query.getSelect()));
@@ -151,7 +151,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <p>
  * 	All ADQL functions are by default not translated. Consequently, the SQL translation is
  * 	actually the ADQL expression. Generally the ADQL expression is generic enough. However some mathematical functions may need
- * 	to be translated differently. For instance {@link PostgreSQLTranslator} is translating differently: LOG, LOG10, RAND and TRUNC. 
+ * 	to be translated differently. For instance {@link PostgreSQLTranslator} is translating differently: LOG, LOG10, RAND and TRUNC.
  * </p>
  * 
  * <p><i>Note:
@@ -167,7 +167,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (09/2015)
+ * @version 1.4 (04/2016)
  * @since 1.4
  * 
  * @see PostgreSQLTranslator
@@ -249,7 +249,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * </i></p>
 	 * 
 	 * @param table			The table whose the DB name is asked.
-	 * @param withSchema	<i>true</i> if the qualified schema name must prefix the table name, <i>false</i> otherwise. 
+	 * @param withSchema	<i>true</i> if the qualified schema name must prefix the table name, <i>false</i> otherwise.
 	 * 
 	 * @return	The DB table name (prefixed by the qualified schema name if asked, and with double quotes if needed),
 	 *        	or an empty string if the given table is NULL or if there is no DB name.
@@ -273,7 +273,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	/**
 	 * <p>Get the DB name of the given column</p>
-	 *  
+	 * 
 	 * <p><i>Note:
 	 * 	This function will, by default, add double quotes if the column name must be case sensitive in the SQL query.
 	 * 	This information is provided by {@link #isCaseSensitive(IdentifierField)}.
@@ -294,13 +294,26 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	}
 
 	/**
-	 * Appends the given identifier in the given StringBuffer.
+	 * <p>Appends the given identifier in the given StringBuffer.</p>
+	 * 
+	 * <p>
+	 * 	This function just call {@link #appendIdentifier(StringBuffer, String, boolean)}
+	 * 	with the same 2 first parameters. The third one is the result of:
+	 * 	<code>{@link #isCaseSensitive(IdentifierField) isCaseSensitive(field)}</code>.
+	 * </p>
+	 * 
+	 * <p><i>Note:
+	 * 	In order to keep a consistent output of the <code>appendIdentifier(...)</code> functions,
+	 * 	this function can not be overwritten ; it is just a shortcut function.
+	 * </i></p>
 	 * 
 	 * @param str		The string buffer.
 	 * @param id		The identifier to append.
 	 * @param field		The type of identifier (column, table, schema, catalog or alias ?).
 	 * 
 	 * @return			The string buffer + identifier.
+	 * 
+	 * @see #appendIdentifier(StringBuffer, String, boolean)
 	 */
 	public final StringBuffer appendIdentifier(final StringBuffer str, final String id, final IdentifierField field){
 		return appendIdentifier(str, id, isCaseSensitive(field));
@@ -315,7 +328,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * 
 	 * @return					The string buffer + identifier.
 	 */
-	public static final StringBuffer appendIdentifier(final StringBuffer str, final String id, final boolean caseSensitive){
+	public StringBuffer appendIdentifier(final StringBuffer str, final String id, final boolean caseSensitive){
 		if (caseSensitive)
 			return str.append('"').append(id).append('"');
 		else
