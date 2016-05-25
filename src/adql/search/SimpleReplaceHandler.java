@@ -1,5 +1,7 @@
 package adql.search;
 
+import java.util.Stack;
+
 /*
  * This file is part of ADQLLibrary.
  * 
@@ -16,7 +18,8 @@ package adql.search;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012,2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.ADQLIterator;
@@ -31,15 +34,12 @@ import adql.query.ADQLObject;
  * 	<li>Matching objects are collected before their replacement.</li>
  * </ul>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (05/2016)
  * 
  * @see RemoveHandler
  */
 public abstract class SimpleReplaceHandler extends SimpleSearchHandler implements IReplaceHandler {
-
-	/** Indicates whether {@link #searchAndReplace(ADQLObject)} (=true) has been called or just {@link #search(ADQLObject)} (=false). */
-	protected boolean replaceActive = false;
 
 	/** Count matching objects which have been replaced successfully. */
 	protected int nbReplacement = 0;
@@ -74,6 +74,7 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 		super(recursive, onlyFirstMatch);
 	}
 
+	@Override
 	public int getNbReplacement(){
 		return nbReplacement;
 	}
@@ -84,11 +85,25 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 		nbReplacement = 0;
 	}
 
-	@Override
-	protected void addMatch(ADQLObject matchObj, ADQLIterator it){
+	/**
+	 * <p>Adds the given ADQL object as one result of the research, and then replace its reference
+	 * inside its parent.</p>
+	 * 
+	 * <p>Thus, the matched item added in the list is no longer available in its former parent.</p>
+	 * 
+	 * <p><b><u>Warning:</u> the second parameter (<i>it</i>) may be <i>null</i> if the given match is the root search object itself.</b></p>
+	 * 
+	 * @param matchObj	An ADQL object which has matched to the research criteria.
+	 * @param it		The iterator from which the matched ADQL object has been extracted.
+	 * 
+	 * @return	The match item after replacement if any replacement has occurred,
+	 *        	or <code>null</code> if the item has been removed,
+	 *        	or the object given in parameter if there was no replacement.
+	 */
+	protected ADQLObject addMatchAndReplace(ADQLObject matchObj, ADQLIterator it){
 		super.addMatch(matchObj, it);
 
-		if (replaceActive && it != null){
+		if (it != null){
 			try{
 				ADQLObject replacer = getReplacer(matchObj);
 				if (replacer == null)
@@ -96,18 +111,55 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 				else
 					it.replace(replacer);
 				nbReplacement++;
+				return replacer;
 			}catch(IllegalStateException ise){
 
 			}catch(UnsupportedOperationException uoe){
 
 			}
 		}
+
+		return matchObj;
 	}
 
+	@Override
 	public void searchAndReplace(final ADQLObject startObj){
-		replaceActive = true;
-		search(startObj);
-		replaceActive = false;
+		reset();
+
+		if (startObj == null)
+			return;
+
+		// Test the root search object:
+		if (match(startObj))
+			addMatch(startObj, null);
+
+		Stack<ADQLIterator> stackIt = new Stack<ADQLIterator>();
+		ADQLObject obj = null;
+		ADQLIterator it = startObj.adqlIterator();
+
+		while(!isFinished()){
+			// Fetch the next ADQL object to test:
+			do{
+				if (it != null && it.hasNext())
+					obj = it.next();
+				else if (!stackIt.isEmpty())
+					it = stackIt.pop();
+				else
+					return;
+			}while(obj == null);
+
+			// Add the current object if it is matching:
+			if (match(obj))
+				obj = addMatchAndReplace(obj, it);
+
+			// Continue the research inside the current object (or the new object if a replacement has been performed):
+			if (obj != null && goInto(obj)){
+				stackIt.push(it);
+				it = obj.adqlIterator();
+			}
+
+			obj = null;
+		}
 	}
 
 	/**
