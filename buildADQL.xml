@@ -5,7 +5,9 @@
 	<property name="version" value="1.4" />
 
 	<property name="srcDir" value="src" />
+	<property name="testDir" value="test" />
 	<property name="compileDir" value="antBuild" />
+	<property name="junitBuildDir" value="junitBuild" />
 	<property name="classesDir" value="${compileDir}"/>
 	<property name="javadocDir" value="javadoc/adql" />
 	
@@ -27,10 +29,6 @@
 	
 	<fail message="The property POSTGRES must be set! It provides the path toward a directory or a JAR which contains all classes inside org.postgresql.">
 		<condition><not><isset property="POSTGRES"/></not></condition>
-	</fail>
-	
-	<fail message="The property SERVLET-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.servlet.">
-		<condition><not><isset property="SERVLET-API"/></not></condition>
 	</fail>
 	
 	<fail message="The property JUNIT-API must be set! It provides the path toward a directory or a JAR which contains all classes needed to use JUnit.">
@@ -64,16 +62,33 @@
 			<delete dir="${junitReportsDir}" failonerror="false" />
 	</target>
 	
-	<target name="junitValidation" depends="cleanJUnitReports" description="Executes all JUnit tests before building the library and stop ANT at any error.">
+	<target name="junitValidation" depends="cleanJUnitReports,compileJUnit" description="Executes all JUnit tests before building the library and stop ANT at any error.">
 		<mkdir dir="${junitReportsDir}"/>
 		<junit errorproperty="adqlTestsFailure" failureproperty="adqlTestsFailure">
 			<classpath refid="junit.class.path" />
+			<classpath>
+				<pathelement location="${compileDir}" />
+				<pathelement location="${junitBuildDir}" />
+			</classpath>
 			<formatter type="brief" usefile="yes" />
 			<batchtest todir="${junitReportsDir}">
 				<fileset dir="${testsDir}" includes="adql/**/Test*.java" />
 			</batchtest>
 		</junit>
+		<delete dir="${junitBuildDir}" failonerror="false" />
 		<fail if="${adqlTestsFailure}" message="Failed JUnit validation for ADQL Lib.!" />
+	</target>
+	
+	<target name="compileJUnit" depends="compileLib" description="Build all the classes to test the ADQL library.">
+		<mkdir dir="${junitBuildDir}" />
+		<javac destdir="${junitBuildDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
+			<src path="${testDir}" />
+			<classpath refid="junit.class.path" />
+			<classpath refid="adql.classpath" />
+			<classpath>
+				<pathelement location="${compileDir}" />
+			</classpath>
+		</javac>
 	</target>
 			
 	<!-- LIB & SOURCES -->
@@ -83,16 +98,17 @@
 		<delete file="${adqlParserJarFile}" failonerror="false" />
 		<symlink action="delete" link="${adqlParserLink}" failonerror="false" />
 		<delete dir="${compileDir}" failonerror="false" />
+		<delete dir="${junitBuildDir}" failonerror="false" />
 	</target>
 	
-	<target name="compileLib" depends="clean,junitValidation" description="Build all the classes of the ADQL library. This target is particularly usefull because it lets highlighting missing dependencies.">
+	<target name="compileLib" depends="clean" description="Build all the classes of the ADQL library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
 		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
 			<classpath refid="adql.classpath" />
 		</javac>
 	</target>
 	
-	<target name="buildLib" depends="compileLib" description="After 'clean', build the library JAR (only classes) and the runnable ADQL parser.">
+	<target name="buildLib" depends="compileLib,junitValidation" description="After 'clean', build the library JAR (only classes) and the runnable ADQL parser.">
 		<echo>Generate the library:</echo>
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}" />
 		<echo>Generate the ADQL parser:</echo>

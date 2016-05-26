@@ -5,8 +5,10 @@
 	<property name="version" value="4.2" />
 
 	<property name="srcDir" value="src" />
+	<property name="testDir" value="test" />
 	<property name="libDir" value="lib" />
 	<property name="compileDir" value="antBuild" />
+	<property name="junitBuildDir" value="junitBuild" />
 	<property name="classesDir" value="${compileDir}"/>
 	<property name="javadocDir" value="javadoc/uws" />
 
@@ -58,16 +60,33 @@
 			<delete dir="${junitReportsDir}" failonerror="false" />
 	</target>
 	
-	<target name="junitValidation" depends="cleanJUnitReports" description="Executes all JUnit tests before building the library and stop ANT at any error.">
+	<target name="junitValidation" depends="cleanJUnitReports,compileJUnit" description="Executes all JUnit tests before building the library and stop ANT at any error.">
 		<mkdir dir="${junitReportsDir}"/>
 		<junit errorproperty="uwsTestsFailure" failureproperty="uwsTestsFailure">
 			<classpath refid="junit.class.path" />
+			<classpath>
+				<pathelement location="${compileDir}" />
+				<pathelement location="${junitBuildDir}" />
+			</classpath>
 			<formatter type="brief" usefile="yes" />
 			<batchtest todir="${junitReportsDir}">
 				<fileset dir="${testsDir}" includes="uws/**/Test*.java" />
 			</batchtest>
 		</junit>
+		<delete dir="${junitBuildDir}" failonerror="false" />
 		<fail if="${uwsTestsFailure}" message="Failed JUnit validation for UWS Lib.!" />
+	</target>
+	
+	<target name="compileJUnit" depends="compileLib" description="Build all the classes to test the UWS library.">
+		<mkdir dir="${junitBuildDir}" />
+		<javac destdir="${junitBuildDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${uws.bootclasspath}" debug="true">
+			<src path="${testDir}" />
+			<classpath refid="junit.class.path" />
+			<classpath refid="uws.classpath" />
+			<classpath>
+				<pathelement location="${compileDir}" />
+			</classpath>
+		</javac>
 	</target>
 			
 	<!-- LIB & SOURCES -->
@@ -77,18 +96,18 @@
 		<delete dir="${compileDir}" failonerror="false" />
 	</target>
 	
-	<target name="compileLib" depends="clean,junitValidation" description="Build all the classes of the UWS library. This target is particularly usefull because it lets highlighting missing dependencies.">
+	<target name="compileLib" depends="clean" description="Build all the classes of the UWS library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
 		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" debug="true">
 			<classpath refid="uws.classpath" />
 		</javac>
 	</target>
 	
-	<target name="buildLib" depends="compileLib" description="After 'clean', build the library JAR (only classes).">
+	<target name="buildLib" depends="compileLib,junitValidation" description="After 'clean', build the library JAR (only classes).">
 		<echo>Generate the library:</echo>
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
 			<zipfileset src="${cosJar}" excludes="META-INF/*" />
-			<zipfileset dir="src" includes="${licensePath}" />
+			<zipfileset dir="${srcDir}" includes="${licensePath}" />
 		</jar>
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>

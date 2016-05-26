@@ -5,8 +5,10 @@
 	<property name="version" value="2.1" />
 
 	<property name="srcDir" value="src" />
+	<property name="testDir" value="test" />
 	<property name="libDir" value="lib" />
 	<property name="compileDir" value="antBuild" />
+	<property name="junitBuildDir" value="junitBuild" />
 	<property name="classesDir" value="${compileDir}"/>
 	<property name="javadocDir" value="javadoc/tap" />
 
@@ -83,12 +85,16 @@
 		<delete dir="${tapJunitReportsDir}" failonerror="false" />
 	</target>
 	
-	<target name="junitValidation" depends="cleanJUnitReports" description="Executes all JUnit tests before building the library and stop ANT at any error.">
+	<target name="junitValidation" depends="cleanJUnitReports,compileJUnit" description="Executes all JUnit tests before building the library and stop ANT at any error.">
 		<mkdir dir="${adqlJunitReportsDir}"/>
 		<mkdir dir="${uwsJunitReportsDir}"/>
 		<mkdir dir="${tapJunitReportsDir}"/>
 		<junit errorproperty="testsFailure" failureproperty="testsFailure">
 			<classpath refid="junit.class.path" />
+			<classpath>
+				<pathelement location="${compileDir}" />
+				<pathelement location="${junitBuildDir}" />
+			</classpath>
 			<formatter type="brief" usefile="yes" />
 			<batchtest todir="${adqlJunitReportsDir}">
 				<fileset dir="${testsDir}" includes="adql/**/Test*.java" />
@@ -100,7 +106,20 @@
 				<fileset dir="${testsDir}" includes="tap/**/Test*.java" />
 			</batchtest>
 		</junit>
+		<delete dir="${junitBuildDir}" failonerror="false" />
 		<fail if="${testsFailure}" message="Failed JUnit validation for ADQL, UWS or TAP Lib.!" />
+	</target>
+	
+	<target name="compileJUnit" depends="compileLib" description="Build all the classes to test the TAP library.">
+		<mkdir dir="${junitBuildDir}" />
+		<javac destdir="${junitBuildDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${tap.bootclasspath}" debug="true">
+			<src path="${testDir}" />
+			<classpath refid="junit.class.path" />
+			<classpath refid="tap.classpath" />
+			<classpath>
+				<pathelement location="${compileDir}" />
+			</classpath>
+		</javac>
 	</target>
 			
 	<!-- LIB & SOURCES -->
@@ -108,25 +127,26 @@
 		<delete file="${libJarFile}" failonerror="false" />
 		<delete file="${srcJarFile}" failonerror="false" />
 		<delete dir="${compileDir}" failonerror="false" />
+		<delete dir="${junitBuildDir}" failonerror="false" />
 	</target>
 	
-	<target name="compileLib" depends="clean,junitValidation" description="Build all the classes of the TAP library. This target is particularly usefull because it lets highlighting missing dependencies.">
+	<target name="compileLib" depends="clean" description="Build all the classes of the TAP library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
 		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" debug="true">
 			<classpath refid="tap.classpath" />
 		</javac>
 	</target>
 	
-	<target name="buildLib" depends="compileLib" description="After 'clean', build the library JAR (only classes).">
+	<target name="buildLib" depends="compileLib,junitValidation" description="After 'clean', build the library JAR (only classes).">
 		<echo>Generate the library:</echo>
 		<jar basedir="${classesDir}" destfile="${libJarFileWithSTIL}" includes="${includesList}">
 			<zipfileset src="${cosJar}" excludes="META-INF/*" />
 			<zipfileset src="${stilJar}" excludes="META-INF/*" />
-			<zipfileset dir="src" includes="${licensePath}" />
+			<zipfileset dir="${srcDir}" includes="${licensePath}" />
 		</jar>
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
 			<zipfileset src="${cosJar}" excludes="META-INF/*" />
-			<zipfileset dir="src" includes="${licensePath}" />
+			<zipfileset dir="${srcDir}" includes="${licensePath}" />
 		</jar>
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>
