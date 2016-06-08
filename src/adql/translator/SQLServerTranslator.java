@@ -36,9 +36,14 @@ import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.parser.SQLServer_ADQLQueryFactory;
 import adql.query.ADQLQuery;
+import adql.query.ClauseSelect;
 import adql.query.IdentifierField;
 import adql.query.from.ADQLJoin;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
+import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.MathFunction;
+import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -151,6 +156,53 @@ public class SQLServerTranslator extends JDBCTranslator {
 	public boolean isCaseSensitive(final IdentifierField field) {
 		return field == null ? false : field.isCaseSensitive(caseSensitivity);
 	}
+	
+	/* For SQL Server, translate(ADQLQuery) must be overridden for TOP/LIMIT handling.
+	 * We must not add "LIMIT" at the end of the query, it must go in select.
+	 * @see adql.translator.ADQLTranslator#translate(adql.query.ADQLQuery)
+	 */
+	@Override
+	public String translate(ADQLQuery query) throws TranslationException{
+		StringBuffer sql = new StringBuffer(translate(query.getSelect()));
+
+		sql.append("\nFROM ").append(translate(query.getFrom()));
+
+		if (!query.getWhere().isEmpty())
+			sql.append('\n').append(translate(query.getWhere()));
+
+		if (!query.getGroupBy().isEmpty())
+			sql.append('\n').append(translate(query.getGroupBy()));
+
+		if (!query.getHaving().isEmpty())
+			sql.append('\n').append(translate(query.getHaving()));
+
+		if (!query.getOrderBy().isEmpty())
+			sql.append('\n').append(translate(query.getOrderBy()));
+
+		return sql.toString();
+	}
+	
+	/* For SQL Server, translate(ClauseSelect) must be overridden for TOP/LIMIT handling.
+	 * We must not add "LIMIT" at the end of the query, it must go in select.
+	 * @see adql.translator.ADQLTranslator#translate(adql.query.ClauseSelect)
+	 */
+	@Override
+	public String translate(ClauseSelect clause) throws TranslationException{
+		String sql = null;
+		
+		for(int i = 0; i < clause.size(); i++){
+			if (i == 0){
+				sql = clause.getName() + 
+				(clause.hasLimit() ? " TOP " + clause.getLimit() + " " : "") +
+				(clause.distinctColumns() ? " DISTINCT" : "");
+			}else
+				sql += " " + clause.getSeparator(i);
+
+			sql += " " + translate(clause.get(i));
+		}
+
+		return sql;
+	}
 
 	@Override
 	public String translate(final ADQLJoin join) throws TranslationException {
@@ -206,7 +258,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 					// search for exactly one column with the same name in the LEFT list
 					// and throw an exception if there is none, or if there are several matches:
 					leftCol = ADQLJoin.findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), leftList, true);
-					// idem in the RIGHT list:
+					// item in the RIGHT list:
 					rightCol = ADQLJoin.findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), rightList, false);
 					// append the corresponding join condition:
 					if (buf.length() > 0)
@@ -287,7 +339,20 @@ public class SQLServerTranslator extends JDBCTranslator {
 	public String translate(final RegionFunction region) throws TranslationException {
 		return getDefaultADQLFunction(region);
 	}
-
+	
+	@Override
+	public String translate(MathFunction fct) throws TranslationException{
+		 switch(fct.getType()){
+		 	case TRUNCATE:
+		 		// third argument to round nonzero means do a truncate
+		    	return "round(" + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "" ) + ",1)";
+		    case MOD:
+		    	return ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + "% " + translate(fct.getParameter(1))) : "");                
+		    default:
+		    	return getDefaultADQLFunction(fct);
+		 }
+	}	
+	
 	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
 		// If no type is provided return VARCHAR:
