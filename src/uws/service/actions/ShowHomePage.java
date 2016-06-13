@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -45,7 +45,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>This action displays the UWS home page.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (04/2015)
+ * @version 4.2 (06/2016)
  */
 public class ShowHomePage extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -128,7 +128,7 @@ public class ShowHomePage extends UWSAction {
 				URL homePageUrl = new URL(uws.getHomePage());
 				BufferedReader reader = new BufferedReader(new InputStreamReader(homePageUrl.openStream()));
 
-				response.setContentType("text/html");
+				response.setContentType(uws.getHomePageMimeType());
 				response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 				PrintWriter writer = response.getWriter();
 				try{
