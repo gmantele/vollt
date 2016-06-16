@@ -177,7 +177,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (04/2016)
+ * @version 2.1 (06/2016)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -886,8 +886,10 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(translator.getColumnName(tableDef.getColumn("schema_name")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
-			if (hasDBName)
-				sqlBuf.append(", ").append(DB_NAME_COLUMN);
+			if (hasDBName){
+				sqlBuf.append(", ");
+				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, true);
+			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
 			// Execute the query:
@@ -950,8 +952,10 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("table_type")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
-			if (hasDBName)
-				sqlBuf.append(", ").append(DB_NAME_COLUMN);
+			if (hasDBName){
+				sqlBuf.append(", ");
+				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, true);
+			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
 			// Execute the query:
@@ -1046,8 +1050,10 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("principal")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("indexed")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("std")));
-			if (hasDBName)
-				sqlBuf.append(", ").append(DB_NAME_COLUMN);
+			if (hasDBName){
+				sqlBuf.append(", ");
+				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, true);
+			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
 			// Execute the query:
