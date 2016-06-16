@@ -888,7 +888,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
 			if (hasDBName){
 				sqlBuf.append(", ");
-				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, true);
+				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
@@ -954,7 +954,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
 			if (hasDBName){
 				sqlBuf.append(", ");
-				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, true);
+				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
@@ -1052,7 +1052,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("std")));
 			if (hasDBName){
 				sqlBuf.append(", ");
-				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, true);
+				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema)).append(';');
 
