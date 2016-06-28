@@ -137,7 +137,7 @@ import uws.service.request.RequestParser;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (01/2016)
+ * @version 4.2 (06/2016)
  */
 public class UWSService implements UWS {
 
@@ -167,6 +167,10 @@ public class UWSService implements UWS {
 
 	/** Indicates whether the home page must be a copy or a redirection to the given URL. */
 	protected boolean homeRedirection = false;
+
+	/** MIME type of the custom home page. By default, it is "text/html".
+	 * @since 4.2 */
+	protected String homePageMimeType = "text/html";
 
 	/** List of UWS actions (i.e. to list jobs, to get a job, to set a job parameter, etc...). */
 	protected final Vector<UWSAction> uwsActions;
@@ -599,6 +603,42 @@ public class UWSService implements UWS {
 	public final void setDefaultHomePage(){
 		homePage = null;
 		homeRedirection = false;
+	}
+
+	/**
+	 * <p>Get the MIME type of the custom home page.</p>
+	 * 
+	 * <p>By default, it is the same as the default home page: "text/html".</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function has a sense only if the HOME PAGE resource of this UWS service
+	 * 	is still the default home page (i.e. {@link ShowHomePage}).
+	 * </i></p>
+	 * 
+	 * @return	MIME type of the custom home page.
+	 * 
+	 * @since 4.2
+	 */
+	public final String getHomePageMimeType(){
+		return homePageMimeType;
+	}
+
+	/**
+	 * <p>Set the MIME type of the custom home page.</p>
+	 * 
+	 * <p>A NULL value will be considered as "text/html".</p>
+	 * 
+	 * <p><i>Note:
+	 * 	This function has a sense only if the HOME PAGE resource of this UWS service
+	 * 	is still the default home page (i.e. {@link ShowHomePage}).
+	 * </i></p>
+	 * 
+	 * @param mime	MIME type of the custom home page.
+	 * 
+	 * @since 4.2
+	 */
+	public final void setHomePageMimeType(final String mime){
+		homePageMimeType = (mime == null || mime.trim().length() == 0) ? "text/html" : mime.trim();
 	}
 
 	/* ********************** */
@@ -1117,7 +1157,7 @@ public class UWSService implements UWS {
 			/*
 			 *   Any known/"expected" UWS exception is logged but also returned to the HTTP client in an error document.
 			 *   Since the error is known, it is supposed to have already been logged with a full stack trace. Thus, there
-			 * is no need to log again its stack trace...just its message is logged. 
+			 * is no need to log again its stack trace...just its message is logged.
 			 *   Besides, this error may also be just a redirection and not a true error. In such case, the error message
 			 * is not logged.
 			 */
@@ -1133,7 +1173,7 @@ public class UWSService implements UWS {
 			 *   If this exception happens, the library tried to rewrite the HTTP response body with a message or a result,
 			 * while this body has already been partially sent to the client. It is then no longer possible to change its content.
 			 *   Consequently, the error is logged as FATAL and a message will be appended at the end of the already submitted response
-			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable. 
+			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable.
 			 */
 			// Write the error in the response and return the appropriate HTTP status code:
 			errorWriter.writeError(ise, response, request, reqID, user, ((action != null) ? action.getName() : null));

@@ -16,7 +16,7 @@ package uws.job.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -26,18 +26,25 @@ import uws.UWSException;
  * Let controlling a String parameter.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.2 (06/2016)
  */
 public class StringParamController implements InputParamController {
 
 	/** Name of the controlled parameter. */
 	private final String paramName;
 
-	/** Default value of this parameter. <i>By default: NULL</i> */
+	/** Default value of this parameter.
+	 * <i>By default: <code>null</code></i> */
 	private String defaultValue = null;
 
-	/** List of all allowed values. If NULL, any value is allowed. <i>By default: NULL</i> */
+	/** List of all allowed values. If NULL, any value is allowed.
+	 * <i>By default: <code>null</code></i> */
 	private String[] possibleValues = null;
+
+	/** Regular Expression that any value of this input parameter must match in order to be valid.
+	 * <i>By default: <code>null</code>.</i>
+	 * @since 4.2 */
+	private String regexp = null;
 
 	/** Tells whether the parameter can be modified after its initialization. */
 	private boolean allowModification = true;
@@ -50,7 +57,7 @@ public class StringParamController implements InputParamController {
 	 * @see #StringParamController(String, String, String[], boolean)
 	 */
 	public StringParamController(final String paramName){
-		this(paramName, null, null, true);
+		this(paramName, null, (String[])null, true);
 	}
 
 	/**
@@ -65,6 +72,21 @@ public class StringParamController implements InputParamController {
 		this.paramName = paramName;
 		setDefaultValue(defaultValue);
 		setPossibleValues(possibleValues);
+		allowModification(allowModif);
+	}
+
+	/**
+	 * Builds a controller of the specified String parameter and configures it.
+	 * 
+	 * @param paramName			Name of the controlled parameter.
+	 * @param defaultValue		Default value of this parameter. <i><u>note:</u> It may be NULL. If the next parameter is not NULL or empty, the default value must be one of its values.</i>
+	 * @param regExp			Regular Expression that any value of this parameter must match. <i><u>note:</u> It may be NULL or empty. In this case, any value is allowed.</i>
+	 * @param allowModif		<i>true</i> to allow the modification of the specified parameter after its initialization, <i>false</i> otherwise.
+	 */
+	public StringParamController(final String paramName, final String defaultValue, final String regExp, final boolean allowModif){
+		this.paramName = paramName;
+		setDefaultValue(defaultValue);
+		setRegExp(regExp);
 		allowModification(allowModif);
 	}
 
@@ -87,6 +109,36 @@ public class StringParamController implements InputParamController {
 	}
 
 	/**
+	 * Gets the Regular Expression that all values of this parameter must match.
+	 * 
+	 * @return The current Regular Expression. (MAY BE NULL)
+	 * 
+	 * @since 4.2
+	 */
+	public final String getRegExp(){
+		return regexp;
+	}
+
+	/**
+	 * Sets the Regular Expression that all values of this parameter must match.
+	 * 
+	 * <p><b>Warning:</b> setting a non empty regular expression will set to <code>null</code>
+	 * 	any list of allowed values eventually set in this controller.
+	 * </p>
+	 * 
+	 * @param regExp The new Regular Expression. <i><u>note:</u> If NULL or empty, any value is allowed.</i>
+	 * 
+	 * @since 4.2
+	 */
+	public final void setRegExp(String regExp){
+		if (regExp != null && regExp.length() > 0){
+			this.regexp = regExp;
+			this.possibleValues = null;
+		}else
+			this.regexp = null;
+	}
+
+	/**
 	 * Gets the list of all allowed values.
 	 * 
 	 * @return The allowed values. <i><u>note:</u> If NULL or empty, any value is allowed.</i>
@@ -98,13 +150,19 @@ public class StringParamController implements InputParamController {
 	/**
 	 * Sets the list of all allowed values.
 	 * 
+	 * <p><b>Warning:</b> setting a non empty list of values will set to <code>null</code>
+	 * 	any regular expression eventually set in this controller.
+	 * </p>
+	 * 
 	 * @param possibleValues The new allowed values. <i><u>note:</u> If NULL or empty, any value is allowed.</i>
 	 */
 	public final void setPossibleValues(String[] possibleValues){
 		if (possibleValues == null || possibleValues.length == 0)
 			this.possibleValues = null;
-		else
+		else{
 			this.possibleValues = possibleValues;
+			this.regexp = null;
+		}
 	}
 
 	@Override
@@ -134,6 +192,11 @@ public class StringParamController implements InputParamController {
 						return v;
 				}
 				throw new UWSException(UWSException.BAD_REQUEST, "Unknown value for the parameter \"" + paramName + "\": \"" + strValue + "\". It should be " + getExpectedFormat());
+			}else if (regexp != null){
+				if (strValue.matches(regexp))
+					return strValue;
+				else
+					throw new UWSException(UWSException.BAD_REQUEST, "Incorrect value for the property \"" + paramName + "\": \"" + strValue + "\". It should be " + getExpectedFormat());
 			}else
 				return strValue;
 		}else
@@ -151,7 +214,9 @@ public class StringParamController implements InputParamController {
 			for(int i = 0; i < possibleValues.length; i++)
 				buffer.append((i == 0) ? "" : ", ").append(possibleValues[i]);
 			return buffer.toString();
-		}else
+		}else if (regexp != null)
+			return "a String matching this Regular Expression: " + regexp;
+		else
 			return "a String value.";
 	}
 

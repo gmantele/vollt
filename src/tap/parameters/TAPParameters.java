@@ -16,7 +16,7 @@ package tap.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -42,7 +42,7 @@ import uws.job.parameters.UWSParameters;
  * submitted by a TAP client to this TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (12/2014)
+ * @version 2.1 (06/2016)
  */
 public class TAPParameters extends UWSParameters {
 
@@ -87,7 +87,7 @@ public class TAPParameters extends UWSParameters {
 			// Deal with the UPLOAD parameter(s):
 			DALIUpload.getDALIUploads(params, true, service.getFileManager());
 
-			// Load all parameters:			
+			// Load all parameters:
 			Iterator<Entry<String,Object>> it = params.entrySet().iterator();
 			Entry<String,Object> entry;
 			try{
@@ -121,7 +121,7 @@ public class TAPParameters extends UWSParameters {
 		controllers.put(TAPJob.PARAM_EXECUTION_DURATION, new TAPExecutionDurationController(service));
 		controllers.put(TAPJob.PARAM_DESTRUCTION_TIME, new TAPDestructionTimeController(service));
 		controllers.put(TAPJob.PARAM_REQUEST, new StringParamController(TAPJob.PARAM_REQUEST, null, new String[]{TAPJob.REQUEST_DO_QUERY,TAPJob.REQUEST_GET_CAPABILITIES}, true));
-		controllers.put(TAPJob.PARAM_LANGUAGE, new StringParamController(TAPJob.PARAM_LANGUAGE, TAPJob.LANG_ADQL, null, true));
+		controllers.put(TAPJob.PARAM_LANGUAGE, new StringParamController(TAPJob.PARAM_LANGUAGE, TAPJob.LANG_ADQL, (String[])null, true));
 		controllers.put(TAPJob.PARAM_VERSION, new StringParamController(TAPJob.PARAM_VERSION, TAPJob.VERSION_1_0, new String[]{TAPJob.VERSION_1_0}, true));
 		controllers.put(TAPJob.PARAM_QUERY, new StringParamController(TAPJob.PARAM_QUERY));
 		controllers.put(TAPJob.PARAM_FORMAT, new FormatController(service));
@@ -136,7 +136,7 @@ public class TAPParameters extends UWSParameters {
 	 * <ul>
 	 * 	<li><b>NULL</b>: NULL is returned.</li>
 	 * 	<li><b>An array (of whatever is the items' type)</b>: a string in which each Object.toString() are concatenated ; each item is separated by a semicolon</li>
-	 * 	<li><b>Anything else</b>: Object.toString()</li> 
+	 * 	<li><b>Anything else</b>: Object.toString()</li>
 	 * </ul>
 	 * 
 	 * @param paramName	Name of the parameter whose the value must be returned as a String.
@@ -220,7 +220,7 @@ public class TAPParameters extends UWSParameters {
 	}
 
 	/**
-	 * Get the list of all tables uploaded and defined by the standard TAP parameter "UPLOAD". 
+	 * Get the list of all tables uploaded and defined by the standard TAP parameter "UPLOAD".
 	 * 
 	 * @return	Tables to upload in database at query execution.
 	 */
