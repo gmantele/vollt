@@ -35,15 +35,15 @@ import adql.db.exception.UnresolvedJoinException;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.parser.SQLServer_ADQLQueryFactory;
+import adql.query.ADQLList;
+import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
+import adql.query.constraint.ConstraintsGroup;
 import adql.query.IdentifierField;
 import adql.query.from.ADQLJoin;
 import adql.query.operand.ADQLColumn;
-import adql.query.operand.ADQLOperand;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.MathFunction;
-import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -263,9 +263,19 @@ public class SQLServerTranslator extends JDBCTranslator {
 					// append the corresponding join condition:
 					if (buf.length() > 0)
 						buf.append(" AND ");
-					buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
+					
+					//if table has alias, we must use it here.
+					if (usingCol.getAdqlTable().getAlias() != null)
+						buf.append(usingCol.getAdqlTable().getAlias()).append('.').append(getColumnName(leftCol));
+					else
+						buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
 					buf.append("=");
-					buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
+					
+					//if table has alias, we must use it here.
+					if (usingCol.getAdqlTable().getAlias() != null)
+						buf.append(usingCol.getAdqlTable().getAlias()).append('.').append(getColumnName(rightCol));
+					else
+						buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
 				}
 				
 				sql.append("ON ").append(buf.toString());
@@ -352,6 +362,53 @@ public class SQLServerTranslator extends JDBCTranslator {
 		    	return getDefaultADQLFunction(fct);
 		 }
 	}	
+
+    @Override
+	protected String getDefaultADQLList(ADQLList<? extends ADQLObject> list) throws TranslationException {
+		StringBuilder builder = new StringBuilder();
+
+		if (list instanceof ConstraintsGroup) {
+
+			builder.append(super.getDefaultADQLList(list));
+
+		} else {
+			builder.append(super.getDefaultADQLList(list));
+		}
+
+		String result = builder.toString();
+		return result;
+	}
+    
+	/**
+	 * <p>
+	 * Get the qualified DB name of the given table.
+	 * </p>
+	 * 
+	 * <p>
+	 * <i>Note: This function will, by default, add double quotes if the table
+	 * name must be case sensitive in the SQL query. This information is
+	 * provided by {@link #isCaseSensitive(IdentifierField)}. </i>
+	 * </p>
+	 * 
+	 * @param table
+	 *            The table whose the qualified DB name is asked.
+	 * 
+	 * @return The qualified (with DB catalog and schema prefix if any, and with
+	 *         double quotes if needed) DB table name, or an empty string if the
+	 *         given table is NULL or if there is no DB name.
+	 */
+	public String getQualifiedTableName(final DBTable table) {
+		if (table == null)
+			return "";
+
+		StringBuffer buf = new StringBuffer(getQualifiedSchemaName(table));
+		if (buf.length() > 0)
+			buf.append('.');
+
+		appendIdentifier(buf, table.getDBName(), IdentifierField.TABLE);
+
+		return buf.toString();
+	}
 	
 	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
