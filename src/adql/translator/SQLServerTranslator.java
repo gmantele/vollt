@@ -353,6 +353,13 @@ public class SQLServerTranslator extends JDBCTranslator {
 	@Override
 	public String translate(MathFunction fct) throws TranslationException{
 		 switch(fct.getType()){
+		 case RADIANS:	
+			 //MSSQL radians returns integer results if given them.
+			 //To match other databases' functionality, convert here just in case:
+			 if( fct.getNbParameters() > 0 && fct.getParameter(0).isNumeric())
+				 return("radians(convert(float, " + (translate(fct.getParameter(0)) + "))"));
+			 else
+				 return getDefaultADQLFunction(fct);
 		 	case TRUNCATE:
 		 		// third argument to round nonzero means do a truncate
 		    	return "round(" + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "" ) + ",1)";
