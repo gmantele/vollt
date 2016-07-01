@@ -16,7 +16,7 @@ package uws.service.log;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -43,7 +43,7 @@ import uws.service.file.UWSFileManager;
  * <p>Default implementation of {@link UWSLog} interface which lets logging any message about a UWS.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (04/2015)
+ * @version 4.2 (07/2016)
  */
 public class DefaultUWSLog implements UWSLog {
 
@@ -577,7 +577,10 @@ public class DefaultUWSLog implements UWSLog {
 		String report = null;
 		if (event != null && event.equalsIgnoreCase("BACKUPED") && obj != null && obj.getClass().getName().equals("[I")){
 			int[] backupReport = (int[])obj;
-			report = "(" + backupReport[0] + "/" + backupReport[1] + " jobs backuped ; " + backupReport[2] + "/" + backupReport[3] + " users backuped)";
+			if (backupReport.length == 2)
+				report = "(" + backupReport[0] + "/" + backupReport[1] + " jobs backuped for this user)";
+			else
+				report = "(" + backupReport[0] + "/" + backupReport[1] + " jobs backuped ; " + backupReport[2] + "/" + backupReport[3] + " users backuped)";
 		}else if (event != null && event.equalsIgnoreCase("RESTORED") && obj != null && obj.getClass().getName().equals("[I")){
 			int[] restoreReport = (int[])obj;
 			report = "(" + restoreReport[0] + "/" + restoreReport[1] + " jobs restored ; " + restoreReport[2] + "/" + restoreReport[3] + " users restored)";
