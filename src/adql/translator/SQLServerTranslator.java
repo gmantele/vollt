@@ -370,53 +370,6 @@ public class SQLServerTranslator extends JDBCTranslator {
 		 }
 	}	
 
-    @Override
-	protected String getDefaultADQLList(ADQLList<? extends ADQLObject> list) throws TranslationException {
-		StringBuilder builder = new StringBuilder();
-
-		if (list instanceof ConstraintsGroup) {
-
-			builder.append(super.getDefaultADQLList(list));
-
-		} else {
-			builder.append(super.getDefaultADQLList(list));
-		}
-
-		String result = builder.toString();
-		return result;
-	}
-    
-	/**
-	 * <p>
-	 * Get the qualified DB name of the given table.
-	 * </p>
-	 * 
-	 * <p>
-	 * <i>Note: This function will, by default, add double quotes if the table
-	 * name must be case sensitive in the SQL query. This information is
-	 * provided by {@link #isCaseSensitive(IdentifierField)}. </i>
-	 * </p>
-	 * 
-	 * @param table
-	 *            The table whose the qualified DB name is asked.
-	 * 
-	 * @return The qualified (with DB catalog and schema prefix if any, and with
-	 *         double quotes if needed) DB table name, or an empty string if the
-	 *         given table is NULL or if there is no DB name.
-	 */
-	public String getQualifiedTableName(final DBTable table) {
-		if (table == null)
-			return "";
-
-		StringBuffer buf = new StringBuffer(getQualifiedSchemaName(table));
-		if (buf.length() > 0)
-			buf.append('.');
-
-		appendIdentifier(buf, table.getDBName(), IdentifierField.TABLE);
-
-		return buf.toString();
-	}
-	
 	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
 		// If no type is provided return VARCHAR:
