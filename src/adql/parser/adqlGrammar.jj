@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (04/2016)
+*  Version: 1.4 (07/2016)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (04/2016)
+* @version 1.4 (07/2016)
 */
 public class ADQLParser {
 	
@@ -802,7 +802,7 @@ SelectItem SelectItem(): {IdentifierItems identifiers = new IdentifierItems(true
 		)
 		
 	| 
-		(op=ValueExpression()(<AS> label=Identifier())?)
+		(op=ValueExpression()[[<AS>] label=Identifier()])
 	)
 	
 	{
