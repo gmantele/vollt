@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -39,20 +39,27 @@ import tap.metadata.TAPTable.TableType;
  * 
  * <p><i>Note:
  * 	On the contrary to {@link TAPColumn} and {@link TAPTable}, a {@link TAPSchema} object MAY have no DB name.
- * 	But by default, at the creation the DB name is the ADQL name. Once created, it is possible to set the DB
- * 	name with {@link #setDBName(String)}. This DB name MAY be qualified, BUT MUST BE without double quotes.
+ * 	But by default, at the creation the DB name is the simplified ADQL name (i.e. as it is returned by {@link #getADQLName()}).
+ * 	Once created, it is possible to set the DB name with {@link #setDBName(String)}. This DB name MAY be qualified,
+ * 	BUT MUST BE without double quotes.
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.1 (07/2016)
  */
 public class TAPSchema implements Iterable<TAPTable> {
 
 	/** Name that this schema MUST have in ADQL queries. */
 	private final String adqlName;
 
+	/** Indicates whether the given ADQL name must be simplified by {@link #getADQLName()}.
+	 * <p>Here, "simplification" means removing the surrounding double quotes.
+	 * Since there is no information on the catalog name, none can be detected and so removed.</p>
+	 * @since 2.1 */
+	private final boolean simplificationNeeded;
+
 	/** Name that this schema have in the database.
-	 * <i>Note: It MAY be NULL. By default, it is the ADQL name.</i> */
+	 * <i>Note: NULL by default. When NULL, {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.</i> */
 	private String dbName = null;
 
 	/** Descriptive, human-interpretable name of the schema.
@@ -80,23 +87,42 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 * <p>Build a {@link TAPSchema} instance with the given ADQL name.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * 	The DB name is set by default to the ADQL name (as returned by {@link #getADQLName()}).
+	 * 	To set the DB name, you MUST call then {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the schema name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		No catalog prefix is supported. <i>For instance: <code>myCatalog.mySchema</code> will be considered
+	 * 		as the schema name instead of <code>mySchema</code>.</i>
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the ADQL name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
 	 * 
-	 * @param schemaName	Name that this schema MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param schemaName	Name that this schema MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPSchema(String schemaName){
-		if (schemaName == null || schemaName.trim().length() == 0)
+	public TAPSchema(String schemaName) throws NullPointerException{
+		if (schemaName == null)
 			throw new NullPointerException("Missing schema name!");
-		int indPrefix = schemaName.lastIndexOf('.');
-		adqlName = (indPrefix >= 0) ? schemaName.substring(indPrefix + 1).trim() : schemaName.trim();
-		dbName = adqlName;
+
+		adqlName = schemaName.trim();
+		simplificationNeeded = adqlName.matches("\"[^\"]*\"");
+
+		if (getADQLName().length() == 0)
+			throw new NullPointerException("Missing schema name!");
+
+		dbName = getADQLName();
+
 		tables = new LinkedHashMap<String,TAPTable>();
 	}
 
@@ -104,19 +130,32 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 * <p>Build a {@link TAPSchema} instance with the given ADQL name and description.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * 	The DB name is set by default to the ADQL name (as returned by {@link #getADQLName()}).
+	 * 	To set the DB name, you MUST call then {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the schema name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		No catalog prefix is supported. <i>For instance: <code>myCatalog.mySchema</code> will be considered
+	 * 		as the schema name instead of <code>mySchema</code>.</i>
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the ADQL name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
 	 * 
-	 * @param schemaName	Name that this schema MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param schemaName	Name that this schema MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param description	Description of this schema. <i>MAY be NULL</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPSchema(String schemaName, String description){
+	public TAPSchema(String schemaName, String description) throws NullPointerException{
 		this(schemaName, description, null);
 	}
 
@@ -124,20 +163,33 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 * <p>Build a {@link TAPSchema} instance with the given ADQL name, description and UType.</p>
 	 * 
 	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * 	The DB name is set by default to the ADQL name (as returned by {@link #getADQLName()}).
+	 * 	To set the DB name, you MUST call then {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the schema name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		No catalog prefix is supported. <i>For instance: <code>myCatalog.mySchema</code> will be considered
+	 * 		as the schema name instead of <code>mySchema</code>.</i>
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the ADQL name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
 	 * 
-	 * @param schemaName	Name that this schema MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param schemaName	Name that this schema MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param description	Description of this schema. <i>MAY be NULL</i>
 	 * @param utype			UType associating this schema with a data-model. <i>MAY be NULL</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPSchema(String schemaName, String description, String utype){
+	public TAPSchema(String schemaName, String description, String utype) throws NullPointerException{
 		this(schemaName);
 		this.description = description;
 		this.utype = utype;
@@ -156,11 +208,26 @@ public class TAPSchema implements Iterable<TAPTable> {
 	}
 
 	/**
-	 * Get the name this schema MUST have in ADQL queries.
+	 * Get the name of this schema.
+	 * 
+	 * <p><i>Note:
+	 * 	If a simplification is needed, the double quotes surrounding the ADQL name, will be removed.
+	 * </i></p>
 	 * 
 	 * @return	Its ADQL name. <i>CAN'T be NULL</i>
 	 */
 	public final String getADQLName(){
+		return simplificationNeeded ? adqlName.substring(1, adqlName.length() - 1) : adqlName;
+	}
+
+	/**
+	 * Get the full ADQL name of this schema, as it has been provided at initialization.
+	 * 
+	 * @return	Get the original ADQL name.
+	 * 
+	 * @since 2.1
+	 */
+	public final String getRawName(){
 		return adqlName;
 	}
 
@@ -175,6 +242,17 @@ public class TAPSchema implements Iterable<TAPTable> {
 
 	/**
 	 * Set the name this schema MUST have in the database.
+	 * 
+	 * <p>Notes:</p>
+	 * <ul>
+	 * 	<li>The given name may be NULL. In such case {@link #getDBName()} will then return NULL.</li>
+	 * 	<li>It may be prefixed by a catalog name.</li>
+	 * 	<li>
+	 * 		It MUST be NON delimited/double-quoted. Otherwise an SQL error will be raised when
+	 * 		querying any item of this schema because the library double-quotes systematically the
+	 * 		DB name of schemas, tables and columns.
+	 *	</li>
+	 * </ul>
 	 * 
 	 * @param name	Its new DB name. <i>MAY be NULL</i>
 	 */
@@ -282,8 +360,8 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 */
 	public final void addTable(TAPTable newTable){
 		if (newTable != null && newTable.getADQLName() != null){
-			tables.put(newTable.getADQLName(), newTable);
 			newTable.setSchema(this);
+			tables.put(newTable.getADQLName(), newTable);
 		}
 	}
 
@@ -416,7 +494,7 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 * </i></p>
 	 * 
 	 * @param tableName	ADQL name of the table to remove from this schema.
-	 *  
+	 * 
 	 * @return	The removed table,
 	 *        	or NULL if no table with the given ADQL name can be found.
 	 */
@@ -457,6 +535,11 @@ public class TAPSchema implements Iterable<TAPTable> {
 	@Override
 	public Iterator<TAPTable> iterator(){
 		return tables.values().iterator();
+	}
+
+	@Override
+	public String toString(){
+		return getADQLName();
 	}
 
 }

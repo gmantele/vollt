@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -41,10 +41,12 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * <p><i><b>Important note:</b>
- * 	A {@link TAPColumn} object MUST always have a DB name. That's why by default, at the creation
- * 	the DB name is the ADQL name. Once created, it is possible to set the DB name with {@link #setDBName(String)}.
+ * 	A {@link TAPColumn} object MUST always have a DB name. That's why, {@link #getDBName()} returns
+ * 	what {@link #getADQLName()} returns when no DB name is set. After creation, it is possible to set
+ * 	the DB name with {@link #setDBName(String)}.
+ * 	<br/>
  * 	This DB name MUST be UNqualified and without double quotes. If a NULL or empty value is provided,
- * 	nothing is done and the object keeps its former DB name.
+ * 	{@link #getDBName()} returns what {@link #getADQLName()} returns.
  * </i></p>
  * 
  * <h3>Set a table</h3>
@@ -52,7 +54,7 @@ import adql.db.DBType.DBDatatype;
  * <p>
  *	By default a column is detached (not part of a table). To specify the table in which this column is,
  *	you must use {@link TAPTable#addColumn(TAPColumn)}. By doing this, the table link inside this column
- *	will be set automatically and you will be able to get the table with {@link #getTable()}. 
+ *	will be set automatically and you will be able to get the table with {@link #getTable()}.
  * </p>
  * 
  * <h3>Foreign keys</h3>
@@ -67,12 +69,17 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2015)
+ * @version 2.1 (07/2016)
  */
 public class TAPColumn implements DBColumn {
 
 	/** Name that this column MUST have in ADQL queries. */
 	private final String adqlName;
+
+	/** Indicates whether the given ADQL name must be simplified by {@link #getADQLName()}.
+	 * <p>Here, "simplification" means removing the surrounding double quotes and the table prefix if any.</p>
+	 * @since 2.1 */
+	private final boolean simplificationNeeded;
 
 	/** Name that this column have in the database.
 	 * <i>Note: It CAN NOT be NULL. By default, it is the ADQL name.</i> */
@@ -139,25 +146,48 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note 2:
 	 * 	The datatype is set by default to VARCHAR.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPColumn(String columnName){
-		if (columnName == null || columnName.trim().length() == 0)
-			throw new NullPointerException("Missing column name !");
-		int indPrefix = columnName.lastIndexOf('.');
-		adqlName = (indPrefix >= 0) ? columnName.substring(indPrefix + 1).trim() : columnName.trim();
-		dbName = adqlName;
+	public TAPColumn(String columnName) throws NullPointerException{
+		if (columnName == null)
+			throw new NullPointerException("Missing column name!");
+
+		adqlName = columnName.trim();
+		simplificationNeeded = (adqlName.indexOf('.') > 0 || adqlName.indexOf('"') >= 0);
+
+		if (getADQLName().length() == 0)
+			throw new NullPointerException("Missing column name!");
+
+		dbName = null;
+
 		lstTargets = new ArrayList<TAPForeignKey>(1);
 		lstSources = new ArrayList<TAPForeignKey>(1);
 	}
@@ -165,27 +195,40 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * <p>Build a {@link TAPColumn} instance with the given ADQL name and datatype.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * <p><i>Note 2:
+	 * 	The datatype is set by default to VARCHAR.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does not do
-	 *	anything if the given datatype is NULL.
-	 * </i></p>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 * 
 	 * @see #setDatatype(DBType)
 	 */
-	public TAPColumn(String columnName, DBType type){
+	public TAPColumn(String columnName, DBType type) throws NullPointerException{
 		this(columnName);
 		setDatatype(type);
 	}
@@ -193,46 +236,78 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name and description.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * <p><i>Note 2:
+	 * 	The datatype is set by default to VARCHAR.
 	 * </i></p>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPColumn(String columnName, String description){
+	public TAPColumn(String columnName, String description) throws NullPointerException{
 		this(columnName, (DBType)null, description);
 	}
 
 	/**
 	 * <p>Build a {@link TAPColumn} instance with the given ADQL name, datatype and description.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
-	 * 
-	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
+	 * <p><i>Note 2:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does not do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
 	 * @param description	Description of the column's content. <i>May be NULL</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPColumn(String columnName, DBType type, String description){
+	public TAPColumn(String columnName, DBType type, String description) throws NullPointerException{
 		this(columnName, type);
 		this.description = description;
 	}
@@ -240,48 +315,80 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given ADQL name, description and unit.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * <p><i>Note 2:
+	 * 	The datatype is set by default to VARCHAR.
 	 * </i></p>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param description	Description of the column's content. <i>May be NULL</i>
 	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPColumn(String columnName, String description, String unit){
+	public TAPColumn(String columnName, String description, String unit) throws NullPointerException{
 		this(columnName, null, description, unit);
 	}
 
 	/**
 	 * <p>Build a {@link TAPColumn} instance with the given ADQL name, type, description and unit.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
-	 * 
-	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
+	 * <p><i>Note 2:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does not do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
 	 * @param description	Description of the column's content. <i>May be NULL</i>
 	 * @param unit			Unit of the column's values. <i>May be NULL</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPColumn(String columnName, DBType type, String description, String unit){
+	public TAPColumn(String columnName, DBType type, String description, String unit) throws NullPointerException{
 		this(columnName, type, description);
 		this.unit = unit;
 	}
@@ -289,57 +396,84 @@ public class TAPColumn implements DBColumn {
 	/**
 	 * <p>Build a VARCHAR {@link TAPColumn} instance with the given fields.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
+	 * <p><i>Note 2:
+	 * 	The datatype is set by default to VARCHAR.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
-	 *	anything if the given datatype is NULL.
-	 * </i></p>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param description	Description of the column's content. <i>May be NULL</i>
 	 * @param unit			Unit of the column's values. <i>May be NULL</i>
 	 * @param ucd			UCD describing the scientific content of this column.
 	 * @param utype			UType associating this column with a data-model.
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPColumn(String columnName, String description, String unit, String ucd, String utype){
+	public TAPColumn(String columnName, String description, String unit, String ucd, String utype) throws NullPointerException{
 		this(columnName, null, description, unit, ucd, utype);
 	}
 
 	/**
 	 * <p>Build a {@link TAPColumn} instance with the given fields.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the column name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
-	 * 
-	 * <p><i>Note:
-	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does do
+	 * <p><i>Note 2:
+	 *	The datatype is set by calling the function {@link #setDatatype(DBType)} which does not do
 	 *	anything if the given datatype is NULL.
 	 * </i></p>
 	 * 
-	 * @param columnName	Name that this column MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the column name is prefixed by its table name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the table name must be exactly the same
+	 * 		as what the function {@link TAPTable#getRawName()} of the set table returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single column name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
+	 * 
+	 * @param columnName	Name that this column MUST have in ADQL queries.
+	 *                  	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param type			Datatype of this column. <i>If NULL, VARCHAR will be the datatype of this column</i>
 	 * @param description	Description of the column's content. <i>May be NULL</i>
 	 * @param unit			Unit of the column's values. <i>May be NULL</i>
 	 * @param ucd			UCD describing the scientific content of this column.
 	 * @param utype			UType associating this column with a data-model.
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPColumn(String columnName, DBType type, String description, String unit, String ucd, String utype){
+	public TAPColumn(String columnName, DBType type, String description, String unit, String ucd, String utype) throws NullPointerException{
 		this(columnName, type, description, unit);
 		this.ucd = ucd;
 		this.utype = utype;
@@ -359,12 +493,37 @@ public class TAPColumn implements DBColumn {
 
 	@Override
 	public final String getADQLName(){
+		if (simplificationNeeded){
+			String tmp = adqlName;
+			// Remove the table prefix if any:
+			if (table != null){
+				String tablePrefix = ((table instanceof TAPTable) ? ((TAPTable)table).getRawName() : table.getADQLName()) + ".";
+				if (tmp.startsWith(tablePrefix))
+					tmp = tmp.substring(tablePrefix.length()).trim();
+			}
+			// Remove the surrounding double-quotes if any:
+			if (tmp.matches("\"[^\"]*\""))
+				tmp = tmp.substring(1, tmp.length() - 1);
+			// Finally, return the result:
+			return tmp;
+		}else
+			return adqlName;
+	}
+
+	/**
+	 * Get the full ADQL name of this table, as it has been provided at initialization.
+	 * 
+	 * @return	Get the original ADQL name.
+	 * 
+	 * @since 2.1
+	 */
+	public final String getRawName(){
 		return adqlName;
 	}
 
 	@Override
 	public final String getDBName(){
-		return dbName;
+		return (dbName == null) ? getADQLName() : dbName;
 	}
 
 	/**
@@ -380,6 +539,8 @@ public class TAPColumn implements DBColumn {
 		name = (name != null) ? name.trim() : name;
 		if (name != null && name.length() > 0)
 			dbName = name;
+		else
+			dbName = null;
 	}
 
 	@Override
@@ -614,7 +775,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * <p><i><b>Warning:</b>
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
-	 * 	that owns this column or that is part of the foreign key. 
+	 * 	that owns this column or that is part of the foreign key.
 	 * </i></p>
 	 * 
 	 * @param key	A foreign key.
@@ -652,7 +813,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * <p><i><b>Warning:</b>
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
-	 * 	that owns this column or that is part of the foreign key. 
+	 * 	that owns this column or that is part of the foreign key.
 	 * </i></p>
 	 * 
 	 * @param key	Foreign key in which this column was targeting another column.
@@ -668,7 +829,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * <p><i><b>Warning:</b>
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
-	 * 	that owns this column or that is part of the foreign key. 
+	 * 	that owns this column or that is part of the foreign key.
 	 * </i></p>
 	 */
 	protected void removeAllTargets(){
@@ -684,7 +845,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * <p><i><b>Warning:</b>
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
-	 * 	that owns this column or that is part of the foreign key. 
+	 * 	that owns this column or that is part of the foreign key.
 	 * </i></p>
 	 * 
 	 * @param key	A foreign key.
@@ -722,7 +883,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * <p><i><b>Warning:</b>
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
-	 * 	that owns this column or that is part of the foreign key. 
+	 * 	that owns this column or that is part of the foreign key.
 	 * </i></p>
 	 * 
 	 * @param key	Foreign key in which this column was targeted by another column.
@@ -737,7 +898,7 @@ public class TAPColumn implements DBColumn {
 	 * 
 	 * <p><i><b>Warning:</b>
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPTable}
-	 * 	that owns this column or that is part of the foreign key. 
+	 * 	that owns this column or that is part of the foreign key.
 	 * </i></p>
 	 */
 	protected void removeAllSources(){
@@ -802,7 +963,7 @@ public class TAPColumn implements DBColumn {
 
 	@Override
 	public String toString(){
-		return ((table != null) ? (table.getADQLName() + ".") : "") + adqlName;
+		return ((table != null) ? (((table.getADQLSchemaName() != null) ? table.getADQLSchemaName() : "") + table.getADQLName() + ".") : "") + getADQLName();
 	}
 
 }

@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,12 +29,12 @@ package adql.db;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (09/2014)
+ * @version 1.4 (07/2016)
  */
 public interface DBTable extends Iterable<DBColumn> {
 
 	/**
-	 * Gets the name of this table which must be used in an ADQL query.
+	 * Gets the name of this table (without any prefix and double-quotes).
 	 * 
 	 * @return	Its ADQL name.
 	 */

@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -27,10 +27,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import tap.TAPException;
 import adql.db.DBColumn;
 import adql.db.DBTable;
 import adql.db.DBType;
+import tap.TAPException;
 
 /**
  * <p>Represent a table as described by the IVOA standard in the TAP protocol definition.</p>
@@ -43,14 +43,16 @@ import adql.db.DBType;
  * </p>
  * 
  * <p><i><b>Important note:</b>
- * 	A {@link TAPTable} object MUST always have a DB name. That's why by default, at the creation
- * 	the DB name is the ADQL name. Once created, it is possible to set the DB name with {@link #setDBName(String)}.
+ * 	A {@link TAPTable} object MUST always have a DB name. That's why, {@link #getDBName()} returns
+ * 	what {@link #getADQLName()} returns when no DB name is set. After creation, it is possible to set
+ * 	the DB name with {@link #setDBName(String)}.
+ * 	<br/>
  * 	This DB name MUST be UNqualified and without double quotes. If a NULL or empty value is provided,
- * 	nothing is done and the object keeps its former DB name.
+ * 	{@link #getDBName()} returns what {@link #getADQLName()} returns.
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.1 (07/2016)
  */
 public class TAPTable implements DBTable {
 
@@ -70,13 +72,20 @@ public class TAPTable implements DBTable {
 	/** Name that this table MUST have in ADQL queries. */
 	private final String adqlName;
 
+	/** Indicates whether the given ADQL name must be simplified by {@link #getADQLName()}.
+	 * <p>Here, "simplification" means removing the surrounding double quotes and the schema prefix if any.</p>
+	 * @since 2.1 */
+	private final boolean simplificationNeeded;
+
 	/** <p>Indicate whether the ADQL name has been given at creation with a schema prefix or not.</p>
 	 * <p><i>Note: This information is used only when writing TAP_SCHEMA.tables or when writing the output of the resource /tables.</i></p>
-	 * @since 2.0 */
+	 * @since 2.0
+	 * @deprecated See {@link #simplificationNeeded}, {@link #getRawName()} and {@link #getADQLName()}. */
+	@Deprecated
 	private boolean isInitiallyQualified;
 
 	/** Name that this table have in the database.
-	 * <i>Note: It CAN'T be NULL. By default, it is the ADQL name.</i> */
+	 * <i>Note: If NULL, {@link #getDBName()} returns what {@link #getADQLName()} returns.</i> */
 	private String dbName = null;
 
 	/** The schema which owns this table.
@@ -117,26 +126,49 @@ public class TAPTable implements DBTable {
 	/**
 	 * <p>Build a {@link TAPTable} instance with the given ADQL name.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
+	 * </i></p>
+	 * 
+	 * <p><i>Note 2:
 	 * 	The table type is set by default to "table".
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 * 	If the given ADQL name is prefixed (= it has some text separated by a '.' before the table name),
-	 * 	this prefix will be removed. Only the part after the '.' character will be kept.
-	 * </i></p>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the table name is prefixed by its schema name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the schema name must be exactly the same
+	 * 		as what the function {@link TAPSchema#getRawName()} of the set schema returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single table name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
 	 * 
-	 * @param tableName	Name that this table MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * @param tableName	Name that this table MUST have in ADQL queries.
+	 *                 	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 */
-	public TAPTable(String tableName){
-		if (tableName == null || tableName.trim().length() == 0)
-			throw new NullPointerException("Missing table name !");
-		int indPrefix = tableName.lastIndexOf('.');
-		adqlName = (indPrefix >= 0) ? tableName.substring(indPrefix + 1).trim() : tableName.trim();
-		isInitiallyQualified = (indPrefix >= 0);
-		dbName = adqlName;
+	public TAPTable(String tableName) throws NullPointerException{
+		if (tableName == null)
+			throw new NullPointerException("Missing table name!");
+
+		adqlName = tableName.trim();
+		simplificationNeeded = (adqlName.indexOf('.') > 0 || adqlName.indexOf('"') >= 0);
+		isInitiallyQualified = (adqlName.indexOf('.') > 0);
+
+		if (getADQLName().length() == 0)
+			throw new NullPointerException("Missing table name!");
+
+		dbName = null;
+
 		columns = new LinkedHashMap<String,TAPColumn>();
 		foreignKeys = new ArrayList<TAPForeignKey>();
 	}
@@ -144,22 +176,40 @@ public class TAPTable implements DBTable {
 	/**
 	 * <p>Build a {@link TAPTable} instance with the given ADQL name and table type.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 *	The table type is set by calling the function {@link #setType(TableType)} which does not do
-	 *	anything if the given table type is NULL.
+	 * <p><i>Note 2:
+	 * 	The table type is set by default to "table".
 	 * </i></p>
 	 * 
-	 * @param tableName	Name that this table MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the table name is prefixed by its schema name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the schema name must be exactly the same
+	 * 		as what the function {@link TAPSchema#getRawName()} of the set schema returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single table name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
+	 * 
+	 * @param tableName	Name that this table MUST have in ADQL queries.
+	 *                 	<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param tableType	Type of this table. <i>If NULL, "table" will be the type of this table.</i>
+	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
 	 * 
 	 * @see #setType(TableType)
 	 */
-	public TAPTable(String tableName, TableType tableType){
+	public TAPTable(String tableName, TableType tableType) throws NullPointerException{
 		this(tableName);
 		setType(tableType);
 	}
@@ -167,24 +217,42 @@ public class TAPTable implements DBTable {
 	/**
 	 * <p>Build a {@link TAPTable} instance with the given ADQL name, table type, description and UType.</p>
 	 * 
-	 * <p><i>Note:
-	 * 	The DB name is set by default with the ADQL name. To set the DB name,
-	 * 	you MUST call then {@link #setDBName(String)}.
+	 * <p><i>Note 1:
+	 * 	The DB name is set by default to NULL so that {@link #getDBName()} returns exactly what {@link #getADQLName()} returns.
+	 * 	To set a specific DB name, you MUST call {@link #setDBName(String)}.
 	 * </i></p>
 	 * 
-	 * <p><i>Note:
-	 *	The table type is set by calling the function {@link #setType(TableType)} which does not do
-	 *	anything if the given table type is NULL.
+	 * <p><i>Note 2:
+	 * 	The table type is set by default to "table".
 	 * </i></p>
 	 * 
-	 * @param tableName		Name that this table MUST have in ADQL queries. <i>CAN'T be NULL ; this name can never be changed after.</i>
+	 * <p><b>Important notes on the given ADQL name:</b></p>
+	 * <ul>
+	 * 	<li>Any leading or trailing space is immediately deleted.</li>
+	 * 	<li>
+	 * 		If the table name is prefixed by its schema name, this prefix is removed by {@link #getADQLName()}
+	 * 		but will be still here when using {@link #getRawName()}. To work, the schema name must be exactly the same
+	 * 		as what the function {@link TAPSchema#getRawName()} of the set schema returns.
+	 *	</li>
+	 * 	<li>
+	 * 		Double quotes may surround the single table name. They will be removed by {@link #getADQLName()} but will
+	 * 		still appear in the result of {@link #getRawName()}.
+	 *	</li>
+	 * </ul>
+	 * 
+	 * @param tableName		Name that this table MUST have in ADQL queries.
+	 *                 		<i>CAN'T be NULL ; this name can never be changed after initialization.</i>
 	 * @param tableType		Type of this table. <i>If NULL, "table" will be the type of this table.</i>
 	 * @param description	Description of this table. <i>MAY be NULL.</i>
 	 * @param utype			UType associating this table with a data-model. <i>MAY be NULL</i>
 	 * 
+	 * @throws NullPointerException	If the given name is <code>null</code>,
+	 *                             	or if the given string is empty after simplification
+	 *                             	(i.e. without the surrounding double quotes).
+	 * 
 	 * @see #setType(TableType)
 	 */
-	public TAPTable(String tableName, TableType tableType, String description, String utype){
+	public TAPTable(String tableName, TableType tableType, String description, String utype) throws NullPointerException{
 		this(tableName, tableType);
 		this.description = description;
 		this.utype = utype;
@@ -206,7 +274,7 @@ public class TAPTable implements DBTable {
 	 */
 	public final String getFullName(){
 		if (schema != null)
-			return schema.getADQLName() + "." + adqlName;
+			return schema.getADQLName() + "." + getADQLName();
 		else
 			return adqlName;
 	}
@@ -225,6 +293,28 @@ public class TAPTable implements DBTable {
 
 	@Override
 	public final String getADQLName(){
+		if (simplificationNeeded){
+			String tmp = adqlName;
+			// Remove the schema prefix if any:
+			if (schema != null && tmp.startsWith(schema.getRawName() + "."))
+				tmp = tmp.substring((schema.getRawName() + ".").length()).trim();
+			// Remove the surrounding double-quotes if any:
+			if (tmp.matches("\"[^\"]*\""))
+				tmp = tmp.substring(1, tmp.length() - 1);
+			// Finally, return the result:
+			return tmp;
+		}else
+			return adqlName;
+	}
+
+	/**
+	 * Get the full ADQL name of this table, as it has been provided at initialization.
+	 * 
+	 * @return	Get the original ADQL name.
+	 * 
+	 * @since 2.1
+	 */
+	public final String getRawName(){
 		return adqlName;
 	}
 
@@ -239,7 +329,10 @@ public class TAPTable implements DBTable {
 	 * @return	<i>true</i> if the table name must be qualified in TAP_SCHEMA.tables and in /tables, <i>false</i> otherwise.
 	 * 
 	 * @since 2.0
+	 * @deprecated	To get name of the table as it should be used: {@link #getRawName()}.
+	 *            	To get just the table name (with no prefix and surrounding double quotes): {@link #getADQLName()}.
 	 */
+	@Deprecated
 	public final boolean isInitiallyQualified(){
 		return isInitiallyQualified;
 	}
@@ -255,21 +348,24 @@ public class TAPTable implements DBTable {
 	 *                       	<i>false</i> otherwise.
 	 * 
 	 * @since 2.0
+	 * @deprecated	To get name of the table as it should be used: {@link #getRawName()}.
+	 *            	To get just the table name (with no prefix and surrounding double quotes): {@link #getADQLName()}.
 	 */
+	@Deprecated
 	public final void setInitiallyQualifed(final boolean mustBeQualified){
 		isInitiallyQualified = mustBeQualified;
 	}
 
 	@Override
 	public final String getDBName(){
-		return dbName;
+		return (dbName == null) ? getADQLName() : dbName;
 	}
 
 	/**
 	 * <p>Change the name that this table MUST have in the database (i.e. in SQL queries).</p>
 	 * 
 	 * <p><i>Note:
-	 * 	If the given value is NULL or an empty string, nothing is done ; the DB name keeps is former value.
+	 * 	If the given value is NULL or an empty string, {@link #getDBName()} will return exactly what {@link #getADQLName()} returns.
 	 * </i></p>
 	 * 
 	 * @param name	The new database name of this table.
@@ -278,6 +374,8 @@ public class TAPTable implements DBTable {
 		name = (name != null) ? name.trim() : name;
 		if (name != null && name.length() > 0)
 			dbName = name;
+		else
+			dbName = null;
 	}
 
 	@Override
@@ -314,7 +412,7 @@ public class TAPTable implements DBTable {
 	 * 
 	 * <p><i><b>Warning:</b>
 	 * 	For consistency reasons, this function SHOULD be called only by the {@link TAPSchema}
-	 * 	that owns this table. 
+	 * 	that owns this table.
 	 * </i></p>
 	 * 
 	 * <p><i><b>Important note:</b>
@@ -452,8 +550,8 @@ public class TAPTable implements DBTable {
 	 */
 	public final void addColumn(final TAPColumn newColumn){
 		if (newColumn != null && newColumn.getADQLName() != null){
-			columns.put(newColumn.getADQLName(), newColumn);
 			newColumn.setTable(this);
+			columns.put(newColumn.getADQLName(), newColumn);
 		}
 	}
 
@@ -668,7 +766,7 @@ public class TAPTable implements DBTable {
 	 * 
 	 * @return	The removed column,
 	 *        	or NULL if no column with the given ADQL name has been found.
-	 *        
+	 * 
 	 * @see #deleteColumnRelations(TAPColumn)
 	 */
 	public final TAPColumn removeColumn(String columnName){
@@ -764,9 +862,9 @@ public class TAPTable implements DBTable {
 				TAPTable targetTable = key.getTargetTable();
 				for(Map.Entry<String,String> relation : key){
 					if (!hasColumn(relation.getKey()))
-						throw new TAPException(errorMsgPrefix + "the source column \"" + relation.getKey() + "\" doesn't exist in \"" + getName() + "\" !");
+						throw new TAPException(errorMsgPrefix + "the source column \"" + relation.getKey() + "\" doesn't exist in \"" + getADQLName() + "\" !");
 					else if (!targetTable.hasColumn(relation.getValue()))
-						throw new TAPException(errorMsgPrefix + "the target column \"" + relation.getValue() + "\" doesn't exist in \"" + targetTable.getName() + "\" !");
+						throw new TAPException(errorMsgPrefix + "the target column \"" + relation.getValue() + "\" doesn't exist in \"" + targetTable.getADQLName() + "\" !");
 					else{
 						getColumn(relation.getKey()).addTarget(key);
 						targetTable.getColumn(relation.getValue()).addSource(key);
@@ -929,7 +1027,7 @@ public class TAPTable implements DBTable {
 
 	@Override
 	public String toString(){
-		return ((schema != null) ? (schema.getADQLName() + ".") : "") + adqlName;
+		return ((schema != null) ? (schema.getADQLName() + ".") : "") + getADQLName();
 	}
 
 	@Override
@@ -939,7 +1037,7 @@ public class TAPTable implements DBTable {
 		copy.setSchema(schema);
 		Collection<TAPColumn> collColumns = columns.values();
 		for(TAPColumn col : collColumns)
-			copy.addColumn((TAPColumn)col.copy(col.getDBName(), col.getADQLName(), null));
+			copy.addColumn((TAPColumn)col.copy(col.getDBName(), col.getADQLName(), copy));
 		copy.setDescription(description);
 		copy.setOtherData(otherData);
 		copy.setType(type);

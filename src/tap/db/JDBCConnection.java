@@ -177,7 +177,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (06/2016)
+ * @version 2.1 (07/2016)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -1750,8 +1750,8 @@ public class JDBCConnection implements DBConnection {
 
 				// add the table entry into the DB:
 				stmt.setString(1, table.getADQLSchemaName());
-				if (table.isInitiallyQualified())
-					stmt.setString(2, table.getADQLSchemaName() + "." + table.getADQLName());
+				if (table instanceof TAPTable)
+					stmt.setString(2, ((TAPTable)table).getRawName());
 				else
 					stmt.setString(2, table.getADQLName());
 				stmt.setString(3, table.getType().toString());
@@ -1819,8 +1819,8 @@ public class JDBCConnection implements DBConnection {
 				appendAllInto(allKeys, col.getTargets());
 
 				// add the column entry into the DB:
-				if (!(col.getTable() instanceof TAPTable) || ((TAPTable)col.getTable()).isInitiallyQualified())
-					stmt.setString(1, col.getTable().getADQLSchemaName() + "." + col.getTable().getADQLName());
+				if (col.getTable() instanceof TAPTable)
+					stmt.setString(1, ((TAPTable)col.getTable()).getRawName());
 				else
 					stmt.setString(1, col.getTable().getADQLName());
 				stmt.setString(2, col.getADQLName());
@@ -1894,12 +1894,12 @@ public class JDBCConnection implements DBConnection {
 
 				// add the key entry into KEYS:
 				stmtKeys.setString(1, key.getKeyId());
-				if (key.getFromTable().isInitiallyQualified())
-					stmtKeys.setString(2, key.getFromTable().getADQLSchemaName() + "." + key.getFromTable().getADQLName());
+				if (key.getFromTable() instanceof TAPTable)
+					stmtKeys.setString(2, ((TAPTable)key.getFromTable()).getRawName());
 				else
 					stmtKeys.setString(2, key.getFromTable().getADQLName());
-				if (key.getTargetTable().isInitiallyQualified())
-					stmtKeys.setString(3, key.getTargetTable().getADQLSchemaName() + "." + key.getTargetTable().getADQLName());
+				if (key.getTargetTable() instanceof TAPTable)
+					stmtKeys.setString(3, ((TAPTable)key.getTargetTable()).getRawName());
 				else
 					stmtKeys.setString(3, key.getTargetTable().getADQLName());
 				stmtKeys.setString(4, key.getDescription());

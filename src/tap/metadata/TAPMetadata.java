@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -33,6 +33,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import adql.db.DBTable;
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import tap.metadata.TAPTable.TableType;
 import tap.resource.Capabilities;
 import tap.resource.TAPResource;
@@ -40,9 +43,6 @@ import tap.resource.VOSIResource;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.ClientAbortException;
 import uws.UWSToolBox;
-import adql.db.DBTable;
-import adql.db.DBType;
-import adql.db.DBType.DBDatatype;
 
 /**
  * <p>Let listing all schemas, tables and columns available in a TAP service.
@@ -64,7 +64,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (10/2015)
+ * @version 2.1 (07/2016)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -99,7 +99,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 	Otherwise, if you want customize just some part of this schema, you can also use the function
 	 * 	{@link #getStdTable(STDTable)} to get just the standard definition of some of its tables, either
 	 * 	to customize them or to merely get them and keep them like they are.
-	 * </i></p> 
+	 * </i></p>
 	 */
 	public TAPMetadata(){
 		schemas = new LinkedHashMap<String,TAPSchema>();
@@ -518,7 +518,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		final String prefix = "\t\t";
 		writer.println("\t<schema>");
 
-		writeAtt(prefix, "name", s.getADQLName(), false, writer);
+		writeAtt(prefix, "name", s.getRawName(), false, writer);
 		writeAtt(prefix, "title", s.getTitle(), true, writer);
 		writeAtt(prefix, "description", s.getDescription(), true, writer);
 		writeAtt(prefix, "utype", s.getUtype(), true, writer);
@@ -587,10 +587,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		}
 		writer.println(">");
 
-		if (t.isInitiallyQualified())
-			writeAtt(prefix, "name", t.getADQLSchemaName() + "." + t.getADQLName(), false, writer);
-		else
-			writeAtt(prefix, "name", t.getADQLName(), false, writer);
+		writeAtt(prefix, "name", t.getRawName(), false, writer);
 		writeAtt(prefix, "title", t.getTitle(), true, writer);
 		writeAtt(prefix, "description", t.getDescription(), true, writer);
 		writeAtt(prefix, "utype", t.getUtype(), true, writer);
@@ -643,7 +640,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 			writer.print(" std=\"true\"");
 		writer.println(">");
 
-		writeAtt(prefix, "name", c.getADQLName(), false, writer);
+		writeAtt(prefix, "name", c.getRawName(), false, writer);
 		writeAtt(prefix, "description", c.getDescription(), true, writer);
 		writeAtt(prefix, "unit", c.getUnit(), true, writer);
 		writeAtt(prefix, "ucd", c.getUcd(), true, writer);
@@ -701,7 +698,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 		writer.println("\t\t\t<foreignKey>");
 
-		writeAtt(prefix, "targetTable", fk.getTargetTable().getFullName(), false, writer);
+		writeAtt(prefix, "targetTable", fk.getTargetTable().getRawName(), false, writer);
 		writeAtt(prefix, "description", fk.getDescription(), true, writer);
 		writeAtt(prefix, "utype", fk.getUtype(), true, writer);
 
@@ -724,8 +721,8 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * @param prefix			Prefix of the XML node. (generally, space characters)
 	 * @param attributeName		Name of the metadata attribute to write (= Name of the XML node).
 	 * @param attributeValue	Value of the metadata attribute (= Value of the XML node).
-	 * @param isOptionalAttr	<i>true</i> if the attribute to write is optional (in this case, if the value is NULL or an empty string, the whole attribute item won't be written), 
-	 *                      	<i>false</i> otherwise (here, if the value is NULL or an empty string, the XML item will be written with an empty string as value). 
+	 * @param isOptionalAttr	<i>true</i> if the attribute to write is optional (in this case, if the value is NULL or an empty string, the whole attribute item won't be written),
+	 *                      	<i>false</i> otherwise (here, if the value is NULL or an empty string, the XML item will be written with an empty string as value).
 	 * @param writer			Output in which the XML node must be written.
 	 */
 	protected final void writeAtt(String prefix, String attributeName, String attributeValue, boolean isOptionalAttr, PrintWriter writer){
@@ -763,9 +760,9 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 			tap_schema.setDBName(null);
 		for(STDTable t : STDTable.values()){
 			TAPTable table = getStdTable(t);
+			tap_schema.addTable(table);
 			if (!isSchemaSupported)
 				table.setDBName(STDSchema.TAPSCHEMA.label + "_" + table.getADQLName());
-			tap_schema.addTable(table);
 		}
 		return tap_schema;
 	}
@@ -792,16 +789,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		switch(tableId){
 
 			case SCHEMAS:
-				TAPTable schemas = new TAPTable(STDTable.SCHEMAS.toString(), TableType.table, "List of schemas published in this TAP service.", null);
-				schemas.setInitiallyQualifed(true);
+				TAPTable schemas = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.SCHEMAS, TableType.table, "List of schemas published in this TAP service.", null);
 				schemas.addColumn("schema_name", new DBType(DBDatatype.VARCHAR), "schema name, possibly qualified", null, null, null, true, true, true);
 				schemas.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of schema", null, null, null, false, false, true);
 				schemas.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE if schema corresponds to a data model", null, null, null, false, false, true);
 				return schemas;
 
 			case TABLES:
-				TAPTable tables = new TAPTable(STDTable.TABLES.toString(), TableType.table, "List of tables published in this TAP service.", null);
-				tables.setInitiallyQualifed(true);
+				TAPTable tables = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.TABLES, TableType.table, "List of tables published in this TAP service.", null);
 				tables.addColumn("schema_name", new DBType(DBDatatype.VARCHAR), "the schema name from TAP_SCHEMA.schemas", null, null, null, true, true, true);
 				tables.addColumn("table_name", new DBType(DBDatatype.VARCHAR), "table name as it should be used in queries", null, null, null, true, true, true);
 				tables.addColumn("table_type", new DBType(DBDatatype.VARCHAR), "one of: table, view", null, null, null, false, false, true);
@@ -810,8 +805,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				return tables;
 
 			case COLUMNS:
-				TAPTable columns = new TAPTable(STDTable.COLUMNS.toString(), TableType.table, "List of columns of all tables listed in TAP_SCHEMA.TABLES and published in this TAP service.", null);
-				columns.setInitiallyQualifed(true);
+				TAPTable columns = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.COLUMNS, TableType.table, "List of columns of all tables listed in TAP_SCHEMA.TABLES and published in this TAP service.", null);
 				columns.addColumn("table_name", new DBType(DBDatatype.VARCHAR), "table name from TAP_SCHEMA.tables", null, null, null, true, true, true);
 				columns.addColumn("column_name", new DBType(DBDatatype.VARCHAR), "column name", null, null, null, true, true, true);
 				columns.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of column", null, null, null, false, false, true);
@@ -826,8 +820,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				return columns;
 
 			case KEYS:
-				TAPTable keys = new TAPTable(STDTable.KEYS.toString(), TableType.table, "List all foreign keys but provides just the tables linked by the foreign key. To know which columns of these tables are linked, see in TAP_SCHEMA.key_columns using the key_id.", null);
-				keys.setInitiallyQualifed(true);
+				TAPTable keys = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.KEYS, TableType.table, "List all foreign keys but provides just the tables linked by the foreign key. To know which columns of these tables are linked, see in TAP_SCHEMA.key_columns using the key_id.", null);
 				keys.addColumn("key_id", new DBType(DBDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
 				keys.addColumn("from_table", new DBType(DBDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
 				keys.addColumn("target_table", new DBType(DBDatatype.VARCHAR), "fully qualified table name", null, null, null, false, false, true);
@@ -836,8 +829,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				return keys;
 
 			case KEY_COLUMNS:
-				TAPTable key_columns = new TAPTable(STDTable.KEY_COLUMNS.toString(), TableType.table, "List all foreign keys but provides just the columns linked by the foreign key. To know the table of these columns, see in TAP_SCHEMA.keys using the key_id.", null);
-				key_columns.setInitiallyQualifed(true);
+				TAPTable key_columns = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.KEY_COLUMNS, TableType.table, "List all foreign keys but provides just the columns linked by the foreign key. To know the table of these columns, see in TAP_SCHEMA.keys using the key_id.", null);
 				key_columns.addColumn("key_id", new DBType(DBDatatype.VARCHAR), "unique key identifier", null, null, null, true, true, true);
 				key_columns.addColumn("from_column", new DBType(DBDatatype.VARCHAR), "key column name in the from_table", null, null, null, false, false, true);
 				key_columns.addColumn("target_column", new DBType(DBDatatype.VARCHAR), "key column name in the target_table", null, null, null, false, false, true);
@@ -853,11 +845,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 
 	 * <p><i>Note:
 	 *	This function is case sensitive. Indeed TAP_SCHEMA tables are defined by the TAP standard by a given case.
-	 *	Thus, this case is expected here.  
+	 *	Thus, this case is expected here.
 	 * </i></p>
 	 * 
 	 * @param tableName	Unqualified table name.
-	 *  
+	 * 
 	 * @return	The corresponding {@link STDTable} or NULL if the given table is not part of the TAP standard.
 	 * 
 	 * @since 2.0
