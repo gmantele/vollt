@@ -16,7 +16,7 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -39,7 +39,7 @@ import adql.query.TextPosition;
  * A table reference may have an alias (MUST if it is a sub-query).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 06/2015
+ * @version 2.1 (07/2016)
  */
 public class ADQLTable implements ADQLObject, FromContent {
 
@@ -165,6 +165,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @return	The position of this {@link ADQLTable}.
 	 */
+	@Override
 	public final TextPosition getPosition(){
 		return position;
 	}
@@ -174,6 +175,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * 
 	 * @param pos	Position of this {@link ADQLTable}.
 	 */
+	@Override
 	public final void setPosition(final TextPosition pos){
 		position = pos;
 	}
@@ -465,18 +467,15 @@ public class ADQLTable implements ADQLObject, FromContent {
 	}
 
 	/**
-	 * <p>Sets the {@link DBTable} corresponding to this {@link ADQLTable}.</p>
-	 * <p><i>
-	 * 	<u>Note:</u> This function will do nothing if this {@link ADQLTable} is a sub query.
-	 * </i></p>
+	 * Sets the {@link DBTable} corresponding to this {@link ADQLTable}.
 	 * 
 	 * @param dbLink Its corresponding {@link DBTable}.
 	 */
 	public final void setDBLink(DBTable dbLink){
-		if (!isSubQuery())
-			this.dbLink = dbLink;
+		this.dbLink = dbLink;
 	}
 
+	@Override
 	public SearchColumnList getDBColumns(){
 		SearchColumnList list = new SearchColumnList();
 		if (isSubQuery() && dbLink == null)
@@ -488,12 +487,14 @@ public class ADQLTable implements ADQLObject, FromContent {
 		return list;
 	}
 
+	@Override
 	public ArrayList<ADQLTable> getTables(){
 		ArrayList<ADQLTable> tables = new ArrayList<ADQLTable>();
 		tables.add(this);
 		return tables;
 	}
 
+	@Override
 	public ArrayList<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
 		ArrayList<ADQLTable> tables = new ArrayList<ADQLTable>();
 
@@ -515,19 +516,23 @@ public class ADQLTable implements ADQLObject, FromContent {
 		return tables;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new ADQLTable(this);
 	}
 
+	@Override
 	public String getName(){
 		return hasAlias() ? alias : (isSubQuery() ? "{subquery}" : getTableName());
 	}
 
+	@Override
 	public ADQLIterator adqlIterator(){
 		return new ADQLIterator(){
 
 			private boolean subQueryGot = !isSubQuery();
 
+			@Override
 			public ADQLObject next(){
 				if (!subQueryGot){
 					subQueryGot = true;
@@ -536,10 +541,12 @@ public class ADQLTable implements ADQLObject, FromContent {
 					throw new NoSuchElementException();
 			}
 
+			@Override
 			public boolean hasNext(){
 				return !subQueryGot;
 			}
 
+			@Override
 			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
 				if (!subQueryGot)
 					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
@@ -553,6 +560,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 					throw new UnsupportedOperationException("Impossible to replace a sub-query (" + subQuery.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
 			}
 
+			@Override
 			public void remove(){
 				if (!subQueryGot)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
@@ -562,6 +570,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 		};
 	}
 
+	@Override
 	public String toADQL(){
 		return (isSubQuery() ? ("(" + subQuery.toADQL() + ")") : getFullTableName()) + ((alias == null) ? "" : (" AS " + (isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + alias + "\"") : alias)));
 	}
