@@ -21,13 +21,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import tap.TAPException;
-import tap.metadata.TableSetParser.ForeignKey;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
+import tap.TAPException;
+import tap.metadata.TableSetParser.ForeignKey;
 
 @SuppressWarnings("deprecation")
-public class TableSetParserTest {
+public class TestTableSetParser {
 
 	private static TableSetParser parser = null;
 	private static XMLInputFactory factory = null;
@@ -903,7 +903,7 @@ public class TableSetParserTest {
 			col = parser.parseColumn(reader);
 			assertEquals("col1", col.getADQLName());
 			assertNull(col.getDescription());
-			assertEquals(DBDatatype.VARCHAR, col.getDatatype().type);
+			assertEquals(DBDatatype.UNKNOWN, col.getDatatype().type);
 			assertEquals(-1, col.getDatatype().length);
 			assertNull(col.getUtype());
 			assertNull(col.getUcd());

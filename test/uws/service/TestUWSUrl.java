@@ -31,7 +31,7 @@ import javax.servlet.http.Part;
 import org.junit.Before;
 import org.junit.Test;
 
-public class UWSUrlTest {
+public class TestUWSUrl {
 
 	public static final class TestHttpServletRequest implements HttpServletRequest {
 

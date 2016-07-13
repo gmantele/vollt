@@ -29,9 +29,9 @@ package adql.db;
  * 
  * <p>All datatypes declared in the IVOA recommendation document of TAP are listed in an enumeration type: {@link DBDatatype}.
  * It is used to set the attribute type/datatype of this class.</p>
- *  
+ * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (03/2016)
+ * @version 1.4 (07/2016)
  * @since 1.3
  */
 public class DBType {
@@ -40,12 +40,12 @@ public class DBType {
 	 * List of all datatypes declared in the IVOA recommendation of TAP (in the section UPLOAD).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.4 (03/2016)
+	 * @version 1.4 (07/2016)
 	 * @since 1.3
 	 */
 	public static enum DBDatatype{
 		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, REGION,
-		/** Type to use when the precise datatype is unknown. 
+		/** Type to use when the precise datatype is unknown.
 		 * @since 1.4 */
 		UNKNOWN,
 		/** <p>Type to use when the type is known as numeric but there is no precise datatype
@@ -70,8 +70,9 @@ public class DBType {
 		 * <b>ONLY FOR {@link #UNKNOWN} and {@link #UNKNOWN_NUMERIC} {@link DBDatatype}s</b>.</p>
 		 * 
 		 * <p><i><b>Important:</b>
-		 * 	If this {@link DBDatatype} is not {@link #UNKNOWN} or {@link #UNKNOWN_NUMERIC} or
-		 * 	if the given name is NULL or empty, this function has no effect.
+		 * 	If this {@link DBDatatype} is not {@link #UNKNOWN} or {@link #UNKNOWN_NUMERIC} this function has no effect.
+		 * 	But if the given name is NULL or empty, no custom type will be set ; instead the default value (i.e. name of
+		 * 	the unknown enum item) will be returned.
 		 * </i></p>
 		 * 
 		 * @param typeName	User type name.
@@ -79,8 +80,12 @@ public class DBType {
 		 * @since 1.4
 		 */
 		public void setCustomType(final String typeName){
-			if ((this == UNKNOWN || this == UNKNOWN_NUMERIC) && typeName != null && typeName.trim().length() > 0)
-				strExp = "?" + typeName.trim() + "?";
+			if ((this == UNKNOWN || this == UNKNOWN_NUMERIC)){
+				if (typeName != null && typeName.trim().length() > 0)
+					strExp = "?" + typeName.trim() + "?";
+				else
+					strExp = this.name();
+			}
 		}
 	}
 

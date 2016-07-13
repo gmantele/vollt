@@ -26,13 +26,15 @@ import adql.db.DefaultDBTable;
 import adql.db.FunctionDef;
 import adql.query.ADQLQuery;
 
-public class UnknownTypes {
+public class TestUnknownTypes {
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception{}
 
 	@AfterClass
-	public static void tearDownAfterClass() throws Exception{}
+	public static void tearDownAfterClass() throws Exception{
+		DBType.DBDatatype.UNKNOWN.setCustomType(null);
+	}
 
 	@Before
 	public void setUp() throws Exception{}

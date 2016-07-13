@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import adql.db.DBType.DBDatatype;
@@ -19,6 +20,11 @@ import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.geometry.PointFunction;
 
 public class TestFunctionDef {
+
+	@AfterClass
+	public static void tearDownAfterClass() throws Exception{
+		DBType.DBDatatype.UNKNOWN.setCustomType(null);
+	}
 
 	@Test
 	public void testIsString(){
