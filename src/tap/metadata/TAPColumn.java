@@ -945,7 +945,7 @@ public class TAPColumn implements DBColumn {
 	@Override
 	public DBColumn copy(final String dbName, final String adqlName, final DBTable dbTable){
 		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, datatype, description, unit, ucd, utype);
-		copy.setDBName((dbName == null) ? this.dbName : dbName);
+		copy.setDBName((dbName == null) ? this.getDBName() : dbName);
 		copy.setTable(dbTable);
 
 		copy.setIndexed(indexed);

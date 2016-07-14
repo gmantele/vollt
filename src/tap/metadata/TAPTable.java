@@ -1060,7 +1060,7 @@ public class TAPTable implements DBTable {
 	@Override
 	public DBTable copy(final String dbName, final String adqlName){
 		TAPTable copy = new TAPTable((adqlName == null) ? this.adqlName : adqlName);
-		copy.setDBName((dbName == null) ? this.dbName : dbName);
+		copy.setDBName((dbName == null) ? this.getDBName() : dbName);
 		copy.setSchema(schema);
 		Collection<TAPColumn> collColumns = columns.values();
 		for(TAPColumn col : collColumns)
