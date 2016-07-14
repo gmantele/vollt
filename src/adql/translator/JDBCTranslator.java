@@ -167,7 +167,7 @@ import tap.data.DataReadException;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (04/2016)
+ * @version 1.4 (07/2016)
  * @since 1.4
  * 
  * @see PostgreSQLTranslator
@@ -329,7 +329,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * @return					The string buffer + identifier.
 	 */
 	public StringBuffer appendIdentifier(final StringBuffer str, final String id, final boolean caseSensitive){
-		if (caseSensitive)
+		if (caseSensitive && !id.matches("\"[^\"]*\""))
 			return str.append('"').append(id).append('"');
 		else
 			return str.append(id);

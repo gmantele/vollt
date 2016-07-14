@@ -111,6 +111,11 @@ public class TAPTable implements DBTable {
 	 * <i>Note: Standard TAP table field ; MAY be NULL.</i> */
 	private String utype = null;
 
+	/** Ordering index of this table inside its schema.
+	 * <i>Note: Standard TAP table field since TAP 1.1.</i>
+	 * @since 2.1 */
+	private int index = -1;
+
 	/** List of columns composing this table.
 	 * <i>Note: all columns of this list are linked to this table from the moment they are added inside it.</i> */
 	protected final Map<String,TAPColumn> columns;
@@ -507,6 +512,28 @@ public class TAPTable implements DBTable {
 	 */
 	public final void setUtype(String utype){
 		this.utype = utype;
+	}
+
+	/**
+	 * Get the ordering index of this table inside its schema.
+	 * 
+	 * @return	Its ordering index.
+	 * 
+	 * @since 2.1
+	 */
+	public final int getIndex(){
+		return index;
+	}
+
+	/**
+	 * Set the ordering index of this table inside its schema.
+	 * 
+	 * @param tableIndex	Its new ordering index.
+	 * 
+	 * @since 2.1
+	 */
+	public final void setIndex(int tableIndex){
+		this.index = tableIndex;
 	}
 
 	/**

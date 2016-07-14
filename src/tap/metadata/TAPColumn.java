@@ -128,6 +128,11 @@ public class TAPColumn implements DBColumn {
 	 * <i>Note: Standard TAP column field ; FALSE by default.</i> */
 	private boolean std = false;
 
+	/** Ordering index of this column inside its table.
+	 * <i>Note: Standard TAP column field since TAP 1.1.</i>
+	 * @since 2.1 */
+	private int index = -1;
+
 	/** Let add some information in addition of the ones of the TAP protocol.
 	 * <i>Note: This object can be anything: an {@link Integer}, a {@link String}, a {@link Map}, a {@link List}, ...
 	 * Its content is totally free and never used or checked.</i> */
@@ -741,6 +746,28 @@ public class TAPColumn implements DBColumn {
 	 */
 	public final void setStd(boolean std){
 		this.std = std;
+	}
+
+	/**
+	 * Get the ordering index of this column inside its table.
+	 * 
+	 * @return	Its ordering index.
+	 * 
+	 * @since 2.1
+	 */
+	public final int getIndex(){
+		return index;
+	}
+
+	/**
+	 * Set the ordering index of this column inside its table.
+	 * 
+	 * @param columnIndex	Its new ordering index.
+	 * 
+	 * @since 2.1
+	 */
+	public final void setIndex(int columnIndex){
+		this.index = columnIndex;
 	}
 
 	/**

@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -37,11 +37,11 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.xml.sax.helpers.DefaultHandler;
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import tap.TAPException;
 import tap.data.VOTableIterator;
 import tap.metadata.TAPTable.TableType;
-import adql.db.DBType;
-import adql.db.DBType.DBDatatype;
 
 /**
  * <p>Let parse an XML document representing a table set, and return the corresponding {@link TAPMetadata} instance.</p>
@@ -78,7 +78,7 @@ import adql.db.DBType.DBDatatype;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (02/2015)
+ * @version 2.1 (07/2016)
  * @since 2.0
  */
 public class TableSetParser extends DefaultHandler {
@@ -95,7 +95,7 @@ public class TableSetParser extends DefaultHandler {
 	 * <p>
 	 * 	An instance of this class lets save all information provided in the XML document and needed to create the corresponding TAP metadata ({@link TAPForeignKey})
 	 * 	at the end of XML document parsing, once all available tables are listed.
-	 * </p>  
+	 * </p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 2.0 (02/2015)
@@ -257,7 +257,8 @@ public class TableSetParser extends DefaultHandler {
 			throw new IllegalStateException(getPosition(reader) + " Illegal usage of TableSetParser.parseSchema(XMLStreamParser)! This function can be called only when the reader has just read the START ELEMENT tag \"schema\".");
 
 		TAPSchema schema = null;
-		String tag = null, name = null, description = null, title = null, utype = null;
+		String tag = null, name = null, description = null, title = null,
+				utype = null;
 		ArrayList<TAPTable> tables = new ArrayList<TAPTable>(10);
 
 		while(nextTag(reader) == XMLStreamConstants.START_ELEMENT){
@@ -273,7 +274,9 @@ public class TableSetParser extends DefaultHandler {
 				description = ((description != null) ? (description + "\n") : "") + getText(reader);
 			else if (tag.equalsIgnoreCase("table")){
 				ArrayList<ForeignKey> keys = new ArrayList<ForeignKey>(2);
-				tables.add(parseTable(reader, keys));
+				TAPTable newTable = parseTable(reader, keys);
+				newTable.setIndex(tables.size());
+				tables.add(newTable);
 				allForeignKeys.addAll(keys);
 			}else if (tag.equalsIgnoreCase("title"))
 				title = ((title != null) ? (title + "\n") : "") + getText(reader);
@@ -342,7 +345,8 @@ public class TableSetParser extends DefaultHandler {
 
 		TAPTable table = null;
 		TableType type = TableType.table;
-		String tag = null, name = null, description = null, title = null, utype = null;
+		String tag = null, name = null, description = null, title = null,
+				utype = null;
 		ArrayList<TAPColumn> columns = new ArrayList<TAPColumn>(10);
 
 		// Get the table type (attribute "type") [OPTIONAL] :
@@ -379,7 +383,9 @@ public class TableSetParser extends DefaultHandler {
 			}else if (tag.equalsIgnoreCase("description"))
 				description = ((description != null) ? (description + "\n") : "") + getText(reader);
 			else if (tag.equalsIgnoreCase("column")){
-				columns.add(parseColumn(reader));
+				TAPColumn newCol = parseColumn(reader);
+				newCol.setIndex(columns.size());
+				columns.add(newCol);
 			}else if (tag.equalsIgnoreCase("foreignKey"))
 				keys.add(parseFKey(reader));
 			else if (tag.equalsIgnoreCase("title"))
@@ -446,7 +452,8 @@ public class TableSetParser extends DefaultHandler {
 
 		TAPColumn column = null;
 		boolean std = false, indexed = false, primary = false, nullable = false;
-		String tag = null, name = null, description = null, unit = null, ucd = null, utype = null;
+		String tag = null, name = null, description = null, unit = null,
+				ucd = null, utype = null;
 		DBType type = null;
 
 		// Get the column STD flag (attribute "std") [OPTIONAL] :
@@ -550,7 +557,8 @@ public class TableSetParser extends DefaultHandler {
 		if (reader.getEventType() != XMLStreamConstants.START_ELEMENT || reader.getLocalName() == null || !reader.getLocalName().equalsIgnoreCase("dataType"))
 			throw new IllegalStateException(getPosition(reader) + " Illegal usage of TableSetParser.parseDataType(XMLStreamParser)! This function can be called only when the reader has just read the START ELEMENT tag \"dataType\".");
 
-		String typeOfType = null, datatype = null, size = null, xtype = null, arraysize = null;
+		String typeOfType = null, datatype = null, size = null, xtype = null,
+				arraysize = null;
 
 		/* Note:
 		 * The 1st parameter of XMLStreamReader.getAttributeValue(String, String) should be the namespace of the attribute.
@@ -776,7 +784,7 @@ public class TableSetParser extends DefaultHandler {
 	 * @throws XMLStreamException	If there is an error processing the underlying XML source.
 	 * @throws TAPException			If the name of the only corresponding end element does not match the given one,
 	 *                     			or if the END ELEMENT can not be found <i>(2 possible reasons for that:
-	 *                     			1/ malformed XML document, 2/ this function has been called before the START ELEMENT has been read)</i>. 
+	 *                     			1/ malformed XML document, 2/ this function has been called before the START ELEMENT has been read)</i>.
 	 */
 	protected final void goToEndTag(final XMLStreamReader reader, final String startNode) throws XMLStreamException, TAPException{
 		if (startNode == null || startNode.trim().length() <= 0)
@@ -860,7 +868,7 @@ public class TableSetParser extends DefaultHandler {
 		if (tableName.indexOf('.') >= 0){
 			// get the schema name:
 			schema = tableName.substring(0, tableName.indexOf('.')).trim();
-			// test that the schema name is not null: 
+			// test that the schema name is not null:
 			if (schema.length() == 0)
 				throw new TAPException(position + " Incorrect full table name - \"" + tableName + "\": empty schema name!");
 			// test that the remaining table name is not null:
