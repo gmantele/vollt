@@ -33,7 +33,7 @@ import tap.backup.DefaultTAPBackupManager;
  * <p>Utility class gathering tool functions and properties' names useful to deal with a TAP configuration file.</p>
  * 
  * <p><i>This class implements the Design Pattern "Utility": no instance of this class can be created, it can not be extended,
- * and it must be used only thanks to its static classes and attributes.</i></p> 
+ * and it must be used only thanks to its static classes and attributes.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
  * @version 2.1 (11/2015)
@@ -272,12 +272,16 @@ public final class TAPConfiguration {
 	public final static String VALUE_ANY = "ANY";
 
 	/* ADDITIONAL TAP RESOURCES */
+	/** Name/Key of the property specifying the XSLT stylesheet to use for /capabilities. */
+	public final static String KEY_CAPABILITIES_STYLESHEET = "capabilities_stylesheet";
+	/** Name/Key of the property specifying the XSLT stylesheet to use for /tables. */
+	public final static String KEY_TABLES_STYLESHEET = "tables_stylesheet";
 	/** Name/Key of the property specifying a list of resources to add to the TAP service (e.g. a ADQL query validator).
 	 * By default, this list if empty ; only the default TAP resources exist. */
 	public final static String KEY_ADD_TAP_RESOURCES = "additional_resources";
 
 	/* CUSTOM FACTORY */
-	/** Name/Key of the property specifying the {@link TAPFactory} class to use instead of the default {@link ConfigurableTAPFactory}. 
+	/** Name/Key of the property specifying the {@link TAPFactory} class to use instead of the default {@link ConfigurableTAPFactory}.
 	 * <em>Setting a value to this property could disable several properties of the TAP configuration file.</em> */
 	public final static String KEY_TAP_FACTORY = "tap_factory";
 
@@ -324,7 +328,7 @@ public final class TAPConfiguration {
 	}
 
 	/**
-	 * Fetch the class object corresponding to the class name provided between brackets in the given value. 
+	 * Fetch the class object corresponding to the class name provided between brackets in the given value.
 	 * 
 	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propertyName	Name of the property associated with the parameter "value".

@@ -79,6 +79,10 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * By default, it is the resource name ; so here, the corresponding TAP URI would be: "/tables". */
 	protected String accessURL = getName();
 
+	/** The path of the XSLT style-sheet to apply.
+	 * @version 2.1 */
+	protected String xsltPath = null;
+
 	/**
 	 * <p>Build an empty list of metadata.</p>
 	 * 
@@ -103,6 +107,34 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 */
 	public TAPMetadata(){
 		schemas = new LinkedHashMap<String,TAPSchema>();
+	}
+
+	/**
+	 * Gets the path/URL of the XSLT style-sheet to use.
+	 * 
+	 * @return	XSLT path/url.
+	 * 
+	 * @version 2.1
+	 */
+	public final String getXSLTPath(){
+		return xsltPath;
+	}
+
+	/**
+	 * Sets the path/URL of the XSLT style-sheet to use.
+	 * 
+	 * @param path	The new XSLT path/URL.
+	 * 
+	 * @version 2.1
+	 */
+	public final void setXSLTPath(final String path){
+		if (path == null)
+			xsltPath = null;
+		else{
+			xsltPath = path.trim();
+			if (xsltPath.isEmpty())
+				xsltPath = null;
+		}
 	}
 
 	/**
@@ -475,6 +507,12 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 */
 	public void write(final PrintWriter writer) throws IOException{
 		writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+
+		if (xsltPath != null){
+			writer.print("<?xml-stylesheet type=\"text/xsl\" ");
+			writer.print(VOSerializer.formatAttribute("href", xsltPath));
+			writer.println("?>");
+		}
 
 		/* TODO The XSD schema for VOSITables should be fixed soon! This schema should be changed here before the library is released!
 		 * Note: the XSD schema at http://www.ivoa.net/xml/VOSITables/v1.0 contains an incorrect targetNamespace ("http://www.ivoa.net/xml/VOSICapabilities/v1.0").

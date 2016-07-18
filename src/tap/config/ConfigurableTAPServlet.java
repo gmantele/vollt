@@ -16,14 +16,16 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_TAP_CONF_FILE;
 import static tap.config.TAPConfiguration.KEY_ADD_TAP_RESOURCES;
+import static tap.config.TAPConfiguration.KEY_CAPABILITIES_STYLESHEET;
 import static tap.config.TAPConfiguration.KEY_EXAMPLES;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE;
 import static tap.config.TAPConfiguration.KEY_HOME_PAGE_MIME_TYPE;
+import static tap.config.TAPConfiguration.KEY_TABLES_STYLESHEET;
 import static tap.config.TAPConfiguration.TAP_CONF_PARAMETER;
 import static tap.config.TAPConfiguration.getProperty;
 import static tap.config.TAPConfiguration.isClassName;
@@ -58,7 +60,7 @@ import tap.resource.TAPResource;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (07/2016)
  * @since 2.0
  */
 public class ConfigurableTAPServlet extends HttpServlet {
@@ -150,8 +152,11 @@ public class ConfigurableTAPServlet extends HttpServlet {
 					tap.setHomePageMimeType(propValue);
 			}
 		}
-		
-		/* 4Ter. SET THE EXAMPLES ENDPOINT (if any) */
+
+		/* 4Ter. SET THE XSLT for /capabilities and /tables */
+		initXSLTStylesheet(tapConf);
+
+		/* 4Quater. SET THE EXAMPLES ENDPOINT (if any) */
 		propValue = getProperty(tapConf, KEY_EXAMPLES);
 		if (propValue != null)
 			tap.addResource(new Examples(tap, propValue));
@@ -181,7 +186,7 @@ public class ConfigurableTAPServlet extends HttpServlet {
 
 		/* 6. DEFAULT SERVLET INITIALIZATION */
 		super.init(config);
-		
+
 		/* 7. INITIATILIZE THE TAP SERVICE */
 		tap.init(config);
 
@@ -217,6 +222,25 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		}
 
 		return input;
+	}
+
+	/**
+	 * Initialize the XSLT for /capabilities and /tables.
+	 * 
+	 * @param tapConfig	The content of the TAP configuration file.
+	 * 
+	 * @since 2.1
+	 */
+	protected void initXSLTStylesheet(final Properties tapConfig){
+		// Set the XSLT of /capabilities:
+		String propValue = getProperty(tapConfig, KEY_CAPABILITIES_STYLESHEET);
+		if (propValue != null)
+			tap.getCapabilities().setXSLTPath(propValue);
+
+		// Set the XSLT of /tables:
+		propValue = getProperty(tapConfig, KEY_TABLES_STYLESHEET);
+		if (propValue != null)
+			tap.getTAPMetadata().setXSLTPath(propValue);
 	}
 
 	@Override
