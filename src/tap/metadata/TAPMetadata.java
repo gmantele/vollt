@@ -828,6 +828,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 			case SCHEMAS:
 				TAPTable schemas = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.SCHEMAS, TableType.table, "List of schemas published in this TAP service.", null);
+				schemas.addColumn("schema_index", new DBType(DBDatatype.INTEGER), "this index is used to recommend schema ordering for clients", null, null, null, false, false, true);
 				schemas.addColumn("schema_name", new DBType(DBDatatype.VARCHAR), "schema name, possibly qualified", null, null, null, true, true, true);
 				schemas.addColumn("description", new DBType(DBDatatype.VARCHAR), "brief description of schema", null, null, null, true, false, true);
 				schemas.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE if schema corresponds to a data model", null, null, null, false, false, true);

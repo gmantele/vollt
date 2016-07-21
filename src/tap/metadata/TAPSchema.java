@@ -75,6 +75,11 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 * <i>Note: Standard TAP schema field ; MAY be NULL.</i> */
 	private String utype = null;
 
+	/** Ordering index of this schema inside its whole schema set.
+	 * <i>Note: SHOULD be a standard TAP schema field in TAP 1.1, as table_index and column_index are resp. in TAP_SCHEMA.tables and TAP_SCHEMA.columns.</i>
+	 * @since 2.1 */
+	private int index = -1;
+
 	/** Let add some information in addition of the ones of the TAP protocol.
 	 * <i>Note: This object can be anything: an {@link Integer}, a {@link String}, a {@link Map}, a {@link List}, ...
 	 * Its content is totally free and never used or checked.</i> */
@@ -317,6 +322,28 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 */
 	public final void setUtype(String utype){
 		this.utype = utype;
+	}
+
+	/**
+	 * Get the ordering index of this schema inside its whole schema set.
+	 * 
+	 * @return	Its ordering index.
+	 * 
+	 * @since 2.1
+	 */
+	public final int getIndex(){
+		return index;
+	}
+
+	/**
+	 * Set the ordering index of this schema inside its whole schema set.
+	 * 
+	 * @param schemaIndex	Its new ordering index.
+	 * 
+	 * @since 2.1
+	 */
+	public final void setIndex(int schemaIndex){
+		this.index = schemaIndex;
 	}
 
 	/**

@@ -885,17 +885,25 @@ public class JDBCConnection implements DBConnection {
 			/* note: if the schema notion is not supported by this DBMS, the column "dbname" is ignored. */
 			boolean hasDBName = supportsSchema && isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), DB_NAME_COLUMN, connection.getMetaData());
 
+			// Determine whether the schemaIndex column exists:
+			boolean hasSchemaIndex = isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), "schema_index", connection.getMetaData());
+
 			// Build the SQL query:
 			StringBuffer sqlBuf = new StringBuffer("SELECT ");
 			sqlBuf.append(translator.getColumnName(tableDef.getColumn("schema_name")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
+			if (hasSchemaIndex)
+				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("schema_index")));
 			if (hasDBName){
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema));
-			sqlBuf.append(" ORDER BY 1");
+			if (hasSchemaIndex)
+				sqlBuf.append(" ORDER BY 1,4,2");
+			else
+				sqlBuf.append(" ORDER BY 1");
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
@@ -904,12 +912,14 @@ public class JDBCConnection implements DBConnection {
 			while(rs.next()){
 				String schemaName = rs.getString(1),
 						description = rs.getString(2), utype = rs.getString(3),
-						dbName = (hasDBName ? rs.getString(4) : null);
+						dbName = (hasDBName ? (hasSchemaIndex ? rs.getString(5) : rs.getString(4)) : null);
+				int schemaIndex = (hasSchemaIndex ? (rs.getObject(4) == null ? -1 : rs.getInt(4)) : -1);
 
 				// create the new schema:
 				TAPSchema newSchema = new TAPSchema(schemaName, nullifyIfNeeded(description), nullifyIfNeeded(utype));
 				if (dbName != null && dbName.trim().length() > 0)
 					newSchema.setDBName(dbName);
+				newSchema.setIndex(schemaIndex);
 
 				// add the new schema inside the given metadata:
 				metadata.addSchema(newSchema);
@@ -965,15 +975,15 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("table_type")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
+			if (hasTableIndex)
+				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("table_index")));
 			if (hasDBName){
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
-			if (hasTableIndex)
-				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("table_index")));
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema));
 			if (hasTableIndex)
-				sqlBuf.append(" ORDER BY 1,7,2");
+				sqlBuf.append(" ORDER BY 1,6,2");
 			else
 				sqlBuf.append(" ORDER BY 1,2");
 			sqlBuf.append(';');
@@ -987,8 +997,8 @@ public class JDBCConnection implements DBConnection {
 				String schemaName = rs.getString(1),
 						tableName = rs.getString(2), typeStr = rs.getString(3),
 						description = rs.getString(4), utype = rs.getString(5),
-						dbName = (hasDBName ? rs.getString(6) : null);
-				int tableIndex = (hasTableIndex ? (rs.getObject(7) == null ? -1 : rs.getInt(7)) : -1);
+						dbName = (hasDBName ? (hasTableIndex ? rs.getString(7) : rs.getString(6)) : null);
+				int tableIndex = (hasTableIndex ? (rs.getObject(6) == null ? -1 : rs.getInt(6)) : -1);
 
 				// get the schema:
 				TAPSchema schema = metadata.getSchema(schemaName);
@@ -1086,15 +1096,15 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("principal")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("indexed")));
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("std")));
+			if (hasColumnIndex)
+				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("column_index")));
 			if (hasDBName){
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
-			if (hasColumnIndex)
-				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("column_index")));
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema));
 			if (hasColumnIndex)
-				sqlBuf.append(" ORDER BY 1,13,2");
+				sqlBuf.append(" ORDER BY 1,12,2");
 			else
 				sqlBuf.append(" ORDER BY 1,2");
 			sqlBuf.append(';');
@@ -1109,9 +1119,9 @@ public class JDBCConnection implements DBConnection {
 						description = rs.getString(3), unit = rs.getString(4),
 						ucd = rs.getString(5), utype = rs.getString(6),
 						datatype = rs.getString(7),
-						dbName = (hasDBName ? rs.getString(12) : null);
+						dbName = (hasDBName ? (hasColumnIndex ? rs.getString(13) : rs.getString(12)) : null);
 				int size = rs.getInt(8),
-						colIndex = (hasColumnIndex ? (rs.getObject(13) == null ? -1 : rs.getInt(13)) : -1);
+						colIndex = (hasColumnIndex ? (rs.getObject(12) == null ? -1 : rs.getInt(12)) : -1);
 				boolean principal = toBoolean(rs.getObject(9)),
 						indexed = toBoolean(rs.getObject(10)),
 						std = toBoolean(rs.getObject(11));
