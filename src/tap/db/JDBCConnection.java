@@ -901,7 +901,7 @@ public class JDBCConnection implements DBConnection {
 			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema));
 			if (hasSchemaIndex)
-				sqlBuf.append(" ORDER BY 1,4,2");
+				sqlBuf.append(" ORDER BY 4");
 			else
 				sqlBuf.append(" ORDER BY 1");
 
