@@ -30,6 +30,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import adql.db.FunctionDef;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
@@ -45,7 +46,6 @@ import uws.service.UWS;
 import uws.service.UWSService;
 import uws.service.error.ServiceErrorWriter;
 import uws.service.log.UWSLog.LogLevel;
-import adql.db.FunctionDef;
 
 /**
  * <p>Root/Home of the TAP service. It is also the resource (HOME) which gathers all the others of the same TAP service.</p>
@@ -53,7 +53,7 @@ import adql.db.FunctionDef;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (01/2016)
+ * @version 2.1 (08/2016)
  */
 public class TAP implements VOSIResource {
 
@@ -120,7 +120,7 @@ public class TAP implements VOSIResource {
 
 	/**
 	 * Build a HOME resource of a TAP service whose the description is given in parameter.
-	 * All the other TAP resources will be created and configured here thanks to the given {@link ServiceConnection}. 
+	 * All the other TAP resources will be created and configured here thanks to the given {@link ServiceConnection}.
 	 * 
 	 * @param serviceConnection	Description of the TAP service.
 	 * 
@@ -565,9 +565,9 @@ public class TAP implements VOSIResource {
 			if (executionDuration[0] > -1 || executionDuration[1] > -1){
 				xml.append("\t<executionDuration>\n");
 				if (executionDuration[0] > -1)
-					xml.append("\t\t<default>").append(executionDuration[0]).append("</default>\n");
+					xml.append("\t\t<default>").append(executionDuration[0] / 1000).append("</default>\n");
 				if (executionDuration[1] > -1)
-					xml.append("\t\t<hard>").append(executionDuration[1]).append("</hard>\n");
+					xml.append("\t\t<hard>").append(executionDuration[1] / 1000).append("</hard>\n");
 				xml.append("\t</executionDuration>\n");
 			}
 		}
@@ -864,7 +864,7 @@ public class TAP implements VOSIResource {
 			/*
 			 *   Any known/"expected" TAP exception is logged but also returned to the HTTP client in an XML error document.
 			 *   Since the error is known, it is supposed to have already been logged with a full stack trace. Thus, there
-			 * is no need to log again its stack trace...just its message is logged. 
+			 * is no need to log again its stack trace...just its message is logged.
 			 */
 			// Write the error in the response and return the appropriate HTTP status code:
 			errorWriter.writeError(te, response, request, reqID, user, resourceName);
@@ -878,7 +878,7 @@ public class TAP implements VOSIResource {
 			 *   If this exception happens, the library tried to rewrite the HTTP response body with a message or a result,
 			 * while this body has already been partially sent to the client. It is then no longer possible to change its content.
 			 *   Consequently, the error is logged as FATAL and a message will be appended at the end of the already submitted response
-			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable. 
+			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable.
 			 */
 			// Write the error in the response and return the appropriate HTTP status code:
 			errorWriter.writeError(ise, response, request, reqID, user, resourceName);
