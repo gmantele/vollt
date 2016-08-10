@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -50,7 +50,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (12/2015)
+ * @version 1.4 (08/2016)
  * 
  * @see PgSphereTranslator
  */
@@ -77,7 +77,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	 * Builds a PostgreSQLTranslator which always translates in SQL all identifiers (schema, table and column) in the specified case sensitivity ;
 	 * in other words, schema, table and column names will all be surrounded or not by double quotes in the SQL translation.
 	 * 
-	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity. 
+	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity.
 	 */
 	public PostgreSQLTranslator(final boolean allCaseSensitive){
 		caseSensitivity = allCaseSensitive ? (byte)0x0F : (byte)0x00;
@@ -241,7 +241,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 		else if (dbmsTypeName.equals("real") || dbmsTypeName.equals("float4"))
 			return new DBType(DBDatatype.REAL);
 		// DOUBLE
-		else if (dbmsTypeName.equals("double precision") || dbmsTypeName.equals("float8"))
+		else if (dbmsTypeName.equals("double precision") || dbmsTypeName.equals("float8") || dbmsTypeName.equals("numeric"))
 			return new DBType(DBDatatype.DOUBLE);
 		// BINARY
 		else if (dbmsTypeName.equals("bit"))

@@ -43,7 +43,7 @@ import uws.ISO8601Format;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (04/2016)
+ * @version 2.1 (08/2016)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -779,7 +779,7 @@ public class ResultSetTableIterator implements TableIterator {
 			dbType = translator.convertTypeFromDB(dbmsType, dbmsTypeName, dbmsTypePrefix, typeParams);
 
 		// And if unsuccessful, apply a default conversion:
-		if (dbType == null)
+		if (dbType == null || dbType.isUnknown())
 			dbType = defaultTypeConversion(dbmsTypePrefix, typeParams, dbms);
 
 		return dbType;
@@ -861,7 +861,7 @@ public class ResultSetTableIterator implements TableIterator {
 			else if (dbmsTypeName.equals("real") || dbmsTypeName.equals("float4") || (dbmsTypeName.equals("float") && lengthParam <= 63))
 				return new DBType(DBDatatype.REAL);
 			// DOUBLE
-			else if (dbmsTypeName.equals("double") || dbmsTypeName.equals("double precision") || dbmsTypeName.equals("float8") || (dbmsTypeName.equals("float") && lengthParam > 63))
+			else if (dbmsTypeName.equals("double") || dbmsTypeName.equals("double precision") || dbmsTypeName.equals("float8") || (dbmsTypeName.equals("float") && lengthParam > 63) || dbmsTypeName.equals("numeric"))
 				return new DBType(DBDatatype.DOUBLE);
 			// BINARY
 			else if (dbmsTypeName.equals("bit") || dbmsTypeName.equals("binary") || dbmsTypeName.equals("raw") || ((dbmsTypeName.equals("char") || dbmsTypeName.equals("character")) && dbmsTypeName.endsWith(" for bit data")))
