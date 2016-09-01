@@ -177,7 +177,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2016)
+ * @version 2.1 (09/2016)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -301,6 +301,17 @@ public class JDBCConnection implements DBConnection {
 	 * <p><i>Note 1: this value must always be positive. If negative or null, it will be ignored and the {@link Statement} will keep its default behavior.</i></p>
 	 * <p><i>Note 2: if this feature is enabled (i.e. has a value &gt; 0), the AutoCommit will be disabled.</i></p> */
 	protected int fetchSize = DEFAULT_FETCH_SIZE;
+
+	/* TAP_SCHEMA MAPPING */
+
+	/** Mapping of the TAP_SCHEMA items between their ADQL name and their name in the database.
+	 * <p><b>IMPORTANT:</b>
+	 * 	Keys of the map MUST be the full ADQL name of an item (e.g. TAP_SCHEMA, TAP_SCHEMA.tables, TAP_SCHEMA.columns.ucd).
+	 * 	Values MUST be the name of the corresponding item in the database.
+	 * 	Keys and values are case sensitive.
+	 * </p>
+	 * @since 2.1 */
+	protected Map<String,String> dbMapping = null;
 
 	/**
 	 * <p>Creates a JDBC connection to the specified database and with the specified JDBC driver.
@@ -792,6 +803,77 @@ public class JDBCConnection implements DBConnection {
 		}
 	}
 
+	/**
+	 * Let specify for all item of the standard TAP_SCHEMA a different name in the database.
+	 * <p><i>
+	 * 	For instance: if in the database "TAP_SCHEMA" is called "MY_TAP_SCHEMA".
+	 * </i></p>
+	 * 
+	 * <p><b>IMPORTANT:</b>
+	 * 	TAP_SCHEMA items (i.e. keys in the map) MUST be fully qualified ADQL names (e.g. TAP_SCHEMA.columns.name).
+	 * 	The values MUST be single database names (i.e. no catalogue, schema or table prefix).
+	 * 	Both keys and values are case sensitive.
+	 * </p>
+	 * 
+	 * <p><i>Note:</i>
+	 * 	TAP_SCHEMA items keeping the same name in the database than in ADQL do not need to
+	 * 	be listed in the given map.
+	 * </p>
+	 * 
+	 * @param mapping	Mapping between ADQL names and DB names.
+	 *               	If <code>null</code>, DB names will be considered equals to the ADQL names.
+	 * 
+	 * @since 2.1
+	 */
+	public void setDBMapping(final Map<String,String> mapping){
+		if (mapping == null)
+			dbMapping = null;
+		else{
+			if (dbMapping == null)
+				dbMapping = new HashMap<String,String>(mapping.size());
+			else
+				dbMapping.clear();
+			dbMapping.putAll(mapping);
+			if (dbMapping.size() == 0)
+				dbMapping = null;
+		}
+	}
+
+	/**
+	 * Get the standard definition of TAP_SCHEMA with eventually DB names provided by the set mapping (see {@link #setDBMapping(Map)}).
+	 * 
+	 * @return	The standard schema as it should be detected in the database.
+	 * 
+	 * @since 2.1
+	 */
+	protected TAPSchema getStdSchema(){
+		TAPSchema tap_schema = TAPMetadata.getStdSchema(supportsSchema);
+
+		if (dbMapping != null){
+			// Update the TAP_SCHEMA DB name, if needed:
+			if (dbMapping.containsKey(tap_schema.getADQLName()))
+				tap_schema.setDBName(dbMapping.get(tap_schema.getADQLName()));
+
+			// For each table...
+			for(TAPTable t : tap_schema){
+				// ...update the table DB name, if needed:
+				if (dbMapping.containsKey(t.getFullName()))
+					t.setDBName(dbMapping.get(t.getFullName()));
+
+				// For each column...
+				String fullName;
+				for(DBColumn c : t){
+					fullName = t.getFullName() + "." + c.getADQLName();
+					// ...update the column DB name, if needed:
+					if (dbMapping.containsKey(fullName))
+						((TAPColumn)c).setDBName(dbMapping.get(fullName));
+				}
+			}
+		}
+
+		return tap_schema;
+	}
+
 	/* ************************************ */
 	/* GETTING TAP_SCHEMA FROM THE DATABASE */
 	/* ************************************ */
@@ -822,7 +904,7 @@ public class JDBCConnection implements DBConnection {
 		TAPMetadata metadata = new TAPMetadata();
 
 		// Get the definition of the standard TAP_SCHEMA tables:
-		TAPSchema tap_schema = TAPMetadata.getStdSchema(supportsSchema);
+		TAPSchema tap_schema = getStdSchema();
 
 		// LOAD ALL METADATA FROM THE STANDARD TAP TABLES:
 		try{

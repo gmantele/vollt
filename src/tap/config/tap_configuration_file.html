@@ -302,6 +302,31 @@
 				</td>
 				<td><ul><li>/home/foo/my_metadata.xml</li><li>my_metadata.xml</li><li>WEB-INF/my_metadata.xml</li></ul></td>
 			</tr>
+			<tr class="optional">
+				<td class="done">TAP_SCHEMA...</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p><strong>Only used if <code>metadata = db</code></strong>.</p>
+					<p>Mapping between TAP_SCHEMA ADQL names and their names in the database.</p>
+					<p>
+						<b>Any property named exactly (case sensitive) like TAP_SCHEMA items</b> will be considered
+						as a mapping between its ADQL name and its DB name.
+					</p>
+					<p>
+						The property value MUST be NOT qualified. Just the item name is required.
+						The value will be used as provided (with the same case).
+					</p>
+				</td>
+				<td>
+					<ul>
+						<li>TAP_SCHEMA = myTAPSchema</li>
+						<li>TAP_SCHEMA.tables = tap_tables</li>
+						<li>TAP_SCHEMA.columns.column_name = name</li>
+						<li>...</li>
+					</ul>
+				</td>
+			</tr>
 			
 			<tr><td colspan="5">Files</td></tr>
 			<tr class="mandatory">
@@ -758,7 +783,7 @@
 						tap.AbstractTAPFactory or tap.config.ConfigurableTAPFactory.
 					</p>
 					<p><em>By default, the default TAPFactory (tap.config.ConfigurableTAPFactory) is used and may use all properties related to the backup management,
-					the database access and the ADQL translation.</em></p>
+					the database access, the TAP_SCHEMA mapping and the ADQL translation.</em></p>
 				</td>
 				<td>{aPackage.MyTAPFactory}</td>
 			</tr>

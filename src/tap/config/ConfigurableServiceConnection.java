@@ -86,13 +86,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 
+import adql.db.FunctionDef;
+import adql.db.STCS;
+import adql.parser.ParseException;
+import adql.query.operand.function.UserDefinedFunction;
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPFactory;
 import tap.db.DBConnection;
+import tap.db.JDBCConnection;
 import tap.formatter.FITSFormat;
 import tap.formatter.HTMLFormat;
 import tap.formatter.JSONFormat;
@@ -111,10 +117,6 @@ import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog.LogLevel;
-import adql.db.FunctionDef;
-import adql.db.STCS;
-import adql.parser.ParseException;
-import adql.query.operand.function.UserDefinedFunction;
 
 /**
  * <p>Concrete implementation of {@link ServiceConnection}, fully parameterized with a TAP configuration file.</p>
@@ -125,7 +127,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (02/2016)
+ * @version 2.1 (09/2016)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -329,7 +331,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * <p>
 	 * 	If not an absolute URI, the given path may be either relative or absolute. A relative path is always considered
 	 * 	as relative from the Web Application directory (supposed to be given in 2nd parameter).
-	 * </p> 
+	 * </p>
 	 * 
 	 * @param filePath			URI/Path/Name of the file to get.
 	 * @param webAppRootPath	Web Application directory local path.
@@ -482,7 +484,22 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		else if (metaFetchType.equalsIgnoreCase(VALUE_DB)){
 			DBConnection conn = null;
 			try{
+				// get a db connection:
 				conn = tapFactory.getConnection("GET_TAP_SCHEMA");
+
+				// fetch and set the ADQL<->DB mapping for all standard TAP_SCHEMA items:
+				if (conn instanceof JDBCConnection){
+					HashMap<String,String> dbMapping = new HashMap<String,String>(10);
+					// fetch the mapping from the Property file:
+					for(String key : tapConfig.stringPropertyNames()){
+						if (key.trim().startsWith("TAP_SCHEMA") && tapConfig.getProperty(key) != null && tapConfig.getProperty(key).trim().length() > 0)
+							dbMapping.put(key.trim(), tapConfig.getProperty(key));
+					}
+					// set the mapping into the DB connection:
+					((JDBCConnection)conn).setDBMapping(dbMapping);
+				}
+
+				// fetch TAP_SCHEMA:
 				metadata = conn.getTAPSchema();
 			}finally{
 				if (conn != null)
@@ -970,7 +987,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			Object[] limit = parseLimit(propValue, KEY_UPLOAD_MAX_FILE_SIZE, true);
 			if (((Integer)limit[0]).intValue() <= 0)
 				limit[0] = new Integer(TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE);
-			// ...check that the unit is correct (bytes): 
+			// ...check that the unit is correct (bytes):
 			if (!LimitUnit.bytes.isCompatibleWith((LimitUnit)limit[1]))
 				throw new TAPException("The maximum upload file size " + KEY_UPLOAD_MAX_FILE_SIZE + " (here: " + propValue + ") can not be expressed in a unit different from bytes (B, kB, MB, GB)!");
 			// ...set the max file size:
@@ -1135,10 +1152,12 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			char c;
 			int ind = 0;
 			short nbComma = 0;
-			boolean within_item = false, within_params = false, within_classpath = false;
+			boolean within_item = false, within_params = false,
+					within_classpath = false;
 			StringBuffer buf = new StringBuffer();
 			String signature, classpath;
-			int[] posSignature = new int[]{-1,-1}, posClassPath = new int[]{-1,-1};
+			int[] posSignature = new int[]{-1,-1},
+					posClassPath = new int[]{-1,-1};
 
 			signature = null;
 			classpath = null;
@@ -1307,7 +1326,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * 	In other words, if the given value is less or equals to the current maximum retention period.
 	 * </em></p>
 	 * 
-	 * @param period	New default retention period (in seconds). 
+	 * @param period	New default retention period (in seconds).
 	 * 
 	 * @return	<i>true</i> if the given retention period has been successfully set, <i>false</i> otherwise.
 	 */
@@ -1355,7 +1374,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * 	In other words, if the given value is less or equals to the current maximum execution duration.
 	 * </em></p>
 	 * 
-	 * @param duration	New default execution duration (in milliseconds). 
+	 * @param duration	New default execution duration (in milliseconds).
 	 * 
 	 * @return	<i>true</i> if the given execution duration has been successfully set, <i>false</i> otherwise.
 	 */
@@ -1451,7 +1470,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * 	In other words, if the given value is less or equals to the current maximum output limit.
 	 * </em></p>
 	 * 
-	 * @param limit	New default output limit (in number of rows). 
+	 * @param limit	New default output limit (in number of rows).
 	 * 
 	 * @return	<i>true</i> if the given output limit has been successfully set, <i>false</i> otherwise.
 	 */
@@ -1546,7 +1565,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * 	In other words, if the given value is less or equals to the current maximum upload limit.
 	 * </em></p>
 	 * 
-	 * @param limit	New default upload limit. 
+	 * @param limit	New default upload limit.
 	 * 
 	 * @return	<i>true</i> if the given upload limit has been successfully set, <i>false</i> otherwise.
 	 */
