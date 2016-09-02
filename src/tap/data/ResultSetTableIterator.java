@@ -43,7 +43,7 @@ import uws.ISO8601Format;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (08/2016)
+ * @version 2.1 (09/2016)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -706,6 +706,9 @@ public class ResultSetTableIterator implements TableIterator {
 			// if the column value is a Timestamp object, format it in ISO8601:
 			if (colValue instanceof Timestamp)
 				colValue = ISO8601Format.format(((Timestamp)colValue).getTime());
+			// if the column value is a Boolean object, format it as a SMALLINT:
+			else if (colValue instanceof Boolean)
+				colValue = ((Boolean)colValue) ? 1 : 0;
 			// if the column should be only a character:
 			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)
 				colValue = ((String)colValue).charAt(0);
