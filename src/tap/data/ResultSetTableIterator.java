@@ -708,7 +708,7 @@ public class ResultSetTableIterator implements TableIterator {
 				colValue = ISO8601Format.format(((Timestamp)colValue).getTime());
 			// if the column value is a Boolean object, format it as a SMALLINT:
 			else if (colValue instanceof Boolean)
-				colValue = ((Boolean)colValue) ? 1 : 0;
+				colValue = ((Boolean)colValue) ? (short)1 : (short)0;
 			// if the column should be only a character:
 			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)
 				colValue = ((String)colValue).charAt(0);
