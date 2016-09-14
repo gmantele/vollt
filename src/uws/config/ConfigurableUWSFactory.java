@@ -68,7 +68,7 @@ import uws.service.request.UWSRequestParser;
  * Concrete implementation of a {@link UWSFactory} which is parameterized by a UWS configuration file.
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (06/2016)
+ * @version 4.2 (09/2016)
  * @since 4.2
  */
 public class ConfigurableUWSFactory implements UWSFactory {
@@ -167,7 +167,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 						controller = new ExecutionDurationController();
 
 					// Set the default execution duration:
-					controller.setDefaultExecutionDuration(durationController.parseDuration(propValue));
+					controller.setDefaultExecutionDuration(durationController.parseDuration(propValue) / 1000); // parseDuration(...) returns a duration in ms while executionDuration must be in seconds
 
 					// Update the map of controllers for this job list:
 					mapControllers.put(UWSJob.PARAM_EXECUTION_DURATION, controller);
@@ -203,7 +203,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 						controller = new ExecutionDurationController();
 
 					// Set the maximum execution duration:
-					controller.setMaxExecutionDuration(durationController.parseDuration(propValue));
+					controller.setMaxExecutionDuration(durationController.parseDuration(propValue) / 1000); // parseDuration(...) returns a duration in ms while executionDuration must be in seconds
 
 					// Update the map of controllers for this job list:
 					mapControllers.put(UWSJob.PARAM_EXECUTION_DURATION, controller);
@@ -389,7 +389,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 		/* Note: it is possible if the same property key is found more than once in a property file.
 		 *       In this case, the second list of parameters should update the first one. */
 		Map<String,InputParamController> jlParameters = jobParams.get(jlName);
-		
+
 		// If no list of controllers exists, create an empty one:
 		if (jlParameters == null)
 			jlParameters = new HashMap<String,InputParamController>();
@@ -433,10 +433,10 @@ public class ConfigurableUWSFactory implements UWSFactory {
 				/* a parameter name must NOT contain any space character */
 				else if (!paramName.replaceFirst("\\s", "_").equals(paramName))
 					throw new UWSException("Incorrect syntax for the parameter name \"" + paramName + "\"! Space characters are forbidden.");
-				
+
 				// CASE: CUSTOM CONTROLLER
 				if (matcher.group(4) != null){
-					jlParameters.put(paramName, newInstance(matcher.group(4), jlName+"."+UWSConfiguration.KEY_PARAMETERS, InputParamController.class, new Class<?>[0], new Object[0]));
+					jlParameters.put(paramName, newInstance(matcher.group(4), jlName + "." + UWSConfiguration.KEY_PARAMETERS, InputParamController.class, new Class<?>[0], new Object[0]));
 				}
 				// CASE: STRING/NUMERIC/DURATION
 				else{
@@ -446,41 +446,41 @@ public class ConfigurableUWSFactory implements UWSFactory {
 						modif = true;
 					else
 						modif = false;
-	
+
 					// CASE: STRING
 					if (matcher.group(11) != null){
-	
+
 						// Create the controller:
 						StringParamController controller = new StringParamController(paramName);
-	
+
 						// Set its modification flag:
 						controller.allowModification(modif);
-	
+
 						// Set its default value, if any:
 						if (matcher.group(12).length() > 0)
 							controller.setDefaultValue(matcher.group(12));
-	
+
 						// Set the regular expression:
 						if (matcher.group(13).length() > 0)
 							controller.setRegExp((matcher.group(15) != null ? "(?i)" : "") + matcher.group(13));
-	
+
 						// Add the controller:
 						jlParameters.put(paramName, controller);
-	
+
 					}
-	
+
 					// CASE: NUMERIC/DURATION
 					else if (matcher.group(7) != null){
-	
+
 						// CASE: NUMERIC
 						if (matcher.group(7).trim().equalsIgnoreCase("numeric")){
-	
+
 							// Create the controller:
 							NumericParamController controller = new NumericParamController();
-	
+
 							// Set its modification flag:
 							controller.allowModification(modif);
-	
+
 							// Set the default value:
 							if (matcher.group(8).trim().length() > 0){
 								try{
@@ -489,7 +489,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 									throw new UWSException("Wrong numeric format for the default value of the parameter \"" + paramName + "\": \"" + matcher.group(8).trim() + "\"!");
 								}
 							}
-	
+
 							// Set the minimum value:
 							if (matcher.group(9).trim().length() > 0){
 								try{
@@ -498,7 +498,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 									throw new UWSException("Wrong numeric format for the minimum value of the parameter \"" + paramName + "\": \"" + matcher.group(9).trim() + "\"!");
 								}
 							}
-	
+
 							// Set the maximum value:
 							if (matcher.group(10).trim().length() > 0){
 								try{
@@ -507,20 +507,20 @@ public class ConfigurableUWSFactory implements UWSFactory {
 									throw new UWSException("Wrong numeric format for the maximum value of the parameter \"" + paramName + "\": \"" + matcher.group(10).trim() + "\"!");
 								}
 							}
-	
+
 							// Add the controller:
 							jlParameters.put(paramName, controller);
-	
+
 						}
 						// CASE: DURATION
 						else{
-	
+
 							// Create the controller:
 							DurationParamController controller = new DurationParamController();
-	
+
 							// Set its modification flag:
 							controller.allowModification(modif);
-	
+
 							// Set the default value:
 							if (matcher.group(8).trim().length() > 0){
 								try{
@@ -531,7 +531,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 									throw new UWSException("Incorrect syntax for the default duration of the parameter \"" + paramName + "\"! Cause: " + pe.getMessage());
 								}
 							}
-	
+
 							// Set the minimum value:
 							if (matcher.group(9).trim().length() > 0){
 								try{
@@ -542,7 +542,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 									throw new UWSException("Incorrect syntax for the minimu duration of the parameter \"" + paramName + "\"! Cause: " + pe.getMessage());
 								}
 							}
-	
+
 							// Set the maximum value:
 							if (matcher.group(10).trim().length() > 0){
 								try{
@@ -553,7 +553,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 									throw new UWSException("Incorrect syntax for the maximum duration of the parameter \"" + paramName + "\"! Cause: " + pe.getMessage());
 								}
 							}
-	
+
 							// Add the controller:
 							jlParameters.put(paramName, controller);
 						}

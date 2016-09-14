@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ import uws.UWSToolBox;
  * 
  * <p><i>Note:
  * 	This class is using the two following {@link TAP} attributes in order to display the home page:
- * 	{@link TAP#homePageURI} and {@link TAP#homePageMimeType}. The MIME type is used only for the third case below (local file). 
+ * 	{@link TAP#homePageURI} and {@link TAP#homePageMimeType}. The MIME type is used only for the third case below (local file).
  * </i></p>
  * 
  * <p>
@@ -52,7 +52,7 @@ import uws.UWSToolBox;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (09/2016)
  * @since 2.0
  */
 public class HomePage extends ForwardResource {
@@ -86,7 +86,7 @@ public class HomePage extends ForwardResource {
 	public boolean executeResource(final HttpServletRequest request, final HttpServletResponse response) throws IOException, TAPException{
 		// Try by default a forward toward the specified file:
 		boolean written = forward(tap.homePageURI, tap.homePageMimeType, request, response);
-		
+
 		// DEFAULT: list all available resources:
 		if (!written){
 			// Set the content type: HTML document
@@ -141,8 +141,8 @@ public class HomePage extends ForwardResource {
 			// Execution duration limit:
 			writer.print("\n\t\t\t<div class=\"formField\">\n\t\t\t\t<input id=\"toggleDuration\" type=\"checkbox\" onclick=\"toggleTextInput('EXECUTIONDURATION');\" /><label for=\"toggleDuration\"><strong>Duration limit:</strong></label> <input id=\"EXECUTIONDURATION\" type=\"text\" value=\"-1\" list=\"durationList\" disabled=\"disabled\" /> seconds <em>(a value &le; 0 means 'default value')</em>\n\t\t\t\t<datalist id=\"durationList\">");
 			if (tap.getServiceConnection().getExecutionDuration() != null && tap.getServiceConnection().getExecutionDuration().length >= 2){
-				writer.print("\n\t\t\t\t\t<option value=\"" + tap.getServiceConnection().getExecutionDuration()[0] + "\">Default</option>");
-				writer.print("\n\t\t\t\t\t<option value=\"" + tap.getServiceConnection().getExecutionDuration()[1] + "\">Maximum</option>");
+				writer.print("\n\t\t\t\t\t<option value=\"" + (tap.getServiceConnection().getExecutionDuration()[0] / 1000) + "\">Default</option>");
+				writer.print("\n\t\t\t\t\t<option value=\"" + (tap.getServiceConnection().getExecutionDuration()[1] / 1000) + "\">Maximum</option>");
 			}
 			writer.print("\n\t\t\t\t</datalist>\n\t\t\t</div>");
 

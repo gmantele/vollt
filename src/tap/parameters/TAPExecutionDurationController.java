@@ -16,7 +16,7 @@ package tap.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -42,7 +42,7 @@ import uws.job.parameters.InputParamController;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2014)
+ * @version 2.1 (09/2016)
  */
 public class TAPExecutionDurationController implements InputParamController {
 
@@ -80,7 +80,7 @@ public class TAPExecutionDurationController implements InputParamController {
 		// Get the default value from the service connection:
 		long defaultVal = TAPJob.UNLIMITED_DURATION;
 		if (service.getExecutionDuration() != null && service.getExecutionDuration().length >= 2)
-			defaultVal = service.getExecutionDuration()[0];
+			defaultVal = service.getExecutionDuration()[0] / 1000; // ServiceConnection keeps limits in MILLISECONDS, but the controller MUST work in SECONDS (TAP input and output for this parameter are always in seconds)
 
 		// The default value is also limited by the maximum value if any:
 		long maxVal = getMaxDuration();
@@ -95,7 +95,7 @@ public class TAPExecutionDurationController implements InputParamController {
 	public final long getMaxDuration(){
 		if (service.getExecutionDuration() != null && service.getExecutionDuration().length >= 2){
 			if (service.getExecutionDuration()[1] > 0)
-				return service.getExecutionDuration()[1];
+				return service.getExecutionDuration()[1] / 1000; // ServiceConnection keeps limits in MILLISECONDS, but the controller MUST work in SECONDS (TAP input and output for this parameter are always in seconds)
 		}
 		return TAPJob.UNLIMITED_DURATION;
 	}
@@ -107,9 +107,10 @@ public class TAPExecutionDurationController implements InputParamController {
 			return getDefault();
 
 		// Get the default and maximum durations for comparison:
-		long defaultDuration = (Long)getDefault(), maxDuration = getMaxDuration();
+		long defaultDuration = (Long)getDefault(),
+				maxDuration = getMaxDuration();
 
-		// Parse the given duration:		
+		// Parse the given duration:
 		Long duration;
 		if (value instanceof Long)
 			duration = (Long)value;

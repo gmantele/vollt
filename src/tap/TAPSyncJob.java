@@ -48,7 +48,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (01/2016)
+ * @version 2.1 (09/2016)
  */
 public class TAPSyncJob {
 
@@ -83,7 +83,7 @@ public class TAPSyncJob {
 	 * Create a synchronous TAP job.
 	 * 
 	 * @param service	Description of the TAP service which is in charge of this synchronous job.
-	 * @param params	Parameters of the query to execute. It must mainly contain the ADQL query to execute.  
+	 * @param params	Parameters of the query to execute. It must mainly contain the ADQL query to execute.
 	 * 
 	 * @throws NullPointerException	If one of the parameters is NULL.
 	 */
@@ -248,12 +248,12 @@ public class TAPSyncJob {
 		if (timeout && error != null && error instanceof InterruptedException){
 			// Log the timeout:
 			if (thread.isAlive())
-				service.getLogger().logTAP(LogLevel.WARNING, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "ms) for the synchonous job " + ID + ", but the thread can not be interrupted!", null);
+				service.getLogger().logTAP(LogLevel.WARNING, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "seconds) for the synchonous job " + ID + ", but the thread can not be interrupted!", null);
 			else
-				service.getLogger().logTAP(LogLevel.INFO, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "ms) for the synchonous job " + ID + ".", null);
+				service.getLogger().logTAP(LogLevel.INFO, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "seconds) for the synchonous job " + ID + ".", null);
 
 			// Report the timeout to the user:
-			throw new TAPException("Time out! The execution of this synchronous TAP query was limited to " + tapParams.getExecutionDuration() + "ms. You should try again but in asynchronous execution.", UWSException.ACCEPTED_BUT_NOT_COMPLETE);
+			throw new TAPException("Time out! The execution of this synchronous TAP query was limited to " + tapParams.getExecutionDuration() + "seconds. You should try again but in asynchronous execution.", UWSException.ACCEPTED_BUT_NOT_COMPLETE);
 		}
 		// CASE: ERRORS
 		else if (!thread.isSuccess()){
