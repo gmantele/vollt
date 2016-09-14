@@ -42,22 +42,22 @@ public class TestTAPExecutionDurationController {
 			// By default, the controller has no limit on the execution duration, so let's try with a duration of 1e6 seconds:
 			assertEquals(1000000L, controller.check(1000000));
 
-			// With just a default execution duration (of 10 minutes):
-			service.setExecutionDuration(600, -1);
+			// With just a default execution duration (of 10 minutes = 600000 milliseconds):
+			service.setExecutionDuration(600000, -1);
 			assertEquals(600L, controller.check(null));
 			assertEquals(TAPJob.UNLIMITED_DURATION, controller.check(-1));
 			assertEquals(TAPJob.UNLIMITED_DURATION, controller.check(TAPJob.UNLIMITED_DURATION));
 
-			// With just a maximum execution duration (of 1 hour):
-			service.setExecutionDuration(-1, 3600);
+			// With just a maximum execution duration (of 1 hour = 3600000):
+			service.setExecutionDuration(-1, 3600000);
 			assertEquals(3600L, controller.check(null));
 			assertEquals(60L, controller.check(60));
 			assertEquals(3600L, controller.check(-1));
 			assertEquals(3600L, controller.check(TAPJob.UNLIMITED_DURATION));
 			assertEquals(3600L, controller.check(3601));
 
-			// With a default (10 minutes) AND a maximum (1 hour) execution duration:
-			service.setExecutionDuration(600, 3600);
+			// With a default (10 minutes = 600000 ms) AND a maximum (1 hour = 3600000 ms) execution duration:
+			service.setExecutionDuration(600000, 3600000);
 			assertEquals(600L, controller.check(null));
 			assertEquals(10L, controller.check(10));
 			assertEquals(600L, controller.check(600));
@@ -88,12 +88,12 @@ public class TestTAPExecutionDurationController {
 		service.setExecutionDuration(-1, -1);
 		assertEquals(TAPJob.UNLIMITED_DURATION, controller.getDefault());
 
-		// With an execution duration of 10 minutes:
-		service.setExecutionDuration(600, -1);
+		// With an execution duration of 10 minutes (= 600000 ms):
+		service.setExecutionDuration(600000, -1);
 		assertEquals(600L, controller.getDefault());
 
 		// The default value must always be less than the maximum value:
-		service.setExecutionDuration(600, 300);
+		service.setExecutionDuration(600000, 300000);
 		assertEquals(300L, controller.getDefault());
 	}
 
@@ -113,8 +113,8 @@ public class TestTAPExecutionDurationController {
 		service.setExecutionDuration(-1, -1);
 		assertEquals(TAPJob.UNLIMITED_DURATION, controller.getMaxDuration());
 
-		// With an execution duration of 10 minutes:
-		service.setExecutionDuration(-1, 600);
+		// With an execution duration of 10 minutes (= 600000 ms):
+		service.setExecutionDuration(-1, 600000);
 		assertEquals(600L, controller.getMaxDuration());
 	}
 
