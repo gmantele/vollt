@@ -267,7 +267,7 @@ public class TAPSyncJob {
 			// REQUEST ABORTION:
 			else if (error instanceof IOException){
 				// log the unexpected interruption (unexpected because not caused by a timeout):
-				service.getLogger().logTAP(LogLevel.INFO, this, "END", "Abortion of the synchronous job " + ID + "! Cause: connection with the HTTP client unexpectedly closed.", null);
+				service.getLogger().logTAP(LogLevel.INFO, this, "END", "Abortion of the synchronous job " + ID + "! Cause: connection with the HTTP client unexpectedly closed.", error);
 				// throw the error until the TAP instance to notify it about the abortion:
 				throw (IOException)error;
 			}
