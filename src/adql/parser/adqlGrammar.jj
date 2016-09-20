@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (07/2016)
+*  Version: 1.4 (09/2016)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (07/2016)
+* @version 1.4 (09/2016)
 */
 public class ADQLParser {
 	
@@ -998,14 +998,14 @@ FromContent JoinedTable(): { FromContent content; } {
 ADQLJoin JoinSpecification(FromContent leftTable): { boolean natural = false; JoinType type = JoinType.INNER;  ClauseConstraints condition = new ClauseConstraints("ON"); ArrayList<ADQLColumn> lstColumns=new ArrayList<ADQLColumn>(); IdentifierItem id; FromContent rightTable; ADQLJoin join; Token lastPar;} {
 	try{
 		(
-			<NATURAL> {natural=true;} [<INNER> | ((<LEFT> {type = JoinType.OUTER_LEFT;}|<RIGHT> {type = JoinType.OUTER_RIGHT;}|<FULL> {type = JoinType.OUTER_FULL;}) [<OUTER>])] <JOIN> rightTable=TableRef()
+			<NATURAL> {natural=true;} [<INNER> | ((<LEFT> {type = JoinType.OUTER_LEFT;}|<RIGHT> {type = JoinType.OUTER_RIGHT;}|<FULL> {type = JoinType.OUTER_FULL;}) [<OUTER>])] <JOIN> rightTable=SimpleTableRef()
 			{
 			  join = queryFactory.createJoin(type, leftTable, rightTable);
 			  join.setPosition(new TextPosition(leftTable.getPosition(), rightTable.getPosition()));
 			  return join;
 			}
 		|
-			[<INNER> | ((<LEFT> {type = JoinType.OUTER_LEFT;}|<RIGHT> {type = JoinType.OUTER_RIGHT;}|<FULL> {type = JoinType.OUTER_FULL;}) [<OUTER>])] <JOIN> rightTable=TableRef()
+			[<INNER> | ((<LEFT> {type = JoinType.OUTER_LEFT;}|<RIGHT> {type = JoinType.OUTER_RIGHT;}|<FULL> {type = JoinType.OUTER_FULL;}) [<OUTER>])] <JOIN> rightTable=SimpleTableRef()
 			(
 				<ON> ConditionsList(condition)
 				{

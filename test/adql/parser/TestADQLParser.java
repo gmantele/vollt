@@ -2,6 +2,7 @@ package adql.parser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.After;
@@ -11,6 +12,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import adql.query.ADQLQuery;
+import adql.query.from.ADQLJoin;
+import adql.query.from.ADQLTable;
 import adql.query.operand.StringConstant;
 
 public class TestADQLParser {
@@ -108,6 +111,33 @@ public class TestADQLParser {
 		try{
 			ADQLQuery query = parser.parseQuery("SELECT * FROM \"B/avo.rad/catalog\";");
 			assertEquals("B/avo.rad/catalog", query.getFrom().getTables().get(0).getTableName());
+		}catch(Exception e){
+			e.printStackTrace(System.err);
+			fail("The ADQL query is strictly correct! No error should have occured. (see stdout for more details)");
+		}
+	}
+
+	@Test
+	public void testJoinTree(){
+		ADQLParser parser = new ADQLParser();
+		try{
+			String[] queries = new String[]{"SELECT * FROM aTable A JOIN aSecondTable B ON A.id = B.id JOIN aThirdTable C ON B.id = C.id;","SELECT * FROM aTable A NATURAL JOIN aSecondTable B NATURAL JOIN aThirdTable C;"};
+			for(String q : queries){
+				ADQLQuery query = parser.parseQuery(q);
+
+				assertTrue(query.getFrom() instanceof ADQLJoin);
+
+				ADQLJoin join = ((ADQLJoin)query.getFrom());
+				assertTrue(join.getLeftTable() instanceof ADQLJoin);
+				assertTrue(join.getRightTable() instanceof ADQLTable);
+				assertEquals("aThirdTable", ((ADQLTable)join.getRightTable()).getTableName());
+
+				join = (ADQLJoin)join.getLeftTable();
+				assertTrue(join.getLeftTable() instanceof ADQLTable);
+				assertEquals("aTable", ((ADQLTable)join.getLeftTable()).getTableName());
+				assertTrue(join.getRightTable() instanceof ADQLTable);
+				assertEquals("aSecondTable", ((ADQLTable)join.getRightTable()).getTableName());
+			}
 		}catch(Exception e){
 			e.printStackTrace(System.err);
 			fail("The ADQL query is strictly correct! No error should have occured. (see stdout for more details)");
