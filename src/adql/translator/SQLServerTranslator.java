@@ -35,15 +35,15 @@ import adql.db.exception.UnresolvedJoinException;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.parser.SQLServer_ADQLQueryFactory;
+import adql.query.ADQLList;
+import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
+import adql.query.constraint.ConstraintsGroup;
 import adql.query.IdentifierField;
 import adql.query.from.ADQLJoin;
 import adql.query.operand.ADQLColumn;
-import adql.query.operand.ADQLOperand;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.MathFunction;
-import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -263,9 +263,19 @@ public class SQLServerTranslator extends JDBCTranslator {
 					// append the corresponding join condition:
 					if (buf.length() > 0)
 						buf.append(" AND ");
-					buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
+					
+					//if table has alias, we must use it here.
+					if (usingCol.getAdqlTable().getAlias() != null)
+						buf.append(usingCol.getAdqlTable().getAlias()).append('.').append(getColumnName(leftCol));
+					else
+						buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
 					buf.append("=");
-					buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
+					
+					//if table has alias, we must use it here.
+					if (usingCol.getAdqlTable().getAlias() != null)
+						buf.append(usingCol.getAdqlTable().getAlias()).append('.').append(getColumnName(rightCol));
+					else
+						buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
 				}
 				
 				sql.append("ON ").append(buf.toString());
@@ -343,6 +353,13 @@ public class SQLServerTranslator extends JDBCTranslator {
 	@Override
 	public String translate(MathFunction fct) throws TranslationException{
 		 switch(fct.getType()){
+		 case RADIANS:	
+			 //MSSQL radians returns integer results if given them.
+			 //To match other databases' functionality, convert here just in case:
+			 if( fct.getNbParameters() > 0 && fct.getParameter(0).isNumeric())
+				 return("radians(convert(float, " + (translate(fct.getParameter(0)) + "))"));
+			 else
+				 return getDefaultADQLFunction(fct);
 		 	case TRUNCATE:
 		 		// third argument to round nonzero means do a truncate
 		    	return "round(" + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "" ) + ",1)";
@@ -352,7 +369,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 		    	return getDefaultADQLFunction(fct);
 		 }
 	}	
-	
+
 	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
 		// If no type is provided return VARCHAR:
