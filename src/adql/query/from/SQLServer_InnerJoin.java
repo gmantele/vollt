@@ -71,7 +71,7 @@ public class SQLServer_InnerJoin extends InnerJoin {
 	 * 
 	 * @see InnerJoin#InnerJoin(FromContent, FromContent)
 	 */
-	public SQLServer_InnerJoin(FromContent left, FromContent right) {
+	public SQLServer_InnerJoin(FromContent left, FromContent right){
 		super(left, right);
 	}
 
@@ -84,20 +84,20 @@ public class SQLServer_InnerJoin extends InnerJoin {
 	 * 
 	 * @see InnerJoin#InnerJoin(FromContent, FromContent, ClauseConstraints)
 	 */
-	public SQLServer_InnerJoin(FromContent left, FromContent right, ClauseConstraints condition) {
+	public SQLServer_InnerJoin(FromContent left, FromContent right, ClauseConstraints condition){
 		super(left, right, condition);
 	}
 
 	/**
 	 * Builds an INNER JOIN between the two given "tables" with the given condition.
 	 * 
-	 * @param left		Left "table".
-	 * @param right		Right "table".
-	 * @param condition	Join condition.
+	 * @param left			Left "table".
+	 * @param right			Right "table".
+	 * @param lstColumns	List of columns to join.
 	 * 
 	 * @see InnerJoin#InnerJoin(FromContent, FromContent, Collection)
 	 */
-	public SQLServer_InnerJoin(FromContent left, FromContent right, Collection<ADQLColumn> lstColumns) {
+	public SQLServer_InnerJoin(FromContent left, FromContent right, Collection<ADQLColumn> lstColumns){
 		super(left, right, lstColumns);
 	}
 
@@ -110,18 +110,18 @@ public class SQLServer_InnerJoin extends InnerJoin {
 	 * 
 	 * @see InnerJoin#InnerJoin(InnerJoin)
 	 */
-	public SQLServer_InnerJoin(InnerJoin toCopy) throws Exception {
+	public SQLServer_InnerJoin(InnerJoin toCopy) throws Exception{
 		super(toCopy);
 	}
 
 	@Override
-	public SearchColumnList getDBColumns() throws UnresolvedJoinException {
+	public SearchColumnList getDBColumns() throws UnresolvedJoinException{
 		return getDBColumns(this);
 	}
 
 	/**
 	 * <p>Gets the list of all columns (~ database metadata) available in this FROM part.
-	 * Columns implied in a NATURAL join or in a USING list, are not returned as a {@link DBCommonColumn} ; 
+	 * Columns implied in a NATURAL join or in a USING list, are not returned as a {@link DBCommonColumn} ;
 	 * actually, just the corresponding {@link DBColumn} of the left table is returned.</p>
 	 * 
 	 * @return	All the available {@link DBColumn}s.
@@ -195,7 +195,7 @@ public class SQLServer_InnerJoin extends InnerJoin {
 			throw uje;
 		}
 	}
-	
+
 	public final static void addAllExcept2(final SearchColumnList itemsToAdd, final SearchColumnList target, final Map<String,DBColumn> exception){
 		for(DBColumn col : itemsToAdd){
 			if (!exception.containsKey(col.getADQLName().toLowerCase()) && !exception.containsKey("\"" + col.getADQLName() + "\""))

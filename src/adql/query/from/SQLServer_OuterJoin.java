@@ -47,8 +47,7 @@ import adql.query.operand.ADQLColumn;
  * 	Since this special behavior is also valid for {@link InnerJoin}, a special implementation
  * 	of this class has been also created: {@link SQLServer_InnerJoin}. Both must have exactly the
  * 	same behavior when {@link #getDBColumns()} is called. That's why the static function
- * 	{@link InnerJoin#getDBColumns(ADQLJoin)} has been created. It is called by {@link SQLServer_InnerJoin}
- * 	and {@link SQLServer_OuterJoin}.
+ * 	{@link SQLServer_InnerJoin#getDBColumns(ADQLJoin)} has been created.
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
@@ -69,7 +68,7 @@ public class SQLServer_OuterJoin extends OuterJoin {
 	 * 
 	 * @see OuterJoin#OuterJoin(FromContent, FromContent, OuterType)
 	 */
-	public SQLServer_OuterJoin(FromContent left, FromContent right, OuterType type) {
+	public SQLServer_OuterJoin(FromContent left, FromContent right, OuterType type){
 		super(left, right, type);
 	}
 
@@ -83,7 +82,7 @@ public class SQLServer_OuterJoin extends OuterJoin {
 	 * 
 	 * @see OuterJoin#OuterJoin(FromContent, FromContent, OuterType, ClauseConstraints)
 	 */
-	public SQLServer_OuterJoin(FromContent left, FromContent right, OuterType type, ClauseConstraints condition) {
+	public SQLServer_OuterJoin(FromContent left, FromContent right, OuterType type, ClauseConstraints condition){
 		super(left, right, type, condition);
 	}
 
@@ -97,7 +96,7 @@ public class SQLServer_OuterJoin extends OuterJoin {
 	 * 
 	 * @see OuterJoin#OuterJoin(FromContent, FromContent, OuterType, Collection)
 	 */
-	public SQLServer_OuterJoin(FromContent left, FromContent right, OuterType type, Collection<ADQLColumn> lstColumns) {
+	public SQLServer_OuterJoin(FromContent left, FromContent right, OuterType type, Collection<ADQLColumn> lstColumns){
 		super(left, right, type, lstColumns);
 	}
 
@@ -110,7 +109,7 @@ public class SQLServer_OuterJoin extends OuterJoin {
 	 * 
 	 * @see OuterJoin#OuterJoin(OuterJoin)
 	 */
-	public SQLServer_OuterJoin(OuterJoin toCopy) throws Exception {
+	public SQLServer_OuterJoin(OuterJoin toCopy) throws Exception{
 		super(toCopy);
 	}
 

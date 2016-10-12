@@ -282,7 +282,7 @@ public class ADQLQueryFactory {
 	 * <p><i><b>IMPORTANT:</b>
 	 * 	The tests done to check whether a user defined function is allowed/managed in this implementation, is done later by the parser.
 	 * 	Only declared UDF will pass the test of the parser. For that, you should give it a list of allowed UDFs (each UDF will be then
-	 * 	represented by a {@link FunctionDef} object). 
+	 * 	represented by a {@link FunctionDef} object).
 	 * </i></p>
 	 * 
 	 * @param name			Name of the user defined function to create.
@@ -411,7 +411,7 @@ public class ADQLQueryFactory {
 	}
 
 	/**
-	 * @deprecated since 1.4 ; Former version's mistake: an ORDER BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createOrder(IdentifierItem, boolean)} ; This function is no longer used by ADQLParser. 
+	 * @deprecated since 1.4 ; Former version's mistake: an ORDER BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createOrder(adql.parser.IdentifierItems.IdentifierItem, boolean)} ; This function is no longer used by ADQLParser.
 	 */
 	@Deprecated
 	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception{
@@ -431,7 +431,7 @@ public class ADQLQueryFactory {
 	}
 
 	/**
-	 * @deprecated since 1.4 ; Former version's mistake: a GROUP BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createColRef(IdentifierItem)} ; This function is no longer used by ADQLParser.
+	 * @deprecated since 1.4 ; Former version's mistake: a GROUP BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createColRef(adql.parser.IdentifierItems.IdentifierItem)} ; This function is no longer used by ADQLParser.
 	 */
 	@Deprecated
 	public ColumnReference createColRef(final IdentifierItems idItems) throws Exception{
