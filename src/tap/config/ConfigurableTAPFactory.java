@@ -34,6 +34,7 @@ import static tap.config.TAPConfiguration.VALUE_JDBC;
 import static tap.config.TAPConfiguration.VALUE_JDBC_DRIVERS;
 import static tap.config.TAPConfiguration.VALUE_JNDI;
 import static tap.config.TAPConfiguration.VALUE_NEVER;
+import static tap.config.TAPConfiguration.VALUE_PGMOC;
 import static tap.config.TAPConfiguration.VALUE_PGSPHERE;
 import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
 import static tap.config.TAPConfiguration.VALUE_USER_ACTION;
@@ -50,6 +51,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import adql.translator.JDBCTranslator;
+import adql.translator.PgMocTranslator;
 import adql.translator.PgSphereTranslator;
 import adql.translator.PostgreSQLTranslator;
 import tap.AbstractTAPFactory;
@@ -74,7 +76,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (04/2016)
+ * @version 2.1 (11/2016)
  * @since 2.0
  */
 public class ConfigurableTAPFactory extends AbstractTAPFactory {
@@ -200,11 +202,15 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 		else if (sqlTranslator.equalsIgnoreCase(VALUE_PGSPHERE))
 			translator = PgSphereTranslator.class;
 
-		// case d: a client defined ADQLTranslator (with the provided class name)
+		// case d: PgMoc translator
+		else if (sqlTranslator.equalsIgnoreCase(VALUE_PGMOC))
+			translator = PgMocTranslator.class;
+
+		// case e: a client defined ADQLTranslator (with the provided class name)
 		else if (TAPConfiguration.isClassName(sqlTranslator))
 			translator = TAPConfiguration.fetchClass(sqlTranslator, KEY_SQL_TRANSLATOR, JDBCTranslator.class);
 
-		// case e: unsupported value
+		// case f: unsupported value
 		else
 			throw new TAPException("Unsupported value for the property " + KEY_SQL_TRANSLATOR + ": \"" + sqlTranslator + "\" !");
 

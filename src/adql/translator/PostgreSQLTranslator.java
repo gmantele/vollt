@@ -36,6 +36,8 @@ import adql.query.operand.function.geometry.DistanceFunction;
 import adql.query.operand.function.geometry.ExtractCoord;
 import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.IntersectsFunction;
+import adql.query.operand.function.geometry.MocAggFunction;
+import adql.query.operand.function.geometry.MocFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
@@ -50,7 +52,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2016)
+ * @version 1.4 (11/2016)
  * 
  * @see PgSphereTranslator
  */
@@ -212,6 +214,16 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	}
 
 	@Override
+	public String translate(MocFunction moc) throws TranslationException{
+		return getDefaultADQLFunction(moc);
+	}
+
+	@Override
+	public String translate(MocAggFunction mocAgg) throws TranslationException{
+		return getDefaultADQLFunction(mocAgg);
+	}
+
+	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
 		// If no type is provided return VARCHAR:
 		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
@@ -300,6 +312,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 
 			case POINT:
 			case REGION:
+			case MOC:
 			default:
 				return "VARCHAR";
 		}

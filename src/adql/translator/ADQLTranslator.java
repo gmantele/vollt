@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -62,6 +62,8 @@ import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.GeometryFunction;
 import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.IntersectsFunction;
+import adql.query.operand.function.geometry.MocAggFunction;
+import adql.query.operand.function.geometry.MocFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
@@ -69,8 +71,8 @@ import adql.query.operand.function.geometry.RegionFunction;
 /**
  * Translates ADQL objects into any language (i.e. SQL).
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (11/2016)
  * 
  * @see PostgreSQLTranslator
  */
@@ -171,4 +173,8 @@ public interface ADQLTranslator {
 	public String translate(PolygonFunction polygon) throws TranslationException;
 
 	public String translate(RegionFunction region) throws TranslationException;
+
+	public String translate(MocFunction moc) throws TranslationException;
+
+	public String translate(MocAggFunction mocAgg) throws TranslationException;
 }

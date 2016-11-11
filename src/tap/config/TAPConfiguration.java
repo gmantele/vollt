@@ -16,7 +16,7 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.lang.reflect.Constructor;
@@ -36,7 +36,7 @@ import tap.backup.DefaultTAPBackupManager;
  * and it must be used only thanks to its static classes and attributes.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (11/2016)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -134,6 +134,9 @@ public final class TAPConfiguration {
 	public final static String VALUE_POSTGRESQL = "postgres";
 	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a PgSphere translator. */
 	public final static String VALUE_PGSPHERE = "pgsphere";
+	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a PgMoc translator.
+	 * @since 2.1 */
+	public final static String VALUE_PGMOC = "pgmoc";
 	/** Name/Key of the property specifying by how many rows the library should fetch a query result from the database.
 	 * This is the fetch size for to apply for synchronous queries. */
 	public final static String KEY_SYNC_FETCH_SIZE = "sync_fetch_size";

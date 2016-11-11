@@ -167,10 +167,10 @@
 				<td>text</td>
 				<td>
 					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
-					<p>The TAP library supports only Postgresql (without spatial extension) and PgSphere for the moment. But you can provide your own SQL translator
+					<p>The TAP library supports only Postgresql (without spatial extension), PgSphere and PgMoc for the moment. But you can provide your own SQL translator
 					(even if it does not have spatial features), by providing the name of a class (within brackets: {...}) that implements ADQLTranslator and which have at least an empty constructor.</p>
 				</td>
-				<td><ul><li>postgres</li><li>pgsphere</li><li>{apackage.MyADQLTranslator}</li></ul></td>
+				<td><ul><li>postgres</li><li>pgsphere</li><li>pgmoc</li><li>{apackage.MyADQLTranslator}</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">sync_fetch_size</td>

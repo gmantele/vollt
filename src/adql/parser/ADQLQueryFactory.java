@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -73,6 +73,8 @@ import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.GeometryFunction;
 import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.IntersectsFunction;
+import adql.query.operand.function.geometry.MocAggFunction;
+import adql.query.operand.function.geometry.MocFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
@@ -83,7 +85,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <p>To customize the object representation you merely have to extends the appropriate functions of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2015)
+ * @version 1.4 (11/2016)
  * 
  * @see ADQLParser
  */
@@ -330,6 +332,18 @@ public class ADQLQueryFactory {
 
 	public PolygonFunction createPolygon(ADQLOperand coordSys, Collection<? extends ADQLOperand> coords) throws Exception{
 		return new PolygonFunction(coordSys, coords);
+	}
+
+	public MocFunction createMoc(ADQLOperand asciiMoc) throws Exception{
+		return new MocFunction(asciiMoc);
+	}
+
+	public MocAggFunction createMocAgg(ADQLOperand hpxindex, ADQLOperand hpxorder) throws Exception{
+		return new MocAggFunction(hpxindex, hpxorder);
+	}
+
+	public MocAggFunction createMocAgg(PointFunction pt, ADQLOperand hpxorder) throws Exception{
+		return new MocAggFunction(pt, hpxorder);
 	}
 
 	public AreaFunction createArea(GeometryFunction param) throws Exception{

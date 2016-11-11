@@ -31,7 +31,7 @@ package adql.db;
  * It is used to set the attribute type/datatype of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (07/2016)
+ * @version 1.4 (11/2016)
  * @since 1.3
  */
 public class DBType {
@@ -40,11 +40,11 @@ public class DBType {
 	 * List of all datatypes declared in the IVOA recommendation of TAP (in the section UPLOAD).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.4 (07/2016)
+	 * @version 1.4 (11/2016)
 	 * @since 1.3
 	 */
 	public static enum DBDatatype{
-		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, REGION,
+		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, MOC, REGION,
 		/** Type to use when the precise datatype is unknown.
 		 * @since 1.4 */
 		UNKNOWN,
@@ -218,7 +218,7 @@ public class DBType {
 	 * <p>Tells whether this type is a geometrical region.</p>
 	 * 
 	 * <p><i>Concerned types:
-	 * 	{@link DBDatatype#POINT POINT} and {@link DBDatatype#REGION REGION}.
+	 * 	{@link DBDatatype#POINT POINT}, {@link DBDatatype#MOC MOC} and {@link DBDatatype#REGION REGION}.
 	 * </i></p>
 	 * 
 	 * <p><i><b>Important note</b>:
@@ -231,7 +231,7 @@ public class DBType {
 	 * @return	<code>true</code> if this type is a geometry, <code>false</code> otherwise.
 	 */
 	public boolean isGeometry(){
-		return (type == DBDatatype.POINT || type == DBDatatype.REGION);
+		return (type == DBDatatype.POINT || type == DBDatatype.MOC || type == DBDatatype.REGION);
 	}
 
 	/**

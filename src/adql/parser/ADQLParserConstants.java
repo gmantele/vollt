@@ -123,81 +123,85 @@ public interface ADQLParserConstants {
   /** RegularExpression Id. */
   int REGION = 57;
   /** RegularExpression Id. */
-  int CONTAINS = 58;
+  int MOC = 58;
   /** RegularExpression Id. */
-  int INTERSECTS = 59;
+  int MOC_AGG = 59;
   /** RegularExpression Id. */
-  int AREA = 60;
+  int CONTAINS = 60;
   /** RegularExpression Id. */
-  int COORD1 = 61;
+  int INTERSECTS = 61;
   /** RegularExpression Id. */
-  int COORD2 = 62;
+  int AREA = 62;
   /** RegularExpression Id. */
-  int COORDSYS = 63;
+  int COORD1 = 63;
   /** RegularExpression Id. */
-  int DISTANCE = 64;
+  int COORD2 = 64;
   /** RegularExpression Id. */
-  int ABS = 65;
+  int COORDSYS = 65;
   /** RegularExpression Id. */
-  int CEILING = 66;
+  int DISTANCE = 66;
   /** RegularExpression Id. */
-  int DEGREES = 67;
+  int ABS = 67;
   /** RegularExpression Id. */
-  int EXP = 68;
+  int CEILING = 68;
   /** RegularExpression Id. */
-  int FLOOR = 69;
+  int DEGREES = 69;
   /** RegularExpression Id. */
-  int LOG = 70;
+  int EXP = 70;
   /** RegularExpression Id. */
-  int LOG10 = 71;
+  int FLOOR = 71;
   /** RegularExpression Id. */
-  int MOD = 72;
+  int LOG = 72;
   /** RegularExpression Id. */
-  int PI = 73;
+  int LOG10 = 73;
   /** RegularExpression Id. */
-  int POWER = 74;
+  int MOD = 74;
   /** RegularExpression Id. */
-  int RADIANS = 75;
+  int PI = 75;
   /** RegularExpression Id. */
-  int RAND = 76;
+  int POWER = 76;
   /** RegularExpression Id. */
-  int ROUND = 77;
+  int RADIANS = 77;
   /** RegularExpression Id. */
-  int SQRT = 78;
+  int RAND = 78;
   /** RegularExpression Id. */
-  int TRUNCATE = 79;
+  int ROUND = 79;
   /** RegularExpression Id. */
-  int ACOS = 80;
+  int SQRT = 80;
   /** RegularExpression Id. */
-  int ASIN = 81;
+  int TRUNCATE = 81;
   /** RegularExpression Id. */
-  int ATAN = 82;
+  int ACOS = 82;
   /** RegularExpression Id. */
-  int ATAN2 = 83;
+  int ASIN = 83;
   /** RegularExpression Id. */
-  int COS = 84;
+  int ATAN = 84;
   /** RegularExpression Id. */
-  int COT = 85;
+  int ATAN2 = 85;
   /** RegularExpression Id. */
-  int SIN = 86;
+  int COS = 86;
   /** RegularExpression Id. */
-  int TAN = 87;
+  int COT = 87;
   /** RegularExpression Id. */
-  int STRING_LITERAL = 93;
+  int SIN = 88;
   /** RegularExpression Id. */
-  int DELIMITED_IDENTIFIER = 96;
+  int TAN = 89;
   /** RegularExpression Id. */
-  int REGULAR_IDENTIFIER = 97;
+  int STRING_LITERAL = 95;
   /** RegularExpression Id. */
-  int Letter = 98;
+  int DELIMITED_IDENTIFIER = 98;
   /** RegularExpression Id. */
-  int SCIENTIFIC_NUMBER = 99;
+  int REGULAR_IDENTIFIER = 99;
   /** RegularExpression Id. */
-  int UNSIGNED_FLOAT = 100;
+  int Letter = 100;
   /** RegularExpression Id. */
-  int UNSIGNED_INTEGER = 101;
+  int SCIENTIFIC_NUMBER = 101;
   /** RegularExpression Id. */
-  int DIGIT = 102;
+  int UNSIGNED_FLOAT = 102;
+  /** RegularExpression Id. */
+  int UNSIGNED_INTEGER = 103;
+  /** RegularExpression Id. */
+  int DIGIT = 104;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -268,6 +272,8 @@ public interface ADQLParserConstants {
     "\"POINT\"",
     "\"POLYGON\"",
     "\"REGION\"",
+    "\"MOC\"",
+    "\"MOC_AGG\"",
     "\"CONTAINS\"",
     "\"INTERSECTS\"",
     "\"AREA\"",
@@ -298,14 +304,14 @@ public interface ADQLParserConstants {
     "\"COT\"",
     "\"SIN\"",
     "\"TAN\"",
-    "<token of kind 88>",
-    "<token of kind 89>",
     "<token of kind 90>",
-    "\"\\\'\"",
+    "<token of kind 91>",
     "<token of kind 92>",
     "\"\\\'\"",
+    "<token of kind 94>",
+    "\"\\\'\"",
     "\"\\\"\"",
-    "<token of kind 95>",
+    "<token of kind 97>",
     "\"\\\"\"",
     "<REGULAR_IDENTIFIER>",
     "<Letter>",

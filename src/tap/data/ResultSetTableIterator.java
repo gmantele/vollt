@@ -43,7 +43,7 @@ import uws.ISO8601Format;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (09/2016)
+ * @version 2.1 (11/2016)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -716,8 +716,11 @@ public class ResultSetTableIterator implements TableIterator {
 			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)
 				colValue = ((String)colValue).charAt(0);
 			// if the column value is a geometrical object, it must be serialized in STC-S:
-			else if (translator != null && colType != null && colType.isGeometry()){
+			else if (translator != null && colType != null && (colType.isGeometry() && colType.type != DBDatatype.MOC)){
 				try{
+
+					/* TODO VERY IMPORTANT: No way to determine if the String is MOC since there is no STC-S description of a MOC. */
+
 					Region region = translator.translateGeometryFromDB(colValue);
 					if (region != null)
 						colValue = region.toSTCS();

@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (09/2016)
+*  Version: 1.4 (11/2016)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (09/2016)
+* @version 1.4 (11/2016)
 */
 public class ADQLParser {
 	
@@ -605,6 +605,8 @@ TOKEN : {
 |	< POINT: "POINT" >
 |	< POLYGON: "POLYGON" >
 |	< REGION: "REGION" >
+|   < MOC: "MOC" >
+|   < MOC_AGG: "MOC_AGG" >
 
 |	< CONTAINS: "CONTAINS" >
 |	< INTERSECTS: "INTERSECTS" >
@@ -1500,7 +1502,7 @@ ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null;}{
 	{ return coordSys; }
 }
 
-GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand coordSys; ADQLOperand width, height; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; ADQLOperand op=null; GeometryValue<GeometryFunction> gvf = null; GeometryFunction gf = null;} {
+GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand coordSys; ADQLOperand width, height; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; ADQLOperand op=null; GeometryValue<GeometryFunction> gvf = null; GeometryFunction gf = null; ADQLOperand mocexpr = null, hpxorder; PointFunction point = null;} {
 	try{
 		// BOX:
 		((fct=<BOX> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
@@ -1531,7 +1533,12 @@ GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand
 		  { gf = queryFactory.createPolygon(coordSys, vCoords); }
 		  
 		// REGION:
-		| (fct=<REGION> <LEFT_PAR> op=StringExpression() end=<RIGHT_PAR>) {gf = queryFactory.createRegion(op);})
+		| (fct=<REGION> <LEFT_PAR> op=StringExpression() end=<RIGHT_PAR>) {gf = queryFactory.createRegion(op);}
+
+		// MOC:
+        | (fct=<MOC> <LEFT_PAR> op=StringExpression() end=<RIGHT_PAR>) {gf = queryFactory.createMoc(op);}
+        | (fct=<MOC_AGG> <LEFT_PAR> (mocexpr=NumericExpression() | point=Point())
+                         <COMMA> hpxorder=NumericExpression() end=<RIGHT_PAR>) {gf = (mocexpr != null ? queryFactory.createMocAgg(mocexpr, hpxorder) : queryFactory.createMocAgg(point, hpxorder));})
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
