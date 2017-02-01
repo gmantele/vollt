@@ -16,13 +16,16 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014-2016 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.NoSuchElementException;
 
 import adql.db.DBColumn;
@@ -43,7 +46,7 @@ import uws.ISO8601Format;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (09/2016)
+ * @version 2.1 (02/2017)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -72,6 +75,11 @@ public class ResultSetTableIterator implements TableIterator {
 	private boolean endReached = false;
 	/** Index of the last read column (=0 just after {@link #nextRow()} and before {@link #nextCol()}, ={@link #nbColumns} after the last column has been read). */
 	private int colIndex;
+
+	/** Formatter to use in order to format java.sql.Date values. */
+	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	/** Formatter to use in order to format java.sql.Time values. */
+	private static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
@@ -687,7 +695,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 
 	 * <p>By default, the following function performs the following formatting:</p>
 	 * <ul>
-	 * 	<li><b>If {@link Timestamp}:</b> the date-time is converted into a string with the ISO8601 format (see {@link ISO8601Format}).</li>
+	 * 	<li><b>If {@link Timestamp}, {@link Date} or {@link Time}:</b> the date-time is converted into a string with the ISO8601 format (see {@link ISO8601Format}).</li>
 	 * 	<li><b>If a single CHAR is declared and a String is given:</b> only the first character is returned as a {@link Character} object.</li>
 	 * 	<li><b>If the value is declared as a Geometry:</b> the geometry is formatted as a STC-S expression.</li>
 	 * </ul>
@@ -703,9 +711,16 @@ public class ResultSetTableIterator implements TableIterator {
 	protected Object formatColValue(Object colValue) throws DataReadException{
 		if (colValue != null){
 			DBType colType = getColType();
-			// if the column value is a Timestamp object, format it in ISO8601:
-			if (colValue instanceof Timestamp)
-				colValue = ISO8601Format.format(((Timestamp)colValue).getTime());
+			// if the column value is a java.sql.Time object, format it into an ISO8601 time (i.e. with the format: HH:mm:ss):
+			if (colValue instanceof java.sql.Time)
+				colValue = timeFormat.format((java.sql.Time)colValue);
+			// if the column value is a java.sql.Date object, format it into an ISO8601 date (i.e. with the format: yyyy-MM-dd):
+			else if (colValue instanceof java.sql.Date)
+				colValue = dateFormat.format((java.sql.Date)colValue);
+			// if the column value is a Timestamp (or java.util.Date) object, format it into an ISO8601 date-time:
+			// note: java.sql.Timestamp extends java.util.Date. That's why the next condition also works for java.sql.Timestamp.
+			else if (colValue instanceof java.util.Date)
+				colValue = ISO8601Format.format((java.util.Date)colValue);
 			// if the type is Integer but it is declared as a SMALLINT cast the value (absolutely required for the FITS format):
 			else if (colValue instanceof Integer && colType != null && colValue != null && colType.type == DBDatatype.SMALLINT)
 				colValue = new Short(((Integer)colValue).shortValue());
