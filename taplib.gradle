@@ -18,5 +18,5 @@ dependencies {
 }
 
 sourceSets.main.java.srcDirs = ["src"]
-// the tests fail baecause they have environemnt specific parameters
+// the tests fail because they have environemnt specific parameters
 // sourceSets.test.java.srcDirs = ["test"]
