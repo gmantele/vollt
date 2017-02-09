@@ -189,7 +189,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 		for(int i = 0; i < clause.size(); i++){
 			if (i == 0){
-				sql = clause.getName() + (clause.hasLimit() ? " TOP " + clause.getLimit() + " " : "") + (clause.distinctColumns() ? " DISTINCT" : "");
+				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "") + (clause.hasLimit() ? " TOP " + clause.getLimit() + " " : "");
 			}else
 				sql += " " + clause.getSeparator(i);
 
