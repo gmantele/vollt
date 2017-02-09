@@ -11,7 +11,6 @@ dependencies {
     compile fileTree(dir: 'lib', include: '*.jar')
     compile 'javax.servlet:javax.servlet-api:3.0.1'
     compile 'postgresql:postgresql:9.1-901.jdbc4'
-    compile 'com.microsoft.sqlserver:mssql-jdbc:6.1.0.jre8'
 
     testCompile 'simple-jndi:simple-jndi:0.11.4.1'
     testCompile 'junit:junit:4.12'
