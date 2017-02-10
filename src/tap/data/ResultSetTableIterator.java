@@ -716,7 +716,7 @@ public class ResultSetTableIterator implements TableIterator {
 			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)
 				colValue = ((String)colValue).charAt(0);
 			// if the column value is a geometrical object, it must be serialized in STC-S:
-			else if (translator != null && colType != null && colType.isGeometry()){
+			else if ((translator != null && colType != null && colType.isGeometry()) || colType.type == DBDatatype.VARBINARY) {
 				try{
 					Region region = translator.translateGeometryFromDB(colValue);
 					if (region != null)
