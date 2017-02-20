@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -34,6 +34,7 @@ import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
+import adql.query.operand.function.geometry.CentroidFunction;
 import adql.query.operand.function.geometry.CircleFunction;
 import adql.query.operand.function.geometry.ContainsFunction;
 import adql.query.operand.function.geometry.DistanceFunction;
@@ -48,7 +49,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * The other functions are managed by {@link PostgreSQLTranslator}.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (07/2015)
+ * @version 1.4 (07/2017)
  */
 public class PgSphereTranslator extends PostgreSQLTranslator {
 
@@ -72,7 +73,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 * Builds a PgSphereTranslator which always translates in SQL all identifiers (schema, table and column) in the specified case sensitivity ;
 	 * in other words, schema, table and column names will all be surrounded or not by double quotes in the SQL translation.
 	 * 
-	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity. 
+	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity.
 	 * 
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean)
 	 */
@@ -175,6 +176,13 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
+	public String translate(CentroidFunction centroidFunction) throws TranslationException{
+		StringBuffer str = new StringBuffer("center(");
+		str.append(translate(centroidFunction.getParameter(0))).append(")");
+		return str.toString();
+	}
+
+	@Override
 	public String translate(ContainsFunction fct) throws TranslationException{
 		StringBuffer str = new StringBuffer("(");
 		str.append(translate(fct.getLeftParam())).append(" @ ").append(translate(fct.getRightParam())).append(")");
@@ -245,7 +253,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		String objType = pgo.getType().toLowerCase();
 		String geomStr = pgo.getValue();
 
-		/* Only spoint, scircle, sbox and spoly are supported ; 
+		/* Only spoint, scircle, sbox and spoly are supported ;
 		 * these geometries are parsed and transformed in Region instances:*/
 		if (objType.equals("spoint"))
 			return (new PgSphereGeometryParser()).parsePoint(geomStr);
@@ -434,7 +442,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 * Finalize the parsing.
 		 * No more characters (except eventually some space characters) should remain in the PgSphere expression to parse.
 		 * 
-		 * @throws ParseException	If other non-space characters remains. 
+		 * @throws ParseException	If other non-space characters remains.
 		 */
 		private void end() throws ParseException{
 			// Skip all spaces:
@@ -451,7 +459,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		}
 
 		/**
-		 * Tool function which skips all next space characters until the next meaningful characters. 
+		 * Tool function which skips all next space characters until the next meaningful characters.
 		 */
 		private void skipSpaces(){
 			while(pos < expr.length() && Character.isWhitespace(expr.charAt(pos)))
@@ -555,7 +563,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		}
 
 		/**
-		 * Internal spoint parsing function. It parses the PgSphere expression stored in this parser as a point. 
+		 * Internal spoint parsing function. It parses the PgSphere expression stored in this parser as a point.
 		 * 
 		 * @return	The ra and dec coordinates (in degrees) of the parsed point.
 		 * 
@@ -624,7 +632,8 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 			end();
 
 			// Build the STC Box region:
-			double width = Math.abs(northeast[0] - southwest[0]), height = Math.abs(northeast[1] - southwest[1]);
+			double width = Math.abs(northeast[0] - southwest[0]),
+					height = Math.abs(northeast[1] - southwest[1]);
 			double[] center = new double[]{northeast[0] - width / 2,northeast[1] - height / 2};
 			return new Region(null, center, width, height);
 		}

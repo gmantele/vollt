@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -36,7 +36,7 @@ import adql.query.operand.ADQLOperand;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (02/2017)
  */
 public class CentroidFunction extends GeometryFunction {
 
@@ -80,7 +80,7 @@ public class CentroidFunction extends GeometryFunction {
 
 	@Override
 	public boolean isNumeric(){
-		return true;
+		return false;
 	}
 
 	@Override
@@ -90,7 +90,7 @@ public class CentroidFunction extends GeometryFunction {
 
 	@Override
 	public boolean isGeometry(){
-		return false;
+		return true;
 	}
 
 	@Override
