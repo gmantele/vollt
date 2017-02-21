@@ -19,6 +19,12 @@ import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
 import adql.parser.ParseException;
+import adql.query.operand.NumericConstant;
+import adql.query.operand.StringConstant;
+import adql.query.operand.function.geometry.CentroidFunction;
+import adql.query.operand.function.geometry.CircleFunction;
+import adql.query.operand.function.geometry.GeometryFunction;
+import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 
 public class TestPgSphereTranslator {
 
@@ -33,6 +39,18 @@ public class TestPgSphereTranslator {
 
 	@After
 	public void tearDown() throws Exception{}
+
+	@Test
+	public void testTranslateCentroidFunction(){
+		try{
+			PgSphereTranslator translator = new PgSphereTranslator();
+			CentroidFunction centfc = new CentroidFunction(new GeometryValue<GeometryFunction>(new CircleFunction(new StringConstant("ICRS"), new NumericConstant(128.23), new NumericConstant(0.53), new NumericConstant(2))));
+			assertEquals("center(scircle(spoint(radians(128.23),radians(0.53)),radians(2)))", translator.translate(centfc));
+		}catch(Throwable t){
+			t.printStackTrace(System.err);
+			fail("An error occured while building a simple CentroidFunction! (see the console for more details)");
+		}
+	}
 
 	@Test
 	public void testConvertTypeFromDB(){

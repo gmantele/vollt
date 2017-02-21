@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.GregorianCalendar;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -64,7 +65,7 @@ public class ResultSetTableIteratorTest {
 				// TEST that all columns have been read:
 				assertEquals(expectedNbColumns, countColumns);
 			}
-			// TEST that all lines have been read: 
+			// TEST that all lines have been read:
 			assertEquals(expectedNbLines, countLines);
 
 		}catch(Exception ex){
@@ -92,7 +93,7 @@ public class ResultSetTableIteratorTest {
 			// count lines:
 			while(it.nextRow())
 				countLines++;
-			// TEST that no line has been read: 
+			// TEST that no line has been read:
 			assertEquals(countLines, 0);
 
 		}catch(Exception ex){
@@ -122,6 +123,46 @@ public class ResultSetTableIteratorTest {
 			fail("The constructor should have failed, because: the given ResultSet is closed.");
 		}catch(Exception ex){
 			assertEquals(ex.getClass().getName(), "tap.data.DataReadException");
+		}
+	}
+
+	@Test
+	public void testDateFormat(){
+		ResultSet rs = null;
+		try{
+			// create a valid ResultSet:
+			rs = DBTools.select(conn, "SELECT * FROM gums LIMIT 1;");
+
+			// Create the iterator:
+			ResultSetTableIterator rsit = new ResultSetTableIterator(rs);
+			assertTrue(rsit.nextRow());
+			assertTrue(rsit.hasNextCol());
+			rsit.nextCol();
+
+			// Set a date-time:
+			GregorianCalendar cal = new GregorianCalendar();
+			cal.set(2017, GregorianCalendar.FEBRUARY, 1, 15, 13, 56); // 1st Feb. 2017 - 15:13:56 CET
+
+			// Try to format it from a java.SQL.Timestamp into a ISO8601 date-time:
+			assertEquals("2017-02-01T14:13:56Z", rsit.formatColValue(new java.sql.Timestamp(cal.getTimeInMillis())));
+			// Try to format it from a java.UTIL.Date into an ISO8601 date-time:
+			assertEquals("2017-02-01T14:13:56Z", rsit.formatColValue(cal.getTime()));
+
+			// Try to format it from a java.SQL.Date into a simple date (no time indication):
+			assertEquals("2017-02-01", rsit.formatColValue(new java.sql.Date(cal.getTimeInMillis())));
+
+			// Try to format it into a simple time (no date indication):
+			assertEquals("15:13:56", rsit.formatColValue(new java.sql.Time(cal.getTimeInMillis())));
+
+		}catch(Exception ex){
+			ex.printStackTrace(System.err);
+			fail("An exception occurs while formatting dates/times.");
+		}finally{
+			if (rs != null){
+				try{
+					rs.close();
+				}catch(Exception ex){}
+			}
 		}
 	}
 }
