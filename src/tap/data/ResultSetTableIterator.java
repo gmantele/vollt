@@ -455,7 +455,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * @since 2.1
 	 */
 	public ResultSetTableIterator(final DBConnection dbConn, final ResultSet dataSet, final DBColumn[] metadata) throws NullPointerException, DataReadException{
-		this(dbConn, dataSet, null, null, null);
+		this(dbConn, dataSet, metadata, null, null);
 	}
 
 	/**
@@ -579,9 +579,12 @@ public class ResultSetTableIterator implements TableIterator {
 			colMeta = new TAPColumn[nbColumns];
 			for(int i = 1; i <= nbColumns; i++){
 				if (resultMeta != null && (i - 1) < resultMeta.length && resultMeta[i - 1] != null){
-					try{
+					if (resultMeta[i - 1] instanceof TAPColumn)
 						colMeta[i - 1] = (TAPColumn)resultMeta[i - 1];
-					}catch(ClassCastException cce){
+					else if (resultMeta[i - 1].getDatatype() != null){
+						colMeta[i - 1] = new TAPColumn(resultMeta[i - 1].getADQLName(), resultMeta[i - 1].getDatatype());
+						colMeta[i - 1].setDBName(resultMeta[i - 1].getDBName());
+					}else{
 						DBType datatype = convertType(metadata.getColumnType(i), metadata.getColumnTypeName(i), dbms);
 						colMeta[i - 1] = new TAPColumn(resultMeta[i - 1].getADQLName(), datatype);
 					}

@@ -12,6 +12,11 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import adql.db.DBType;
+import adql.parser.ADQLParser;
+import adql.query.ADQLQuery;
+import adql.translator.PgSphereTranslator;
+import tap.metadata.TAPColumn;
 import testtools.DBTools;
 
 public class ResultSetTableIteratorTest {
@@ -153,6 +158,43 @@ public class ResultSetTableIteratorTest {
 
 			// Try to format it into a simple time (no date indication):
 			assertEquals("15:13:56", rsit.formatColValue(new java.sql.Time(cal.getTimeInMillis())));
+
+		}catch(Exception ex){
+			ex.printStackTrace(System.err);
+			fail("An exception occurs while formatting dates/times.");
+		}finally{
+			if (rs != null){
+				try{
+					rs.close();
+				}catch(Exception ex){}
+			}
+		}
+	}
+
+	@Test
+	public void testGeometryColumns(){
+		ResultSet rs = null;
+		try{
+			ADQLQuery query = (new ADQLParser()).parseQuery("SELECT TOP 1 POINT('', ra, deg), CENTROID(CIRCLE('', ra, deg, 2)), BOX('', ra-10, deg-2, ra+10, deg+2), CIRCLE('', ra, deg, 2) FROM gums;");
+
+			// create a valid ResultSet:
+			rs = DBTools.select(conn, (new PgSphereTranslator()).translate(query));
+
+			// Create the iterator:
+			ResultSetTableIterator rsit = new ResultSetTableIterator(rs, query.getResultingColumns());
+			assertTrue(rsit.nextRow());
+
+			// Fetch the metadata:
+			TAPColumn[] cols = rsit.getMetadata();
+			assertEquals(4, cols.length);
+
+			// Check that the two first columns are POINTs:
+			for(int i = 0; i < 2; i++)
+				assertEquals(DBType.DBDatatype.POINT, cols[i].getDatatype().type);
+
+			// Check that the next columns are REGIONs:
+			for(int i = 2; i < 3; i++)
+				assertEquals(DBType.DBDatatype.REGION, cols[i].getDatatype().type);
 
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
