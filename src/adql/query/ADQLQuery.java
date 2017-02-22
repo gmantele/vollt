@@ -16,7 +16,7 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -35,6 +35,7 @@ import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.geometry.BoxFunction;
+import adql.query.operand.function.geometry.CentroidFunction;
 import adql.query.operand.function.geometry.CircleFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
@@ -46,7 +47,7 @@ import adql.search.ISearchHandler;
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (03/2016)
+ * @version 1.4 (02/2017)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -321,7 +322,7 @@ public class ADQLQuery implements ADQLObject {
 			}else{
 				// Create the DBColumn:
 				DBColumn col = null;
-				// ...whose the name will be set with the SELECT item's alias: 
+				// ...whose the name will be set with the SELECT item's alias:
 				if (item.hasAlias()){
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null){
 						col = ((ADQLColumn)operand).getDBLink();
@@ -333,11 +334,11 @@ public class ADQLQuery implements ADQLObject {
 				else{
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null)
 						col = ((ADQLColumn)operand).getDBLink();
-					if (col == null)
+					else
 						col = new DefaultDBColumn(item.getName(), null);
 				}
 
-				/* For columns created by default (from functions and operations generally), 
+				/* For columns created by default (from functions and operations generally),
 				 * set the adequate type if known: */
 				// CASE: Well-defined UDF
 				if (operand instanceof DefaultUDF && ((DefaultUDF)operand).getDefinition() != null){
@@ -345,7 +346,7 @@ public class ADQLQuery implements ADQLObject {
 					((DefaultDBColumn)col).setDatatype(type);
 				}
 				// CASE: Point type:
-				else if (operand instanceof PointFunction)
+				else if (operand instanceof PointFunction || operand instanceof CentroidFunction)
 					((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.POINT));
 				// CASE: Region type:
 				else if (operand instanceof RegionFunction || operand instanceof CircleFunction || operand instanceof BoxFunction || operand instanceof PolygonFunction)
