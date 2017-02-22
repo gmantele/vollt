@@ -1,4 +1,4 @@
-package adql;
+package adql.query.constraint;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

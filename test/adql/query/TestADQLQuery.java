@@ -1,4 +1,4 @@
-package adql;
+package adql.query;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -14,13 +14,6 @@ import org.junit.Test;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
-import adql.query.ADQLObject;
-import adql.query.ADQLOrder;
-import adql.query.ADQLQuery;
-import adql.query.ClauseADQL;
-import adql.query.ClauseConstraints;
-import adql.query.ClauseSelect;
-import adql.query.SelectItem;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.constraint.ConstraintsGroup;
@@ -39,7 +32,10 @@ import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
 import adql.query.operand.function.geometry.BoxFunction;
+import adql.query.operand.function.geometry.CentroidFunction;
 import adql.query.operand.function.geometry.CircleFunction;
+import adql.query.operand.function.geometry.GeometryFunction;
+import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
@@ -195,8 +191,10 @@ public class TestADQLQuery {
 		try{
 			select.clear();
 			select.add(new PointFunction(new StringConstant(""), new ADQLColumn("ra"), new ADQLColumn("dec")));
-			assertEquals(1, query.getResultingColumns().length);
-			assertEquals(DBDatatype.POINT, query.getResultingColumns()[0].getDatatype().type);
+			select.add(new CentroidFunction(new GeometryValue<GeometryFunction>(new ADQLColumn("aRegion"))));
+			assertEquals(2, query.getResultingColumns().length);
+			for(int i = 0; i < 2; i++)
+				assertEquals(DBDatatype.POINT, query.getResultingColumns()[i].getDatatype().type);
 		}catch(Exception ex){
 			ex.printStackTrace();
 			fail("The POINT function is well defined. This error should have occurred.");
