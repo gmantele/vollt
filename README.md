@@ -85,3 +85,7 @@ All of these ANT scripts have the following main targets:
 * `buildLibAndSrc`: same as `buildLib` + building of a JAR file containing all the sources and the required libraries.
 * `buildJavadoc`: generate a JAR containing the Javadoc of the target library's classes.
 * `buildAll`: equivalent of `buildLibAndSrc` and `buildJavadoc` together. The result is 3 JARs: one with the compiled classes, one with the corresponding sources and the last one with the Javadoc.
+
+### Gradle build
+The code can be built with Gradle, either as a jar file to be included in other projects 
+or as a war file to be deployed in Tomcat.

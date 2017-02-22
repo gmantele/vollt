@@ -19,18 +19,9 @@ package adql.translator;
  * Copyright 2016 - Astronomisches Rechen Institut (ARI)
  */
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import adql.db.DBChecker;
-import adql.db.DBColumn;
-import adql.db.DBTable;
-import adql.db.DBType;
+import adql.db.*;
 import adql.db.DBType.DBDatatype;
-import adql.db.DefaultDBColumn;
-import adql.db.DefaultDBTable;
 import adql.db.STCS.Region;
-import adql.db.SearchColumnList;
 import adql.db.exception.UnresolvedJoinException;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
@@ -41,18 +32,10 @@ import adql.query.IdentifierField;
 import adql.query.from.ADQLJoin;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.function.MathFunction;
-import adql.query.operand.function.geometry.AreaFunction;
-import adql.query.operand.function.geometry.BoxFunction;
-import adql.query.operand.function.geometry.CentroidFunction;
-import adql.query.operand.function.geometry.CircleFunction;
-import adql.query.operand.function.geometry.ContainsFunction;
-import adql.query.operand.function.geometry.DistanceFunction;
-import adql.query.operand.function.geometry.ExtractCoord;
-import adql.query.operand.function.geometry.ExtractCoordSys;
-import adql.query.operand.function.geometry.IntersectsFunction;
-import adql.query.operand.function.geometry.PointFunction;
-import adql.query.operand.function.geometry.PolygonFunction;
-import adql.query.operand.function.geometry.RegionFunction;
+import adql.query.operand.function.geometry.*;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * <p>MS SQL Server translator.</p>
@@ -189,7 +172,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 		for(int i = 0; i < clause.size(); i++){
 			if (i == 0){
-				sql = clause.getName() + (clause.hasLimit() ? " TOP " + clause.getLimit() + " " : "") + (clause.distinctColumns() ? " DISTINCT" : "");
+				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "") + (clause.hasLimit() ? " TOP " + clause.getLimit() + " " : "");
 			}else
 				sql += " " + clause.getSeparator(i);
 
@@ -343,6 +326,8 @@ public class SQLServerTranslator extends JDBCTranslator {
 				return "round(" + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "") + ",1)";
 			case MOD:
 				return ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + "% " + translate(fct.getParameter(1))) : "");
+			case ATAN2:
+				return "ATN2(" + translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1)) + ")";
 			default:
 				return getDefaultADQLFunction(fct);
 		}
