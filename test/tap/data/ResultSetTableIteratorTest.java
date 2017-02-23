@@ -198,7 +198,43 @@ public class ResultSetTableIteratorTest {
 
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
-			fail("An exception occurs while formatting dates/times.");
+			fail("An exception occurs while checking geometrical functions datatypes.");
+		}finally{
+			if (rs != null){
+				try{
+					rs.close();
+				}catch(Exception ex){}
+			}
+		}
+	}
+
+	@Test
+	public void testSQLFunctions(){
+		ResultSet rs = null;
+		try{
+			ADQLQuery query = (new ADQLParser()).parseQuery("SELECT COUNT(*), MIN(vmag), AVG(plx) FROM hipparcos;");
+
+			// create a valid ResultSet:
+			rs = DBTools.select(conn, (new PgSphereTranslator()).translate(query));
+
+			// Create the iterator:
+			ResultSetTableIterator rsit = new ResultSetTableIterator(rs, query.getResultingColumns());
+			assertTrue(rsit.nextRow());
+
+			// Fetch the metadata:
+			TAPColumn[] cols = rsit.getMetadata();
+			assertEquals(3, cols.length);
+
+			// Check that the first column is a BIGINT:
+			assertEquals(DBType.DBDatatype.BIGINT, cols[0].getDatatype().type);
+
+			// Check that the two next columns are REAL:
+			for(int i = 1; i < 3; i++)
+				assertEquals(DBType.DBDatatype.REAL, cols[i].getDatatype().type);
+
+		}catch(Exception ex){
+			ex.printStackTrace(System.err);
+			fail("An exception occurs while checking SQL functions datatypes");
 		}finally{
 			if (rs != null){
 				try{

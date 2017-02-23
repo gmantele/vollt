@@ -581,7 +581,7 @@ public class ResultSetTableIterator implements TableIterator {
 				if (resultMeta != null && (i - 1) < resultMeta.length && resultMeta[i - 1] != null){
 					if (resultMeta[i - 1] instanceof TAPColumn)
 						colMeta[i - 1] = (TAPColumn)resultMeta[i - 1];
-					else if (resultMeta[i - 1].getDatatype() != null){
+					else if (resultMeta[i - 1].getDatatype() != null && !resultMeta[i - 1].getDatatype().isUnknown()){
 						colMeta[i - 1] = new TAPColumn(resultMeta[i - 1].getADQLName(), resultMeta[i - 1].getDatatype());
 						colMeta[i - 1].setDBName(resultMeta[i - 1].getDBName());
 					}else{
