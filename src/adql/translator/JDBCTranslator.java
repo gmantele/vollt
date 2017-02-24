@@ -77,7 +77,6 @@ import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
-import tap.data.DataReadException;
 
 /**
  * <p>Implementation of {@link ADQLTranslator} which translates ADQL queries in SQL queries.</p>
@@ -886,7 +885,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * 	{@link #convertTypeFromDB(int, String, String, String[])}. So the value should always
 	 * 	be of the expected type and format. However, if it turns out that the type is wrong
 	 * 	and that the conversion is finally impossible, this function SHOULD throw a
-	 * 	{@link DataReadException}.
+	 * 	{@link tap.data.DataReadException}.
 	 * </i></p>
 	 * 
 	 * @param jdbcColValue	A JDBC column value (returned by ResultSet.getObject(int)).
