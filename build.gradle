@@ -16,6 +16,10 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+compileJava {
+    options.encoding = "UTF-8"
+}
+
 sourceSets.main.java.srcDirs = ["src"]
 // the tests fail because they have environemnt specific parameters
 // sourceSets.test.java.srcDirs = ["test"]
