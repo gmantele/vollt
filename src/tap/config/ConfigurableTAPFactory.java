@@ -139,10 +139,10 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 			if (jdbcDriver == null){
 				if (dbUrl == null)
 					throw new TAPException("The property \"" + KEY_JDBC_URL + "\" is missing! Since the choosen database access method is \"" + VALUE_JDBC + "\", this property is required.");
-				else if (!dbUrl.startsWith(JDBCConnection.JDBC_PREFIX + ":"))
-					throw new TAPException("JDBC URL format incorrect! It MUST begins with " + JDBCConnection.JDBC_PREFIX + ":");
+				else if (!dbUrl.startsWith(JDBCConnection.JDBC_PREFIX))
+					throw new TAPException("JDBC URL format incorrect! It MUST begins with " + JDBCConnection.JDBC_PREFIX);
 				else{
-					String dbType = dbUrl.substring(JDBCConnection.JDBC_PREFIX.length() + 1);
+					String dbType = dbUrl.substring(JDBCConnection.JDBC_PREFIX.length());
 					if (dbType.indexOf(':') <= 0)
 						throw new TAPException("JDBC URL format incorrect! Database type name is missing.");
 					dbType = dbType.substring(0, dbType.indexOf(':'));

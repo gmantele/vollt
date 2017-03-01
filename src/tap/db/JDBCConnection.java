@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -177,7 +177,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (09/2016)
+ * @version 2.1 (03/2017)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -237,7 +237,7 @@ public class JDBCConnection implements DBConnection {
 	/* JDBC URL MANAGEMENT */
 
 	/** JDBC prefix of any database URL (for instance: jdbc:postgresql://127.0.0.1/myDB or jdbc:postgresql:myDB). */
-	public final static String JDBC_PREFIX = "jdbc";
+	public final static String JDBC_PREFIX = "jdbc:";
 
 	/** Name (in lower-case) of the DBMS with which the connection is linked. */
 	protected final String dbms;
@@ -391,8 +391,8 @@ public class JDBCConnection implements DBConnection {
 		if (dbUrl == null)
 			throw new DBException("Missing database URL!");
 
-		if (!dbUrl.startsWith(JDBC_PREFIX + ":"))
-			throw new DBException("This DBConnection implementation is only able to deal with JDBC connection! (the DB URL must start with \"" + JDBC_PREFIX + ":\" ; given url: " + dbUrl + ")");
+		if (!dbUrl.startsWith(JDBC_PREFIX))
+			throw new DBException("This DBConnection implementation is only able to deal with JDBC connection! (the DB URL must start with \"" + JDBC_PREFIX + "\" ; given url: " + dbUrl + ")");
 
 		dbUrl = dbUrl.substring(5);
 		int indSep = dbUrl.indexOf(':');
@@ -425,7 +425,7 @@ public class JDBCConnection implements DBConnection {
 		// Select the JDBDC driver:
 		Driver d;
 		try{
-			d = DriverManager.getDriver(dbUrl);
+			d = DriverManager.getDriver(url);
 		}catch(SQLException e){
 			try{
 				// ...load it, if necessary:
@@ -433,11 +433,11 @@ public class JDBCConnection implements DBConnection {
 					throw new DBException("Missing JDBC driver path! Since the required JDBC driver is not yet loaded, this path is needed to load it.");
 				Class.forName(driverPath);
 				// ...and try again:
-				d = DriverManager.getDriver(dbUrl);
+				d = DriverManager.getDriver(url);
 			}catch(ClassNotFoundException cnfe){
 				throw new DBException("Impossible to find the JDBC driver \"" + driverPath + "\" !", cnfe);
 			}catch(SQLException se){
-				throw new DBException("No suitable JDBC driver found for the database URL \"" + dbUrl + "\" and the driver path \"" + driverPath + "\"!", se);
+				throw new DBException("No suitable JDBC driver found for the database URL \"" + url + "\" and the driver path \"" + driverPath + "\"!", se);
 			}
 		}
 
