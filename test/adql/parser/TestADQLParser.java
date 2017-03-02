@@ -148,11 +148,20 @@ public class TestADQLParser {
 	public void test(){
 		ADQLParser parser = new ADQLParser();
 		try{
-			ADQLQuery query = parser.parseQuery("SELECT 'truc''machin'  	'bidule' -- why not a comment now ^^\n'FIN' FROM foo;");
+			ADQLQuery query = parser.parseQuery("SELECT 'truc''machin'  	'bidule' --- why not a comment now ^^\n'FIN' FROM foo;");
 			assertNotNull(query);
 			assertEquals("truc'machinbiduleFIN", ((StringConstant)(query.getSelect().get(0).getOperand())).getValue());
 			assertEquals("'truc''machinbiduleFIN'", query.getSelect().get(0).getOperand().toADQL());
 		}catch(Exception ex){
+			fail("String litteral concatenation is perfectly legal according to the ADQL standard.");
+		}
+
+		// With a comment ending the query
+		try{
+			ADQLQuery query = parser.parseQuery("SELECT TOP 1 * FROM ivoa.ObsCore -- comment");
+			assertNotNull(query);
+		}catch(Exception ex){
+			ex.printStackTrace();
 			fail("String litteral concatenation is perfectly legal according to the ADQL standard.");
 		}
 	}

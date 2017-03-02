@@ -183,30 +183,28 @@ public interface ADQLParserConstants {
   /** RegularExpression Id. */
   int TAN = 87;
   /** RegularExpression Id. */
-  int STRING_LITERAL = 93;
+  int STRING_LITERAL = 91;
   /** RegularExpression Id. */
-  int DELIMITED_IDENTIFIER = 96;
+  int DELIMITED_IDENTIFIER = 94;
   /** RegularExpression Id. */
-  int REGULAR_IDENTIFIER = 97;
+  int REGULAR_IDENTIFIER = 95;
   /** RegularExpression Id. */
-  int Letter = 98;
+  int Letter = 96;
   /** RegularExpression Id. */
-  int SCIENTIFIC_NUMBER = 99;
+  int SCIENTIFIC_NUMBER = 97;
   /** RegularExpression Id. */
-  int UNSIGNED_FLOAT = 100;
+  int UNSIGNED_FLOAT = 98;
   /** RegularExpression Id. */
-  int UNSIGNED_INTEGER = 101;
+  int UNSIGNED_INTEGER = 99;
   /** RegularExpression Id. */
-  int DIGIT = 102;
+  int DIGIT = 100;
 
   /** Lexical state. */
   int DEFAULT = 0;
   /** Lexical state. */
-  int WithinComment = 1;
+  int WithinString = 1;
   /** Lexical state. */
-  int WithinString = 2;
-  /** Lexical state. */
-  int WithinDelimitedId = 3;
+  int WithinDelimitedId = 2;
 
   /** Literal token values. */
   String[] tokenImage = {
@@ -299,13 +297,11 @@ public interface ADQLParserConstants {
     "\"SIN\"",
     "\"TAN\"",
     "<token of kind 88>",
-    "<token of kind 89>",
+    "\"\\\'\"",
     "<token of kind 90>",
     "\"\\\'\"",
-    "<token of kind 92>",
-    "\"\\\'\"",
     "\"\\\"\"",
-    "<token of kind 95>",
+    "<token of kind 93>",
     "\"\\\"\"",
     "<REGULAR_IDENTIFIER>",
     "<Letter>",

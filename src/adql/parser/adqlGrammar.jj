@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (09/2016)
+*  Version: 1.4 (03/2017)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (09/2016)
+* @version 1.4 (03/2017)
 */
 public class ADQLParser {
 	
@@ -653,9 +653,7 @@ TOKEN : {
 /* ******* */
 /* Comment */
 /* ******* */
-<DEFAULT> MORE : { < <MINUS>(<MINUS>)+ >: WithinComment }
-<WithinComment> SKIP : { < "\n" | "\r" | "\r\n" >: DEFAULT }
-<WithinComment> MORE : { < ~[] > }
+SKIP : { < <MINUS><MINUS> (~["\n","\r"])* ("\n"|"\r"|"\r\n")? > }
 
 /* ****** */
 /* String */
