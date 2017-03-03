@@ -45,7 +45,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.util.*;
 
 import static tap.config.TAPConfiguration.*;
@@ -258,38 +257,27 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	/**
 	 * <p>Resolve the given file name/path.</p>
 	 * 
-	 * <p>Only the URI protocol "file:" is allowed. If the protocol is different a {@link TAPException} is thrown.</p>
-	 * 
 	 * <p>
-	 * 	If not an absolute URI, the given path may be either relative or absolute. A relative path is always considered
+	 * 	If not an absolute path, the given path may be either relative or absolute. A relative path is always considered
 	 * 	as relative from the Web Application directory (supposed to be given in 2nd parameter).
 	 * </p>
 	 * 
-	 * @param filePath			URI/Path/Name of the file to get.
+	 * @param filePath			Path/Name of the file to get.
 	 * @param webAppRootPath	Web Application directory local path.
 	 * @param propertyName		Name of the property which gives the given file path.
 	 * 
 	 * @return	The specified File instance.
 	 * 
-	 * @throws TAPException	If the given URI is malformed or if the used URI scheme is different from "file:".
 	 */
-	protected static final File getFile(final String filePath, final String webAppRootPath, final String propertyName) throws TAPException{
+	protected static final File getFile(final String filePath, final String webAppRootPath, final String propertyName) {
 		if (filePath == null)
 			return null;
 
-		URI uri = new File(filePath).toURI();
-		if (uri.isAbsolute()){
-			if (uri.getScheme().equalsIgnoreCase("file"))
-				return new File(uri);
-			else
-				throw new TAPException("Incorrect file URI for the property \"" + propertyName + "\": \"" + filePath + "\"! Only URI with the protocol \"file:\" are allowed.");
-		}else{
-			File f = new File(filePath);
-			if (f.isAbsolute())
-				return f;
-			else
-				return new File(webAppRootPath, filePath);
-		}
+		File f = new File(filePath);
+		if (f.isAbsolute())
+			return f;
+		else
+			return new File(webAppRootPath, filePath);
 	}
 
 	/**
