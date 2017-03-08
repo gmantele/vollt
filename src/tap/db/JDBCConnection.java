@@ -1502,8 +1502,6 @@ public class JDBCConnection implements DBConnection {
 
 			// CASE: no custom definition:
 			if (customStdTables[i] == null){
-				if (!supportsSchema)
-					stdTables[i].setDBName(STDSchema.TAPSCHEMA.label + "_" + stdTables[i].getADQLName());
 				// add the table to the fetched or built-in schema:
 				tapSchema.addTable(stdTables[i]);
 			}
