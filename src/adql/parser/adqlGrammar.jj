@@ -20,7 +20,7 @@
 
 /*
 *  This JavaCC file implements the BNF definition of ADQL v2.0 (IVOA Recommendation 30 Oct 2008 - http://www.ivoa.net/Documents/cover/ADQL-20081030.html).
-*  To generate the parser with this file use JavaCC. This .jj file has been successfully tested with JavaCC 5.0.
+*  To generate the parser with this file use JavaCC. This .jj file has been successfully tested with JavaCC 6.0.
 *  
 *  The generated parser checks the syntax of the given ADQL query and generates an object representation but no coherence with any database is done.
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
