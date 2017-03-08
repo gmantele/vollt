@@ -1,5 +1,8 @@
 package tap.metadata;
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
+
 /*
  * This file is part of TAPLibrary.
  * 
@@ -16,14 +19,12 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import tap.TAPException;
 import uk.ac.starlink.votable.VOSerializer;
-import adql.db.DBType;
-import adql.db.DBType.DBDatatype;
 
 /**
  * <p>Describes a full VOTable type. Thus it includes the following field attributes:</p>
@@ -34,7 +35,7 @@ import adql.db.DBType.DBDatatype;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (02/2015)
+ * @version 2.1 (03/2017)
  */
 public final class VotType {
 	/**
@@ -129,43 +130,43 @@ public final class VotType {
 		switch(tapType.type){
 			case SMALLINT:
 				this.datatype = VotDatatype.SHORT;
-				this.arraysize = "1";
+				this.arraysize = null;
 				this.xtype = null;
 				break;
 
 			case INTEGER:
 				this.datatype = VotDatatype.INT;
-				this.arraysize = "1";
+				this.arraysize = null;
 				this.xtype = null;
 				break;
 
 			case BIGINT:
 				this.datatype = VotDatatype.LONG;
-				this.arraysize = "1";
+				this.arraysize = null;
 				this.xtype = null;
 				break;
 
 			case REAL:
 				this.datatype = VotDatatype.FLOAT;
-				this.arraysize = "1";
+				this.arraysize = null;
 				this.xtype = null;
 				break;
 
 			case DOUBLE:
 				this.datatype = VotDatatype.DOUBLE;
-				this.arraysize = "1";
+				this.arraysize = null;
 				this.xtype = null;
 				break;
 
 			case CHAR:
 				this.datatype = VotDatatype.CHAR;
-				this.arraysize = Integer.toString(tapType.length > 0 ? tapType.length : 1);
+				this.arraysize = Integer.toString(tapType.length > 0 ? tapType.length : null);
 				this.xtype = null;
 				break;
 
 			case BINARY:
 				this.datatype = VotDatatype.UNSIGNEDBYTE;
-				this.arraysize = Integer.toString(tapType.length > 0 ? tapType.length : 1);
+				this.arraysize = Integer.toString(tapType.length > 0 ? tapType.length : null);
 				this.xtype = null;
 				break;
 
@@ -253,7 +254,7 @@ public final class VotType {
 	 * 
 	 * @return	The corresponding {@link DBType}.
 	 * 
-	 * @throws TAPException	If the conversion is impossible (particularly if the array-size refers to a multi-dimensional array ; only 1D arrays are allowed). 
+	 * @throws TAPException	If the conversion is impossible (particularly if the array-size refers to a multi-dimensional array ; only 1D arrays are allowed).
 	 */
 	public DBType toTAPType() throws TAPException{
 
@@ -264,7 +265,7 @@ public final class VotType {
 
 		// Convert the VOTable datatype into TAP datatype:
 		switch(datatype){
-		/* NUMERIC TYPES */
+			/* NUMERIC TYPES */
 			case SHORT:
 			case BOOLEAN:
 				return convertNumericType(DBDatatype.SMALLINT);
@@ -281,7 +282,7 @@ public final class VotType {
 			case DOUBLE:
 				return convertNumericType(DBDatatype.DOUBLE);
 
-				/* BINARY TYPES */
+			/* BINARY TYPES */
 			case UNSIGNEDBYTE:
 				// BLOB exception:
 				if (xtype != null && xtype.equalsIgnoreCase(XTYPE_BLOB))
