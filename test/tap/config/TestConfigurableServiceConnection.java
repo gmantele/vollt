@@ -1124,11 +1124,8 @@ public class TestConfigurableServiceConnection {
 			// NULL test => NULL must be returned.
 			assertNull(ConfigurableServiceConnection.getFile(null, rootPath, propertyName));
 
-			// Valid file URI:
-			path = "/custom/user/dir";
-			assertEquals(path, ConfigurableServiceConnection.getFile("file://" + path, rootPath, propertyName).getAbsolutePath());
-
 			// Valid absolute file path:
+			path = "/custom/user/dir";
 			assertEquals(path, ConfigurableServiceConnection.getFile(path, rootPath, propertyName).getAbsolutePath());
 
 			// File name relative to the given rootPath:
@@ -1144,14 +1141,14 @@ public class TestConfigurableServiceConnection {
 			fail("None of these tests should have failed!");
 		}
 
-		// Test with a file URI having a bad syntax:
-		path = "file:#toto^foo";
+		// Test with a file URI:
+		path = "file:/custom/user/dir";
 		try{
 			ConfigurableServiceConnection.getFile(path, rootPath, propertyName);
-			fail("This test should have failed, because the given file URI has a bad syntax!");
+			fail("This test should have failed, because URIs are no longer supported!");
 		}catch(Exception ex){
 			assertEquals(TAPException.class, ex.getClass());
-			assertEquals("Incorrect file URI for the property \"" + propertyName + "\": \"" + path + "\"! Bad syntax for the given file URI.", ex.getMessage());
+			assertEquals("Incorrect file path for the property \"" + propertyName + "\": \"" + path + "\"! URI/URLs are not expected here.", ex.getMessage());
 		}
 
 		// Test with an URL:
@@ -1161,7 +1158,7 @@ public class TestConfigurableServiceConnection {
 			fail("This test should have failed, because the given URI uses the HTTP protocol (actually, it uses a protocol different from \"file\"!");
 		}catch(Exception ex){
 			assertEquals(TAPException.class, ex.getClass());
-			assertEquals("Incorrect file URI for the property \"" + propertyName + "\": \"" + path + "\"! Only URI with the protocol \"file:\" are allowed.", ex.getMessage());
+			assertEquals("Incorrect file path for the property \"" + propertyName + "\": \"" + path + "\"! URI/URLs are not expected here.", ex.getMessage());
 		}
 
 	}

@@ -1,13 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'war'
 
-compileJava.options.encoding = 'UTF-8'
-
-test{
-	forkEvery = 1
-	include '**/Test*'
-}
-
 repositories {
     jcenter()
     mavenCentral()
@@ -26,6 +19,15 @@ dependencies {
     testCompile 'com.vividsolutions:jts-core:1.14.0'
     testCompile 'org.locationtech.spatial4j:spatial4j:0.6'
     testCompile fileTree(dir: 'lib', include: 'astroh2-0.3.jar')
+}
+
+compileJava {
+    options.encoding = "UTF-8"
+}
+
+test{
+	forkEvery = 1
+	include '**/Test*'
 }
 
 sourceSets.main.java.srcDirs = ["src"]

@@ -1,24 +1,5 @@
 package tap.config;
 
-/*
- * This file is part of TAPLibrary.
- * 
- * TAPLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * TAPLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
- */
-
 import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
@@ -82,13 +63,30 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
+
+/*
+ * This file is part of TAPLibrary.
+ * 
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2016 - Astronomisches Rechen Institut (ARI)
+ */
 
 import adql.db.FunctionDef;
 import adql.db.STCS;
@@ -326,42 +324,30 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	/**
 	 * <p>Resolve the given file name/path.</p>
 	 * 
-	 * <p>Only the URI protocol "file:" is allowed. If the protocol is different a {@link TAPException} is thrown.</p>
-	 * 
 	 * <p>
-	 * 	If not an absolute URI, the given path may be either relative or absolute. A relative path is always considered
+	 * 	If not an absolute path, the given path may be either relative or absolute. A relative path is always considered
 	 * 	as relative from the Web Application directory (supposed to be given in 2nd parameter).
 	 * </p>
 	 * 
-	 * @param filePath			URI/Path/Name of the file to get.
+	 * @param filePath			Path/Name of the file to get.
 	 * @param webAppRootPath	Web Application directory local path.
 	 * @param propertyName		Name of the property which gives the given file path.
 	 * 
 	 * @return	The specified File instance.
-	 * 
-	 * @throws TAPException	If the given URI is malformed or if the used URI scheme is different from "file:".
+	 *
+	 * @throws ParseException	If the given file path is a URI/URL.
 	 */
 	protected static final File getFile(final String filePath, final String webAppRootPath, final String propertyName) throws TAPException{
 		if (filePath == null)
 			return null;
+		else if (filePath.matches(".*:.*"))
+			throw new TAPException("Incorrect file path for the property \"" + propertyName + "\": \"" + filePath + "\"! URI/URLs are not expected here.");
 
-		try{
-			URI uri = new URI(filePath);
-			if (uri.isAbsolute()){
-				if (uri.getScheme().equalsIgnoreCase("file"))
-					return new File(uri);
-				else
-					throw new TAPException("Incorrect file URI for the property \"" + propertyName + "\": \"" + filePath + "\"! Only URI with the protocol \"file:\" are allowed.");
-			}else{
-				File f = new File(filePath);
-				if (f.isAbsolute())
-					return f;
-				else
-					return new File(webAppRootPath, filePath);
-			}
-		}catch(URISyntaxException use){
-			throw new TAPException("Incorrect file URI for the property \"" + propertyName + "\": \"" + filePath + "\"! Bad syntax for the given file URI.", use);
-		}
+		File f = new File(filePath);
+		if (f.isAbsolute())
+			return f;
+		else
+			return new File(webAppRootPath, filePath);
 	}
 
 	/**
