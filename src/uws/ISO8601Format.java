@@ -16,7 +16,7 @@ package uws;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014-2016 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.text.DecimalFormat;
@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
  * </p>
  * 
  * <h3>Date parsing</h3>
- *  
+ * 
  * <p>
  * 	This class is able to parse dates - with the function {@link #parse(String)} - formatted in ISO-8601.
  * 	This parser allows the following general syntaxes:
@@ -95,7 +95,7 @@ import java.util.regex.Pattern;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (01/2016)
+ * @version 4.2 (03/2017)
  * @since 4.1
  */
 public class ISO8601Format {
@@ -202,14 +202,21 @@ public class ISO8601Format {
 	 * Convert the given date in the given time zone and format it in ISO8601 format, with or without displaying the time zone
 	 * and/or the milliseconds field.
 	 * 
+	 * <p><i><b>Important Note:</b>
+	 * 	This function is synchronized because it is using (directly or in other static functions) static {@link DecimalFormat} instances.
+	 * 	A {@link DecimalFormat} is a Java class which can be used only by one thread at a time. So {@link #format(long, String, boolean, boolean)}
+	 * 	and {@link #parse(String)} (main public functions of {@link ISO8601Format}) must be synchronized in order to avoid concurrent access
+	 * 	to the {@link DecimalFormat} instances and so to avoid unpredictable errors/results.
+	 * </i></p>
+	 * 
 	 * @param date				Date-time in milliseconds (from the 1st January 1970 ; this value is returned by java.util.Date#getTime()).
 	 * @param targetTimeZone	Target time zone.
 	 * @param withTimeZone		<i>true</i> to display the time zone, <i>false</i> otherwise.
-	 * @param withMillisec		<i>true</i> to display the milliseconds, <i>false</i> otherwise.	
+	 * @param withMillisec		<i>true</i> to display the milliseconds, <i>false</i> otherwise.
 	 * 
 	 * @return	Date formatted in ISO8601.
 	 */
-	protected static String format(final long date, final String targetTimeZone, final boolean withTimeZone, final boolean withMillisec){
+	protected static synchronized String format(final long date, final String targetTimeZone, final boolean withTimeZone, final boolean withMillisec){
 		GregorianCalendar cal = new GregorianCalendar();
 		cal.setTimeInMillis(date);
 
@@ -310,7 +317,7 @@ public class ISO8601Format {
 	 *  11: hours offset (hh)
 	 * (12: ':' + minutes offset)
 	 *  13: minutes offset (mm)</pre>
-	 *  
+	 * 
 	 * @since 4.2
 	 */
 	private final static String ISO8601_TIME_REGEX = "((T| )(\\d{2})(:?(\\d{2})(:?(\\d{2})(\\.?(\\d{1,}))?)?)?(Z|(\\+|-)(\\d{2})(:?(\\d{2}))?)?)?";
@@ -335,11 +342,11 @@ public class ISO8601Format {
 	 *  39-52: TIME</pre>
 	 * 
 	 * <p>All groups named <code>TIME</code> refer to {@link #ISO8601_TIME_REGEX}.</p>
-	 *  
+	 * 
 	 * <p>Groups in parenthesis should be ignored ; but an exception must be done for the 9th of {@link #ISO8601_TIME_REGEX} which may contain 'Z' meaning a UTC time zone.</p>
 	 * 
 	 * <p>Separator characters ('-', '.' and ':') are optional. The separator 'T' may be replaced by a ' '.</p>
-	 *  
+	 * 
 	 * @since 4.2
 	 */
 	private final static Pattern ISO8601_PATTERN = Pattern.compile("(\\d{4})(-?((\\d{2})(-?(\\d{2})" + ISO8601_TIME_REGEX + ")?|(\\d{3})" + ISO8601_TIME_REGEX + "|W(\\d{2})(-?(\\d)" + ISO8601_TIME_REGEX + ")?))?");
@@ -391,7 +398,14 @@ public class ISO8601Format {
 	 * 
 	 * <p>
 	 * 	Separators (like '-', ':' and '.') are optional. The date and time separator ('T') may be replaced by a space.
-	 * </p> 
+	 * </p>
+	 * 
+	 * <p><i><b>Important Note:</b>
+	 * 	This function is synchronized because it is using (directly or in other static functions) static {@link DecimalFormat} instances.
+	 * 	A {@link DecimalFormat} is a Java class which can be used only by one thread at a time. So {@link #format(long, String, boolean, boolean)}
+	 * 	and {@link #parse(String)} (main public functions of {@link ISO8601Format}) must be synchronized in order to avoid concurrent access
+	 * 	to the {@link DecimalFormat} instances and so to avoid unpredictable errors/results.
+	 * </i></p>
 	 * 
 	 * @param strDate	Date expressed as a string in ISO8601 format.
 	 * 
@@ -400,14 +414,14 @@ public class ISO8601Format {
 	 * 
 	 * @throws ParseException	If the given date is not expressed in ISO8601 format or is not merely parseable with this implementation.
 	 */
-	public static long parse(final String strDate) throws ParseException{
+	public static synchronized long parse(final String strDate) throws ParseException{
 		Matcher m = ISO8601_PATTERN.matcher(strDate);
 		if (m.matches()){
 			GregorianCalendar cal = new GregorianCalendar();
 			int timeGroupInd = -1;
 
 			// SET THE TIME ZONE:
-			/* 
+			/*
 			 * Note: In this library, we suppose that any date provided without specified time zone, is in UTC.
 			 * 
 			 * It is more a TAP specification than a UWS one ; see the REC-TAP 1.0 at section 2.3.4 (page 15):
