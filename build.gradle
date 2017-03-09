@@ -28,5 +28,9 @@ dependencies {
     testCompile fileTree(dir: 'lib', include: 'astroh2-0.3.jar')
 }
 
+compileJava {
+    options.encoding = "UTF-8"
+}
+
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
