@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institute (ARI)
+ * Copyright 2014-2017 - Astronomisches Rechen Institute (ARI)
  */
 
 import java.sql.Connection;
@@ -26,11 +26,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import tap.db_testtools.DBTools;
 import tap.metadata.TAPTable.TableType;
 
 /**
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
- * @version 1.1 (04/2014)
+ * @version 2.1 (03/2017)
  */
 public class MetadataExtractionTest {
 
@@ -38,7 +39,7 @@ public class MetadataExtractionTest {
 		MetadataExtractionTest extractor = new MetadataExtractionTest();
 		try{
 			extractor.connect();
-			extractor.printTableMetadata("gums");
+			extractor.printTableMetadata("HIPPARCOS");
 		}finally{
 			extractor.close();
 		}
@@ -49,8 +50,9 @@ public class MetadataExtractionTest {
 
 	public void connect(){
 		try{
-			Class.forName("org.postgresql.Driver");
-			connection = DriverManager.getConnection("jdbc:postgresql:gmantele", "gmantele", "pwd");
+			DBTools.createTestDB();
+			Class.forName(DBTools.DB_TEST_JDBC_DRIVER);
+			connection = DriverManager.getConnection(DBTools.DB_TEST_URL, DBTools.DB_TEST_USER, DBTools.DB_TEST_PWD);
 			statement = connection.createStatement();
 			System.out.println("[OK] DB connection successfully established !");
 		}catch(ClassNotFoundException notFoundException){
@@ -76,34 +78,39 @@ public class MetadataExtractionTest {
 
 	public TAPSchema printTableMetadata(final String table){
 		try{
-
 			DatabaseMetaData dbMeta = connection.getMetaData();
 			TAPSchema tapSchema = null;
 			TAPTable tapTable = null;
 
 			// Extract Table metadata (schema, table, type):
 			ResultSet rs = dbMeta.getTables(null, null, table, null);
-			rs.last();
-			if (rs.getRow() == 0)
+			String schemaName = null, tableName = null, dbtype = null;
+
+			if (!rs.next())
 				System.err.println("[ERROR] No found table for \"" + table + "\" !");
-			else if (rs.getRow() > 1){
-				rs.first();
+
+			schemaName = rs.getString(2);
+			tableName = rs.getString(3);
+			dbtype = rs.getString(4);
+
+			if (rs.next()){
 				System.err.println("[ERROR] More than one match for \"" + table + "\":");
-				while(rs.next())
+				do{
 					System.err.println(rs.getString(2) + "." + rs.getString(3) + " : " + rs.getString(4));
-			}else{
-				rs.first();
-				tapSchema = new TAPSchema(rs.getString(2));
-				TableType tableType = TableType.table;
-				if (rs.getString(4) != null){
-					try{
-						tableType = TableType.valueOf(rs.getString(4));
-					}catch(IllegalArgumentException iae){}
-				}
-				tapTable = new TAPTable(rs.getString(3), tableType);
-				tapSchema.addTable(tapTable);
-				System.out.println("[OK] 1 table FOUND ! => " + tapTable + " : " + tapTable.getType());
+				}while(rs.next());
+				return null;
 			}
+
+			tapSchema = new TAPSchema(schemaName);
+			TableType tableType = TableType.table;
+			if (dbtype != null){
+				try{
+					tableType = TableType.valueOf(dbtype);
+				}catch(IllegalArgumentException iae){}
+			}
+			tapTable = new TAPTable(tableName, tableType);
+			tapSchema.addTable(tapTable);
+			System.out.println("[OK] 1 table FOUND ! => " + tapTable + " : " + tapTable.getType());
 
 			// Extract all columns metadata (type, precision, scale):
 			rs = dbMeta.getColumns(null, tapSchema.getDBName(), tapTable.getDBName(), null);
@@ -137,6 +144,7 @@ public class MetadataExtractionTest {
 		try{
 			connection.close();
 			statement.close();
+			DBTools.dropTestDB();
 			System.out.println("[OK] Connection closed !");
 		}catch(SQLException e){
 			e.printStackTrace();

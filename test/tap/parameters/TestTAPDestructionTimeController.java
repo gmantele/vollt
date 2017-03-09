@@ -164,7 +164,8 @@ public class TestTAPDestructionTimeController {
 		assertTrue(val instanceof Date);
 
 		if (expected != null && val != null){
-			Calendar cexpected = Calendar.getInstance(), cval = Calendar.getInstance();
+			Calendar cexpected = Calendar.getInstance(),
+					cval = Calendar.getInstance();
 			cexpected.setTime(expected);
 			cval.setTime((Date)val);
 
@@ -174,7 +175,7 @@ public class TestTAPDestructionTimeController {
 				assertEquals(cexpected.get(Calendar.YEAR), cval.get(Calendar.YEAR));
 				assertEquals(cexpected.get(Calendar.HOUR), cval.get(Calendar.HOUR));
 				assertEquals(cexpected.get(Calendar.MINUTE), cval.get(Calendar.MINUTE));
-				assertEquals(cexpected.get(Calendar.SECOND), cval.get(Calendar.SECOND));
+				assertTrue(cval.get(Calendar.SECOND) - cexpected.get(Calendar.SECOND) >= 0 && cval.get(Calendar.SECOND) - cexpected.get(Calendar.SECOND) <= 1);
 			}catch(AssertionError e){
 				fail("Expected <" + expected + "> but was <" + val + ">");
 			}

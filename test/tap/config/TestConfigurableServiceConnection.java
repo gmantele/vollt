@@ -47,9 +47,16 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import adql.db.FunctionDef;
+import adql.db.STCS.Flavor;
+import adql.db.STCS.Frame;
+import adql.db.STCS.RefPos;
+import adql.db.TestDBChecker.UDFToto;
+import adql.translator.AstroH2Translator;
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
@@ -57,6 +64,7 @@ import tap.TAPException;
 import tap.db.DBConnection;
 import tap.db.DBException;
 import tap.db.JDBCConnection;
+import tap.db_testtools.DBTools;
 import tap.formatter.OutputFormat;
 import tap.formatter.VOTableFormat;
 import tap.metadata.TAPMetadata;
@@ -71,12 +79,6 @@ import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog.LogLevel;
-import adql.db.FunctionDef;
-import adql.db.STCS.Flavor;
-import adql.db.STCS.Frame;
-import adql.db.STCS.RefPos;
-import adql.db.TestDBChecker.UDFToto;
-import adql.translator.PostgreSQLTranslator;
 
 public class TestConfigurableServiceConnection {
 
@@ -93,8 +95,8 @@ public class TestConfigurableServiceConnection {
 			badVotFormat3Prop, badVotFormat4Prop, badVotFormat5Prop,
 			badVotFormat6Prop, unknownFormatProp, maxAsyncProp,
 			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
-			maxOutputLimitProp, bothOutputLimitGoodProp,
-			bothOutputLimitBadProp, syncFetchSizeProp, notIntSyncFetchSizeProp,
+			maxOutputLimitProp, bothOutputLimitGoodProp, bothOutputLimitBadProp,
+			syncFetchSizeProp, notIntSyncFetchSizeProp,
 			negativeSyncFetchSizeProp, notIntAsyncFetchSizeProp,
 			negativeAsyncFetchSizeProp, asyncFetchSizeProp, userIdentProp,
 			notClassPathUserIdentProp, coordSysProp, noneCoordSysProp,
@@ -103,15 +105,20 @@ public class TestConfigurableServiceConnection {
 			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
 			udfsWithClassNameProp, udfsListWithNONEorANYProp,
 			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
-			udfsWithMissingDefProp1, udfsWithMissingDefProp2,
-			emptyUdfItemProp1, emptyUdfItemProp2, udfWithMissingEndBracketProp,
-			customFactoryProp, customConfigurableFactoryProp,
-			badCustomFactoryProp;
+			udfsWithMissingDefProp1, udfsWithMissingDefProp2, emptyUdfItemProp1,
+			emptyUdfItemProp2, udfWithMissingEndBracketProp, customFactoryProp,
+			customConfigurableFactoryProp, badCustomFactoryProp;
 
 	@BeforeClass
 	public static void setUp() throws Exception{
-		// LOAD ALL PROPERTIES FILES NEEDED FOR ALL THE TESTS:
+		// LOAD THE VALID PROPERTIES:
 		validProp = AllTAPConfigTests.getValidProperties();
+
+		// CREATE THE DB AND ITS TAP_SCHEMA:
+		DBTools.createTestDB();
+		DBTools.createAddTAPSchema();
+
+		// LOAD ALL OTHER PROPERTIES FILES NEEDED FOR ALL THE TESTS:
 
 		noFmProp = (Properties)validProp.clone();
 		noFmProp.setProperty(KEY_FILE_MANAGER, "");
@@ -321,20 +328,25 @@ public class TestConfigurableServiceConnection {
 		badCustomFactoryProp.setProperty(KEY_TAP_FACTORY, "{tap.config.TestConfigurableServiceConnection$BadCustomTAPFactory}");
 	}
 
+	@AfterClass
+	public static void tearDownAfterClass() throws Exception{
+		DBTools.dropTestDB();
+	}
+
 	/**
 	 * CONSTRUCTOR TESTS
 	 *  * In general:
 	 * 		- A valid configuration file builds successfully a fully functional ServiceConnection object.
 	 * 
 	 * 	* Over the file manager:
-	 * 		- If no TAPFileManager is provided, an exception must be thrown. 
+	 * 		- If no TAPFileManager is provided, an exception must be thrown.
 	 * 		- If a class name toward a valid TAPFileManager is provided, a functional DefaultServiceConnection must be successfully built.
 	 * 		- An incorrect file manager value in the configuration file must generate an exception.
 	 * 
 	 *  * Over the output format:
 	 *  	- If a SV format is badly expressed (test with "sv" and "sv()"), an exception must be thrown.
 	 *  	- If an unknown output format is provided an exception must be thrown.
-	 *  
+	 * 
 	 * Note: the good configuration of the TAPFactory built by the DefaultServiceConnection is tested in {@link TestConfigurableTAPFactory}.
 	 * 
 	 * @see ConfigurableServiceConnection#DefaultServiceConnection(Properties)
@@ -1199,7 +1211,7 @@ public class TestConfigurableServiceConnection {
 	 * TAPFactory just to test whether the property tap_factory works well.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 02/2015
+	 * @version 03/2017
 	 */
 	private static class CustomTAPFactory extends AbstractTAPFactory {
 
@@ -1207,7 +1219,7 @@ public class TestConfigurableServiceConnection {
 
 		public CustomTAPFactory(final ServiceConnection conn) throws DBException{
 			super(conn);
-			dbConn = new JDBCConnection("", "jdbc:postgresql:gmantele", "gmantele", null, new PostgreSQLTranslator(), "TheOnlyConnection", conn.getLogger());
+			dbConn = new JDBCConnection(DBTools.DB_TEST_JDBC_DRIVER, DBTools.DB_TEST_URL, DBTools.DB_TEST_USER, DBTools.DB_TEST_PWD, new AstroH2Translator(), "TheOnlyConnection", conn.getLogger());
 		}
 
 		@Override
@@ -1232,7 +1244,7 @@ public class TestConfigurableServiceConnection {
 	 * with a constructor (ServiceConnection, Properties).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 02/2015
+	 * @version 03/2017
 	 */
 	private static class CustomConfigurableTAPFactory extends AbstractTAPFactory {
 
@@ -1240,7 +1252,7 @@ public class TestConfigurableServiceConnection {
 
 		public CustomConfigurableTAPFactory(final ServiceConnection conn, final Properties prop) throws DBException{
 			super(conn);
-			dbConn = new JDBCConnection("", "jdbc:postgresql:gmantele", "gmantele", null, new PostgreSQLTranslator(), "TheOnlyConnection", conn.getLogger());
+			dbConn = new JDBCConnection(DBTools.DB_TEST_JDBC_DRIVER, DBTools.DB_TEST_URL, DBTools.DB_TEST_USER, DBTools.DB_TEST_PWD, new AstroH2Translator(), "TheOnlyConnection", conn.getLogger());
 		}
 
 		@Override

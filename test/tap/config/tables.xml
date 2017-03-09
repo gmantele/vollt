@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vosi:tableset xmlns:vosi="http://www.ivoa.net/xml/VOSITables/v1.0" xmlns:vod="http://www.ivoa.net/xml/VODataService/v1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ivoa.net/xml/VODataService/v1.1 http://www.ivoa.net/xml/VODataService/v1.1 http://www.ivoa.net/xml/VOSITables/v1.0 http://vo.ari.uni-heidelberg.de/docs/schemata/VOSITables-v1.0.xsd">
+	<schema>
+		<name>TAP_SCHEMA</name>
+		<description>Set of tables listing and describing the schemas, tables and columns published in this TAP service.</description>
+		<table>
+			<name>TAP_SCHEMA.schemas</name>
+			<description>List of schemas published in this TAP service.</description>
+			<column std="true">
+				<name>schema_name</name>
+				<description>schema name, possibly qualified</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>description</name>
+				<description>brief description of schema</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>utype</name>
+				<description>UTYPE if schema corresponds to a data model</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+			</column>
+		</table>
+		<table>
+			<name>TAP_SCHEMA.tables</name>
+			<description>List of tables published in this TAP service.</description>
+			<column std="true">
+				<name>table_index</name>
+				<description>this index is used to recommend table ordering for clients</description>
+				<dataType xsi:type="vod:TAPType">INTEGER</dataType>
+			</column>
+			<column std="true">
+				<name>schema_name</name>
+				<description>the schema name from TAP_SCHEMA.schemas</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>table_name</name>
+				<description>table name as it should be used in queries</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>table_type</name>
+				<description>one of: table, view</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+			</column>
+			<column std="true">
+				<name>description</name>
+				<description>brief description of table</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>utype</name>
+				<description>UTYPE if table corresponds to a data model</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+			</column>
+		</table>
+		<table>
+			<name>TAP_SCHEMA.columns</name>
+			<description>List of columns of all tables listed in TAP_SCHEMA.TABLES and published in this TAP service.</description>
+			<column std="true">
+				<name>column_index</name>
+				<description>this index is used to recommend column ordering for clients</description>
+				<dataType xsi:type="vod:TAPType">INTEGER</dataType>
+			</column>
+			<column std="true">
+				<name>table_name</name>
+				<description>table name from TAP_SCHEMA.tables</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>column_name</name>
+				<description>column name</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>datatype</name>
+				<description>an XType or a TAPType</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>arraysize</name>
+				<description>length of variable length datatypes</description>
+				<dataType xsi:type="vod:TAPType">INTEGER</dataType>
+			</column>
+			<column std="true">
+				<name>"size"</name>
+				<description>same as "arraysize" but kept for backward compatibility only</description>
+				<dataType xsi:type="vod:TAPType">INTEGER</dataType>
+			</column>
+			<column std="true">
+				<name>description</name>
+				<description>brief description of column</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>utype</name>
+				<description>UTYPE of column if any</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+			</column>
+			<column std="true">
+				<name>unit</name>
+				<description>unit in VO standard format</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>ucd</name>
+				<description>UCD of column if any</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>indexed</name>
+				<description>an indexed column; 1 means true, 0 means false</description>
+				<dataType xsi:type="vod:TAPType">SMALLINT</dataType>
+			</column>
+			<column std="true">
+				<name>principal</name>
+				<description>a principal column; 1 means true, 0 means false</description>
+				<dataType xsi:type="vod:TAPType">SMALLINT</dataType>
+			</column>
+			<column std="true">
+				<name>std</name>
+				<description>a standard column; 1 means true, 0 means false</description>
+				<dataType xsi:type="vod:TAPType">SMALLINT</dataType>
+			</column>
+		</table>
+		<table>
+			<name>TAP_SCHEMA.keys</name>
+			<description>List all foreign keys but provides just the tables linked by the foreign key. To know which columns of these tables are linked, see in TAP_SCHEMA.key_columns using the key_id.</description>
+			<column std="true">
+				<name>key_id</name>
+				<description>unique key identifier</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>from_table</name>
+				<description>fully qualified table name</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>target_table</name>
+				<description>fully qualified table name</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>description</name>
+				<description>description of this key</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>utype</name>
+				<description>utype of this key</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+			</column>
+		</table>
+		<table>
+			<name>TAP_SCHEMA.key_columns</name>
+			<description>List all foreign keys but provides just the columns linked by the foreign key. To know the table of these columns, see in TAP_SCHEMA.keys using the key_id.</description>
+			<column std="true">
+				<name>key_id</name>
+				<description>unique key identifier</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>from_column</name>
+				<description>key column name in the from_table</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column std="true">
+				<name>target_column</name>
+				<description>key column name in the target_table</description>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+		</table>
+	</schema>
+	<schema>
+		<name>public</name>
+		<table>
+			<name>hipparcos</name>
+			<description>Hipparcos subset for JUnit tests of the TAP-Library.</description>
+			<column>
+				<name>hip</name>
+				<description>Identifier (HIP number)</description>
+				<ucd>meta.id;meta.main</ucd>
+				<dataType xsi:type="vod:TAPType">INTEGER</dataType>
+				<flag>indexed</flag>
+				<flag>primary</flag>
+			</column>
+			<column>
+				<name>ra</name>
+				<description>alpha, degrees (ICRS, Epoch=J1991.25)</description>
+				<unit>deg</unit>
+				<ucd>pos.eq.ra;meta.main</ucd>
+				<dataType xsi:type="vod:TAPType">UNKNOWN</dataType>
+				<flag>primary</flag>
+			</column>
+			<column>
+				<name>dec</name>
+				<description>delta, degrees (ICRS, Epoch=J1991.25)</description>
+				<unit>deg</unit>
+				<ucd>pos.eq.dec;meta.main</ucd>
+				<dataType xsi:type="vod:TAPType">UNKNOWN</dataType>
+				<flag>primary</flag>
+			</column>
+			<column>
+				<name>e_ra</name>
+				<description>Standard error in RA*cos(DEdeg) (at epoch J1991.25; for different epochs, the actual mean error must take into account the proper motion uncertainties)</description>
+				<unit>mas</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>e_dec</name>
+				<description>Standard error in DE (at epoch J1991.25; for different epochs, the actual mean error must take into account the proper motion uncertainties)</description>
+				<unit>mas</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>vmag</name>
+				<description>Magnitude in Johnson V</description>
+				<unit>mag</unit>
+				<ucd>phot.mag;em.opt.V</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>plx</name>
+				<description>Trigonometric parallax</description>
+				<unit>mas</unit>
+				<ucd>pos.parallax.trig</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>e_plx</name>
+				<description>Standard error in Plx</description>
+				<unit>mas</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>pmra</name>
+				<description>Proper motion mu_alpha.cos(delta), ICRS (for J1991.25 epoch)</description>
+				<unit>mas/yr</unit>
+				<ucd>pos.pm;pos.eq.ra</ucd>
+				<dataType xsi:type="vod:TAPType">DOUBLE</dataType>
+			</column>
+			<column>
+				<name>e_pmra</name>
+				<description>Standard error in pmRA</description>
+				<unit>mas/yr</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>e_pmdec</name>
+				<description>Standard error in pmDE</description>
+				<unit>mas/yr</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>bt_mag</name>
+				<description>Mean BT magnitude</description>
+				<unit>mag</unit>
+				<ucd>phot.mag;em.opt.B</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>e_bt_mag</name>
+				<description>Standard error on BTmag</description>
+				<unit>mag</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>vt_mag</name>
+				<description>Mean VT magnitude</description>
+				<unit>mag</unit>
+				<ucd>phot.mag;em.opt.V</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>e_vt_mag</name>
+				<description>Standard error on VTmag</description>
+				<unit>mag</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>b_v</name>
+				<description>Johnson B-V colour</description>
+				<unit>mag</unit>
+				<ucd>phot.color;em.opt.B;em.opt.V</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>e_b_v</name>
+				<description>Standard error on B-V</description>
+				<unit>mag</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>v_i</name>
+				<description>Colour index in Cousins' system</description>
+				<unit>mag</unit>
+				<ucd>phot.color;em.opt.V;em.opt.I</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>e_v_i</name>
+				<description>Standard error on V-I</description>
+				<unit>mag</unit>
+				<ucd>stat.error</ucd>
+				<dataType xsi:type="vod:TAPType">REAL</dataType>
+			</column>
+			<column>
+				<name>sptype</name>
+				<description>Spectral type</description>
+				<ucd>src.spType</ucd>
+				<dataType xsi:type="vod:TAPType">VARCHAR</dataType>
+			</column>
+		</table>
+	</schema>
+</vosi:tableset>

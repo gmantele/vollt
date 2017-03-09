@@ -16,6 +16,18 @@
 	<property name="cosJar" value="${libDir}/${cosJarName}" />
 	<property name="stilJarName" value="stil_3.1.jar" />
 	<property name="stilJar" value="${libDir}/${stilJarName}" />
+
+	<property name="sqliteJarName" value="sqlite-jdbc-3.16.1.jar" />
+	<property name="sqliteJar" value="${libDir}/${sqliteJarName}" />
+
+	<property name="h2JarName" value="h2-1.4.193.jar" />
+	<property name="h2Jar" value="${libDir}/${h2JarName}" />
+	<property name="jtsJarName" value="jts-core-1.14.0.jar" />
+	<property name="jtsJar" value="${libDir}/${jtsJarName}" />
+	<property name="spatial4jJarName" value="spatial4j-0.6.jar" />
+	<property name="spatial4jJar" value="${libDir}/${spatial4jJarName}" />
+	<property name="astroh2JarName" value="astroh2-0.3.jar" />
+	<property name="astroh2Jar" value="${libDir}/${astroh2JarName}" />
 		
 	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
 	<property name="jsonPath" value="org/json/**" />
@@ -61,11 +73,22 @@
 		<pathelement location="${SERVLET-API}" />
 	</path>
 	
+	<path id="h2.classpath">
+		<pathelement location="${h2Jar}" />
+		<pathelement location="${jtsJar}" />
+		<pathelement location="${spatial4jJar}" />
+		<pathelement location="${astroh2Jar}" />
+	</path>
+	
 	<path id="junit.class.path">
-		<path refid="tap.classpath" />
 		<pathelement path="${JNDI-API}" />
 		<pathelement path="${JUNIT-API}" />
+			
+		<path refid="tap.classpath" />
 		<pathelement location="bin" />
+		
+		<path refid="h2.classpath" />
+		<pathelement location="${sqliteJar}" />
 	</path>
 	
 	<echo>TAP LIBRARY VERSION = ${version}</echo>
@@ -89,7 +112,7 @@
 		<mkdir dir="${adqlJunitReportsDir}"/>
 		<mkdir dir="${uwsJunitReportsDir}"/>
 		<mkdir dir="${tapJunitReportsDir}"/>
-		<junit errorproperty="testsFailure" failureproperty="testsFailure">
+		<junit fork="true" errorproperty="testsFailure" failureproperty="testsFailure">
 			<classpath refid="junit.class.path" />
 			<classpath>
 				<pathelement location="${compileDir}" />

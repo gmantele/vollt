@@ -25,12 +25,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
+import adql.db.DBColumn;
+import cds.util.AsciiTable;
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPExecutionReport;
 import tap.data.TableIterator;
-import adql.db.DBColumn;
-import cds.util.AsciiTable;
 
 /**
  * Format any given query (table) result into a simple table ASCII representation
@@ -118,8 +118,10 @@ public class TextFormat implements OutputFormat {
 		}
 
 		// Add a line in case of an OVERFLOW:
-		if (overflow)
+		if (overflow){
 			writer.write("\nOVERFLOW (more rows were available but have been truncated by the TAP service)");
+			writer.newLine();
+		}
 
 		writer.flush();
 	}
@@ -158,7 +160,7 @@ public class TextFormat implements OutputFormat {
 	/**
 	 * Write all the data rows into the given {@link AsciiTable} object.
 	 * 
-	 * @param queryResult		Result to write.	
+	 * @param queryResult		Result to write.
 	 * @param asciiTable		Output in which the rows (as string) must be written.
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).

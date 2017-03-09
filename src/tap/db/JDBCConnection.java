@@ -67,8 +67,8 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>This {@link DBConnection} implementation is theoretically able to deal with any DBMS JDBC connection.</p>
  * 
  * <p><i>Note:
- * 	"Theoretically", because its design has been done using information about Postgres, SQLite, Oracle, MySQL and Java DB (Derby).
- * 	Then it has been really tested successfully with Postgres and SQLite.
+ * 	"Theoretically", because its design has been done using information about Postgres, SQLite, Oracle, MySQL, Java DB (Derby) and H2.
+ * 	Then it has been really tested successfully with Postgres, SQLite and H2.
  * </i></p>
  * 
  * 

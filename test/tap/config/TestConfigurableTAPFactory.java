@@ -31,11 +31,13 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
 
+import org.h2.jdbc.JdbcSQLException;
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.postgresql.ds.PGSimpleDataSource;
-import org.postgresql.util.PSQLException;
 
+import adql.db.FunctionDef;
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPFactory;
@@ -43,6 +45,7 @@ import tap.backup.DefaultTAPBackupManager;
 import tap.db.DBConnection;
 import tap.db.DBException;
 import tap.db.JDBCConnection;
+import tap.db_testtools.DBTools;
 import tap.formatter.OutputFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
@@ -54,7 +57,6 @@ import uws.service.UWSUrl;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
-import adql.db.FunctionDef;
 
 public class TestConfigurableTAPFactory {
 
@@ -78,9 +80,10 @@ public class TestConfigurableTAPFactory {
 		InitialContext ic = new InitialContext();
 
 		// Creation of a reference on a DataSource:
-		PGSimpleDataSource datasource = new PGSimpleDataSource();
-		datasource.setServerName("localhost");
-		datasource.setDatabaseName("gmantele");
+		JdbcDataSource datasource = new JdbcDataSource();
+		datasource.setUrl(DBTools.DB_TEST_URL);
+		datasource.setUser(DBTools.DB_TEST_USER);
+		datasource.setPassword(DBTools.DB_TEST_PWD);
 
 		// Link the datasource with the context:
 		ic.rebind("jdbc/MyDataSource", datasource);
@@ -90,6 +93,9 @@ public class TestConfigurableTAPFactory {
 	public static void beforeClass() throws Exception{
 		// BUILD A FAKE SERVICE CONNECTION:
 		serviceConnection = new ServiceConnectionTest();
+
+		// BUILD THE DATABASE:
+		DBTools.createTestDB();
 
 		// LOAD ALL PROPERTIES FILES NEEDED FOR ALL THE TESTS:
 		validJDBCProp = AllTAPConfigTests.getValidProperties();
@@ -119,14 +125,14 @@ public class TestConfigurableTAPFactory {
 		noJdbcProp1.remove(KEY_JDBC_DRIVER);
 
 		noJdbcProp2 = (Properties)noJdbcProp1.clone();
-		noJdbcProp2.setProperty(KEY_JDBC_URL, "jdbc:foo:gmantele");
+		noJdbcProp2.setProperty(KEY_JDBC_URL, "jdbc:foo:./test/db-test");
 
 		noJdbcProp3 = (Properties)noJdbcProp1.clone();
 		noJdbcProp3.remove(KEY_JDBC_URL);
 
 		badJdbcProp = (Properties)validJDBCProp.clone();
 		badJdbcProp.setProperty(KEY_JDBC_DRIVER, "foo");
-		badJdbcProp.setProperty(KEY_JDBC_URL, "jdbc:foo:gmantele");
+		badJdbcProp.setProperty(KEY_JDBC_URL, "jdbc:foo:./test/db-test");
 
 		missingTranslatorProp = (Properties)validJDBCProp.clone();
 		missingTranslatorProp.remove(KEY_SQL_TRANSLATOR);
@@ -135,7 +141,7 @@ public class TestConfigurableTAPFactory {
 		badTranslatorProp.setProperty(KEY_SQL_TRANSLATOR, "foo");
 
 		badDBNameProp = (Properties)validJDBCProp.clone();
-		badDBNameProp.setProperty(KEY_JDBC_URL, "jdbc:postgresql:foo");
+		badDBNameProp.setProperty(KEY_JDBC_URL, "jdbc:h2:foo");
 
 		badUsernameProp = (Properties)validJDBCProp.clone();
 		badUsernameProp.setProperty(KEY_DB_USERNAME, "foo");
@@ -154,6 +160,11 @@ public class TestConfigurableTAPFactory {
 
 		badBackupFrequency = (Properties)validJDBCProp.clone();
 		badBackupFrequency.setProperty(KEY_BACKUP_FREQUENCY, "foo");
+	}
+
+	@AfterClass
+	public static void tearDownAfterClass() throws Exception{
+		DBTools.dropTestDB();
 	}
 
 	@Test
@@ -287,8 +298,8 @@ public class TestConfigurableTAPFactory {
 		}catch(Exception ex){
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to establish a connection to the database \"[^\\\"]*\"!"));
-			assertEquals(PSQLException.class, ex.getCause().getClass());
-			assertTrue(ex.getCause().getMessage().matches("FATAL: password authentication failed for user \"[^\\\"]*\""));
+			assertEquals(JdbcSQLException.class, ex.getCause().getClass());
+			assertEquals("A file path that is implicitly relative to the current working directory is not allowed in the database URL \"jdbc:h2:foo\". Use an absolute path, ~/name, ./name, or the baseDir setting instead. [90011-193]", ex.getCause().getMessage());
 		}
 
 		// Bad DB Username: ABORTED BECAUSE THE BAD USERNAME IS NOT DETECTED FOR THE DB WHICH HAS THE SAME NAME AS THE USERNAME !
@@ -298,19 +309,19 @@ public class TestConfigurableTAPFactory {
 		}catch(Exception ex){
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to establish a connection to the database \"[^\\\"]*\"!"));
-			assertEquals(PSQLException.class, ex.getCause().getClass());
-			assertTrue(ex.getCause().getMessage().matches("FATAL: password authentication failed for user \"[^\\\"]*\""));
+			assertEquals(JdbcSQLException.class, ex.getCause().getClass());
+			assertEquals("Wrong user name or password [28000-193]", ex.getCause().getMessage());
 		}
 
 		// Bad DB Password:
 		try{
 			new ConfigurableTAPFactory(serviceConnection, badPasswordProp);
-			//fail("This MUST have failed because the provided database password is incorrect!"); // NOTE: In function of the database configuration, a password may be required or not. So this test is not automatic! 
+			//fail("This MUST have failed because the provided database password is incorrect!"); // NOTE: In function of the database configuration, a password may be required or not. So this test is not automatic!
 		}catch(Exception ex){
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to establish a connection to the database \"[^\\\"]*\"!"));
-			assertEquals(PSQLException.class, ex.getCause().getClass());
-			assertTrue(ex.getCause().getMessage().matches("FATAL: password authentication failed for user \"[^\\\"]*\""));
+			assertEquals(JdbcSQLException.class, ex.getCause().getClass());
+			assertEquals("Wrong user name or password [28000-193]", ex.getCause().getMessage());
 		}
 
 		// Valid backup frequency:

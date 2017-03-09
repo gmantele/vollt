@@ -16,7 +16,7 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.lang.reflect.Constructor;
@@ -36,7 +36,7 @@ import tap.backup.DefaultTAPBackupManager;
  * and it must be used only thanks to its static classes and attributes.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (03/2017)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -151,14 +151,15 @@ public final class TAPConfiguration {
 	 * in {@link #VALUE_JDBC_DRIVERS}. */
 	public final static String KEY_JDBC_DRIVER = "jdbc_driver";
 	/** List of the most known JDBC drivers. For the moment this list contains 4 drivers:
-	 * oracle ("oracle.jdbc.OracleDriver"), postgresql ("org.postgresql.Driver"), mysql ("com.mysql.jdbc.Driver")
-	 * and sqlite ("org.sqlite.JDBC"). */
+	 * oracle ("oracle.jdbc.OracleDriver"), postgresql ("org.postgresql.Driver"), mysql ("com.mysql.jdbc.Driver"),
+	 * sqlite ("org.sqlite.JDBC") and h2 ("org.h2.Driver"). */
 	public final static HashMap<String,String> VALUE_JDBC_DRIVERS = new HashMap<String,String>(4);
 	static{
 		VALUE_JDBC_DRIVERS.put("oracle", "oracle.jdbc.OracleDriver");
 		VALUE_JDBC_DRIVERS.put("postgresql", "org.postgresql.Driver");
 		VALUE_JDBC_DRIVERS.put("mysql", "com.mysql.jdbc.Driver");
 		VALUE_JDBC_DRIVERS.put("sqlite", "org.sqlite.JDBC");
+		VALUE_JDBC_DRIVERS.put("h2", "org.h2.Driver");
 	}
 	/** Name/Key of the property specifying the JDBC URL of the database to access. */
 	public final static String KEY_JDBC_URL = "jdbc_url";
