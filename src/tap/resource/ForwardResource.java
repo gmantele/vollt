@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedReader;
@@ -48,14 +48,14 @@ import uws.service.log.UWSLog.LogLevel;
  * 	the given URL will be performed.
  * </p>
  * 
- * <p><i>See {@link #forward(String, String, HttpServletRequest, HttpServletResponse)} for more details</i></p> 
+ * <p><i>See {@link #forward(String, String, HttpServletRequest, HttpServletResponse)} for more details</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (03/2017)
  * @since 2.1
  */
 public abstract class ForwardResource implements TAPResource {
-	
+
 	/** Logger that {@link #forward(String, String, HttpServletRequest, HttpServletResponse)} must use
 	 * in case of not grave error (e.g. the specified Web Application file can not be found). */
 	protected final TAPLog logger;
@@ -65,7 +65,7 @@ public abstract class ForwardResource implements TAPResource {
 	 * 
 	 * @param logger	A TAP logger.
 	 */
-	protected ForwardResource(final TAPLog logger) {
+	protected ForwardResource(final TAPLog logger){
 		this.logger = logger;
 	}
 
@@ -79,7 +79,7 @@ public abstract class ForwardResource implements TAPResource {
 	 * 	                                    In this case the request is forwarded to this file. It is neither a redirection nor a copy,
 	 * 	                                    but a kind of inclusion of the interpreted file into the response.
 	 *                                      <i>This method MUST be used if your page/content is a JSP.</i></li>
-	 * <li><b>a local file</b> if a URI starts with "file:". In this case, the content of the local file is copied in the HTTP response. There is no interpretation. So this method should not be used for JSP.</li>	
+	 * <li><b>a local file</b> if a URI starts with "file:". In this case, the content of the local file is copied in the HTTP response. There is no interpretation. So this method should not be used for JSP.</li>
 	 * <li><b>a distance document</b> in all other cases. Indeed, if there is a scheme different from "file:" the given URI will be considered as a URL.
 	 *                                In this case, any request to the TAP home page is redirected to this URL.</li>
 	 * </ol>
@@ -87,7 +87,7 @@ public abstract class ForwardResource implements TAPResource {
 	 * <p><b>Important note:</b>
 	 * 	The 1st option is applied ONLY IF the path of the TAP servlet is NOT the root path of the web application:
 	 * 	that's to say <code>/*</code>. In the case where a URI without scheme is provided though the servlet path
-	 * 	is <code>/*</code>, this function will resolve the full path on the local file system and apply the 
+	 * 	is <code>/*</code>, this function will resolve the full path on the local file system and apply the
 	 * 	2nd option: write the file content directly in the response. Note that will work only in cases where the
 	 * 	specified file is not a JSP or does not need any kind of interpretation by the function
 	 * 	{@link RequestDispatcher#forward(javax.servlet.ServletRequest, javax.servlet.ServletResponse)}.
@@ -106,7 +106,7 @@ public abstract class ForwardResource implements TAPResource {
 	 *                    				or when the HTTP connection has been aborted.
 	 * @throws IllegalStateException	If an attempt of resetting the buffer fails.
 	 */
-	public final boolean forward(final String file, final String mimeType, final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+	public final boolean forward(final String file, final String mimeType, final HttpServletRequest request, final HttpServletResponse response) throws IOException{
 		boolean written = false;
 
 		// Display the specified file, if any is specified:
@@ -114,17 +114,17 @@ public abstract class ForwardResource implements TAPResource {
 
 			URI uri = null;
 			try{
-				uri = new URI(file);
-				
+				uri = new URI(file.replaceAll(" ", "%20"));
+				/* Note: the space replacement is just a convenient way to fix badly encoding URIs.
+				 *       A proper way would be to encode all such incorrect URI characters (e.g. accents), but
+				 *       the idea here is to focus on the most common mistake while writing manually 'file:' URIs. */
+
 				/* If the servlet is set on the root Web Application path, a forward toward a WebContent resource won't work.
 				 * The file then need to be copied "manually" in the HTTPServletResponse. For that, the trick consists to rewrite
 				 * the given file path to a URI with the scheme "file://". */
-				String tmpFile = null;
-				if (request.getServletPath().length() == 0 && uri.getScheme() == null){
-					tmpFile = "file://"+request.getServletContext().getRealPath(file);
-					uri = new URI(tmpFile);
-				}
-				
+				if (request.getServletPath().length() == 0 && uri.getScheme() == null)
+					uri = new URI("file", null, request.getServletContext().getRealPath(file), null);
+
 				/* CASE: FILE IN WebContent */
 				if (uri.getScheme() == null){
 					try{
@@ -206,7 +206,7 @@ public abstract class ForwardResource implements TAPResource {
 
 			}catch(IOException ioe){
 				/*   This IOException can be caught here only if caused by a HTTP client abortion or by a closing of the HTTPrequest.
-				 * So, it must be propagated until the TAP instance, where it will be merely logged as INFO. No response/error can be 
+				 * So, it must be propagated until the TAP instance, where it will be merely logged as INFO. No response/error can be
 				 * returned in the HTTP response. */
 				throw ioe;
 

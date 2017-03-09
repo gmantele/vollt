@@ -1,5 +1,74 @@
 package tap.config;
 
+import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
+import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
+import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
+import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
+import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
+import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE;
+import static tap.config.TAPConfiguration.KEY_ASYNC_FETCH_SIZE;
+import static tap.config.TAPConfiguration.KEY_COORD_SYS;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_UPLOAD_LIMIT;
+import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
+import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
+import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
+import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
+import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
+import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
+import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
+import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
+import static tap.config.TAPConfiguration.KEY_MAX_UPLOAD_LIMIT;
+import static tap.config.TAPConfiguration.KEY_METADATA;
+import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
+import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
+import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
+import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
+import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
+import static tap.config.TAPConfiguration.KEY_SYNC_FETCH_SIZE;
+import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
+import static tap.config.TAPConfiguration.KEY_UDFS;
+import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
+import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
+import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
+import static tap.config.TAPConfiguration.VALUE_ALL;
+import static tap.config.TAPConfiguration.VALUE_ANY;
+import static tap.config.TAPConfiguration.VALUE_CSV;
+import static tap.config.TAPConfiguration.VALUE_DB;
+import static tap.config.TAPConfiguration.VALUE_FITS;
+import static tap.config.TAPConfiguration.VALUE_HTML;
+import static tap.config.TAPConfiguration.VALUE_JSON;
+import static tap.config.TAPConfiguration.VALUE_LOCAL;
+import static tap.config.TAPConfiguration.VALUE_NONE;
+import static tap.config.TAPConfiguration.VALUE_SV;
+import static tap.config.TAPConfiguration.VALUE_TEXT;
+import static tap.config.TAPConfiguration.VALUE_TSV;
+import static tap.config.TAPConfiguration.VALUE_VOT;
+import static tap.config.TAPConfiguration.VALUE_VOTABLE;
+import static tap.config.TAPConfiguration.VALUE_XML;
+import static tap.config.TAPConfiguration.fetchClass;
+import static tap.config.TAPConfiguration.getProperty;
+import static tap.config.TAPConfiguration.hasConstructor;
+import static tap.config.TAPConfiguration.isClassName;
+import static tap.config.TAPConfiguration.newInstance;
+import static tap.config.TAPConfiguration.parseLimit;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Properties;
+
 /*
  * This file is part of TAPLibrary.
  * 
@@ -28,7 +97,13 @@ import tap.TAPException;
 import tap.TAPFactory;
 import tap.db.DBConnection;
 import tap.db.JDBCConnection;
-import tap.formatter.*;
+import tap.formatter.FITSFormat;
+import tap.formatter.HTMLFormat;
+import tap.formatter.JSONFormat;
+import tap.formatter.OutputFormat;
+import tap.formatter.SVFormat;
+import tap.formatter.TextFormat;
+import tap.formatter.VOTableFormat;
 import tap.log.DefaultTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
@@ -40,14 +115,6 @@ import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog.LogLevel;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-
-import static tap.config.TAPConfiguration.*;
 
 /**
  * <p>Concrete implementation of {@link ServiceConnection}, fully parameterized with a TAP configuration file.</p>
@@ -267,11 +334,14 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * @param propertyName		Name of the property which gives the given file path.
 	 * 
 	 * @return	The specified File instance.
-	 * 
+	 *
+	 * @throws ParseException	If the given file path is a URI/URL.
 	 */
-	protected static final File getFile(final String filePath, final String webAppRootPath, final String propertyName) {
+	protected static final File getFile(final String filePath, final String webAppRootPath, final String propertyName) throws TAPException{
 		if (filePath == null)
 			return null;
+		else if (filePath.matches(".*:.*"))
+			throw new TAPException("Incorrect file path for the property \"" + propertyName + "\": \"" + filePath + "\"! URI/URLs are not expected here.");
 
 		File f = new File(filePath);
 		if (f.isAbsolute())
