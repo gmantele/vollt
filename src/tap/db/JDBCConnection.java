@@ -720,6 +720,10 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.INFO, this, "EXECUTE", "SQL query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
 			result = stmt.executeQuery(sql);
 
+			// If the query has been aborted and no result is provided, return immediately:
+			if (cancelled)
+				return null;
+
 			// 4. Return the result through a TableIterator object:
 			if (logger != null)
 				logger.logDB(LogLevel.INFO, this, "RESULT", "Returning result (" + (supportsFetchSize ? "fetch size = " + fetchSize : "all in once") + ").", null);
@@ -731,9 +735,15 @@ public class JDBCConnection implements DBConnection {
 			// End properly the query:
 			endQuery();
 			// Propagate the exception with an appropriate error message:
-			if (ex instanceof SQLException)
-				throw new DBException("Unexpected error while executing a SQL query: " + ex.getMessage(), ex);
-			else if (ex instanceof TranslationException)
+			if (ex instanceof SQLException){
+				/* ...except if the query has been aborted:
+				 * then, it is normal to receive an SQLException
+				 * and NULL should be returned: */
+				if (isCancelled())
+					return null;
+				else
+					throw new DBException("Unexpected error while executing a SQL query: " + ex.getMessage(), ex);
+			}else if (ex instanceof TranslationException)
 				throw new DBException("Unexpected error while translating ADQL into SQL: " + ex.getMessage(), ex);
 			else if (ex instanceof DataReadException)
 				throw new DBException("Impossible to read the query result, because: " + ex.getMessage(), ex);

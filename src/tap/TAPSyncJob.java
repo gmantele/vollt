@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -48,7 +48,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (09/2016)
+ * @version 2.1 (03/2017)
  */
 public class TAPSyncJob {
 
@@ -248,12 +248,12 @@ public class TAPSyncJob {
 		if (timeout && error != null && error instanceof InterruptedException){
 			// Log the timeout:
 			if (thread.isAlive())
-				service.getLogger().logTAP(LogLevel.WARNING, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "seconds) for the synchonous job " + ID + ", but the thread can not be interrupted!", null);
+				service.getLogger().logTAP(LogLevel.WARNING, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + " seconds) for the synchonous job " + ID + ", but the thread can not be interrupted!", null);
 			else
-				service.getLogger().logTAP(LogLevel.INFO, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + "seconds) for the synchonous job " + ID + ".", null);
+				service.getLogger().logTAP(LogLevel.INFO, this, "TIME_OUT", "Time out (after " + tapParams.getExecutionDuration() + " seconds) for the synchonous job " + ID + ".", null);
 
 			// Report the timeout to the user:
-			throw new TAPException("Time out! The execution of this synchronous TAP query was limited to " + tapParams.getExecutionDuration() + "seconds. You should try again but in asynchronous execution.", UWSException.ACCEPTED_BUT_NOT_COMPLETE);
+			throw new TAPException("Time out! The execution of this synchronous TAP query was limited to " + tapParams.getExecutionDuration() + " seconds. You should try again but in asynchronous mode.", UWSException.ACCEPTED_BUT_NOT_COMPLETE);
 		}
 		// CASE: ERRORS
 		else if (!thread.isSuccess()){
@@ -283,7 +283,9 @@ public class TAPSyncJob {
 				// log the error:
 				service.getLogger().logTAP(LogLevel.FATAL, this, "END", "The following GRAVE error interrupted the execution of the synchronous job " + ID + ".", error);
 				// report the error to the user:
-				if (error instanceof Error)
+				if (error == null)
+					throw new TAPException("This query (" + ID + ") stopped unexpectedly without any result! No error/exception has been caught and no execution report has been registered. You should contact the service administrator to investigate this.", UWSException.INTERNAL_SERVER_ERROR);
+				else if (error instanceof Error)
 					throw (Error)error;
 				else
 					throw new TAPException(error);
@@ -303,7 +305,7 @@ public class TAPSyncJob {
 	 * </p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (04/2015)
+	 * @version 2.1 (03/2017)
 	 */
 	protected class SyncThread extends Thread {
 
@@ -366,6 +368,12 @@ public class TAPSyncJob {
 		 */
 		public final TAPExecutionReport getExecutionReport(){
 			return report;
+		}
+
+		@Override
+		public void interrupt(){
+			super.interrupt();
+			executor.cancelQuery();
 		}
 
 		@Override

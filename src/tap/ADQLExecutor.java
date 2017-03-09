@@ -381,7 +381,7 @@ public class ADQLExecutor {
 			queryResult = executeADQL(adqlQuery);
 			endStep();
 
-			if (thread.isInterrupted())
+			if (queryResult == null || thread.isInterrupted())
 				throw new InterruptedException();
 
 			// 4. WRITE RESULT:

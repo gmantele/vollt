@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -45,7 +45,7 @@ import tap.metadata.TAPTable;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (04/2016)
+ * @version 2.1 (03/2017)
  */
 public interface DBConnection {
 
@@ -237,7 +237,7 @@ public interface DBConnection {
 	 * 
 	 * @param adqlQuery	ADQL query to execute.
 	 * 
-	 * @return	The table result.
+	 * @return	The table result or NULL if the query has been aborted.
 	 * 
 	 * @throws DBException	If any errors occurs while executing the query.
 	 * 
