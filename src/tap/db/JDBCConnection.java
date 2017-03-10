@@ -1078,7 +1078,6 @@ public class JDBCConnection implements DBConnection {
 				sqlBuf.append(" ORDER BY 1,6,2");
 			else
 				sqlBuf.append(" ORDER BY 1,2");
-			sqlBuf.append(';');
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
@@ -1199,7 +1198,6 @@ public class JDBCConnection implements DBConnection {
 				sqlBuf.append(" ORDER BY 1,12,2");
 			else
 				sqlBuf.append(" ORDER BY 1,2");
-			sqlBuf.append(';');
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
@@ -1302,7 +1300,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(keysDef.getColumn("description")));
 			sqlBuf.append(", ").append(translator.getColumnName(keysDef.getColumn("utype")));
 			sqlBuf.append(" FROM ").append(translator.getTableName(keysDef, supportsSchema));
-			sqlBuf.append(" ORDER BY 1,2,3;");
+			sqlBuf.append(" ORDER BY 1,2,3");
 
 			// Execute the query:
 			rs = stmt.executeQuery(sqlBuf.toString());
@@ -1551,7 +1549,7 @@ public class JDBCConnection implements DBConnection {
 
 			// create TAP_SCHEMA if it does not exist:
 			if (!hasTAPSchema)
-				stmt.executeUpdate("CREATE SCHEMA " + translator.getQualifiedSchemaName(stdTables[0]) + ";");
+				stmt.executeUpdate("CREATE SCHEMA " + translator.getQualifiedSchemaName(stdTables[0]));
 		}
 
 		// 2-bis. Drop all its standard tables:
@@ -1605,7 +1603,7 @@ public class JDBCConnection implements DBConnection {
 		// Drop the existing tables (in the reverse order of creation):
 		for(int i = stdTablesToDrop.length - 1; i >= 0; i--){
 			if (stdTablesToDrop[i] != null)
-				stmt.executeUpdate("DROP TABLE " + stdTablesToDrop[i] + ";");
+				stmt.executeUpdate("DROP TABLE " + stdTablesToDrop[i]);
 		}
 	}
 
@@ -1668,7 +1666,7 @@ public class JDBCConnection implements DBConnection {
 			sql.append(',').append(primaryKey);
 
 		// d. End the query:
-		sql.append(')').append(';');
+		sql.append(')');
 
 		// 3. FINALLY CREATE THE TABLE:
 		stmt.executeUpdate(sql.toString());
@@ -1737,7 +1735,7 @@ public class JDBCConnection implements DBConnection {
 			TAPColumn col = it.next();
 			// Create an index only for columns that have the 'indexed' flag:
 			if (col.isIndexed() && !isPartOfPrimaryKey(col.getADQLName()))
-				stmt.executeUpdate("CREATE INDEX " + indexNamePrefix + col.getADQLName() + " ON " + dbTableName + "(" + translator.getColumnName(col) + ");");
+				stmt.executeUpdate("CREATE INDEX " + indexNamePrefix + col.getADQLName() + " ON " + dbTableName + "(" + translator.getColumnName(col) + ")");
 		}
 	}
 
@@ -1822,9 +1820,9 @@ public class JDBCConnection implements DBConnection {
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("utype")));
 		if (supportsSchema){
 			sql.append(", ").append(DB_NAME_COLUMN);
-			sql.append(") VALUES (?, ?, ?, ?);");
+			sql.append(") VALUES (?, ?, ?, ?)");
 		}else
-			sql.append(") VALUES (?, ?, ?);");
+			sql.append(") VALUES (?, ?, ?)");
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
@@ -1885,7 +1883,7 @@ public class JDBCConnection implements DBConnection {
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("utype")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("table_index")));
 		sql.append(", ").append(DB_NAME_COLUMN);
-		sql.append(") VALUES (?, ?, ?, ?, ?, ?, ?);");
+		sql.append(") VALUES (?, ?, ?, ?, ?, ?, ?)");
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
@@ -1904,7 +1902,7 @@ public class JDBCConnection implements DBConnection {
 				// add the table entry into the DB:
 				stmt.setString(1, table.getADQLSchemaName());
 				if (table instanceof TAPTable)
-					stmt.setString(2, ((TAPTable)table).getRawName());
+					stmt.setString(2, table.getRawName());
 				else
 					stmt.setString(2, table.getADQLName());
 				stmt.setString(3, table.getType().toString());
@@ -1958,7 +1956,7 @@ public class JDBCConnection implements DBConnection {
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("std")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("column_index")));
 		sql.append(", ").append(DB_NAME_COLUMN);
-		sql.append(") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+		sql.append(") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
@@ -2026,7 +2024,7 @@ public class JDBCConnection implements DBConnection {
 		sqlKeys.append(", ").append(translator.getColumnName(metaKeys.getColumn("target_table")));
 		sqlKeys.append(", ").append(translator.getColumnName(metaKeys.getColumn("description")));
 		sqlKeys.append(", ").append(translator.getColumnName(metaKeys.getColumn("utype")));
-		sqlKeys.append(") VALUES (?, ?, ?, ?, ?);");
+		sqlKeys.append(") VALUES (?, ?, ?, ?, ?)");
 
 		PreparedStatement stmtKeys = null, stmtKeyCols = null;
 		try{
@@ -2039,7 +2037,7 @@ public class JDBCConnection implements DBConnection {
 			sqlKeyCols.append(translator.getColumnName(metaKeyColumns.getColumn("key_id")));
 			sqlKeyCols.append(", ").append(translator.getColumnName(metaKeyColumns.getColumn("from_column")));
 			sqlKeyCols.append(", ").append(translator.getColumnName(metaKeyColumns.getColumn("target_column")));
-			sqlKeyCols.append(") VALUES (?, ?, ?);");
+			sqlKeyCols.append(") VALUES (?, ?, ?)");
 
 			// Prepare the statement for KEY_COLUMNS:
 			stmtKeyCols = connection.prepareStatement(sqlKeyCols.toString());
@@ -2053,11 +2051,11 @@ public class JDBCConnection implements DBConnection {
 				// add the key entry into KEYS:
 				stmtKeys.setString(1, key.getKeyId());
 				if (key.getFromTable() instanceof TAPTable)
-					stmtKeys.setString(2, ((TAPTable)key.getFromTable()).getRawName());
+					stmtKeys.setString(2, key.getFromTable().getRawName());
 				else
 					stmtKeys.setString(2, key.getFromTable().getADQLName());
 				if (key.getTargetTable() instanceof TAPTable)
-					stmtKeys.setString(3, ((TAPTable)key.getTargetTable()).getRawName());
+					stmtKeys.setString(3, key.getTargetTable().getRawName());
 				else
 					stmtKeys.setString(3, key.getTargetTable().getADQLName());
 				stmtKeys.setString(4, key.getDescription());
@@ -2130,7 +2128,7 @@ public class JDBCConnection implements DBConnection {
 
 			// 1. Create the upload schema, if it does not already exist:
 			if (!isSchemaExisting(tableDef.getDBSchemaName(), dbMeta)){
-				stmt.executeUpdate("CREATE SCHEMA " + translator.getQualifiedSchemaName(tableDef) + ";");
+				stmt.executeUpdate("CREATE SCHEMA " + translator.getQualifiedSchemaName(tableDef));
 				if (logger != null)
 					logger.logDB(LogLevel.INFO, this, "SCHEMA_CREATED", "Schema \"" + tableDef.getADQLSchemaName() + "\" (in DB: " + translator.getQualifiedSchemaName(tableDef) + ") created.", null);
 			}
@@ -2157,7 +2155,7 @@ public class JDBCConnection implements DBConnection {
 				if (it.hasNext())
 					sqlBuf.append(',');
 			}
-			sqlBuf.append(");");
+			sqlBuf.append(')');
 			// ...execute the update query:
 			stmt.executeUpdate(sqlBuf.toString());
 
@@ -2228,7 +2226,7 @@ public class JDBCConnection implements DBConnection {
 			varParam.append('?');
 		}
 		// ...values pattern:
-		sql.append(") VALUES (").append(varParam).append(");");
+		sql.append(") VALUES (").append(varParam).append(')');
 
 		// 2. Prepare the statement:
 		PreparedStatement stmt = null;
@@ -2332,7 +2330,7 @@ public class JDBCConnection implements DBConnection {
 				return true;
 
 			// Execute the update:
-			int cnt = getStatement().executeUpdate("DROP TABLE " + translator.getTableName(tableDef, supportsSchema) + ";");
+			int cnt = getStatement().executeUpdate("DROP TABLE " + translator.getTableName(tableDef, supportsSchema));
 
 			// Log the end:
 			if (logger != null){
