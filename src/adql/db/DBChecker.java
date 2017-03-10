@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2011-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2011-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -97,7 +97,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (03/2016)
+ * @version 1.4 (03/2017)
  */
 public class DBChecker implements QueryChecker {
 
@@ -723,18 +723,16 @@ public class DBChecker implements QueryChecker {
 			}else
 				throw new ParseException("Column index out of bounds: " + index + " (must be between 1 and " + select.size() + ") !", colRef.getPosition());
 		}else{
-			ADQLColumn col = new ADQLColumn(colRef.getColumnName());
+			ADQLColumn col = new ADQLColumn(null, colRef.getColumnName());
 			col.setCaseSensitive(colRef.isCaseSensitive());
 			col.setPosition(colRef.getPosition());
 
 			// search among the select_item aliases:
-			if (col.getTableName() == null){
-				ArrayList<SelectItem> founds = select.searchByAlias(colRef.getColumnName(), colRef.isCaseSensitive());
-				if (founds.size() == 1)
-					return null;
-				else if (founds.size() > 1)
-					throw new UnresolvedColumnException(col, founds.get(0).getAlias(), founds.get(1).getAlias());
-			}
+			ArrayList<SelectItem> founds = select.searchByAlias(colRef.getColumnName(), colRef.isCaseSensitive());
+			if (founds.size() == 1)
+				return null;
+			else if (founds.size() > 1)
+				throw new UnresolvedColumnException(col, founds.get(0).getAlias(), founds.get(1).getAlias());
 
 			// check the corresponding column:
 			return resolveColumn(col, dbColumns, null);
@@ -1010,7 +1008,7 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * Check whether the given coordinate system is allowed by this implementation. 
+	 * Check whether the given coordinate system is allowed by this implementation.
 	 * 
 	 * @param coordSys	Coordinate system to test.
 	 * @param operand	The operand representing or containing the coordinate system under test.
@@ -1501,7 +1499,7 @@ public class DBChecker implements QueryChecker {
 				m = s + ((e - s) / 2);
 				// compare the fct with the middle item of the array:
 				comp = compare(searchItem, array[m]);
-				// if the fct is after, trigger the inspection of the right part of the array: 
+				// if the fct is after, trigger the inspection of the right part of the array:
 				if (comp > 0)
 					s = m + 1;
 				// otherwise, the left part:

@@ -32,6 +32,7 @@ import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.search.SimpleSearchHandler;
 import adql.translator.ADQLTranslator;
+import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
 public class TestDBChecker {
@@ -133,6 +134,22 @@ public class TestDBChecker {
 			parser.parseQuery("SELECT noschema.foo2.* FROM foo2;");
 			fail("The table \"foo2\" has no schema specified and so, is not part of a schema. A fake schema prefix should then be forbidden!");
 		}catch(ParseException pe){}
+	}
+
+	@Test
+	public void testColRefWithDottedAlias(){
+		ADQLParser parser = new ADQLParser(new DBChecker(tables));
+		try{
+			ADQLQuery adql = parser.parseQuery("SELECT colI AS \"col.I\" FROM aschema.foo ORDER BY \"col.I\"");
+			assertNotNull(adql);
+			assertEquals("SELECT \"aschema\".\"foo\".\"colI\" AS \"col.I\"\nFROM \"aschema\".\"foo\"\nORDER BY \"col.I\" ASC", (new PostgreSQLTranslator()).translate(adql));
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail();
+		}catch(TranslationException te){
+			te.printStackTrace();
+			fail();
+		}
 	}
 
 	@Test
