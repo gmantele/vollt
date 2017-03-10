@@ -1,6 +1,7 @@
 package tap.data;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -11,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.junit.Test;
+
+import uk.ac.starlink.table.TableFormatException;
 
 public class TestVOTableIterator {
 
@@ -190,6 +193,136 @@ public class TestVOTableIterator {
 				try{
 					it.close();
 				}catch(DataReadException dre){}
+			}
+		}
+	}
+
+	@Test
+	public void testWithNotAVotable(){
+		// CASE: Empty file!
+		File emptyFile = new File("test/tap/data/emptyFile");
+		InputStream input = null;
+		VOTableIterator it = null;
+		try{
+			// Create an empty file:
+			emptyFile.createNewFile();
+
+			// Prepare reading it:
+			input = new FileInputStream(emptyFile);
+
+			// Start the iteration:
+			it = new VOTableIterator(input);
+
+			// Try to read the data:
+			it.getMetadata();
+			fail("An exception was expected because the file is empty!");
+
+		}catch(IOException ioe){
+			ioe.printStackTrace();
+			fail("Another exception was expected here! (see the console for more details)");
+		}catch(DataReadException dre){
+			assertNotNull(dre.getCause());
+			assertEquals(TableFormatException.class, dre.getCause().getClass());
+			assertEquals("The input file is not a valid VOTable document! Cause: [l.1, c.1] Premature end of file.", dre.getMessage());
+		}finally{
+			// Close the input stream (if open):
+			if (input != null){
+				try{
+					input.close();
+				}catch(IOException ioe){
+					ioe.printStackTrace();
+				}
+			}
+			// Close the iterator (if any):
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){
+					dre.printStackTrace();
+				}
+			}
+			// Delete the temporary empty file (if exists):
+			if (emptyFile.exists())
+				emptyFile.delete();
+		}
+
+		// CASE: Neither empty nor a VOTable file!
+		File notAVotFile = new File("test/tap/db_testtools/db-test/create-db.sql");
+		input = null;
+		it = null;
+		try{
+			// Prepare reading it:
+			input = new FileInputStream(notAVotFile);
+
+			// Start the iteration:
+			it = new VOTableIterator(input);
+
+			// Try to read the data:
+			it.getMetadata();
+			fail("An exception was expected because the file is not a VOTable!");
+
+		}catch(IOException ioe){
+			ioe.printStackTrace();
+			fail("Another exception was expected here! (see the console for more details)");
+		}catch(DataReadException dre){
+			assertNotNull(dre.getCause());
+			assertEquals(TableFormatException.class, dre.getCause().getClass());
+			assertEquals("The input file is not a valid VOTable document! Cause: [l.2, c.1] Content is not allowed in prolog.", dre.getMessage());
+		}finally{
+			// Close the input stream (if open):
+			if (input != null){
+				try{
+					input.close();
+				}catch(IOException ioe){
+					ioe.printStackTrace();
+				}
+			}
+			// Close the iterator (if any):
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){
+					dre.printStackTrace();
+				}
+			}
+		}
+
+		// CASE: A VOTable with no field declared!
+		File notAValidVotableFile = new File("test/tap/data/testdata_no-field.vot");
+		input = null;
+		it = null;
+		try{
+			// Prepare reading it:
+			input = new FileInputStream(notAValidVotableFile);
+
+			// Start the iteration:
+			it = new VOTableIterator(input);
+
+			// Try to read the data:
+			it.getMetadata();
+			fail("An exception was expected because no FIELD is declared in this VOTable!");
+
+		}catch(IOException ioe){
+			ioe.printStackTrace();
+			fail("Another exception was expected here! (see the console for more details)");
+		}catch(DataReadException dre){
+			assertEquals("Unexpected VOTable document: no FIELD can be found!", dre.getMessage());
+		}finally{
+			// Close the input stream (if open):
+			if (input != null){
+				try{
+					input.close();
+				}catch(IOException ioe){
+					ioe.printStackTrace();
+				}
+			}
+			// Close the iterator (if any):
+			if (it != null){
+				try{
+					it.close();
+				}catch(DataReadException dre){
+					dre.printStackTrace();
+				}
 			}
 		}
 	}

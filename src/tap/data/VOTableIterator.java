@@ -16,13 +16,16 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.NoSuchElementException;
 
+import org.xml.sax.SAXParseException;
+
+import adql.db.DBType;
 import tap.TAPException;
 import tap.metadata.TAPColumn;
 import tap.metadata.VotType;
@@ -34,7 +37,6 @@ import uk.ac.starlink.table.StarTableFactory;
 import uk.ac.starlink.table.TableBuilder;
 import uk.ac.starlink.table.TableFormatException;
 import uk.ac.starlink.table.TableSink;
-import adql.db.DBType;
 
 /**
  * <p>{@link TableIterator} which lets iterate over a VOTable input stream using STIL.</p>
@@ -42,7 +44,7 @@ import adql.db.DBType;
  * <p>{@link #getColType()} will return TAP type based on the type declared in the VOTable metadata part.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (07/2015)
+ * @version 2.1 (03/2017)
  * @since 2.0
  */
 public class VOTableIterator implements TableIterator {
@@ -61,10 +63,10 @@ public class VOTableIterator implements TableIterator {
 	 * 	Besides, the metadata returned by StarTable are immediately converted into TAP metadata. If this conversion fails, the error is kept
 	 * 	in metaError, so that the VOTable reading can continue if the fact that metadata are missing is not a problem for the class using the
 	 * 	{@link VOTableIterator}.
-	 * </p> 
+	 * </p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 2.0 (04/2015)
+	 * @version 2.1 (03/2017)
 	 * @since 2.0
 	 */
 	protected static class StreamVOTableSink implements TableSink {
@@ -92,8 +94,52 @@ public class VOTableIterator implements TableIterator {
 		 * 	but no exception should be thrown to VOTableIterator.
 		 * </p>
 		 */
-		public synchronized void stop(){
+		public void stop(){
+			stop(null);
+		}
+
+		/**
+		 * <p>Stop nicely reading the VOTable.</p>
+		 * 
+		 * <p>
+		 * 	An exception will be thrown to the STILTS class using this TableSink,
+		 * 	but no exception should be thrown to VOTableIterator.
+		 * </p>
+		 * 
+		 * @param reason	Reason why this Sink should be stop.
+		 *              	<i>This should be used in case of external grave error that
+		 *              	should be raised when trying to access data through
+		 *              	VOTableIterator.
+		 *              	Example: a wrong VOTable format.</i>
+		 */
+		public synchronized void stop(final Throwable reason){
+			// Prevent further attempt to read the input stream:
 			endReached = true;
+
+			// Set the stop reason (if any):
+			if (reason != null && metaError == null){
+				// Case: Wrong VOTable format:
+				if (reason instanceof TableFormatException){
+					// build the most precise error message as possible:
+					String msg = "The input file is not a valid VOTable document!";
+					if (reason.getCause() != null){
+						if (reason.getCause() instanceof SAXParseException){
+							SAXParseException spe = (SAXParseException)reason.getCause();
+							msg += " Cause: [l." + spe.getLineNumber() + ", c." + spe.getColumnNumber() + "] " + spe.getMessage();
+						}else if (reason.getCause().getMessage() != null)
+							msg += " Cause: " + reason.getCause().getMessage();
+						else
+							msg += " Cause: {" + reason.getCause().getClass().getName() + "}";
+					}
+					// create the exception:
+					metaError = new DataReadException(msg, reason);
+				}
+				// Case: Unknown reason!
+				else if (reason.getMessage() != null && !reason.getMessage().equals(STREAM_ABORTED_MESSAGE))
+					metaError = new DataReadException("Unexpected error while reading the uploaded VOTable!", reason);
+			}
+
+			// Stop waiting (=> the reading is aborted):
 			notifyAll();
 		}
 
@@ -116,7 +162,7 @@ public class VOTableIterator implements TableIterator {
 		@Override
 		public synchronized void acceptRow(final Object[] row) throws IOException{
 			try{
-				// Wait until the last accepted row has been consumed: 
+				// Wait until the last accepted row has been consumed:
 				while(!endReached && pendingRow != null)
 					wait();
 
@@ -188,6 +234,9 @@ public class VOTableIterator implements TableIterator {
 				// If there was an error while interpreting the accepted metadata, throw it:
 				if (metaError != null)
 					throw metaError;
+				// Or if no metadata can be fetched:
+				else if (meta == null || meta.length == 0)
+					throw (metaError = new DataReadException("Unexpected VOTable document: no FIELD can be found!"));
 
 				// Otherwise, just return the metadata:
 				return meta;
@@ -248,7 +297,7 @@ public class VOTableIterator implements TableIterator {
 
 		/**
 		 * Extract an array of {@link TAPColumn} objects. Each corresponds to one of the columns listed in the given table,
-		 * and so corresponds to the metadata of a column. 
+		 * and so corresponds to the metadata of a column.
 		 * 
 		 * @param table		{@link StarTable} which contains only the columns' information.
 		 * 
@@ -359,8 +408,9 @@ public class VOTableIterator implements TableIterator {
 					try{
 						tb.streamStarTable(input, sink, null);
 					}catch(IOException e){
-						if (e.getMessage() != null && !e.getMessage().equals(STREAM_ABORTED_MESSAGE))
-							e.printStackTrace();
+						/* Stop the VOTable sink
+						 *(otherwise it may still waiting for a Thread notification to wake it up): */
+						sink.stop(e);
 					}
 				}
 			};
