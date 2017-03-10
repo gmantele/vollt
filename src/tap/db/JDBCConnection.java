@@ -361,7 +361,7 @@ public class JDBCConnection implements DBConnection {
 		// Set the supporting features' flags + DBMS type:
 		try{
 			DatabaseMetaData dbMeta = connection.getMetaData();
-			dbms = getDBMSName(dbMeta.getURL());
+			dbms = (dbMeta.getDatabaseProductName() != null ? dbMeta.getDatabaseProductName().toLowerCase() : null);
 			supportsTransaction = dbMeta.supportsTransactions();
 			supportsBatchUpdates = dbMeta.supportsBatchUpdates();
 			supportsDataDefinition = dbMeta.supportsDataDefinitionAndDataManipulationTransactions();
@@ -386,7 +386,10 @@ public class JDBCConnection implements DBConnection {
 	 * @return	The DBMS name as found in the given URL.
 	 * 
 	 * @throws DBException	If NULL has been given, if the URL is not a JDBC one (starting with "jdbc:") or if the DBMS name is missing.
+	 *
+	 * @deprecated (since 2.1) Should be replaced by <code>{@link java.sql.DatabaseMetaData#getDatabaseProductName()}.toLowerCase()</code>.
 	 */
+	@Deprecated
 	protected static final String getDBMSName(String dbUrl) throws DBException{
 		if (dbUrl == null)
 			throw new DBException("Missing database URL!");
