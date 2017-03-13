@@ -14,11 +14,12 @@ dependencies {
 
     testCompile 'simple-jndi:simple-jndi:0.11.4.1'
     testCompile 'junit:junit:4.12'
-    testCompile 'org.xerial:sqlite-jdbc:3.16.1'
     testCompile 'com.h2database:h2:1.4.193'
     testCompile 'com.vividsolutions:jts-core:1.14.0'
     testCompile 'org.locationtech.spatial4j:spatial4j:0.6'
     testCompile fileTree(dir: 'lib', include: 'astroh2-0.3.jar')
+
+    testRuntime 'org.xerial:sqlite-jdbc:3.16.1'
 }
 
 compileJava {
