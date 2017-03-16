@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -30,6 +30,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import adql.db.DBColumn;
 import adql.db.FunctionDef;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
@@ -38,6 +39,7 @@ import tap.error.DefaultTAPErrorWriter;
 import tap.formatter.OutputFormat;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
+import tap.metadata.TAPTable;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -53,7 +55,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (08/2016)
+ * @version 2.1 (03/2017)
  */
 public class TAP implements VOSIResource {
 
@@ -489,6 +491,9 @@ public class TAP implements VOSIResource {
 		xml.append("\t\t<accessURL use=\"base\">").append((getAccessURL() == null) ? "" : VOSerializer.formatText(getAccessURL())).append("</accessURL>\n");
 		xml.append("\t</interface>\n");
 
+		// Data models:
+		appendDataModels(xml, "\t");
+
 		// Language description:
 		xml.append("\t<language>\n");
 		xml.append("\t\t<name>ADQL</name>\n");
@@ -621,6 +626,92 @@ public class TAP implements VOSIResource {
 		xml.append("\t</capability>");
 
 		return xml.toString();
+	}
+
+	/**
+	 * List and declare all IVOA Data Models supported by this TAP service.
+	 * 
+	 * <p>Currently, only the following DMs are natively supported:</p>
+	 * <ul>
+	 * 	<li>Obscore (1.0 and PR-1.1)</li>
+	 * </ul>
+	 * 
+	 * <p>
+	 * 	More can be supported by extending this function
+	 * 	(but not overwriting it completely otherwise the above
+	 * 	supported DMs won't be anymore).
+	 * </p>
+	 * 
+	 * <p>A DM declaration should follow this XML syntax:</p>
+	 * <pre>&lt;dataModel ivo-id="{DM-IVO_ID}"&gt;{DM-NAME}&lt;/dataModel&gt;</pre>
+	 * 
+	 * @param xml			The <code>/capabilities</code> in-progress content in which
+	 *           			implemented DMs can be declared.
+	 * @param linePrefix	Tabulations/Spaces that should prefix all lines
+	 *                  	(for human readability).
+	 * 
+	 * @since 2.1
+	 */
+	protected void appendDataModels(final StringBuffer xml, final String linePrefix){
+		appendObsCoreDM(xml, linePrefix);
+	}
+
+	/**
+	 * <p>Append the ObsCore DM declaration in the given {@link StringBuffer}
+	 * if an <code>ivoa.Obscore</code> table can be found in <code>TAP_SCHEMA</code>.</p>
+	 * 
+	 * <p>
+	 * 	This function has no effect if <code>ivoa.Obscore</code> can not
+	 * 	be found. The <code>ivoa</code> schema is searched case sensitively,
+	 * 	but not the table name <code>Obscore</code> which can be written
+	 * 	in any possible case.
+	 * </p>
+	 * 
+	 * <p>
+	 * 	If an <code>ivoa.Obscore</code> table is found, this function
+	 * 	detects automatically which version of Obscore is implemented.
+	 * 	It will be declared as Obscore 1.1 if ALL the following columns
+	 * 	are found (case INsensitively): <code>s_xel1</code>, <code>x_xel2</code>,
+	 * 	<code>t_xel</code>, <code>em_xel</code> and <code>pol_xel</code>.
+	 * 	If not, the Obscore table will be declared as Obscore 1.0.
+	 * </p>
+	 * 
+	 * @param xml	The <code>/capabilities</code> in-progress content in which
+	 *           	Obscore-DM should be declared if found.
+	 * @param linePrefix	Tabulations/Spaces that should prefix all lines
+	 *                  	(for human readability).
+	 * 
+	 * @see TAPMetadata#getObsCoreTable()
+	 * 
+	 * @since 2.1
+	 */
+	protected void appendObsCoreDM(final StringBuffer xml, final String linePrefix){
+		// Try to get the ObsCore table definition:
+		TAPTable obscore = service.getTAPMetadata().getObsCoreTable();
+
+		// If there is one, determine the supported DM version and declare it:
+		if (obscore != null){
+			/* ObsCore 1.1 MUST have s_xel1, s_xel2, t_xel, em_xel and pol_xel
+			 * These columns do not exist in ObsCore 1.0. */
+			byte hasAllXel = 0x0;
+			for(DBColumn col : obscore){
+				if (col.getADQLName().equalsIgnoreCase("s_xel1"))
+					hasAllXel |= 1;  // 2^0 = 0000 0001
+				else if (col.getADQLName().equalsIgnoreCase("s_xel2"))
+					hasAllXel |= 2;  // 2^1 = 0000 0010
+				else if (col.getADQLName().equalsIgnoreCase("t_xel"))
+					hasAllXel |= 4;  // 2^2 = 0000 0100
+				else if (col.getADQLName().equalsIgnoreCase("em_xel"))
+					hasAllXel |= 8;  // 2^3 = 0000 1000
+				else if (col.getADQLName().equalsIgnoreCase("pol_xel"))
+					hasAllXel |= 16; // 2^4 = 0001 0000
+			}
+			// Finally add the appropriate DM declaration:
+			if (hasAllXel == 31) // 2^5 - 1 =  0001 1111
+				xml.append(linePrefix + "<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore#core-1.1\">ObsCore-1.1</dataModel>\n");
+			else
+				xml.append(linePrefix + "<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore/v1.0\">ObsCore-1.0</dataModel>\n");
+		}
 	}
 
 	/* ************************************* */
