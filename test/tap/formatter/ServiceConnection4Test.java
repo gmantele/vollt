@@ -3,15 +3,26 @@ package tap.formatter;
 import java.util.Collection;
 import java.util.Iterator;
 
+import adql.db.FunctionDef;
 import tap.ServiceConnection;
 import tap.TAPFactory;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
 import uws.service.file.UWSFileManager;
-import adql.db.FunctionDef;
 
 public class ServiceConnection4Test implements ServiceConnection {
+
+	private TAPMetadata metadata = null;
+	private TAPFactory factory = null;
+	private UWSFileManager fileManager = null;
+
+	public ServiceConnection4Test(){}
+
+	public ServiceConnection4Test(final TAPMetadata metadata, final UWSFileManager fileManager){
+		this.metadata = metadata;
+		this.fileManager = fileManager;
+	}
 
 	@Override
 	public int[] getOutputLimit(){
@@ -80,7 +91,7 @@ public class ServiceConnection4Test implements ServiceConnection {
 
 	@Override
 	public TAPMetadata getTAPMetadata(){
-		return null;
+		return metadata;
 	}
 
 	@Override
@@ -105,12 +116,16 @@ public class ServiceConnection4Test implements ServiceConnection {
 
 	@Override
 	public TAPFactory getFactory(){
-		return null;
+		return factory;
+	}
+
+	public void setFactory(TAPFactory factory){
+		this.factory = factory;
 	}
 
 	@Override
 	public UWSFileManager getFileManager(){
-		return null;
+		return fileManager;
 	}
 
 	@Override

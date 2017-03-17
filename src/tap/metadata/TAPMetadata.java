@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -64,7 +64,7 @@ import uws.UWSToolBox;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2016)
+ * @version 2.1 (03/2017)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -384,6 +384,32 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 			if (s.hasTable(tableName))
 				tables.add(s.getTable(tableName));
 		return tables;
+	}
+
+	/**
+	 * Get the description of the ObsCore table, if it is defined.
+	 * 
+	 * <p>
+	 * 	This function is case sensitive only on the schema name
+	 * 	(i.e. <code>ivoa</code>) which must be defined in full lower case.
+	 * 	The table name (i.e. <code>ObsCore</code>) will be found whatever
+	 * 	the case it is written in.
+	 * </p>
+	 * 
+	 * @return	Description of the ObsCore table,
+	 *        	or <code>NULL</code> if this table is not provided by this TAP service.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPTable getObsCoreTable(){
+		TAPSchema ivoaSchema = getSchema("ivoa");
+		if (ivoaSchema != null){
+			for(TAPTable t : ivoaSchema){
+				if (t.getADQLName().equalsIgnoreCase("obscore"))
+					return t;
+			}
+		}
+		return null;
 	}
 
 	/**
