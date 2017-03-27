@@ -1202,7 +1202,7 @@ ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn col
 
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right; } {
 	try{
-		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
+		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>|<LOGIC_AND>|<LOGIC_OR>))) valueExpr=NumericExpression()
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
