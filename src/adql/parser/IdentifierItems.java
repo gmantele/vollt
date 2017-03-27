@@ -17,6 +17,7 @@ package adql.parser;
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * 
  */
 
 import adql.query.IdentifierField;
@@ -42,7 +43,8 @@ import adql.query.TextPosition;
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 01/2012
  * 
- * see IdentifierItem
+ * TODO:  needs merge (Updated by G.Landais for VizieR)
+ *              - add "token" attribute use in the grammar 
  */
 public class IdentifierItems {
 
@@ -56,11 +58,13 @@ public class IdentifierItems {
 		public String identifier = null;
 		public boolean caseSensitivity = false;
 		public TextPosition position = null;
+		public Token token;
 
 		public IdentifierItem(final Token token, final boolean caseSensitive){
 			identifier = token.image;
 			caseSensitivity = caseSensitive;
 			position = new TextPosition(token);
+			this.token = token;
 		}
 
 		@Override

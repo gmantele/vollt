@@ -40,6 +40,8 @@ import adql.query.TextPosition;
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.1 (07/2016)
+ * 
+ * TODO:  needs merge (Updated by G.Landais for VizieR)
  */
 public class ADQLTable implements ADQLObject, FromContent {
 
@@ -286,7 +288,18 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * @param tableRef	The complete table reference ({catalog}.{schema}.{table}).
 	 */
 	public final void setTable(String tableRef){
-		String[] parts = (tableRef == null) ? null : tableRef.split("\\.");
+		 ////BEGIN - G.Landais needs merge
+		//String[] parts = (tableRef == null) ? null : tableRef.split("\\.");
+	        String[] parts = null;
+	        if (tableRef.charAt(0)=='"' || tableRef.charAt(0)=='\''){
+	            parts = new String[1];
+	            parts[0] =  tableRef;
+	        }
+	        else {
+	            parts = (tableRef == null)?null:tableRef.split("\\.");
+	        }
+	    ////- END
+
 		if (parts != null && parts.length > 3)
 			return;
 		else{

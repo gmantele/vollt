@@ -14,26 +14,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
- *
- *  TODO:  needs merge (Updated by G.Landais for VizieR)
  */
 
 /*
 *  This JavaCC file implements the BNF definition of ADQL v2.0 (IVOA Recommendation 30 Oct 2008 - http://www.ivoa.net/Documents/cover/ADQL-20081030.html).
-*  To generate the parser with this file use JavaCC. This .jj file has been successfully tested with JavaCC 5.0.
+*  To generate the parser with this file use JavaCC. This .jj file has been successfully tested with JavaCC 6.0.
 *  
 *  The generated parser checks the syntax of the given ADQL query and generates an object representation but no coherence with any database is done.
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (09/2016)
-*
-*  TODO:  needs merge (Updated by G.Landais for VizieR)
-*               - TRIM function
-*               - BINARY operator
-*               - names with quotes
+*  Version: 1.4 (03/2017)
 */
 
 							/* ########### */
@@ -76,8 +69,6 @@ import adql.query.operand.function.*;
 
 import adql.query.operand.function.geometry.*;
 import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
- /*****TODO G.Landais - TRIM function *********/
-import adql.query.operand.function.ADQLTrimFunction;
 
 import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
@@ -98,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (09/2016)
+* @version 1.4 (03/2017)
 */
 public class ADQLParser {
 	
@@ -528,15 +519,6 @@ TOKEN : {
 |	< DIVIDE: "/" >
 }
 
- /*****TODO G.Landais - *********/
-/* ************************************************* */
-/* Logic operators (added by G.Landais : 21/05/2013) */
-/* ************************************************* */
-TOKEN : {
-    < LOGIC_AND: "&" >
-|   < LOGIC_OR: "|" >
-}
-
 /* ******************** */
 /* Comparison operators */
 /* ******************** */
@@ -668,14 +650,6 @@ TOKEN : {
 |	< TAN: "TAN" >
 }
 
- /*****TODO G.Landais  *********/
-/* ************************* */
-/* String functions          */
-/* ************************* */
-TOKEN : {
-   < TRIM: "TRIM" >
-}
-
 /* ******* */
 /* Comment */
 /* ******* */
@@ -698,18 +672,6 @@ SKIP : { < <MINUS><MINUS> (~["\n","\r"])* ("\n"|"\r"|"\r\n")? > }
 TOKEN : {
 	< REGULAR_IDENTIFIER: (<Letter>)+ (<DIGIT> | <Letter> | "_")* >
 |	< #Letter: ["a"-"z","A"-"Z"] >
-}
-
- /*****TODO G.Landais - col,tablewith ".", etc. *********/
-/* Added By G.Landais (10/12/2012) */
-TOKEN : {
-    < UNDERSCORE_IDENTIFIER:  ("_") (<DIGIT> | <SpecialLetter> | "_")* (<SpecialLetter>)+ (<DIGIT> | <SpecialLetter> | "_")* >
-|   <  #SpecialLetter: ["a"-"z","A"-"Z",")","(","[","]"] >
-}
-/*    < NUMERIC_IDENTIFIER:  (<DIGIT>)+ (<SpecialLetter> | "_")+ (<DIGIT> | <SpecialLetter> | "_")* >*/
-TOKEN : {
-    < NUMERIC_IDENTIFIER:  (<DIGIT>)+ (<SpecialLetter2> | "_")* (<Letter>)+ (<DIGIT> | <SpecialLetter> | "_")* >
-|   <  #SpecialLetter2: [")","(","[","]"] >
 }
 
 /* *************** */
@@ -902,36 +864,16 @@ void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder o
 /* *************************** */
 /* COLUMN AND TABLE REFERENCES */
 /* *************************** */
- /*****TODO G.Landais - table, columns with "." etc.  *********/
 IdentifierItem Identifier(): {Token t;} {
-    (
-        t=<REGULAR_IDENTIFIER>
-        {
-          /*IdentifierItem identre = new IdentifierItem(t, false);
-          if (t.image.indexOf('(') > -1 ||
-              t.image.indexOf(')') > -1 ||
-              t.image.indexOf('[') > -1 ||
-              t.image.indexOf(']') > -1 ) throw new ParseException("try quoting "+t.image+" "+identre.position);
-          return identre;*/
-          return  new IdentifierItem(t, false);
-        }
-    |
-        /* added by G.Landais (10/12/2012) */
-        t = <UNDERSCORE_IDENTIFIER >
-        { IdentifierItem ident = new IdentifierItem(t, true);
-          throw new ParseException("try quoting "+t.image+"... "+ident.position);
-        }
-    |
-        t=<DELIMITED_IDENTIFIER>
-        { return new IdentifierItem(t, true); }
-    |
-        /* added by G.Landais (10/12/2012) */
-        t = <NUMERIC_IDENTIFIER >
-        { IdentifierItem ident2 = new IdentifierItem(t, true);
-          throw new ParseException("try quoting "+t.image+"... "+ident2.position);
-        }
-    )
+	(
+		t=<REGULAR_IDENTIFIER>
+		{ return new IdentifierItem(t, false); }
+	|
+		t=<DELIMITED_IDENTIFIER>
+		{ return new IdentifierItem(t, true); }
+	)
 }
+
 /**
  * Extracts the name of a table with its possible catalog and schema prefixes.
  * 
@@ -951,28 +893,16 @@ IdentifierItems TableName(): {IdentifierItems identifiers=new IdentifierItems(tr
  * 
  * @return A {@link IdentifierItems} which contains at most four items: catalogName, schemaName, tableName and columnName.
  */
- /*****TODO G.Landais - column name with point... *********/
 IdentifierItems ColumnName(): {IdentifierItem id; IdentifierItems table=null, identifiers=new IdentifierItems(false);} {
-    ( id=Identifier() (<DOT> table=TableName())?)
-    {
-        
-        identifiers.append(id);
-        if (table != null){
-            for(int i=0; i<table.size(); i++)
-                identifiers.append(table.get(i));
-            return identifiers;
-        }
-        /* added by G.Landais (10/12/2012) 
-           if next token begin by "." then the next token is a column */
-        if (id.token == null) return identifiers;
-        if (id.token.next !=null)
-        {
-           if (id.token.next.image == null || id.token.next.image.length() == 0)  return identifiers;
-           if (id.token.next.image.charAt(0)=='.')
-                  throw new ParseException("Try quoting after "+id.toString()+" "+id.position);
-        }
-        return identifiers;
-      }
+	( id=Identifier() (LOOKAHEAD(1) <DOT> table=TableName())? )
+	{
+		identifiers.append(id);
+		if (table != null){
+			for(int i=0; i<table.size(); i++)
+				identifiers.append(table.get(i));
+		}
+		return identifiers;
+	}
 }
 
 ADQLColumn Column(): {IdentifierItems identifiers;} {
@@ -1233,9 +1163,8 @@ ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=n
 	}
 }
 
-/*****TODO G.Landais update AND/OR *********/
 ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
-    (leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE> | sign=<LOGIC_AND> | sign=<LOGIC_OR>) rightOp=NumericTerm())?)
+	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=NumericTerm())?)
 	{
 	if (sign == null)
 		return leftOp;
@@ -1276,14 +1205,7 @@ ADQLOperand Factor(): {boolean negative = false; Token minusSign = null; ADQLOpe
 	}
 }
 
-/*****TODO G.Landais updateTRIM function *********/
 ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;} {
-    ( <TRIM> <LEFT_PAR> rightOp=StringFactor() <RIGHT_PAR> )
-        { try{
-            return new ADQLTrimFunction(rightOp);
-          } catch(Exception ex){ throw generateParseException(ex); }}
-    
-    |
 	leftOp=StringFactor()
 	(
 		<CONCAT>

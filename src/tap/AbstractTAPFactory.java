@@ -56,6 +56,9 @@ import adql.query.ADQLQuery;
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.1 (01/2016)
+ * 
+ * TODO:  needs merge (Updated by G.Landais for VizieR)
+ *     - createQueryChecker is not final!
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
@@ -146,8 +149,9 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	This function can not be overridded, but {@link #createQueryChecker(Collection)} can be.
 	 * </i></p>
 	 */
+	//TOGO G.L.
 	@Override
-	public final QueryChecker createQueryChecker(final TAPSchema uploadSchema) throws TAPException{
+	public QueryChecker createQueryChecker(final TAPSchema uploadSchema) throws TAPException{
 		// Get all tables published in this TAP service:
 		TAPMetadata meta = service.getTAPMetadata();
 

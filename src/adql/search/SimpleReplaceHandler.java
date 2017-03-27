@@ -38,6 +38,9 @@ import adql.query.ADQLObject;
  * @version 1.4 (05/2016)
  * 
  * @see RemoveHandler
+ * 
+ * TODO: needs merge (Updated by G.Landais for VizieR)
+ *             - temporary update (G.Mantelet) because infinite Loop 
  */
 public abstract class SimpleReplaceHandler extends SimpleSearchHandler implements IReplaceHandler {
 
@@ -153,7 +156,7 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 				obj = addMatchAndReplace(obj, it);
 
 			// Continue the research inside the current object (or the new object if a replacement has been performed):
-			if (obj != null && goInto(obj)){
+			else if (obj != null && goInto(obj)){
 				stackIt.push(it);
 				it = obj.adqlIterator();
 			}

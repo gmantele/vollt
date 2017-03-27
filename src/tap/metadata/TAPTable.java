@@ -53,6 +53,9 @@ import tap.TAPException;
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.1 (07/2016)
+ * 
+ * TODO:  needs merge (Updated by G.Landais for VizieR)
+ *              - error with some quoted names
  */
 public class TAPTable implements DBTable {
 
@@ -304,8 +307,9 @@ public class TAPTable implements DBTable {
 			if (schema != null && tmp.startsWith(schema.getRawName() + "."))
 				tmp = tmp.substring((schema.getRawName() + ".").length()).trim();
 			// Remove the surrounding double-quotes if any:
+			/*****TODO: G.Landais - this code doesn't work!.... 
 			if (tmp.matches("\"[^\"]*\""))
-				tmp = tmp.substring(1, tmp.length() - 1);
+				tmp = tmp.substring(1, tmp.length() - 1);*/
 			// Finally, return the result:
 			return tmp;
 		}else

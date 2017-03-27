@@ -98,6 +98,9 @@ import adql.search.SimpleSearchHandler;
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 1.4 (03/2017)
+ * 
+ * TODO:  needs merge (Updated by G.Landais for VizieR)
+ *              - resolveTables (set dbname)
  */
 public class DBChecker implements QueryChecker {
 
@@ -498,7 +501,7 @@ public class DBChecker implements QueryChecker {
 	 * 
 	 * @return	An associative map of all the resolved tables.
 	 */
-	protected Map<DBTable,ADQLTable> resolveTables(final ADQLQuery query, final Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors){
+	public Map<DBTable,ADQLTable> resolveTables(final ADQLQuery query, final Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors){
 		HashMap<DBTable,ADQLTable> mapTables = new HashMap<DBTable,ADQLTable>();
 		ISearchHandler sHandler;
 
@@ -519,7 +522,7 @@ public class DBChecker implements QueryChecker {
 				}else{
 					dbTable = resolveTable(table);
 					if (table.hasAlias())
-						dbTable = dbTable.copy(null, table.getAlias());
+						dbTable = dbTable.copy(dbTable.getDBName(), table.getAlias());
 				}
 
 				// link with the matched DBTable:
