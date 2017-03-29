@@ -252,7 +252,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 			}
 		}
 		// DEFAULT CASE:
-		else
+		else if (join.getJoinCondition() != null)
 			sql.append(translate(join.getJoinCondition()));
 
 		return sql.toString();
