@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -83,7 +83,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <p>To customize the object representation you merely have to extends the appropriate functions of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2015)
+ * @version 1.4 (04/2017)
  * 
  * @see ADQLParser
  */
@@ -430,10 +430,6 @@ public class ADQLQueryFactory {
 		return colRef;
 	}
 
-	/**
-	 * @deprecated since 1.4 ; Former version's mistake: a GROUP BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createColRef(adql.parser.IdentifierItems.IdentifierItem)} ; This function is no longer used by ADQLParser.
-	 */
-	@Deprecated
 	public ColumnReference createColRef(final IdentifierItems idItems) throws Exception{
 		ColumnReference colRef = new ColumnReference(idItems.join("."));
 		if (colRef != null){
