@@ -366,7 +366,7 @@ public class TestSTCS {
 			fail();
 		}catch(Exception e){
 			assertTrue(e instanceof ParseException);
-			assertEquals("Incorrect syntax: \"HOME\" was unexpected! Expected syntax: \"[(ECLIPTIC|FK4|FK5|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used.", e.getMessage());
+			assertEquals("Incorrect syntax: \"HOME\" was unexpected! Expected syntax: \"[(ECLIPTIC|FK4|FK5|J2000|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used.", e.getMessage());
 		}
 
 		// With wrong reference position:
@@ -375,7 +375,7 @@ public class TestSTCS {
 			fail();
 		}catch(Exception e){
 			assertTrue(e instanceof ParseException);
-			assertEquals("Incorrect syntax: \"HOME SPHERICAL2\" was unexpected! Expected syntax: \"[(ECLIPTIC|FK4|FK5|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used.", e.getMessage());
+			assertEquals("Incorrect syntax: \"HOME SPHERICAL2\" was unexpected! Expected syntax: \"[(ECLIPTIC|FK4|FK5|J2000|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used.", e.getMessage());
 		}
 
 		// With a cartesian flavor:
@@ -414,7 +414,7 @@ public class TestSTCS {
 			fail();
 		}catch(Exception e){
 			assertTrue(e instanceof ParseException);
-			assertEquals("Incorrect syntax: \"icrsGeocentercarteSIAN2\" was unexpected! Expected syntax: \"[(ECLIPTIC|FK4|FK5|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used.", e.getMessage());
+			assertEquals("Incorrect syntax: \"icrsGeocentercarteSIAN2\" was unexpected! Expected syntax: \"[(ECLIPTIC|FK4|FK5|J2000|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used.", e.getMessage());
 		}
 	}
 
@@ -518,7 +518,7 @@ public class TestSTCS {
 			fail();
 		}catch(Exception ex){
 			assertTrue(ex instanceof ParseException);
-			assertTrue(ex.getMessage().startsWith("Incorrect syntax: a coordinates pair (2 numerics separated by one or more spaces) was expected! Expected syntax: \"CIRCLE <coordSys> <coordPair> <radius>\", where coordPair=\"<numeric> <numeric>\", radius=\"<numeric>\" and coordSys=\"[(ECLIPTIC|FK4|FK5|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used."));
+			assertTrue(ex.getMessage().startsWith("Incorrect syntax: a coordinates pair (2 numerics separated by one or more spaces) was expected! Expected syntax: \"CIRCLE <coordSys> <coordPair> <radius>\", where coordPair=\"<numeric> <numeric>\", radius=\"<numeric>\" and coordSys=\"[(ECLIPTIC|FK4|FK5|J2000|GALACTIC|ICRS|UNKNOWNFRAME)] [(BARYCENTER|GEOCENTER|HELIOCENTER|LSR|TOPOCENTER|RELOCATABLE|UNKNOWNREFPOS)] [(CARTESIAN2|CARTESIAN3|SPHERICAL2)]\" ; an empty string is also allowed and will be interpreted as the coordinate system locally used."));
 		}
 
 		// TEST WITH EITHER A WRONG NUMERIC (L in lower case instead of 1) OR A MISSING OPENING PARENTHESIS:

@@ -26,7 +26,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (03/2017)
+*  Version: 1.4 (04/2017)
 */
 
 							/* ########### */
@@ -89,7 +89,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (03/2017)
+* @version 1.4 (04/2017)
 */
 public class ADQLParser {
 	
@@ -916,11 +916,11 @@ ADQLColumn Column(): {IdentifierItems identifiers;} {
 	}
 }
 
-ColumnReference ColumnRef(): {IdentifierItem identifier = null;}{
-	identifier=Identifier()
+ColumnReference ColumnRef(): {IdentifierItems identifiers = null;}{
+	identifiers=ColumnName()
 	{
 		try{
-			return queryFactory.createColRef(identifier);
+			return queryFactory.createColRef(identifiers);
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}

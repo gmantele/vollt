@@ -257,6 +257,15 @@ public class TestFunctionDef {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
 		}
+		try{
+			FunctionDef fct = FunctionDef.parse("INTERSECTION(region1 region, region2 region) -> region");
+			assertEquals(DBType.DBDatatype.REGION, fct.getParam(0).type.type);
+			assertEquals(DBType.DBDatatype.REGION, fct.getParam(1).type.type);
+			assertEquals(DBType.DBDatatype.REGION, fct.returnType.type);
+		}catch(Exception ex){
+			ex.printStackTrace(System.err);
+			fail("Impossible to parse this REGION based FunctionDef! (see console for more details)");
+		}
 	}
 
 	@Test

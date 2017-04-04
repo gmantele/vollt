@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -78,7 +78,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.3 (12/2014)
+ * @version 1.4 (04/2017)
  * @since 1.3
  */
 public final class STCS {
@@ -143,11 +143,11 @@ public final class STCS {
 	 * </i></p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.3 (10/2014)
+	 * @version 1.4 (04/2017)
 	 * @since 1.3
 	 */
 	public static enum Frame{
-		ECLIPTIC, FK4, FK5, GALACTIC, ICRS, UNKNOWNFRAME;
+		ECLIPTIC, FK4, FK5, J2000, GALACTIC, ICRS, UNKNOWNFRAME;
 
 		/** Default value for a frame: {@link #UNKNOWNFRAME}. */
 		public static final Frame DEFAULT = UNKNOWNFRAME;
@@ -1329,7 +1329,7 @@ public final class STCS {
 		 * @param expectedSyntax	Description of the good syntax expected. This description is used only to write the
 		 *                      	{@link ParseException} in case other non-space characters are found among the remaining characters.
 		 * 
-		 * @throws ParseException	If other non-space characters remains. 
+		 * @throws ParseException	If other non-space characters remains.
 		 */
 		private void end(final String expectedSyntax) throws ParseException{
 			// Skip all spaces:
@@ -1346,7 +1346,7 @@ public final class STCS {
 		}
 
 		/**
-		 * Tool function which skip all next space characters until the next meaningful characters. 
+		 * Tool function which skip all next space characters until the next meaningful characters.
 		 */
 		private void skipSpaces(){
 			while(pos < stcs.length() && Character.isWhitespace(stcs.charAt(pos)))
