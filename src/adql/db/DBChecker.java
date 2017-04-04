@@ -97,7 +97,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (03/2017)
+ * @version 1.4 (04/2017)
  */
 public class DBChecker implements QueryChecker {
 
@@ -632,7 +632,7 @@ public class DBChecker implements QueryChecker {
 
 		// Check the correctness of all column references (= references to selected columns):
 		/* Note: no need to provide the father tables when resolving column references,
-		 *       because no father column can be used in ORDER BY and/or GROUP BY. */
+		 *       because no father column can be used in ORDER BY. */
 		sHandler = new SearchColReferenceHandler();
 		sHandler.search(query);
 		ClauseSelect select = query.getSelect();

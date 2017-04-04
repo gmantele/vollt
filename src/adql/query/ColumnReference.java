@@ -24,7 +24,7 @@ import adql.query.from.ADQLTable;
 import adql.query.operand.ADQLColumn;
 
 /**
- * Represents a reference to a selected column either by an index or by a name/alias.
+ * Represents a reference to a selected column either by an index or by a non-qualified column name/alias.
  * 
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 01/2012
@@ -94,6 +94,7 @@ public class ColumnReference implements ADQLObject {
 	 * 
 	 * @return	The position of this {@link ColumnReference}.
 	 */
+	@Override
 	public final TextPosition getPosition(){
 		return position;
 	}
@@ -235,18 +236,22 @@ public class ColumnReference implements ADQLObject {
 		this.adqlTable = adqlTable;
 	}
 
+	@Override
 	public ADQLObject getCopy() throws Exception{
 		return new ColumnReference(this);
 	}
 
+	@Override
 	public String getName(){
 		return isIndex() ? (columnIndex + "") : columnName;
 	}
 
+	@Override
 	public final ADQLIterator adqlIterator(){
 		return new NullADQLIterator();
 	}
 
+	@Override
 	public String toADQL(){
 		return isIndex() ? ("" + columnIndex) : (isCaseSensitive() ? ("\"" + columnName + "\"") : columnName);
 	}

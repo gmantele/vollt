@@ -97,6 +97,22 @@ public class TestDBChecker {
 	}
 
 	@Test
+	public void testGroupByWithQualifiedColName(){
+		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
+		try{
+			// Not qualified column name:
+			parser.parseQuery("SELECT colI, COUNT(*) AS cnt FROM foo GROUP BY colI");
+			// Qualified with the table name:
+			parser.parseQuery("SELECT foo.colI, COUNT(*) AS cnt FROM foo GROUP BY foo.colI");
+			// Qualified with the table alias:
+			parser.parseQuery("SELECT f.colI, COUNT(*) AS cnt FROM foo AS f GROUP BY f.colI");
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail();
+		}
+	}
+
+	@Test
 	public void testQualifiedName(){
 		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 		try{
