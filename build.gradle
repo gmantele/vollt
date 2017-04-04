@@ -11,6 +11,7 @@ dependencies {
     compile fileTree(dir: 'lib', includes: ['stil_3.1.jar','cos-1.5beta.jar'])
     compile 'javax.servlet:javax.servlet-api:3.0.1'
     compile 'postgresql:postgresql:9.1-901.jdbc4'
+    compile 'org.json:json:20160810'
 
     testCompile 'junit:junit:4.12'
     testCompile 'com.h2database:h2:1.4.193'
