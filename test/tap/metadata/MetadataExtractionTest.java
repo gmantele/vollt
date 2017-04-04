@@ -70,7 +70,7 @@ public class MetadataExtractionTest {
 			resultat = statement.executeQuery(requet);
 		}catch(SQLException e){
 			e.printStackTrace();
-			System.out.println("Erreur dans la requête: " + requet);
+			System.out.println("Error in the request: " + requet);
 		}
 		return resultat;
 
