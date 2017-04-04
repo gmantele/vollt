@@ -282,7 +282,7 @@ public class TestFunctionDef {
 		// TEST :: With a function having the same name, but a different return type: [EQUAL}
 		assertEquals(0, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER))));
 
-		// TEST :: With a function having the same name, but 2 parameters: [LESS (4 characters: 0 against 1010)]
+		// TEST :: With a function having the same name, but 2 parameters: [LESS (6 characters: ø against 100100)]
 		assertEquals(-6, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.INTEGER)),new FunctionParam("foo", new DBType(DBDatatype.INTEGER))})));
 
 		// DEFINITION 1 :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
