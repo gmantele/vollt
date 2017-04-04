@@ -12,13 +12,13 @@ dependencies {
     compile 'javax.servlet:javax.servlet-api:3.0.1'
     compile 'postgresql:postgresql:9.1-901.jdbc4'
 
-    testCompile 'simple-jndi:simple-jndi:0.11.4.1'
     testCompile 'junit:junit:4.12'
     testCompile 'com.h2database:h2:1.4.193'
-    testCompile 'com.vividsolutions:jts-core:1.14.0'
-    testCompile 'org.locationtech.spatial4j:spatial4j:0.6'
     testCompile fileTree(dir: 'lib', include: 'astroh2-0.3.jar')
-
+    
+    testRuntime 'simple-jndi:simple-jndi:0.11.4.1'
+    testRuntime 'com.vividsolutions:jts-core:1.14.0'
+    testRuntime 'org.locationtech.spatial4j:spatial4j:0.6'
     testRuntime 'org.xerial:sqlite-jdbc:3.16.1'
 }
 
