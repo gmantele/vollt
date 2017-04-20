@@ -106,6 +106,8 @@ public class TestDBChecker {
 			parser.parseQuery("SELECT foo.colI, COUNT(*) AS cnt FROM foo GROUP BY foo.colI");
 			// Qualified with the table alias:
 			parser.parseQuery("SELECT f.colI, COUNT(*) AS cnt FROM foo AS f GROUP BY f.colI");
+			// With the SELECT item alias:
+			parser.parseQuery("SELECT colI AS mycol, COUNT(*) AS cnt FROM foo GROUP BY mycol");
 		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail();
@@ -156,9 +158,15 @@ public class TestDBChecker {
 	public void testColRefWithDottedAlias(){
 		ADQLParser parser = new ADQLParser(new DBChecker(tables));
 		try{
+			// ORDER BY
 			ADQLQuery adql = parser.parseQuery("SELECT colI AS \"col.I\" FROM aschema.foo ORDER BY \"col.I\"");
 			assertNotNull(adql);
 			assertEquals("SELECT \"aschema\".\"foo\".\"colI\" AS \"col.I\"\nFROM \"aschema\".\"foo\"\nORDER BY \"col.I\" ASC", (new PostgreSQLTranslator()).translate(adql));
+
+			// GROUP BY
+			adql = parser.parseQuery("SELECT colI AS \"col.I\" FROM aschema.foo GROUP BY \"col.I\"");
+			assertNotNull(adql);
+			assertEquals("SELECT \"aschema\".\"foo\".\"colI\" AS \"col.I\"\nFROM \"aschema\".\"foo\"\nGROUP BY \"col.I\"", (new PostgreSQLTranslator()).translate(adql));
 		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail();
