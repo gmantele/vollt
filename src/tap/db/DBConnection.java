@@ -45,7 +45,7 @@ import tap.metadata.TAPTable;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (03/2017)
+ * @version 2.1 (04/2017)
  */
 public interface DBConnection {
 
@@ -172,11 +172,12 @@ public interface DBConnection {
 	 * 
 	 * @param metadata			List of all schemas, tables, columns and foreign keys to insert in the TAP_SCHEMA.
 	 * 
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing.
 	 * @throws DBException			If any error occurs while updating the database.
 	 * 
 	 * @since 2.0
 	 */
-	public void setTAPSchema(final TAPMetadata metadata) throws DBException;
+	public void setTAPSchema(final TAPMetadata metadata) throws DBCancelledException, DBException;
 
 	/**
 	 * Add the defined and given table inside the TAP_UPLOAD schema.
@@ -192,12 +193,13 @@ public interface DBConnection {
 	 * 
 	 * @return			<i>true</i> if the given table has been successfully added, <i>false</i> otherwise.
 	 * 
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing.
 	 * @throws DBException			If any error occurs while adding the table.
 	 * @throws DataReadException	If any error occurs while reading the given data (particularly if any limit - in byte or row - set in the TableIterator is reached).
 	 * 
 	 * @since 2.0
 	 */
-	public boolean addUploadedTable(final TAPTable tableDef, final TableIterator data) throws DBException, DataReadException;
+	public boolean addUploadedTable(final TAPTable tableDef, final TableIterator data) throws DBCancelledException, DBException, DataReadException;
 
 	/**
 	 * <p>Drop the specified uploaded table from the database.
@@ -237,16 +239,17 @@ public interface DBConnection {
 	 * 
 	 * @param adqlQuery	ADQL query to execute.
 	 * 
-	 * @return	The table result or NULL if the query has been aborted.
+	 * @return	The table result.
 	 * 
-	 * @throws DBException	If any errors occurs while executing the query.
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called (i.e. query aborted) during the processing.
+	 * @throws DBException			If any errors occurs while executing the query.
 	 * 
 	 * @since 2.0
 	 * 
 	 * @see #endQuery()
 	 * @see TableIterator#close()
 	 */
-	public TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException;
+	public TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBCancelledException, DBException;
 
 	/**
 	 * <p>Set the number of rows to fetch before searching/getting the following.
