@@ -743,9 +743,14 @@ public class JDBCConnection implements DBConnection {
 			if (ex instanceof DBCancelledException)
 				throw (DBCancelledException)ex;
 			// Otherwise propagate the exception with an appropriate error message:
-			else if (ex instanceof SQLException)
-				throw new DBException("Unexpected error while executing a SQL query: " + ex.getMessage(), ex);
-			else if (ex instanceof TranslationException)
+			else if (ex instanceof SQLException){
+				/* ...except if the query has been aborted:
+				 * then, it is normal to receive an SQLException: */
+				if (isCancelled())
+					throw new DBCancelledException();
+				else
+					throw new DBException("Unexpected error while executing a SQL query: " + ex.getMessage(), ex);
+			}else if (ex instanceof TranslationException)
 				throw new DBException("Unexpected error while translating ADQL into SQL: " + ex.getMessage(), ex);
 			else if (ex instanceof DataReadException)
 				throw new DBException("Impossible to read the query result, because: " + ex.getMessage(), ex);
