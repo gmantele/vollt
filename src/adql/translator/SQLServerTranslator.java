@@ -35,13 +35,11 @@ import adql.db.exception.UnresolvedJoinException;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.parser.SQLServer_ADQLQueryFactory;
-import adql.query.ADQLList;
-import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
-import adql.query.constraint.ConstraintsGroup;
 import adql.query.IdentifierField;
 import adql.query.from.ADQLJoin;
+import adql.query.from.ADQLTable;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
@@ -221,7 +219,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 				SearchColumnList rightList = join.getRightTable().getDBColumns();
 				for(DBColumn leftCol : leftList){
 					// search for at most one column with the same name in the RIGHT list
-					// and throw an exception is there are several matches:
+					// and throw an exception if there are several matches:
 					rightCol = ADQLJoin.findAtMostOneColumn(leftCol.getADQLName(), (byte)0, rightList, false);
 					// if there is one...
 					if (rightCol != null){
@@ -231,14 +229,31 @@ public class SQLServerTranslator extends JDBCTranslator {
 						// ...append the corresponding join condition:
 						if (buf.length() > 0)
 							buf.append(" AND ");
-						buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
+						
+						//if there is an alias for the left table, use it:
+						if (leftCol.getTable().getADQLName() != null &&
+							leftCol.getTable().getADQLName() != leftCol.getTable().getDBName()) {
+							buf.append(leftCol.getTable().getADQLName());
+							buf.append('.').append(leftCol.getADQLName());
+						}
+						else
+							buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
+						
 						buf.append("=");
-						buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
+						
+						//if there is an alias for the right table, use it.
+						if (rightCol.getTable().getADQLName() != null &&
+								rightCol.getTable().getADQLName() != rightCol.getTable().getDBName()) {
+							buf.append(rightCol.getTable().getADQLName());
+							buf.append('.').append(rightCol.getADQLName());
+						}
+						else
+							buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
 					}
-				}
-	
-				sql.append("ON ").append(buf.toString());
-			}catch(UnresolvedJoinException uje){
+				}		
+				sql.append(" ON ").append(buf.toString());
+				
+			} catch(UnresolvedJoinException uje){
 				throw new TranslationException("Impossible to resolve the NATURAL JOIN between "+join.getLeftTable().toADQL()+" and "+join.getRightTable().toADQL()+"!", uje);
 			}
 		}
