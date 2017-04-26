@@ -204,10 +204,24 @@ public class MAST_ObsCore_SQLServerTranslator extends SQLServerTranslator {
 	}
 
 	@Override
-	//we will be ignoring the Contains() in favor of using the fnSpatial syntax 
-	//for the underlying spatial function.
+	//we will be using the fnSpatial syntax for the underlying spatial function.
 	public String translate(final ContainsFunction fct) throws TranslationException {
-		return(translate(fct.getLeftParam()));
+		
+		StringBuilder fnCall = new StringBuilder("dbo.fnObsCore_SearchSTCSFootprint(");
+		
+		//Check for s_region simple case from ObsCore data model
+		if( fct.getRightParam().isColumn()) {
+			fnCall.append(translate(fct.getLeftParam()));
+		} //else find and work with ra, dec, etc.
+		else if ( fct.getLeftParam().isGeometry() && fct.getRightParam().isGeometry()) {
+			fnCall.append(translate(fct.getRightParam()));		
+		}
+		else {
+			throw new TranslationException("Invalid CONTAINS parameters");
+		}
+		
+		fnCall.append(")");
+		return fnCall.toString();
 	}
 
 	@Override
@@ -217,31 +231,31 @@ public class MAST_ObsCore_SQLServerTranslator extends SQLServerTranslator {
 
 	@Override
 	public String translate(final PointFunction point) throws TranslationException {
-		return ("dbo.fnObsCore_SearchSTCSFootprint('point " +
+		return ("'point " +
 				((NumericConstant)(point.getCoord1())).getValue() + " " +
-				((NumericConstant)(point.getCoord2())).getValue() + "')"); 
+				((NumericConstant)(point.getCoord2())).getValue() + "'"); 
 	}
 
 	@Override
 	public String translate(final CircleFunction circle) throws TranslationException {
-		return ("dbo.fnObsCore_SearchSTCSFootprint('circle " +
+		return ("'circle " +
 				circle.getCoord1().toADQL() + " " +
 				circle.getCoord2().toADQL() + " " +
-				circle.getRadius().toADQL() + "')");
+				circle.getRadius().toADQL() + "'");
 	}
 
 	@Override
 	public String translate(final BoxFunction box) throws TranslationException {
-		return ("dbo.fnObsCore_SearchSTCSFootprint('box " +
+		return ("'box " +
 				box.getCoord1().toADQL() + " " +
 				box.getCoord2().toADQL() + " " +
 				box.getWidth().toADQL() + " " +
-				box.getHeight().toADQL() + "')");
+				box.getHeight().toADQL() + "'");
 	}
 
 	@Override
 	public String translate(final PolygonFunction polygon) throws TranslationException {
-		StringBuilder fnCall = new StringBuilder("dbo.fnObsCore_SearchSTCSFootprint('polygon ");
+		StringBuilder fnCall = new StringBuilder("'polygon ");
 		ADQLOperand[] operands = polygon.getParameters();
 		for( int i = 0; i < operands.length; ++i) {
 			if( operands[i] instanceof NumericConstant || operands[i] instanceof NegativeOperand)
@@ -250,7 +264,7 @@ public class MAST_ObsCore_SQLServerTranslator extends SQLServerTranslator {
 				fnCall.append(" ");
 		}
 		
-		fnCall.append("') ");
+		fnCall.append("'");
 		return fnCall.toString();
 	}
 
