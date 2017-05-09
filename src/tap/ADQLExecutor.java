@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -31,6 +31,7 @@ import adql.parser.ParseException;
 import adql.query.ADQLQuery;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
+import tap.db.DBCancelledException;
 import tap.db.DBConnection;
 import tap.db.DBException;
 import tap.formatter.OutputFormat;
@@ -104,7 +105,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (04/2016)
+ * @version 2.1 (04/2017)
  */
 public class ADQLExecutor {
 
@@ -267,7 +268,7 @@ public class ADQLExecutor {
 	 * @since 2.1
 	 */
 	public final void cancelQuery(){
-		if (dbConn != null && progression == ExecutionProgression.EXECUTING_ADQL)
+		if (dbConn != null && (progression == ExecutionProgression.EXECUTING_ADQL || progression == ExecutionProgression.UPLOADING))
 			dbConn.cancel(true);
 	}
 
@@ -382,6 +383,8 @@ public class ADQLExecutor {
 			endStep();
 
 			if (queryResult == null || thread.isInterrupted())
+				/* Note: 'queryResult == null' is for former version of the library
+				 *       ; now, a DBCancelledException should be thrown instead */
 				throw new InterruptedException();
 
 			// 4. WRITE RESULT:
@@ -400,6 +403,9 @@ public class ADQLExecutor {
 			logger.logTAP(LogLevel.INFO, report, "END_EXEC", "ADQL query execution finished.", null);
 
 			return report;
+
+		}catch(DBCancelledException dce){
+			throw new InterruptedException();
 		}finally{
 			// Close the result if any:
 			if (queryResult != null){
@@ -570,15 +576,15 @@ public class ADQLExecutor {
 	 * 
 	 * @param adql	The object representation of the ADQL query to execute.
 	 * 
-	 * @return	The result of the query,
-	 *        	or NULL if the query execution has failed.
+	 * @return	The result of the query.
 	 * 
 	 * @throws InterruptedException	If the thread has been interrupted.
+	 * @throws DBCancelledException	If the inner DB connection has been canceled.
 	 * @throws TAPException			If the {@link DBConnection} has failed to deal with the given ADQL query.
 	 * 
 	 * @see DBConnection#executeQuery(ADQLQuery)
 	 */
-	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, TAPException{
+	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, DBCancelledException, TAPException{
 		// Log the start of execution:
 		logger.logTAP(LogLevel.INFO, report, "START_DB_EXECUTION", "ADQL query: " + adql.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 
@@ -590,16 +596,22 @@ public class ADQLExecutor {
 				dbConn.setFetchSize(service.getFetchSize()[0]);
 		}
 
-		// Execute the ADQL query:
-		TableIterator result = dbConn.executeQuery(adql);
+		try{
+			// Execute the ADQL query:
+			TableIterator result = dbConn.executeQuery(adql);
 
-		// Log the success or failure:
-		if (result == null)
-			logger.logTAP(LogLevel.INFO, report, "END_DB_EXECUTION", "Query execution aborted after " + (System.currentTimeMillis() - startStep) + "ms!", null);
-		else
+			// If NULL, in a former version of the library, it means the query execution has been aborted:
+			if (result == null)
+				throw new DBCancelledException();
+
+			// Log the success:
 			logger.logTAP(LogLevel.INFO, report, "END_DB_EXECUTION", "Query successfully executed in " + (System.currentTimeMillis() - startStep) + "ms!", null);
 
-		return result;
+			return result;
+		}catch(DBCancelledException dce){
+			logger.logTAP(LogLevel.INFO, report, "END_DB_EXECUTION", "Query execution aborted after " + (System.currentTimeMillis() - startStep) + "ms!", null);
+			throw dce;
+		}
 	}
 
 	/**

@@ -90,7 +90,10 @@ import uws.service.log.UWSLog.LogLevel;
  * 
  * <p>
  * 	To cancel a query execution the function {@link #cancel(boolean)} must be called. No error is returned by this function in case
- * 	no query is currently executing.
+ * 	no query is currently executing. When called, the flag {@link #isCancelled()} is set to <code>true</code>. Any potentially long
+ * 	running function is checking this flag and may then stop immediately by throwing a {@link DBCancelledException} as soon as
+ * 	the flag turns <code>true</code>. It should be the case for {@link #addUploadedTable(TAPTable, TableIterator)},
+ * 	{@link #executeQuery(ADQLQuery)} and {@link #setTAPSchema(TAPMetadata)}.
  * </p>
  * 
  * 
@@ -177,7 +180,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (03/2017)
+ * @version 2.1 (04/2017)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -210,16 +213,12 @@ public class JDBCConnection implements DBConnection {
 	protected Statement stmt = null;
 
 	/**
-	 * <p>It <code>true</code>, this flag indicates that the function {@link #cancel(boolean)} has been called successfully.</p>
+	 * <p>If <code>true</code>, this flag indicates that the function {@link #cancel(boolean)} has been called at least once.</p>
 	 * 
 	 * <p>{@link #cancel(boolean)} sets this flag to <code>true</code>.</p>
 	 * <p>
 	 * 	All functions executing any kind of query on the database MUST set this flag to <code>false</code> before doing anything
 	 * 	by calling the function {@link #resetCancel()}.
-	 * </p>
-	 * <p>
-	 * 	This flag is particularly useful for debugging: when an exception is detected inside a function executing a query,
-	 * 	this flag is used to know whether the exception should be ignored for logging (if <code>true</code>) or not.
 	 * </p>
 	 * <p>
 	 * 	Any access (write AND read) to this flag MUST be synchronized on it using one of the following functions:
@@ -525,14 +524,19 @@ public class JDBCConnection implements DBConnection {
 	 * <p>Cancel (and rollback when possible) the currently running query of this {@link JDBCConnection} instance.</p>
 	 * 
 	 * <p><b>Important note:</b>
-	 * 	This function is effective only if the JDBC driver and DBMS both support
-	 * 	this operation.
+	 * 	This function tries canceling the current JDBC statement. This can work only if the JDBC driver and
+	 * 	the DBMS both support this operation. If the statement cancellation fails, the flag {@link #supportsCancel}
+	 * 	is set to <code>false</code> so that any subsequent call of this function for this instance of
+	 * 	{@link JDBCConnection} does not try any other cancellation attempt. <b>HOWEVER</b> the rollback will
+	 * 	still continue to be performed if the parameter <code>rollback</code> is set to <code>true</code>.
 	 * </p>
+	 * 
 	 * <p>
-	 * 	If a call of this function fails the flag {@link #supportsCancel} is set to false
-	 * 	so that any subsequent call of this function for this instance of {@link JDBCConnection}
-	 * 	does not try any other cancellation attempt. <b>HOWEVER</b> the rollback will still continue
-	 * 	to be performed if the parameter <code>rollback</code> is set to <code>true</code>.
+	 * 	In any case, this function sets anyway the flag {@link #isCancelled()} to <code>true</code> so that after
+	 * 	a DB processing this {@link DBConnection} can interrupt immediately any potentially long running functions
+	 * 	(i.e. {@link #addUploadedTable(TAPTable, TableIterator)}, {@link #executeQuery(ADQLQuery)} and
+	 * 	{@link #setTAPSchema(TAPMetadata)}). When these functions realize this flag is set, they immediately stop
+	 * 	by throwing a {@link DBCancelledException}.
 	 * </p>
 	 * 
 	 * <p><i>Note 1:
@@ -542,12 +546,6 @@ public class JDBCConnection implements DBConnection {
 	 * </i></p>
 	 * 
 	 * <p><i>Note 2:
-	 * 	In case of cancellation success, the flag {@link #cancelled} is set to <code>true</code>.
-	 * 	Thus, the function executing a query can know that if any SQL exception is thrown, it will be due to the cancellation and
-	 * 	should not be then considered as a real error (=> exception not logged but anyway propagated in order to stop any processing).
-	 * </i></p></p>
-	 * 
-	 * <p><i>Note 3:
 	 * 	This function is synchronized on the {@link #cancelled} flag.
 	 * 	Thus, it may block until another synchronized block on this same flag is finished.
 	 * </i></p>
@@ -563,9 +561,10 @@ public class JDBCConnection implements DBConnection {
 	@Override
 	public final void cancel(final boolean rollback){
 		synchronized(cancelled){
-			cancelled = cancel(stmt, rollback);
+			cancelled = true;
+			boolean effectivelyCancelled = cancel(stmt, rollback);
 			// Log the success of the cancellation:
-			if (cancelled && logger != null)
+			if (effectivelyCancelled && logger != null)
 				logger.logDB(LogLevel.INFO, this, "CANCEL", "Query execution successfully stopped!", null);
 		}
 	}
@@ -574,14 +573,11 @@ public class JDBCConnection implements DBConnection {
 	 * <p>Cancel (and rollback when asked and if possible) the given statement.</p>
 	 * 
 	 * <p><b>Important note:</b>
-	 * 	This function is effective only if the JDBC driver and DBMS both support
-	 * 	this operation.
-	 * </p>
-	 * <p>
-	 * 	If a call of this function fails the flag {@link #supportsCancel} is set to false
-	 * 	so that any subsequent call of this function for this instance of {@link JDBCConnection}
-	 * 	does not try any other cancellation attempt. <b>HOWEVER</b> the rollback will still continue
-	 * 	to be performed if the parameter <code>rollback</code> is set to <code>true</code>.
+	 * 	This function tries canceling the current JDBC statement. This can work only if the JDBC driver and
+	 * 	the DBMS both support this operation. If the statement cancellation fails, the flag {@link #supportsCancel}
+	 * 	is set to <code>false</code> so that any subsequent call of this function for this instance of
+	 * 	{@link JDBCConnection} does not try any other cancellation attempt. <b>HOWEVER</b> the rollback will
+	 * 	still continue to be performed if the parameter <code>rollback</code> is set to <code>true</code>.
 	 * </p>
 	 * 
 	 * <p><i>Note:
@@ -624,7 +620,7 @@ public class JDBCConnection implements DBConnection {
 		// Whatever happens, rollback all executed operations (only if rollback=true and if in a transaction ; that's to say if AutoCommit = false):
 		finally{
 			if (rollback && supportsTransaction)
-				rollback();
+				rollback((stmt != null && stmt == this.stmt));
 		}
 	}
 
@@ -704,8 +700,14 @@ public class JDBCConnection implements DBConnection {
 				}
 			}
 
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+
+			// Get a statement:
 			getStatement();
 
+			// Adjust the fetching size of this statement:
 			if (supportsFetchSize){
 				try{
 					stmt.setFetchSize(fetchSize);
@@ -723,9 +725,9 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.INFO, this, "EXECUTE", "SQL query: " + sql.replaceAll("(\t|\r?\n)+", " "), null);
 			result = stmt.executeQuery(sql);
 
-			// If the query has been aborted and no result is provided, return immediately:
-			if (cancelled)
-				return null;
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
 
 			// 4. Return the result through a TableIterator object:
 			if (logger != null)
@@ -737,13 +739,15 @@ public class JDBCConnection implements DBConnection {
 			close(result);
 			// End properly the query:
 			endQuery();
-			// Propagate the exception with an appropriate error message:
-			if (ex instanceof SQLException){
+			// Propagate the exception if it is just about the cancellation:
+			if (ex instanceof DBCancelledException)
+				throw (DBCancelledException)ex;
+			// Otherwise propagate the exception with an appropriate error message:
+			else if (ex instanceof SQLException){
 				/* ...except if the query has been aborted:
-				 * then, it is normal to receive an SQLException
-				 * and NULL should be returned: */
+				 * then, it is normal to receive an SQLException: */
 				if (isCancelled())
-					return null;
+					throw new DBCancelledException();
 				else
 					throw new DBException("Unexpected error while executing a SQL query: " + ex.getMessage(), ex);
 			}else if (ex instanceof TranslationException)
@@ -1388,7 +1392,7 @@ public class JDBCConnection implements DBConnection {
 	 * @see tap.db.DBConnection#setTAPSchema(tap.metadata.TAPMetadata)
 	 */
 	@Override
-	public synchronized void setTAPSchema(final TAPMetadata metadata) throws DBException{
+	public synchronized void setTAPSchema(final TAPMetadata metadata) throws DBCancelledException, DBException{
 		// Starting of new query execution => disable the cancel flag:
 		resetCancel();
 
@@ -1406,11 +1410,18 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.INFO, this, "CLEAN_TAP_SCHEMA", "Cleaning TAP_SCHEMA.", null);
 			resetTAPSchema(stmt, stdTables);
 
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+
 			// 2. Create all standard TAP tables:
 			if (logger != null)
 				logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Creating TAP_SCHEMA tables.", null);
-			for(TAPTable table : stdTables)
+			for(TAPTable table : stdTables){
 				createTAPSchemaTable(table, stmt);
+				if (isCancelled())
+					throw new DBCancelledException();
+			}
 
 			// C. FILL THE NEW TABLE USING THE GIVEN DATA ITERATOR:
 			if (logger != null)
@@ -1424,11 +1435,17 @@ public class JDBCConnection implements DBConnection {
 				createTAPTableIndexes(table, stmt);
 
 			commit();
+		}catch(DBCancelledException dce){
+			rollback();
+			throw dce;
 		}catch(SQLException se){
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "CREATE_TAP_SCHEMA", "Impossible to SET TAP_SCHEMA in DB!", se);
 			rollback();
-			throw new DBException("Impossible to SET TAP_SCHEMA in DB!", se);
+			if (isCancelled())
+				throw new DBCancelledException();
+			else
+				throw new DBException("Impossible to SET TAP_SCHEMA in DB!", se);
 		}finally{
 			closeStatement();
 			endTransaction();
@@ -1719,10 +1736,11 @@ public class JDBCConnection implements DBConnection {
 	 * @param table	Table whose indexes must be created here.
 	 * @param stmt	Statement to use in order to interact with the database.
 	 * 
-	 * @throws DBException	If the given table is not a standard TAP_SCHEMA table.
-	 * @throws SQLException	If any error occurs while querying or updating the database.
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
+	 * @throws DBException			If the given table is not a standard TAP_SCHEMA table.
+	 * @throws SQLException			If any error occurs while querying or updating the database.
 	 */
-	protected void createTAPTableIndexes(final TAPTable table, final Statement stmt) throws DBException, SQLException{
+	protected void createTAPTableIndexes(final TAPTable table, final Statement stmt) throws DBCancelledException, DBException, SQLException{
 		// 1. Ensure the given table is really a TAP_SCHEMA table (according to the ADQL names):
 		if (!table.getADQLSchemaName().equalsIgnoreCase(STDSchema.TAPSCHEMA.label) || TAPMetadata.resolveStdTable(table.getADQLName()) == null)
 			throw new DBException("Forbidden index creation: " + table + " is not a standard table of TAP_SCHEMA!");
@@ -1739,6 +1757,9 @@ public class JDBCConnection implements DBConnection {
 			// Create an index only for columns that have the 'indexed' flag:
 			if (col.isIndexed() && !isPartOfPrimaryKey(col.getADQLName()))
 				stmt.executeUpdate("CREATE INDEX " + indexNamePrefix + col.getADQLName() + " ON " + dbTableName + "(" + translator.getColumnName(col) + ")");
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
 		}
 	}
 
@@ -1770,10 +1791,11 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @param meta	All schemas and tables to list inside the TAP_SCHEMA tables.
 	 * 
-	 * @throws DBException	If rows can not be inserted because the SQL update query has failed.
-	 * @throws SQLException	If any other SQL exception occurs.
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
+	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
+	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	protected void fillTAPSchema(final TAPMetadata meta) throws SQLException, DBException{
+	protected void fillTAPSchema(final TAPMetadata meta) throws SQLException, DBCancelledException, DBException{
 		TAPTable metaTable;
 
 		// 1. Fill SCHEMAS:
@@ -1809,10 +1831,11 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @return	Iterator over the full list of all tables (whatever is their schema).
 	 * 
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException	If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException	If any other SQL exception occurs.
 	 */
-	private Iterator<TAPTable> fillSchemas(final TAPTable metaTable, final Iterator<TAPSchema> itSchemas) throws SQLException, DBException{
+	private Iterator<TAPTable> fillSchemas(final TAPTable metaTable, final Iterator<TAPSchema> itSchemas) throws SQLException, DBCancelledException, DBException{
 		List<TAPTable> allTables = new ArrayList<TAPTable>();
 
 		// Build the SQL update query:
@@ -1847,9 +1870,18 @@ public class JDBCConnection implements DBConnection {
 				stmt.setString(3, schema.getUtype());
 				if (supportsSchema)
 					stmt.setString(4, (schema.getDBName() == null || schema.getDBName().equals(schema.getADQLName())) ? null : schema.getDBName());
-				executeUpdate(stmt, nbRows);
+
+				// If the query has been aborted, return immediately:
+				if (isCancelled())
+					throw new DBCancelledException();
+				else
+					executeUpdate(stmt, nbRows);
 			}
-			executeBatchUpdates(stmt, nbRows);
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+			else
+				executeBatchUpdates(stmt, nbRows);
 		}finally{
 			close(stmt);
 		}
@@ -1870,10 +1902,11 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @return	Iterator over the full list of all columns (whatever is their table).
 	 * 
-	 * @throws DBException	If rows can not be inserted because the SQL update query has failed.
-	 * @throws SQLException	If any other SQL exception occurs.
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
+	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
+	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	private Iterator<TAPColumn> fillTables(final TAPTable metaTable, final Iterator<TAPTable> itTables) throws SQLException, DBException{
+	private Iterator<TAPColumn> fillTables(final TAPTable metaTable, final Iterator<TAPTable> itTables) throws SQLException, DBCancelledException, DBException{
 		List<TAPColumn> allColumns = new ArrayList<TAPColumn>();
 
 		// Build the SQL update query:
@@ -1913,9 +1946,18 @@ public class JDBCConnection implements DBConnection {
 				stmt.setString(5, table.getUtype());
 				stmt.setInt(6, table.getIndex());
 				stmt.setString(7, (table.getDBName() == null || table.getDBName().equals(table.getADQLName())) ? null : table.getDBName());
-				executeUpdate(stmt, nbRows);
+
+				// If the query has been aborted, return immediately:
+				if (isCancelled())
+					throw new DBCancelledException();
+				else
+					executeUpdate(stmt, nbRows);
 			}
-			executeBatchUpdates(stmt, nbRows);
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+			else
+				executeBatchUpdates(stmt, nbRows);
 		}finally{
 			close(stmt);
 		}
@@ -1936,10 +1978,11 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @return	Iterator over the full list of all foreign keys.
 	 * 
-	 * @throws DBException	If rows can not be inserted because the SQL update query has failed.
-	 * @throws SQLException	If any other SQL exception occurs.
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
+	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
+	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	private Iterator<TAPForeignKey> fillColumns(final TAPTable metaTable, final Iterator<TAPColumn> itColumns) throws SQLException, DBException{
+	private Iterator<TAPForeignKey> fillColumns(final TAPTable metaTable, final Iterator<TAPColumn> itColumns) throws SQLException, DBCancelledException, DBException{
 		List<TAPForeignKey> allKeys = new ArrayList<TAPForeignKey>();
 
 		// Build the SQL update query:
@@ -1993,9 +2036,18 @@ public class JDBCConnection implements DBConnection {
 				stmt.setInt(12, col.isStd() ? 1 : 0);
 				stmt.setInt(13, col.getIndex());
 				stmt.setString(14, (col.getDBName() == null || col.getDBName().equals(col.getADQLName())) ? null : col.getDBName());
-				executeUpdate(stmt, nbRows);
+
+				// If the query has been aborted, return immediately:
+				if (isCancelled())
+					throw new DBCancelledException();
+				else
+					executeUpdate(stmt, nbRows);
 			}
-			executeBatchUpdates(stmt, nbRows);
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+			else
+				executeBatchUpdates(stmt, nbRows);
 		}finally{
 			close(stmt);
 		}
@@ -2015,10 +2067,11 @@ public class JDBCConnection implements DBConnection {
 	 * @param metaKeyColumns	Description of TAP_SCHEMA.key_columns.
 	 * @param itKeys			Iterator over the list of foreign keys.
 	 * 
-	 * @throws DBException	If rows can not be inserted because the SQL update query has failed.
-	 * @throws SQLException	If any other SQL exception occurs.
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
+	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
+	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	private void fillKeys(final TAPTable metaKeys, final TAPTable metaKeyColumns, final Iterator<TAPForeignKey> itKeys) throws SQLException, DBException{
+	private void fillKeys(final TAPTable metaKeys, final TAPTable metaKeyColumns, final Iterator<TAPForeignKey> itKeys) throws SQLException, DBCancelledException, DBException{
 		// Build the SQL update query for KEYS:
 		StringBuffer sqlKeys = new StringBuffer("INSERT INTO ");
 		sqlKeys.append(translator.getTableName(metaKeys, supportsSchema)).append(" (");
@@ -2063,7 +2116,12 @@ public class JDBCConnection implements DBConnection {
 					stmtKeys.setString(3, key.getTargetTable().getADQLName());
 				stmtKeys.setString(4, key.getDescription());
 				stmtKeys.setString(5, key.getUtype());
-				executeUpdate(stmtKeys, nbKeys);
+
+				// If the query has been aborted, return immediately:
+				if (isCancelled())
+					throw new DBCancelledException();
+				else
+					executeUpdate(stmtKeys, nbKeys);
 
 				// add the key columns into KEY_COLUMNS:
 				Iterator<Map.Entry<String,String>> itAssoc = key.iterator();
@@ -2073,12 +2131,22 @@ public class JDBCConnection implements DBConnection {
 					stmtKeyCols.setString(1, key.getKeyId());
 					stmtKeyCols.setString(2, assoc.getKey());
 					stmtKeyCols.setString(3, assoc.getValue());
-					executeUpdate(stmtKeyCols, nbKeyColumns);
+
+					// If the query has been aborted, return immediately:
+					if (isCancelled())
+						throw new DBCancelledException();
+					else
+						executeUpdate(stmtKeyCols, nbKeyColumns);
 				}
 			}
 
-			executeBatchUpdates(stmtKeys, nbKeys);
-			executeBatchUpdates(stmtKeyCols, nbKeyColumns);
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+			else{
+				executeBatchUpdates(stmtKeys, nbKeys);
+				executeBatchUpdates(stmtKeyCols, nbKeyColumns);
+			}
 		}finally{
 			close(stmtKeys);
 			close(stmtKeyCols);
@@ -2143,6 +2211,10 @@ public class JDBCConnection implements DBConnection {
 				throw de;
 			}
 
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+
 			// 2. Create the table:
 			// ...build the SQL query:
 			StringBuffer sqlBuf = new StringBuffer("CREATE TABLE ");
@@ -2162,8 +2234,14 @@ public class JDBCConnection implements DBConnection {
 			// ...execute the update query:
 			stmt.executeUpdate(sqlBuf.toString());
 
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+
 			// 3. Fill the table:
 			int nbUploadedRows = fillUploadedTable(tableDef, data);
+			if (isCancelled())
+				throw new DBCancelledException();
 
 			// Commit the transaction:
 			commit();
@@ -2181,6 +2259,8 @@ public class JDBCConnection implements DBConnection {
 			throw new DBException("Impossible to create the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 		}catch(DBException de){
 			rollback();
+			if (logger != null && (de instanceof DBCancelledException || isCancelled()))
+				logger.logDB(LogLevel.INFO, this, "ADD_UPLOAD_TABLE", "Upload of the table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") canceled!", null);
 			throw de;
 		}catch(DataReadException dre){
 			rollback();
@@ -2208,11 +2288,12 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @return	Number of inserted rows.
 	 * 
+	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
 	 * @throws DataReadException	If there is any error while reading the data from the given {@link TableIterator} (and particularly if a limit - in byte or row - has been reached).
 	 */
-	protected int fillUploadedTable(final TAPTable metaTable, final TableIterator data) throws SQLException, DBException, DataReadException{
+	protected int fillUploadedTable(final TAPTable metaTable, final TableIterator data) throws SQLException, DBCancelledException, DBException, DataReadException{
 		// 1. Build the SQL update query:
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
 		StringBuffer varParam = new StringBuffer();
@@ -2281,11 +2362,26 @@ public class JDBCConnection implements DBConnection {
 						else if ((dbms == null || dbms.equalsIgnoreCase(DBMS_POSTGRES)) && val instanceof Character && (Character)val == 0x00)
 							val = null;
 					}
-					stmt.setObject(c++, val);
+
+					// If the query has been aborted, return immediately:
+					if (isCancelled())
+						throw new DBCancelledException();
+					else
+						stmt.setObject(c++, val);
 				}
-				executeUpdate(stmt, nbRows);
+
+				// If the query has been aborted, return immediately:
+				if (isCancelled())
+					throw new DBCancelledException();
+				else
+					executeUpdate(stmt, nbRows);
 			}
-			executeBatchUpdates(stmt, nbRows);
+
+			// If the query has been aborted, return immediately:
+			if (isCancelled())
+				throw new DBCancelledException();
+			else
+				executeBatchUpdates(stmt, nbRows);
 
 			return nbRows;
 

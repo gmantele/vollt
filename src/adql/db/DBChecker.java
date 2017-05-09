@@ -42,6 +42,7 @@ import adql.parser.QueryChecker;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
+import adql.query.ClauseADQL;
 import adql.query.ClauseSelect;
 import adql.query.ColumnReference;
 import adql.query.IdentifierField;
@@ -615,7 +616,7 @@ public class DBChecker implements QueryChecker {
 		ISearchHandler sHandler;
 
 		// Check the existence of all columns:
-		sHandler = new SearchColumnHandler();
+		sHandler = new SearchColumnOutsideGroupByHandler();
 		sHandler.search(query);
 		for(ADQLObject result : sHandler){
 			try{
@@ -630,12 +631,30 @@ public class DBChecker implements QueryChecker {
 			}
 		}
 
+		// Check the GROUP BY items:
+		ClauseSelect select = query.getSelect();
+		sHandler = new SearchColumnHandler();
+		sHandler.search(query.getGroupBy());
+		for(ADQLObject result : sHandler){
+			try{
+				ADQLColumn adqlColumn = (ADQLColumn)result;
+				// resolve the column:
+				DBColumn dbColumn = checkGroupByItem(adqlColumn, select, list);
+				// link with the matched DBColumn:
+				if (dbColumn != null){
+					adqlColumn.setDBLink(dbColumn);
+					adqlColumn.setAdqlTable(mapTables.get(dbColumn.getTable()));
+				}
+			}catch(ParseException pe){
+				errors.addException(pe);
+			}
+		}
+
 		// Check the correctness of all column references (= references to selected columns):
 		/* Note: no need to provide the father tables when resolving column references,
 		 *       because no father column can be used in ORDER BY. */
 		sHandler = new SearchColReferenceHandler();
 		sHandler.search(query);
-		ClauseSelect select = query.getSelect();
 		for(ADQLObject result : sHandler){
 			try{
 				ColumnReference colRef = (ColumnReference)result;
@@ -693,6 +712,38 @@ public class DBChecker implements QueryChecker {
 				return resolveColumn(column, fathersList.peek(), subStack);
 			}
 		}
+	}
+
+	/**
+	 * Check whether the given column corresponds to a selected item's alias or to an existing column.
+	 * 
+	 * @param col			The column to check.
+	 * @param select		The SELECT clause of the ADQL query.
+	 * @param dbColumns		The list of all available columns.
+	 * 
+	 * @return 	The corresponding {@link DBColumn} if this column corresponds to an existing column,
+	 *        	<i>NULL</i> otherwise.
+	 * 
+	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
+	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
+	 * 
+	 * @see ClauseSelect#searchByAlias(String)
+	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
+	 * 
+	 * @since 1.4
+	 */
+	protected DBColumn checkGroupByItem(final ADQLColumn col, final ClauseSelect select, final SearchColumnList dbColumns) throws ParseException{
+		/* If the column name is not qualified, it may be a SELECT-item's alias.
+		 * So, try resolving the name as an alias.
+		 * If it fails, perform the normal column resolution.*/
+		if (col.getTableName() == null){
+			ArrayList<SelectItem> founds = select.searchByAlias(col.getColumnName(), col.isCaseSensitive(IdentifierField.COLUMN));
+			if (founds.size() == 1)
+				return null;
+			else if (founds.size() > 1)
+				throw new UnresolvedColumnException(col, founds.get(0).getAlias(), founds.get(1).getAlias());
+		}
+		return resolveColumn(col, dbColumns, null);
 	}
 
 	/**
@@ -1245,6 +1296,26 @@ public class DBChecker implements QueryChecker {
 	/* *************** */
 	/* SEARCH HANDLERS */
 	/* *************** */
+
+	/**
+	 * Lets searching all {@link ADQLColumn} in the given object, EXCEPT in the GROUP BY clause.
+	 * 
+	 * <p>
+	 * 	{@link ADQLColumn}s of the GROUP BY may be aliases and so, they can not be checked
+	 *	exactly as a normal column.
+	 * </p>
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 1.4 (04/2017)
+	 * @since 1.4
+	 */
+	private static class SearchColumnOutsideGroupByHandler extends SearchColumnHandler {
+		@Override
+		protected boolean goInto(final ADQLObject obj){
+			return !(obj instanceof ClauseADQL<?> && ((ClauseADQL<?>)obj).getName().equalsIgnoreCase("GROUP BY")) && super.goInto(obj);
+		}
+	}
+
 	/**
 	 * Lets searching all tables.
 	 * 
