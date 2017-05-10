@@ -1306,13 +1306,13 @@ public class DBChecker implements QueryChecker {
 	 * </p>
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.4 (04/2017)
+	 * @version 1.4 (05/2017)
 	 * @since 1.4
 	 */
 	private static class SearchColumnOutsideGroupByHandler extends SearchColumnHandler {
 		@Override
 		protected boolean goInto(final ADQLObject obj){
-			return !(obj instanceof ClauseADQL<?> && ((ClauseADQL<?>)obj).getName().equalsIgnoreCase("GROUP BY")) && super.goInto(obj);
+			return !(obj instanceof ClauseADQL<?> && ((ClauseADQL<?>)obj).getName() != null && ((ClauseADQL<?>)obj).getName().equalsIgnoreCase("GROUP BY")) && super.goInto(obj);
 		}
 	}
 
