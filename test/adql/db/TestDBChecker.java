@@ -97,6 +97,23 @@ public class TestDBChecker {
 	}
 
 	@Test
+	public void testClauseADQLWithNameNull(){
+		/* The name of an ADQLClause is got in DBChecker by SearchColumnOutsideGroupByHandler.goInto(...)
+		 * and possibly in other locations in the future. If this name is NULL, no NullPointerException
+		 * should be thrown.
+		 * 
+		 * This issue can be tested by creating a ConstraintsGroup (i.e. in a constraints location like WHERE or JOIN...ON,
+		 * a constraint (or more) between parenthesis). */
+		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
+		try{
+			parser.parseQuery("SELECT * FROM foo WHERE (colI BETWEEN 1 AND 10)");
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail();
+		}
+	}
+
+	@Test
 	public void testGroupByWithQualifiedColName(){
 		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 		try{
