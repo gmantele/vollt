@@ -16,7 +16,7 @@ package uws.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import static uws.config.UWSConfiguration.KEY_REGEXP_MAX_DESTRUCTION_INTERVAL;
@@ -49,6 +49,7 @@ import uws.job.ErrorSummary;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.jobInfo.JobInfo;
 import uws.job.parameters.DestructionTimeController;
 import uws.job.parameters.DurationParamController;
 import uws.job.parameters.ExecutionDurationController;
@@ -68,7 +69,7 @@ import uws.service.request.UWSRequestParser;
  * Concrete implementation of a {@link UWSFactory} which is parameterized by a UWS configuration file.
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (09/2016)
+ * @version 4.2 (06/2017)
  * @since 4.2
  */
 public class ConfigurableUWSFactory implements UWSFactory {
@@ -620,7 +621,14 @@ public class ConfigurableUWSFactory implements UWSFactory {
 			requestID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID).toString();
 
 		// Create the job:
-		return new UWSJob(user, createUWSParameters(request), requestID);
+		UWSJob newJob = new UWSJob(user, createUWSParameters(request), requestID);
+
+		// Set the XML job description if any:
+		Object jobDesc = request.getAttribute(UWS.REQ_ATTRIBUTE_JOB_DESCRIPTION);
+		if (jobDesc != null && jobDesc instanceof JobInfo)
+			newJob.setJobInfo((JobInfo)jobDesc);
+
+		return newJob;
 	}
 
 	@Override

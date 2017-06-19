@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -30,55 +30,58 @@ import uws.UWSToolBox;
 import uws.service.file.UWSFileManager;
 import uws.service.request.FormEncodedParser;
 import uws.service.request.MultipartParser;
-import uws.service.request.NoEncodingParser;
 import uws.service.request.RequestParser;
 import uws.service.request.UploadFile;
 
 /**
- * <p>This parser adapts the request parser to use in function of the request content-type:</p>
+ * This parser adapts the request parser to use in function of the request
+ * content-type:
+ * 
  * <ul>
  * 	<li><b>application/x-www-form-urlencoded</b>: {@link FormEncodedParser}</li>
  * 	<li><b>multipart/form-data</b>: {@link MultipartParser}</li>
- * 	<li><b>other</b>: {@link NoEncodingParser} (the whole request body will be stored as one single parameter)</li>
+ * 	<li><b>other</b>: no parameter is returned</li>
  * </ul>
  * 
  * <p>
- * 	The request body size is limited for the multipart AND the no-encoding parsers. If you want to change this limit,
- * 	you MUST do it for each of these parsers, setting the following static attributes: resp. {@link MultipartParser#SIZE_LIMIT}
- * 	and {@link NoEncodingParser#SIZE_LIMIT}.
- * </p> 
+ * 	The request body size is limited for the multipart. If you want to change
+ * 	this limit, you MUST do it for each of these parsers, setting the following
+ * 	static attributes: {@link MultipartParser#SIZE_LIMIT}.
+ * </p>
  * 
  * <p><i>Note:
- * 	If you want to change the support other request parsing, you will have to write your own {@link RequestParser} implementation.
+ * 	If you want to change the support other request parsing, you will have to
+ * 	write your own {@link RequestParser} implementation.
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (12/2014)
+ * @version 2.1 (06/2017)
  * @since 2.0
  */
 public class TAPRequestParser implements RequestParser {
 
 	/** File manager to use to create {@link UploadFile} instances.
-	 * It is required by this new object to execute open, move and delete operations whenever it could be asked. */
+	 * It is required by this new object to execute open, move and delete
+	 * operations whenever it could be asked. */
 	private final UWSFileManager fileManager;
 
-	/** {@link RequestParser} to use when a application/x-www-form-urlencoded request must be parsed. This attribute is set by {@link #parse(HttpServletRequest)}
-	 * only when needed, by calling the function {@link #getFormParser()}. */
+	/** {@link RequestParser} to use when a application/x-www-form-urlencoded
+	 * request must be parsed. This attribute is set by
+	 * {@link #parse(HttpServletRequest)} only when needed, by calling the
+	 * function {@link #getFormParser()}. */
 	private RequestParser formParser = null;
 
-	/** {@link RequestParser} to use when a multipart/form-data request must be parsed. This attribute is set by {@link #parse(HttpServletRequest)}
+	/** {@link RequestParser} to use when a multipart/form-data request must be
+	 * parsed. This attribute is set by {@link #parse(HttpServletRequest)}
 	 * only when needed, by calling the function {@link #getMultipartParser()}. */
 	private RequestParser multipartParser = null;
 
-	/** {@link RequestParser} to use when none of the other parsers can be used ; it will then transform the whole request body in a parameter called "JDL"
-	 * (Job Description Language). This attribute is set by {@link #parse(HttpServletRequest)} only when needed, by calling the function
-	 * {@link #getNoEncodingParser()}. */
-	private RequestParser noEncodingParser = null;
-
 	/**
-	 * Build a {@link RequestParser} able to choose the most appropriate {@link RequestParser} in function of the request content-type.
+	 * Build a {@link RequestParser} able to choose the most appropriate
+	 * {@link RequestParser} in function of the request content-type.
 	 * 
-	 * @param fileManager	The file manager to use in order to store any eventual upload. <b>MUST NOT be NULL</b>
+	 * @param fileManager	The file manager to use in order to store any
+	 *                   	eventual upload. <b>MUST NOT be NULL</b>
 	 */
 	public TAPRequestParser(final UWSFileManager fileManager){
 		if (fileManager == null)
@@ -103,7 +106,7 @@ public class TAPRequestParser implements RequestParser {
 			else if (MultipartParser.isMultipartContent(req))
 				params = getMultipartParser().parse(req);
 			else
-				params = getNoEncodingParser().parse(req);
+				params = new HashMap<String,Object>(0);
 
 			// Only for POST requests, the parameters specified in the URL must be added:
 			if (method.equals("post"))
@@ -115,10 +118,12 @@ public class TAPRequestParser implements RequestParser {
 	}
 
 	/**
-	 * Get the {@link RequestParser} to use for application/x-www-form-urlencoded HTTP requests.
+	 * Get the {@link RequestParser} to use for
+	 * application/x-www-form-urlencoded HTTP requests.
 	 * This parser may be created if not already done.
 	 * 
-	 * @return	The {@link RequestParser} to use for application/x-www-form-urlencoded requests. <i>Never NULL</i>
+	 * @return	The {@link RequestParser} to use for
+	 *        	application/x-www-form-urlencoded requests. <i>Never NULL</i>
 	 */
 	private synchronized final RequestParser getFormParser(){
 		return (formParser != null) ? formParser : (formParser = new FormEncodedParser(){
@@ -142,10 +147,12 @@ public class TAPRequestParser implements RequestParser {
 	}
 
 	/**
-	 * Get the {@link RequestParser} to use for multipart/form-data HTTP requests.
+	 * Get the {@link RequestParser} to use for multipart/form-data HTTP
+	 * requests.
 	 * This parser may be created if not already done.
 	 * 
-	 * @return	The {@link RequestParser} to use for multipart/form-data requests. <i>Never NULL</i>
+	 * @return	The {@link RequestParser} to use for multipart/form-data
+	 *        	requests. <i>Never NULL</i>
 	 */
 	private synchronized final RequestParser getMultipartParser(){
 		return (multipartParser != null) ? multipartParser : (multipartParser = new MultipartParser(fileManager){
@@ -176,25 +183,17 @@ public class TAPRequestParser implements RequestParser {
 	}
 
 	/**
-	 * Get the {@link RequestParser} to use for HTTP requests whose the content type is neither application/x-www-form-urlencoded nor multipart/form-data.
-	 * This parser may be created if not already done.
-	 * 
-	 * @return	The {@link RequestParser} to use for requests whose the content-type is not supported. <i>Never NULL</i>
-	 */
-	private synchronized final RequestParser getNoEncodingParser(){
-		return (noEncodingParser == null) ? (noEncodingParser = new NoEncodingParser(fileManager)) : noEncodingParser;
-	}
-
-	/**
-	 * Create a new array in which the given String is appended at the end of the given array.
+	 * Create a new array in which the given String is appended at the end of
+	 * the given array.
 	 * 
 	 * @param value		String to append in the array.
 	 * @param oldValue	The array after which the given String must be appended.
 	 * 
-	 * @return	The new array containing the values of the array and then the given String.
+	 * @return	The new array containing the values of the array and then the
+	 *        	given String.
 	 */
 	private final static String[] append(final String value, final String[] oldValue){
-		// Create the corresponding array of Strings: 
+		// Create the corresponding array of Strings:
 		// ...if the array already exists, extend it:
 		String[] newValue;
 		if (oldValue != null){
