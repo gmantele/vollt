@@ -42,7 +42,7 @@ import uws.job.parameters.UWSParameters;
  * submitted by a TAP client to this TAP service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (06/2016)
+ * @version 2.1 (04/2017)
  */
 public class TAPParameters extends UWSParameters {
 
@@ -55,7 +55,7 @@ public class TAPParameters extends UWSParameters {
 	 * @param service	Description of the TAP service in which the parameters are created and will be used.
 	 */
 	public TAPParameters(final ServiceConnection service){
-		super(TAP_PARAMETERS, buildDefaultControllers(service));
+		super(TAP_PARAMETERS, buildDefaultControllers(service, null));
 	}
 
 	/**
@@ -73,15 +73,49 @@ public class TAPParameters extends UWSParameters {
 	}
 
 	/**
+	 * Create a {@link TAPParameters} instance whose the parameters must be extracted from the given {@link HttpServletRequest}.
+	 * 
+	 * @param request		HTTP request containing the parameters to gather inside this class.
+	 * @param service		Description of the TAP service in which the parameters are created and will be used.
+	 * @param controllers	Additional/Replacing controllers to apply on some input parameters.
+	 *                      <i>Ignored if <code>NULL</code>.</i>
+	 * 
+	 * @throws TAPException	If any error occurs while extracting the DALIParameters OR while setting a parameter.
+	 * 
+	 * @see #getParameters(HttpServletRequest)
+	 * 
+	 * @since 2.1
+	 */
+	public TAPParameters(final HttpServletRequest request, final ServiceConnection service, final Map<String,InputParamController> controllers) throws TAPException{
+		this(service, getParameters(request), controllers);
+	}
+
+	/**
 	 * Create a {@link TAPParameters} instance whose the parameters are given in parameter.
 	 * 
 	 * @param service	Description of the TAP service. Limits of the standard TAP parameters are listed in it.
 	 * @param params	List of parameters to load inside this object.
 	 * 
 	 * @throws TAPException	If any error occurs while extracting the DALIParameters OR while setting a parameter.
+	 * 
+	 * @see #TAPParameters(ServiceConnection, Map, Map)
 	 */
 	public TAPParameters(final ServiceConnection service, final Map<String,Object> params) throws TAPException{
-		super(TAP_PARAMETERS, buildDefaultControllers(service));
+		this(service, params, null);
+	}
+
+	/**
+	 * Create a {@link TAPParameters} instance whose the parameters are given in parameter.
+	 * 
+	 * @param service		Description of the TAP service. Limits of the standard TAP parameters are listed in it.
+	 * @param params		List of parameters to load inside this object.
+	 * @param controllers	Additional/Replacing controllers to apply on some input parameters.
+	 *                      <i>Ignored if <code>NULL</code>.</i>
+	 * 
+	 * @throws TAPException	If any error occurs while extracting the DALIParameters OR while setting a parameter.
+	 */
+	public TAPParameters(final ServiceConnection service, final Map<String,Object> params, final Map<String,InputParamController> controllers) throws TAPException{
+		super(TAP_PARAMETERS, buildDefaultControllers(service, controllers));
 
 		if (params != null && !params.isEmpty()){
 			// Deal with the UPLOAD parameter(s):
@@ -110,14 +144,18 @@ public class TAPParameters extends UWSParameters {
 	 * 	tested in the constructor while interpreting it.
 	 * </i></p>
 	 * 
-	 * @param service	Description of the TAP service.
+	 * @param service			Description of the TAP service.
+	 * @param customControllers	Additional/Replacing controllers to apply on some input parameters.
+	 *                         	<i>Ignored if <code>NULL</code>.</i>
 	 * 
 	 * @return	Map of all default controllers.
 	 * 
 	 * @since 2.0
 	 */
-	protected static final Map<String,InputParamController> buildDefaultControllers(final ServiceConnection service){
+	protected static final Map<String,InputParamController> buildDefaultControllers(final ServiceConnection service, final Map<String,InputParamController> customControllers){
 		Map<String,InputParamController> controllers = new HashMap<String,InputParamController>(10);
+
+		// Set the default controllers:
 		controllers.put(TAPJob.PARAM_EXECUTION_DURATION, new TAPExecutionDurationController(service));
 		controllers.put(TAPJob.PARAM_DESTRUCTION_TIME, new TAPDestructionTimeController(service));
 		controllers.put(TAPJob.PARAM_REQUEST, new StringParamController(TAPJob.PARAM_REQUEST, null, new String[]{TAPJob.REQUEST_DO_QUERY,TAPJob.REQUEST_GET_CAPABILITIES}, true));
@@ -126,6 +164,15 @@ public class TAPParameters extends UWSParameters {
 		controllers.put(TAPJob.PARAM_QUERY, new StringParamController(TAPJob.PARAM_QUERY));
 		controllers.put(TAPJob.PARAM_FORMAT, new FormatController(service));
 		controllers.put(TAPJob.PARAM_MAX_REC, new MaxRecController(service));
+
+		// Add/Replace with the given controllers:
+		if (customControllers != null){
+			for(Map.Entry<String,InputParamController> item : customControllers.entrySet()){
+				if (item.getKey() != null && item.getValue() != null)
+					controllers.put(item.getKey(), item.getValue());
+			}
+		}
+
 		return controllers;
 	}
 

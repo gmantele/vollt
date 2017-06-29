@@ -879,9 +879,9 @@ void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condit
 	}
 }
 
-void GroupBy(): {ClauseADQL<ColumnReference> groupBy = query.getGroupBy(); ColumnReference colRef = null; Token start;} {
-	start=<GROUP_BY> colRef=ColumnRef() { groupBy.add(colRef); }
-	( <COMMA> colRef=ColumnRef() { groupBy.add(colRef); } )*
+void GroupBy(): {ClauseADQL<ADQLColumn> groupBy = query.getGroupBy(); ADQLColumn colRef = null; Token start;} {
+	start=<GROUP_BY> colRef=Column() { groupBy.add(colRef); }
+	( <COMMA> colRef=Column() { groupBy.add(colRef); } )*
 	{ groupBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, colRef.getPosition().endLine, colRef.getPosition().endColumn)); }
 }
 
@@ -980,17 +980,6 @@ ADQLColumn Column(): {IdentifierItems identifiers;} {
 	{
 		try{
 			return queryFactory.createColumn(identifiers);
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	}
-}
-
-ColumnReference ColumnRef(): {IdentifierItem identifier = null;}{
-	identifier=Identifier()
-	{
-		try{
-			return queryFactory.createColRef(identifier);
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}

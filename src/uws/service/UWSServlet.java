@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -48,6 +48,7 @@ import uws.job.JobList;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.jobInfo.JobInfo;
 import uws.job.parameters.DestructionTimeController;
 import uws.job.parameters.DestructionTimeController.DateField;
 import uws.job.parameters.ExecutionDurationController;
@@ -102,7 +103,7 @@ import uws.service.request.UploadFile;
  * 		addJobList(new JobList("jobList"));
  * 	}
  * 
- * 	// Create the job process corresponding to the job to execute ; generally, the process identification can be merely done by checking the job list name. 
+ * 	// Create the job process corresponding to the job to execute ; generally, the process identification can be merely done by checking the job list name.
  * 	public JobThread createJobThread(UWSJob job) throws UWSException {
  * 		if (job.getJobList().getName().equals("jobList"))
  * 			return new MyJobThread(job);
@@ -149,7 +150,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (02/2016)
+ * @version 4.2 (06/2017)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -467,7 +468,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			/*
 			 *   Any known/"expected" UWS exception is logged but also returned to the HTTP client in an error document.
 			 *   Since the error is known, it is supposed to have already been logged with a full stack trace. Thus, there
-			 * is no need to log again its stack trace...just its message is logged. 
+			 * is no need to log again its stack trace...just its message is logged.
 			 *   Besides, this error may also be just a redirection and not a true error. In such case, the error message
 			 * is not logged.
 			 */
@@ -480,7 +481,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 			 *   If this exception happens, the library tried to rewrite the HTTP response body with a message or a result,
 			 * while this body has already been partially sent to the client. It is then no longer possible to change its content.
 			 *   Consequently, the error is logged as FATAL and a message will be appended at the end of the already submitted response
-			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable. 
+			 * to alert the HTTP client that an error occurs and the response should not be considered as complete and reliable.
 			 */
 			// Write the error in the response and return the appropriate HTTP status code:
 			errorWriter.writeError(ise, resp, req, reqID, user, uwsAction);
@@ -643,7 +644,8 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 						input.close();
 				}
 			}
-		}// ERROR DETAILS CASE: Display the full stack trace of the error:
+		}
+		// ERROR DETAILS CASE: Display the full stack trace of the error:
 		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) && attributes.length > 1 && attributes[1].equalsIgnoreCase("details")){
 			ErrorSummary error = job.getErrorSummary();
 			if (error == null)
@@ -661,7 +663,16 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 						input.close();
 				}
 			}
-		}// REFERENCE FILE: Display the content of the uploaded file or redirect to the URL (if it is a URL):
+		}
+		// JOB INFO: Display the content of the JobInfo field (if any):
+		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_JOB_INFO)){
+
+			if (job.getJobInfo() == null)
+				resp.sendError(HttpServletResponse.SC_NO_CONTENT);
+			else
+				job.getJobInfo().write(resp);
+		}
+		// REFERENCE FILE: Display the content of the uploaded file or redirect to the URL (if it is a URL):
 		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS) && attributes.length > 1 && job.getAdditionalParameterValue(attributes[1]) != null && job.getAdditionalParameterValue(attributes[1]) instanceof UploadFile){
 			UploadFile upl = (UploadFile)job.getAdditionalParameterValue(attributes[1]);
 			if (upl.getLocation().matches("^http(s)?://"))
@@ -752,7 +763,15 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	@Override
 	public UWSJob createJob(HttpServletRequest request, JobOwner user) throws UWSException{
-		return new UWSJob(user, createUWSParameters(request));
+		// Create the job:
+		UWSJob newJob = new UWSJob(user, createUWSParameters(request));
+
+		// Set the XML job description if any:
+		Object jobDesc = request.getAttribute(UWS.REQ_ATTRIBUTE_JOB_DESCRIPTION);
+		if (jobDesc != null && jobDesc instanceof JobInfo)
+			newJob.setJobInfo((JobInfo)jobDesc);
+
+		return newJob;
 	}
 
 	@Override

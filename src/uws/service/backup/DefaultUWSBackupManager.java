@@ -16,14 +16,19 @@ package uws.service.backup;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -41,6 +46,9 @@ import org.json.JSONTokener;
 import org.json.JSONWriter;
 import org.json.Json4Uws;
 
+import com.oreilly.servlet.Base64Decoder;
+import com.oreilly.servlet.Base64Encoder;
+
 import uws.ISO8601Format;
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -49,6 +57,7 @@ import uws.job.ErrorType;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.jobInfo.JobInfo;
 import uws.job.parameters.UWSParameters;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
@@ -77,7 +86,7 @@ import uws.service.request.UploadFile;
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.2 (06/2017)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -571,7 +580,90 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		// Add the name of the job list owning the given job:
 		jsonJob.put("jobListName", jlName);
 
+		// ReSet jobInfo to a boolean field:
+		if (job.getJobInfo() != null)
+			jsonJob.put(UWSJob.PARAM_JOB_INFO, getJSONJobInfo(job.getJobInfo()));
+		else
+			jsonJob.remove(UWSJob.PARAM_JOB_INFO);
+
 		return jsonJob;
+	}
+
+	/**
+	 * Serialize the given {@link JobInfo} so that being able later to restore this exact object as provided.
+	 * 
+	 * <p><i>
+	 * 	By default, this function use the Java Class serialization (see {@link Serializable})
+	 * 	and save the corresponding bytes into a Base-64 string.
+	 * </i></p>
+	 * 
+	 * @param jobInfo	The jobInfo to backup.
+	 * 
+	 * @return	The string to use in order to restore the given jobInfo
+	 *        	(e.g. a Base-64 serialization of the Java Object, a URL, ...).
+	 * 
+	 * @throws UWSException		If any error occurs while representing the given {@link JobInfo}.
+	 * @throws JSONException	If any error occurs while manipulating a JSON object or array.
+	 * 
+	 * @since 4.2
+	 */
+	protected Object getJSONJobInfo(final JobInfo jobInfo) throws UWSException, JSONException{
+		ByteArrayOutputStream bArray = null;
+		ObjectOutputStream oOutput = null;
+		try{
+			bArray = new ByteArrayOutputStream();
+			oOutput = new ObjectOutputStream(bArray);
+			oOutput.writeObject(jobInfo);
+			oOutput.flush();
+			return Base64Encoder.encode(bArray.toByteArray());
+		}catch(IOException ioe){
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Unexpected error while serializing the given JobInfo!");
+		}finally{
+			if (oOutput != null){
+				try{
+					oOutput.close();
+				}catch(IOException ioe){}
+			}
+			if (bArray != null){
+				try{
+					bArray.close();
+				}catch(IOException ioe){}
+			}
+		}
+	}
+
+	/**
+	 * Restore the JobInfo referenced or represented by the given JSON value.
+	 * 
+	 * <p><i>
+	 * 	By default, this function considers that the given value is a Base-64 string encoding
+	 * 	the Java Class serialization (see {@link Serializable}) of the {@link JobInfo} to restore.
+	 * </i></p>
+	 * 
+	 * @param jsonValue	The reference or backup representation of the {@link JobInfo} to restore.
+	 * 
+	 * @return	The restored {@link JobInfo}.
+	 * 
+	 * @throws UWSException		If any error occurs while restoring the {@link JobInfo}.
+	 * @throws JSONException	If any error occurs while manipulating a JSON object or array.
+	 * 
+	 * @since 4.2
+	 */
+	protected JobInfo restoreJobInfo(final Object jsonValue) throws UWSException, JSONException{
+		ObjectInputStream oInput = null;
+		try{
+			byte[] bArray = Base64Decoder.decodeToBytes((String)jsonValue);
+			oInput = new ObjectInputStream(new ByteArrayInputStream(bArray));
+			return (JobInfo)oInput.readObject();
+		}catch(Exception ex){
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ex, "Unexpected error while restoring a JobInfo!");
+		}finally{
+			if (oInput != null){
+				try{
+					oInput.close();
+				}catch(IOException ioe){}
+			}
+		}
 	}
 
 	/**
@@ -817,12 +909,15 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		String jobListName = null, jobId = null, ownerID = null, tmp;
 		//Date destruction=null;
-		long quote = UWSJob.UNLIMITED_DURATION, /*duration = UWSJob.UNLIMITED_DURATION, */startTime = -1, endTime = -1;
+		long quote = UWSJob.UNLIMITED_DURATION,
+				/*duration = UWSJob.UNLIMITED_DURATION, */startTime = -1,
+				endTime = -1;
 		HashMap<String,Object> inputParams = new HashMap<String,Object>(10);
 		//Map<String, Object> params = null;
 		ArrayList<Result> results = null;
 		ErrorSummary error = null;
 		JSONArray uploads = null;
+		JobInfo jobInfo = null;
 
 		String[] keys = JSONObject.getNames(json);
 		for(String key : keys){
@@ -902,6 +997,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY)){
 					error = getError(json.getJSONObject(key));
 
+				}
+				// key=JOB_INFO:
+				else if (key.equalsIgnoreCase(UWSJob.PARAM_JOB_INFO)){
+					jobInfo = restoreJobInfo(json.get(key));
+
 				}// Ignore any other key but with a warning message:
 				else
 					getLogger().logUWS(LogLevel.WARNING, json, "RESTORATION", "The job attribute '" + key + "' has been ignored because unknown! A job may be not completely restored!", null);
@@ -961,6 +1061,10 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 			// Create the job:
 			UWSJob job = uws.getFactory().createJob(jobId, owner, uwsParams, quote, startTime, endTime, results, error);
+
+			// Set its jobInfo, if any:
+			if (jobInfo != null)
+				job.setJobInfo(jobInfo);
 
 			// Restore other job params if needed:
 			restoreOtherJobParams(json, job);

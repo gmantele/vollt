@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -64,7 +64,7 @@ import uws.service.request.UWSRequestParser;
  * </b></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (02/2015)
+ * @version 4.2 (06/2017)
  */
 public interface UWS extends Iterable<JobList> {
 
@@ -79,6 +79,11 @@ public interface UWS extends Iterable<JobList> {
 	/** Attribute of the HttpServletRequest to set and to get in order to access the user at the origin of the HTTP request.
 	 * @since 4.1 */
 	public static final String REQ_ATTRIBUTE_USER = "UWS_USER";
+
+	/** Attribute of the HttpServletRequest to set and to get in order to access the Job-Description (generally in XML)
+	 * sent instead of the "normal" HTTP-POST/-PUT parameters in the HTTP request body.
+	 * @since 4.2 */
+	public static final String REQ_ATTRIBUTE_JOB_DESCRIPTION = "UWS_JOB_DESCRIPTION";
 
 	/**
 	 * Gets the name of this UWS.
@@ -105,7 +110,7 @@ public interface UWS extends Iterable<JobList> {
 	 * 	In brief, this function should release all used resources.
 	 * </p>
 	 * 
-	 * <p><b>IMPORTANT: This function should be called only when the JVM or the Web Application Server is stopping.</b></p> 
+	 * <p><b>IMPORTANT: This function should be called only when the JVM or the Web Application Server is stopping.</b></p>
 	 * 
 	 * <p><i>Note:
 	 * 	A call to this function may prevent this instance of {@link UWS} to execute any subsequent HTTP request, or the behavior

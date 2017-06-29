@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -33,6 +33,7 @@ import uws.job.ErrorSummary;
 import uws.job.JobThread;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.jobInfo.JobInfo;
 import uws.job.parameters.DestructionTimeController;
 import uws.job.parameters.DestructionTimeController.DateField;
 import uws.job.parameters.ExecutionDurationController;
@@ -48,7 +49,7 @@ import uws.service.request.UWSRequestParser;
  * Only the function which creates a {@link JobThread} from a {@link UWSJob} needs to be implemented.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (01/2016)
+ * @version 4.2 (06/2017)
  */
 public abstract class AbstractUWSFactory implements UWSFactory {
 
@@ -84,13 +85,20 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 
 	@Override
 	public UWSJob createJob(final HttpServletRequest request, final JobOwner user) throws UWSException{
-		// Extract the HTTP request ID (the job ID should be the same, if not already used by another job): 
+		// Extract the HTTP request ID (the job ID should be the same, if not already used by another job):
 		String requestID = null;
 		if (request != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) instanceof String)
 			requestID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID).toString();
 
 		// Create the job:
-		return new UWSJob(user, createUWSParameters(request), requestID);
+		UWSJob newJob = new UWSJob(user, createUWSParameters(request), requestID);
+
+		// Set the XML job description if any:
+		Object jobDesc = request.getAttribute(UWS.REQ_ATTRIBUTE_JOB_DESCRIPTION);
+		if (jobDesc != null && jobDesc instanceof JobInfo)
+			newJob.setJobInfo((JobInfo)jobDesc);
+
+		return newJob;
 	}
 
 	@Override
