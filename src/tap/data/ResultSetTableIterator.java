@@ -20,7 +20,7 @@ package tap.data;
  */
 
 import java.math.BigDecimal;
-
+import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -730,6 +730,9 @@ public class ResultSetTableIterator implements TableIterator {
 			// but this type can not be supported in FITS and VOTable): 
 			else if (colValue instanceof BigDecimal)
 				colValue = ((BigDecimal)colValue).doubleValue();
+			// if the type is a BigInteger object (as BigDecimal, this type can not be supported in FITS and VOTable): 
+			else if (colValue instanceof BigInteger)
+				colValue = ((BigInteger)colValue).longValue();
 			// if the type is Integer but it is declared as a SMALLINT cast the value (absolutely required for the FITS format):
 			else if (colValue instanceof Integer && colType != null && colValue != null && colType.type == DBDatatype.SMALLINT)
 				colValue = new Short(((Integer)colValue).shortValue());
