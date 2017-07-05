@@ -16,7 +16,7 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -83,7 +83,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (11/2015)
+ * @version 2.1 (07/2017)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -331,6 +331,7 @@ public class VOTableFormat implements OutputFormat {
 
 		/* Turns the result set into a table. */
 		LimitedStarTable table = new LimitedStarTable(queryResult, colInfos, execReport.parameters.getMaxRec(), thread);
+		table.setName("result_"+execReport.jobID);
 
 		/* Prepares the object that will do the serialization work. */
 		VOSerializer voser = VOSerializer.makeSerializer(votFormat, votVersion, table);
