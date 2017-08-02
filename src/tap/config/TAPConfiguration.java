@@ -2,20 +2,20 @@ package tap.config;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2015-2017 - Astronomisches Rechen Institut (ARI)
  */
 
@@ -31,12 +31,12 @@ import tap.backup.DefaultTAPBackupManager;
 
 /**
  * <p>Utility class gathering tool functions and properties' names useful to deal with a TAP configuration file.</p>
- * 
+ *
  * <p><i>This class implements the Design Pattern "Utility": no instance of this class can be created, it can not be extended,
  * and it must be used only thanks to its static classes and attributes.</i></p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (03/2017)
+ * @version 2.1 (08/2017)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -134,6 +134,12 @@ public final class TAPConfiguration {
 	public final static String VALUE_POSTGRESQL = "postgres";
 	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a PgSphere translator. */
 	public final static String VALUE_PGSPHERE = "pgsphere";
+	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select an SQLServer translator.
+	 * @since 2.1*/
+	public final static String VALUE_SQLSERVER = "sqlserver";
+	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a MySQL translator.
+	 * @since 2.1*/
+	public final static String VALUE_MYSQL = "mysql";
 	/** Name/Key of the property specifying by how many rows the library should fetch a query result from the database.
 	 * This is the fetch size for to apply for synchronous queries. */
 	public final static String KEY_SYNC_FETCH_SIZE = "sync_fetch_size";
@@ -295,10 +301,10 @@ public final class TAPConfiguration {
 	 * 	<li>The returned property value is trimmed (no space at the beginning and at the end of the string).</li>
 	 * 	<li>If the value is empty (length=0), NULL is returned.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param prop	List of property
 	 * @param key	Property whose the value is requested.
-	 * 
+	 *
 	 * @return		Return property value.
 	 */
 	public final static String getProperty(final Properties prop, final String key){
@@ -317,11 +323,11 @@ public final class TAPConfiguration {
 	/**
 	 * Test whether a property value is a class name.
 	 * Expected syntax: a non-empty string surrounded by brackets ('{' and '}').
-	 * 
+	 *
 	 * Note: The class name itself is not checked!
-	 * 
+	 *
 	 * @param value	Property value.
-	 * 
+	 *
 	 * @return <i>true</i> if the given value is formatted as a class name, <i>false</i> otherwise.
 	 */
 	public final static boolean isClassName(final String value){
@@ -330,16 +336,16 @@ public final class TAPConfiguration {
 
 	/**
 	 * Fetch the class object corresponding to the class name provided between brackets in the given value.
-	 * 
+	 *
 	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propertyName	Name of the property associated with the parameter "value".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
-	 * 
+	 *
 	 * @return	The corresponding Class object.
-	 * 
+	 *
 	 * @throws TAPException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
-	 * 
+	 *
 	 * @see #isClassName(String)
 	 */
 	@SuppressWarnings("unchecked")
@@ -366,18 +372,18 @@ public final class TAPConfiguration {
 
 	/**
 	 * Test whether the specified class has a constructor with the specified parameters.
-	 * 
+	 *
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
-	 * 
+	 *
 	 * @return	<code>true</code> if the specified class has a constructor with the specified parameters,
 	 *        	<code>false</code> otherwise.
-	 * 
+	 *
 	 * @throws TAPException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public final static < C > boolean hasConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws TAPException{
@@ -401,20 +407,20 @@ public final class TAPConfiguration {
 
 	/**
 	 * <p>Create an instance of the specified class. The class name is expected to be surrounded by {} in the given value.</p>
-	 * 
+	 *
 	 * <p>The instance is created using the empty constructor of the specified class.</p>
-	 * 
+	 *
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
-	 * 
+	 *
 	 * @return	The corresponding instance.
-	 * 
+	 *
 	 * @throws TAPException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType")
 	 *                     	or if the specified class has no empty constructor
 	 *                     	or if an error occurred while calling this constructor.
-	 * 
+	 *
 	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
@@ -424,25 +430,25 @@ public final class TAPConfiguration {
 
 	/**
 	 * <p>Create an instance of the specified class. The class name is expected to be surrounded by {} in the given value.</p>
-	 * 
+	 *
 	 * <p><b>IMPORTANT:</b>
 	 * 	The instance is created using the constructor whose the declaration matches exactly with the given list of parameter types.
 	 * 	The number and types of given parameters MUST match exactly to the list of parameter types.
 	 * </p>
-	 * 
+	 *
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
 	 * @param parameters	List of all constructor parameters. The number of object MUST match exactly the number of classes provided in the parameter pTypes. <i>NULL or empty array if no parameter.</i>
-	 * 
+	 *
 	 * @return	The corresponding instance.
-	 * 
+	 *
 	 * @throws TAPException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType")
 	 *                     	or if the constructor with the specified parameters can not be found
 	 *                     	or if an error occurred while calling this constructor.
-	 * 
+	 *
 	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
@@ -502,13 +508,13 @@ public final class TAPConfiguration {
 	 * 	If the unit is not specified, it is set by default to ROWS.
 	 * </p>
 	 * <p><i>Note: If the value is strictly less than 0 (whatever is the unit), the returned value will be -1.</i></p>
-	 * 
+	 *
 	 * @param value				Property value (must follow the limit syntax: num_val[unit] ; ex: 20kB or 2000 (for 2000 rows)).
 	 * @param propertyName		Name of the property which specify the limit.
 	 * @param areBytesAllowed	Tells whether the unit BYTES is allowed. If not and a BYTES unit is encountered, then an exception is thrown.
-	 * 
+	 *
 	 * @return	An array with always 2 items: [0]=numeric value (of type Integer), [1]=unit (of type {@link LimitUnit}).
-	 * 
+	 *
 	 * @throws TAPException	If the syntax is incorrect or if a not allowed unit has been used.
 	 */
 	public final static Object[] parseLimit(String value, final String propertyName, final boolean areBytesAllowed) throws TAPException{
