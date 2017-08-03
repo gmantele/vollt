@@ -1,42 +1,16 @@
 package adql.db;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import adql.db.STCS.*;
+import adql.parser.ADQLParser;
+import adql.parser.ParseException;
+import adql.query.operand.*;
+import adql.query.operand.function.geometry.*;
+import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
+import org.junit.*;
 
 import java.io.StringBufferInputStream;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import adql.db.STCS.CoordSys;
-import adql.db.STCS.Flavor;
-import adql.db.STCS.Frame;
-import adql.db.STCS.RefPos;
-import adql.db.STCS.Region;
-import adql.db.STCS.RegionType;
-import adql.parser.ADQLParser;
-import adql.parser.ParseException;
-import adql.query.operand.ADQLColumn;
-import adql.query.operand.ADQLOperand;
-import adql.query.operand.NegativeOperand;
-import adql.query.operand.NumericConstant;
-import adql.query.operand.Operation;
-import adql.query.operand.OperationType;
-import adql.query.operand.StringConstant;
-import adql.query.operand.function.geometry.BoxFunction;
-import adql.query.operand.function.geometry.CircleFunction;
-import adql.query.operand.function.geometry.ContainsFunction;
-import adql.query.operand.function.geometry.GeometryFunction;
-import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
-import adql.query.operand.function.geometry.PointFunction;
-import adql.query.operand.function.geometry.PolygonFunction;
-import adql.query.operand.function.geometry.RegionFunction;
+import static org.junit.Assert.*;
 
 @SuppressWarnings("deprecation")
 public class TestSTCS {
