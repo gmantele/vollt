@@ -35,7 +35,7 @@ import adql.query.ADQLObject;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (05/2016)
+ * @version 1.4 (06/2016)
  * 
  * @see RemoveHandler
  */
@@ -134,29 +134,34 @@ public abstract class SimpleReplaceHandler extends SimpleSearchHandler implement
 			addMatch(startObj, null);
 
 		Stack<ADQLIterator> stackIt = new Stack<ADQLIterator>();
+		Stack<ADQLObject> stackObj = new Stack<ADQLObject>();
 		ADQLObject obj = null;
 		ADQLIterator it = startObj.adqlIterator();
 
 		while(!isFinished()){
+
 			// Fetch the next ADQL object to test:
 			do{
-				if (it != null && it.hasNext())
+				if (it != null && it.hasNext()){
+					// Get the next object:
 					obj = it.next();
-				else if (!stackIt.isEmpty())
+					// ...but continue the research inside it as long as it is possible:
+					if (obj != null && goInto(obj)){
+						stackIt.push(it);
+						stackObj.push(obj);
+						it = obj.adqlIterator();
+						obj = null;
+					}
+				}else if (!stackIt.isEmpty()){
 					it = stackIt.pop();
-				else
+					obj = stackObj.pop();
+				}else
 					return;
 			}while(obj == null);
 
 			// Add the current object if it is matching:
 			if (match(obj))
-				obj = addMatchAndReplace(obj, it);
-
-			// Continue the research inside the current object (or the new object if a replacement has been performed):
-			if (obj != null && goInto(obj)){
-				stackIt.push(it);
-				it = obj.adqlIterator();
-			}
+				addMatchAndReplace(obj, it);
 
 			obj = null;
 		}

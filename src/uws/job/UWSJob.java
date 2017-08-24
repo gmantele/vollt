@@ -16,7 +16,7 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -37,6 +37,7 @@ import uws.ISO8601Format;
 import uws.UWSException;
 import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
+import uws.job.jobInfo.JobInfo;
 import uws.job.manager.ExecutionManager;
 import uws.job.parameters.UWSParameters;
 import uws.job.serializer.UWSSerializer;
@@ -114,7 +115,7 @@ import uws.service.request.UploadFile;
  * </ul>
  * 
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.2 (01/2016)
+ * @version	4.2 (06/2017)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -169,6 +170,10 @@ public class UWSJob extends SerializableUWSObject {
 
 	/** Name of the parameter <i>results</i>. */
 	public static final String PARAM_RESULTS = "results";
+
+	/** Name of the parameter <i>jobInfo</i>.
+	 * @since 4.2 */
+	public static final String PARAM_JOB_INFO = "jobInfo";
 
 	/** Default value of {@link #owner} if no ID are given at the job creation. */
 	public final static String ANONYMOUS_OWNER = "anonymous";
@@ -248,6 +253,10 @@ public class UWSJob extends SerializableUWSObject {
 
 	/** List of all input parameters (UWS standard and non-standard parameters). */
 	protected final UWSParameters inputParams;
+
+	/** Additional description of this job.
+	 * @since 4.2 */
+	protected JobInfo jobInfo = null;
 
 	/** The thread to start for executing the job. */
 	protected transient JobThread thread = null;
@@ -420,7 +429,7 @@ public class UWSJob extends SerializableUWSObject {
 			try{
 				setPhase(p, true);
 			}catch(UWSException ue){
-				// Can never append because the "force" parameter is true! 
+				// Can never append because the "force" parameter is true!
 			}
 		}
 
@@ -1015,7 +1024,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see #applyPhaseParam(JobOwner)
 	 */
 	public boolean addOrUpdateParameters(UWSParameters params, final JobOwner user) throws UWSException{
-		// The job can be modified ONLY IF in PENDING phase: 
+		// The job can be modified ONLY IF in PENDING phase:
 		if (!phase.isJobUpdatable())
 			throw new UWSException(UWSException.FORBIDDEN, "Forbidden parameters modification: the job is not any more in the PENDING phase!");
 
@@ -1141,6 +1150,54 @@ public class UWSJob extends SerializableUWSObject {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Get the additional information about this job.
+	 * 
+	 * @return	Additional info. about this job,
+	 *        	or NULL if there is none.
+	 * 
+	 * @since 4.2
+	 */
+	public final JobInfo getJobInfo(){
+		return jobInfo;
+	}
+
+	/**
+	 * Set the additional information about this job.
+	 * 
+	 * <p><i>Note:
+	 * 	By default, this function replaces the current {@link JobInfo}
+	 * 	of this job by the given one (even if NULL). This behavior
+	 * 	can be changed by overwriting this function and by returning the
+	 * 	extended {@link UWSJob} in the used {@link UWSFactory}.
+	 * </i></p>
+	 * 
+	 * <p><b>Important note:</b>
+	 * 	When attributing a {@link JobInfo} to a {@link UWSJob}, you
+	 * 	may have to call {@link JobInfo#setJob(UWSJob)} on the former
+	 * 	and the new jobInfo (see the default implementation for an example)
+	 * 	for some implementations of {@link JobInfo}.
+	 * </p>
+	 * 
+	 * @param newJobInfo	The new additional info. about this job.
+	 *                  	<i>NULL is allowed and should be used to remove a
+	 *                  	JobInfo from a job.</i>
+	 * 
+	 * @since 4.2
+	 */
+	public void setJobInfo(final JobInfo newJobInfo){
+		// Cut the link between the former jobInfo and this job:
+		if (this.jobInfo != null)
+			this.jobInfo.setJob(null);
+
+		// Establish a link between the new jobInfo and this job:
+		if (newJobInfo != null)
+			newJobInfo.setJob(this);
+
+		// Replace the former jobInfo by the given one:
+		this.jobInfo = newJobInfo;
 	}
 
 	/**
@@ -1288,7 +1345,7 @@ public class UWSJob extends SerializableUWSObject {
 	}
 
 	/**
-	 * Stop/Cancel this job when its maximum execution duration has been reached. 
+	 * Stop/Cancel this job when its maximum execution duration has been reached.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
 	 * @version 4.1 (09/2014)
@@ -1458,7 +1515,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * <p>Stops the job if running, removes the job from the execution manager, stops the timer for the execution duration
 	 * and may clear all files or any other resources associated to this job.</p>
 	 * 
-	 * <p><i>By default the job is aborted, the {@link UWSJob#thread} attribute is set to null, the timers are stopped and uploaded files, results and the error summary are deleted.</i></p>
+	 * <p><i>By default the job is aborted, the {@link UWSJob#thread} attribute is set to null, the timers are stopped and uploaded files, results and the error summary are deleted and the jobInfo is destroyed.</i></p>
 	 */
 	public void clearResources(){
 		// If still running, abort/stop the job:
@@ -1504,6 +1561,15 @@ public class UWSJob extends SerializableUWSObject {
 				getFileManager().deleteError(errorSummary, this);
 			}catch(IOException ioe){
 				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file associated with the error '" + errorSummary.message + "' of the job \"" + jobId + "\"!", ioe);
+			}
+		}
+
+		// Destroy the additional job info.:
+		if (jobInfo != null){
+			try{
+				jobInfo.destroy();
+			}catch(UWSException ue){
+				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to destroy the additional information about the job \"" + jobId + "\"", ue);
 			}
 		}
 
@@ -1677,7 +1743,7 @@ public class UWSJob extends SerializableUWSObject {
 
 	@Override
 	public String toString(){
-		return "JOB {jobId: " + jobId + "; phase: " + phase + "; runId: " + getRunId() + "; ownerId: " + owner + "; executionDuration: " + getExecutionDuration() + "; destructionTime: " + getDestructionTime() + "; quote: " + quote + "; NbResults: " + results.size() + "; " + ((errorSummary != null) ? errorSummary.toString() : "No error") + " }";
+		return "JOB {jobId: " + jobId + "; phase: " + phase + "; runId: " + getRunId() + "; ownerId: " + owner + "; executionDuration: " + getExecutionDuration() + "; destructionTime: " + getDestructionTime() + "; quote: " + quote + "; NbResults: " + results.size() + "; " + ((errorSummary != null) ? errorSummary.toString() : "No error") + " ; HasJobInfo: \"" + ((jobInfo != null) ? "yes" : "no") + "\"  }";
 	}
 
 	@Override

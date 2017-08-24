@@ -2,20 +2,20 @@ package tap.db;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -65,15 +65,15 @@ import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>This {@link DBConnection} implementation is theoretically able to deal with any DBMS JDBC connection.</p>
- * 
+ *
  * <p><i>Note:
  * 	"Theoretically", because its design has been done using information about Postgres, SQLite, Oracle, MySQL, Java DB (Derby) and H2.
  * 	Then it has been really tested successfully with Postgres, SQLite and H2.
  * </i></p>
- * 
- * 
+ *
+ *
  * <h3>Only one query executed at a time!</h3>
- * 
+ *
  * <p>
  * 	With a single instance of {@link JDBCConnection} it is possible to execute only one query (whatever the type: SELECT, UPDATE, DELETE, ...)
  * 	at a time. This is indeed the simple way chosen with this implementation in order to allow the cancellation of any query by managing only
@@ -81,13 +81,13 @@ import uws.service.log.UWSLog.LogLevel;
  * 	So all queries are executed with the same {@link Statement}. Thus, allowing the execution of one query at a time lets
  * 	abort only one query rather than several in once (though just one should have been stopped).
  * </p>
- * 
+ *
  * <p>
  * 	All the following functions are synchronized in order to prevent parallel execution of them by several threads:
  * 	{@link #addUploadedTable(TAPTable, TableIterator)}, {@link #dropUploadedTable(TAPTable)}, {@link #executeQuery(ADQLQuery)},
  * 	{@link #getTAPSchema()} and {@link #setTAPSchema(TAPMetadata)}.
  * </p>
- * 
+ *
  * <p>
  * 	To cancel a query execution the function {@link #cancel(boolean)} must be called. No error is returned by this function in case
  * 	no query is currently executing. When called, the flag {@link #isCancelled()} is set to <code>true</code>. Any potentially long
@@ -95,92 +95,92 @@ import uws.service.log.UWSLog.LogLevel;
  * 	the flag turns <code>true</code>. It should be the case for {@link #addUploadedTable(TAPTable, TableIterator)},
  * 	{@link #executeQuery(ADQLQuery)} and {@link #setTAPSchema(TAPMetadata)}.
  * </p>
- * 
- * 
+ *
+ *
  * <h3>Deal with different DBMS features</h3>
- * 
+ *
  * <p>Update queries are taking into account whether the following features are supported by the DBMS:</p>
  * <ul>
  * 	<li><b>data definition</b>: when not supported, no update operation will be possible.
  * 	                            All corresponding functions will then throw a {@link DBException} ;
  * 	                            only {@link #executeQuery(ADQLQuery)} will be possibly called.</li>
- * 
+ *
  * 	<li><b>transactions</b>: when not supported, no transaction is started or merely used.
  * 	                         It means that in case of update failure, no rollback will be possible
  * 	                         and that already done modification will remain in the database.</li>
- * 
+ *
  * 	<li><b>schemas</b>: when the DBMS does not have the notion of schema (like SQLite), no schema creation or dropping will be obviously processed.
  * 	                    Besides, if not already done, database name of all tables will be prefixed by the schema name.</li>
- * 
+ *
  * 	<li><b>batch updates</b>: when not supported, updates will just be done, "normally, one by one.
  * 	                          In one word, there will be merely no optimization.
  * 	                          Anyway, this feature concerns only the insertions into tables.</li>
- * 
+ *
  * 	<li><b>case sensitivity of identifiers</b>: the case sensitivity of quoted identifier varies from the used DBMS. This {@link DBConnection}
  * 	                                            implementation is able to adapt itself in function of the way identifiers are stored and
  * 	                                            researched in the database. How the case sensitivity is managed by the DBMS is the problem
  * 	                                            of only one function (which can be overwritten if needed): {@link #equals(String, String, boolean)}.</li>
  * </ul>
- * 
+ *
  * <p><i><b>Warning</b>:
  * 	All these features have no impact at all on ADQL query executions ({@link #executeQuery(ADQLQuery)}).
  * </i></p>
- * 
- * 
+ *
+ *
  * <h3>Datatypes</h3>
- * 
+ *
  * <p>
  * 	All datatype conversions done while fetching a query result (via a {@link ResultSet})
  * 	are done exclusively by the returned {@link TableIterator} (so, here {@link ResultSetTableIterator}).
  * </p>
- * 
+ *
  * <p>
  * 	However, datatype conversions done while uploading a table are done here by the function
  * 	{@link #convertTypeToDB(DBType)}. This function uses first the conversion function of the translator
  * 	({@link JDBCTranslator#convertTypeToDB(DBType)}), and then {@link #defaultTypeConversion(DBType)}
  * 	if it fails.
  * </p>
- * 
+ *
  * <p>
  * 	In this default conversion, all typical DBMS datatypes are taken into account, <b>EXCEPT the geometrical types</b>
  * 	(POINT and REGION). That's why it is recommended to use a translator in which the geometrical types are supported
  * 	and managed.
  * </p>
- * 
- * 
+ *
+ *
  * <h3>Fetch size</h3>
- * 
+ *
  * <p>
  * 	The possibility to specify a "fetch size" to the JDBC driver (and more exactly to a {@link Statement}) may reveal
  * 	very helpful when dealing with large datasets. Thus, it is possible to fetch rows by block of a size represented
  * 	by this "fetch size". This is also possible with this {@link DBConnection} thanks to the function {@link #setFetchSize(int)}.
  * </p>
- * 
+ *
  * <p>
  * 	However, some JDBC driver or DBMS may not support this feature. In such case, it is then automatically disabled by
  * 	{@link JDBCConnection} so that any subsequent queries do not attempt to use it again. The {@link #supportsFetchSize}
  * 	is however reset to <code>true</code> when {@link #setFetchSize(int)} is called.
  * </p>
- * 
+ *
  * <p><i>Note 1:
  * 	The "fetch size" feature is used only for SELECT queries executed by {@link #executeQuery(ADQLQuery)}. In all other functions,
  * 	results of SELECT queries are fetched with the default parameter of the JDBC driver and its {@link Statement} implementation.
  * </i></p>
- * 
+ *
  * <p><i>Note 2:
  * 	By default, this feature is disabled. So the default value of the JDBC driver is used.
  * 	To enable it, a simple call to {@link #setFetchSize(int)} is enough, whatever is the given value.
  * </i></p>
- * 
+ *
  * <p><i>Note 3:
  * 	Generally set a fetch size starts a transaction in the database. So, after the result of the fetched query
  * 	is not needed any more, do not forget to call {@link #endQuery()} in order to end the implicitly opened transaction.
  * 	However, generally closing the returned {@link TableIterator} is fully enough (see the sources of
  * 	{@link ResultSetTableIterator#close()} for more details).
  * </i></p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (04/2017)
+ * @version 2.1 (08/2017)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -214,7 +214,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>If <code>true</code>, this flag indicates that the function {@link #cancel(boolean)} has been called at least once.</p>
-	 * 
+	 *
 	 * <p>{@link #cancel(boolean)} sets this flag to <code>true</code>.</p>
 	 * <p>
 	 * 	All functions executing any kind of query on the database MUST set this flag to <code>false</code> before doing anything
@@ -315,15 +315,15 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Creates a JDBC connection to the specified database and with the specified JDBC driver.
 	 * This connection is established using the given user name and password.<p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> the JDBC driver is loaded using <pre>Class.forName(driverPath)</pre> and the connection is created with <pre>DriverManager.getConnection(dbUrl, dbUser, dbPassword)</pre>.</i></p>
-	 * 
+	 *
 	 * <p><i><b>Warning:</b>
 	 * 	This constructor really creates a new SQL connection. Creating a SQL connection is time consuming!
 	 * 	That's why it is recommended to use a pool of connections. When doing so, you should use the other constructor of this class
 	 * 	({@link #JDBCConnection(Connection, JDBCTranslator, String, TAPLog)}).
 	 * </i></p>
-	 * 
+	 *
 	 * @param driverPath	Full class name of the JDBC driver.
 	 * @param dbUrl			URL to the database. <i><u>note</u> This URL may not be prefixed by "jdbc:". If not, the prefix will be automatically added.</i>
 	 * @param dbUser		Name of the database user.
@@ -331,7 +331,7 @@ public class JDBCConnection implements DBConnection {
 	 * @param translator	{@link ADQLTranslator} to use in order to get SQL from an ADQL query and to get qualified DB table names.
 	 * @param connID		ID of this connection. <i>note: may be NULL ; but in this case, logs concerning this connection will be more difficult to localize.</i>
 	 * @param logger		Logger to use in case of need. <i>note: may be NULL ; in this case, error will never be logged, but sometimes DBException may be raised.</i>
-	 * 
+	 *
 	 * @throws DBException	If the driver can not be found or if the connection can not merely be created (usually because DB parameters are wrong).
 	 */
 	public JDBCConnection(final String driverPath, final String dbUrl, final String dbUser, final String dbPassword, final JDBCTranslator translator, final String connID, final TAPLog logger) throws DBException{
@@ -340,7 +340,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Create a JDBC connection by wrapping the given connection.
-	 * 
+	 *
 	 * @param conn			Connection to wrap.
 	 * @param translator	{@link ADQLTranslator} to use in order to get SQL from an ADQL query and to get qualified DB table names.
 	 * @param connID		ID of this connection. <i>note: may be NULL ; but in this case, logs concerning this connection will be more difficult to localize.</i>
@@ -364,7 +364,7 @@ public class JDBCConnection implements DBConnection {
 			supportsTransaction = dbMeta.supportsTransactions();
 			supportsBatchUpdates = dbMeta.supportsBatchUpdates();
 			supportsDataDefinition = dbMeta.supportsDataDefinitionAndDataManipulationTransactions();
-			supportsSchema = dbMeta.supportsSchemasInTableDefinitions();
+			supportsSchema = (DBMS_MYSQL.equalsIgnoreCase(dbms) ? true : dbMeta.supportsSchemasInTableDefinitions());
 			lowerCaseUnquoted = dbMeta.storesLowerCaseIdentifiers();
 			upperCaseUnquoted = dbMeta.storesUpperCaseIdentifiers();
 			supportsMixedCaseUnquotedIdentifier = dbMeta.supportsMixedCaseIdentifiers();
@@ -372,6 +372,7 @@ public class JDBCConnection implements DBConnection {
 			mixedCaseQuoted = dbMeta.storesMixedCaseQuotedIdentifiers();
 			upperCaseQuoted = dbMeta.storesUpperCaseQuotedIdentifiers();
 			supportsMixedCaseQuotedIdentifier = dbMeta.supportsMixedCaseQuotedIdentifiers();
+
 		}catch(SQLException se){
 			throw new DBException("Unable to access to one or several DB metadata (url, supportsTransaction, supportsBatchUpdates, supportsDataDefinitionAndDataManipulationTransactions, supportsSchemasInTableDefinitions, storesLowerCaseIdentifiers, storesUpperCaseIdentifiers, supportsMixedCaseIdentifiers, storesLowerCaseQuotedIdentifiers, storesMixedCaseQuotedIdentifiers, storesUpperCaseQuotedIdentifiers and supportsMixedCaseQuotedIdentifiers) from the given Connection!");
 		}
@@ -379,11 +380,11 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Extract the DBMS name from the given database URL.
-	 * 
+	 *
 	 * @param dbUrl	JDBC URL to access the database. <b>This URL must start with "jdbc:" ; otherwise an exception will be thrown.</b>
-	 * 
+	 *
 	 * @return	The DBMS name as found in the given URL.
-	 * 
+	 *
 	 * @throws DBException	If NULL has been given, if the URL is not a JDBC one (starting with "jdbc:") or if the DBMS name is missing.
 	 *
 	 * @deprecated (since 2.1) Should be replaced by <code>{@link java.sql.DatabaseMetaData#getDatabaseProductName()}.toLowerCase()</code>.
@@ -407,16 +408,16 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * Create a {@link Connection} instance using the given database parameters.
 	 * The path of the JDBC driver will be used to load the adequate driver if none is found by default.
-	 * 
+	 *
 	 * @param driverPath	Path to the JDBC driver.
 	 * @param dbUrl			JDBC URL to connect to the database. <i><u>note</u> This URL may not be prefixed by "jdbc:". If not, the prefix will be automatically added.</i>
 	 * @param dbUser		Name of the user to use to connect to the database.
 	 * @param dbPassword	Password of the user to use to connect to the database.
-	 * 
+	 *
 	 * @return	A new DB connection.
-	 * 
+	 *
 	 * @throws DBException	If the driver can not be found or if the connection can not merely be created (usually because DB parameters are wrong).
-	 * 
+	 *
 	 * @see DriverManager#getDriver(String)
 	 * @see Driver#connect(String, Properties)
 	 */
@@ -464,11 +465,11 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Get the JDBC connection wrapped by this {@link JDBCConnection} object.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This is the best way to get the JDBC connection in order to properly close it.
 	 * </i></p>
-	 * 
+	 *
 	 * @return	The wrapped JDBC connection.
 	 */
 	public final Connection getInnerConnection(){
@@ -477,12 +478,12 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Tell whether this {@link JDBCConnection} is already associated with a {@link Statement}.</p>
-	 * 
+	 *
 	 * @return	<code>true</code> if a {@link Statement} instance is already associated with this {@link JDBCConnection}
 	 *        	<code>false</code> otherwise.
-	 * 
+	 *
 	 * @throws SQLException	In case the open/close status of the current {@link Statement} instance can not be checked.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected boolean hasStatement() throws SQLException{
@@ -491,16 +492,16 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Get the only statement associated with this {@link JDBCConnection}.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	If no {@link Statement} is yet existing, one is created, stored in this {@link JDBCConnection} (for further uses)
 	 * 	and then returned.
 	 * </p>
-	 * 
+	 *
 	 * @return	The {@link Statement} instance associated with this {@link JDBCConnection}. <i>Never NULL</i>
-	 * 
+	 *
 	 * @throws SQLException	In case a {@link Statement} can not be created.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected Statement getStatement() throws SQLException{
@@ -512,7 +513,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Close the only statement associated with this {@link JDBCConnection}.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected void closeStatement(){
@@ -522,7 +523,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Cancel (and rollback when possible) the currently running query of this {@link JDBCConnection} instance.</p>
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	This function tries canceling the current JDBC statement. This can work only if the JDBC driver and
 	 * 	the DBMS both support this operation. If the statement cancellation fails, the flag {@link #supportsCancel}
@@ -530,7 +531,7 @@ public class JDBCConnection implements DBConnection {
 	 * 	{@link JDBCConnection} does not try any other cancellation attempt. <b>HOWEVER</b> the rollback will
 	 * 	still continue to be performed if the parameter <code>rollback</code> is set to <code>true</code>.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	In any case, this function sets anyway the flag {@link #isCancelled()} to <code>true</code> so that after
 	 * 	a DB processing this {@link DBConnection} can interrupt immediately any potentially long running functions
@@ -538,24 +539,24 @@ public class JDBCConnection implements DBConnection {
 	 * 	{@link #setTAPSchema(TAPMetadata)}). When these functions realize this flag is set, they immediately stop
 	 * 	by throwing a {@link DBCancelledException}.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note 1:
 	 * 	A failure of a rollback is not considered as a not supported cancellation feature by the JDBC driver or the DBMS.
 	 * 	So if the cancellation succeeds but a rollback fails, a next call of this function will still try canceling the given statement.
 	 * 	In case of a rollback failure, only a WARNING is written in the log file ; no exception is thrown.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	This function is synchronized on the {@link #cancelled} flag.
 	 * 	Thus, it may block until another synchronized block on this same flag is finished.
 	 * </i></p>
-	 * 
+	 *
 	 * @param rollback	<code>true</code> to cancel the statement AND rollback the current connection transaction,
 	 *                	<code>false</code> to just cancel the statement.
-	 * 
+	 *
 	 * @see DBConnection#cancel(boolean)
 	 * @see #cancel(Statement, boolean)
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	@Override
@@ -571,7 +572,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Cancel (and rollback when asked and if possible) the given statement.</p>
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	This function tries canceling the current JDBC statement. This can work only if the JDBC driver and
 	 * 	the DBMS both support this operation. If the statement cancellation fails, the flag {@link #supportsCancel}
@@ -579,20 +580,20 @@ public class JDBCConnection implements DBConnection {
 	 * 	{@link JDBCConnection} does not try any other cancellation attempt. <b>HOWEVER</b> the rollback will
 	 * 	still continue to be performed if the parameter <code>rollback</code> is set to <code>true</code>.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	A failure of a rollback is not considered as a not supported cancellation feature by the JDBC driver or the DBMS.
 	 * 	So if the cancellation succeeds but a rollback fails, a next call of this function will still try canceling the given statement.
 	 * 	In case of a rollback failure, only a WARNING is written in the log file ; no exception is thrown.
 	 * </i></p>
-	 * 
+	 *
 	 * @param stmt		The statement to cancel. <i>Note: if closed or NULL, no exception will be thrown and only a rollback will be attempted if asked in parameter.</i>
 	 * @param rollback	<code>true</code> to cancel the statement AND rollback the current connection transaction,
 	 *                	<code>false</code> to just cancel the statement.
-	 * 
+	 *
 	 * @return	<code>true</code> if the cancellation succeeded (or none was running),
 	 *        	<code>false</code> otherwise (and especially if the "cancel" operation is not supported).
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected boolean cancel(final Statement stmt, final boolean rollback){
@@ -626,15 +627,15 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Tell whether the last query execution has been canceled.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is synchronized on the {@link #cancelled} flag.
 	 * 	Thus, it may block until another synchronized block on this same flag is finished.
 	 * </i></p>
-	 * 
+	 *
 	 * @return	<code>true</code> if the last query execution has been cancelled,
 	 *        	<code>false</code> otherwise.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected final boolean isCancelled(){
@@ -645,12 +646,12 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Reset the {@link #cancelled} flag to <code>false</code>.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is synchronized on the {@link #cancelled} flag.
 	 * 	Thus, it may block until another synchronized block on this same flag is finished.
 	 * </i></p>
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected final void resetCancel(){
@@ -761,7 +762,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Create a {@link TableIterator} instance which lets reading the given result table.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	The statement currently opened is not closed by this function. Actually, it is still associated with
 	 * 	this {@link JDBCConnection}. However, this latter is provided to the {@link TableIterator} returned by
@@ -769,15 +770,15 @@ public class JDBCConnection implements DBConnection {
 	 * 	will be called. It will then close the {@link ResultSet}, the {@link Statement} and end any opened
 	 * 	transaction (with rollback). See {@link #endQuery()} for more details.
 	 * </i></p>
-	 * 
+	 *
 	 * @param rs				Result of an SQL query.
 	 * @param resultingColumns	Metadata corresponding to each columns of the result.
-	 * 
+	 *
 	 * @return	A {@link TableIterator} instance.
-	 * 
+	 *
 	 * @throws DataReadException	If the metadata (columns count and types) can not be fetched
 	 *                          	or if any other error occurs.
-	 * 
+	 *
 	 * @see ResultSetTableIterator#ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
 	 */
 	protected TableIterator createTableIterator(final ResultSet rs, final DBColumn[] resultingColumns) throws DataReadException{
@@ -794,9 +795,9 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Tell when, compared to the other TAP standard tables, a given standard TAP table should be created.
-	 * 
+	 *
 	 * @param table	Standard TAP table.
-	 * 
+	 *
 	 * @return	An index between 0 and 4 (included) - 0 meaning the first table to create whereas 4 is the last one.
 	 *          -1 is returned if NULL is given in parameter of if the standard table is not taken into account here.
 	 */
@@ -825,21 +826,21 @@ public class JDBCConnection implements DBConnection {
 	 * <p><i>
 	 * 	For instance: if in the database "TAP_SCHEMA" is called "MY_TAP_SCHEMA".
 	 * </i></p>
-	 * 
+	 *
 	 * <p><b>IMPORTANT:</b>
 	 * 	TAP_SCHEMA items (i.e. keys in the map) MUST be fully qualified ADQL names (e.g. TAP_SCHEMA.columns.name).
 	 * 	The values MUST be single database names (i.e. no catalogue, schema or table prefix).
 	 * 	Both keys and values are case sensitive.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:</i>
 	 * 	TAP_SCHEMA items keeping the same name in the database than in ADQL do not need to
 	 * 	be listed in the given map.
 	 * </p>
-	 * 
+	 *
 	 * @param mapping	Mapping between ADQL names and DB names.
 	 *               	If <code>null</code>, DB names will be considered equals to the ADQL names.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public void setDBMapping(final Map<String,String> mapping){
@@ -858,9 +859,9 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Get the standard definition of TAP_SCHEMA with eventually DB names provided by the set mapping (see {@link #setDBMapping(Map)}).
-	 * 
+	 *
 	 * @return	The standard schema as it should be detected in the database.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected TAPSchema getStdSchema(){
@@ -904,12 +905,12 @@ public class JDBCConnection implements DBConnection {
 	 * 	<li>{@link #loadColumns(TAPTable, List, Statement)}</li>
 	 * 	<li>{@link #loadKeys(TAPTable, TAPTable, List, Statement)}</li>
 	 * </ol>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If schemas are not supported by this DBMS connection, the DB name of all tables will be set to NULL
 	 * 	and the DB name of all tables will be prefixed by the ADQL name of their respective schema.
 	 * </i></p>
-	 * 
+	 *
 	 * @see tap.db.DBConnection#getTAPSchema()
 	 */
 	@Override
@@ -962,19 +963,19 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Load into the given metadata all schemas listed in TAP_SCHEMA.schemas.</p>
-	 * 
+	 *
 	 * <p><i>Note 1:
 	 * 	If schemas are not supported by this DBMS connection, the DB name of the loaded schemas is set to NULL.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	Schema entries are retrieved ordered by ascending schema_name.
 	 * </i></p>
-	 * 
+	 *
 	 * @param tableDef		Definition of the table TAP_SCHEMA.schemas.
 	 * @param metadata		Metadata to fill with all found schemas.
 	 * @param stmt			Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @throws DBException	If any error occurs while interacting with the database.
 	 */
 	protected void loadSchemas(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
@@ -1034,28 +1035,28 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Load into the corresponding metadata all tables listed in TAP_SCHEMA.tables.</p>
-	 * 
+	 *
 	 * <p><i>Note 1:
 	 * 	Schemas are searched in the given metadata by their ADQL name and case sensitively.
 	 * 	If they can not be found a {@link DBException} is thrown.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	If schemas are not supported by this DBMS connection, the DB name of the loaded
 	 * 	{@link TAPTable}s is prefixed by the ADQL name of their respective schema.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 3:
 	 * 	If the column table_index exists, table entries are retrieved ordered by ascending schema_name, then table_index, and finally table_name.
 	 * 	If this column does not exist, table entries are retrieved ordered by ascending schema_name and then table_name.
 	 * </i></p>
-	 * 
+	 *
 	 * @param tableDef		Definition of the table TAP_SCHEMA.tables.
 	 * @param metadata		Metadata (containing already all schemas listed in TAP_SCHEMA.schemas).
 	 * @param stmt			Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @return	The complete list of all loaded tables. <i>note: this list is required by {@link #loadColumns(TAPTable, List, Statement)}.</i>
-	 * 
+	 *
 	 * @throws DBException	If a schema can not be found, or if any other error occurs while interacting with the database.
 	 */
 	protected List<TAPTable> loadTables(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
@@ -1149,21 +1150,21 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Load into the corresponding tables all columns listed in TAP_SCHEMA.columns.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Tables are searched in the given list by their ADQL name and case sensitively.
 	 * 	If they can not be found a {@link DBException} is thrown.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	If the column column_index exists, column entries are retrieved ordered by ascending table_name, then column_index, and finally column_name.
 	 * 	If this column does not exist, column entries are retrieved ordered by ascending table_name and then column_name.
 	 * </i></p>
-	 * 
+	 *
 	 * @param tableDef		Definition of the table TAP_SCHEMA.columns.
 	 * @param lstTables		List of all published tables (= all tables listed in TAP_SCHEMA.tables).
 	 * @param stmt			Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @throws DBException	If a table can not be found, or if any other error occurs while interacting with the database.
 	 */
 	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException{
@@ -1268,22 +1269,22 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Load into the corresponding tables all keys listed in TAP_SCHEMA.keys and detailed in TAP_SCHEMA.key_columns.</p>
-	 * 
+	 *
 	 * <p><i>Note 1:
 	 * 	Tables and columns are searched in the given list by their ADQL name and case sensitively.
 	 * 	If they can not be found a {@link DBException} is thrown.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	Key entries are retrieved ordered by ascending key_id, then from_table and finally target_table.
 	 * 	Key_Column entries are retrieved ordered by ascending from_column and then target_column.
 	 * </i></p>
-	 * 
+	 *
 	 * @param keysDef		Definition of the table TAP_SCHEMA.keys.
 	 * @param keyColumnsDef	Definition of the table TAP_SCHEMA.key_columns.
 	 * @param lstTables		List of all published tables (= all tables listed in TAP_SCHEMA.tables).
 	 * @param stmt			Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @throws DBException	If a table or a column can not be found, or if any other error occurs while interacting with the database.
 	 */
 	protected void loadKeys(final TAPTable keysDef, final TAPTable keyColumnsDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException{
@@ -1383,12 +1384,12 @@ public class JDBCConnection implements DBConnection {
 	 * 	<li>{@link #commit()} or {@link #rollback()}</li>
 	 * 	<li>{@link #endTransaction()}</li>
 	 * </ol>
-	 * 
+	 *
 	 * <p><i><b>Important note:
 	 * 	If the connection does not support transactions, then there will be merely no transaction.
 	 * 	Consequently, any failure (exception/error) will not clean the partial modifications done by this function.
 	 * </i></p>
-	 * 
+	 *
 	 * @see tap.db.DBConnection#setTAPSchema(tap.metadata.TAPMetadata)
 	 */
 	@Override
@@ -1454,33 +1455,33 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Merge the definition of TAP_SCHEMA tables given in parameter with the definition provided in the TAP standard.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	The goal is to get in output the list of all standard TAP_SCHEMA tables. But it must take into account the customized
 	 * 	definition given in parameter if there is one. Indeed, if a part of TAP_SCHEMA is not provided, it will be completed here by the
 	 * 	definition provided in the TAP standard. And so, if the whole TAP_SCHEMA is not provided at all, the returned tables will be those
 	 * 	of the IVOA standard.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	If the TAP_SCHEMA definition is missing or incomplete in the given metadata, it will be added or completed automatically
 	 * 	by this function with the definition provided in the IVOA TAP standard.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Only the standard tables of TAP_SCHEMA are considered. The others are skipped (that's to say: never returned by this function ;
 	 *  however, they will stay in the given metadata).
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If schemas are not supported by this DBMS connection, the DB name of schemas is set to NULL and
 	 * 	the DB name of tables is prefixed by the schema name.
 	 * </i></p>
-	 * 
+	 *
 	 * @param metadata	Metadata (with or without TAP_SCHEMA schema or some of its table). <i>Must not be NULL</i>
-	 * 
+	 *
 	 * @return	The list of all standard TAP_SCHEMA tables, ordered by creation order (see {@link #getCreationOrder(tap.metadata.TAPMetadata.STDTable)}).
-	 * 
+	 *
 	 * @see TAPMetadata#resolveStdTable(String)
 	 * @see TAPMetadata#getStdSchema(boolean)
 	 * @see TAPMetadata#getStdTable(STDTable)
@@ -1544,15 +1545,15 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Ensure the TAP_SCHEMA schema exists in the database AND it must especially drop all of its standard tables
 	 * (schemas, tables, columns, keys and key_columns), if they exist.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note</b>:
 	 * 	If TAP_SCHEMA already exists and contains other tables than the standard ones, they will not be dropped and they will stay in place.
 	 * </i></p>
-	 * 
+	 *
 	 * @param stmt			The statement to use in order to interact with the database.
 	 * @param stdTables		List of all standard tables that must be (re-)created.
 	 *                      They will be used just to know the name of the standard tables that should be dropped here.
-	 * 
+	 *
 	 * @throws SQLException	If any error occurs while querying or updating the database.
 	 */
 	protected void resetTAPSchema(final Statement stmt, final TAPTable[] stdTables) throws SQLException{
@@ -1578,19 +1579,19 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Remove/Drop all standard TAP_SCHEMA tables given in parameter.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	To test the existence of tables to drop, {@link DatabaseMetaData#getTables(String, String, String, String[])} is called.
 	 * 	Then the schema and table names are compared with the case sensitivity defined by the translator.
 	 * 	Only tables matching with these comparisons will be dropped.
 	 * </i></p>
-	 * 
+	 *
 	 * @param stdTables	Tables to drop. (they should be provided ordered by their creation order (see {@link #getCreationOrder(STDTable)})).
 	 * @param stmt		Statement to use in order to interact with the database.
 	 * @param dbMeta	Database metadata. Used to list all existing tables.
-	 * 
+	 *
 	 * @throws SQLException	If any error occurs while querying or updating the database.
-	 * 
+	 *
 	 * @see JDBCTranslator#isCaseSensitive(IdentifierField)
 	 */
 	private void dropTAPSchemaTables(final TAPTable[] stdTables, final Statement stmt, final DatabaseMetaData dbMeta) throws SQLException{
@@ -1629,22 +1630,22 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Create the specified standard TAP_SCHEMA tables into the database.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	Only standard TAP_SCHEMA tables (schemas, tables, columns, keys and key_columns) can be created here.
 	 * 	If the given table is not part of the schema TAP_SCHEMA (comparison done on the ADQL name case-sensitively)
 	 * 	and is not a standard TAP_SCHEMA table (comparison done on the ADQL name case-sensitively),
 	 * 	this function will do nothing and will throw an exception.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	An extra column is added in TAP_SCHEMA.schemas, TAP_SCHEMA.tables and TAP_SCHEMA.columns: {@value #DB_NAME_COLUMN}.
 	 * 	This column is particularly used when getting the TAP metadata from the database to alias some schema, table and/or column names in ADQL.
 	 * </i></p>
-	 * 
+	 *
 	 * @param table	Table to create.
 	 * @param stmt	Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @throws DBException	If the given table is not a standard TAP_SCHEMA table.
 	 * @throws SQLException	If any error occurs while querying or updating the database.
 	 */
@@ -1694,11 +1695,11 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Get the primary key corresponding to the specified table.</p>
-	 * 
+	 *
 	 * <p>If the specified table is not a standard TAP_SCHEMA table, NULL will be returned.</p>
-	 * 
+	 *
 	 * @param tableName	ADQL table name.
-	 * 
+	 *
 	 * @return	The primary key definition (prefixed by a space) corresponding to the specified table (ex: " PRIMARY KEY(schema_name)"),
 	 *          or NULL if the specified table is not a standard TAP_SCHEMA table.
 	 */
@@ -1725,17 +1726,17 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Create the DB indexes corresponding to the given TAP_SCHEMA table.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	Only standard TAP_SCHEMA tables (schemas, tables, columns, keys and key_columns) can be created here.
 	 * 	If the given table is not part of the schema TAP_SCHEMA (comparison done on the ADQL name case-sensitively)
 	 * 	and is not a standard TAP_SCHEMA table (comparison done on the ADQL name case-sensitively),
 	 * 	this function will do nothing and will throw an exception.
 	 * </i></p>
-	 * 
+	 *
 	 * @param table	Table whose indexes must be created here.
 	 * @param stmt	Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException			If the given table is not a standard TAP_SCHEMA table.
 	 * @throws SQLException			If any error occurs while querying or updating the database.
@@ -1765,9 +1766,9 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Tell whether the specified column is part of the primary key of its table.
-	 * 
+	 *
 	 * @param adqlName	ADQL name of a column.
-	 * 
+	 *
 	 * @return	<i>true</i> if the specified column is part of the primary key,
 	 *          <i>false</i> otherwise.
 	 */
@@ -1780,7 +1781,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Fill all the standard tables of TAP_SCHEMA (schemas, tables, columns, keys and key_columns).</p>
-	 * 
+	 *
 	 * <p>This function just call the following functions:</p>
 	 * <ol>
 	 * 	<li>{@link #fillSchemas(TAPTable, Iterator)}</li>
@@ -1788,9 +1789,9 @@ public class JDBCConnection implements DBConnection {
 	 * 	<li>{@link #fillColumns(TAPTable, Iterator)}</li>
 	 * 	<li>{@link #fillKeys(TAPTable, TAPTable, Iterator)}</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param meta	All schemas and tables to list inside the TAP_SCHEMA tables.
-	 * 
+	 *
 	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
@@ -1820,17 +1821,17 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Fill the standard table TAP_SCHEMA.schemas with the list of all published schemas.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Batch updates may be done here if its supported by the DBMS connection.
 	 * 	In case of any failure while using this feature, it will be flagged as unsupported and one-by-one updates will be processed.
 	 * </i></p>
-	 * 
+	 *
 	 * @param metaTable	Description of TAP_SCHEMA.schemas.
 	 * @param itSchemas	Iterator over the list of schemas.
-	 * 
+	 *
 	 * @return	Iterator over the full list of all tables (whatever is their schema).
-	 * 
+	 *
 	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException	If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException	If any other SQL exception occurs.
@@ -1891,17 +1892,17 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Fill the standard table TAP_SCHEMA.tables with the list of all published tables.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Batch updates may be done here if its supported by the DBMS connection.
 	 * 	In case of any failure while using this feature, it will be flagged as unsupported and one-by-one updates will be processed.
 	 * </i></p>
-	 * 
+	 *
 	 * @param metaTable	Description of TAP_SCHEMA.tables.
 	 * @param itTables	Iterator over the list of tables.
-	 * 
+	 *
 	 * @return	Iterator over the full list of all columns (whatever is their table).
-	 * 
+	 *
 	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
@@ -1967,17 +1968,17 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Fill the standard table TAP_SCHEMA.columns with the list of all published columns.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Batch updates may be done here if its supported by the DBMS connection.
 	 * 	In case of any failure while using this feature, it will be flagged as unsupported and one-by-one updates will be processed.
 	 * </i></p>
-	 * 
+	 *
 	 * @param metaTable	Description of TAP_SCHEMA.columns.
 	 * @param itColumns	Iterator over the list of columns.
-	 * 
+	 *
 	 * @return	Iterator over the full list of all foreign keys.
-	 * 
+	 *
 	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
@@ -2057,16 +2058,16 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Fill the standard tables TAP_SCHEMA.keys and TAP_SCHEMA.key_columns with the list of all published foreign keys.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Batch updates may be done here if its supported by the DBMS connection.
 	 * 	In case of any failure while using this feature, it will be flagged as unsupported and one-by-one updates will be processed.
 	 * </i></p>
-	 * 
+	 *
 	 * @param metaKeys			Description of TAP_SCHEMA.keys.
 	 * @param metaKeyColumns	Description of TAP_SCHEMA.key_columns.
 	 * @param itKeys			Iterator over the list of foreign keys.
-	 * 
+	 *
 	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
@@ -2162,17 +2163,17 @@ public class JDBCConnection implements DBConnection {
 	 * 	Only tables uploaded by users can be created in the database. To ensure that, the schema name of this table MUST be {@link STDSchema#UPLOADSCHEMA} ("TAP_UPLOAD") in ADQL.
 	 * 	If it has another ADQL name, an exception will be thrown. Of course, the DB name of this schema MAY be different.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function may modify the given {@link TAPTable} object if schemas are not supported by this connection.
 	 * 	In this case, this function will prefix the table's DB name by the schema's DB name directly inside the given
 	 * 	{@link TAPTable} object. Then the DB name of the schema will be set to NULL.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If the upload schema does not already exist in the database, it will be created.
 	 * </i></p>
-	 * 
+	 *
 	 * @see tap.db.DBConnection#addUploadedTable(tap.metadata.TAPTable, tap.data.TableIterator)
 	 * @see #checkUploadedTableDef(TAPTable)
 	 */
@@ -2231,6 +2232,7 @@ public class JDBCConnection implements DBConnection {
 					sqlBuf.append(',');
 			}
 			sqlBuf.append(')');
+
 			// ...execute the update query:
 			stmt.executeUpdate(sqlBuf.toString());
 
@@ -2273,21 +2275,21 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Fill the table uploaded by the user with the given data.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Batch updates may be done here if its supported by the DBMS connection.
 	 * 	In case of any failure while using this feature, it will be flagged as unsupported and one-by-one updates will be processed.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function proceeds to a formatting of TIMESTAMP and GEOMETRY (point, circle, box, polygon) values.
 	 * </i></p>
-	 * 
+	 *
 	 * @param metaTable	Description of the updated table.
 	 * @param data		Iterator over the rows to insert.
-	 * 
+	 *
 	 * @return	Number of inserted rows.
-	 * 
+	 *
 	 * @throws DBCancelledException	If {@link #cancel(boolean)} has been called during the processing,
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
@@ -2395,18 +2397,18 @@ public class JDBCConnection implements DBConnection {
 	 * 	Only tables uploaded by users can be dropped from the database. To ensure that, the schema name of this table MUST be {@link STDSchema#UPLOADSCHEMA} ("TAP_UPLOAD") in ADQL.
 	 * 	If it has another ADQL name, an exception will be thrown. Of course, the DB name of this schema MAY be different.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function may modify the given {@link TAPTable} object if schemas are not supported by this connection.
 	 * 	In this case, this function will prefix the table's DB name by the schema's DB name directly inside the given
 	 * 	{@link TAPTable} object. Then the DB name of the schema will be set to NULL.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This implementation is able to drop only one uploaded table. So if this function finds more than one table matching to the given one,
 	 * 	an exception will be thrown and no table will be dropped.
 	 * </i></p>
-	 * 
+	 *
 	 * @see tap.db.DBConnection#dropUploadedTable(tap.metadata.TAPTable)
 	 * @see #checkUploadedTableDef(TAPTable)
 	 */
@@ -2454,7 +2456,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Ensures that the given table MUST be inside the upload schema in ADQL.</p>
-	 * 
+	 *
 	 * <p>Thus, the following cases are taken into account:</p>
 	 * <ul>
 	 * 	<li>
@@ -2466,9 +2468,9 @@ public class JDBCConnection implements DBConnection {
 	 * 		inside the given {@link TAPTable} object. Then the DB name of the schema will be set to NULL.
 	 * 	</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param tableDef	Definition of the table to create/drop.
-	 * 
+	 *
 	 * @throws DBException	If the given table is not in a schema
 	 *                    	or if the ADQL name of this schema is not {@link STDSchema#UPLOADSCHEMA} ("TAP_UPLOAD").
 	 */
@@ -2491,17 +2493,17 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Convert the given TAP type into the corresponding DBMS column type.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	This function tries first the type conversion using the translator ({@link JDBCTranslator#convertTypeToDB(DBType)}).
 	 * 	If it fails, a default conversion is done considering all the known types of the following DBMS:
 	 * 	PostgreSQL, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * </p>
-	 * 
+	 *
 	 * @param type	TAP type to convert.
-	 * 
+	 *
 	 * @return	The corresponding DBMS type.
-	 * 
+	 *
 	 * @see JDBCTranslator#convertTypeToDB(DBType)
 	 * @see #defaultTypeConversion(DBType)
 	 */
@@ -2512,24 +2514,24 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Get the DBMS compatible datatype corresponding to the given column {@link DBType}.</p>
-	 * 
+	 *
 	 * <p><i>Note 1:
 	 * 	This function is able to generate a DB datatype compatible with the currently used DBMS.
 	 * 	In this current implementation, only Postgresql, Oracle, SQLite, MySQL and Java DB/Derby have been considered.
 	 * 	Most of the TAP types have been tested only with Postgresql and SQLite without any problem.
 	 * 	If the DBMS you are using has not been considered, note that this function will return the TAP type expression by default.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	In case the given datatype is NULL or not managed here, the DBMS type corresponding to "VARCHAR" will be returned.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 3:
 	 * 	The special TAP types POINT and REGION are converted into the DBMS type corresponding to "VARCHAR".
 	 * </i></p>
-	 * 
+	 *
 	 * @param datatype	Column TAP type.
-	 * 
+	 *
 	 * @return	The corresponding DB type, or VARCHAR if the given type is not managed or is NULL.
 	 */
 	protected String defaultTypeConversion(DBType datatype){
@@ -2622,19 +2624,19 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Start a transaction.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Basically, if transactions are supported by this connection, the flag AutoCommit is just turned off.
 	 * 	It will be turned on again when {@link #endTransaction()} is called.
 	 * </p>
-	 * 
+	 *
 	 * <p>If transactions are not supported by this connection, nothing is done.</p>
-	 * 
+	 *
 	 * <p><b><i>Important note:</b>
 	 * 	If any error interrupts the START TRANSACTION operation, transactions will be afterwards considered as not supported by this connection.
 	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
 	 * </i></p>
-	 * 
+	 *
 	 * @throws DBException	If it is impossible to start a transaction though transactions are supported by this connection.
 	 *                    	If these are not supported, this error can never be thrown.
 	 */
@@ -2655,19 +2657,19 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Commit the current transaction.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	{@link #startTransaction()} must have been called before. If it's not the case the connection
 	 * 	may throw a {@link SQLException} which will be transformed into a {@link DBException} here.
 	 * </p>
-	 * 
+	 *
 	 * <p>If transactions are not supported by this connection, nothing is done.</p>
-	 * 
+	 *
 	 * <p><b><i>Important note:</b>
 	 * 	If any error interrupts the COMMIT operation, transactions will be afterwards considered as not supported by this connection.
 	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
 	 * </i></p>
-	 * 
+	 *
 	 * @throws DBException	If it is impossible to commit a transaction though transactions are supported by this connection..
 	 *                    	If these are not supported, this error can never be thrown.
 	 */
@@ -2689,22 +2691,22 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Rollback the current transaction.
 	 * The success or the failure of the rollback operation is always logged (except if no logger is available).</p>
-	 * 
+	 *
 	 * <p>
 	 * 	{@link #startTransaction()} must have been called before. If it's not the case the connection
 	 * 	may throw a {@link SQLException} which will be transformed into a {@link DBException} here.
 	 * </p>
-	 * 
+	 *
 	 * <p>If transactions are not supported by this connection, nothing is done.</p>
-	 * 
+	 *
 	 * <p><b><i>Important note:</b>
 	 * 	If any error interrupts the ROLLBACK operation, transactions will considered afterwards as not supported by this connection.
 	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
 	 * </i></p>
-	 * 
+	 *
 	 * @throws DBException	If it is impossible to rollback a transaction though transactions are supported by this connection..
 	 *                    	If these are not supported, this error can never be thrown.
-	 * 
+	 *
 	 * @see #rollback(boolean)
 	 */
 	protected final void rollback(){
@@ -2713,25 +2715,25 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Rollback the current transaction.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	{@link #startTransaction()} must have been called before. If it's not the case the connection
 	 * 	may throw a {@link SQLException} which will be transformed into a {@link DBException} here.
 	 * </p>
-	 * 
+	 *
 	 * <p>If transactions are not supported by this connection, nothing is done.</p>
-	 * 
+	 *
 	 * <p><b><i>Important note:</b>
 	 * 	If any error interrupts the ROLLBACK operation, transactions will considered afterwards as not supported by this connection.
 	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
 	 * </i></p>
-	 * 
+	 *
 	 * @param log	<code>true</code> to log the success/failure of the rollback operation,
 	 *           	<code>false</code> to be quiet whatever happens.
-	 * 
+	 *
 	 * @throws DBException	If it is impossible to rollback a transaction though transactions are supported by this connection..
 	 *                    	If these are not supported, this error can never be thrown.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected void rollback(final boolean log){
@@ -2751,21 +2753,21 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>End the current transaction.
 	 * The success or the failure of the transaction ending operation is always logged (except if no logger is available).</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Basically, if transactions are supported by this connection, the flag AutoCommit is just turned on.
 	 * </p>
-	 * 
+	 *
 	 * <p>If transactions are not supported by this connection, nothing is done.</p>
-	 * 
+	 *
 	 * <p><b><i>Important note:</b>
 	 * 	If any error interrupts the END TRANSACTION operation, transactions will be afterwards considered as not supported by this connection.
 	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
 	 * </i></p>
-	 * 
+	 *
 	 * @throws DBException	If it is impossible to end a transaction though transactions are supported by this connection.
 	 *                    	If these are not supported, this error can never be thrown.
-	 * 
+	 *
 	 * @see #endTransaction(boolean)
 	 */
 	protected final void endTransaction(){
@@ -2774,24 +2776,24 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>End the current transaction.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Basically, if transactions are supported by this connection, the flag AutoCommit is just turned on.
 	 * </p>
-	 * 
+	 *
 	 * <p>If transactions are not supported by this connection, nothing is done.</p>
-	 * 
+	 *
 	 * <p><b><i>Important note:</b>
 	 * 	If any error interrupts the END TRANSACTION operation, transactions will be afterwards considered as not supported by this connection.
 	 * 	So, subsequent call to this function (and any other transaction related function) will never do anything.
 	 * </i></p>
-	 * 
+	 *
 	 * @param log	<code>true</code> to log the success/failure of the transaction ending operation,
 	 *           	<code>false</code> to be quiet whatever happens.
-	 * 
+	 *
 	 * @throws DBException	If it is impossible to end a transaction though transactions are supported by this connection.
 	 *                    	If these are not supported, this error can never be thrown.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected void endTransaction(final boolean log){
@@ -2810,15 +2812,15 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Close silently the given {@link ResultSet}.</p>
-	 * 
+	 *
 	 * <p>If the given {@link ResultSet} is NULL, nothing (even exception/error) happens.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	If any {@link SQLException} occurs during this operation, it is caught and just logged
 	 * 	(see {@link TAPLog#logDB(uws.service.log.UWSLog.LogLevel, DBConnection, String, String, Throwable)}).
 	 * 	No error is thrown and nothing else is done.
 	 * </p>
-	 * 
+	 *
 	 * @param rs	{@link ResultSet} to close.
 	 */
 	protected final void close(final ResultSet rs){
@@ -2833,28 +2835,28 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Close silently the given {@link Statement}.</p>
-	 * 
+	 *
 	 * <p>If the given {@link Statement} is NULL, nothing (even exception/error) happens.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	The given statement is explicitly canceled by this function before being closed.
 	 * 	Thus the corresponding DBMS process is ensured to be stopped. Of course, this
 	 * 	cancellation is effective only if this operation is supported by the JDBC driver
 	 * 	and the DBMS.
 	 * </p>
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	In case of cancellation, <b>NO</b> rollback is performed.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	If any {@link SQLException} occurs during this operation, it is caught and just logged
 	 * 	(see {@link TAPLog#logDB(uws.service.log.UWSLog.LogLevel, DBConnection, String, String, Throwable)}).
 	 * 	No error is thrown and nothing else is done.
 	 * </p>
-	 * 
+	 *
 	 * @param stmt	{@link Statement} to close.
-	 * 
+	 *
 	 * @see #cancel(Statement, boolean)
 	 */
 	protected final void close(final Statement stmt){
@@ -2871,21 +2873,21 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Transform the given column value in a boolean value.</p>
-	 * 
+	 *
 	 * <p>The following cases are taken into account in function of the given value's type:</p>
 	 * <ul>
 	 * 	<li><b>NULL</b>: <i>false</i> is always returned.</li>
-	 * 
+	 *
 	 * 	<li><b>{@link Boolean}</b>: the boolean value is returned as provided (but casted in boolean).</li>
-	 * 
+	 *
 	 * 	<li><b>{@link Integer}</b>: <i>true</i> is returned only if the integer value is strictly greater than 0, otherwise <i>false</i> is returned.</li>
-	 * 
+	 *
 	 * 	<li><b>Other</b>: toString().trim() is first called on this object. Then, an integer value is tried to be extracted from it.
 	 *                    If it succeeds, the previous rule is applied. If it fails, <i>true</i> will be returned only if the string is "t" or "true" (case insensitively).</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param colValue	The column value to transform in boolean.
-	 * 
+	 *
 	 * @return	Its corresponding boolean value.
 	 */
 	protected final boolean toBoolean(final Object colValue){
@@ -2919,9 +2921,9 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * Return NULL if the given column value is an empty string (or it just contains space characters) or NULL.
 	 * Otherwise the given string is returned as provided.
-	 * 
+	 *
 	 * @param dbValue	Value to nullify if needed.
-	 * 
+	 *
 	 * @return	NULL if the given string is NULL or empty, otherwise the given value.
 	 */
 	protected final String nullifyIfNeeded(final String dbValue){
@@ -2930,10 +2932,10 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Search a {@link TAPTable} instance whose the ADQL name matches (case sensitively) to the given one.
-	 * 
+	 *
 	 * @param tableName	ADQL name of the table to search.
 	 * @param itTables	Iterator over the set of tables in which the research must be done.
-	 * 
+	 *
 	 * @return	The found table, or NULL if not found.
 	 */
 	private TAPTable searchTable(String tableName, final Iterator<TAPTable> itTables){
@@ -2966,29 +2968,29 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Tell whether the specified schema exists in the database.
 	 * 	To do so, it is using the given {@link DatabaseMetaData} object to query the database and list all existing schemas.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is completely useless if the connection is not supporting schemas.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Test on the schema name is done considering the case sensitivity indicated by the translator
 	 * 	(see {@link JDBCTranslator#isCaseSensitive(IdentifierField)}).
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This functions is used by {@link #addUploadedTable(TAPTable, TableIterator)} and {@link #resetTAPSchema(Statement, TAPTable[])}.
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	DB name of the schema whose the existence must be checked.
 	 * @param dbMeta		Metadata about the database, and mainly the list of all existing schemas.
-	 * 
+	 *
 	 * @return	<i>true</i> if the specified schema exists, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws SQLException	If any error occurs while interrogating the database about existing schema.
 	 */
 	protected boolean isSchemaExisting(String schemaName, final DatabaseMetaData dbMeta) throws SQLException{
-		if (!supportsSchema || schemaName == null || schemaName.length() == 0)
+		if (DBMS_MYSQL.equals(dbms) || !supportsSchema || schemaName == null || schemaName.length() == 0)
 			return true;
 
 		// Determine the case sensitivity to use for the equality test:
@@ -2999,8 +3001,9 @@ public class JDBCConnection implements DBConnection {
 			// List all schemas available and stop when a schema name matches ignoring the case:
 			rs = dbMeta.getSchemas();
 			boolean hasSchema = false;
-			while(!hasSchema && rs.next())
+			while(!hasSchema && rs.next()){
 				hasSchema = equals(rs.getString(1), schemaName, caseSensitive);
+			}
 			return hasSchema;
 		}finally{
 			close(rs);
@@ -3010,28 +3013,28 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Tell whether the specified table exists in the database.
 	 * 	To do so, it is using the given {@link DatabaseMetaData} object to query the database and list all existing tables.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	If schemas are not supported by this connection but a schema name is even though provided in parameter,
 	 * 	the table name will be prefixed by the schema name.
 	 * 	The research will then be done with NULL as schema name and this prefixed table name.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Test on the schema name is done considering the case sensitivity indicated by the translator
 	 * 	(see {@link JDBCTranslator#isCaseSensitive(IdentifierField)}).
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is used by {@link #addUploadedTable(TAPTable, TableIterator)} and {@link #dropUploadedTable(TAPTable)}.
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	DB name of the schema in which the table to search is. <i>If NULL, the table is expected in any schema but ONLY one MUST exist.</i>
 	 * @param tableName		DB name of the table to search.
 	 * @param dbMeta		Metadata about the database, and mainly the list of all existing tables.
-	 * 
+	 *
 	 * @return	<i>true</i> if the specified table exists, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws SQLException	If any error occurs while interrogating the database about existing tables.
 	 */
 	protected boolean isTableExisting(String schemaName, String tableName, final DatabaseMetaData dbMeta) throws DBException, SQLException{
@@ -3082,30 +3085,30 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Tell whether the specified column exists in the specified table of the database.
 	 * 	To do so, it is using the given {@link DatabaseMetaData} object to query the database and list all existing columns.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	If schemas are not supported by this connection but a schema name is even though provided in parameter,
 	 * 	the table name will be prefixed by the schema name.
 	 * 	The research will then be done with NULL as schema name and this prefixed table name.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Test on the schema name is done considering the case sensitivity indicated by the translator
 	 * 	(see {@link JDBCTranslator#isCaseSensitive(IdentifierField)}).
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is used by {@link #loadSchemas(TAPTable, TAPMetadata, Statement)}, {@link #loadTables(TAPTable, TAPMetadata, Statement)}
 	 * 	and {@link #loadColumns(TAPTable, List, Statement)}.
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	DB name of the table schema. <i>MAY BE NULL</i>
 	 * @param tableName		DB name of the table containing the column to search. <i>MAY BE NULL</i>
 	 * @param columnName	DB name of the column to search.
 	 * @param dbMeta		Metadata about the database, and mainly the list of all existing tables.
-	 * 
+	 *
 	 * @return	<i>true</i> if the specified column exists, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws SQLException	If any error occurs while interrogating the database about existing columns.
 	 */
 	protected boolean isColumnExisting(String schemaName, String tableName, String columnName, final DatabaseMetaData dbMeta) throws DBException, SQLException{
@@ -3120,11 +3123,11 @@ public class JDBCConnection implements DBConnection {
 		ResultSet rsT = null, rsC = null;
 		try{
 			/* Note:
-			 * 
+			 *
 			 *     The DatabaseMetaData.getColumns(....) function does not work properly
 			 * with the SQLite driver: when all parameters are set to null, meaning all columns of the database
 			 * must be returned, absolutely no rows are selected.
-			 * 
+			 *
 			 *     The solution proposed here, is to first search all (matching) tables, and then for each table get
 			 * all its columns and find the matching one(s).
 			 */
@@ -3178,22 +3181,22 @@ public class JDBCConnection implements DBConnection {
 
 	/*
 	 * <p>Build a table prefix with the given schema name.</p>
-	 * 
+	 *
 	 * <p>By default, this function returns: schemaName + "_".</p>
-	 * 
+	 *
 	 * <p><b>CAUTION:
 	 * 	This function is used only when schemas are not supported by the DBMS connection.
 	 * 	It aims to propose an alternative of the schema notion by prefixing the table name by the schema name.
 	 * </b></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If the given schema is NULL or is an empty string, an empty string will be returned.
 	 * 	Thus, no prefix will be set....which is very useful when the table name has already been prefixed
 	 * 	(in such case, the DB name of its schema has theoretically set to NULL).
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	(DB) Schema name.
-	 * 
+	 *
 	 * @return	The corresponding table prefix, or "" if the given schema name is an empty string or NULL.
 	 *
 	protected String getTablePrefix(final String schemaName){
@@ -3205,14 +3208,14 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Tell whether the specified table (using its DB name only) is a standard one or not.
-	 * 
+	 *
 	 * @param dbTableName	DB (unqualified) table name.
 	 * @param stdTables		List of all tables to consider as the standard ones.
 	 * @param caseSensitive	Indicate whether the equality test must be done case sensitively or not.
-	 * 
+	 *
 	 * @return	The corresponding {@link STDTable} if the specified table is a standard one,
 	 *        	NULL otherwise.
-	 * 
+	 *
 	 * @see TAPMetadata#resolveStdTable(String)
 	 */
 	protected final STDTable isStdTable(final String dbTableName, final TAPTable[] stdTables, final boolean caseSensitive){
@@ -3227,7 +3230,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>"Execute" the query update. <i>This update must concern ONLY ONE ROW.</i></p>
-	 * 
+	 *
 	 * <p>
 	 * 	Note that the "execute" action will be different in function of whether batch update queries are supported or not by this connection:
 	 * </p>
@@ -3241,12 +3244,12 @@ public class JDBCConnection implements DBConnection {
 	 * 		If <b>they are NOT supported</b>, {@link PreparedStatement#executeUpdate()} will merely be called.
 	 * 	</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p>
 	 *	Before returning, and only if batch update queries are not supported, this function is ensuring that exactly one row has been updated.
 	 *	If it is not the case, a {@link DBException} is thrown.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	If the function {@link PreparedStatement#addBatch()} fails by throwing an {@link SQLException}, batch updates
 	 * 	will be afterwards considered as not supported by this connection. Besides, if this row is the first one in a batch update (parameter indRow=1),
@@ -3254,10 +3257,10 @@ public class JDBCConnection implements DBConnection {
 	 * 	the error will be logged but also thrown as a {@link DBException}. In both cases, a subsequent call to
 	 * 	{@link #executeBatchUpdates(PreparedStatement, int)} will have obviously no effect.
 	 * </i></p>
-	 * 
+	 *
 	 * @param stmt		{@link PreparedStatement} in which the update query has been prepared.
 	 * @param indRow	Index of the row in the whole update process. It is used only for error management purpose.
-	 * 
+	 *
 	 * @throws SQLException	If {@link PreparedStatement#executeUpdate()} fails.</i>
 	 * @throws DBException	If {@link PreparedStatement#addBatch()} fails and this update does not concern the first row, or if the number of updated rows is different from 1.
 	 */
@@ -3273,7 +3276,7 @@ public class JDBCConnection implements DBConnection {
 				/*
 				 * If the error happens for the first row, it is still possible to insert all rows
 				 * with the non-batch function - executeUpdate().
-				 * 
+				 *
 				 * Otherwise, it is impossible to insert the previous batched rows ; an exception must be thrown
 				 * and must stop the whole TAP_SCHEMA initialization.
 				 */
@@ -3305,26 +3308,26 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Execute all batched queries.</p>
-	 * 
+	 *
 	 * <p>To do so, {@link PreparedStatement#executeBatch()} and then, if the first was successful, {@link PreparedStatement#clearBatch()} is called.</p>
-	 * 
+	 *
 	 * <p>
 	 *	Before returning, this function is ensuring that exactly the given number of rows has been updated.
 	 *	If it is not the case, a {@link DBException} is thrown.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function has no effect if batch queries are not supported.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	In case {@link PreparedStatement#executeBatch()} fails by throwing an {@link SQLException},
 	 * 	batch update queries will be afterwards considered as not supported by this connection.
 	 * </i></p>
-	 * 
+	 *
 	 * @param stmt		{@link PreparedStatement} in which the update query has been prepared.
 	 * @param nbRows	Number of rows that should be updated.
-	 * 
+	 *
 	 * @throws DBException	If {@link PreparedStatement#executeBatch()} fails, or if the number of updated rows is different from the given one.
 	 */
 	protected final void executeBatchUpdates(final PreparedStatement stmt, int nbRows) throws DBException{
@@ -3366,7 +3369,7 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Append all items of the iterator inside the given list.
-	 * 
+	 *
 	 * @param lst	List to update.
 	 * @param it	All items to append inside the list.
 	 */
@@ -3378,20 +3381,20 @@ public class JDBCConnection implements DBConnection {
 	/**
 	 * <p>Tell whether the given DB name is equals (case sensitively or not, in function of the given parameter)
 	 * 	to the given name coming from a {@link TAPMetadata} object.</p>
-	 * 
+	 *
 	 * <p>If at least one of the given name is NULL, <i>false</i> is returned.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	The comparison will be done in function of the specified case sensitivity BUT ALSO of the case supported and stored by the DBMS.
 	 * 	For instance, if it has been specified a case insensitivity and that mixed case is not supported by unquoted identifier,
 	 * 	the comparison must be done, surprisingly, by considering the case if unquoted identifiers are stored in lower or upper case.
 	 * 	Thus, this special way to evaluate equality should be as closed as possible to the identifier storage and research policies of the used DBMS.
 	 * </i></p>
-	 * 
+	 *
 	 * @param dbName		Name provided by the database.
 	 * @param metaName		Name provided by a {@link TAPMetadata} object.
 	 * @param caseSensitive	<i>true</i> if the equality test must be done case sensitively, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @return	<i>true</i> if both names are equal, <i>false</i> otherwise.
 	 */
 	protected final boolean equals(final String dbName, final String metaName, final boolean caseSensitive){

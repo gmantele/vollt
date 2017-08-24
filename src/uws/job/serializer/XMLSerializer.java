@@ -16,8 +16,8 @@ package uws.job.serializer;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institut (ARI) 
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.UnsupportedEncodingException;
@@ -25,10 +25,12 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 
 import uws.ISO8601Format;
+import uws.UWSException;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.jobInfo.JobInfo;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
@@ -38,7 +40,7 @@ import uws.service.request.UploadFile;
  * Lets serializing any UWS resource in XML.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (02/2015)
+ * @version 4.2 (06/2017)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -90,9 +92,13 @@ public class XMLSerializer extends UWSSerializer {
 	}
 
 	/**
-	 * <p>Gets the XML file header (xml version, encoding and the xslt style-sheet link if any).</p>
-	 * <p>It is always called by the implementation of the UWSSerializer functions
-	 * if their boolean parameter (<i>root</i>) is <i>true</i>.</p>
+	 * Gets the XML file header (xml version, encoding and the xslt
+	 * style-sheet link if any).
+	 * 
+	 * <p>
+	 * 	It is always called by the implementation of the UWSSerializer functions
+	 * 	if their boolean parameter (<i>root</i>) is <i>true</i>.
+	 * </p>
 	 * 
 	 * @return	The XML file header.
 	 */
@@ -104,9 +110,12 @@ public class XMLSerializer extends UWSSerializer {
 	}
 
 	/**
-	 * Gets all UWS namespaces declarations needed for an XML representation of a UWS object.
+	 * Gets all UWS namespaces declarations needed for an XML representation of
+	 * a UWS object.
 	 * 
-	 * @return	The UWS namespaces: <br /> (i.e. <i>= "xmlns:uws=[...] xmlns:xlink=[...] xmlns:xs=[...] xmlns:xsi=[...] xsi:schemaLocation=[...]"</i>).
+	 * @return	The UWS namespaces: <br /> (i.e. <i>= "xmlns:uws=[...]
+	 *        	xmlns:xlink=[...] xmlns:xs=[...] xmlns:xsi=[...]
+	 *        	xsi:schemaLocation=[...]"</i>).
 	 */
 	public String getUWSNamespace(){
 		return "xmlns=\"http://www.ivoa.net/xml/UWS/v1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.ivoa.net/xml/UWS/v1.0 http://www.ivoa.net/xml/UWS/v1.0 http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd http://www.w3.org/2001/XMLSchema http://www.w3.org/2001/XMLSchema.xsd\"";
@@ -116,9 +125,11 @@ public class XMLSerializer extends UWSSerializer {
 	 * Gets the node attributes which declare the UWS namespace.
 	 * 
 	 * @param root	<i>false</i> if the attribute to serialize will be included
-	 * 				in a top level serialization (for a job attribute: job), <i>true</i> otherwise.
+	 * 				in a top level serialization (for a job attribute: job),
+	 *            	<i>true</i> otherwise.
 	 * 
-	 * @return		"" if <i>root</i> is <i>false</i>, " "+UWSNamespace otherwise.
+	 * @return		"" if <i>root</i> is <i>false</i>, " "+UWSNamespace
+	 *        		otherwise.
 	 * 
 	 * @see #getUWSNamespace()
 	 */
@@ -185,7 +196,7 @@ public class XMLSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJob(final UWSJob job, final boolean root){
+	public String getJob(final UWSJob job, final boolean root) throws UWSException{
 		StringBuffer xml = new StringBuffer(root ? getHeader() : "");
 		String newLine = "\n\t";
 
@@ -212,7 +223,12 @@ public class XMLSerializer extends UWSSerializer {
 		xml.append(newLine).append(getResults(job, false));
 
 		// errorSummary:
-		xml.append(newLine).append(getErrorSummary(job.getErrorSummary(), false));
+		if (job.getErrorSummary() != null)
+			xml.append(newLine).append(getErrorSummary(job.getErrorSummary(), false));
+
+		// jobInfo:
+		if (job.getJobInfo() != null)
+			xml.append(newLine).append(getJobInfo(job));
 
 		tabPrefix = "";
 		return xml.append("\n</job>").toString();
@@ -411,7 +427,7 @@ public class XMLSerializer extends UWSSerializer {
 		}
 
 		/* NOTE: THE FOLLOWING ATTRIBUTES MAY PROVIDE USEFUL INFORMATION TO USERS, BUT THEY ARE NOT ALLOWED BY THE CURRENT UWS STANDARD.
-		 *       HOWEVER, IF, ONE DAY, THEY ARE, THE FOLLOWING LINES SHOULD BE UNCOMNENTED. 
+		 *       HOWEVER, IF, ONE DAY, THEY ARE, THE FOLLOWING LINES SHOULD BE UNCOMNENTED.
 		 *
 		 * if (result.getMimeType() != null)
 		 * 	xml.append(" mime=\"").append(escapeXMLAttribute(result.getMimeType())).append("\"");
@@ -420,6 +436,33 @@ public class XMLSerializer extends UWSSerializer {
 		 */
 
 		return xml.append(" />").toString();
+	}
+
+	/**
+	 * Serialize into XML the {@link JobInfo} of the given job, if any.
+	 * 
+	 * <p><b>Important note:</b>
+	 * 	By default, this function wrap the XML content returned by
+	 * 	{@link JobInfo#getXML(String)} inside an XML node "jobInfo".
+	 * 	To change this behavior, you should overwrite this function.
+	 * </p>
+	 * 
+	 * @param job	The job whose the jobInfo must be serialized into XML.
+	 * 
+	 * @return	The XML serialization of the given job's jobInfo,
+	 *        	or an empty string if the given job has no jobInfo.
+	 * 
+	 * @since 4.2
+	 */
+	public String getJobInfo(final UWSJob job) throws UWSException{
+		if (job.getJobInfo() != null){
+			StringBuffer xml = new StringBuffer();
+			xml.append(tabPrefix).append("<jobInfo>");
+			xml.append("\n\t").append(tabPrefix).append(job.getJobInfo().getXML("\n\t" + tabPrefix));
+			xml.append('\n').append(tabPrefix).append("</jobInfo>");
+			return xml.toString();
+		}else
+			return "";
 	}
 
 	/* ************** */
@@ -506,10 +549,12 @@ public class XMLSerializer extends UWSSerializer {
 	 * <p>Returns a legal XML character corresponding to an input character.
 	 * Certain characters are simply illegal in XML (regardless of encoding).
 	 * If the input character is legal in XML, it is returned;
-	 * otherwise some other weird but legal character 
+	 * otherwise some other weird but legal character
 	 * (currently the inverted question mark, "\u00BF") is returned instead.</p>
 	 * 
-	 * <p><i>Note: copy of the STILTS VOSerializer.ensureLegalXml(char) function.</i></p>
+	 * <p><i>Note:
+	 * 	copy of the STILTS VOSerializer.ensureLegalXml(char) function.
+	 * </i></p>
 	 *
 	 * @param   c  input character
 	 * @return  legal XML character, <code>c</code> if possible
@@ -518,6 +563,46 @@ public class XMLSerializer extends UWSSerializer {
 	 */
 	public static char ensureLegalXml(char c){
 		return ((c >= '\u0020' && c <= '\uD7FF') || (c >= '\uE000' && c <= '\uFFFD') || ((c) == 0x09 || (c) == 0x0A || (c) == 0x0D)) ? c : '\u00BF';
+	}
+
+	/** Regular expression for the first character of a valid XML node name.
+	 * <p><i>Note:
+	 * 	This rule comes from the XML 1.1 standard by the W3C:
+	 * 		<a href="https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-NameStartChar">https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-NameStartChar</a>
+	 * </i></p>
+	 * @since 4.2 */
+	private final static String XML_START_NODE_NAME_REGEX = ":A-Z_a-z\\xC0-\\xD6\\xD8-\\xF6\\xF8-\\x{2FF}\\x{370}-\\x{37D}\\x{37F}-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\x{10000}-\\x{EFFFF}";
+
+	/**
+	 * Regular expression of a whole valid XML node name.
+	 * <p><i>Note:
+	 * 	This rule comes from the XML 1.1 standard by the W3C:
+	 * 		<a href="https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-Name">https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-Name</a>
+	 * </i></p>
+	 * @since 4.2 */
+	private final static String XML_NODE_NAME_REGEX = "[" + XML_START_NODE_NAME_REGEX + "][" + XML_START_NODE_NAME_REGEX + "\\-.0-9\\xB7\\u0300-\\u036F\\u203F-\\u2040]*";
+
+	/**
+	 * Determine whether the given name is a valid XML node name
+	 * according to the W3C (XML 1.1).
+	 * 
+	 * <p><i>Note:
+	 * 	In addition of validating the given name against the regular expression
+	 * 	provided by the W3C (see {@link #XML_NODE_NAME_REGEX}), this function
+	 * 	ensures the given name does not start with "XML" according to the
+	 * 	following W3C note:
+	 * 		<a href="https://www.w3.org/TR/2006/REC-xml11-20060816/#dt-name">https://www.w3.org/TR/2006/REC-xml11-20060816/#dt-name</a>
+	 * </i></p>
+	 * 
+	 * @param nodeName	XML node name to test.
+	 * 
+	 * @return	<code>true</code> if the given node name is valid,
+	 *        	<code>false</code> otherwise.
+	 * 
+	 * @since 4.2
+	 */
+	public static boolean isValidXMLNodeName(final String nodeName){
+		return nodeName.matches(XML_NODE_NAME_REGEX) && !nodeName.toLowerCase().startsWith("xml");
 	}
 
 }

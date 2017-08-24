@@ -16,17 +16,19 @@ package org.json;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
 
 import uws.ISO8601Format;
+import uws.UWSException;
 import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.jobInfo.JobInfo;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
@@ -35,7 +37,7 @@ import uws.service.UWSUrl;
  * Useful conversion functions from UWS to JSON.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.2 (06/2017)
  */
 public final class Json4Uws {
 
@@ -139,9 +141,44 @@ public final class Json4Uws {
 				json.put(UWSJob.PARAM_PARAMETERS, getJobParamsJson(job));
 				json.put(UWSJob.PARAM_RESULTS, getJobResultsJson(job));
 				json.put(UWSJob.PARAM_ERROR_SUMMARY, getJson(job.getErrorSummary()));
+				if (job.getJobInfo() != null)
+					json.put(UWSJob.PARAM_JOB_INFO, getJobInfoJson(job));
 			}
 		}
 		return json;
+	}
+
+	/**
+	 * Gets the JSON representation of the jobInfo of the given job.
+	 * 
+	 * <p><b>Important note:</b>
+	 * 	This function transforms the XML returned by
+	 * 	{@link JobInfo#getXML(String)} into a JSON object
+	 * 	(see {@link XML#toJSONObject(String)}).
+	 * </p>
+	 * 
+	 * @param job				The job whose the jobInfo must be represented
+	 *           				in JSON.
+	 * 
+	 * @return					The JSON representation of its jobInfo.
+	 * 
+	 * @throws JSONException	If there is an error while building the JSON
+	 *                      	object.
+	 * 
+	 * @see JobInfo#getXML(String)
+	 * @see XML#toJSONObject(String)
+	 * 
+	 * @since 4.2
+	 */
+	public final static JSONObject getJobInfoJson(final UWSJob job) throws JSONException{
+		if (job.getJobInfo() != null){
+			try{
+				return XML.toJSONObject(job.getJobInfo().getXML(null));
+			}catch(UWSException ue){
+				throw new JSONException(ue);
+			}
+		}else
+			return null;
 	}
 
 	/**

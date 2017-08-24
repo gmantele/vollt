@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -32,6 +32,7 @@ import uws.UWSToolBox;
 import uws.job.ErrorSummary;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.jobInfo.JobInfo;
 import uws.job.serializer.UWSSerializer;
 import uws.job.user.JobOwner;
 import uws.service.UWSService;
@@ -50,7 +51,7 @@ import uws.service.request.UploadFile;
  * The serializer is choosen in function of the HTTP Accept header.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (04/2015)
+ * @version 4.2 (06/2017)
  */
 public class GetJobParam extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -99,6 +100,7 @@ public class GetJobParam extends UWSAction {
 	 * @see #getJob(UWSUrl)
 	 * @see UWSService#getSerializer(String)
 	 * @see UWSJob#serialize(ServletOutputStream, UWSSerializer)
+	 * @see JobInfo#write(HttpServletResponse)
 	 * 
 	 * @see uws.service.actions.UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)
 	 */
@@ -129,7 +131,8 @@ public class GetJobParam extends UWSAction {
 						input.close();
 				}
 			}
-		}// ERROR DETAILS CASE: Display the full stack trace of the error:
+		}
+		// ERROR DETAILS CASE: Display the full stack trace of the error:
 		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_ERROR_SUMMARY) && attributes.length > 1 && attributes[1].equalsIgnoreCase("details")){
 			ErrorSummary error = job.getErrorSummary();
 			if (error == null)
@@ -147,7 +150,15 @@ public class GetJobParam extends UWSAction {
 						input.close();
 				}
 			}
-		}// REFERENCE FILE: Display the content of the uploaded file or redirect to the URL (if it is a URL):
+		}
+		// JOB INFO: Display the content of the JobInfo field (if any):
+		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_JOB_INFO)){
+			if (job.getJobInfo() == null)
+				response.sendError(HttpServletResponse.SC_NO_CONTENT);
+			else
+				job.getJobInfo().write(response);
+		}
+		// REFERENCE FILE: Display the content of the uploaded file or redirect to the URL (if it is a URL):
 		else if (attributes[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS) && attributes.length > 1 && job.getAdditionalParameterValue(attributes[1]) != null && job.getAdditionalParameterValue(attributes[1]) instanceof UploadFile){
 			UploadFile upl = (UploadFile)job.getAdditionalParameterValue(attributes[1]);
 			if (upl.getLocation().matches("^http(s)?://"))
@@ -165,7 +176,8 @@ public class GetJobParam extends UWSAction {
 						input.close();
 				}
 			}
-		}// DEFAULT CASE: Display the serialization of the selected UWS object:
+		}
+		// DEFAULT CASE: Display the serialization of the selected UWS object:
 		else{
 			// Write the value/content of the selected attribute:
 			UWSSerializer serializer = uws.getSerializer(request.getHeader("Accept"));

@@ -19,6 +19,8 @@ package tap.data;
  * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -46,7 +48,7 @@ import uws.ISO8601Format;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (02/2017)
+ * @version 2.1 (07/2017)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -724,6 +726,13 @@ public class ResultSetTableIterator implements TableIterator {
 			// note: java.sql.Timestamp extends java.util.Date. That's why the next condition also works for java.sql.Timestamp.
 			else if (colValue instanceof java.util.Date)
 				colValue = ISO8601Format.format((java.util.Date)colValue);
+			// if the type is a BigDecimal object (this is possible for instance with PostgreSQL "numeric" datatype,
+			// but this type can not be supported in FITS and VOTable): 
+			else if (colValue instanceof BigDecimal)
+				colValue = ((BigDecimal)colValue).doubleValue();
+			// if the type is a BigInteger object (as BigDecimal, this type can not be supported in FITS and VOTable): 
+			else if (colValue instanceof BigInteger)
+				colValue = ((BigInteger)colValue).longValue();
 			// if the type is Integer but it is declared as a SMALLINT cast the value (absolutely required for the FITS format):
 			else if (colValue instanceof Integer && colType != null && colValue != null && colType.type == DBDatatype.SMALLINT)
 				colValue = new Short(((Integer)colValue).shortValue());
