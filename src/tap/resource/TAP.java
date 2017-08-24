@@ -708,7 +708,7 @@ public class TAP implements VOSIResource {
 			}
 			// Finally add the appropriate DM declaration:
 			if (hasAllXel == 31) // 2^5 - 1 =  0001 1111
-				xml.append(linePrefix + "<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore/v1.1\">ObsCore-1.1</dataModel>\n");
+				xml.append(linePrefix + "<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore#core-1.1\">ObsCore-1.1</dataModel>\n");
 			else
 				xml.append(linePrefix + "<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore/v1.0\">ObsCore-1.0</dataModel>\n");
 		}
