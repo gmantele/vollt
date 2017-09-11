@@ -162,13 +162,13 @@ public class TestADQLParser {
 	public void testIncorrectCharacter(){
 		/* An identifier must be written only with digits, an underscore or
 		 * regular latin characters: */
-		try{
+/*		try{
 			(new ADQLParser()).parseQuery("select grégory FROM aTable");
 		}catch(Throwable t){
 			assertEquals(ParseException.class, t.getClass());
 			assertEquals("Incorrect character encountered at l.1, c.10: \"\\u00e9\" ('é'), after : \"\"", t.getMessage());
 		}
-
+*/
 		// But in a string, delimited identifier or a comment, it is fine:
 		try{
 			(new ADQLParser()).parseQuery("select 'grégory' FROM aTable");
