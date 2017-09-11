@@ -16,12 +16,13 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import adql.query.IdentifierField;
 import adql.query.from.ADQLTable;
@@ -36,9 +37,9 @@ import cds.utils.TextualSearchList;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2015)
+ * @version 1.4 (09/2017)
  */
-public class SearchTableList extends TextualSearchList<DBTable> {
+public class SearchTableList extends TextualSearchList<DBTable> implements SearchTableApi {
 	private static final long serialVersionUID = 1L;
 
 	/** Indicates whether multiple occurrences are allowed. */
@@ -105,7 +106,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @see TextualSearchList#get(String)
 	 */
-	public ArrayList<DBTable> search(final String tableName){
+	public List<DBTable> search(final String tableName){
 		return get(tableName);
 	}
 
@@ -120,7 +121,7 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @see #search(String, String, String, byte)
 	 */
-	public final ArrayList<DBTable> search(final String catalog, final String schema, final String table){
+	public final List<DBTable> search(final String catalog, final String schema, final String table){
 		return search(catalog, schema, table, (byte)0);
 	}
 
@@ -133,7 +134,8 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @see #search(String, String, String, byte)
 	 */
-	public ArrayList<DBTable> search(final ADQLTable table){
+	@Override
+	public List<DBTable> search(final ADQLTable table){
 		return search(table.getCatalogName(), table.getSchemaName(), table.getTableName(), table.getCaseSensitive());
 	}
 
@@ -149,11 +151,11 @@ public class SearchTableList extends TextualSearchList<DBTable> {
 	 * 
 	 * @see IdentifierField
 	 */
-	public ArrayList<DBTable> search(final String catalog, final String schema, final String table, final byte caseSensitivity){
-		ArrayList<DBTable> tmpResult = get(table, IdentifierField.TABLE.isCaseSensitive(caseSensitivity));
+	public List<DBTable> search(final String catalog, final String schema, final String table, final byte caseSensitivity){
+		List<DBTable> tmpResult = get(table, IdentifierField.TABLE.isCaseSensitive(caseSensitivity));
 
 		if (schema != null){
-			ArrayList<DBTable> result = new ArrayList<DBTable>();
+			List<DBTable> result = new ArrayList<DBTable>();
 
 			for(DBTable match : tmpResult){
 				// No schema name (<=> no schema), then this table can not be a good match:

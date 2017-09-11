@@ -16,11 +16,12 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import adql.db.DBChecker;
@@ -39,7 +40,7 @@ import adql.query.TextPosition;
  * A table reference may have an alias (MUST if it is a sub-query).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2016)
+ * @version 1.4 (09/2017)
  */
 public class ADQLTable implements ADQLObject, FromContent {
 
@@ -488,14 +489,14 @@ public class ADQLTable implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public ArrayList<ADQLTable> getTables(){
+	public List<ADQLTable> getTables(){
 		ArrayList<ADQLTable> tables = new ArrayList<ADQLTable>();
 		tables.add(this);
 		return tables;
 	}
 
 	@Override
-	public ArrayList<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
+	public List<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
 		ArrayList<ADQLTable> tables = new ArrayList<ADQLTable>();
 
 		if (hasAlias()){
