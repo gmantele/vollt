@@ -16,13 +16,14 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import uws.UWSException;
@@ -96,7 +97,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (11/2014)
+ * @version 4.2 (09/2017)
  * 
  * @see UWSJob
  */
@@ -493,7 +494,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 	 * 
 	 * @return		All the corresponding jobs.
 	 */
-	public final ArrayList<UWSJob> searchJobs(String runID){
+	public final List<UWSJob> searchJobs(String runID){
 		ArrayList<UWSJob> foundJobs = new ArrayList<UWSJob>();
 		runID = (runID != null) ? runID.trim() : runID;
 

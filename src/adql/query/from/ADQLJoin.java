@@ -16,7 +16,7 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -42,7 +43,7 @@ import adql.query.operand.ADQLColumn;
  * Defines a join between two "tables".
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (03/2016)
+ * @version 1.4 (09/2017)
  */
 public abstract class ADQLJoin implements ADQLObject, FromContent {
 
@@ -445,7 +446,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	}
 
 	public final static DBColumn findAtMostOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoinException{
-		ArrayList<DBColumn> result = list.search(null, null, null, columnName, caseSensitive);
+		List<DBColumn> result = list.search(null, null, null, columnName, caseSensitive);
 		if (result.isEmpty())
 			return null;
 		else if (result.size() > 1)
@@ -465,15 +466,15 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public ArrayList<ADQLTable> getTables(){
-		ArrayList<ADQLTable> tables = leftTable.getTables();
+	public List<ADQLTable> getTables(){
+		List<ADQLTable> tables = leftTable.getTables();
 		tables.addAll(rightTable.getTables());
 		return tables;
 	}
 
 	@Override
-	public ArrayList<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
-		ArrayList<ADQLTable> tables = leftTable.getTablesByAlias(alias, caseSensitive);
+	public List<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
+		List<ADQLTable> tables = leftTable.getTablesByAlias(alias, caseSensitive);
 		tables.addAll(rightTable.getTablesByAlias(alias, caseSensitive));
 		return tables;
 	}

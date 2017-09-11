@@ -16,7 +16,7 @@ package uws.service.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import uws.UWSException;
@@ -69,7 +70,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (02/2015)
+ * @version 4.2 (09/2017)
  */
 public class LocalUWSFileManager implements UWSFileManager {
 
@@ -417,7 +418,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Create a File instance from the given upload file description.
-	 * This function is able to deal with location as URI and as file path. 
+	 * This function is able to deal with location as URI and as file path.
 	 * 
 	 * @param upload	Description of an uploaded file.
 	 * 
@@ -765,7 +766,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 			itBackupFiles = loadAllBackupFiles().iterator();
 		}
 
-		private ArrayList<File> loadAllBackupFiles(){
+		private List<File> loadAllBackupFiles(){
 			ArrayList<File> backupFiles = new ArrayList<File>();
 
 			// If there must be 1 directory by user:

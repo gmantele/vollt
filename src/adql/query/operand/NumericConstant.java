@@ -16,7 +16,7 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,15 +29,15 @@ import adql.query.TextPosition;
  * A numeric (integer, double, ...) constant.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (09/2017)
  */
-public final class NumericConstant implements ADQLOperand {
+public class NumericConstant implements ADQLOperand {
 
-	private String value;
+	protected String value;
 
 	/** Position of this operand.
 	 * @since 1.4 */
-	private TextPosition position = null;
+	protected TextPosition position = null;
 
 	/**
 	 * The numeric value is saved as a string so that the exact user format can be saved.
@@ -94,11 +94,11 @@ public final class NumericConstant implements ADQLOperand {
 		this.value = toCopy.value;
 	}
 
-	public final String getValue(){
+	public String getValue(){
 		return value;
 	}
 
-	public final double getNumericValue(){
+	public double getNumericValue(){
 		try{
 			return Double.parseDouble(value);
 		}catch(NumberFormatException nfe){
@@ -111,7 +111,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @param value		The numeric value.
 	 */
-	public final void setValue(long value){
+	public void setValue(long value){
 		this.value = "" + value;
 	}
 
@@ -120,7 +120,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @param value		The numeric value.
 	 */
-	public final void setValue(double value){
+	public void setValue(double value){
 		this.value = "" + value;
 	}
 
@@ -132,7 +132,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * 
 	 * @see NumericConstant#setValue(String, boolean)
 	 */
-	public final void setValue(String value) throws NumberFormatException{
+	public void setValue(String value) throws NumberFormatException{
 		setValue(value, true);
 	}
 
@@ -145,7 +145,7 @@ public final class NumericConstant implements ADQLOperand {
 	 * @param checkNumeric				<i>true</i> to check whether the given value is numeric, <i>false</i> otherwise.
 	 * @throws NumberFormatException	If the given value can not be converted in a Double.
 	 */
-	public final void setValue(String value, boolean checkNumeric) throws NumberFormatException{
+	public void setValue(String value, boolean checkNumeric) throws NumberFormatException{
 		if (checkNumeric)
 			Double.parseDouble(value);
 

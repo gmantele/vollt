@@ -150,7 +150,7 @@ import uws.service.request.UploadFile;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.2 (09/2017)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -937,7 +937,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * 
 	 * @return	Names of the expected additional parameters.
 	 */
-	public final ArrayList<String> getExpectedAdditionalParameters(){
+	public final List<String> getExpectedAdditionalParameters(){
 		return expectedAdditionalParams;
 	}
 
@@ -1214,7 +1214,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		if (mimeTypes != null){
 			// Parse the given MIME types list:
 			AcceptHeader accept = new AcceptHeader(mimeTypes);
-			ArrayList<String> lstMimeTypes = accept.getOrderedMimeTypes();
+			List<String> lstMimeTypes = accept.getOrderedMimeTypes();
 
 			// Try each of them and stop at the first which match with an existing serializer:
 			for(int i = 0; choosenSerializer == null && i < lstMimeTypes.size(); i++)

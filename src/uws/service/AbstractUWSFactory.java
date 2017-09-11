@@ -49,7 +49,7 @@ import uws.service.request.UWSRequestParser;
  * Only the function which creates a {@link JobThread} from a {@link UWSJob} needs to be implemented.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.2 (09/2017)
  */
 public abstract class AbstractUWSFactory implements UWSFactory {
 
@@ -147,7 +147,7 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	 * 
 	 * @return	Names of the expected additional parameters.
 	 */
-	public final ArrayList<String> getExpectedAdditionalParameters(){
+	public final List<String> getExpectedAdditionalParameters(){
 		return expectedAdditionalParams;
 	}
 

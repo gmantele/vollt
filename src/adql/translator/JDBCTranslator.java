@@ -16,12 +16,12 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2017 - Astronomisches Rechen Institut (ARI)
  */
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import adql.db.DBColumn;
 import adql.db.DBTable;
@@ -166,7 +166,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (07/2016)
+ * @version 1.4 (09/2017)
  * @since 1.4
  * 
  * @see PostgreSQLTranslator
@@ -472,7 +472,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			}catch(UnresolvedJoinException pe){
 				throw new TranslationException("Due to a join problem, the ADQL to SQL translation can not be completed!", pe);
 			}
-			ArrayList<ADQLTable> tables = item.getQuery().getFrom().getTables();
+			List<ADQLTable> tables = item.getQuery().getFrom().getTables();
 			for(ADQLTable table : tables){
 				if (table.hasAlias()){
 					String key = getQualifiedTableName(table.getDBLink());

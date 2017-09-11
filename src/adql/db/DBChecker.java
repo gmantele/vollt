@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -98,12 +99,12 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (04/2017)
+ * @version 1.4 (09/2017)
  */
 public class DBChecker implements QueryChecker {
 
 	/** List of all available tables ({@link DBTable}). */
-	protected SearchTableList lstTables;
+	protected SearchTableApi lstTables;
 
 	/** <p>List of all allowed geometrical functions (i.e. CONTAINS, REGION, POINT, COORD2, ...).</p>
 	 * <p>
@@ -337,8 +338,9 @@ public class DBChecker implements QueryChecker {
 	 * <p>Sets the list of all available tables.</p>
 	 * 
 	 * <p><i><u>Note:</u>
-	 * 	Only if the given collection is NOT an instance of {@link SearchTableList},
-	 * 	the collection will be copied inside a new {@link SearchTableList}, otherwise it is used as provided.
+	 * 	Only if the given collection is NOT an implementation of
+	 * 	{@link SearchTableApi}, the collection will be copied inside a new
+	 * 	{@link SearchTableList}, otherwise it is used as provided.
 	 * </i></p>
 	 * 
 	 * @param tables	List of {@link DBTable}s.
@@ -346,8 +348,8 @@ public class DBChecker implements QueryChecker {
 	public final void setTables(final Collection<? extends DBTable> tables){
 		if (tables == null)
 			lstTables = new SearchTableList();
-		else if (tables instanceof SearchTableList)
-			lstTables = (SearchTableList)tables;
+		else if (tables instanceof SearchTableApi)
+			lstTables = (SearchTableApi)tables;
 		else
 			lstTables = new SearchTableList(tables);
 	}
@@ -546,7 +548,7 @@ public class DBChecker implements QueryChecker {
 
 				// first, try to resolve the table by table alias:
 				if (table.getTableName() != null && table.getSchemaName() == null){
-					ArrayList<ADQLTable> tables = query.getFrom().getTablesByAlias(table.getTableName(), table.isCaseSensitive(IdentifierField.TABLE));
+					List<ADQLTable> tables = query.getFrom().getTablesByAlias(table.getTableName(), table.isCaseSensitive(IdentifierField.TABLE));
 					if (tables.size() == 1)
 						dbTable = tables.get(0).getDBLink();
 				}
@@ -575,7 +577,7 @@ public class DBChecker implements QueryChecker {
 	 * @throws ParseException	An {@link UnresolvedTableException} if the given table can't be resolved.
 	 */
 	protected DBTable resolveTable(final ADQLTable table) throws ParseException{
-		ArrayList<DBTable> tables = lstTables.search(table);
+		List<DBTable> tables = lstTables.search(table);
 
 		// good if only one table has been found:
 		if (tables.size() == 1)
@@ -691,7 +693,7 @@ public class DBChecker implements QueryChecker {
 	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
 	 */
 	protected DBColumn resolveColumn(final ADQLColumn column, final SearchColumnList dbColumns, Stack<SearchColumnList> fathersList) throws ParseException{
-		ArrayList<DBColumn> foundColumns = dbColumns.search(column);
+		List<DBColumn> foundColumns = dbColumns.search(column);
 
 		// good if only one column has been found:
 		if (foundColumns.size() == 1)
@@ -737,7 +739,7 @@ public class DBChecker implements QueryChecker {
 		 * So, try resolving the name as an alias.
 		 * If it fails, perform the normal column resolution.*/
 		if (col.getTableName() == null){
-			ArrayList<SelectItem> founds = select.searchByAlias(col.getColumnName(), col.isCaseSensitive(IdentifierField.COLUMN));
+			List<SelectItem> founds = select.searchByAlias(col.getColumnName(), col.isCaseSensitive(IdentifierField.COLUMN));
 			if (founds.size() == 1)
 				return null;
 			else if (founds.size() > 1)
@@ -779,7 +781,7 @@ public class DBChecker implements QueryChecker {
 			col.setPosition(colRef.getPosition());
 
 			// search among the select_item aliases:
-			ArrayList<SelectItem> founds = select.searchByAlias(colRef.getColumnName(), colRef.isCaseSensitive());
+			List<SelectItem> founds = select.searchByAlias(colRef.getColumnName(), colRef.isCaseSensitive());
 			if (founds.size() == 1)
 				return null;
 			else if (founds.size() > 1)

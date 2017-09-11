@@ -16,7 +16,7 @@ package adql.query.operand;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -27,7 +27,7 @@ import adql.query.ADQLObject;
  * Represents a concatenation in ADQL (ex: <i>"_s_ra" || ':' || "_s_dec"</i>).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.3 (10/2014)
+ * @version 1.4 (09/2017)
  */
 public final class Concatenation extends ADQLList<ADQLOperand> implements ADQLOperand {
 
@@ -36,7 +36,7 @@ public final class Concatenation extends ADQLList<ADQLOperand> implements ADQLOp
 	 * To add operands, use the "add" functions.
 	 */
 	public Concatenation(){
-		super((String)null);
+		super("CONCAT_STR");
 	}
 
 	/**
@@ -79,6 +79,19 @@ public final class Concatenation extends ADQLList<ADQLOperand> implements ADQLOp
 	@Override
 	public final boolean isGeometry(){
 		return false;
+	}
+
+	@Override
+	public String toADQL(){
+		StringBuffer adql = new StringBuffer();
+
+		for(int i = 0; i < size(); i++){
+			if (i > 0)
+				adql.append(" " + getSeparator(i) + " ");
+			adql.append(get(i).toADQL());
+		}
+
+		return adql.toString();
 	}
 
 }

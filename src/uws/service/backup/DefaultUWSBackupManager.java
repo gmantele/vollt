@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Timer;
@@ -86,7 +87,7 @@ import uws.service.request.UploadFile;
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.2 (09/2017)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -914,7 +915,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				endTime = -1;
 		HashMap<String,Object> inputParams = new HashMap<String,Object>(10);
 		//Map<String, Object> params = null;
-		ArrayList<Result> results = null;
+		List<Result> results = null;
 		ErrorSummary error = null;
 		JSONArray uploads = null;
 		JobInfo jobInfo = null;
@@ -1156,7 +1157,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 
 	 * @see #getResult(JSONObject)
 	 */
-	protected ArrayList<Result> getResults(final JSONArray array) throws UWSException{
+	protected List<Result> getResults(final JSONArray array) throws UWSException{
 		if (array == null || array.length() == 0)
 			return null;
 

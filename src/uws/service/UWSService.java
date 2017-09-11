@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
@@ -137,7 +138,7 @@ import uws.service.request.RequestParser;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2016)
+ * @version 4.2 (09/2017)
  */
 public class UWSService implements UWS {
 
@@ -721,7 +722,7 @@ public class UWSService implements UWS {
 		if (mimeTypes != null){
 			// Parse the given MIME types list:
 			AcceptHeader accept = new AcceptHeader(mimeTypes);
-			ArrayList<String> lstMimeTypes = accept.getOrderedMimeTypes();
+			List<String> lstMimeTypes = accept.getOrderedMimeTypes();
 
 			// Try each of them and stop at the first which match with an existing serializer:
 			for(int i = 0; choosenSerializer == null && i < lstMimeTypes.size(); i++)

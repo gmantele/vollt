@@ -16,7 +16,7 @@ package uws;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -55,7 +55,7 @@ import uws.service.request.UploadFile;
  * Some useful functions for the managing of a UWS service.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (07/2015)
+ * @version 4.2 (09/2017)
  */
 public class UWSToolBox {
 
@@ -137,7 +137,7 @@ public class UWSToolBox {
 	 * @return		The corresponding map of string.
 	 */
 	@SuppressWarnings("unchecked")
-	public static final HashMap<String,String> getParamsMap(final HttpServletRequest req){
+	public static final Map<String,String> getParamsMap(final HttpServletRequest req){
 		HashMap<String,String> map = new HashMap<String,String>();
 
 		/* If the attribute "PARAMETERS" has been already set by the UWS library,
@@ -325,7 +325,7 @@ public class UWSToolBox {
 	}
 
 	/**
-	 * Check whether the parameter specified with the given pair (name,value) exists in the given HTTP request. 
+	 * Check whether the parameter specified with the given pair (name,value) exists in the given HTTP request.
 	 * 
 	 * @param name				Name of the parameter to search.
 	 * @param value				Expected value of the parameter.
@@ -351,7 +351,7 @@ public class UWSToolBox {
 	}
 
 	/**
-	 * Get the parameter specified by the given name from the given HTTP request. 
+	 * Get the parameter specified by the given name from the given HTTP request.
 	 * 
 	 * @param name				Name of the parameter to search.
 	 * @param request			HTTP request in which the given pair must be searched.

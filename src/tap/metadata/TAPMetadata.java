@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -64,7 +65,7 @@ import uws.UWSToolBox;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (03/2017)
+ * @version 2.1 (09/2017)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -378,7 +379,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * @return	A list of all the tables which have the given ADQL name,
 	 *        	or an empty list if no such table can be found.
 	 */
-	public ArrayList<DBTable> getTable(String tableName){
+	public List<DBTable> getTable(String tableName){
 		ArrayList<DBTable> tables = new ArrayList<DBTable>();
 		for(TAPSchema s : this)
 			if (s.hasTable(tableName))

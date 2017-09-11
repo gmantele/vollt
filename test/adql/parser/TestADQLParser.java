@@ -166,7 +166,7 @@ public class TestADQLParser {
 			(new ADQLParser()).parseQuery("select grégory FROM aTable");
 		}catch(Throwable t){
 			assertEquals(ParseException.class, t.getClass());
-			assertEquals("Incorrect character encountered at l.1, c.10: \"\\u00e9\" ('é'), after : \"\"", t.getMessage());
+			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.10: \"\\u00e9\" ('"));
 		}
 */
 		// But in a string, delimited identifier or a comment, it is fine:
