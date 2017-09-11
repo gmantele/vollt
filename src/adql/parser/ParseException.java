@@ -2,12 +2,13 @@
 /* JavaCCOptions:KEEP_LINE_COL=null
  * 
  * Modified by Gr&eacute;gory Mantelet (CDS), on March 2017
- * Modification: several small modifications.
- *               /!\ DO NOT RE-GENERATE THIS FILE /!\
- *               In case of re-generation, replace it by
- *               ParseException.java.backup (but maybe after a diff
- *               in case of significant modifications have been done
- *               by a new version of JavaCC).
+ * Modifications:
+ *     - several small modifications.
+ * 
+ * /!\ DO NOT RE-GENERATE THIS FILE /!\
+ * In case of re-generation, replace it by ParseException.java.backup (but maybe
+ * after a diff in case of significant modifications have been done by a new
+ * version of JavaCC).
  */
 package adql.parser;
 

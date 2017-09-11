@@ -1,41 +1,35 @@
 package adql.translator;
 
-/*
- * This file is part of ADQLLibrary.
- * 
- * ADQLLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * ADQLLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
- */
+import java.util.Iterator;
 
-import adql.db.*;
+import adql.db.DBColumn;
+import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
+import adql.db.SearchColumnList;
 import adql.db.exception.UnresolvedJoinException;
-import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.parser.SQLServer_ADQLQueryFactory;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
 import adql.query.IdentifierField;
 import adql.query.from.ADQLJoin;
+import adql.query.from.ADQLTable;
+import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.function.MathFunction;
-import adql.query.operand.function.geometry.*;
-
-import java.util.ArrayList;
-import java.util.Iterator;
+import adql.query.operand.function.geometry.AreaFunction;
+import adql.query.operand.function.geometry.BoxFunction;
+import adql.query.operand.function.geometry.CentroidFunction;
+import adql.query.operand.function.geometry.CircleFunction;
+import adql.query.operand.function.geometry.ContainsFunction;
+import adql.query.operand.function.geometry.DistanceFunction;
+import adql.query.operand.function.geometry.ExtractCoord;
+import adql.query.operand.function.geometry.ExtractCoordSys;
+import adql.query.operand.function.geometry.IntersectsFunction;
+import adql.query.operand.function.geometry.PointFunction;
+import adql.query.operand.function.geometry.PolygonFunction;
+import adql.query.operand.function.geometry.RegionFunction;
 
 /**
  * <p>MS SQL Server translator.</p>
@@ -59,36 +53,12 @@ import java.util.Iterator;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (03/2016)
+ * @version 1.4 (09/2017)
  * @since 1.4
  * 
  * @see SQLServer_ADQLQueryFactory
  */
 public class SQLServerTranslator extends JDBCTranslator {
-
-	/* TODO Temporary MAIN function.
-	 *      TO REMOVE for the release. */
-	public final static void main(final String[] args) throws Exception{
-		final String adqlquery = "SELECT id, name, aColumn, anotherColumn FROM aTable A NATURAL JOIN anotherTable B;";
-		System.out.println("ADQL Query:\n" + adqlquery);
-
-		ArrayList<DBTable> tables = new ArrayList<DBTable>(2);
-		DefaultDBTable t = new DefaultDBTable("aTable");
-		t.addColumn(new DefaultDBColumn("id", t));
-		t.addColumn(new DefaultDBColumn("name", t));
-		t.addColumn(new DefaultDBColumn("aColumn", t));
-		tables.add(t);
-		t = new DefaultDBTable("anotherTable");
-		t.addColumn(new DefaultDBColumn("id", t));
-		t.addColumn(new DefaultDBColumn("name", t));
-		t.addColumn(new DefaultDBColumn("anotherColumn", t));
-		tables.add(t);
-
-		ADQLQuery query = (new ADQLParser(new DBChecker(tables), new SQLServer_ADQLQueryFactory())).parseQuery(adqlquery);
-
-		SQLServerTranslator translator = new SQLServerTranslator();
-		System.out.println("\nIn MS SQL Server:\n" + translator.translate(query));
-	}
 
 	/** <p>Indicate the case sensitivity to apply to each SQL identifier (only SCHEMA, TABLE and COLUMN).</p>
 	 * 
@@ -137,9 +107,12 @@ public class SQLServerTranslator extends JDBCTranslator {
 		return field == null ? false : field.isCaseSensitive(caseSensitivity);
 	}
 
-	/* For SQL Server, translate(ADQLQuery) must be overridden for TOP/LIMIT handling.
-	 * We must not add "LIMIT" at the end of the query, it must go in select.
-	 * @see adql.translator.ADQLTranslator#translate(adql.query.ADQLQuery)
+	/**
+	 * For SQL Server, {@link #translate(ClauseSelect)} must be overridden for
+	 * TOP/LIMIT handling. We must not add the LIMIT at the end of the query, it
+	 * must go in the SELECT.
+	 * 
+	 * @see #translate(ClauseSelect)
 	 */
 	@Override
 	public String translate(ADQLQuery query) throws TranslationException{
@@ -162,10 +135,6 @@ public class SQLServerTranslator extends JDBCTranslator {
 		return sql.toString();
 	}
 
-	/* For SQL Server, translate(ClauseSelect) must be overridden for TOP/LIMIT handling.
-	 * We must not add "LIMIT" at the end of the query, it must go in select.
-	 * @see adql.translator.ADQLTranslator#translate(adql.query.ClauseSelect)
-	 */
 	@Override
 	public String translate(ClauseSelect clause) throws TranslationException{
 		String sql = null;
@@ -209,9 +178,9 @@ public class SQLServerTranslator extends JDBCTranslator {
 						// ...append the corresponding join condition:
 						if (buf.length() > 0)
 							buf.append(" AND ");
-						buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
+						buf.append(translate(generateJoinColumn(join.getLeftTable(), leftCol, new ADQLColumn(leftCol.getADQLName()))));
 						buf.append("=");
-						buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
+						buf.append(translate(generateJoinColumn(join.getRightTable(), rightCol, new ADQLColumn(rightCol.getADQLName()))));
 					}
 				}
 
@@ -241,9 +210,9 @@ public class SQLServerTranslator extends JDBCTranslator {
 					// append the corresponding join condition:
 					if (buf.length() > 0)
 						buf.append(" AND ");
-					buf.append(getQualifiedTableName(leftCol.getTable())).append('.').append(getColumnName(leftCol));
+					buf.append(translate(generateJoinColumn(join.getLeftTable(), leftCol, usingCol)));
 					buf.append("=");
-					buf.append(getQualifiedTableName(rightCol.getTable())).append('.').append(getColumnName(rightCol));
+					buf.append(translate(generateJoinColumn(join.getRightTable(), rightCol, usingCol)));
 				}
 
 				sql.append("ON ").append(buf.toString());
@@ -256,6 +225,32 @@ public class SQLServerTranslator extends JDBCTranslator {
 			sql.append(translate(join.getJoinCondition()));
 
 		return sql.toString();
+	}
+
+	/**
+	 * Generate an ADQL column of the given table and with the given metadata.
+	 * 
+	 * @param table			Parent table of the column to generate.
+	 * @param colMeta		DB metadata of the column to generate.
+	 * @param joinedColumn	The joined column (i.e. the ADQL column listed in a
+	 *                   	USING) from which the generated column should
+	 *                   	derive.
+	 *                   	<i>If NULL, an {@link ADQLColumn} instance will be
+	 *                   	created from scratch using the ADQL name of the
+	 *                   	given DB metadata.</i>
+	 * 
+	 * @return	The generated column.
+	 */
+	protected ADQLColumn generateJoinColumn(final FromContent table, final DBColumn colMeta, final ADQLColumn joinedColumn){
+		ADQLColumn newCol = (joinedColumn == null ? new ADQLColumn(colMeta.getADQLName()) : new ADQLColumn(joinedColumn));
+		if (table != null){
+			if (table instanceof ADQLTable)
+				newCol.setAdqlTable((ADQLTable)table);
+			else
+				newCol.setAdqlTable(new ADQLTable(table.getName()));
+		}
+		newCol.setDBLink(colMeta);
+		return newCol;
 	}
 
 	@Override
@@ -323,11 +318,30 @@ public class SQLServerTranslator extends JDBCTranslator {
 		switch(fct.getType()){
 			case TRUNCATE:
 				// third argument to round nonzero means do a truncate
-				return "round(" + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "") + ",1)";
+				return "round(convert(float, " + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "") + "),1)";
 			case MOD:
-				return ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + "% " + translate(fct.getParameter(1))) : "");
+				return ((fct.getNbParameters() >= 2) ? ("convert(float, " + translate(fct.getParameter(0)) + ") % convert(float, " + translate(fct.getParameter(1)) + ")") : "");
 			case ATAN2:
 				return "ATN2(" + translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1)) + ")";
+
+			/* In MS-SQLServer, the following functions returns a value of the
+			 * same type as the given argument. However, ADQL requires that an
+			 * SQLServer float (so a double in ADQL) is returned. So, in order
+			 * to follow the ADQL standard, the given parameter must be
+			 * converted into a float: */
+			case ABS:
+				return "abs(convert(float, " + translate(fct.getParameter(0)) + "))";
+			case CEILING:
+				return "ceiling(convert(float, " + translate(fct.getParameter(0)) + "))";
+			case DEGREES:
+				return "degrees(convert(float, " + translate(fct.getParameter(0)) + "))";
+			case FLOOR:
+				return "floor(convert(float, " + translate(fct.getParameter(0)) + "))";
+			case RADIANS:
+				return "radians(convert(float, " + translate(fct.getParameter(0)) + "))";
+			case ROUND:
+				return "round(convert(float, " + translate(fct.getParameter(0)) + ")" + ", " + translate(fct.getParameter(1)) + ")";
+
 			default:
 				return getDefaultADQLFunction(fct);
 		}
