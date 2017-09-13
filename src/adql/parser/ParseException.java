@@ -12,7 +12,7 @@
  * 
  * Modified by Gr&eacute;gory Mantelet (ARI), on Sept. 2017
  * Modifications:
- *     - addition of a HINT in the error message when an ADQL reserved
+ *     - addition of a HINT in the error message when an ADQL or SQL reserved
  *       word is at the origin of the error (see initialise(...))
  * 
  * /!\ DO NOT RE-GENERATE THIS FILE /!\
@@ -121,6 +121,22 @@ public class ParseException extends Exception {
 	 * </i></p> */
 	private final static String ADQL_RESERVED_WORDS_REGEX = "(ABS|ACOS|AREA|ASIN|ATAN|ATAN2|BOX|CEILING|CENTROID|CIRCLE|CONTAINS|COORD1|COORD2|COORDSYS|COS|DEGREES|DISTANCE|EXP|FLOOR|INTERSECTS|LOG|LOG10|MOD|PI|POINT|POLYGON|POWER|RADIANS|REGION|RAND|ROUND|SIN|SQRT|TOP|TAN|TRUNCATE|SELECT|TOP|DISTINCT|ALL|AS|COUNT|AVG|MAX|MIN|SUM|FROM|JOIN|CROSS|INNER|OUTER|LEFT|RIGHT|FULL|NATURAL|USING|ON|WHERE|IS|NOT|AND|OR|EXISTS|IN|LIKE|NULL|BETWEEN|ORDER|ASC|DESC|GROUP|BY|HAVING)";
 
+	/** Regular expression listing all SQL reserved words.
+	 * 
+	 * <p><i>Note 1:
+	 * 	This list is built from the list given in the ADQL-2.0 standard,
+	 * 	after removal of all words potentially used in an ADQL query
+	 * 	(see {@link #ADQL_RESERVED_WORDS_REGEX}).
+	 * </i></p>
+	 * 
+	 * <p><i>Note 2:
+	 * 	This regular expression is only used to display an appropriate hint
+	 * 	to the user in the error message if a such word is at the origin of
+	 * 	the error. (see {@link #initialise(Token, int[][], String[])} for more
+	 * 	details).
+	 * </i></p> */
+	private final static String SQL_RESERVED_WORDS_REGEX = "(ABSOLUTE|ACTION|ADD|ALLOCATE|ALTER|ANY|ARE|ASSERTION|AT|AUTHORIZATION|BEGIN|BIT|BIT_LENGTH|BOTH|CASCADE|CASCADED|CASE|CAST|CATALOG|CHAR|CHARACTER|CHAR_LENGTH|CHARACTER_LENGTH|CHECK|CLOSE|COALESCE|COLLATE|COLLATION|COLUMN|COMMIT|CONNECT|CONNECTION|CONSTRAINT|CONSTRAINTS|CONTINUE|CONVERT|CORRESPONDING|CREATE|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATE|DAY|DEALLOCATE|DECIMAL|DECLARE|DEFAULT|DEFERRABLE|DEFERRED|DELETE|DESCRIBE|DESCRIPTOR|DIAGNOSTICS|DISCONNECT|DOMAIN|DOUBLE|DROP|ELSE|END|END-EXEC|ESCAPE|EXCEPT|EXCEPTION|EXEC|EXECUTE|EXTERNAL|EXTRACT|FALSE|FETCH|FIRST|FLOAT|FOR|FOREIGN|FOUND|GET|GLOBAL|GO|GOTO|GRANT|HOUR|IDENTITY|IMMEDIATE|INDICATOR|INITIALLY|INPUT|INSENSITIVE|INSERT|INT|INTEGER|INTERSECT|INTERVAL|INTO|ISOLATION|KEY|LANGUAGE|LAST|LEADING|LEVEL|LOCAL|LOWER|MATCH|MINUTE|MODULE|MONTH|NAMES|NATIONAL|NCHAR|NEXT|NO|NULLIF|NUMERIC|OCTET_LENGTH|OF|ONLY|OPEN|OPTION|OUTPUT|OVERLAPS|PAD|PARTIAL|POSITION|PRECISION|PREPARE|PRESERVE|PRIMARY|PRIOR|PRIVILEGES|PROCEDURE|PUBLIC|READ|REAL|REFERENCES|RELATIVE|RESTRICT|REVOKE|ROLLBACK|ROWS|SCHEMA|SCROLL|SECOND|SECTION|SESSION|SESSION_USER|SET|SIZE|SMALLINT|SOME|SPACE|SQL|SQLCODE|SQLERROR|SQLSTATE|SUBSTRING|SYSTEM_USER|TABLE|TEMPORARY|THEN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TO|TRAILING|TRANSACTION|TRANSLATE|TRANSLATION|TRIM|TRUE|UNION|UNIQUE|UNKNOWN|UPDATE|UPPER|USAGE|USER|VALUE|VALUES|VARCHAR|VARYING|VIEW|WHEN|WHENEVER|WITH|WORK|WRITE|YEAR|ZONE)";
+
 	/**
 	 * Gets the position in the ADQL query of the token which generates this exception.
 	 * 
@@ -181,6 +197,8 @@ public class ParseException extends Exception {
 		String word = tokenName.toString().trim();
 		if (word.toUpperCase().matches(ADQL_RESERVED_WORDS_REGEX))
 			msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(word).append("\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)");
+		else if (word.toUpperCase().matches(SQL_RESERVED_WORDS_REGEX))
+			msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(word).append("\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)");
 
 		return msg.toString();
 		/*String eol = System.getProperty("line.separator", "\n");

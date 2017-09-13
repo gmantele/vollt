@@ -284,4 +284,25 @@ public class TestADQLParser {
 		}
 	}
 
+	@Test
+	public void testSQLReservedWord(){
+		ADQLParser parser = new ADQLParser();
+
+		try{
+			parser.parseQuery("SELECT rows FROM aTable");
+			fail("\"ROWS\" is an SQL reserved word. This query should not pass.");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith("\n(HINT: \"rows\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)"));
+		}
+
+		try{
+			parser.parseQuery("SELECT CASE WHEN aCol = 2 THEN 'two' ELSE 'smth else' END as str FROM aTable");
+			fail("ADQL does not support the CASE syntax. This query should not pass.");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith("\n(HINT: \"CASE\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)"));
+		}
+	}
+
 }

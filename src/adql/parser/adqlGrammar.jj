@@ -563,6 +563,20 @@ PARSER_END(ADQLParser)
 /* ******************** */
 SKIP : { < " " | "\t" | "\n" | "\r" | "\r\n" > }
 
+/* ************************************************************************** */
+/* Reserved SQL words                                                         */
+/*                                                                            */
+/* NOTE:                                                                      */
+/*   This list is the one provided by the ADQL-2.0 standard after removal of  */
+/*   all ADQL used words (e.g. SELECT, AS, LIKE, AVG, ABS, COS, POINT).       */
+/*   (see ParseException.initialise(Token, int[][], String[]) for more        */
+/*   details)                                                                 */
+/* ************************************************************************** */
+
+TOKEN : {
+	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CAST"|"CATALOG"|"CHAR"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COALESCE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DOUBLE"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPT"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTEGER"|"INTERSECT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"LOWER"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PRECISION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REAL"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SMALLINT"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMESTAMP"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNION"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"UPPER"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARCHAR"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WITH"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
+}
+
 /* *********** */
 /* Punctuation */
 /* *********** */
@@ -1204,7 +1218,7 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 		 * current token and with an error message implying that a column name
 		 * was expected (which is generally the case in an ADQL query).
 		 *
-		 * Note: This choice will generally be reached if an unexpected ADQL
+		 * Note: This choice will generally be reached if an unexpected ADQL/SQL
 		 *       word is ending the query. */
 		| valueExpr=Column() )
 		{return valueExpr;}
