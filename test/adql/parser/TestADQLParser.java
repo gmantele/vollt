@@ -206,4 +206,82 @@ public class TestADQLParser {
 		}
 	}
 
+	@Test
+	public void testADQLReservedWord(){
+		ADQLParser parser = new ADQLParser();
+
+		final String hintAbs = "\n(HINT: \"abs\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+		final String hintPoint = "\n(HINT: \"point\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+		final String hintExists = "\n(HINT: \"exists\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+		final String hintLike = "\n(HINT: \"LIKE\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+
+		/* TEST AS A COLUMN/TABLE/SCHEMA NAME... */
+		// ...with a numeric function name (but no param):
+		try{
+			parser.parseQuery("select abs from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintAbs));
+		}
+		// ...with a geometric function name (but no param):
+		try{
+			parser.parseQuery("select point from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintPoint));
+		}
+		// ...with an ADQL function name (but no param):
+		try{
+			parser.parseQuery("select exists from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintExists));
+		}
+		// ...with an ADQL syntax item:
+		try{
+			parser.parseQuery("select LIKE from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintLike));
+		}
+
+		/* TEST AS AN ALIAS... */
+		// ...with a numeric function name (but no param):
+		try{
+			parser.parseQuery("select aCol AS abs from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintAbs));
+		}
+		// ...with a geometric function name (but no param):
+		try{
+			parser.parseQuery("select aCol AS point from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintPoint));
+		}
+		// ...with an ADQL function name (but no param):
+		try{
+			parser.parseQuery("select aCol AS exists from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintExists));
+		}
+		// ...with an ADQL syntax item:
+		try{
+			parser.parseQuery("select aCol AS LIKE from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintLike));
+		}
+
+		/* TEST AT THE END OF THE QUERY (AND IN A WHERE) */
+		try{
+			parser.parseQuery("select aCol from aTable WHERE toto = abs");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintAbs));
+		}
+	}
+
 }

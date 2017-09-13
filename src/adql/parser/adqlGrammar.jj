@@ -1192,10 +1192,21 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
-		| valueExpr=GeometryValueFunction()
+		| LOOKAHEAD(2) valueExpr=GeometryValueFunction()
 		| LOOKAHEAD(Column()) valueExpr=Column()
 		| LOOKAHEAD(String()) valueExpr=StringFactor()
-		| valueExpr=Factor())
+		| LOOKAHEAD(3) valueExpr=Factor()
+
+		/* At this position in this switch, all possibilities (including
+		 * Column()) have already been tested and failed.
+		 * 
+		 * So, this final choice actually aims to throw an error set with the
+		 * current token and with an error message implying that a column name
+		 * was expected (which is generally the case in an ADQL query).
+		 *
+		 * Note: This choice will generally be reached if an unexpected ADQL
+		 *       word is ending the query. */
+		| valueExpr=Column() )
 		{return valueExpr;}
 	}catch(Exception ex){
 		throw generateParseException(ex);

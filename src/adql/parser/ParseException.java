@@ -3,7 +3,17 @@
  * 
  * Modified by Gr&eacute;gory Mantelet (CDS), on March 2017
  * Modifications:
- *     - several small modifications.
+ *     - addition of a getPosition() function in order to get the exact location
+ *       of the error in the original ADQL query
+ *     - generate the error message at creation instead of doing that at each
+ *       call of getMessage()
+ *     - use of StringBuffer to build the error message
+ *     - small other alterations of the generated error message
+ * 
+ * Modified by Gr&eacute;gory Mantelet (ARI), on Sept. 2017
+ * Modifications:
+ *     - addition of a HINT in the error message when an ADQL reserved
+ *       word is at the origin of the error (see initialise(...))
  * 
  * /!\ DO NOT RE-GENERATE THIS FILE /!\
  * In case of re-generation, replace it by ParseException.java.backup (but maybe
@@ -95,6 +105,22 @@ public class ParseException extends Exception {
 	/** Line in the ADQL query where the exception occurs. */
 	protected TextPosition position = null;
 
+	/** Regular expression listing all ADQL reserved words.
+	 * 
+	 * <p><i>Note 1:
+	 * 	This list is built NOT from the list given in the ADQL-2.0 standard,
+	 * 	but from the collation of all words potentially used in an ADQL query
+	 * 	(including standard function names).
+	 * </i></p>
+	 * 
+	 * <p><i>Note 2:
+	 * 	This regular expression is only used to display an appropriate hint
+	 * 	to the user in the error message if a such word is at the origin of
+	 * 	the error. (see {@link #initialise(Token, int[][], String[])} for more
+	 * 	details).
+	 * </i></p> */
+	private final static String ADQL_RESERVED_WORDS_REGEX = "(ABS|ACOS|AREA|ASIN|ATAN|ATAN2|BOX|CEILING|CENTROID|CIRCLE|CONTAINS|COORD1|COORD2|COORDSYS|COS|DEGREES|DISTANCE|EXP|FLOOR|INTERSECTS|LOG|LOG10|MOD|PI|POINT|POLYGON|POWER|RADIANS|REGION|RAND|ROUND|SIN|SQRT|TOP|TAN|TRUNCATE|SELECT|TOP|DISTINCT|ALL|AS|COUNT|AVG|MAX|MIN|SUM|FROM|JOIN|CROSS|INNER|OUTER|LEFT|RIGHT|FULL|NATURAL|USING|ON|WHERE|IS|NOT|AND|OR|EXISTS|IN|LIKE|NULL|BETWEEN|ORDER|ASC|DESC|GROUP|BY|HAVING)";
+
 	/**
 	 * Gets the position in the ADQL query of the token which generates this exception.
 	 * 
@@ -130,17 +156,18 @@ public class ParseException extends Exception {
 		StringBuffer msg = new StringBuffer();
 		msg.append(" Encountered \"");
 		Token tok = currentToken.next;
+		StringBuffer tokenName = new StringBuffer();
 		for(int i = 0; i < maxSize; i++){
 			if (i != 0)
-				msg.append(' ');
+				tokenName.append(' ');
 			if (tok.kind == 0){
-				msg.append(tokenImage[0]);
+				tokenName.append(tokenImage[0]);
 				break;
 			}
-			msg.append(add_escapes(tok.image));
+			tokenName.append(add_escapes(tok.image));
 			tok = tok.next;
 		}
-		msg.append("\".");
+		msg.append(tokenName.toString()).append("\".");
 
 		// Append the expected tokens list:
 		if (expectedTokenSequences.length == 1){
@@ -149,6 +176,11 @@ public class ParseException extends Exception {
 			msg.append(" Was expecting one of: ");
 		}
 		msg.append(expected);
+
+		// Append a hint about reserved words if it is one:
+		String word = tokenName.toString().trim();
+		if (word.toUpperCase().matches(ADQL_RESERVED_WORDS_REGEX))
+			msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(word).append("\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)");
 
 		return msg.toString();
 		/*String eol = System.getProperty("line.separator", "\n");
