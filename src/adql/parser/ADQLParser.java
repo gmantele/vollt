@@ -52,16 +52,31 @@ import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
 /**
-* <p>Parses an ADQL query thanks to the {@link ADQLParser#Query()} function. </p>
+* Parses an ADQL query thanks to the {@link ADQLParser#Query()} function.
 * 
-* <p>This parser is able, thanks to a {@link QueryChecker} object, to check each ADQLQuery just after its generation.
-* It could be used to check the consistency between the ADQL query to parse and the "database" on which the query must be executed.
-* By default, there is no {@link QueryChecker}. Thus you must extend {@link QueryChecker} to check semantically all generated ADQLQuery objects.</p>
+* <p>
+*   This parser is able, thanks to a {@link QueryChecker} object, to check each
+*   {@link ADQLQuery} just after its generation. It could be used to check the
+*   consistency between the ADQL query to parse and the "database" on which the
+*   query must be executed. By default, there is no {@link QueryChecker}. Thus
+*   you must extend {@link QueryChecker} to check semantically all generated
+*   ADQLQuery objects.
+* </p>
 * 
-* <p>To create an object representation of the given ADQL query, this parser uses a {@link ADQLQueryFactory} object. So if you want customize some object (ie. CONTAINS) of this representation
-* you just have to extend the corresponding default object (ie. ContainsFunction) and to extend the corresponding function of {@link ADQLQueryFactory} (ie. createContains(...)).</p>
+* <p>
+*   To create an object representation of the given ADQL query, this parser uses
+*   a {@link ADQLQueryFactory} object. So if you want customize some object
+*   (ie. CONTAINS) of this representation you just have to extend the
+*   corresponding default object (ie. ContainsFunction) and to extend the
+*   corresponding function of {@link ADQLQueryFactory}
+*   (ie. createContains(...)).
+* </p>
 * 
-* <p><b><u>WARNING:</u> To modify this class it's strongly encouraged to modify the .jj file in the section between <i>PARSER_BEGIN</i> and <i>PARSER_END</i> and to re-compile it with JavaCC.</b></p>
+* <p><b><u>WARNING:</u>
+*   To modify this class it's strongly encouraged to modify the .jj file in the
+*   section between <i>PARSER_BEGIN</i> and <i>PARSER_END</i> and to re-compile
+*   it with JavaCC.
+* </b></p>
 *
 * @see QueryChecker
 * @see ADQLQueryFactory
@@ -77,13 +92,16 @@ public class ADQLParser implements ADQLParserConstants {
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
 
-	/** The object representation of the ADQL query to parse. (ONLY USED DURING THE PARSING, else it is always <i>null</i>). */
+	/** The object representation of the ADQL query to parse.
+	* (ONLY USED DURING THE PARSING, else it is always <i>null</i>). */
 	private ADQLQuery query = null;
 
-	/** Checks each ADQLQuery (sub-query or not) just after their generation. */
+	/** Checks each {@link ADQLQuery} (sub-query or not) just after their
+	* generation. */
 	private QueryChecker queryChecker = null;
 
-	/** The first token of a table/column name. This token is extracted by {@link #Identifier()}. */
+	/** The first token of a table/column name. This token is extracted by
+	* {@link #Identifier()}. */
 	private Token currentIdentifierToken = null;
 
 	/**
@@ -95,10 +113,12 @@ public class ADQLParser implements ADQLParserConstants {
 	}
 
 	/**
-	* Builds an ADQL parser without a query to parse but with a QueryChecker and a ADQLQueryFactory.
+	* Builds an ADQL parser without a query to parse but with a
+	* {@link QueryChecker} and a {@link ADQLQueryFactory}.
 	*
-	* @param checker	The object to use to check each ADQLQuery.
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(QueryChecker checker, ADQLQueryFactory factory){
 		this();
@@ -110,18 +130,21 @@ public class ADQLParser implements ADQLParserConstants {
 	}
 
 	/**
-	* Builds an ADQL parser without a query to parse but with a QueryChecker.
+	* Builds an ADQL parser without a query to parse but with a
+	* {@link QueryChecker}.
 	*
-	* @param checker	The object to use to check each ADQLQuery.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(QueryChecker checker){
 		this(checker, null);
 	}
 
 	/**
-	* Builds an ADQL parser without a query to parse but with a ADQLQueryFactory.
+	* Builds an ADQL parser without a query to parse but with a
+	* {@link ADQLQueryFactory}.
 	*
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(ADQLQueryFactory factory){
 		this((QueryChecker)null, factory);
@@ -131,8 +154,9 @@ public class ADQLParser implements ADQLParserConstants {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each ADQLQuery.
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory){
 		this(stream);
@@ -150,7 +174,7 @@ public class ADQLParser implements ADQLParserConstants {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each ADQLQuery.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker){
 		this(stream, checker, null);
@@ -160,7 +184,8 @@ public class ADQLParser implements ADQLParserConstants {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, ADQLQueryFactory factory){
 		this(stream, (QueryChecker)null, factory);
@@ -169,10 +194,11 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream			The stream in which the ADQL query to parse is given.
-	* @param encoding		The supplied encoding.
-	* @param checker		The object to use to check each ADQLQuery.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param encoding	The supplied encoding.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory){
 		this(stream, encoding);
@@ -187,9 +213,9 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream			The stream in which the ADQL query to parse is given.
-	* @param encoding		The supplied encoding.
-	* @param checker		The object to use to check each ADQLQuery.
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param encoding	The supplied encoding.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker){
 		this(stream, encoding, checker, null);
@@ -198,9 +224,10 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream			The stream in which the ADQL query to parse is given.
-	* @param encoding		The supplied encoding.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param encoding	The supplied encoding.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, ADQLQueryFactory factory){
 		this(stream, encoding, null, factory);
@@ -209,9 +236,10 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with a reader containing the query to parse.
 	*
-	* @param reader			The reader in which the ADQL query to parse is given.
-	* @param checker		The object to use to check each ADQLQuery.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param reader		The reader in which the ADQL query to parse is given.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory){
 		this(reader);
@@ -228,8 +256,8 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with a reader containing the query to parse.
 	*
-	* @param reader			The reader in which the ADQL query to parse is given.
-	* @param checker		The object to use to check each ADQLQuery.
+	* @param reader		The reader in which the ADQL query to parse is given.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker){
 		this(reader, checker, null);
@@ -239,7 +267,8 @@ public class ADQLParser implements ADQLParserConstants {
 	* Builds a parser with a reader containing the query to parse.
 	*
 	* @param reader		The reader in which the ADQL query to parse is given.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.Reader reader, ADQLQueryFactory factory){
 		this(reader, null, factory);
@@ -248,9 +277,10 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm				The manager which associates a token to a numeric code.
-	* @param checker		The object to use to check each ADQLQuery.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param tm			The manager which associates a token to a numeric code.
+	* @param checker	The object to use to check each {@link ADQLQuery }.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory){
 		this(tm);
@@ -267,8 +297,8 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm				The manager which associates a token to a numeric code.
-	* @param checker		The object to use to check each ADQLQuery.
+	* @param tm			The manager which associates a token to a numeric code.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker){
 		this(tm, checker, null);
@@ -277,17 +307,20 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm				The manager which associates a token to a numeric code.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param tm			The manager which associates a token to a numeric code.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, ADQLQueryFactory factory){
 		this(tm, null, factory);
 	}
 
 	/**
-	* Parses the query given at the creation of this parser or in the <i>ReInit</i> functions.
+	* Parses the query given at the creation of this parser or in the
+	* <i>ReInit</i> functions.
 	*
-	* @return 					The object representation of the given ADQL query.
+	* @return 	The object representation of the given ADQL query.
+	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
 	* @see ADQLParser#Query()
@@ -305,8 +338,10 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Parses the query given in parameter.
 	*
-	* @param q					The ADQL query to parse.
-	* @return 					The object representation of the given ADQL query.
+	* @param q	The ADQL query to parse.
+	* 
+	* @return	The object representation of the given ADQL query.
+	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
 	* @see ADQLParser#ReInit(java.io.InputStream)
@@ -327,8 +362,10 @@ public class ADQLParser implements ADQLParserConstants {
 	/**
 	* Parses the query contained in the stream given in parameter.
 	*
-	* @param stream				The stream which contains the ADQL query to parse.
-	* @return 					The object representation of the given ADQL query.
+	* @param stream		The stream which contains the ADQL query to parse.
+	* 
+	* @return	The object representation of the given ADQL query.
+	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
 	* @see ADQLParser#ReInit(java.io.InputStream)
@@ -379,11 +416,23 @@ public class ADQLParser implements ADQLParserConstants {
 	}
 
 	/**
-	* <p>Gets the specified ADQL query and parses the given ADQL query. The SQL translation is then printed if the syntax is correct.</p>
-	* <p><b>ONLY the syntax is checked: the query is NOT EXECUTED !</b></p>
-	* <p>Supplied parameters are: <ul><li>[-debug] -url http://...</li><li>[-debug] -file ...</li><li>[-debug] -query SELECT...</li></ul></p>
+	* Gets the specified ADQL query and parses the given ADQL query. The SQL
+	* translation is then printed if the syntax is correct.
+	* 
+	* <p>
+	*     <b>ONLY the syntax is checked: the query is NOT EXECUTED !</b>
+	* </p>
+	* 
+	* <p>Supplied parameters are:
+	*     <ul>
+	*       <li>[-debug] -url http://...</li>
+	*       <li>[-debug] -file ...</li>
+	*       <li>[-debug] -query SELECT...</li>
+	*     </ul>
+	* </p>
 	*
 	* @param args
+	
 	* @throws Exception
 	*/
 	public static final void main(String[] args) throws Exception{
@@ -560,7 +609,7 @@ public class ADQLParser implements ADQLParserConstants {
 					jj_la1[1] = jj_gen;;
 			}
 			switch((jj_ntk == -1) ? jj_ntk_f() : jj_ntk){
-				case GROUP_BY:{
+				case GROUP:{
 					GroupBy();
 					endPos = query.getGroupBy().getPosition();
 					break;
@@ -578,7 +627,7 @@ public class ADQLParser implements ADQLParserConstants {
 					jj_la1[3] = jj_gen;;
 			}
 			switch((jj_ntk == -1) ? jj_ntk_f() : jj_ntk){
-				case ORDER_BY:{
+				case ORDER:{
 					OrderBy();
 					endPos = query.getOrderBy().getPosition();
 					break;
@@ -903,7 +952,8 @@ public class ADQLParser implements ADQLParserConstants {
 			ClauseADQL<ADQLColumn> groupBy = query.getGroupBy();
 			ADQLColumn colRef = null;
 			Token start;
-			start = jj_consume_token(GROUP_BY);
+			start = jj_consume_token(GROUP);
+			jj_consume_token(BY);
 			colRef = Column();
 			groupBy.add(colRef);
 			label_3: while(true){
@@ -946,7 +996,8 @@ public class ADQLParser implements ADQLParserConstants {
 			ClauseADQL<ADQLOrder> orderBy = query.getOrderBy();
 			ADQLOrder order = null;
 			Token start;
-			start = jj_consume_token(ORDER_BY);
+			start = jj_consume_token(ORDER);
+			jj_consume_token(BY);
 			order = OrderItem();
 			orderBy.add(order);
 			label_4: while(true){
@@ -3924,346 +3975,6 @@ public class ADQLParser implements ADQLParserConstants {
 		}
 	}
 
-	private boolean jj_3R_16(){
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		if (jj_3R_31())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_122(){
-		if (jj_scan_token(BOX))
-			return true;
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		if (jj_3R_134())
-			return true;
-		if (jj_scan_token(COMMA))
-			return true;
-		if (jj_3R_135())
-			return true;
-		if (jj_scan_token(COMMA))
-			return true;
-		if (jj_3R_101())
-			return true;
-		if (jj_scan_token(COMMA))
-			return true;
-		if (jj_3R_101())
-			return true;
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_116(){
-		if (jj_3R_21())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_42(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_56()){
-			jj_scanpos = xsp;
-			if (jj_3R_57()){
-				jj_scanpos = xsp;
-				if (jj_3R_58()){
-					jj_scanpos = xsp;
-					if (jj_3R_59()){
-						jj_scanpos = xsp;
-						if (jj_3R_60()){
-							jj_scanpos = xsp;
-							if (jj_3R_61()){
-								jj_scanpos = xsp;
-								if (jj_3R_62()){
-									jj_scanpos = xsp;
-									if (jj_3R_63())
-										return true;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	private boolean jj_3R_115(){
-		if (jj_3R_22())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_150(){
-		if (jj_3R_21())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_105(){
-		if (jj_scan_token(FULL))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_145(){
-		if (jj_3R_136())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_102(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_122()){
-			jj_scanpos = xsp;
-			if (jj_3R_123()){
-				jj_scanpos = xsp;
-				if (jj_3R_124()){
-					jj_scanpos = xsp;
-					if (jj_3R_125()){
-						jj_scanpos = xsp;
-						if (jj_3R_126()){
-							jj_scanpos = xsp;
-							if (jj_3R_127())
-								return true;
-						}
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	private boolean jj_3R_151(){
-		if (jj_3R_42())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_143(){
-		if (jj_3R_136())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_112(){
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		if (jj_3R_101())
-			return true;
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_148(){
-		if (jj_3R_21())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_111(){
-		if (jj_3R_129())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_149(){
-		if (jj_3R_136())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_71(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_115()){
-			jj_scanpos = xsp;
-			if (jj_3R_116()){
-				jj_scanpos = xsp;
-				if (jj_3R_117())
-					return true;
-			}
-		}
-		return false;
-	}
-
-	private boolean jj_3R_110(){
-		if (jj_3R_21())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_134(){
-		if (jj_3R_27())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_109(){
-		if (jj_3R_128())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_147(){
-		if (jj_3R_136())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_108(){
-		if (jj_scan_token(FULL))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_69(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_109()){
-			jj_scanpos = xsp;
-			if (jj_3R_110()){
-				jj_scanpos = xsp;
-				if (jj_3R_111()){
-					jj_scanpos = xsp;
-					if (jj_3R_112())
-						return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	private boolean jj_3R_31(){
-		if (jj_3R_44())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_100(){
-		if (jj_scan_token(DISTANCE))
-			return true;
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_147()){
-			jj_scanpos = xsp;
-			if (jj_3R_148())
-				return true;
-		}
-		if (jj_scan_token(COMMA))
-			return true;
-		xsp = jj_scanpos;
-		if (jj_3R_149()){
-			jj_scanpos = xsp;
-			if (jj_3R_150())
-				return true;
-		}
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_99(){
-		if (jj_scan_token(COORD2))
-			return true;
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_145()){
-			jj_scanpos = xsp;
-			if (jj_3R_146())
-				return true;
-		}
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_98(){
-		if (jj_scan_token(COORD1))
-			return true;
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_143()){
-			jj_scanpos = xsp;
-			if (jj_3R_144())
-				return true;
-		}
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_97(){
-		if (jj_scan_token(AREA))
-			return true;
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		if (jj_3R_113())
-			return true;
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_104(){
-		if (jj_scan_token(RIGHT))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_153(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_scan_token(8)){
-			jj_scanpos = xsp;
-			if (jj_scan_token(9))
-				return true;
-		}
-		return false;
-	}
-
-	private boolean jj_3R_96(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_scan_token(58)){
-			jj_scanpos = xsp;
-			if (jj_scan_token(59))
-				return true;
-		}
-		if (jj_scan_token(LEFT_PAR))
-			return true;
-		if (jj_3R_113())
-			return true;
-		if (jj_scan_token(COMMA))
-			return true;
-		if (jj_3R_113())
-			return true;
-		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_152(){
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_153())
-			jj_scanpos = xsp;
-		if (jj_scan_token(UNSIGNED_INTEGER))
-			return true;
-		return false;
-	}
-
 	private boolean jj_3R_107(){
 		if (jj_scan_token(RIGHT))
 			return true;
@@ -4303,13 +4014,13 @@ public class ADQLParser implements ADQLParserConstants {
 	private boolean jj_3R_139(){
 		Token xsp;
 		xsp = jj_scanpos;
-		if (jj_scan_token(47)){
+		if (jj_scan_token(48)){
 			jj_scanpos = xsp;
-			if (jj_scan_token(48)){
+			if (jj_scan_token(49)){
 				jj_scanpos = xsp;
-				if (jj_scan_token(49)){
+				if (jj_scan_token(50)){
 					jj_scanpos = xsp;
-					if (jj_scan_token(50))
+					if (jj_scan_token(51))
 						return true;
 				}
 			}
@@ -4329,11 +4040,11 @@ public class ADQLParser implements ADQLParserConstants {
 	private boolean jj_3R_128(){
 		Token xsp;
 		xsp = jj_scanpos;
-		if (jj_scan_token(97)){
+		if (jj_scan_token(98)){
 			jj_scanpos = xsp;
-			if (jj_scan_token(98)){
+			if (jj_scan_token(99)){
 				jj_scanpos = xsp;
-				if (jj_scan_token(99))
+				if (jj_scan_token(100))
 					return true;
 			}
 		}
@@ -5446,7 +5157,7 @@ public class ADQLParser implements ADQLParserConstants {
 	private boolean jj_3_5(){
 		Token xsp;
 		xsp = jj_scanpos;
-		if (jj_scan_token(63)){
+		if (jj_scan_token(64)){
 			jj_scanpos = xsp;
 			if (jj_3R_20())
 				return true;
@@ -5624,6 +5335,346 @@ public class ADQLParser implements ADQLParserConstants {
 		return false;
 	}
 
+	private boolean jj_3R_16(){
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		if (jj_3R_31())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_122(){
+		if (jj_scan_token(BOX))
+			return true;
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		if (jj_3R_134())
+			return true;
+		if (jj_scan_token(COMMA))
+			return true;
+		if (jj_3R_135())
+			return true;
+		if (jj_scan_token(COMMA))
+			return true;
+		if (jj_3R_101())
+			return true;
+		if (jj_scan_token(COMMA))
+			return true;
+		if (jj_3R_101())
+			return true;
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_116(){
+		if (jj_3R_21())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_42(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_56()){
+			jj_scanpos = xsp;
+			if (jj_3R_57()){
+				jj_scanpos = xsp;
+				if (jj_3R_58()){
+					jj_scanpos = xsp;
+					if (jj_3R_59()){
+						jj_scanpos = xsp;
+						if (jj_3R_60()){
+							jj_scanpos = xsp;
+							if (jj_3R_61()){
+								jj_scanpos = xsp;
+								if (jj_3R_62()){
+									jj_scanpos = xsp;
+									if (jj_3R_63())
+										return true;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean jj_3R_115(){
+		if (jj_3R_22())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_150(){
+		if (jj_3R_21())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_105(){
+		if (jj_scan_token(FULL))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_145(){
+		if (jj_3R_136())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_102(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_122()){
+			jj_scanpos = xsp;
+			if (jj_3R_123()){
+				jj_scanpos = xsp;
+				if (jj_3R_124()){
+					jj_scanpos = xsp;
+					if (jj_3R_125()){
+						jj_scanpos = xsp;
+						if (jj_3R_126()){
+							jj_scanpos = xsp;
+							if (jj_3R_127())
+								return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean jj_3R_151(){
+		if (jj_3R_42())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_143(){
+		if (jj_3R_136())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_112(){
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		if (jj_3R_101())
+			return true;
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_148(){
+		if (jj_3R_21())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_111(){
+		if (jj_3R_129())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_149(){
+		if (jj_3R_136())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_71(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_115()){
+			jj_scanpos = xsp;
+			if (jj_3R_116()){
+				jj_scanpos = xsp;
+				if (jj_3R_117())
+					return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean jj_3R_110(){
+		if (jj_3R_21())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_134(){
+		if (jj_3R_27())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_109(){
+		if (jj_3R_128())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_147(){
+		if (jj_3R_136())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_108(){
+		if (jj_scan_token(FULL))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_69(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_109()){
+			jj_scanpos = xsp;
+			if (jj_3R_110()){
+				jj_scanpos = xsp;
+				if (jj_3R_111()){
+					jj_scanpos = xsp;
+					if (jj_3R_112())
+						return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean jj_3R_31(){
+		if (jj_3R_44())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_100(){
+		if (jj_scan_token(DISTANCE))
+			return true;
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_147()){
+			jj_scanpos = xsp;
+			if (jj_3R_148())
+				return true;
+		}
+		if (jj_scan_token(COMMA))
+			return true;
+		xsp = jj_scanpos;
+		if (jj_3R_149()){
+			jj_scanpos = xsp;
+			if (jj_3R_150())
+				return true;
+		}
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_99(){
+		if (jj_scan_token(COORD2))
+			return true;
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_145()){
+			jj_scanpos = xsp;
+			if (jj_3R_146())
+				return true;
+		}
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_98(){
+		if (jj_scan_token(COORD1))
+			return true;
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_143()){
+			jj_scanpos = xsp;
+			if (jj_3R_144())
+				return true;
+		}
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_97(){
+		if (jj_scan_token(AREA))
+			return true;
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		if (jj_3R_113())
+			return true;
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_104(){
+		if (jj_scan_token(RIGHT))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_153(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_scan_token(8)){
+			jj_scanpos = xsp;
+			if (jj_scan_token(9))
+				return true;
+		}
+		return false;
+	}
+
+	private boolean jj_3R_96(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_scan_token(59)){
+			jj_scanpos = xsp;
+			if (jj_scan_token(60))
+				return true;
+		}
+		if (jj_scan_token(LEFT_PAR))
+			return true;
+		if (jj_3R_113())
+			return true;
+		if (jj_scan_token(COMMA))
+			return true;
+		if (jj_3R_113())
+			return true;
+		if (jj_scan_token(RIGHT_PAR))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_152(){
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_153())
+			jj_scanpos = xsp;
+		if (jj_scan_token(UNSIGNED_INTEGER))
+			return true;
+		return false;
+	}
+
 	/** Generated Token Manager. */
 	public ADQLParserTokenManager token_source;
 	SimpleCharStream jj_input_stream;
@@ -5652,15 +5703,15 @@ public class ADQLParser implements ADQLParserConstants {
 	}
 
 	private static void jj_la1_init_1(){
-		jj_la1_1 = new int[]{0x0,0x1,0x400,0x800,0x1000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xffff8000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x6000,0x6000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xf8000,0x0,0x3f00000,0x7c0f8000,0x0,0x0,0x0,0x0,0x0,0x0,0xf8000,0x0,0x80000000,0x0,0x3f00000,0x8,0x6,0x6,0x8,0x0,0x8,0x8,0x0,0x108,0x200,0xffff8000,0x0,0x8,0x8,0x0,0x0,0x0,0xffff8000,0x78000,0x0,0xf8000,0xc000000,0x800000,0x800000,0x800000,0x800000,0x7c000000,0x0,0x3f00000,0x7c000000,0x7c0f8000,0x0,0x0,0x0,0x0,0x0,0xffff8000,};
+		jj_la1_1 = new int[]{0x0,0x1,0x800,0x1000,0x2000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xffff0000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xc000,0xc000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1f0000,0x0,0x7e00000,0xf81f0000,0x0,0x0,0x0,0x0,0x0,0x0,0x1f0000,0x0,0x0,0x0,0x7e00000,0x8,0x6,0x6,0x8,0x0,0x8,0x8,0x0,0x108,0x200,0xffff0000,0x0,0x8,0x8,0x0,0x0,0x0,0xffff0000,0xf0000,0x0,0x1f0000,0x18000000,0x1000000,0x1000000,0x1000000,0x1000000,0xf8000000,0x0,0x7e00000,0xf8000000,0xf81f0000,0x0,0x0,0x0,0x0,0x0,0xffff0000,};
 	}
 
 	private static void jj_la1_init_2(){
-		jj_la1_2 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xc0000000,0xc0000000,0x0,0xc0000000,0x0,0xc8ffffff,0x0,0x0,0x0,0xc0000000,0x0,0x0,0x0,0xc0000000,0x0,0x0,0x0,0xc0000000,0x0,0xc0000000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x8000000,0x0,0x0,0x0,0x0,0xc0000000,0xc8000000,0x0,0xc0ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0xc0000000,0x0,0x0,0xc8000000,0xc0000000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xc8ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0xc8ffffff,0x0,0x0,0x0,0x0,0xc0000000,0xc0000000,0xc0000000,0xc0000000,0x1,0x0,0x0,0x80ffffff,0xc0ffffff,0x0,0x0,0xfffe,0xff0000,0x0,0xc8ffffff,};
+		jj_la1_2 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x80000000,0x80000000,0x0,0x80000000,0x0,0x91ffffff,0x0,0x0,0x0,0x80000000,0x0,0x0,0x0,0x80000000,0x0,0x0,0x0,0x80000000,0x0,0x80000000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x10000000,0x0,0x0,0x0,0x0,0x80000000,0x90000000,0x0,0x81fffffe,0x0,0x0,0x0,0x0,0x0,0x0,0x80000000,0x0,0x1,0x90000000,0x80000000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x91ffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x91ffffff,0x0,0x0,0x0,0x0,0x80000000,0x80000000,0x80000000,0x80000000,0x2,0x0,0x0,0x1fffffe,0x81fffffe,0x0,0x0,0x1fffc,0x1fe0000,0x0,0x91ffffff,};
 	}
 
 	private static void jj_la1_init_3(){
-		jj_la1_3 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xe,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x8,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xe,0xc,0x0,0x0,0xe,0x0,0x0,0xe,0x0,0x0,0x0,0x0,0x0,0x0,0xe,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xe,0x0,0x0,0x0,0x0,0x0,0x0,0xe,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0xe,0x0,0x0,0x0,0x0,0x0,0xe,};
+		jj_la1_3 = new int[]{0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x1,0x0,0x1,0x0,0x1d,0x0,0x0,0x0,0x1,0x0,0x0,0x0,0x11,0x0,0x0,0x0,0x1,0x0,0x1,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1c,0x18,0x0,0x0,0x1d,0x1,0x0,0x1d,0x0,0x0,0x0,0x0,0x0,0x0,0x1d,0x0,0x0,0x1,0x1,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1d,0x0,0x0,0x0,0x0,0x0,0x0,0x1d,0x0,0x0,0x0,0x0,0x1,0x1,0x1,0x1,0x0,0x0,0x0,0x1,0x1d,0x0,0x0,0x0,0x0,0x0,0x1d,};
 	}
 
 	final private JJCalls[] jj_2_rtns = new JJCalls[16];
@@ -5889,7 +5940,7 @@ public class ADQLParser implements ADQLParserConstants {
 	/** Generate ParseException. */
 	public ParseException generateParseException(){
 		jj_expentries.clear();
-		boolean[] la1tokens = new boolean[101];
+		boolean[] la1tokens = new boolean[102];
 		if (jj_kind >= 0){
 			la1tokens[jj_kind] = true;
 			jj_kind = -1;
@@ -5912,7 +5963,7 @@ public class ADQLParser implements ADQLParserConstants {
 				}
 			}
 		}
-		for(int i = 0; i < 101; i++){
+		for(int i = 0; i < 102; i++){
 			if (la1tokens[i]){
 				jj_expentry = new int[1];
 				jj_expentry[0] = i;

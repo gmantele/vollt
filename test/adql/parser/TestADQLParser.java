@@ -179,4 +179,31 @@ public class TestADQLParser {
 		}
 	}
 
+	@Test
+	public void testMultipleSpacesInOrderAndGroupBy(){
+		try{
+			ADQLParser parser = new ADQLParser();
+
+			// Single space:
+			parser.parseQuery("select * from aTable ORDER BY aCol");
+			parser.parseQuery("select * from aTable GROUP BY aCol");
+
+			// More than one space:
+			parser.parseQuery("select * from aTable ORDER      BY aCol");
+			parser.parseQuery("select * from aTable GROUP      BY aCol");
+
+			// With any other space character:
+			parser.parseQuery("select * from aTable ORDER\tBY aCol");
+			parser.parseQuery("select * from aTable ORDER\nBY aCol");
+			parser.parseQuery("select * from aTable ORDER \t\nBY aCol");
+
+			parser.parseQuery("select * from aTable GROUP\tBY aCol");
+			parser.parseQuery("select * from aTable GROUP\nBY aCol");
+			parser.parseQuery("select * from aTable GROUP \t\nBY aCol");
+		}catch(Throwable t){
+			t.printStackTrace();
+			fail("Having multiple space characters between the ORDER/GROUP and the BY keywords should not generate any parsing error.");
+		}
+	}
+
 }
