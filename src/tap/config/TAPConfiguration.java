@@ -36,7 +36,7 @@ import tap.backup.DefaultTAPBackupManager;
  * and it must be used only thanks to its static classes and attributes.</i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (08/2017)
+ * @version 2.1 (09/2017)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -80,6 +80,11 @@ public final class TAPConfiguration {
 	public final static int DEFAULT_RETENTION_PERIOD = 0;
 
 	/* LOG KEYS */
+	/** Name/Key of the property specifying the logger to use.
+	 * By default, {@link tap.log.DefaultTAPLog} is used. */
+	public final static String KEY_LOGGER = "logger";
+	/** Default value of the property {@link #KEY_LOGGER}: {@value #DEFAULT_LOGGER}. */
+	public final static String DEFAULT_LOGGER = "default";
 	/** Name/Key of the property specifying the minimum type of messages (i.e. DEBUG, INFO, WARNING, ERROR, FATAL)
 	 * that must be logged. By default all messages are logged...which is equivalent to set this property to "DEBUG". */
 	public final static String KEY_MIN_LOG_LEVEL = "min_log_level";

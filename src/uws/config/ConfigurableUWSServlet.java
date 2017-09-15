@@ -16,13 +16,14 @@ package uws.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import static uws.config.UWSConfiguration.DEFAULT_BACKUP_BY_USER;
 import static uws.config.UWSConfiguration.DEFAULT_BACKUP_FREQUENCY;
 import static uws.config.UWSConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static uws.config.UWSConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
+import static uws.config.UWSConfiguration.DEFAULT_LOGGER;
 import static uws.config.UWSConfiguration.DEFAULT_UWS_CONF_FILE;
 import static uws.config.UWSConfiguration.KEY_ADD_SERIALIZERS;
 import static uws.config.UWSConfiguration.KEY_ADD_UWS_ACTIONS;
@@ -38,6 +39,7 @@ import static uws.config.UWSConfiguration.KEY_GROUP_USER_DIRECTORIES;
 import static uws.config.UWSConfiguration.KEY_HOME_PAGE;
 import static uws.config.UWSConfiguration.KEY_HOME_PAGE_MIME_TYPE;
 import static uws.config.UWSConfiguration.KEY_JOB_LISTS;
+import static uws.config.UWSConfiguration.KEY_LOGGER;
 import static uws.config.UWSConfiguration.KEY_LOG_ROTATION;
 import static uws.config.UWSConfiguration.KEY_MAX_RUNNING_JOBS;
 import static uws.config.UWSConfiguration.KEY_MIN_LOG_LEVEL;
@@ -103,7 +105,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (06/2016)
+ * @version 4.2 (09/2017)
  * @since 4.2
  */
 public class ConfigurableUWSServlet extends HttpServlet {
@@ -292,15 +294,23 @@ public class ConfigurableUWSServlet extends HttpServlet {
 	 * 
 	 * @param uwsConfig		The content of the UWS configuration file.
 	 * @param fileManager	The file manager to access the log file(s).
+	 * 
+	 * @throws UWSException	If no instance of the specified custom logger can
+	 *                     	be created.
 	 */
-	private UWSLog createLogger(final Properties uwsConfig, final UWSFileManager fileManager){
+	private UWSLog createLogger(final Properties uwsConfig, final UWSFileManager fileManager) throws UWSException{
 		// Create the logger:
-		UWSLog logger = new DefaultUWSLog(fileManager);
+		UWSLog logger;
+		String propValue = getProperty(uwsConfig, KEY_LOGGER);
+		if (propValue == null || propValue.trim().equalsIgnoreCase(DEFAULT_LOGGER))
+			logger = new DefaultUWSLog(fileManager);
+		else
+			logger = newInstance(propValue, KEY_LOGGER, UWSLog.class, new Class<?>[]{UWSFileManager.class}, new Object[]{fileManager});
 
 		StringBuffer buf = new StringBuffer("Logger initialized");
 
 		// Set the minimum log level:
-		String propValue = getProperty(uwsConfig, KEY_MIN_LOG_LEVEL);
+		propValue = getProperty(uwsConfig, KEY_MIN_LOG_LEVEL);
 		if (propValue != null){
 			try{
 				((DefaultUWSLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));

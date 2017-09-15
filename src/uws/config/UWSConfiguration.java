@@ -16,7 +16,7 @@ package uws.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.lang.reflect.Constructor;
@@ -39,7 +39,7 @@ import uws.service.request.UWSRequestParser;
  * and it must be used only thanks to its static classes and attributes.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (06/2016)
+ * @version 4.2 (09/2017)
  * @since 4.2
  */
 public final class UWSConfiguration {
@@ -178,6 +178,11 @@ public final class UWSConfiguration {
 
 	/* LOG KEYS */
 
+	/** Name/Key of the property specifying the logger to use.
+	 * By default, {@link uws.service.log.DefaultUWSLog} is used. */
+	public final static String KEY_LOGGER = "logger";
+	/** Default value of the property {@link #KEY_LOGGER}: {@value #DEFAULT_LOGGER}. */
+	public final static String DEFAULT_LOGGER = "default";
 	/** Name/Key of the property specifying the minimum type of messages (i.e. DEBUG, INFO, WARNING, ERROR, FATAL)
 	 * that must be logged. By default all messages are logged...which is equivalent to set this property to "DEBUG". */
 	public final static String KEY_MIN_LOG_LEVEL = "min_log_level";

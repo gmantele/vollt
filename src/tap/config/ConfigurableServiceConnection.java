@@ -1,9 +1,29 @@
 package tap.config;
 
+/*
+ * This file is part of TAPLibrary.
+ * 
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
+ */
+
 import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.DEFAULT_LOGGER;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
@@ -19,6 +39,7 @@ import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
 import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.KEY_LOGGER;
 import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
@@ -69,25 +90,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 
-/*
- * This file is part of TAPLibrary.
- * 
- * TAPLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * TAPLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
- */
-
 import adql.db.FunctionDef;
 import adql.db.STCS;
 import adql.parser.ParseException;
@@ -125,7 +127,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (09/2016)
+ * @version 2.1 (09/2017)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -354,15 +356,22 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * Initialize the TAP logger with the given TAP configuration file.
 	 * 
 	 * @param tapConfig	The content of the TAP configuration file.
+	 * 
+	 * @throws TAPException	If no instance of the specified custom logger can
+	 *                     	be created.
 	 */
-	private void initLogger(final Properties tapConfig){
+	private void initLogger(final Properties tapConfig) throws TAPException{
 		// Create the logger:
-		logger = new DefaultTAPLog(fileManager);
+		String propValue = getProperty(tapConfig, KEY_LOGGER);
+		if (propValue == null || propValue.trim().equalsIgnoreCase(DEFAULT_LOGGER))
+			logger = new DefaultTAPLog(fileManager);
+		else
+			logger = newInstance(propValue, KEY_LOGGER, TAPLog.class, new Class<?>[]{UWSFileManager.class}, new Object[]{fileManager});
 
 		StringBuffer buf = new StringBuffer("Logger initialized");
 
 		// Set the minimum log level:
-		String propValue = getProperty(tapConfig, KEY_MIN_LOG_LEVEL);
+		propValue = getProperty(tapConfig, KEY_MIN_LOG_LEVEL);
 		if (propValue != null){
 			try{
 				((DefaultTAPLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));

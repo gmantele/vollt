@@ -420,6 +420,30 @@
 			
 			<tr><td colspan="5">Log files</td></tr>
 			<tr class="optional">
+				<td class="todo">logger</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Only two possibilities are already implemented.</p>
+					<ul>
+						<li><b>default</b>: default logger provided by the
+							library. Any logged message will be appended in the
+							file 'service.log' inside the root directory of this
+							service (cf property <code>file_root_path</code>).
+						</li>
+						<li><b><em>{...}</em></b>: a custom logger. A class name
+							MUST be provided (between {...}). The specified
+							class must reference an implementation of
+							uws.service.log.UWSLog. This implementation must
+							have at least one constructor with a single
+							parameter of type uws.service.file.UWSFileManager.
+						</li>
+					</ul>
+	 				<p><em>Default: <code>default</code> (i.e. uws.service.log.DefaultUWSLog)</em></p>
+				</td>
+				<td><ul><li>default</li><li>{aPackage.MyLogger}</li></ul></td>
+			</tr>
+			<tr class="optional">
 				<td class="todo">min_log_level</td>
 				<td></td>
 				<td>text</td>
