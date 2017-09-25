@@ -23,6 +23,7 @@ package tap.metadata;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,6 +76,10 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/** List of all schemas available through the TAP service. */
 	protected final Map<String,TAPSchema> schemas;
+	
+	/** List of all coordinate systems used by columns published in the TAP_SCHEMA.
+	 * @since 2.1 */
+	protected final Map<String, TAPCoosys> coordinateSystems;
 
 	/** Part of the TAP URI which identify this TAP resource.
 	 * By default, it is the resource name ; so here, the corresponding TAP URI would be: "/tables". */
@@ -108,6 +113,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 */
 	public TAPMetadata(){
 		schemas = new LinkedHashMap<String,TAPSchema>();
+		coordinateSystems = new HashMap<String, TAPCoosys>();
 	}
 
 	/**
@@ -423,6 +429,60 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		for(TAPSchema s : this)
 			nbTables += s.getNbTables();
 		return nbTables;
+	}
+	
+	/**
+	 * Get the coordinate system definition associated with the given ID.
+	 * 
+	 * @param coosysId	ID of the coordinate system to get. <i>(case sensitive)</i>
+	 * 
+	 * @return	The corresponding coordinate system definition,
+	 *        	or NULL if no match for the given ID.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPCoosys getCoosys(final String coosysId) {
+		return (coosysId == null ? null : coordinateSystems.get(coosysId));
+	}
+	
+	/**
+	 * Add the given coordinate system definition.
+	 * 
+	 * <p><b>Important:</b>
+	 * 	If a coordinate system with the same ID (case sensitive) is already declared in
+	 * 	this {@link TAPMetadata}, it will be replaced by the given one. The replaced
+	 * 	coordinate system is returned by this function.
+	 * </p>
+	 * 
+	 * @param newCoosys	The coordinate system definition to add.
+	 * 
+	 * @return	The coordinate system definition previously declared with the same ID in this {@link TAPMetadata},
+	 *        	or NULL if no coord. sys. was declared with this ID.  
+	 * 
+	 * @since 2.1
+	 */
+	public TAPCoosys addCoosys(final TAPCoosys newCoosys) {
+		if (newCoosys == null)
+			return null;
+		else{
+			TAPCoosys formerValue = coordinateSystems.get(newCoosys.getId());
+			coordinateSystems.put(newCoosys.getId(), newCoosys);
+			return formerValue;
+		}
+	}
+	
+	/**
+	 * Remove the coordinate system declared with the given ID.
+	 * 
+	 * @param coosysId	The ID of the coordinate system definition to remove.
+	 * 
+	 * @return	The removed coordinate system definition,
+	 *        	or NULL if none is declared with the given ID.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPCoosys removeCoosys(final String coosysId){
+		return (coosysId == null) ? null : coordinateSystems.remove(coosysId);
 	}
 
 	/**
@@ -871,6 +931,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				tables.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE if table corresponds to a data model", null, null, null, false, false, true);
 				return tables;
 
+			case COOSYS:
+				TAPTable coosys = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.COOSYS, TableType.table, "List of coordinate systems published used this TAP service.", null);
+				coosys.addColumn("id", new DBType(DBDatatype.VARCHAR), "ID of the coordinate system definition.", null, null, null, true, true, false);
+				coosys.addColumn("system", new DBType(DBDatatype.VARCHAR), "The coordinate system (among \"ICRS\", \"eq_FK5\", \"eq_FK4\", \"ecl_FK4\", \"ecl_FK5\", \"galactic\", \"supergalactic\").", null, null, null, false, false, false);
+				coosys.addColumn("equinox", new DBType(DBDatatype.VARCHAR), "Required to fix the equatorial or ecliptic systems (as e.g. \"J2000\" as the default \"eq_FK5\" or \"B1950\" as the default \"eq_FK4\").", null, null, null, false, false, false);
+				coosys.addColumn("epoch", new DBType(DBDatatype.VARCHAR), "Epoch of the positions (if necessary).", null, null, null, false, false, false);
+				return coosys;
+
 			case COLUMNS:
 				TAPTable columns = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.COLUMNS, TableType.table, "List of columns of all tables listed in TAP_SCHEMA.TABLES and published in this TAP service.", null);
 				columns.addColumn("column_index", new DBType(DBDatatype.INTEGER), "this index is used to recommend column ordering for clients", null, null, null, false, false, true);
@@ -886,6 +954,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				columns.addColumn("indexed", new DBType(DBDatatype.INTEGER), "an indexed column; 1 means true, 0 means false", null, null, null, false, false, true);
 				columns.addColumn("principal", new DBType(DBDatatype.INTEGER), "a principal column; 1 means true, 0 means false", null, null, null, false, false, true);
 				columns.addColumn("std", new DBType(DBDatatype.INTEGER), "a standard column; 1 means true, 0 means false", null, null, null, false, false, true);
+				columns.addColumn("coosys_id", new DBType(DBDatatype.VARCHAR), "ID of the used coordinate systems (if any).", null, null, null, false, false, false);
 				return columns;
 
 			case KEYS:
@@ -962,11 +1031,18 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * Enumeration of all tables of TAP_SCHEMA.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 2.0 (07/2014)
+	 * @version 2.1 (07/2017)
 	 * @since 2.0
 	 */
 	public enum STDTable{
-		SCHEMAS("schemas"), TABLES("tables"), COLUMNS("columns"), KEYS("keys"), KEY_COLUMNS("key_columns");
+		SCHEMAS("schemas"),
+		TABLES("tables"),
+		COLUMNS("columns"),
+		KEYS("keys"),
+		KEY_COLUMNS("key_columns"),
+		/** Non standard table but anyway expected by this library in order to associated coordinate columns with a coordinate system.
+		 * @since 2.1 */
+		COOSYS("coosys");
 
 		/** Real name of the table. */
 		public final String label;
