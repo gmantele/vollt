@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import adql.db.DBTable;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
+import tap.db.JDBCConnection;
 import tap.metadata.TAPTable.TableType;
 import tap.resource.Capabilities;
 import tap.resource.TAPResource;
@@ -893,6 +894,23 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	/**
+	 * Get the minimum definition of the table TAP_SCHEMA.coosys as expected by
+	 * the library (see {@link JDBCConnection#getTAPSchema()}.
+	 * 
+	 * @return	The created definition of TAP_SCHEMA.coosys.
+	 * 
+	 * @since 2.1
+	 */
+	public static final TAPTable getCoosysTable(){
+		TAPTable coosys = new TAPTable(STDSchema.TAPSCHEMA + ".coosys", TableType.table, "List of coordinate systems of coordinate columns published in this TAP service.", null);
+		coosys.addColumn("id", new DBType(DBDatatype.VARCHAR), "ID of the coordinate system definition as it must be in the VOTable.", null, null, null, true, true, false);
+		coosys.addColumn("system", new DBType(DBDatatype.VARCHAR), "The coordinate system (among \"ICRS\", \"eq_FK5\", \"eq_FK4\", \"ecl_FK4\", \"ecl_FK5\", \"galactic\", \"supergalactic\", \"xy\", \"barycentric\", \"geo_app\").", null, null, null, false, false, false);
+		coosys.addColumn("equinox", new DBType(DBDatatype.VARCHAR), "Required to fix the equatorial or ecliptic systems (as e.g. \"J2000\" as the default for \"eq_FK5\" or \"B1950\" as the default for \"eq_FK4\").", null, null, null, false, false, false);
+		coosys.addColumn("epoch", new DBType(DBDatatype.VARCHAR), "Epoch of the positions (if necessary).", null, null, null, false, false, false);
+		return coosys;
+	}
+
+	/**
 	 * <p>Get the definition of the specified standard TAP table.</p>
 	 * 
 	 * <p><i><b>Important note:</b>
@@ -931,14 +949,6 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				tables.addColumn("utype", new DBType(DBDatatype.VARCHAR), "UTYPE if table corresponds to a data model", null, null, null, false, false, true);
 				return tables;
 
-			case COOSYS:
-				TAPTable coosys = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.COOSYS, TableType.table, "List of coordinate systems of coordinate columns published in this TAP service.", null);
-				coosys.addColumn("id", new DBType(DBDatatype.VARCHAR), "ID of the coordinate system definition as it must be in the VOTable.", null, null, null, true, true, false);
-				coosys.addColumn("system", new DBType(DBDatatype.VARCHAR), "The coordinate system (among \"ICRS\", \"eq_FK5\", \"eq_FK4\", \"ecl_FK4\", \"ecl_FK5\", \"galactic\", \"supergalactic\", \"xy\", \"barycentric\", \"geo_app\").", null, null, null, false, false, false);
-				coosys.addColumn("equinox", new DBType(DBDatatype.VARCHAR), "Required to fix the equatorial or ecliptic systems (as e.g. \"J2000\" as the default for \"eq_FK5\" or \"B1950\" as the default for \"eq_FK4\").", null, null, null, false, false, false);
-				coosys.addColumn("epoch", new DBType(DBDatatype.VARCHAR), "Epoch of the positions (if necessary).", null, null, null, false, false, false);
-				return coosys;
-
 			case COLUMNS:
 				TAPTable columns = new TAPTable(STDSchema.TAPSCHEMA + "." + STDTable.COLUMNS, TableType.table, "List of columns of all tables listed in TAP_SCHEMA.TABLES and published in this TAP service.", null);
 				columns.addColumn("column_index", new DBType(DBDatatype.INTEGER), "this index is used to recommend column ordering for clients", null, null, null, false, false, true);
@@ -954,7 +964,6 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 				columns.addColumn("indexed", new DBType(DBDatatype.INTEGER), "an indexed column; 1 means true, 0 means false", null, null, null, false, false, true);
 				columns.addColumn("principal", new DBType(DBDatatype.INTEGER), "a principal column; 1 means true, 0 means false", null, null, null, false, false, true);
 				columns.addColumn("std", new DBType(DBDatatype.INTEGER), "a standard column; 1 means true, 0 means false", null, null, null, false, false, true);
-				columns.addColumn("coosys_id", new DBType(DBDatatype.VARCHAR), "ID of the used coordinate systems (if any).", null, null, null, false, false, false);
 				return columns;
 
 			case KEYS:
@@ -1031,14 +1040,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * Enumeration of all tables of TAP_SCHEMA.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 2.1 (07/2017)
+	 * @version 2.1 (09/2017)
 	 * @since 2.0
 	 */
 	public enum STDTable{
-		SCHEMAS("schemas"), TABLES("tables"), COLUMNS("columns"), KEYS("keys"), KEY_COLUMNS("key_columns"),
-		/** Non standard table but anyway expected by this library in order to associated coordinate columns with a coordinate system.
-		 * @since 2.1 */
-		COOSYS("coosys");
+		SCHEMAS("schemas"), TABLES("tables"), COLUMNS("columns"), KEYS("keys"), KEY_COLUMNS("key_columns");
 
 		/** Real name of the table. */
 		public final String label;

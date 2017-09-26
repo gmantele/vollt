@@ -903,6 +903,7 @@ public class JDBCConnection implements DBConnection {
 	 * <ol>
 	 * 	<li>{@link #loadSchemas(TAPTable, TAPMetadata, Statement)}</li>
 	 * 	<li>{@link #loadTables(TAPTable, TAPMetadata, Statement)}</li>
+	 * 	<li>{@link #loadCoosys(TAPTable, TAPMetadata, Statement)}</li>
 	 * 	<li>{@link #loadColumns(TAPTable, List, Statement)}</li>
 	 * 	<li>{@link #loadKeys(TAPTable, TAPTable, List, Statement)}</li>
 	 * </ol>
@@ -941,11 +942,16 @@ public class JDBCConnection implements DBConnection {
 			List<TAPTable> lstTables = loadTables(tap_schema.getTable(STDTable.TABLES.label), metadata, stmt);
 
 			// load all coordinate systems from TAP_SCHEMA.coosys: [non standard]
-			Map<String, TAPCoosys> mapCoosys = null;
-			if (isTableExisting(tap_schema.getDBName(), STDTable.COOSYS.label, stmt.getConnection().getMetaData())){
+			Map<String,TAPCoosys> mapCoosys = null;
+			if (isTableExisting(tap_schema.getDBName(), "coosys", stmt.getConnection().getMetaData())){
 				if (logger != null)
 					logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.coosys.", null);
-				mapCoosys = loadCoosys(tap_schema.getTable(STDTable.COOSYS.label), metadata, stmt);
+				// create the TAP_SCHEMA.coosys table:
+				TAPTable coosysTable = TAPMetadata.getCoosysTable();
+				// add TAP_SCHEMA.coosys to the schema TAP_SCHEMA:
+				tap_schema.addTable(coosysTable);
+				// load all declared coordinate systems from it:
+				mapCoosys = loadCoosys(coosysTable, metadata, stmt);
 			}
 
 			// load all columns from TAP_SCHEMA.columns:
@@ -1156,7 +1162,7 @@ public class JDBCConnection implements DBConnection {
 			close(rs);
 		}
 	}
-	
+
 	/**
 	 * Load all coordinate systems declared in the TAP_SCHEMA.
 	 * 
@@ -1171,7 +1177,7 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @since 2.1
 	 */
-	protected Map<String, TAPCoosys> loadCoosys(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
+	protected Map<String,TAPCoosys> loadCoosys(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
 		ResultSet rs = null;
 		try{
 			// Build the SQL query:
@@ -1187,15 +1193,14 @@ public class JDBCConnection implements DBConnection {
 			rs = stmt.executeQuery(sqlBuf.toString());
 
 			// Create all coosys:
-			HashMap<String, TAPCoosys> mapCoosys = new HashMap<String, TAPCoosys>();
+			HashMap<String,TAPCoosys> mapCoosys = new HashMap<String,TAPCoosys>();
 			while(rs.next()){
-				String coosysId = rs.getString(1),
-						system = rs.getString(2), equinox = rs.getString(3),
-						epoch = rs.getString(4);
+				String coosysId = rs.getString(1), system = rs.getString(2),
+						equinox = rs.getString(3), epoch = rs.getString(4);
 
 				// create the new coosys:
 				TAPCoosys newCoosys = new TAPCoosys(coosysId, system, nullifyIfNeeded(equinox), nullifyIfNeeded(epoch));
-				
+
 				// create and add the new coosys:
 				metadata.addCoosys(newCoosys);
 				mapCoosys.put(coosysId, newCoosys);
@@ -1210,8 +1215,6 @@ public class JDBCConnection implements DBConnection {
 			close(rs);
 		}
 	}
-	
-
 
 	/**
 	 * <p>Load into the corresponding tables all columns listed in TAP_SCHEMA.columns.</p>
@@ -1233,7 +1236,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException	If a table can not be found, or if any other error occurs while interacting with the database.
 	 * 
 	 * @deprecated	This method is now replaced by {@link #loadColumns(TAPTable, List, Map, Statement)} which has an additional parameter:
-	 *            	the list of declared coordinate systems. 
+	 *            	the list of declared coordinate systems.
 	 */
 	@Deprecated
 	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException{
@@ -1262,7 +1265,7 @@ public class JDBCConnection implements DBConnection {
 	 * 
 	 * @since 2.1
 	 */
-	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Map<String, TAPCoosys> mapCoosys, final Statement stmt) throws DBException{
+	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Map<String,TAPCoosys> mapCoosys, final Statement stmt) throws DBException{
 		ResultSet rs = null;
 		try{
 			// Determine whether the dbName column exists:
@@ -1354,10 +1357,10 @@ public class JDBCConnection implements DBConnection {
 				newColumn.setStd(std);
 				newColumn.setDBName(dbName);
 				newColumn.setIndex(colIndex);
-				
+
 				// set the coordinate system if any is specified:
 				if (hasCoosys){
-					int indCoosys = 12; 
+					int indCoosys = 12;
 					if (hasColumnIndex)
 						indCoosys++;
 					if (hasDBName)
@@ -1366,7 +1369,7 @@ public class JDBCConnection implements DBConnection {
 					if (coosysId != null){
 						newColumn.setCoosys(mapCoosys.get(coosysId));
 						if (logger != null && newColumn.getCoosys() == null)
-							logger.logDB(LogLevel.WARNING, this, "LOAD_TAP_SCHEMA", "No coordinate system for the column \""+columnName+"\"! Cause: unknown coordinate system: \""+coosysId+"\".", null);
+							logger.logDB(LogLevel.WARNING, this, "LOAD_TAP_SCHEMA", "No coordinate system for the column \"" + columnName + "\"! Cause: unknown coordinate system: \"" + coosysId + "\".", null);
 					}
 				}
 
