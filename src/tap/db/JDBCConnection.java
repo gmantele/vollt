@@ -201,6 +201,11 @@ public class JDBCConnection implements DBConnection {
 	/** Name of the database column giving the database name of a TAP column, table or schema. */
 	protected final static String DB_NAME_COLUMN = "dbname";
 
+	/** Name of the database column giving the coordinate system ID associated
+	 * with a TAP column.
+	 * @since 2.1 */
+	protected final static String COOSYS_ID_COLUMN = "dbname";
+
 	/** Connection ID (typically, the job ID). It lets identify the DB errors linked to the Job execution in the logs. */
 	protected final String ID;
 
@@ -1302,8 +1307,10 @@ public class JDBCConnection implements DBConnection {
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
-			if (hasCoosys)
-				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("coosys_id")));
+			if (hasCoosys){
+				sqlBuf.append(", ");
+				translator.appendIdentifier(sqlBuf, COOSYS_ID_COLUMN, IdentifierField.COLUMN);
+			}
 			sqlBuf.append(" FROM ").append(translator.getTableName(tableDef, supportsSchema));
 			if (hasColumnIndex)
 				sqlBuf.append(" ORDER BY 1,12,2");
