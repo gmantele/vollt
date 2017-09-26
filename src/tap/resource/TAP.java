@@ -39,6 +39,7 @@ import tap.error.DefaultTAPErrorWriter;
 import tap.formatter.OutputFormat;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
+import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
@@ -55,7 +56,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (03/2017)
+ * @version 2.1 (09/2017)
  */
 public class TAP implements VOSIResource {
 
@@ -634,6 +635,7 @@ public class TAP implements VOSIResource {
 	 * <p>Currently, only the following DMs are natively supported:</p>
 	 * <ul>
 	 * 	<li>Obscore (1.0 and PR-1.1)</li>
+	 * 	<li>RegTAP (1.0)</li>
 	 * </ul>
 	 * 
 	 * <p>
@@ -653,7 +655,10 @@ public class TAP implements VOSIResource {
 	 * @since 2.1
 	 */
 	protected void appendDataModels(final StringBuffer xml, final String linePrefix){
+		// ObsCore:
 		appendObsCoreDM(xml, linePrefix);
+		// RegTAP:
+		appendRegTAPDM(xml, linePrefix);
 	}
 
 	/**
@@ -676,8 +681,8 @@ public class TAP implements VOSIResource {
 	 * 	If not, the Obscore table will be declared as Obscore 1.0.
 	 * </p>
 	 * 
-	 * @param xml	The <code>/capabilities</code> in-progress content in which
-	 *           	Obscore-DM should be declared if found.
+	 * @param xml			The <code>/capabilities</code> in-progress content
+	 *           			in which Obscore-DM should be declared if found.
 	 * @param linePrefix	Tabulations/Spaces that should prefix all lines
 	 *                  	(for human readability).
 	 * 
@@ -712,6 +717,41 @@ public class TAP implements VOSIResource {
 			else
 				xml.append(linePrefix + "<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore/v1.0\">ObsCore-1.0</dataModel>\n");
 		}
+	}
+
+	/**
+	 * <p>Append the RegTAP DM declaration in the given {@link StringBuffer}
+	 * if a schema <code>rr</code> can be found in <code>TAP_SCHEMA</code>
+	 * with all its required tables.</p>
+	 * 
+	 * <p>
+	 * 	This function has no effect if the schema <code>rr</code> or its
+	 * 	mandatory children tables can not be found. The research is done
+	 * 	case sensitively by {@link TAPMetadata#getRegTAPSchema()}.
+	 * </p>
+	 * 
+	 * <p>
+	 * 	If there is a valid schema <code>rr</code>, this function
+	 * 	detects automatically which version of RegTAP is implemented. For the
+	 * 	moment only one is supported: RegTAP-1.0.
+	 * </p>
+	 * 
+	 * @param xml			The <code>/capabilities</code> in-progress content
+	 *           			in which RegTAP-DM should be declared if found.
+	 * @param linePrefix	Tabulations/Spaces that should prefix all lines
+	 *                  	(for human readability).
+	 * 
+	 * @see TAPMetadata#getRegTAPTable()
+	 * 
+	 * @since 2.1
+	 */
+	protected void appendRegTAPDM(final StringBuffer xml, final String linePrefix){
+		// Try to get the RegTAP schema definition:
+		TAPSchema regtap = service.getTAPMetadata().getRegTAPSchema();
+
+		// If there is one, determine the supported DM version and declare it:
+		if (regtap != null)
+			xml.append(linePrefix + "<dataModel ivo-id=\"ivo://ivoa.net/std/RegTAP#1.0\">Registry 1.0</dataModel>\n");
 	}
 
 	/* ************************************* */

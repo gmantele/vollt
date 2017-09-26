@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 import adql.db.DBTable;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import tap.db.JDBCConnection;
 import tap.metadata.TAPTable.TableType;
 import tap.resource.Capabilities;
 import tap.resource.TAPResource;
@@ -52,18 +52,27 @@ import uws.UWSToolBox;
  * This list also corresponds to the TAP resource "/tables".</p>
  * 
  * <p>
- * 	Only schemas are stored in this object. So that's why only schemas can be added and removed
- * 	from this class. However, {@link TAPSchema} objects are listing tables, whose the object
- * 	representation is listing columns. So to add tables, you must first embed them in a schema.
+ * 	Only schemas are stored in this object. So that's why only schemas can be
+ * 	added and removed from this class. However, {@link TAPSchema} objects are
+ * 	listing tables, whose the object representation is listing columns. So to
+ * 	add tables, you must first embed them in a schema.
  * </p>
  * 
  * <p>
- * 	All metadata have two names: one to use in ADQL queries and the other to use when really querying
- * 	the database. This is very useful to hide the real complexity of the database and propose
- * 	a simpler view of the query-able data. It is particularly useful if a schema does not exist in the
- * 	database but has been added in the TAP schema for more logical separation on the user point of view.
- * 	In a such case, the schema would have an ADQL name but no DB name (NULL value ; which is possible only
- * 	with {@link TAPSchema} objects).
+ * 	All metadata have two names: one to use in ADQL queries and the other to use
+ * 	when really querying the database. This is very useful to hide the real
+ * 	complexity of the database and propose a simpler view of the query-able
+ * 	data. It is particularly useful if a schema does not exist in the database
+ * 	but has been added in the TAP schema for more logical separation on the user
+ * 	point of view. In a such case, the schema would have an ADQL name but no DB
+ * 	name (NULL value ; which is possible only with {@link TAPSchema} objects).
+ * </p>
+ * 
+ * <p>
+ * 	This class lets also detect the ObsCore and RegTAP data models, thanks to
+ * 	the functions {@link #getObsCoreTable()} and {@link #getRegTAPSchema()}
+ * 	which return resp. the ObsCore table and the RegTAP schema if matching the
+ * 	IVOA specification.
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
@@ -401,11 +410,12 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 	This function is case sensitive only on the schema name
 	 * 	(i.e. <code>ivoa</code>) which must be defined in full lower case.
 	 * 	The table name (i.e. <code>ObsCore</code>) will be found whatever
-	 * 	the case it is written in.
+	 * 	the case it is written in and whether it is prefixed or not.
 	 * </p>
 	 * 
 	 * @return	Description of the ObsCore table,
-	 *        	or <code>NULL</code> if this table is not provided by this TAP service.
+	 *        	or <code>NULL</code> if this table is not provided by this TAP
+	 *        	service.
 	 * 
 	 * @since 2.1
 	 */
@@ -413,10 +423,48 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		TAPSchema ivoaSchema = getSchema("ivoa");
 		if (ivoaSchema != null){
 			for(TAPTable t : ivoaSchema){
-				if (t.getADQLName().equalsIgnoreCase("obscore"))
+				if (t.getADQLName().matches("(?i)(ivoa\\.)?obscore"))
 					return t;
 			}
 		}
+		return null;
+	}
+
+	/**
+	 * Get the description of the RegTAP schema, if it is defined.
+	 * 
+	 * <p>
+	 * 	This function is case sensitive only on the schema name
+	 * 	(i.e. <code>rr</code>) which must be defined in full lower case.
+	 * 	The tables name (e.g. <code>capability</code>) will be searched case
+	 * 	sensitively as well. However, it does not matter if the table name is
+	 * 	prefixed or not.
+	 * </p>
+	 * 
+	 * @return	Description of the RegTAP schema,
+	 *        	or <code>NULL</code> if RegTAP is not supported in this TAP
+	 *        	service.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPSchema getRegTAPSchema(){
+		// Get the RegTAP schema if existing:
+		TAPSchema rrSchema = getSchema("rr");
+
+		// If there is one, check its content:
+		if (rrSchema != null){
+			// search for all mandatory tables of RegTAP:
+			HashSet<String> matchedTables = new HashSet<String>(13);
+			for(TAPTable t : rrSchema){
+				if (t.getADQLName().matches("(rr\\.)?(capability|interface|intf_param|relationship|res_date|res_detail|res_role|res_schema|res_subject|res_table|resource|table_column|validation)"))
+					matchedTables.add(t.getADQLName());
+			}
+			// if all columns have been found, return the RegTAP schema:
+			if (matchedTables.size() == 13)
+				return rrSchema;
+		}
+
+		// NULL, if no schema rr or if it does match the IVOA specification:
 		return null;
 	}
 
@@ -895,7 +943,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Get the minimum definition of the table TAP_SCHEMA.coosys as expected by
-	 * the library (see {@link JDBCConnection#getTAPSchema()}.
+	 * the library (see {@link tap.db.JDBCConnection#getTAPSchema()}.
 	 * 
 	 * @return	The created definition of TAP_SCHEMA.coosys.
 	 * 
