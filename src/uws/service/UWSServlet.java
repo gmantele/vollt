@@ -398,15 +398,15 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 					uwsAction = UWSAction.ADD_JOB;
 					doAddJob(requestUrl, req, resp, user);
 
+				}// DESTROY JOB:
+				else if (requestUrl.hasJobList() && requestUrl.hasJob() && requestUrl.getAttributes().length == 0 && UWSToolBox.hasParameter(UWSJob.PARAM_ACTION, UWSJob.ACTION_DELETE, req, false)){
+					uwsAction = UWSAction.DESTROY_JOB;
+					doDestroyJob(requestUrl, req, resp, user);
+
 				}// SET JOB's UWS STANDARD PARAMETER
 				else if (requestUrl.hasJobList() && requestUrl.hasJob() && requestUrl.getAttributes().length == 1 && requestUrl.getAttributes()[0].toLowerCase().matches(UWSParameters.UWS_RW_PARAMETERS_REGEXP) && UWSToolBox.hasParameter(requestUrl.getAttributes()[0], req, false)){
 					uwsAction = UWSAction.SET_UWS_PARAMETER;
 					doSetUWSParameter(requestUrl, req, resp, user);
-
-				}// DESTROY JOB:
-				else if (requestUrl.hasJobList() && requestUrl.hasJob() && UWSToolBox.hasParameter(UWSJob.PARAM_ACTION, UWSJob.ACTION_DELETE, req, false)){
-					uwsAction = UWSAction.DESTROY_JOB;
-					doDestroyJob(requestUrl, req, resp, user);
 
 				}// SET JOB PARAMETER:
 				else if (requestUrl.hasJobList() && requestUrl.hasJob() && (!requestUrl.hasAttribute() || requestUrl.getAttributes().length == 1 && requestUrl.getAttributes()[0].equalsIgnoreCase(UWSJob.PARAM_PARAMETERS)) && UWSToolBox.getNbParameters(req) > 0){
