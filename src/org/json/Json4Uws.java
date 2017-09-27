@@ -124,15 +124,16 @@ public final class Json4Uws {
 			json.put("version", UWS.VERSION);
 			json.put(UWSJob.PARAM_JOB_ID, job.getJobId());
 			json.put(UWSJob.PARAM_PHASE, job.getPhase());
+			json.put(UWSJob.PARAM_RUN_ID, job.getRunId());
+			if (job.getOwner() != null)
+				json.put(UWSJob.PARAM_OWNER, job.getOwner().getPseudo());
+			json.put(UWSJob.PARAM_CREATION_TIME, ISO8601Format.format(job.getCreationTime()));
 			if (reference){
 				if (jobsListUrl != null){
 					jobsListUrl.setJobId(job.getJobId());
 					json.put("href", jobsListUrl.getRequestURL());
 				}
 			}else{
-				json.put(UWSJob.PARAM_RUN_ID, job.getRunId());
-				if (job.getOwner() != null)
-					json.put(UWSJob.PARAM_OWNER, job.getOwner().getPseudo());
 				json.put(UWSJob.PARAM_QUOTE, job.getQuote());
 				if (job.getStartTime() != null)
 					json.put(UWSJob.PARAM_START_TIME, ISO8601Format.format(job.getStartTime()));

@@ -212,6 +212,7 @@ public class XMLSerializer extends UWSSerializer {
 		xml.append(newLine).append(getOwnerID(job, false));
 		xml.append(newLine).append(getPhase(job, false));
 		xml.append(newLine).append(getQuote(job, false));
+		xml.append(newLine).append(getCreationTime(job, false));
 		xml.append(newLine).append(getStartTime(job, false));
 		xml.append(newLine).append(getEndTime(job, false));
 		xml.append(newLine).append(getExecutionDuration(job, false));
@@ -247,18 +248,32 @@ public class XMLSerializer extends UWSSerializer {
 		}
 
 		StringBuffer xml = new StringBuffer("<jobref id=\"");
-		xml.append(escapeXMLAttribute(job.getJobId())).append('"');
-		/* NOTE: NO ATTRIBUTE "runId" IN THE XML SCHEMA!
-		 * if (job.getRunId() != null && job.getRunId().length() > 0)
-		 * 	xml.append("\" runId=\"").append(escapeXMLAttribute(job.getRunId()));
-		 */
 
-		/* The XLink attributes are optional. So if no URL is available for this
+		// [MANDATORY] Set the job ID as an attribute:
+		xml.append(escapeXMLAttribute(job.getJobId())).append('"');
+
+		/* [OPTIONAL] Set the XLink attributes. If no URL is available for this
 		 * Job reference, none is written here: */
 		if (url != null)
 			xml.append(" xlink:type=\"simple\" xlink:href=\"").append(escapeXMLAttribute(url)).append('"');
 
-		xml.append(">\n\t\t").append(getPhase(job, false)).append("\n\t</jobref>");
+		xml.append('>');
+
+		// [MANDATORY] Append the execution phase:
+		xml.append("\n\t\t").append(getPhase(job, false));
+
+		// [OPTIONAL] Append the RUN ID (name/label of the job set by the user), if any:
+		if (job.getRunId() != null)
+			xml.append("\n\t\t").append(getRunID(job, false));
+
+		// [OPTIONAL] Append the job owner, if any:
+		if (job.getOwner() != null)
+			xml.append("\n\t\t").append(getOwnerID(job, false));
+
+		// [OPTIONAL] Append the creation time:
+		xml.append("\n\t\t").append(getCreationTime(job, false));
+
+		xml.append("\n\t</jobref>");
 
 		return xml.toString();
 	}
@@ -304,6 +319,11 @@ public class XMLSerializer extends UWSSerializer {
 		else
 			xml.append('>').append(job.getQuote()).append("</quote>");
 		return xml.toString();
+	}
+
+	@Override
+	public String getCreationTime(final UWSJob job, final boolean root){
+		return (new StringBuffer(root ? getHeader() : "")).append("<creationTime").append(getUWSNamespace(root)).append('>').append(ISO8601Format.format(job.getCreationTime())).append("</creationTime>").toString();
 	}
 
 	@Override

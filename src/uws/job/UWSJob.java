@@ -115,7 +115,7 @@ import uws.service.request.UploadFile;
  * </ul>
  *
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.2 (09/2017)
+ * @version	4.3 (09/2017)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -131,6 +131,10 @@ public class UWSJob extends SerializableUWSObject {
 
 	/** Name of the parameter <i>jobId</i>. */
 	public static final String PARAM_JOB_ID = "jobId";
+
+	/** Name of the parameter <i>creationTime</i>.
+	 * @since 4.3 */
+	public static final String PARAM_CREATION_TIME = "creationTime";
 
 	/** Name of the parameter <i>runId</i>. */
 	public static final String PARAM_RUN_ID = "runId";
@@ -200,6 +204,13 @@ public class UWSJob extends SerializableUWSObject {
 	 * by the function {@link #generateJobId()}.
 	 * To change the way this ID is generated or its format you must override this function.</i> */
 	protected final String jobId;
+
+	/** Date of the initial creation of this job.<BR />
+	  * <i><u>Note:</u> This attribute can be set only automatically at creation
+	  * by the UWS service and can not be set or changed by a user (even its
+	  * owner).</i>
+	  * @since 4.3 */
+	protected final Date creationTime;
 
 	/** The identifier of the creator of this job.<BR />
 	 * <i><u>Note:</u> This object will not exist for all invocations of the UWS conformant protocol,
@@ -288,10 +299,15 @@ public class UWSJob extends SerializableUWSObject {
 	}
 
 	/**
-	 * <p>Builds a job of the given owner and from a map of all parameters (UWS and additional parameters).</p>
+	 * Builds a job of the given owner and from a map of all parameters (UWS
+	 * and additional parameters).
 	 *
-	 * <p><i><u>Note:</u> if the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the value {@link #PHASE_RUN}
-	 * the job execution starts immediately after the job has been added to a job list or after {@link #applyPhaseParam(JobOwner)} is called.</i></p>
+	 * <p><i><u>Note:</u>
+	 * 	if the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the
+	 * 	value {@link #PHASE_RUN} the job execution starts immediately after the
+	 * 	job has been added to a job list or after
+	 * 	{@link #applyPhaseParam(JobOwner)} is called.
+	 * </i></p>
 	 *
 	 * @param owner		Job.owner ({@link #PARAM_OWNER}).
 	 * @param params	UWS standard and non-standard parameters.
@@ -299,6 +315,8 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see UWSParameters#init()
 	 */
 	public UWSJob(JobOwner owner, final UWSParameters params){
+		this.creationTime = new Date();
+
 		this.owner = owner;
 
 		phase = new JobPhase(this);
@@ -337,6 +355,8 @@ public class UWSJob extends SerializableUWSObject {
 	 * @since 4.2
 	 */
 	public UWSJob(JobOwner owner, final UWSParameters params, final String requestID){
+		this.creationTime = new Date();
+
 		this.owner = owner;
 
 		phase = new JobPhase(this);
@@ -371,12 +391,15 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * <p>Builds a job of the given owner with all the given parameter.</p>
 	 *
-	 * <p><i>
-	 * 	<u>Note:</u> The job phase is automatically set in function of the last parameters (startTime, endTime, results and error).
-	 * 	Only the following execution phase are possible: PENDING, ABORTED, ERROR and COMPLETED.
+	 * <p><i><u>Note:</u>
+	 * 	The job phase is automatically set in function of the last parameters
+	 * 	(startTime, endTime, results and error). Only the following execution
+	 * 	phase are possible: PENDING, ABORTED, ERROR and COMPLETED.
 	 * </i></p>
 	 *
 	 * @param jobID			The ID of this job (NOT NULL).
+	 * @param creationTime	Its creation date/time (SHOULD NOT BE NEGATIVE OR
+	 *                    	NULL).
 	 * @param owner			Its owner.
 	 * @param params		UWS standard and non-standard parameters.
 	 * @param quote			Its quote (in seconds).
@@ -386,10 +409,21 @@ public class UWSJob extends SerializableUWSObject {
 	 * @param error			Its error (if phase=ERROR).
 	 *
 	 * @throws NullPointerException	If the given ID is NULL.
+	 *
+	 * @since 4.3
 	 */
-	public UWSJob(final String jobID, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws NullPointerException{
+	public UWSJob(final String jobID, final long creationTime, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws NullPointerException{
 		if (jobID == null)
 			throw new NullPointerException("Missing job ID => impossible to build a Job without a valid ID!");
+
+		this.creationTime = (creationTime <= 0) ? new Date() : new Date(creationTime);
+		/* Note:
+		 *   If no creation date is provided, it may be because we are getting
+		 *   the data from an old backup file (so, created by a UWS service
+		 *   previously implementing UWS-1.0). Except this missing information,
+		 *   the rest of the job properties may be ok, so there is no need to
+		 *   throw an error for an accessory property like the creation time.
+		 *   So, the current date is set instead. */
 
 		this.jobId = jobID;
 		this.owner = owner;
@@ -462,11 +496,15 @@ public class UWSJob extends SerializableUWSObject {
 	/**
 	 * <p>Gets the value of the specified parameter.</p>
 	 *
-	 * <p><i><u>note:</u> No case sensitivity for the UWS parameters ON THE CONTRARY TO the names of the additional parameters (which are case sensitive).</i></p>
+	 * <p><i><u>note:</u>
+	 * 	No case sensitivity for the UWS parameters ON THE CONTRARY TO the names
+	 * 	of the additional parameters (which are case sensitive).
+	 * </i></p>
 	 *
 	 * @param name	Name of the parameter to get.
 	 *
-	 * @return		Its value or <i>null</i> if there is no parameter with the given name or if the value is <i>null</i>.
+	 * @return	Its value or <i>null</i> if there is no parameter with the given
+	 *        	name or if the value is <i>null</i>.
 	 *
 	 * @see UWSParameters#get(String)
 	 */
@@ -477,6 +515,8 @@ public class UWSJob extends SerializableUWSObject {
 		name = name.trim();
 		if (name.equalsIgnoreCase(PARAM_JOB_ID))
 			return jobId;
+		else if (name.equalsIgnoreCase(PARAM_CREATION_TIME))
+			return creationTime;
 		else if (name.equalsIgnoreCase(PARAM_OWNER))
 			return owner;
 		else if (name.equalsIgnoreCase(PARAM_PHASE))
@@ -1000,6 +1040,17 @@ public class UWSJob extends SerializableUWSObject {
 	 */
 	public boolean addOrUpdateParameters(UWSParameters params) throws UWSException{
 		return addOrUpdateParameters(params, null);
+	}
+
+	/**
+	 * Gets the creation date/time of this job.
+	 *
+	 * @return	The job creation date/time.
+	 *
+	 * @since 4.3
+	 */
+	public final Date getCreationTime(){
+		return creationTime;
 	}
 
 	/**

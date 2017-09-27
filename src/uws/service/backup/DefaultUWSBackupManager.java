@@ -2,20 +2,20 @@ package uws.service.backup;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -69,7 +69,7 @@ import uws.service.request.UploadFile;
 
 /**
  * <p>Default implementation of the interface {@link UWSBackupManager}.</p>
- * 
+ *
  * <p>
  * 	With this class, a UWS can be saved and restored easily thanks to {@link #saveAll()} and {@link #restoreAll()}.
  * 	It is saved in JSON and in one or several files in function of the backup mode:
@@ -78,16 +78,16 @@ import uws.service.request.UploadFile;
  * 	<li><u>by user</u>: one file for each user. The file contains all the information about the user and all the jobs he owns.</li>
  * 	<li><u>in one file</u>: one file to describe all users and all the jobs.</li>
  * </ul>
- * 
+ *
  * <p>The backup frequency can also be changed and may have 2 special values:</p>
  * <ul>
  * 	<li><u>{@link #AT_USER_ACTION} (=0)</u>: only the jobs of the user which has just created, destroyed, executed or stopped a job are saved. This frequency is possible only if the backup mode is <u>by user</u>.</li>
  * 	<li><u>{@link #MANUAL} (=-1)</u>: you must call yourself the function {@link #saveAll()} to save the UWS.</li>
  * </ul>
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (09/2017)
+ * @version 4.3 (09/2017)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -120,9 +120,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	/**
 	 * Builds a backup manager in the mode "auto": one file for all users and all jobs, and the backup
 	 * is done all minutes (see {@link #DEFAULT_FREQUENCY}.
-	 * 
+	 *
 	 * @param uws The UWS to save/restore.
-	 * 
+	 *
 	 * @see #DefaultUWSBackupManager(UWS, long)
 	 */
 	public DefaultUWSBackupManager(final UWS uws){
@@ -132,12 +132,12 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	/**
 	 * <p>Builds a backup manager in the mode "auto" or "manual": one file for all users and all jobs, and the backup
 	 * is done at the given frequency.</p>
-	 * 
+	 *
 	 * <p>If the given frequency is 0 or negative (see {@link #MANUAL}), the backup will not be done automatically. You must manually
 	 * save the UWS thanks to the function {@link #saveAll()}.</p>
-	 * 
+	 *
 	 * <p>If the given frequency is positive, the backup will be done automatically at the given frequency.</p>
-	 * 
+	 *
 	 * @param uws 		The UWS to save/restore.
 	 * @param frequency	The backup frequency (in ms ; MUST BE positive and different from 0. If negative or 0, the frequency will be automatically set to {@link #DEFAULT_FREQUENCY}).
 	 */
@@ -160,12 +160,12 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	/**
 	 * Builds a backup manager in the given mode: "by user" (one file for each user and the backup is done at each user action)
 	 * or not (one file for all users and all jobs and the backup is done all minutes (see {@link #DEFAULT_FREQUENCY})).
-	 * 
+	 *
 	 * @param uws 		The UWS to save/restore.
 	 * @param byUser	Backup mode.
-	 * 
+	 *
 	 * @throws UWSException	If the user identification is disabled (that's to say, if the given UWS has no UserIdentifier) while the parameter <i>byUser</i> is <i>true</i>.
-	 * 
+	 *
 	 * @see #DefaultUWSBackupManager(UWS, boolean, long)
 	 */
 	public DefaultUWSBackupManager(final UWS uws, final boolean byUser) throws UWSException{
@@ -174,11 +174,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Builds a backup manager in the given mode and with the given frequency.
-	 * 
+	 *
 	 * @param uws 		The UWS to save/restore.
 	 * @param byUser	Backup mode (<i>true</i> means one file for each user and <i>false</i>, one file for all users and jobs).
 	 * @param frequency	Backup frequency ({@link #AT_USER_ACTION}, {@link #MANUAL}, {@link #DEFAULT_FREQUENCY}, or a positive value).
-	 * 
+	 *
 	 * @throws UWSException	If the user identification is disabled (that's to say, if the given UWS has no UserIdentifier) while the parameter <i>byUser</i> is <i>true</i>.
 	 */
 	public DefaultUWSBackupManager(final UWS uws, final boolean byUser, final long frequency) throws UWSException{
@@ -205,7 +205,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Tells whether this backup manager is enabled or not.
-	 * 
+	 *
 	 * @return <i>true</i> if the backup is enabled, <i>false</i> otherwise.
 	 */
 	public final boolean isEnabled(){
@@ -237,7 +237,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Gets the backup frequency.
-	 * 
+	 *
 	 * @return The backup frequency (in milliseconds).
 	 */
 	public final long getBackupFreq(){
@@ -246,7 +246,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * <p>Sets the backup frequency.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	<i><u>note 1:</u> A negative frequency will be interpreted as "manual"..
 	 * 	that's to say you will have to call yourself the {@link #saveAll()} method to save the UWS.
@@ -254,7 +254,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * <p>
 	 * 	<i><u>note 2:</u> Nothing will be done if the given frequency is {@link #AT_USER_ACTION} although the current backup mode is "by user".
 	 * </i></p>
-	 * 
+	 *
 	 * @param freq The new backup frequency (in milliseconds) ({@link #AT_USER_ACTION}, {@link #MANUAL}, {@link #DEFAULT_FREQUENCY} or any other positive value).
 	 */
 	public final void setBackupFreq(long freq){
@@ -282,7 +282,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Gets the date of the last restoration
-	 * 
+	 *
 	 * @return The date of the last restoration (MAY BE NULL).
 	 */
 	public final Date getLastRestoration(){
@@ -291,7 +291,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Gets the date of the last backup.
-	 * 
+	 *
 	 * @return The date of the last backup (MAY BE NULL).
 	 */
 	public final Date getLastBackup(){
@@ -300,9 +300,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Gets the logger of its UWS, or the default one if it is unknown.
-	 * 
+	 *
 	 * @return	A logger.
-	 * 
+	 *
 	 * @see UWS#getLogger()
 	 * @see UWSToolBox#getDefaultLogger()
 	 */
@@ -495,7 +495,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * <p>Serializes the given user into a JSON object.</p>
-	 * 
+	 *
 	 * <pre>
 	 * {
 	 * 	"id": "...",
@@ -508,11 +508,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 	the last suspension points mean that other user data may be added into this JSON object.
 	 * 	These other user data to save MUST BE given by {@link JobOwner#getDataToSave()}.
 	 * </i></p>
-	 * 
+	 *
 	 * @param user	The user to save.
-	 * 
+	 *
 	 * @return		Its JSON representation.
-	 * 
+	 *
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
 	protected JSONObject getJSONUser(final JobOwner user) throws JSONException{
@@ -531,18 +531,18 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * <p>Serializes the given job into a JSON object.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	<i><u>note</u>:
 	 * 	the structure of the returned JSON object is decided by {@link Json4Uws#getJson(UWSJob)}.
 	 * 	Only one attribute is added: "jobListName".
 	 * </i></p>
-	 * 
+	 *
 	 * @param job				The job to save.
 	 * @param jlName			Name of the jobs list containing the given job.
-	 * 
+	 *
 	 * @return					The JSON representation of the given job.
-	 * 
+	 *
 	 * @throws UWSException		If there is an error while getting job parameters and serializing them.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
@@ -592,20 +592,20 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Serialize the given {@link JobInfo} so that being able later to restore this exact object as provided.
-	 * 
+	 *
 	 * <p><i>
 	 * 	By default, this function use the Java Class serialization (see {@link Serializable})
 	 * 	and save the corresponding bytes into a Base-64 string.
 	 * </i></p>
-	 * 
+	 *
 	 * @param jobInfo	The jobInfo to backup.
-	 * 
+	 *
 	 * @return	The string to use in order to restore the given jobInfo
 	 *        	(e.g. a Base-64 serialization of the Java Object, a URL, ...).
-	 * 
+	 *
 	 * @throws UWSException		If any error occurs while representing the given {@link JobInfo}.
 	 * @throws JSONException	If any error occurs while manipulating a JSON object or array.
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	protected Object getJSONJobInfo(final JobInfo jobInfo) throws UWSException, JSONException{
@@ -635,19 +635,19 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Restore the JobInfo referenced or represented by the given JSON value.
-	 * 
+	 *
 	 * <p><i>
 	 * 	By default, this function considers that the given value is a Base-64 string encoding
 	 * 	the Java Class serialization (see {@link Serializable}) of the {@link JobInfo} to restore.
 	 * </i></p>
-	 * 
+	 *
 	 * @param jsonValue	The reference or backup representation of the {@link JobInfo} to restore.
-	 * 
+	 *
 	 * @return	The restored {@link JobInfo}.
-	 * 
+	 *
 	 * @throws UWSException		If any error occurs while restoring the {@link JobInfo}.
 	 * @throws JSONException	If any error occurs while manipulating a JSON object or array.
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	protected JobInfo restoreJobInfo(final Object jsonValue) throws UWSException, JSONException{
@@ -669,13 +669,13 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Get the JSON representation of the given {@link UploadFile}.
-	 * 
+	 *
 	 * @param upl	The uploaded file to serialize in JSON.
-	 * 
+	 *
 	 * @return		Its JSON representation.
-	 * 
+	 *
 	 * @throws JSONException	If there is an error while building the JSON object.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected JSONObject getUploadJson(final UploadFile upl) throws JSONException{
@@ -855,13 +855,13 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Builds the instance of {@link JobOwner} corresponding to the given JSON object.
-	 * 
+	 *
 	 * @param json			JSON representation of the user to build.
-	 * 
+	 *
 	 * @return				The corresponding instance of {@link JobOwner} or <i>null</i> if the given object is empty.
-	 * 
+	 *
 	 * @throws UWSException	If the "id" parameter is missing (a user MUST have an id ; warning: the case sensitivity is enabled only for this attribute).
-	 * 
+	 *
 	 * @see JobOwner#restoreData(Map)
 	 */
 	protected JobOwner getUser(final JSONObject json) throws UWSException{
@@ -894,12 +894,12 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Builds the job corresponding to the given JSON object and then restore it in the UWS.
-	 * 
+	 *
 	 * @param json			The JSON representation of the job to restore.
 	 * @param users			The list of all fetched users.
-	 * 
+	 *
 	 * @return				<i>true</i> if the corresponding job has been successfully restored, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws UWSException	If the job ID or the job list name is missing,
 	 * 						or if the job list name is incorrect,
 	 * 						or if there is an error with "parameters", "error" and "results".
@@ -912,7 +912,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		//Date destruction=null;
 		long quote = UWSJob.UNLIMITED_DURATION,
 				/*duration = UWSJob.UNLIMITED_DURATION, */startTime = -1,
-				endTime = -1;
+				endTime = -1, creationTime = -1;
 		HashMap<String,Object> inputParams = new HashMap<String,Object>(10);
 		//Map<String, Object> params = null;
 		List<Result> results = null;
@@ -948,7 +948,17 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_QUOTE))
 					quote = json.getLong(key);
 
-				// key=EXECUTION_DURATION:
+				// key=CREATION_TIME:
+				else if (key.equalsIgnoreCase(UWSJob.PARAM_CREATION_TIME)){
+					tmp = json.getString(key);
+					try{
+						Date d = ISO8601Format.parseToDate(tmp);
+						creationTime = d.getTime();
+					}catch(ParseException pe){
+						getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect date format for the '" + key + "' parameter!", pe);
+					}
+
+				}// key=EXECUTION_DURATION:
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_EXECUTION_DURATION)){
 					long duration = json.getLong(key);
 					inputParams.put(UWSJob.PARAM_EXECUTION_DURATION, duration);
@@ -1061,7 +1071,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			}
 
 			// Create the job:
-			UWSJob job = uws.getFactory().createJob(jobId, owner, uwsParams, quote, startTime, endTime, results, error);
+			UWSJob job = uws.getFactory().createJob(jobId, creationTime, owner, uwsParams, quote, startTime, endTime, results, error);
 
 			// Set its jobInfo, if any:
 			if (jobInfo != null)
@@ -1081,15 +1091,15 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 	Restores other job parameters, either from the given JSON object or from the parameters map of the given job.
 	 * 	The job is supposed to be updated after the call of this function.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> By default, this function does nothing ! It is called by {@link #restoreJob(JSONObject, Map)}
 	 * just after the default restoration from the given JSON and just before to add the job in its dedicated jobs list.</i></p>
-	 * 
+	 *
 	 * @param json				JSON backup of the given job.
 	 * @param job				Default restoration of the job.
-	 * 
+	 *
 	 * @throws UWSException		If there is an error while restoring other job parameters.
-	 * 
+	 *
 	 * @see #restoreJob(JSONObject, Map)
 	 */
 	protected void restoreOtherJobParams(final JSONObject json, final UWSJob job) throws UWSException{
@@ -1098,9 +1108,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Builds the list of parameters corresponding to the given JSON object.
-	 * 
+	 *
 	 * @param obj				The JSON representation of a parameters list.
-	 * 
+	 *
 	 * @return					The corresponding list of parameters
 	 * 							or <i>null</i> if the given object is empty.
 	 */
@@ -1122,11 +1132,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Build the upload file corresponding to the given JSON object.
-	 * 
+	 *
 	 * @param obj	The JSON representation of the {@link UploadFile} to get.
-	 * 
+	 *
 	 * @return		The corresponding {@link UploadFile}.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected UploadFile getUploadFile(final JSONObject obj){
@@ -1147,14 +1157,14 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Builds the list of results corresponding to the given JSON array.
-	 * 
+	 *
 	 * @param array				The JSON representation of the results to restore.
-	 * 
+	 *
 	 * @return					The corresponding list of results
 	 * 							or <i>null</i> if the array is empty.
-	 * 
+	 *
 	 * @throws UWSException		If there is an error while restoring one of the result.
-	 * 
+	 *
 	 * @see #getResult(JSONObject)
 	 */
 	protected List<Result> getResults(final JSONArray array) throws UWSException{
@@ -1177,11 +1187,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Builds the result corresponding to the given JSON object.
-	 * 
+	 *
 	 * @param obj				The JSON representation of the result to restore.
-	 * 
+	 *
 	 * @return					The corresponding result or <i>null</i> if the given object is empty.
-	 * 
+	 *
 	 * @throws JSONException	If there is an error while reading the JSON.
 	 * @throws UWSException
 	 */
@@ -1223,11 +1233,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * Builds the error summary corresponding to the given JSON object.
-	 * 
+	 *
 	 * @param obj				The JSON representation of the error summary to restore.
-	 * 
+	 *
 	 * @return					The corresponding error summary or <i>null</i> if the given object is empty.
-	 * 
+	 *
 	 * @throws UWSException
 	 */
 	protected ErrorSummary getError(final JSONObject obj) throws UWSException{
@@ -1267,7 +1277,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * as an iterator which returns all the keys. The value of each key can be fetched thanks to
 	 * the different available getters (i.e. {@link #getJSONArray()}, {@link #getJSONObject()},
 	 * {@link #getValue()}, {@link #getString()}, ...).
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 05/2012
 	 */
@@ -1417,7 +1427,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	/**
 	 * Lets reading a JSON array from a {@link JSONTokener} (that's to directly from a file)
 	 * as an iterator <b>which returns all items which MUST BE {@link JSONObject}s</b>.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 05/2012
 	 */
@@ -1515,10 +1525,10 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 	/**
 	 * An iterator of input streams with ONLY ONE input stream.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 05/2012
-	 * 
+	 *
 	 * @see DefaultUWSBackupManager#restoreAll()
 	 */
 	protected final static class SingleInputIterator implements Iterator<InputStream> {

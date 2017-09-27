@@ -150,7 +150,7 @@ import uws.service.request.UploadFile;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (09/2017)
+ * @version 4.3 (09/2017)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -775,8 +775,8 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	}
 
 	@Override
-	public UWSJob createJob(final String jobID, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
-		return new UWSJob(jobID, owner, params, quote, startTime, endTime, results, error);
+	public UWSJob createJob(final String jobID, final long creationTime, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
+		return new UWSJob(jobID, creationTime, owner, params, quote, startTime, endTime, results, error);
 	}
 
 	@Override
