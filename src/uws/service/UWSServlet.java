@@ -2,20 +2,20 @@ package uws.service;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -77,7 +77,7 @@ import uws.service.request.UploadFile;
  * 	That's to say all methods and functionalities of a UWS are already implemented. All you have to
  * 	do is to initialize and maybe to customize your UWS.
  * </p>
- * 
+ *
  * <h3>UWS Definition</h3>
  * <p>
  * 	To create a such servlet, you have to extend this class. Once done, only two functions must be
@@ -97,12 +97,12 @@ import uws.service.request.UploadFile;
  * <p>The below code show an example of usage of this class:</p>
  * <pre>
  * public class MyUWSServlet extends UWSServlet {
- * 
+ *
  * 	// Initialize the UWS service by creating at least one job list.
  * 	public void initUWS() throws UWSException {
  * 		addJobList(new JobList("jobList"));
  * 	}
- * 
+ *
  * 	// Create the job process corresponding to the job to execute ; generally, the process identification can be merely done by checking the job list name.
  * 	public JobThread createJobThread(UWSJob job) throws UWSException {
  * 		if (job.getJobList().getName().equals("jobList"))
@@ -117,14 +117,14 @@ import uws.service.request.UploadFile;
  * 	<code>name</code> and <code>description</code>. The other way is to directly set the corresponding
  * 	attributes: {@link #name} and {@link #description}.
  * </p>
- * 
+ *
  * <p><i>Note:
  * 	If any error occurs while the initialization or the creation of a {@link UWSServlet} instance, a {@link ServletException}
  * 	will be thrown with a basic message dedicated to the service users. This basic and non-informative message is
  * 	obviously not intended to the administrator which will be able to get the reason of the failure
  * 	(with a stack trace when available) in the log files.
  * </i></p>
- * 
+ *
  * <h3>UWS customization</h3>
  * <p>
  * 	As for the classic HTTP servlets, this servlet has one method for each method of the implemented protocol.
@@ -148,7 +148,7 @@ import uws.service.request.UploadFile;
  * 	are called normally if none of the UWS actions match to the received HTTP request.
  * 	So, they can be overridden as in any HTTP servlet.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 4.2 (09/2017)
  */
@@ -799,11 +799,11 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/* ****************************** */
 	/**
 	 * <p>Sends a redirection (with the HTTP status code 303) to the given URL/URI into the given response.</p>
-	 * 
+	 *
 	 * @param url		The redirection URL/URI.
 	 * @param request	The {@link HttpServletRequest} which may be used to make a redirection.
 	 * @param response	The {@link HttpServletResponse} which must contain all information to make a redirection.
-	 * 
+	 *
 	 * @throws IOException	If there is an error during the redirection.
 	 * @throws UWSException	If there is any other error.
 	 */
@@ -821,17 +821,17 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * 	If the error code is {@link UWSException#SEE_OTHER} this method calls {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)}.
 	 * 	Otherwise the function {@link HttpServletResponse#sendError(int, String)} is called.
 	 * </p>
-	 * 
+	 *
 	 * @param error			The error to send/display.
 	 * @param request		The request which has caused the given error <i>(not used by default)</i>.
 	 * @param reqID			ID of the request.
 	 * @param user			The user which executes the given request.
 	 * @param uwsAction	The UWS action corresponding to the given request.
 	 * @param response		The response in which the error must be published.
-	 * 
+	 *
 	 * @throws IOException	If there is an error when calling {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)} or {@link HttpServletResponse#sendError(int, String)}.
 	 * @throws UWSException	If there is an error when calling {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)}.
-	 * 
+	 *
 	 * @see #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * @see #sendError(Throwable, HttpServletRequest, String, JobOwner, String, HttpServletResponse)
 	 */
@@ -857,18 +857,18 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * 	{@link HttpServletResponse#sendError(int, String)} is called with the HTTP status code is {@link UWSException#INTERNAL_SERVER_ERROR}
 	 * 	and the message of the given exception.
 	 * </p>
-	 * 
-	 * 
+	 *
+	 *
 	 * @param error			The error to send/display.
 	 * @param request		The request which has caused the given error <i>(not used by default)</i>.
 	 * @param reqID			ID of the request.
 	 * @param user			The user which executes the given request.
 	 * @param uwsAction	The UWS action corresponding to the given request.
 	 * @param response		The response in which the error must be published.
-	 * 
+	 *
 	 * @throws IOException	If there is an error when calling {@link HttpServletResponse#sendError(int, String)}.
 	 * @throws UWSException
-	 * 
+	 *
 	 * @see ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, String, JobOwner, String)
 	 */
 	public final void sendError(Throwable error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws ServletException{
@@ -888,7 +888,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Gets the object used to write/format any error in a HttpServletResponse.
-	 * 
+	 *
 	 * @return The error writer/formatter.
 	 */
 	public final ServiceErrorWriter getErrorWriter(){
@@ -897,9 +897,9 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * <p>Sets the object used to write/format any error in a HttpServletResponse.</p>
-	 * 
+	 *
 	 * <p><i><u>Note:</u> Nothing is done if the given writer is NULL !</i></p>
-	 * 
+	 *
 	 * @param errorWriter The new error writer/formatter.
 	 */
 	public final void setErrorWriter(ServiceErrorWriter errorWriter){
@@ -914,7 +914,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/**
 	 * Adds the name of an additional parameter which must be identified without taking into account its case
 	 * and then stored with the case of the given name.
-	 * 
+	 *
 	 * @param paramName		Name of an additional parameter.
 	 */
 	public final void addExpectedAdditionalParameter(final String paramName){
@@ -924,7 +924,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Gets the number of additional parameters which must be identified with no case sensitivity.
-	 * 
+	 *
 	 * @return	Number of expected additional parameters.
 	 */
 	public final int getNbExpectedAdditionalParameters(){
@@ -934,7 +934,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/**
 	 * Gets the names of the expected additional parameters. These parameters are identified with no case sensitivity
 	 * and stored in the given case.
-	 * 
+	 *
 	 * @return	Names of the expected additional parameters.
 	 */
 	public final List<String> getExpectedAdditionalParameters(){
@@ -943,7 +943,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Gets an iterator on the names of the expected additional parameters.
-	 * 
+	 *
 	 * @return	An iterator on the names of the expected additional parameters.
 	 */
 	public final Iterator<String> expectedAdditionalParametersIterator(){
@@ -954,7 +954,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * Removes the name of an expected additional parameter.
 	 * This parameter will never be identify specifically and so, it will be stored in the same case as
 	 * in the initial Map or HttpServletRequest.
-	 * 
+	 *
 	 * @param paramName	Name of an additional parameter.
 	 */
 	public final void removeExpectedAdditionalParam(final String paramName){
@@ -989,10 +989,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Sets the controller of the specified input UWS job parameter.
-	 * 
+	 *
 	 * @param paramName		Name of the parameter with which the given controller will be associated.
 	 * @param controller	An input parameter controller.
-	 * 
+	 *
 	 * @return				The former controller associated with the specified parameter
 	 * 						or <i>null</i> if there is no controller before this call
 	 * 						or if the given parameter name is <i>null</i> or an empty string.
@@ -1008,9 +1008,9 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Removes the controller of the specified input UWS job parameter.
-	 * 
+	 *
 	 * @param paramName	Name of the parameter whose the controller must be removed.
-	 * 
+	 *
 	 * @return	The removed controller
 	 * 			or <i>null</i> if there were no controller
 	 * 			or if the given name is <i>null</i> or an empty string.
@@ -1021,14 +1021,14 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * <p>Lets configuring the execution duration default and maximum value.</p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> A new controller is created if needed.
 	 * Otherwise the current one (if it is an instance of {@link DestructionTimeController}) is updated.</i></p>
-	 * 
+	 *
 	 * @param defaultDuration	Default duration between the start and the end of the execution of a job.
 	 * @param maxDuration		Maximum duration between the start and the end of the execution of a job that a user can set when creating/initializing a job.
 	 * @param allowModif		<i>true</i> to allow the modification of this parameter after its initialization, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @see ExecutionDurationController
 	 */
 	public final void configureExecution(final long defaultDuration, final long maxDuration, final boolean allowModif){
@@ -1048,16 +1048,16 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * <p>Lets configuring the destruction time default and maximum value.</p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> A new controller is created if needed.
 	 * Otherwise the current one (if it is an instance of {@link ExecutionDurationController}) is updated.</i></p>
-	 * 
+	 *
 	 * @param defaultTime		Default time since the job creation and its destruction.
 	 * @param defaultTimeUnit	Unit of the default time (i.e. minutes, days, ...).
 	 * @param maxTime			Maximum time since the job creation and its destruction that a user can set when creating/initializing a job.
 	 * @param maxTimeUnit		Unit of the maximum time (i.e. minutes, days, ...).
 	 * @param allowModif		<i>true</i> to allow the modification of this parameter after its initialization, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @see DestructionTimeController
 	 */
 	public final void configureDestruction(final int defaultTime, final DateField defaultTimeUnit, final int maxTime, final DateField maxTimeUnit, final boolean allowModif){
@@ -1067,7 +1067,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		DestructionTimeController destructionController;
 		if (controller == null || !(controller instanceof DestructionTimeController)){
 			destructionController = new DestructionTimeController();
-			inputParamControllers.put(UWSJob.PARAM_DESTRUCTION_TIME, controller);
+			inputParamControllers.put(UWSJob.PARAM_DESTRUCTION_TIME, destructionController);
 		}else
 			destructionController = (DestructionTimeController)controller;
 
@@ -1146,11 +1146,11 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Destroys the given jobs list.
-	 * 
+	 *
 	 * @param jl	The jobs list to destroy.
-	 * 
+	 *
 	 * @return	<i>true</i> if the given jobs list has been destroyed, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @see JobList#clear()
 	 * @see JobList#setUWS(UWS)
 	 */
@@ -1177,7 +1177,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * <p>Adds a serializer to this UWS</p>
 	 * <p><b><u>WARNING:</u> If there is already a serializer with the same MIME type (see {@link UWSSerializer#getMimeType()}) in this UWS ,
 	 * it should be replaced by the given one !</b></p>
-	 * 
+	 *
 	 * @param serializer	The serializer to add.
 	 * @return				<i>true</i> if the serializer has been successfully added, <i>false</i> otherwise.
 	 */
@@ -1193,17 +1193,17 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * <p>Gets the serializer whose the MIME type is the same as the given one.</p>
-	 * 
+	 *
 	 * <p><i><u>Note:</u> If this UWS has no corresponding serializer, its default one will be returned !</i></p>
-	 * 
+	 *
 	 * @param mimeTypes		The MIME type of the searched serializer (may be more than one MIME types
 	 * 						- comma separated ; see the format of the Accept header of a HTTP-Request).
-	 * 
+	 *
 	 * @return				The corresponding serializer
 	 * 						or the default serializer of this UWS if no corresponding serializer has been found.
-	 * 
+	 *
 	 * @throws UWSException	If there is no corresponding serializer AND if the default serializer of this UWS can not be found.
-	 * 
+	 *
 	 * @see AcceptHeader#AcceptHeader(String)
 	 * @see AcceptHeader#getOrderedMimeTypes()
 	 */
@@ -1233,7 +1233,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Removes the serializer whose the MIME type is the same as the given one.
-	 * 
+	 *
 	 * @param mimeType	MIME type of the serializer to remove.
 	 * @return			The removed serializer
 	 * 					or <i>null</i> if no corresponding serializer has been found.
@@ -1244,7 +1244,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Gets the URL of the XSLT style-sheet that the XML serializer of this UWS is using.
-	 * 
+	 *
 	 * @return	The used XSLT URL.
 	 */
 	public final String getXsltURL(){
@@ -1256,9 +1256,9 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Sets the URL of the XSLT style-sheet that the XML serializer of this UWS must use.
-	 * 
+	 *
 	 * @param xsltPath	The new XSLT URL.
-	 * 
+	 *
 	 * @return			<i>true</i> if the given path/url has been successfully set, <i>false</i> otherwise.
 	 */
 	public final boolean setXsltURL(String xsltPath){
@@ -1276,7 +1276,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/**
 	 * <p>Gets the object which lets extracting the user ID from a HTTP request.</p>
 	 * <p><i><u>note:</u>If the returned user identifier is NULL, no job should have an owner.</i></p>
-	 * 
+	 *
 	 * @return	The used UserIdentifier (MAY BE NULL).
 	 */
 	@Override
@@ -1286,7 +1286,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Sets the object which lets extracting the use ID from a received request.
-	 * 
+	 *
 	 * @param identifier	The UserIdentifier to use (may be <i>null</i>).
 	 */
 	public final void setUserIdentifier(UserIdentifier identifier){
@@ -1298,7 +1298,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/* ******************* */
 	/**
 	 * Gets the UWS URL interpreter of this UWS.
-	 * 
+	 *
 	 * @return	Its UWS URL interpreter.
 	 */
 	@Override
@@ -1308,7 +1308,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 	/**
 	 * Sets the UWS URL interpreter to use in this UWS.
-	 * 
+	 *
 	 * @param urlInterpreter	Its new UWS URL interpreter (may be <i>null</i>. In this case, it will be created from the next request ; see {@link #service(HttpServletRequest, HttpServletResponse)}).
 	 */
 	public final void setUrlInterpreter(UWSUrl urlInterpreter){
@@ -1322,7 +1322,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	/* ************** */
 	/**
 	 * <p>Gets its backup manager.</p>
-	 * 
+	 *
 	 * @return Its backup manager.
 	 */
 	@Override
