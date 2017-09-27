@@ -40,7 +40,7 @@ import uws.service.request.UploadFile;
  * Lets serializing any UWS resource in XML.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (09/2017)
+ * @version 4.3 (09/2017)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -150,7 +150,7 @@ public class XMLSerializer extends UWSSerializer {
 		String name = uws.getName(), description = uws.getDescription();
 		StringBuffer xml = new StringBuffer(getHeader());
 
-		xml.append("<uws").append(getUWSNamespace(true));
+		xml.append("<uws version=\"").append(UWS.VERSION).append('"').append(getUWSNamespace(true));
 		if (name != null)
 			xml.append(" name=\"").append(escapeXMLAttribute(name)).append('"');
 		xml.append(">\n");
@@ -161,10 +161,14 @@ public class XMLSerializer extends UWSSerializer {
 		xml.append("\t<jobLists>\n");
 		for(JobList jobList : uws){
 			UWSUrl jlUrl = jobList.getUrl();
-			xml.append("\t\t<jobListRef name=\"").append(escapeXMLAttribute(jobList.getName())).append("\" href=\"");
+			xml.append("\t\t<jobListRef name=\"").append(escapeXMLAttribute(jobList.getName())).append('"');
+
+			/* The XLink attributes are optional. So if no URL is available for
+			 * this Job List reference, none is written here: */
 			if (jlUrl != null && jlUrl.getRequestURL() != null)
-				xml.append(escapeXMLAttribute(jlUrl.getRequestURL()));
-			xml.append("\" />\n");
+				xml.append(" xlink:type=\"simple\" xlink:href=\"").append(escapeXMLAttribute(jlUrl.getRequestURL())).append('"');
+
+			xml.append(" />\n");
 		}
 		xml.append("\t</jobLists>\n");
 
@@ -177,7 +181,7 @@ public class XMLSerializer extends UWSSerializer {
 	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root){
 		StringBuffer xml = new StringBuffer(getHeader());
 
-		xml.append("<jobs").append(getUWSNamespace(true));
+		xml.append("<jobs version=\"").append(UWS.VERSION).append('"').append(getUWSNamespace(true));
 		/* NOTE: NO ATTRIBUTE "name" IN THE XML SCHEMA!
 		 * String name = jobsList.getName();
 		 * if (name != null)
@@ -201,7 +205,7 @@ public class XMLSerializer extends UWSSerializer {
 		String newLine = "\n\t";
 
 		// general information:
-		xml.append("<job").append(getUWSNamespace(root)).append('>');
+		xml.append("<job version=\"").append(UWS.VERSION).append('"').append(getUWSNamespace(root)).append('>');
 		xml.append(newLine).append(getJobID(job, false));
 		if (job.getRunId() != null)
 			xml.append(newLine).append(getRunID(job, false));
