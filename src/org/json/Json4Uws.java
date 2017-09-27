@@ -2,20 +2,20 @@ package org.json;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -35,9 +35,9 @@ import uws.service.UWSUrl;
 
 /**
  * Useful conversion functions from UWS to JSON.
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.2 (09/2017)
  */
 public final class Json4Uws {
 
@@ -150,24 +150,24 @@ public final class Json4Uws {
 
 	/**
 	 * Gets the JSON representation of the jobInfo of the given job.
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	This function transforms the XML returned by
 	 * 	{@link JobInfo#getXML(String)} into a JSON object
 	 * 	(see {@link XML#toJSONObject(String)}).
 	 * </p>
-	 * 
+	 *
 	 * @param job				The job whose the jobInfo must be represented
 	 *           				in JSON.
-	 * 
+	 *
 	 * @return					The JSON representation of its jobInfo.
-	 * 
+	 *
 	 * @throws JSONException	If there is an error while building the JSON
 	 *                      	object.
-	 * 
+	 *
 	 * @see JobInfo#getXML(String)
 	 * @see XML#toJSONObject(String)
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	public final static JSONObject getJobInfoJson(final UWSJob job) throws JSONException{
@@ -242,7 +242,8 @@ public final class Json4Uws {
 			resultJson.put("id", r.getId());
 			resultJson.put("type", r.getType());
 			resultJson.put("href", r.getHref());
-			resultJson.put("mime", r.getMimeType());
+			if (r.getMimeType() != null)
+				resultJson.put("mime-type", r.getMimeType());
 			if (r.getSize() >= 0)
 				resultJson.put("size", r.getSize());
 			resultJson.put("redirection", r.isRedirectionRequired());

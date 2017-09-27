@@ -393,10 +393,21 @@ public class XMLSerializer extends UWSSerializer {
 				}
 				// otherwise, just return the XML parameter description:
 				else{
-					buf.append("<parameter").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(paramName));
+					buf.append("<parameter").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(paramName)).append('"');
+
+					// set if it is an uploaded file:
 					if (paramValue instanceof UploadFile)
-						buf.append("\" byReference=\"true");
-					buf.append("\">").append(escapeXMLData(paramValue.toString())).append("</parameter>");
+						buf.append(" byReference=\"true");
+
+					/*
+					 * Note:
+					 *   The attribute isPost is not supported in this library.
+					 *   This information is not stored by the UWS Library and
+					 *   so is never reported in the XML serialization of the
+					 *   job. Besides, this attribute is optional.
+					 */
+
+					buf.append('>').append(escapeXMLData(paramValue.toString())).append("</parameter>");
 				}
 				return buf.toString();
 			}
@@ -423,20 +434,21 @@ public class XMLSerializer extends UWSSerializer {
 	public String getResult(final Result result, final boolean root){
 		StringBuffer xml = new StringBuffer(root ? getHeader() : "");
 		xml.append("<result").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(result.getId())).append('"');
+
+		/* The XLink attributes are optional. So if no URL is available, none
+		 * will be written here: */
 		if (result.getHref() != null){
-			if (result.getType() != null)
-				xml.append(" xlink:type=\"").append(escapeXMLAttribute(result.getType())).append('"');
+			xml.append(" xlink:type=\"").append((result.getType() == null) ? "simple" : escapeXMLAttribute(result.getType())).append('"');
 			xml.append(" xlink:href=\"").append(escapeXMLAttribute(result.getHref())).append('"');
 		}
 
-		/* NOTE: THE FOLLOWING ATTRIBUTES MAY PROVIDE USEFUL INFORMATION TO USERS, BUT THEY ARE NOT ALLOWED BY THE CURRENT UWS STANDARD.
-		 *       HOWEVER, IF, ONE DAY, THEY ARE, THE FOLLOWING LINES SHOULD BE UNCOMNENTED.
-		 *
-		 * if (result.getMimeType() != null)
-		 * 	xml.append(" mime=\"").append(escapeXMLAttribute(result.getMimeType())).append("\"");
-		 * if (result.getSize() >= 0)
-		 * 	xml.append(" size=\"").append(result.getSize()).append("\"");
-		 */
+		// Append the MIME type, if any:
+		if (result.getMimeType() != null)
+			xml.append(" mime-type=\"").append(escapeXMLAttribute(result.getMimeType())).append('"');
+
+		// Append the result size (in bytes), if any:
+		if (result.getSize() >= 0)
+			xml.append(" size=\"").append(result.getSize()).append('"');
 
 		return xml.append(" />").toString();
 	}
