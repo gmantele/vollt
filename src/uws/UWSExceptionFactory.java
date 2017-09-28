@@ -2,21 +2,21 @@ package uws;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -25,10 +25,10 @@ import uws.job.user.JobOwner;
 
 /**
  * Let's creating the common exceptions of a UWS service.
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
- * 
+ * @version 4.3 (09/2017)
+ *
  * @see UWSException
  */
 public final class UWSExceptionFactory {
@@ -54,7 +54,7 @@ public final class UWSExceptionFactory {
 	}
 
 	public final static String incorrectPhaseTransition(final String jobID, final ExecutionPhase fromPhase, final ExecutionPhase toPhase, final String consequence){
-		return "Incorrect phase transition ! => the job " + jobID + " is in the phase " + fromPhase + ". It can not go to " + toPhase + "." + appendMessage(consequence);
+		return "Incorrect phase transition! => the job " + jobID + " is in the phase " + fromPhase + ". It can not go to " + toPhase + "." + appendMessage(consequence);
 	}
 
 	public final static String readPermissionDenied(final JobOwner user, final boolean jobList, final String containerName){
@@ -62,7 +62,7 @@ public final class UWSExceptionFactory {
 	}
 
 	public final static String readPermissionDenied(final JobOwner user, final boolean jobList, final String containerName, final String consequence){
-		return user.getID() + ((user.getPseudo() == null) ? "" : (" (alias " + user.getPseudo() + ")")) + " is not allowed to read the content of the " + (jobList ? "jobs list" : "job") + " \"" + containerName + "\" !" + appendMessage(consequence);
+		return user.getID() + ((user.getPseudo() == null) ? "" : (" (alias " + user.getPseudo() + ")")) + " is not allowed to read the content of the " + (jobList ? "jobs list" : "job") + " \"" + containerName + "\"!" + appendMessage(consequence);
 	}
 
 	public final static String writePermissionDenied(final JobOwner user, final boolean jobList, final String containerName){
@@ -70,7 +70,7 @@ public final class UWSExceptionFactory {
 	}
 
 	public final static String writePermissionDenied(final JobOwner user, final boolean jobList, final String containerName, final String consequence){
-		return user.getID() + ((user.getPseudo() == null) ? "" : (" (alias " + user.getPseudo() + ")")) + " is not allowed to update the content of the " + (jobList ? "jobs list" : "job") + " \"" + containerName + "\" !" + appendMessage(consequence);
+		return user.getID() + ((user.getPseudo() == null) ? "" : (" (alias " + user.getPseudo() + ")")) + " is not allowed to update the content of the " + (jobList ? "jobs list" : "job") + " \"" + containerName + "\"!" + appendMessage(consequence);
 	}
 
 	public final static String executePermissionDenied(final JobOwner user, final String jobID){
@@ -78,7 +78,7 @@ public final class UWSExceptionFactory {
 	}
 
 	public final static String executePermissionDenied(final JobOwner user, final String jobID, final String consequence){
-		return user.getID() + ((user.getPseudo() == null) ? "" : (" (alias " + user.getPseudo() + ")")) + " is not allowed to execute/abort the job \"" + jobID + "\" !" + appendMessage(consequence);
+		return user.getID() + ((user.getPseudo() == null) ? "" : (" (alias " + user.getPseudo() + ")")) + " is not allowed to execute/abort the job \"" + jobID + "\"!" + appendMessage(consequence);
 	}
 
 	public final static String jobModificationForbidden(final String jobId, final ExecutionPhase phase, final String parameter){
@@ -87,9 +87,9 @@ public final class UWSExceptionFactory {
 
 	public final static String jobModificationForbidden(final String jobId, final ExecutionPhase phase, final String parameter, final String consequence){
 		if (parameter != null && !parameter.trim().isEmpty())
-			return "Impossible to change the parameter \"" + parameter + "\" of the job " + jobId + ((phase != null) ? (" (phase: " + phase + ")") : "") + " !" + appendMessage(consequence);
+			return "Impossible to change the parameter \"" + parameter + "\" of the job " + jobId + ((phase != null) ? (" (phase: " + phase + ")") : "") + "!" + appendMessage(consequence);
 		else
-			return "Impossible to change the parameters of the job " + jobId + ((phase != null) ? (" (phase: " + phase + ")") : "") + " !" + appendMessage(consequence);
+			return "Impossible to change the parameters of the job " + jobId + ((phase != null) ? (" (phase: " + phase + ")") : "") + "!" + appendMessage(consequence);
 	}
 
 }
