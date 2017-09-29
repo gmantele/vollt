@@ -633,11 +633,17 @@ public class TestJobPhase {
 			for(ExecutionPhase phase : ExecutionPhase.values()){
 				// set the phase to test:
 				jobPhase.setPhase(phase, true);
-				// ensure isExecuting(...) returns TRUE only for EXECUTING:
-				if (phase == ExecutionPhase.EXECUTING)
-					assertTrue(jobPhase.isExecuting());
-				else
-					assertFalse(jobPhase.isExecuting());
+				// ensure isExecuting(...) returns TRUE only for EXECUTING
+				// or SUSPENDED:
+				switch(phase){
+					case EXECUTING:
+					case SUSPENDED:
+						assertTrue(jobPhase.isExecuting());
+						break;
+					default:
+						assertFalse(jobPhase.isExecuting());
+						break;
+				}
 			}
 		}catch(Exception ex){
 			ex.printStackTrace();

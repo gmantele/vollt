@@ -53,42 +53,55 @@ import uws.service.log.UWSLog.LogLevel;
 public class TAPJob extends UWSJob {
 	private static final long serialVersionUID = 1L;
 
-	/** Name of the standard TAP parameter which specifies the type of request to execute: "REQUEST". */
+	/** Name of the standard TAP parameter which specifies the type of request
+	 * to execute: "REQUEST". */
 	public static final String PARAM_REQUEST = "request";
 	/** REQUEST value meaning an ADQL query must be executed: "doQuery". */
 	public static final String REQUEST_DO_QUERY = "doQuery";
-	/** REQUEST value meaning VO service capabilities must be returned: "getCapabilities". */
+	/** REQUEST value meaning VO service capabilities must be returned:
+	 * "getCapabilities". */
 	public static final String REQUEST_GET_CAPABILITIES = "getCapabilities";
 
-	/** Name of the standard TAP parameter which specifies the query language: "LANG". <i>(only the ADQL language is supported by default in this version of the library)</i> */
+	/** Name of the standard TAP parameter which specifies the query language:
+	 * "LANG". <i>(only the ADQL language is supported by default in this
+	 * version of the library)</i> */
 	public static final String PARAM_LANGUAGE = "lang";
 	/** LANG value meaning ADQL language: "ADQL". */
 	public static final String LANG_ADQL = "ADQL";
-	/** LANG value meaning PQL language: "PQL". <i>(this language is not supported in this version of the library)</i> */
+	/** LANG value meaning PQL language: "PQL". <i>(this language is not
+	 * supported in this version of the library)</i> */
 	public static final String LANG_PQL = "PQL";
 
-	/** Name of the standard TAP parameter which specifies the version of the TAP protocol that must be used: "VERSION". <i>(only the version 1.0 is supported in this version of the library)</i> */
+	/** Name of the standard TAP parameter which specifies the version of the
+	 * TAP protocol that must be used: "VERSION". <i>(only the version 1.0 is
+	 * supported in this version of the library)</i> */
 	public static final String PARAM_VERSION = "version";
 	/** VERSION value meaning the version 1.0 of TAP: "1.0". */
 	public static final String VERSION_1_0 = "1.0";
 
-	/** Name of the standard TAP parameter which specifies the output format (format of a query result): "FORMAT". */
+	/** Name of the standard TAP parameter which specifies the output format
+	 * (format of a query result): "FORMAT". */
 	public static final String PARAM_FORMAT = "format";
 	/** FORMAT value meaning the VOTable format: "votable". */
 	public static final String FORMAT_VOTABLE = "votable";
 
-	/** Name of the standard TAP parameter which specifies the maximum number of rows that must be returned in the query result: "MAXREC". */
+	/** Name of the standard TAP parameter which specifies the maximum number of
+	 * rows that must be returned in the query result: "MAXREC". */
 	public static final String PARAM_MAX_REC = "maxRec";
 	/** Special MAXREC value meaning the number of output rows is not limited. */
 	public static final int UNLIMITED_MAX_REC = -1;
 
-	/** Name of the standard TAP parameter which specifies the query to execute: "QUERY". */
+	/** Name of the standard TAP parameter which specifies the query to execute:
+	 * "QUERY". */
 	public static final String PARAM_QUERY = "query";
 
-	/** Name of the standard TAP parameter which defines the tables to upload in the database for the query execution: "UPLOAD". */
+	/** Name of the standard TAP parameter which defines the tables to upload in
+	 * the database for the query execution: "UPLOAD". */
 	public static final String PARAM_UPLOAD = "upload";
 
-	/** Name of the library parameter which informs about a query execution progression: "PROGRESSION". <i>(this parameter is removed once the execution is finished)</i> */
+	/** Name of the library parameter which informs about a query execution
+	 * progression: "PROGRESSION". <i>(this parameter is removed once the
+	 * execution is finished)</i> */
 	public static final String PARAM_PROGRESSION = "progression";
 
 	/** Internal query execution report. */
@@ -98,15 +111,20 @@ public class TAPJob extends UWSJob {
 	protected final TAPParameters tapParams;
 
 	/**
-	 * <p>Build a pending TAP job with the given parameters.</p>
+	 * Build a pending TAP job with the given parameters.
 	 *
-	 * <p><i><u>Note:</u> if the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the value {@link #PHASE_RUN}
-	 * the job execution starts immediately after the job has been added to a job list or after {@link #applyPhaseParam(JobOwner)} is called.</i></p>
+	 * <p><i>Note:
+	 * 	If the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the
+	 * 	value {@link #PHASE_RUN} the job execution starts immediately after the
+	 * 	job has been added to a job list or after
+	 * 	{@link #applyPhaseParam(JobOwner)} is called.
+	 * </i></p>
 	 *
 	 * @param owner		User who owns this job. <i>MAY BE NULL</i>
 	 * @param tapParams	Set of parameters.
 	 *
-	 * @throws TAPException	If one of the given parameters has a forbidden or wrong value.
+	 * @throws TAPException	If one of the given parameters has a forbidden or
+	 *                     	wrong value.
 	 */
 	public TAPJob(final JobOwner owner, final TAPParameters tapParams) throws TAPException{
 		super(owner, tapParams);
@@ -115,18 +133,26 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Build a pending TAP job with the given parameters.
-	 * The given HTTP request ID will be used as Job ID if not already used by another job.</p>
+	 * Build a pending TAP job with the given parameters.
+	 * The given HTTP request ID will be used as Job ID if not already used by
+	 * another job.
 	 *
-	 * <p><i><u>Note:</u> if the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the value {@link #PHASE_RUN}
-	 * the job execution starts immediately after the job has been added to a job list or after {@link #applyPhaseParam(JobOwner)} is called.</i></p>
+	 * <p><i>Note:
+	 * 	If the parameter {@link #PARAM_PHASE} (</i>phase<i>) is given with the
+	 * 	value {@link #PHASE_RUN} the job execution starts immediately after the
+	 * 	job has been added to a job list or after
+	 * 	{@link #applyPhaseParam(JobOwner)} is called.
+	 * </i></p>
 	 *
 	 * @param owner		User who owns this job. <i>MAY BE NULL</i>
 	 * @param tapParams	Set of parameters.
-	 * @param requestID	ID of the HTTP request which has initiated the creation of this job.
-	 *                 	<i>Note: if NULL, empty or already used, a job ID will be generated thanks to {@link #generateJobId()}.</i>
+	 * @param requestID	ID of the HTTP request which has initiated the creation
+	 *                 	of this job.
+	 *                 	<i>Note: if NULL, empty or already used, a job ID will
+	 *                 	be generated thanks to {@link #generateJobId()}.</i>
 	 *
-	 * @throws TAPException	If one of the given parameters has a forbidden or wrong value.
+	 * @throws TAPException	If one of the given parameters has a forbidden or
+	 *                     	wrong value.
 	 *
 	 * @since 2.1
 	 */
@@ -138,11 +164,13 @@ public class TAPJob extends UWSJob {
 
 	/**
 	 * Restore a job in a state defined by the given parameters.
-	 * The phase must be set separately with {@link #setPhase(uws.job.ExecutionPhase, boolean)},
-	 * where the second parameter is true.
+	 * The phase must be set separately with
+	 * {@link #setPhase(uws.job.ExecutionPhase, boolean)}, where the second
+	 * parameter is true.
 	 *
 	 * @param jobID			ID of the job.
-	 * @param creationTime	Creation date/time of the job (SHOULD NOT BE NEGATIVE OR NULL).
+	 * @param creationTime	Creation date/time of the job
+	 *                    	(SHOULD NOT BE NEGATIVE OR NULL).
 	 * @param owner			User who owns this job.
 	 * @param params		Set of not-standard UWS parameters (i.e. what is
 	 *              		called by {@link UWSJob} as additional parameters ;
@@ -169,7 +197,8 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * Get the object storing and managing the set of all (UWS and TAP) parameters.
+	 * Get the object storing and managing the set of all (UWS and TAP)
+	 * parameters.
 	 *
 	 * @return The object managing all job parameters.
 	 */
@@ -178,7 +207,7 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Get the value of the REQUEST parameter.</p>
+	 * Get the value of the REQUEST parameter.
 	 *
 	 * <p>This value must be {@value #REQUEST_DO_QUERY}.</p>
 	 *
@@ -198,9 +227,12 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Get the value of the LANG parameter.</p>
+	 * Get the value of the LANG parameter.
 	 *
-	 * <p>This value should always be {@value #LANG_ADQL} in this version of the library</p>
+	 * <p>
+	 * 	This value should always be {@value #LANG_ADQL} in this version of the
+	 * 	library
+	 * </p>
 	 *
 	 * @return	LANG value.
 	 */
@@ -209,9 +241,12 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Get the value of the MAXREC parameter.</p>
+	 * Get the value of the MAXREC parameter.
 	 *
-	 * <p>If this value is negative, it means the number of output rows is not limited.</p>
+	 * <p>
+	 * 	If this value is negative, it means the number of output rows is not
+	 * 	limited.
+	 * </p>
 	 *
 	 * @return	MAXREC value.
 	 */
@@ -220,7 +255,8 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * Get the value of the QUERY parameter (i.e. the query, in the language returned by {@link #getLanguage()}, to execute).
+	 * Get the value of the QUERY parameter (i.e. the query, in the language
+	 * returned by {@link #getLanguage()}, to execute).
 	 *
 	 * @return	QUERY value.
 	 */
@@ -229,9 +265,12 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Get the value of the VERSION parameter.</p>
+	 * Get the value of the VERSION parameter.
 	 *
-	 * <p>This value should be {@value #VERSION_1_0} in this version of the library.</p>
+	 * <p>
+	 * 	This value should be {@value #VERSION_1_0} in this version of the
+	 * 	library.
+	 * </p>
 	 *
 	 * @return	VERSION value.
 	 */
@@ -240,9 +279,12 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Get the value of the UPLOAD parameter.</p>
+	 * Get the value of the UPLOAD parameter.
 	 *
-	 * <p>This value must be formatted as specified by the TAP standard (= a semicolon separated list of DALI uploads).</p>
+	 * <p>
+	 * 	This value must be formatted as specified by the TAP standard (= a
+	 * 	semicolon separated list of DALI uploads).
+	 * </p>
 	 *
 	 * @return	UPLOAD value.
 	 */
@@ -251,7 +293,7 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Get the list of tables to upload in the database for the query execution.</p>
+	 * Get the list of tables to upload in the database for the query execution.
 	 *
 	 * <p>The returned array is an interpretation of the UPLOAD parameter.</p>
 	 *
@@ -262,12 +304,13 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Get the execution report.</p>
+	 * Get the execution report.
 	 *
 	 * <p>
 	 * 	This report is available only during or after the job execution.
-	 * 	It tells in which step the execution is, and how long was the previous steps.
-	 * 	It can also give more information about the number of resulting rows and columns.
+	 * 	It tells in which step the execution is, and how long was the previous
+	 * 	steps. It can also give more information about the number of resulting
+	 * 	rows and columns.
 	 * </p>
 	 *
 	 * @return The execReport.
@@ -277,16 +320,18 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Set the execution report.</p>
+	 * Set the execution report.
 	 *
 	 * <p><b>IMPORTANT:
-	 * 	This function can be called only if the job is running or is being restored, otherwise an exception would be thrown.
-	 * 	It should not be used by implementors, but only by the internal library processing.
+	 * 	This function can be called only if the job is running or is being
+	 * 	restored, otherwise an exception would be thrown. It should not be used
+	 * 	by implementors, but only by the internal library processing.
 	 * </b></p>
 	 *
 	 * @param execReport	An execution report.
 	 *
-	 * @throws UWSException	If this job has never been restored and is not running.
+	 * @throws UWSException	If this job has never been restored and is not
+	 *                     	running.
 	 */
 	public final void setExecReport(final TAPExecutionReport execReport) throws UWSException{
 		if (getRestorationDate() == null && (thread == null || thread.isFinished()))
@@ -295,11 +340,14 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Create the thread to use for the execution of this job.</p>
+	 * Create the thread to use for the execution of this job.
 	 *
-	 * <p><i>Note: If the job already exists, this function does nothing.</i></p>
+	 * <p><i>Note:
+	 * 	If the job already exists, this function does nothing.
+	 * </i></p>
 	 *
-	 * @throws NullPointerException	If the factory returned NULL rather than the asked {@link JobThread}.
+	 * @throws NullPointerException	If the factory returned NULL rather than the
+	 *                             	asked {@link JobThread}.
 	 * @throws UWSException			If the thread creation fails.
 	 *
 	 * @see TAPFactory#createJobThread(UWSJob)
@@ -315,18 +363,23 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * <p>Check whether this job is able to start right now.</p>
+	 * Check whether this job is able to start right now.
 	 *
 	 * <p>
-	 * 	Basically, this function try to get a database connection. If none is available,
-	 * 	then this job can not start and this function return FALSE. In all the other cases,
-	 * 	TRUE is returned.
+	 * 	Basically, this function try to get a database connection. If none is
+	 * 	available, then this job can not start and this function return FALSE.
+	 * 	In all the other cases, TRUE is returned.
 	 * </p>
 	 *
-	 * <p><b>Warning:</b> This function will indirectly open and keep a database connection, so that the job can be started just after its call.
-	 * If it turns out that the execution won't start just after this call, the DB connection should be closed in some way in order to save database resources.</i></p>
+	 * <p><b>Warning:</b>
+	 * 	This function will indirectly open and keep a database connection, so
+	 * 	that the job can be started just after its call. If it turns out that
+	 * 	the execution won't start just after this call, the DB connection should
+	 * 	be closed in some way in order to save database resources.
+	 * </p>
 	 *
-	 * @return	<i>true</i> if this job can start right now, <i>false</i> otherwise.
+	 * @return	<i>true</i> if this job can start right now,
+	 *        	<i>false</i> otherwise.
 	 *
 	 * @since 2.0
 	 */
@@ -363,6 +416,7 @@ public class TAPJob extends UWSJob {
 			}
 
 			// Change the job phase:
+			setPhase(ExecutionPhase.QUEUED);
 			setPhase(ExecutionPhase.EXECUTING);
 
 			// Set the start time:
@@ -403,7 +457,8 @@ public class TAPJob extends UWSJob {
 	}
 
 	/**
-	 * This exception is thrown by a job execution when no database connection are available anymore.
+	 * This exception is thrown by a job execution when no database connection
+	 * are available anymore.
 	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 2.0 (02/2015)

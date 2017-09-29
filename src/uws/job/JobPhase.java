@@ -362,14 +362,16 @@ public class JobPhase implements Serializable {
 	 *
 	 * <p><i>Note:
 	 * 	By default, it returns TRUE only if the current phase is
-	 * 	{@link ExecutionPhase#EXECUTING EXECUTING}!
+	 * 	{@link ExecutionPhase#EXECUTING EXECUTING} or
+	 * 	{@link ExecutionPhase#SUSPENDED SUSPENDED} (since it is a phase that can
+	 * 	happen only during execution)!
 	 * </i></p>
 	 *
 	 * @return	<i>true</i> if the job is executing,
 	 *        	<i>false</i> otherwise.
 	 */
 	public boolean isExecuting(){
-		return phase == ExecutionPhase.EXECUTING;
+		return phase == ExecutionPhase.EXECUTING || phase == ExecutionPhase.SUSPENDED;
 	}
 
 	@Override

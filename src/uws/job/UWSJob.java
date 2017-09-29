@@ -38,6 +38,7 @@ import uws.UWSException;
 import uws.UWSExceptionFactory;
 import uws.UWSToolBox;
 import uws.job.jobInfo.JobInfo;
+import uws.job.jobInfo.SingleValueJobInfo;
 import uws.job.manager.ExecutionManager;
 import uws.job.parameters.UWSParameters;
 import uws.job.serializer.UWSSerializer;
@@ -1105,6 +1106,12 @@ public class UWSJob extends SerializableUWSObject {
 	 * job can be updated (considering its current execution phase, see
 	 * {@link JobPhase#isJobUpdatable()}).
 	 *
+	 * <p><i><b>Important note:</b>
+	 * 	If the given parameter value is an {@link UploadFile} and that it is
+	 * 	impossible to move it close to the job, this parameter will be removed.
+	 * 	No error is thrown, but a warning message is logged.
+	 * </i></p>
+	 *
 	 * @param paramName		The name of the parameter to add or to update.
 	 * @param paramValue	The (new) value of the specified parameter.
 	 *
@@ -1124,6 +1131,12 @@ public class UWSJob extends SerializableUWSObject {
 	 * Adds or updates the specified parameter with the given value ONLY IF the
 	 * job can be updated (considering its current execution phase, see
 	 * {@link JobPhase#isJobUpdatable()}).
+	 *
+	 * <p><i><b>Important note:</b>
+	 * 	If the given parameter value is an {@link UploadFile} and that it is
+	 * 	impossible to move it close to the job, this parameter will be removed.
+	 * 	No error is thrown, but a warning message is logged.
+	 * </i></p>
 	 *
 	 * @param paramName		The name of the parameter to add or to update.
 	 * @param paramValue	The (new) value of the specified parameter.
@@ -1145,19 +1158,21 @@ public class UWSJob extends SerializableUWSObject {
 			// Set the parameter:
 			inputParams.set(paramName, paramValue);
 
-			// If it is a file or an array containing files, they must be moved in a location related to this job:
-			try{
-				if (paramValue instanceof UploadFile)
-					((UploadFile)paramValue).move(this);
-				else if (paramValue.getClass().isArray()){
-					for(Object o : (Object[])paramValue){
-						if (o != null && o instanceof UploadFile)
-							((UploadFile)o).move(this);
+			// CASE DESTRUCTION_TIME: update the thread dedicated to the destruction:
+			if (paramValue.equals(PARAM_DESTRUCTION_TIME)){
+				if (myJobList != null)
+					myJobList.updateDestruction(this);
+			}
+			// DEFAULT: test whether the parameter is a file, and if yes, move it in a location related to this job:
+			else{
+				if (paramValue != null && paramValue instanceof UploadFile){
+					try{
+						((UploadFile)paramValue).move(this);
+					}catch(IOException ioe){
+						getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
+						inputParams.remove(paramName);
 					}
 				}
-			}catch(IOException ioe){
-				getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
-				return false;
 			}
 
 			// Apply the retrieved phase:
@@ -1189,6 +1204,12 @@ public class UWSJob extends SerializableUWSObject {
 	 * 		removed from {@link UWSJob#inputParams inputParams} and nothing is
 	 * 		done.</li>
 	 * </ul>
+	 *
+	 * <p><i><b>Important note:</b>
+	 * 	If a given parameter value is an {@link UploadFile} and that it is
+	 * 	impossible to move it close to the job, this parameter will be removed.
+	 * 	No error is thrown, but a warning message is logged.
+	 * </i></p>
 	 *
 	 * @param params	A list of parameters to add/update.
 	 * @return	<i>true</i> if all the given parameters have been successfully
@@ -1235,6 +1256,12 @@ public class UWSJob extends SerializableUWSObject {
 	 * 		removed from {@link UWSJob#inputParams inputParams} and nothing is
 	 * 		done.</li>
 	 * </ul></p>
+	 *
+	 * <p><i><b>Important note:</b>
+	 * 	If a given parameter value is an {@link UploadFile} and that it is
+	 * 	impossible to move it close to the job, this parameter will be removed.
+	 * 	No error is thrown, but a warning message is logged.
+	 * </i></p>
 	 *
 	 * @param params	The UWS parameters to update.
 	 * @param user		The user who asks for this update.
@@ -1585,6 +1612,7 @@ public class UWSJob extends SerializableUWSObject {
 				throw new NullPointerException("Missing job work! The thread created by the factory is NULL => The job can't be executed!");
 
 			// Change the job phase:
+			setPhase(ExecutionPhase.QUEUED);
 			setPhase(ExecutionPhase.EXECUTING);
 
 			// Set the start time:
@@ -1796,19 +1824,93 @@ public class UWSJob extends SerializableUWSObject {
 	}
 
 	/**
-	 * Stops the job if running, removes the job from the execution manager,
-	 * stops the timer for the execution duration and may clear all files or any
-	 * other resources associated to this job.
+	 * Archive this job.
+	 *
+	 * <p>
+	 * 	An archive job can not be executed any more. Threads, results and input
+	 * 	files are destroyed but the description and the error summary of
+	 * 	the job stay unchanged (except the execution phase which will then be
+	 * 	{@link ExecutionPhase#ARCHIVED ARCHIVED}).
+	 * </p>
 	 *
 	 * <p><i>Note:
-	 * 	By default the job is aborted, the {@link UWSJob#thread} attribute is
-	 * 	set to null, the timers are stopped and uploaded files, results and the
-	 * 	error summary are deleted and the jobInfo is destroyed.
+	 * 	The current phase is stored as job information (only if no JobInfo is
+	 * 	already set) in order to satisfy the user curiosity (i.e. "in what
+	 * 	phase was this job before being archived?").
 	 * </i></p>
+	 *
+	 * @return	<code>true</code> if this job has been successfully archived,
+	 *        	<code>false</code> otherwise.
+	 *
+	 * @throws UWSException	If any error occurs while clearing resources
+	 *                     	or changing the phase of this job.
+	 *
+	 * @since 4.3
+	 */
+	public boolean archive(){
+		/* Interrupt the corresponding thread
+		 * and remove results and input files attached to this job: */
+		clearResources(false);
+
+		// Ensure this job is no longer in the destruction manager:
+		if (getJobList() != null && getJobList().getDestructionManager() != null)
+			getJobList().getDestructionManager().remove(this);
+
+		// Change the phase:
+		try{
+			// store the current phase as additional JobInfo for user curiosity
+			//  (only if no JobInfo is already set):
+			if (getJobInfo() == null)
+				setJobInfo(new SingleValueJobInfo("oldPhase", getPhase().toString()));
+			// change phase:
+			setPhase(ExecutionPhase.ARCHIVED);
+			// log the success of the archiving operation:
+			getLogger().logJob(LogLevel.INFO, this, "ARCHIVE", "Job successfully archived!", null);
+			return true;
+		}catch(UWSException ue){
+			getLogger().logJob(LogLevel.ERROR, this, "ARCHIVE", "Impossible to change the phase of this job into ARCHIVED!", ue);
+			return false;
+		}
+	}
+
+	/**
+	 * Stops the job if running, removes the job from the execution manager,
+	 * stops the timer for the execution duration.
+	 *
+	 * <p>
+	 * 	Besides, ALL files AND ANY other resources (e.g. thread) associated with
+	 * 	this job are destroyed.
+	 * </p>
+	 *
+	 * @see #clearResources(boolean)
 	 */
 	public void clearResources(){
+		clearResources(true);
+	}
+
+	/**
+	 * Stops the job if running, removes the job from the execution manager,
+	 * stops the timer for the execution duration.
+	 *
+	 * <p>
+	 * 	Besides, resources (e.g. thread) associated with this job are freed.
+	 * 	Depending on the given parameter, all (<code>true</code>) or just input
+	 * 	and result files (<code>false</code>) are destroyed.
+	 * </p>
+	 *
+	 * @param fullClean	Indicate whether all resources or just some input and
+	 *                 	result files must be freed.
+	 *                  <code>true</code> to stop the job and delete everything
+	 *                  (input files, results, jobInfos and error summary),
+	 *                  or <code>false</code> to stop the job and delete only
+	 *                  all input files and results but not the jobInfos, the
+	 *                  error summary and the other parameters.
+	 *
+	 * @since 4.3
+	 */
+	public void clearResources(final boolean fullClean){
 		// If still running, abort/stop the job:
-		if (isRunning()){
+		if (!phase.isFinished()){
 			try{
 				abort();
 			}catch(UWSException e){
@@ -1829,40 +1931,54 @@ public class UWSJob extends SerializableUWSObject {
 		while(files.hasNext()){
 			upl = files.next();
 			try{
+				// delete the file:
 				upl.deleteFile();
+				// delete the internal reference to this input parameter:
+				files.remove();
 			}catch(IOException ioe){
 				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file uploaded as parameter \"" + upl.paramName + "\" (" + upl.getLocation() + ") of the job \"" + jobId + "\"!", null);
 			}
 		}
 
 		// Clear all results file:
-		for(Result r : results.values()){
+		Iterator<Result> itResults = getResults();
+		Result r;
+		while(itResults.hasNext()){
+			r = itResults.next();
 			try{
+				// delete the file:
 				getFileManager().deleteResult(r, this);
+				// delete the internal reference to this result:
+				itResults.remove();
 			}catch(IOException ioe){
 				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file associated with the result '" + r.getId() + "' of the job \"" + jobId + "\"!", ioe);
 			}
 		}
 
-		// Clear the error file:
-		if (errorSummary != null && errorSummary.hasDetail()){
-			try{
-				getFileManager().deleteError(errorSummary, this);
-			}catch(IOException ioe){
-				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file associated with the error '" + errorSummary.message + "' of the job \"" + jobId + "\"!", ioe);
+		if (!fullClean){
+			// Clear the error file:
+			if (errorSummary != null && errorSummary.hasDetail()){
+				try{
+					// delete the file associated with the error details:
+					getFileManager().deleteError(errorSummary, this);
+					// delete the error summary:
+					errorSummary = null;
+				}catch(IOException ioe){
+					getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file associated with the error '" + errorSummary.message + "' of the job \"" + jobId + "\"!", ioe);
+				}
+			}
+
+			// Destroy the additional job info.:
+			if (jobInfo != null){
+				try{
+					jobInfo.destroy();
+				}catch(UWSException ue){
+					getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to destroy the additional information about the job \"" + jobId + "\"", ue);
+				}
 			}
 		}
 
-		// Destroy the additional job info.:
-		if (jobInfo != null){
-			try{
-				jobInfo.destroy();
-			}catch(UWSException ue){
-				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to destroy the additional information about the job \"" + jobId + "\"", ue);
-			}
-		}
-
-		getLogger().logJob(LogLevel.INFO, this, "CLEAR_RESOURCES", "Resources associated with the job \"" + getJobId() + "\" have been successfully freed.", null);
+		getLogger().logJob(LogLevel.INFO, this, "CLEAR_RESOURCES", (fullClean ? "All resources" : "Threads and input and result files") + " associated with the job \"" + getJobId() + "\" have been successfully freed.", null);
 	}
 
 	/* ******************* */
