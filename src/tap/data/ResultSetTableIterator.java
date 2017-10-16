@@ -19,17 +19,6 @@ package tap.data;
  * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.NoSuchElementException;
-
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
@@ -39,6 +28,12 @@ import adql.translator.JDBCTranslator;
 import tap.db.DBConnection;
 import tap.metadata.TAPColumn;
 import uws.ISO8601Format;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.NoSuchElementException;
 
 /**
  * <p>{@link TableIterator} which lets iterate over a SQL {@link ResultSet}.</p>
@@ -748,6 +743,8 @@ public class ResultSetTableIterator implements TableIterator {
 					Region region = translator.translateGeometryFromDB(colValue);
 					if (region != null)
 						colValue = region.toSTCS();
+					else
+						colValue = null; // TODO: this is a workaround for wrong footprints (version 2)
 				}catch(ParseException pe){
 					throw new DataReadException(pe.getMessage());
 				}
