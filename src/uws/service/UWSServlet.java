@@ -57,6 +57,7 @@ import uws.job.parameters.UWSParameters;
 import uws.job.serializer.JSONSerializer;
 import uws.job.serializer.UWSSerializer;
 import uws.job.serializer.XMLSerializer;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.actions.UWSAction;
 import uws.service.backup.UWSBackupManager;
@@ -150,7 +151,7 @@ import uws.service.request.UploadFile;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (10/2017)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -536,7 +537,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		resp.setContentType(serializer.getMimeType());
 		resp.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 		try{
-			jobsList.serialize(resp.getOutputStream(), serializer, user);
+			jobsList.serialize(resp.getOutputStream(), serializer, user, new JobListRefiner(req));
 		}catch(Exception e){
 			if (!(e instanceof UWSException)){
 				getLogger().logUWS(LogLevel.ERROR, requestUrl, "SERIALIZE", "Can not serialize the jobs list \"" + jobsList.getName() + "\"!", e);

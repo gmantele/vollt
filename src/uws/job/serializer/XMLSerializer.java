@@ -31,6 +31,7 @@ import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.jobInfo.JobInfo;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
@@ -40,7 +41,7 @@ import uws.service.request.UploadFile;
  * Lets serializing any UWS resource in XML.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (10/2017)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -178,7 +179,7 @@ public class XMLSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root){
+	public String getJobList(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner, final boolean root) throws Exception{
 		StringBuffer xml = new StringBuffer(getHeader());
 
 		xml.append("<jobs version=\"").append(UWS.VERSION).append('"').append(getUWSNamespace(true));
@@ -190,7 +191,16 @@ public class XMLSerializer extends UWSSerializer {
 		xml.append('>');
 
 		UWSUrl jobsListUrl = jobsList.getUrl();
+
+		// Security filter: retrieve only the jobs of the specified owner:
 		Iterator<UWSJob> it = jobsList.getJobs(owner);
+
+		/* User filter: filter the jobs in function of filters specified by the
+		 * user: */
+		if (listRefiner != null)
+			it = listRefiner.refine(it);
+
+		// Append the jobs' description:
 		while(it.hasNext())
 			xml.append("\n\t").append(getJobRef(it.next(), jobsListUrl));
 

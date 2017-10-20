@@ -29,6 +29,7 @@ import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.jobInfo.JobInfo;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
@@ -37,7 +38,7 @@ import uws.service.UWSUrl;
  * Useful conversion functions from UWS to JSON.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (10/2017)
  */
 public final class Json4Uws {
 
@@ -75,25 +76,65 @@ public final class Json4Uws {
 
 	/**
 	 * Gets the JSON representation of the given jobs list.
-	 * @param jobsList			The jobs list to represent in JSON.
-	 * @param owner				The user who asks to serialize the given jobs list. (MAY BE NULL)
-	 * @return					Its JSON representation.
-	 * @throws JSONException	If there is an error while building the JSON object.
+	 *
+	 * @param jobsList	The jobs list to represent in JSON.
+	 * @param owner		The user who asks to serialize the given jobs list.
+	 *             		(MAY BE NULL)
+	 *
+	 * @return	Its JSON representation.
+	 *
+	 * @throws JSONException	If there is an error while building the JSON
+	 *                      	object.
+	 *
+	 * @see #getJson(JobList, JobOwner, JobListRefiner)
 	 */
 	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner) throws JSONException{
+		return getJson(jobsList, owner, null);
+	}
+
+	/**
+	 * Gets the JSON representation of the given jobs list by filtering by owner
+	 * and some user-filters (e.g. on phase, creation time).
+	 *
+	 * @param jobsList		The jobs list to represent in JSON.
+	 * @param owner			The user who asks to serialize the given jobs list.
+	 *             			(MAY BE NULL)
+	 * @param listRefiner	Represent all the specified job filters to apply ;
+	 *                   	only the job that pass through this filter should be
+	 *                   	displayed. If NULL, all jobs are displayed.
+	 *
+	 * @return	Its JSON representation.
+	 *
+	 * @throws JSONException	If there is an error while building the JSON
+	 *                      	object.
+	 *
+	 * @since 4.3
+	 */
+	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (jobsList != null){
 			json.put("name", jobsList.getName());
 			json.put("version", UWS.VERSION);
 			JSONArray jsonJobs = new JSONArray();
 			UWSUrl jobsListUrl = jobsList.getUrl();
+
+			// Security filter: retrieve only the jobs of the specified owner:
 			Iterator<UWSJob> it = jobsList.getJobs(owner);
+
+			/* User filter: filter the jobs in function of filters specified by
+			 * the user:  */
+			if (listRefiner != null)
+				it = listRefiner.refine(it);
+
+			// Append the JSON serialization of all filtered jobs:
 			JSONObject jsonObj = null;
 			while(it.hasNext()){
 				jsonObj = getJson(it.next(), jobsListUrl, true);
 				if (jsonObj != null)
 					jsonJobs.put(jsonObj);
+
 			}
+
 			json.put("jobs", jsonJobs);
 		}
 		return json;

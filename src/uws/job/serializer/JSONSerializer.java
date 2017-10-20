@@ -28,6 +28,7 @@ import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
@@ -36,7 +37,7 @@ import uws.service.UWSUrl;
  * Lets serializing any UWS resource in JSON.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (10/2017)
  *
  * @see Json4Uws
  */
@@ -54,8 +55,8 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root) throws JSONException{
-		return Json4Uws.getJson(jobsList, owner).toString();
+	public String getJobList(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner, final boolean root) throws JSONException{
+		return Json4Uws.getJson(jobsList, owner, listRefiner).toString();
 	}
 
 	@Override

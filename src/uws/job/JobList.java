@@ -20,12 +20,15 @@ package uws.job;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.servlet.ServletOutputStream;
 
 import uws.UWSException;
 import uws.UWSExceptionFactory;
@@ -35,6 +38,7 @@ import uws.job.manager.DefaultExecutionManager;
 import uws.job.manager.DestructionManager;
 import uws.job.manager.ExecutionManager;
 import uws.job.serializer.UWSSerializer;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSService;
@@ -171,7 +175,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (10/2017)
  *
  * @see UWSJob
  */
@@ -998,6 +1002,45 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 				ownerJobs.remove(owner);
 			}
 		}
+	}
+
+	/**
+	 * Serializes the while object in the given output stream,
+	 * considering the given owner ID, the given job filters and thanks to the
+	 * given serializer.
+	 *
+	 * @param output		The ouput stream in which this object must be
+	 *              		serialized.
+	 * @param serializer	The serializer to use.
+	 * @param ownerId		The ID of the current ID.
+	 * @param listRefiner	Special filter able to refine the list of jobs with
+	 *                   	job filters specified by the user
+	 *                   	(i.e. filter, sort and limit).
+	 *
+	 * @throws UWSException		If the owner is not allowed to see the content
+	 *                     		of the serializable object.
+	 * @throws IOException		If there is an error while writing in the given
+	 *                    		stream.
+	 * @throws Exception		If there is any other error during the
+	 *                  		serialization.
+	 *
+	 * @see UWSSerializer#getJobList(JobList, JobOwner, JobListRefiner, boolean)
+	 *
+	 * @since 4.3
+	 */
+	public void serialize(ServletOutputStream output, UWSSerializer serializer, JobOwner owner, JobListRefiner listRefiner) throws UWSException, IOException, Exception{
+		if (output == null)
+			throw new NullPointerException("Missing serialization output stream!");
+
+		if (owner != null && !owner.hasReadPermission(this))
+			throw new UWSException(UWSException.PERMISSION_DENIED, UWSExceptionFactory.writePermissionDenied(owner, true, getName()));
+
+		String serialization = serializer.getJobList(this, owner, listRefiner, true);
+		if (serialization != null){
+			output.print(serialization);
+			output.flush();
+		}else
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Incorrect serialization value (=NULL) ! => impossible to serialize " + toString() + ".");
 	}
 
 	/* ***************** */

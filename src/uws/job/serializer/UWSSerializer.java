@@ -28,6 +28,7 @@ import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
@@ -41,7 +42,7 @@ import uws.service.UWSUrl;
  * </ul>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (10/2017)
  *
  * @see XMLSerializer
  * @see JSONSerializer
@@ -207,23 +208,58 @@ public abstract class UWSSerializer implements Serializable {
 	 * @return				The serialization of the given jobs list.
 	 *
 	 * @throws Exception	If there is an error during the serialization.
+	 *
+	 * @see #getJobList(JobList, JobOwner, boolean)
 	 */
 	public String getJobList(final JobList jobsList, final boolean root) throws Exception{
 		return getJobList(jobsList, null, root);
 	}
 
 	/**
-	 * Serializes the given jobs list.
+	 * Serializes the given jobs list, by filtering by user.
 	 *
 	 * @param jobsList		The jobs list to serialize.
-	 * @param owner			The user which has asked the serialization of the given jobs list.
-	 * @param root			<i>false</i> if the jobs list to serialize will be included
-	 * 						in a top level serialization (for a jobs list: uws), <i>true</i> otherwise.
+	 * @param owner			The user which has asked the serialization of the
+	 *             			given jobs list. If NULL, all anonymous jobs are
+	 *             			displayed.
+	 * @param root			<code>false</code> if the jobs list to serialize
+	 *            			will be included in a top level serialization (for a
+	 *            			jobs list: uws),
+	 *            			<code>true</code> otherwise.
+	 *
 	 * @return				The serialization of the given jobs list.
 	 *
 	 * @throws Exception	If there is an error during the serialization.
+	 *
+	 * @see #getJobList(JobList, JobOwner, JobListRefiner, boolean)
 	 */
-	public abstract String getJobList(final JobList jobsList, JobOwner owner, final boolean root) throws Exception;
+	public String getJobList(final JobList jobsList, JobOwner owner, final boolean root) throws Exception{
+		return getJobList(jobsList, null, null, root);
+	}
+
+	/**
+	 * Serializes the given jobs list, by filtering using user-specified
+	 * filters.
+	 *
+	 * @param jobsList		The jobs list to serialize.
+	 * @param owner			The user which has asked the serialization of the
+	 *             			given jobs list. If NULL, all anonymous jobs are
+	 *             			displayed.
+	 * @param phaseFilters	Represent all the specified job filters to apply ;
+	 *                    	only the job that pass through this filter should be
+	 *                    	displayed. If NULL, all jobs are displayed.
+	 * @param root			<code>false</code> if the jobs list to serialize
+	 *            			will be included in a top level serialization (for a
+	 *            			jobs list: uws),
+	 *            			<code>true</code> otherwise.
+	 *
+	 * @return				The serialization of the given jobs list.
+	 *
+	 * @throws Exception	If there is an error during the serialization.
+	 *
+	 * @since 4.3
+	 */
+	public abstract String getJobList(final JobList jobsList, JobOwner owner, final JobListRefiner listRefiner, final boolean root) throws Exception;
 
 	/**
 	 * Serializes the whole given job.
