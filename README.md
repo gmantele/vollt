@@ -6,7 +6,7 @@ Preambule
 
 This GitHub repository contains the sources of 3 libraries implementing [IVOA](http://www.ivoa.net/ "International Virtual Observatory Alliance") standards and protocols:
 * [ADQL](http://www.ivoa.net/documents/latest/ADQL.html "Astronomical Data Query Language")
-* [UWS](http://www.ivoa.net/documents/UWS/index.html "Universal Worker Service pattern")
+* [UWS-1.1](http://www.ivoa.net/documents/UWS/20161024/index.html "Universal Worker Service pattern")
 * [TAP](http://www.ivoa.net/documents/TAP/ "Table Access Protocol")
 
 ### Documentation
