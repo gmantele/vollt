@@ -2,20 +2,20 @@ package uws.service;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -60,12 +60,13 @@ import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
 import uws.service.request.RequestParser;
+import uws.service.wait.BlockingPolicy;
 
 /**
  * <p>This class implements directly the interface {@link UWS} and so, it represents the core of a UWS service.</p>
- * 
+ *
  * <h3>Usage</h3>
- * 
+ *
  * <p>
  * 	Using this class is very simple! An instance must be created by providing at a factory - {@link UWSFactory} - and a file manager - {@link UWSFileManager}.
  * 	This creation must be done in the init() function of a {@link HttpServlet}. Then, still in init(), at least one job list must be created.
@@ -76,7 +77,7 @@ import uws.service.request.RequestParser;
  * <pre>
  * public class MyUWSService extends HttpServlet {
  * 	private UWS uws;
- * 
+ *
  * 	public void init(ServletConfig config) throws ServletException {
  * 		try{
  * 			// Create the UWS service:
@@ -87,12 +88,12 @@ import uws.service.request.RequestParser;
  * 			throw new ServletException("Can not initialize the UWS service!", ue);
  * 		}
  * 	}
- * 
+ *
  * 	public void destroy(){
  *		if (uws != null)
  * 			uws.destroy();
  * 	}
- * 
+ *
  * 	public void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException{
  * 		try{
  *			service.executeRequest(request, response);
@@ -102,9 +103,9 @@ import uws.service.request.RequestParser;
  * 	}
  * }
  * </pre>
- * 
+ *
  * <h3>UWS actions</h3>
- * 
+ *
  * <p>
  * 	All standard UWS actions are already implemented in this class. However, it is still possible to modify their implementation and/or to
  * 	add or remove some actions.
@@ -127,18 +128,18 @@ import uws.service.request.RequestParser;
  * 	name representing the action. Thus, it is possible to replace a UWS action implementation by using the function {@link #replaceUWSAction(UWSAction)} ; this
  * 	function will replace the action having the same name as the given action.
  * </p>
- * 
+ *
  * <h3>Home page</h3>
- * 
+ *
  * <p>
  * 	In addition of all the actions listed above, a last action is automatically added: {@link ShowHomePage}. This is the action which will display the home page of
  * 	the UWS service. It is called when the root resource of the web service is asked. To change it, you can either overwrite this action
  * 	(see {@link #replaceUWSAction(UWSAction)}) or set an home page URL with the function {@link #setHomePage(String)} <i>(the parameter is a URI pointing on either
  * 	a local or a remote resource)</i> or {@link #setHomePage(URL, boolean)}.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (09/2017)
+ * @version 4.3 (11/2017)
  */
 public class UWSService implements UWS {
 
@@ -201,6 +202,16 @@ public class UWSService implements UWS {
 	/** Lets writing/formatting any exception/throwable in a HttpServletResponse. */
 	protected ServiceErrorWriter errorWriter;
 
+	/**
+	 * Strategy to use for the blocking/wait process concerning the
+	 * {@link JobSummary} action.
+	 * <p>
+	 * 	If NULL, the standard strategy will be used: wait exactly the time asked
+	 * 	by the user (or indefinitely if none is specified).
+	 * </p>
+	 * @since 4.3 */
+	protected BlockingPolicy waitPolicy = null;
+
 	/** Last generated request ID. If the next generated request ID is equivalent to this one,
 	 * a new one will generate in order to ensure the unicity.
 	 * @since 4.1 */
@@ -211,21 +222,21 @@ public class UWSService implements UWS {
 	/* ************ */
 	/**
 	 * <p>Builds a UWS (the base URI will be extracted at the first request directly from the request itself).</p>
-	 * 
+	 *
 	 * <p>
 	 * 	By default, this UWS has 2 serialization formats: XML ({@link XMLSerializer}) and JSON ({@link JSONSerializer}).
 	 * 	All the default actions of a UWS are also already implemented.
 	 * 	However, you still have to create at least one job list !
 	 * </p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> since no logger is provided, a default one is set automatically (see {@link DefaultUWSLog}).</i></p>
-	 * 
+	 *
 	 * @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
-	 * 
+	 *
 	 * @throws NullPointerException	If at least one of the parameters is <i>null</i>.
 	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
-	 * 
+	 *
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog)
 	 */
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager) throws UWSException{
@@ -234,17 +245,17 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Builds a UWS (the base URI will be extracted at the first request directly from the request itself).</p>
-	 * 
+	 *
 	 * <p>
 	 * 	By default, this UWS has 2 serialization formats: XML ({@link XMLSerializer}) and JSON ({@link JSONSerializer}).
 	 * 	All the default actions of a UWS are also already implemented.
 	 * 	However, you still have to create at least one job list !
 	 * </p>
-	 * 
+	 *
 	 * @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param logger		Object which lets printing any message (error, info, debug, warning).
-	 * 
+	 *
 	 * @throws NullPointerException	If at least one of the parameters is <i>null</i>.
 	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 */
@@ -287,15 +298,15 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Builds a UWS with its base UWS URI.</p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> since no logger is provided, a default one is set automatically (see {@link DefaultUWSLog}).</i></p>
-	 * 
+	 *
 	 * @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param baseURI		Base UWS URI.
-	 * 
+	 *
 	 * @throws UWSException	If the given URI is <i>null</i> or empty.
-	 * 
+	 *
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog, String)
 	 */
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final String baseURI) throws UWSException{
@@ -304,14 +315,14 @@ public class UWSService implements UWS {
 
 	/**
 	 * Builds a UWS with its base UWS URI.
-	 * 
+	 *
 	 * @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param logger		Object which lets printing any message (error, info, debug, warning).
 	 * @param baseURI		Base UWS URI.
-	 * 
+	 *
 	 * @throws UWSException	If the given URI is <i>null</i> or empty.
-	 * 
+	 *
 	 * @see UWSUrl#UWSUrl(String)
 	 */
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger, final String baseURI) throws UWSException{
@@ -340,15 +351,15 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Builds a UWS with the given UWS URL interpreter.</p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> since no logger is provided, a default one is set automatically (see {@link DefaultUWSLog}).</i></p>
-	 * 
+	 *
 	 * @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param urlInterpreter	The UWS URL interpreter to use in this UWS.
-	 * 
+	 *
 	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
-	 * 
+	 *
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog, UWSUrl)
 	 */
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSUrl urlInterpreter) throws UWSException{
@@ -357,12 +368,12 @@ public class UWSService implements UWS {
 
 	/**
 	 * Builds a UWS with the given UWS URL interpreter.
-	 * 
+	 *
 	 * @param jobFactory	Object which lets creating the UWS jobs managed by this UWS and their thread/task.
 	 * @param fileManager	Object which lets managing all files managed by this UWS (i.e. log, result, backup, error, ...).
 	 * @param logger		Object which lets printing any message (error, info, debug, warning).
 	 * @param urlInterpreter	The UWS URL interpreter to use in this UWS.
-	 * 
+	 *
 	 * @throws UWSException			If unable to create a request parser using the factory (see {@link UWSFactory#createRequestParser(UWSFileManager)}).
 	 */
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger, final UWSUrl urlInterpreter) throws UWSException{
@@ -411,7 +422,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the object used to write/format any error in a HttpServletResponse.
-	 * 
+	 *
 	 * @return The error writer/formatter.
 	 */
 	public final ServiceErrorWriter getErrorWriter(){
@@ -420,9 +431,9 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Sets the object used to write/format any error in a HttpServletResponse.</p>
-	 * 
+	 *
 	 * <p><i><u>Note:</u> Nothing is done if the given writer is NULL !</i></p>
-	 * 
+	 *
 	 * @param errorWriter The new error writer/formatter.
 	 */
 	public final void setErrorWriter(ServiceErrorWriter errorWriter){
@@ -440,7 +451,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Sets the name of this UWS.
-	 * 
+	 *
 	 * @param name	Its new name.
 	 */
 	public final void setName(String name){
@@ -454,7 +465,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Sets the description of this UWS.
-	 * 
+	 *
 	 * @param description	Its new description.
 	 */
 	public final void setDescription(String description){
@@ -463,9 +474,9 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the base UWS URL.
-	 * 
+	 *
 	 * @return	The base UWS URL.
-	 * 
+	 *
 	 * @see UWSUrl#getBaseURI()
 	 */
 	public final String getBaseURI(){
@@ -479,7 +490,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Sets the UWS URL interpreter to use in this UWS.
-	 * 
+	 *
 	 * @param urlInterpreter	Its new UWS URL interpreter (may be <i>null</i>. In this case, it will be created from the next request ; see {@link #executeRequest(HttpServletRequest, HttpServletResponse)}).
 	 */
 	public final void setUrlInterpreter(UWSUrl urlInterpreter){
@@ -493,7 +504,7 @@ public class UWSService implements UWS {
 	/**
 	 * <p>Gets the object which lets extracting the user ID from a HTTP request.</p>
 	 * <p><i><u>note:</u>If the returned user identifier is NULL, no job should have an owner.</i></p>
-	 * 
+	 *
 	 * @return	The used UserIdentifier (MAY BE NULL).
 	 */
 	@Override
@@ -503,7 +514,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Sets the object which lets extracting the use ID from a received request.
-	 * 
+	 *
 	 * @param identifier	The UserIdentifier to use (may be <i>null</i>).
 	 */
 	public final void setUserIdentifier(UserIdentifier identifier){
@@ -530,7 +541,7 @@ public class UWSService implements UWS {
 	 * 	Sets its backup manager.
 	 * 	This manager will be called at each user action to save only its own jobs list by calling {@link UWSBackupManager#saveOwner(JobOwner)}.
 	 * </p>
-	 * 
+	 *
 	 * @param backupManager Its new backup manager.
 	 */
 	public final void setBackupManager(final UWSBackupManager backupManager){
@@ -542,12 +553,54 @@ public class UWSService implements UWS {
 		return requestParser;
 	}
 
+	/**
+	 * Get the currently used strategy for the blocking behavior of the
+	 * Job Summary action.
+	 *
+	 * <p>
+	 * 	This strategy lets decide how long a WAIT request must block a HTTP
+	 * 	request. With a such policy, the waiting time specified by the user may
+	 * 	be modified.
+	 * </p>
+	 *
+	 * @return	The WAIT strategy,
+	 *        	or NULL if the default one (i.e. wait the time specified by the
+	 *        	user) is used.
+	 *
+	 * @since 4.3
+	 */
+	public final BlockingPolicy getWaitPolicy(){
+		return waitPolicy;
+	}
+
+	/**
+	 * Set the strategy to use for the blocking behavior of the
+	 * Job Summary action.
+	 *
+	 * <p>
+	 * 	This strategy lets decide whether a WAIT request must block a HTTP
+	 * 	request and how long. With a such policy, the waiting time specified by
+	 * 	the user may be modified.
+	 * </p>
+	 *
+	 * @param waitPolicy	The WAIT strategy to use,
+	 *                  	or NULL if the default one (i.e. wait the time
+	 *                  	specified by the user ;
+	 *                  	if no time is specified the HTTP request may be
+	 *                  	blocked indefinitely) must be used.
+	 *
+	 * @since 4.3
+	 */
+	public final void setWaitPolicy(final BlockingPolicy waitPolicy){
+		this.waitPolicy = waitPolicy;
+	}
+
 	/* ******************** */
 	/* HOME PAGE MANAGEMENT */
 	/* ******************** */
 	/**
 	 * Gets the URL of the resource which must be used as home page of this UWS.
-	 * 
+	 *
 	 * @return	The URL of the home page.
 	 */
 	public final String getHomePage(){
@@ -556,7 +609,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Tells whether a redirection to the specified home page must be done or not.
-	 * 
+	 *
 	 * @return	<i>true</i> if a redirection to the specified resource must be done
 	 * 			or <i>false</i> to copy it.
 	 */
@@ -566,7 +619,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Sets the URL of the resource which must be used as home page of this UWS.
-	 * 
+	 *
 	 * @param homePageUrl	The URL of the home page (may be <i>null</i>).
 	 * @param redirect		<i>true</i> if a redirection to the specified resource must be done
 	 * 						or <i>false</i> to copy it.
@@ -579,7 +632,7 @@ public class UWSService implements UWS {
 	/**
 	 * <p>Sets the URI of the resource which must be used as home page of this UWS.</p>
 	 * <i>A redirection will always be done on the specified resource.</i>
-	 * 
+	 *
 	 * @param homePageURI	The URL of the home page.
 	 */
 	public final void setHomePage(String homePageURI){
@@ -590,7 +643,7 @@ public class UWSService implements UWS {
 	/**
 	 * Indicates whether the current home page is the default one (the UWS serialization)
 	 * or if it has been specified manually using {@link UWSService#setHomePage(URL, boolean)}.
-	 * 
+	 *
 	 * @return	<i>true</i> if it is the default home page, <i>false</i> otherwise.
 	 */
 	public final boolean isDefaultHomePage(){
@@ -608,16 +661,16 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Get the MIME type of the custom home page.</p>
-	 * 
+	 *
 	 * <p>By default, it is the same as the default home page: "text/html".</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function has a sense only if the HOME PAGE resource of this UWS service
 	 * 	is still the default home page (i.e. {@link ShowHomePage}).
 	 * </i></p>
-	 * 
+	 *
 	 * @return	MIME type of the custom home page.
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	public final String getHomePageMimeType(){
@@ -626,16 +679,16 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Set the MIME type of the custom home page.</p>
-	 * 
+	 *
 	 * <p>A NULL value will be considered as "text/html".</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function has a sense only if the HOME PAGE resource of this UWS service
 	 * 	is still the default home page (i.e. {@link ShowHomePage}).
 	 * </i></p>
-	 * 
+	 *
 	 * @param mime	MIME type of the custom home page.
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	public final void setHomePageMimeType(final String mime){
@@ -647,7 +700,7 @@ public class UWSService implements UWS {
 	/* ********************** */
 	/**
 	 * Gets the MIME type of the serializer to use by default.
-	 * 
+	 *
 	 * @return	The MIME type of the default serializer.
 	 */
 	public final String getDefaultSerializer(){
@@ -656,9 +709,9 @@ public class UWSService implements UWS {
 
 	/**
 	 * Sets the MIME of the serializer to use by default.
-	 * 
+	 *
 	 * @param mimeType		The MIME type (only one).
-	 * 
+	 *
 	 * @throws UWSException If there is no serializer with this MIME type available in this UWS.
 	 */
 	public final void setDefaultSerializer(String mimeType) throws UWSException{
@@ -672,7 +725,7 @@ public class UWSService implements UWS {
 	 * <p>Adds a serializer to this UWS</p>
 	 * <p><b><u>WARNING:</u> If there is already a serializer with the same MIME type (see {@link UWSSerializer#getMimeType()}) in this UWS ,
 	 * it should be replaced by the given one !</b></p>
-	 * 
+	 *
 	 * @param serializer	The serializer to add.
 	 * @return				<i>true</i> if the serializer has been successfully added, <i>false</i> otherwise.
 	 */
@@ -688,9 +741,9 @@ public class UWSService implements UWS {
 
 	/**
 	 * Tells whether this UWS has already a serializer with the given MIME type.
-	 * 
+	 *
 	 * @param mimeType	A MIME type (only one).
-	 * 
+	 *
 	 * @return			<i>true</i> if a serializer exists with the given MIME type, <i>false</i> otherwise.
 	 */
 	public final boolean hasSerializerFor(String mimeType){
@@ -699,7 +752,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the total number of serializers available in this UWS.
-	 * 
+	 *
 	 * @return	The number of its serializers.
 	 */
 	public final int getNbSerializers(){
@@ -708,7 +761,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets an iterator of the list of all serializers available in this UWS.
-	 * 
+	 *
 	 * @return	An iterator on its serializers.
 	 */
 	public final Iterator<UWSSerializer> getSerializers(){
@@ -741,7 +794,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the serializer choosen during the last call of {@link #getSerializer(String)}.
-	 * 
+	 *
 	 * @return	The last used serializer.
 	 */
 	public final UWSSerializer getChoosenSerializer(){
@@ -750,7 +803,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Removes the serializer whose the MIME type is the same as the given one.
-	 * 
+	 *
 	 * @param mimeType	MIME type of the serializer to remove.
 	 * @return			The removed serializer
 	 * 					or <i>null</i> if no corresponding serializer has been found.
@@ -761,7 +814,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the URL of the XSLT style-sheet that the XML serializer of this UWS is using.
-	 * 
+	 *
 	 * @return	The used XSLT URL.
 	 */
 	public final String getXsltURL(){
@@ -773,9 +826,9 @@ public class UWSService implements UWS {
 
 	/**
 	 * Sets the URL of the XSLT style-sheet that the XML serializer of this UWS must use.
-	 * 
+	 *
 	 * @param xsltPath	The new XSLT URL.
-	 * 
+	 *
 	 * @return			<i>true</i> if the given path/url has been successfully set, <i>false</i> otherwise.
 	 */
 	public final boolean setXsltURL(String xsltPath){
@@ -792,7 +845,7 @@ public class UWSService implements UWS {
 	/* ********************* */
 	/**
 	 * An iterator on the jobs lists list.
-	 * 
+	 *
 	 * @see java.lang.Iterable#iterator()
 	 */
 	@Override
@@ -812,13 +865,13 @@ public class UWSService implements UWS {
 
 	/**
 	 * Adds a jobs list to this UWS.
-	 * 
+	 *
 	 * @param jl	The jobs list to add.
-	 * 
+	 *
 	 * @return		<i>true</i> if the jobs list has been successfully added,
 	 * 				<i>false</i> if the given jobs list is <i>null</i> or if a jobs list with this name already exists
 	 * 				or if a UWS is already associated with another UWS.
-	 * 
+	 *
 	 * @see JobList#setUWS(UWS)
 	 * @see UWS#addJobList(JobList)
 	 */
@@ -847,11 +900,11 @@ public class UWSService implements UWS {
 
 	/**
 	 * Destroys the given jobs list.
-	 * 
+	 *
 	 * @param jl	The jobs list to destroy.
-	 * 
+	 *
 	 * @return	<i>true</i> if the given jobs list has been destroyed, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @see JobList#clear()
 	 * @see JobList#setUWS(UWS)
 	 */
@@ -873,7 +926,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Destroys all managed jobs lists.
-	 * 
+	 *
 	 * @see #destroyJobList(String)
 	 */
 	public final void destroyAllJobLists(){
@@ -887,12 +940,12 @@ public class UWSService implements UWS {
 	/* ********************** */
 	/**
 	 * <p>Lets adding the given action to this UWS.</p>
-	 * 
+	 *
 	 * <p><b><u>WARNING:</u> The action will be added at the end of the actions list of this UWS. That means, it will be evaluated (call of
 	 * the method {@link UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)}) lastly !</b></p>
-	 * 
+	 *
 	 * @param action	The UWS action to add.
-	 * 
+	 *
 	 * @return			<i>true</i> if the given action has been successfully added, <i>false</i> otherwise.
 	 */
 	public final boolean addUWSAction(UWSAction action){
@@ -904,12 +957,12 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Lets inserting the given action at the given position in the actions list of this UWS.</p>
-	 * 
+	 *
 	 * @param indAction							The index where the given action must be inserted.
 	 * @param action							The action to add.
-	 * 
+	 *
 	 * @return									<i>true</i> if the given action has been successfully added, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws ArrayIndexOutOfBoundsException	If the given index is incorrect (index < 0 || index >= uwsActions.size()).
 	 */
 	public final boolean addUWSAction(int indAction, UWSAction action) throws ArrayIndexOutOfBoundsException{
@@ -922,12 +975,12 @@ public class UWSService implements UWS {
 
 	/**
 	 * Replaces the specified action by the given action.
-	 * 
+	 *
 	 * @param indAction							Index of the action to replace.
 	 * @param action							The replacer.
-	 * 
+	 *
 	 * @return									<i>true</i> if the replacement has been a success, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws ArrayIndexOutOfBoundsException	If the index is incorrect (index < 0 || index >= uwsActions.size()).
 	 */
 	public final boolean setUWSAction(int indAction, UWSAction action) throws ArrayIndexOutOfBoundsException{
@@ -940,9 +993,9 @@ public class UWSService implements UWS {
 
 	/**
 	 * Replaces the action which has the same name that the given action.
-	 * 
+	 *
 	 * @param action	The replacer.
-	 * 
+	 *
 	 * @return			The replaced action
 	 * 					or <i>null</i> if the given action is <i>null</i>
 	 * 									or if there is no action with the same name (in this case, the given action is not added).
@@ -961,7 +1014,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the number of actions this UWS has.
-	 * 
+	 *
 	 * @return	The number of its actions.
 	 */
 	public final int getNbUWSActions(){
@@ -970,9 +1023,9 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the action of this UWS which has the same name as the given one.
-	 * 
+	 *
 	 * @param actionName	The name of the searched action.
-	 * 
+	 *
 	 * @return				The corresponding action
 	 * 						or <i>null</i> if there is no corresponding action.
 	 */
@@ -986,7 +1039,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets all actions of this UWS.
-	 * 
+	 *
 	 * @return	An iterator on its actions.
 	 */
 	public final Iterator<UWSAction> getUWSActions(){
@@ -995,7 +1048,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Gets the UWS action executed during the last call of {@link #executeRequest(HttpServletRequest, HttpServletResponse)}.
-	 * 
+	 *
 	 * @return	The last used UWS action.
 	 */
 	public final UWSAction getExecutedAction(){
@@ -1004,11 +1057,11 @@ public class UWSService implements UWS {
 
 	/**
 	 * Removes the specified action from this UWS.
-	 * 
+	 *
 	 * @param indAction							The index of the UWS action to remove.
-	 * 
+	 *
 	 * @return									The removed action.
-	 * 
+	 *
 	 * @throws ArrayIndexOutOfBoundsException	If the given index is incorrect (index < 0 || index >= uwsActions.size()).
 	 */
 	public final UWSAction removeUWSAction(int indAction) throws ArrayIndexOutOfBoundsException{
@@ -1017,7 +1070,7 @@ public class UWSService implements UWS {
 
 	/**
 	 * Removes the action of this UWS which has the same name as the given one.
-	 * 
+	 *
 	 * @param actionName	The name of the UWS to remove.
 	 * @return				The removed action
 	 * 						or <i>null</i> if there is no corresponding action.
@@ -1036,13 +1089,13 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Generate a unique ID for the given request.</p>
-	 * 
+	 *
 	 * <p>By default, a timestamp is returned.</p>
-	 * 
+	 *
 	 * @param request	Request whose an ID is asked.
-	 * 
+	 *
 	 * @return	The ID of the given request.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected synchronized String generateRequestID(final HttpServletRequest request){
@@ -1057,7 +1110,7 @@ public class UWSService implements UWS {
 	/**
 	 * <p>Executes the given request according to the <a href="http://www.ivoa.net/Documents/UWS/20100210/">IVOA Proposed Recommendation of 2010-02-10</a>.
 	 * The result is returned in the given response.</p>
-	 * 
+	 *
 	 * <p>Here is the followed algorithm:</p>
 	 * <ol>
 	 * 	<li>Load the request in the UWS URL interpreter (see {@link UWSUrl#load(HttpServletRequest)})</li>
@@ -1065,15 +1118,15 @@ public class UWSService implements UWS {
 	 * 	<li>Iterate - in order - on all available actions and apply the first which matches.
 	 * 		(see {@link UWSAction#match(UWSUrl, JobOwner, HttpServletRequest)} and {@link UWSAction#apply(UWSUrl, JobOwner, HttpServletRequest, HttpServletResponse)})</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param request		The UWS request.
 	 * @param response		The response of this request which will be edited by the found UWS actions.
-	 * 
+	 *
 	 * @return				<i>true</i> if the request has been executed successfully, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws UWSException	If no action matches or if any error has occurred while applying the found action.
 	 * @throws IOException	If it is impossible to write in the given {@link HttpServletResponse}.
-	 * 
+	 *
 	 * @see UWSUrl#UWSUrl(HttpServletRequest)
 	 * @see UWSUrl#load(HttpServletRequest)
 	 * @see UserIdentifier#extractUserId(UWSUrl, HttpServletRequest)
@@ -1200,13 +1253,13 @@ public class UWSService implements UWS {
 
 	/**
 	 * <p>Sends a redirection (with the HTTP status code 303) to the given URL/URI into the given response.</p>
-	 * 
+	 *
 	 * @param url		The redirection URL/URI.
 	 * @param request	The {@link HttpServletRequest} which may be used to make a redirection.
 	 * @param user		The user which executes the given request.
 	 * @param uwsAction	The UWS action corresponding to the given request.
 	 * @param response	The {@link HttpServletResponse} which must contain all information to make a redirection.
-	 * 
+	 *
 	 * @throws IOException	If there is an error during the redirection.
 	 * @throws UWSException	If there is any other error.
 	 */
@@ -1224,17 +1277,17 @@ public class UWSService implements UWS {
 	 * 	If the error code is {@link UWSException#SEE_OTHER} this method calls {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)}.
 	 * 	Otherwise the function {@link HttpServletResponse#sendError(int, String)} is called.
 	 * </p>
-	 * 
+	 *
 	 * @param error			The error to send/display.
 	 * @param request		The request which has caused the given error <i>(not used by default)</i>.
 	 * @param reqID			ID of the request.
 	 * @param user			The user which executes the given request.
 	 * @param uwsAction	The UWS action corresponding to the given request.
 	 * @param response		The response in which the error must be published.
-	 * 
+	 *
 	 * @throws IOException	If there is an error when calling {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)} or {@link HttpServletResponse#sendError(int, String)}.
 	 * @throws UWSException	If there is an error when calling {@link #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)}.
-	 * 
+	 *
 	 * @see #redirect(String, HttpServletRequest, JobOwner, String, HttpServletResponse)
 	 * @see #sendError(Throwable, HttpServletRequest, String, JobOwner, String, HttpServletResponse)
 	 */
@@ -1255,17 +1308,17 @@ public class UWSService implements UWS {
 	 * 	{@link HttpServletResponse#sendError(int, String)} is called with the HTTP status code is {@link UWSException#INTERNAL_SERVER_ERROR}
 	 * 	and the message of the given exception.
 	 * </p>
-	 * 
-	 * 
+	 *
+	 *
 	 * @param error			The error to send/display.
 	 * @param request		The request which has caused the given error <i>(not used by default)</i>.
 	 * @param reqID			ID of the request.
 	 * @param user			The user which executes the given request.
 	 * @param uwsAction		The UWS action corresponding to the given request.
 	 * @param response		The response in which the error must be published.
-	 * 
+	 *
 	 * @throws IOException	If there is an error when calling {@link HttpServletResponse#sendError(int, String)}.
-	 * 
+	 *
 	 * @see ServiceErrorWriter#writeError(Throwable, HttpServletResponse, HttpServletRequest, String, JobOwner, String)
 	 */
 	public final void sendError(Throwable error, HttpServletRequest request, String reqID, JobOwner user, String uwsAction, HttpServletResponse response) throws IOException{
