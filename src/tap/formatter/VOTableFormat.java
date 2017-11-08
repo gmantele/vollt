@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -35,16 +36,17 @@ import tap.data.DataReadException;
 import tap.data.TableIterator;
 import tap.error.DefaultTAPErrorWriter;
 import tap.metadata.TAPColumn;
+import tap.metadata.TAPCoosys;
 import tap.metadata.VotType;
 import tap.metadata.VotType.VotDatatype;
 import uk.ac.starlink.table.AbstractStarTable;
 import uk.ac.starlink.table.ColumnInfo;
-import uk.ac.starlink.table.DefaultValueInfo;
 import uk.ac.starlink.table.DescribedValue;
 import uk.ac.starlink.table.RowSequence;
 import uk.ac.starlink.table.StarTable;
 import uk.ac.starlink.votable.DataFormat;
 import uk.ac.starlink.votable.VOSerializer;
+import uk.ac.starlink.votable.VOStarTable;
 import uk.ac.starlink.votable.VOTableVersion;
 import adql.db.DBColumn;
 import adql.db.DBType;
@@ -403,12 +405,31 @@ public class VOTableFormat implements OutputFormat {
 			out.write("<INFO name=\"QUERY\"" + VOSerializer.formatAttribute("value", adqlQuery) + "/>");
 			out.newLine();
 		}
-
-		/* TODO Add somewhere in the table header the different Coordinate Systems used in this result!
-		 * 2 ways to do so:
-		 * 	1/ COOSYS (deprecated from VOTable 1.2, but soon un-deprecated)
-		 * 	2/ a GROUP item with the STC expression of the coordinate system. 
-		 */
+		
+		// Insert the definition of all used coordinate systems:
+		HashSet<String> insertedCoosys = new HashSet<String>(10);
+		for(DBColumn col : execReport.resultingColumns){
+			// ignore columns with no coossys:
+			if (col instanceof TAPColumn && ((TAPColumn)col).getCoosys() != null){
+				// get its coosys:
+				TAPCoosys coosys = ((TAPColumn)col).getCoosys();
+				// insert the coosys definition ONLY if not already done because of another column:
+				if (!insertedCoosys.contains(coosys.getId())){
+					// write the VOTable serialization of this coordinate system definition:
+					out.write("<COOSYS"+VOSerializer.formatAttribute("ID", coosys.getId()));
+					if (coosys.getSystem() != null)
+						out.write(VOSerializer.formatAttribute("system", coosys.getSystem()));
+					if (coosys.getEquinox() != null)
+						out.write(VOSerializer.formatAttribute("equinox", coosys.getEquinox()));
+					if (coosys.getEpoch() != null)
+						out.write(VOSerializer.formatAttribute("epoch", coosys.getEpoch()));
+					out.write(" />");
+					out.newLine();
+					// remember this coosys has already been written:
+					insertedCoosys.add(coosys.getId());
+				}
+			}
+		}
 
 		out.flush();
 	}
@@ -502,12 +523,16 @@ public class VOTableFormat implements OutputFormat {
 
 		// Set the XType (if any):
 		if (votType.xtype != null)
-			colInfo.setAuxDatum(new DescribedValue(new DefaultValueInfo("xtype", String.class, "VOTable xtype attribute"), votType.xtype));
+			colInfo.setAuxDatum(new DescribedValue(VOStarTable.XTYPE_INFO, votType.xtype));
 
 		// Set the additional information: unit, UCD and UType:
 		colInfo.setUnitString(tapCol.getUnit());
 		colInfo.setUCD(tapCol.getUcd());
 		colInfo.setUtype(tapCol.getUtype());
+		
+		// Set the coosys ref (if any):
+		if (tapCol.getCoosys() != null)
+			colInfo.setAuxDatum(new DescribedValue(VOStarTable.REF_INFO, tapCol.getCoosys().getId()));
 
 		return colInfo;
 	}

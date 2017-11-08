@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
+import static tap.config.TAPConfiguration.DEFAULT_LOGGER;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_ASYNC_FETCH_SIZE;
@@ -14,6 +15,7 @@ import static tap.config.TAPConfiguration.KEY_COORD_SYS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
+import static tap.config.TAPConfiguration.KEY_LOGGER;
 import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
@@ -67,6 +69,7 @@ import tap.db.JDBCConnection;
 import tap.db_testtools.DBTools;
 import tap.formatter.OutputFormat;
 import tap.formatter.VOTableFormat;
+import tap.log.DefaultTAPLog;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPSchema;
 import uk.ac.starlink.votable.DataFormat;
@@ -77,6 +80,7 @@ import uws.job.user.JobOwner;
 import uws.service.UWSUrl;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
+import uws.service.file.UWSFileManager;
 import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog.LogLevel;
 
@@ -86,7 +90,8 @@ public class TestConfigurableServiceConnection {
 
 	private static Properties validProp, noFmProp, fmClassNameProp,
 			incorrectFmProp, correctLogProp, incorrectLogLevelProp,
-			incorrectLogRotationProp, xmlMetaProp,
+			incorrectLogRotationProp, customLoggerProp,
+			explicitDefaultLoggerProp, xmlMetaProp,
 			xmlMetaPropWithCustomMetaClass, xmlMetaPropWithBadCustomMetaClass,
 			xmlMetaPropWithANonMetaClass, wrongManualMetaProp, missingMetaProp,
 			missingMetaFileProp, wrongMetaProp, wrongMetaFileProp,
@@ -138,6 +143,12 @@ public class TestConfigurableServiceConnection {
 
 		incorrectLogRotationProp = (Properties)validProp.clone();
 		incorrectLogRotationProp.setProperty(KEY_LOG_ROTATION, "foo");
+
+		customLoggerProp = (Properties)validProp.clone();
+		customLoggerProp.setProperty(KEY_LOGGER, "{tap.config.TestConfigurableServiceConnection$CustomLogger}");
+
+		explicitDefaultLoggerProp = (Properties)validProp.clone();
+		explicitDefaultLoggerProp.setProperty(KEY_LOGGER, DEFAULT_LOGGER);
 
 		xmlMetaProp = (Properties)validProp.clone();
 		xmlMetaProp.setProperty(KEY_METADATA, VALUE_XML);
@@ -541,6 +552,24 @@ public class TestConfigurableServiceConnection {
 			assertEquals("monthly on the 5th at 06:03", ((LocalUWSFileManager)connection.getFileManager()).getLogRotationFreq());
 		}catch(Exception e){
 			fail("This MUST have succeeded because the provided log level and log rotation are valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Explicit default logger:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(explicitDefaultLoggerProp);
+			assertNotNull(connection.getFileManager());
+			assertEquals(DefaultTAPLog.class, connection.getLogger().getClass());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the value 'default' should be supported and should set the default TAP logger! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Custom logger:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(customLoggerProp);
+			assertNotNull(connection.getFileManager());
+			assertEquals(CustomLogger.class, connection.getLogger().getClass());
+		}catch(Exception e){
+			fail("This MUST have succeeded because the specified class implements TAPLog and has a constructor with a single parameter of type UWSFileManager! \nCaught exception: " + getPertinentMessage(e));
 		}
 
 		// Incorrect log level:
@@ -1322,6 +1351,29 @@ public class TestConfigurableServiceConnection {
 		public MyBadCustomTAPMetadata(){
 
 		}
+	}
+
+	/**
+	 * Custom TAPLog implementation.
+	 * 
+	 * <p><i>
+	 * 	Actually, for quick implementation, this class just extends
+	 * 	{@link DefaultTAPLog} (and so, implements TAPLog).
+	 * </i></p>
+	 * 
+	 * @author Gr&eacute;gory Mantelet (ARI)
+	 * @version 09/2017
+	 */
+	private static class CustomLogger extends DefaultTAPLog {
+		public CustomLogger(final UWSFileManager fm){
+			super(fm);
+		}
+
+		@Override
+		public void logTAP(LogLevel level, Object obj, String event, String message, Throwable error){
+			super.logTAP(level, obj, event, "[MY] " + message, error);
+		}
+
 	}
 
 }

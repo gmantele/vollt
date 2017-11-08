@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Coordinate system in TAP metadata</title>
+	</head>
+	<body>
+		<h1>How to declare coordinate system(s) in TAP metadata?</h1>
+		<p>
+			The TAP-1.0 standard does not define any way to convey the
+			coordinate system used by coordinate columns. However, this is
+			more and more required by recent catalogs using recent epoch
+			(e.g. 2015 for Gaia-DR1) or coordinate systems not expected by
+			default by most of the VO applications (e.g. something different
+			from ICRS J2000).
+		</p>
+		
+		<p>
+			In order to provide most accurate metadata as possible, the
+			TAPLibrary gives a way to specify the coordinate system of your
+			coordinates. Here is how to proceed in function of how you provide
+			your TAP metadata:
+		</p>
+		
+		<h3>In <code>TAP_SCHEMA</code></h3>
+		<p>
+			You must add a table in <code>TAP_SCHEMA</code>:
+			<code>coosys</code>. This table must have the following columns:
+		</p>
+		<ul>
+			<li><code>id</code>: VARCHAR <i>(ID of the coordinate system
+				definition as it must be in the VOTable)</i></li>
+			<li><code>system</code>: VARCHAR <i>(The coordinate system among:
+				<code>ICRS</code>, <code>eq_FK5</code>, <code>eq_FK4</code>,
+				<code>ecl_FK4</code>, <code>ecl_FK5</code>,
+				<code>galactic</code>, <code>supergalactic</code>,
+				<code>xy</code>, <code>barycentric</code>, <code>geo_app</code>)
+				</i></li>
+			<li><code>equinox</code>: VARCHAR <i>(Required to fix the equatorial
+				or ecliptic systems (as e.g. <code>J2000</code> as the default
+				for <code>eq_FK5</code> or <code>B1950</code> as the default
+				for <code>eq_FK4</code>))</i></li>
+			<li><code>epoch</code>: VARCHAR <i>(Epoch of the positions
+				(if necessary))</i></li>
+		</ul>
+		<p>
+			Then, you need an additional column in
+			<code>TAP_SCHEMA.columns</code>:
+		</p>
+		<ul>
+			<li><code>coosys_id</code>: VARCHAR <i>(ID of the used coordinate
+				systems (if any))</i></li>
+		</ul>
+		<p>
+			Now, all you have to do, is add any coordinate system you need in
+			<code>TAP_SCHEMA.coosys</code> and set the appropriate coordinate
+			system ID in the column <code>coosys_id</code> of all columns using
+			one. Refresh the metadata of your TAP service and now a
+			<code>COOSSYS</code> item should be in the metadata part of your
+			VOTable results (only when there are coordinates with a specified
+			coordinate system).
+		</p>
+		
+		<h3>In an XML file</h3>
+		<p>
+			Unfortunately, the XML definition of the node <code>column</code>
+			does not provide any standard way to provide something as complex
+			as a coordinate system. So, either you keep not providing coordinate
+			systems in your TAP service, or you choose a different method of
+			metadata declaration.
+		</p>
+		<p><i>Tip:
+			Starting your TAP service with an XML file as way to provide
+			metadata will immediately create and initialize correctly the
+			<code>TAP_SCHEMA</code> schema in your database. So, if you want
+			to provide coordinate system information, all you have to do, is to
+			switch the metadata declaration method in order to use this newly
+			created <code>TAP_SCHEMA</code>. Then, just follow the steps listed
+			above for this method.
+		</i></p>
+		
+		<h3>Programmatically</h3>
+		<p>
+			To add a coordinate system to a column, you just have to use the
+			new function of <code>TAPColumn</code>:
+			<code>setCoosys(TAPCoosys)</code>. As in the
+			<code>TAP_SCHEMA</code> method, you can use the same
+			<code>TAPCoosys</code> object for several columns.
+		</p>
+	</body>
+</html>

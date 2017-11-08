@@ -179,4 +179,130 @@ public class TestADQLParser {
 		}
 	}
 
+	@Test
+	public void testMultipleSpacesInOrderAndGroupBy(){
+		try{
+			ADQLParser parser = new ADQLParser();
+
+			// Single space:
+			parser.parseQuery("select * from aTable ORDER BY aCol");
+			parser.parseQuery("select * from aTable GROUP BY aCol");
+
+			// More than one space:
+			parser.parseQuery("select * from aTable ORDER      BY aCol");
+			parser.parseQuery("select * from aTable GROUP      BY aCol");
+
+			// With any other space character:
+			parser.parseQuery("select * from aTable ORDER\tBY aCol");
+			parser.parseQuery("select * from aTable ORDER\nBY aCol");
+			parser.parseQuery("select * from aTable ORDER \t\nBY aCol");
+
+			parser.parseQuery("select * from aTable GROUP\tBY aCol");
+			parser.parseQuery("select * from aTable GROUP\nBY aCol");
+			parser.parseQuery("select * from aTable GROUP \t\nBY aCol");
+		}catch(Throwable t){
+			t.printStackTrace();
+			fail("Having multiple space characters between the ORDER/GROUP and the BY keywords should not generate any parsing error.");
+		}
+	}
+
+	@Test
+	public void testADQLReservedWord(){
+		ADQLParser parser = new ADQLParser();
+
+		final String hintAbs = "\n(HINT: \"abs\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+		final String hintPoint = "\n(HINT: \"point\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+		final String hintExists = "\n(HINT: \"exists\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+		final String hintLike = "\n(HINT: \"LIKE\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+
+		/* TEST AS A COLUMN/TABLE/SCHEMA NAME... */
+		// ...with a numeric function name (but no param):
+		try{
+			parser.parseQuery("select abs from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintAbs));
+		}
+		// ...with a geometric function name (but no param):
+		try{
+			parser.parseQuery("select point from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintPoint));
+		}
+		// ...with an ADQL function name (but no param):
+		try{
+			parser.parseQuery("select exists from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintExists));
+		}
+		// ...with an ADQL syntax item:
+		try{
+			parser.parseQuery("select LIKE from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintLike));
+		}
+
+		/* TEST AS AN ALIAS... */
+		// ...with a numeric function name (but no param):
+		try{
+			parser.parseQuery("select aCol AS abs from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintAbs));
+		}
+		// ...with a geometric function name (but no param):
+		try{
+			parser.parseQuery("select aCol AS point from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintPoint));
+		}
+		// ...with an ADQL function name (but no param):
+		try{
+			parser.parseQuery("select aCol AS exists from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintExists));
+		}
+		// ...with an ADQL syntax item:
+		try{
+			parser.parseQuery("select aCol AS LIKE from aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintLike));
+		}
+
+		/* TEST AT THE END OF THE QUERY (AND IN A WHERE) */
+		try{
+			parser.parseQuery("select aCol from aTable WHERE toto = abs");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith(hintAbs));
+		}
+	}
+
+	@Test
+	public void testSQLReservedWord(){
+		ADQLParser parser = new ADQLParser();
+
+		try{
+			parser.parseQuery("SELECT rows FROM aTable");
+			fail("\"ROWS\" is an SQL reserved word. This query should not pass.");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith("\n(HINT: \"rows\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)"));
+		}
+
+		try{
+			parser.parseQuery("SELECT CASE WHEN aCol = 2 THEN 'two' ELSE 'smth else' END as str FROM aTable");
+			fail("ADQL does not support the CASE syntax. This query should not pass.");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().endsWith("\n(HINT: \"CASE\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)"));
+		}
+	}
+
 }

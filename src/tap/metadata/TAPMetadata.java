@@ -23,6 +23,8 @@ package tap.metadata;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,18 +52,27 @@ import uws.UWSToolBox;
  * This list also corresponds to the TAP resource "/tables".</p>
  * 
  * <p>
- * 	Only schemas are stored in this object. So that's why only schemas can be added and removed
- * 	from this class. However, {@link TAPSchema} objects are listing tables, whose the object
- * 	representation is listing columns. So to add tables, you must first embed them in a schema.
+ * 	Only schemas are stored in this object. So that's why only schemas can be
+ * 	added and removed from this class. However, {@link TAPSchema} objects are
+ * 	listing tables, whose the object representation is listing columns. So to
+ * 	add tables, you must first embed them in a schema.
  * </p>
  * 
  * <p>
- * 	All metadata have two names: one to use in ADQL queries and the other to use when really querying
- * 	the database. This is very useful to hide the real complexity of the database and propose
- * 	a simpler view of the query-able data. It is particularly useful if a schema does not exist in the
- * 	database but has been added in the TAP schema for more logical separation on the user point of view.
- * 	In a such case, the schema would have an ADQL name but no DB name (NULL value ; which is possible only
- * 	with {@link TAPSchema} objects).
+ * 	All metadata have two names: one to use in ADQL queries and the other to use
+ * 	when really querying the database. This is very useful to hide the real
+ * 	complexity of the database and propose a simpler view of the query-able
+ * 	data. It is particularly useful if a schema does not exist in the database
+ * 	but has been added in the TAP schema for more logical separation on the user
+ * 	point of view. In a such case, the schema would have an ADQL name but no DB
+ * 	name (NULL value ; which is possible only with {@link TAPSchema} objects).
+ * </p>
+ * 
+ * <p>
+ * 	This class lets also detect the ObsCore and RegTAP data models, thanks to
+ * 	the functions {@link #getObsCoreTable()} and {@link #getRegTAPSchema()}
+ * 	which return resp. the ObsCore table and the RegTAP schema if matching the
+ * 	IVOA specification.
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
@@ -75,6 +86,10 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/** List of all schemas available through the TAP service. */
 	protected final Map<String,TAPSchema> schemas;
+
+	/** List of all coordinate systems used by columns published in the TAP_SCHEMA.
+	 * @since 2.1 */
+	protected final Map<String,TAPCoosys> coordinateSystems;
 
 	/** Part of the TAP URI which identify this TAP resource.
 	 * By default, it is the resource name ; so here, the corresponding TAP URI would be: "/tables". */
@@ -108,6 +123,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 */
 	public TAPMetadata(){
 		schemas = new LinkedHashMap<String,TAPSchema>();
+		coordinateSystems = new HashMap<String,TAPCoosys>();
 	}
 
 	/**
@@ -394,11 +410,12 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 	This function is case sensitive only on the schema name
 	 * 	(i.e. <code>ivoa</code>) which must be defined in full lower case.
 	 * 	The table name (i.e. <code>ObsCore</code>) will be found whatever
-	 * 	the case it is written in.
+	 * 	the case it is written in and whether it is prefixed or not.
 	 * </p>
 	 * 
 	 * @return	Description of the ObsCore table,
-	 *        	or <code>NULL</code> if this table is not provided by this TAP service.
+	 *        	or <code>NULL</code> if this table is not provided by this TAP
+	 *        	service.
 	 * 
 	 * @since 2.1
 	 */
@@ -406,10 +423,48 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		TAPSchema ivoaSchema = getSchema("ivoa");
 		if (ivoaSchema != null){
 			for(TAPTable t : ivoaSchema){
-				if (t.getADQLName().equalsIgnoreCase("obscore"))
+				if (t.getADQLName().matches("(?i)(ivoa\\.)?obscore"))
 					return t;
 			}
 		}
+		return null;
+	}
+
+	/**
+	 * Get the description of the RegTAP schema, if it is defined.
+	 * 
+	 * <p>
+	 * 	This function is case sensitive only on the schema name
+	 * 	(i.e. <code>rr</code>) which must be defined in full lower case.
+	 * 	The tables name (e.g. <code>capability</code>) will be searched case
+	 * 	sensitively as well. However, it does not matter if the table name is
+	 * 	prefixed or not.
+	 * </p>
+	 * 
+	 * @return	Description of the RegTAP schema,
+	 *        	or <code>NULL</code> if RegTAP is not supported in this TAP
+	 *        	service.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPSchema getRegTAPSchema(){
+		// Get the RegTAP schema if existing:
+		TAPSchema rrSchema = getSchema("rr");
+
+		// If there is one, check its content:
+		if (rrSchema != null){
+			// search for all mandatory tables of RegTAP:
+			HashSet<String> matchedTables = new HashSet<String>(13);
+			for(TAPTable t : rrSchema){
+				if (t.getADQLName().matches("(rr\\.)?(capability|interface|intf_param|relationship|res_date|res_detail|res_role|res_schema|res_subject|res_table|resource|table_column|validation)"))
+					matchedTables.add(t.getADQLName());
+			}
+			// if all columns have been found, return the RegTAP schema:
+			if (matchedTables.size() == 13)
+				return rrSchema;
+		}
+
+		// NULL, if no schema rr or if it does match the IVOA specification:
 		return null;
 	}
 
@@ -423,6 +478,60 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		for(TAPSchema s : this)
 			nbTables += s.getNbTables();
 		return nbTables;
+	}
+
+	/**
+	 * Get the coordinate system definition associated with the given ID.
+	 * 
+	 * @param coosysId	ID of the coordinate system to get. <i>(case sensitive)</i>
+	 * 
+	 * @return	The corresponding coordinate system definition,
+	 *        	or NULL if no match for the given ID.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPCoosys getCoosys(final String coosysId){
+		return (coosysId == null ? null : coordinateSystems.get(coosysId));
+	}
+
+	/**
+	 * Add the given coordinate system definition.
+	 * 
+	 * <p><b>Important:</b>
+	 * 	If a coordinate system with the same ID (case sensitive) is already declared in
+	 * 	this {@link TAPMetadata}, it will be replaced by the given one. The replaced
+	 * 	coordinate system is returned by this function.
+	 * </p>
+	 * 
+	 * @param newCoosys	The coordinate system definition to add.
+	 * 
+	 * @return	The coordinate system definition previously declared with the same ID in this {@link TAPMetadata},
+	 *        	or NULL if no coord. sys. was declared with this ID.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPCoosys addCoosys(final TAPCoosys newCoosys){
+		if (newCoosys == null)
+			return null;
+		else{
+			TAPCoosys formerValue = coordinateSystems.get(newCoosys.getId());
+			coordinateSystems.put(newCoosys.getId(), newCoosys);
+			return formerValue;
+		}
+	}
+
+	/**
+	 * Remove the coordinate system declared with the given ID.
+	 * 
+	 * @param coosysId	The ID of the coordinate system definition to remove.
+	 * 
+	 * @return	The removed coordinate system definition,
+	 *        	or NULL if none is declared with the given ID.
+	 * 
+	 * @since 2.1
+	 */
+	public TAPCoosys removeCoosys(final String coosysId){
+		return (coosysId == null) ? null : coordinateSystems.remove(coosysId);
 	}
 
 	/**
@@ -833,6 +942,23 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	/**
+	 * Get the minimum definition of the table TAP_SCHEMA.coosys as expected by
+	 * the library (see {@link tap.db.JDBCConnection#getTAPSchema()}.
+	 * 
+	 * @return	The created definition of TAP_SCHEMA.coosys.
+	 * 
+	 * @since 2.1
+	 */
+	public static final TAPTable getCoosysTable(){
+		TAPTable coosys = new TAPTable(STDSchema.TAPSCHEMA + ".coosys", TableType.table, "List of coordinate systems of coordinate columns published in this TAP service.", null);
+		coosys.addColumn("id", new DBType(DBDatatype.VARCHAR), "ID of the coordinate system definition as it must be in the VOTable.", null, null, null, true, true, false);
+		coosys.addColumn("system", new DBType(DBDatatype.VARCHAR), "The coordinate system (among \"ICRS\", \"eq_FK5\", \"eq_FK4\", \"ecl_FK4\", \"ecl_FK5\", \"galactic\", \"supergalactic\", \"xy\", \"barycentric\", \"geo_app\").", null, null, null, false, false, false);
+		coosys.addColumn("equinox", new DBType(DBDatatype.VARCHAR), "Required to fix the equatorial or ecliptic systems (as e.g. \"J2000\" as the default for \"eq_FK5\" or \"B1950\" as the default for \"eq_FK4\").", null, null, null, false, false, false);
+		coosys.addColumn("epoch", new DBType(DBDatatype.VARCHAR), "Epoch of the positions (if necessary).", null, null, null, false, false, false);
+		return coosys;
+	}
+
+	/**
 	 * <p>Get the definition of the specified standard TAP table.</p>
 	 * 
 	 * <p><i><b>Important note:</b>
@@ -962,7 +1088,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * Enumeration of all tables of TAP_SCHEMA.
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 2.0 (07/2014)
+	 * @version 2.1 (09/2017)
 	 * @since 2.0
 	 */
 	public enum STDTable{

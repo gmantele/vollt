@@ -401,12 +401,36 @@
 			
 			<tr><td colspan="5">Log files</td></tr>
 			<tr class="optional">
+				<td class="done">logger</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Only two possibilities are already implemented.</p>
+					<ul>
+						<li><b>default</b>: default logger provided by the
+							library. Any logged message will be appended in the
+							file 'service.log' inside the root directory of this
+							service (cf property <code>file_root_path</code>).
+						</li>
+						<li><b><em>{...}</em></b>: a custom logger. A class name MUST be
+							provided (between {...}). The specified class must
+							reference an implementation of tap.log.TAPLog. This
+							implementation must have at least one constructor
+							with a single parameter of type
+							uws.service.file.UWSFileManager.
+						</li>
+					</ul>
+	 				<p><em>Default: <code>default</code> (i.e. tap.log.DefaultTAPLog)</em></p>
+				</td>
+				<td><ul><li>default</li><li>{aPackage.MyLogger}</li></ul></td>
+			</tr>
+			<tr class="optional">
 				<td class="done">min_log_level</td>
 				<td></td>
 				<td>text</td>
 				<td>
 					<p>Minimum level that a message must have in order to be logged.</p>
-					<p>5 possible values:</p>p>
+					<p>5 possible values:</p>
 	 				<ul>
 	 					<li><b>DEBUG</b>: every messages are logged.</li>
 	 					<li><b>INFO</b>: every messages EXCEPT DEBUG are logged.</li>

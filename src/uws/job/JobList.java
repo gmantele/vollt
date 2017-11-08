@@ -22,9 +22,9 @@ package uws.job;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uws.UWSException;
 import uws.UWSExceptionFactory;
@@ -181,8 +181,8 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 		}
 
 		name = jobListName;
-		jobsList = new LinkedHashMap<String,UWSJob>();
-		ownerJobs = new LinkedHashMap<JobOwner,Map<String,UWSJob>>();
+		jobsList = new ConcurrentHashMap<String,UWSJob>();
+		ownerJobs = new ConcurrentHashMap<JobOwner,Map<String,UWSJob>>();
 
 		this.executionManager = executionManager;
 
@@ -543,7 +543,7 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 			if (owner != null){
 				// Index also this job in function of its owner:
 				if (!ownerJobs.containsKey(owner))
-					ownerJobs.put(owner, new LinkedHashMap<String,UWSJob>());
+					ownerJobs.put(owner, new ConcurrentHashMap<String,UWSJob>());
 				ownerJobs.get(owner).put(j.getJobId(), j);
 			}
 
