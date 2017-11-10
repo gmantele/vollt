@@ -2,55 +2,59 @@ package adql.parser;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ *
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.query.IdentifierField;
 import adql.query.TextPosition;
 
 /**
- * <p><b><u>Important:</u> This class is designed to be filled ONLY by {@link ADQLParser} !</b></p>
- * 
+ * <b><u>Important:</u> This class is designed to be filled ONLY by
+ * {@link ADQLParser}!</b>
+ *
  * <p>This class is an array of maximum 4 {@link IdentifierItem}.</p>
  * <p>
  * 	The goal is to represent complex ADQL identifiers (column, table, ...)
  * 	which may be composed of more than only one identifier.
  * </p>
  * <p>
- * 	For instance, a table can be referenced either by only its name or by the name of its schema and its name.
- * 	So, in this last case there are 2 identifiers.
+ * 	For instance, a table can be referenced either by only its name or by the
+ * 	name of its schema and its name. So, in this last case there are 2
+ * 	identifiers.
  * </p>
  * <p>
- * 	It is possible to get one by one each identifier item (by using the getters),
- * 	or the concatenation of all (thanks to {@link #join(String)}).
+ * 	It is possible to get one by one each identifier item (by using the
+ * 	getters), or the concatenation of all (thanks to {@link #join(String)}).
  * </p>
- * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
- * 
- * see IdentifierItem
+ *
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (11/2017)
+ *
+ * @see IdentifierItem
  */
 public class IdentifierItems {
 
 	/**
-	 * Represent any ADQL identifier (column name, table name or table/column alias).
-	 * 
-	 * @author Gr&eacute;gory Mantelet (CDS)
-	 * @version 01/2012
+	 * Represent any ADQL identifier (column name, table name or table/column
+	 * alias).
+	 *
+	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
+	 * @version 1.4 (11/2017)
 	 */
 	public static class IdentifierItem {
 		public String identifier = null;
@@ -58,7 +62,7 @@ public class IdentifierItems {
 		public TextPosition position = null;
 
 		public IdentifierItem(final Token token, final boolean caseSensitive){
-			identifier = token.image;
+			identifier = token.image.replaceAll("\"\"", "\"");
 			caseSensitivity = caseSensitive;
 			position = new TextPosition(token);
 		}
@@ -81,7 +85,7 @@ public class IdentifierItems {
 
 	/**
 	 * Builds an IdentifierItems by specifying it is a table or a column identifier.
-	 * 
+	 *
 	 * @param tableIdentifier	<i>true</i> if this IdentifierItems is a table identifier, <i>false</i> otherwise.
 	 */
 	public IdentifierItems(final boolean tableIdentifier){
@@ -90,9 +94,9 @@ public class IdentifierItems {
 
 	/**
 	 * <p>Apppends a simple identifier, that's to say an additional field (catalog, schema, table, column).</p>
-	 * 
+	 *
 	 * <p><i><u>Note:</u> This function has no effect if there are already 4 identifiers.</i></p>
-	 * 
+	 *
 	 * @param item	Additional item (may be null).
 	 */
 	public void append(final IdentifierItem item){
@@ -103,7 +107,7 @@ public class IdentifierItems {
 
 	/**
 	 * Gets the number of fields/identifiers stored in this {@link IdentifierItems}.
-	 * 
+	 *
 	 * @return	The number of identifiers.
 	 */
 	public int size(){
@@ -112,9 +116,9 @@ public class IdentifierItems {
 
 	/**
 	 * Gets the whole ind-th identifier/field.
-	 * 
+	 *
 	 * @param ind	Index of the identifier/field to get.
-	 * 
+	 *
 	 * @return The wanted identifier/field.
 	 */
 	public IdentifierItem get(final int ind){
@@ -123,9 +127,9 @@ public class IdentifierItems {
 
 	/**
 	 * Gets the value of the ind-th identifier/field.
-	 * 
+	 *
 	 * @param ind	Index of the identifier/field to get.
-	 * 
+	 *
 	 * @return	The value of the wanted identifier/field.
 	 */
 	public String getIdentifier(final int ind){
@@ -212,9 +216,9 @@ public class IdentifierItems {
 
 	/**
 	 * Joins all identifiers with the given delimiter.
-	 * 
+	 *
 	 * @param delim	The string which must separate the identifiers (if <i>null</i>, the delimiter will be an empty string).
-	 * 
+	 *
 	 * @return		The joint complex identifier.
 	 */
 	public String join(String delim){
