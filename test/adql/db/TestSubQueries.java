@@ -55,8 +55,27 @@ public class TestSubQueries {
 			ADQLParser adqlParser = new ADQLParser(new DBChecker(esaTables));
 
 			ADQLQuery query = adqlParser.parseQuery("SELECT oid FROM table1 as MyAlias WHERE oid IN (SELECT oid2 FROM table2 WHERE oid2 = myAlias.oid)");
-			System.out.println((new PostgreSQLTranslator()).translate(query));
 			assertEquals("SELECT \"myalias\".\"oid\" AS \"oid\"\nFROM \"public\".\"table1\" AS \"myalias\"\nWHERE \"myalias\".\"oid\" IN (SELECT \"public\".\"table2\".\"oid2\" AS \"oid2\"\nFROM \"public\".\"table2\"\nWHERE \"public\".\"table2\".\"oid2\" = \"myalias\".\"oid\")", (new PostgreSQLTranslator()).translate(query));
+		}catch(Exception ex){
+			ex.printStackTrace(System.err);
+			fail("No error expected! (see console for more details)");
+		}
+	}
+
+	@Test
+	public void testParentRefToMixedCaseColumnAliasInsideSubQueries(){
+		try{
+			TableSetParser tsParser = new TableSetParser();
+			TAPMetadata esaMetaData = tsParser.parse(new File("test/adql/db/subquery_test_tables.xml"));
+			ArrayList<DBTable> esaTables = new ArrayList<DBTable>(esaMetaData.getNbTables());
+			Iterator<TAPTable> itTables = esaMetaData.getTables();
+			while(itTables.hasNext())
+				esaTables.add(itTables.next());
+
+			ADQLParser adqlParser = new ADQLParser(new DBChecker(esaTables));
+
+			ADQLQuery query = adqlParser.parseQuery("SELECT t.* FROM (SELECT (ra+ra_error) AS x, (dec+dec_error) AS Y, pmra AS \"ProperMotion\" FROM table2) AS t");
+			assertEquals("SELECT \"t\".\"x\" AS \"x\",\"t\".\"y\" AS \"y\",\"t\".\"ProperMotion\" AS \"ProperMotion\"\nFROM (SELECT (\"public\".\"table2\".\"ra\"+\"public\".\"table2\".\"ra_error\") AS \"x\" , (\"public\".\"table2\".\"dec\"+\"public\".\"table2\".\"dec_error\") AS \"y\" , \"public\".\"table2\".\"pmra\" AS \"ProperMotion\"\nFROM \"public\".\"table2\") AS \"t\"", (new PostgreSQLTranslator()).translate(query));
 		}catch(Exception ex){
 			ex.printStackTrace(System.err);
 			fail("No error expected! (see console for more details)");

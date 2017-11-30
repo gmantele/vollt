@@ -443,7 +443,10 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 		StringBuffer translation = new StringBuffer(translate(item.getOperand()));
 		if (item.hasAlias()){
 			translation.append(" AS ");
-			appendIdentifier(translation, item.getAlias(), item.isCaseSensitive());
+			if (item.isCaseSensitive())
+				appendIdentifier(translation, item.getAlias(), true);
+			else
+				appendIdentifier(translation, item.getAlias().toLowerCase(), true);
 		}else{
 			translation.append(" AS ");
 			appendIdentifier(translation, item.getName(), true);
