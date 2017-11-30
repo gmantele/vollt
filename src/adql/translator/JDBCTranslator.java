@@ -19,9 +19,7 @@ package adql.translator;
  * Copyright 2017 - Astronomisches Rechen Institut (ARI)
  */
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 
 import adql.db.DBColumn;
 import adql.db.DBTable;
@@ -456,29 +454,16 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(SelectAllColumns item) throws TranslationException{
-		HashMap<String,String> mapAlias = new HashMap<String,String>();
-
 		// Fetch the full list of columns to display:
 		Iterable<DBColumn> dbCols = null;
 		if (item.getAdqlTable() != null && item.getAdqlTable().getDBLink() != null){
 			ADQLTable table = item.getAdqlTable();
 			dbCols = table.getDBLink();
-			if (table.hasAlias()){
-				String key = getQualifiedTableName(table.getDBLink());
-				mapAlias.put(key, table.isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + table.getAlias() + "\"") : table.getAlias());
-			}
 		}else if (item.getQuery() != null){
 			try{
 				dbCols = item.getQuery().getFrom().getDBColumns();
 			}catch(UnresolvedJoinException pe){
 				throw new TranslationException("Due to a join problem, the ADQL to SQL translation can not be completed!", pe);
-			}
-			List<ADQLTable> tables = item.getQuery().getFrom().getTables();
-			for(ADQLTable table : tables){
-				if (table.hasAlias()){
-					String key = getQualifiedTableName(table.getDBLink());
-					mapAlias.put(key, table.isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + table.getAlias() + "\"") : table.getAlias());
-				}
 			}
 		}
 
@@ -489,11 +474,10 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 				if (cols.length() > 0)
 					cols.append(',');
 				if (col.getTable() != null){
-					String fullDbName = getQualifiedTableName(col.getTable());
-					if (mapAlias.containsKey(fullDbName))
-						appendIdentifier(cols, mapAlias.get(fullDbName), false).append('.');
+					if (col.getTable() instanceof DBTableAlias)
+						cols.append(getTableName(col.getTable(), false)).append('.');
 					else
-						cols.append(fullDbName).append('.');
+						cols.append(getQualifiedTableName(col.getTable())).append('.');
 				}
 				appendIdentifier(cols, col.getDBName(), IdentifierField.COLUMN);
 				cols.append(" AS \"").append(col.getADQLName()).append('\"');
