@@ -2,20 +2,20 @@ package adql.db;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2011-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -78,28 +78,28 @@ import adql.search.SimpleSearchHandler;
  * 	<li>Check whether all used coordinate systems are supported</li>
  * 	<li>Check that types of columns and UDFs match with their context</li>
  * </ol>
- * 
+ *
  * <h3>Check tables and columns</h3>
  * <p>
  * 	In addition to check the existence of tables and columns referenced in the query,
  * 	this checked will also attach database metadata on these references ({@link ADQLTable}
  * 	and {@link ADQLColumn} instances when they are resolved.
  * </p>
- * 
+ *
  * <p>These information are:</p>
  * <ul>
  * 	<li>the corresponding {@link DBTable} or {@link DBColumn} (see getter and setter for DBLink in {@link ADQLTable} and {@link ADQLColumn})</li>
  * 	<li>the link between an {@link ADQLColumn} and its {@link ADQLTable}</li>
  * </ul>
- * 
+ *
  * <p><i><u>Note:</u>
  * 	Knowing DB metadata of {@link ADQLTable} and {@link ADQLColumn} is particularly useful for the translation of the ADQL query to SQL,
  * 	because the ADQL name of columns and tables can be replaced in SQL by their DB name, if different. This mapping is done automatically
  * 	by {@link adql.translator.JDBCTranslator}.
  * </i></p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (09/2017)
+ * @version 1.4 (11/2017)
  */
 public class DBChecker implements QueryChecker {
 
@@ -151,7 +151,7 @@ public class DBChecker implements QueryChecker {
 	/* ************ */
 	/**
 	 * <p>Builds a {@link DBChecker} with an empty list of tables.</p>
-	 * 
+	 *
 	 * <p>Verifications done by this object after creation:</p>
 	 * <ul>
 	 * 	<li>Existence of tables and columns:            <b>NO <i>(even unknown or fake tables and columns are allowed)</i></b></li>
@@ -166,7 +166,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Builds a {@link DBChecker} with the given list of known tables.</p>
-	 * 
+	 *
 	 * <p>Verifications done by this object after creation:</p>
 	 * <ul>
 	 * 	<li>Existence of tables and columns:            <b>OK</b></li>
@@ -174,7 +174,7 @@ public class DBChecker implements QueryChecker {
 	 * 	<li>Support of geometrical functions:           <b>NO <i>(all valid geometrical functions are allowed)</i></b></li>
 	 * 	<li>Support of coordinate systems:              <b>NO <i>(all valid coordinate systems are allowed)</i></b></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param tables	List of all available tables.
 	 */
 	public DBChecker(final Collection<? extends DBTable> tables){
@@ -183,7 +183,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Builds a {@link DBChecker} with the given list of known tables and with a restricted list of user defined functions.</p>
-	 * 
+	 *
 	 * <p>Verifications done by this object after creation:</p>
 	 * <ul>
 	 * 	<li>Existence of tables and columns:            <b>OK</b></li>
@@ -191,13 +191,13 @@ public class DBChecker implements QueryChecker {
 	 * 	<li>Support of geometrical functions:           <b>NO <i>(all valid geometrical functions are allowed)</i></b></li>
 	 * 	<li>Support of coordinate systems:              <b>NO <i>(all valid coordinate systems are allowed)</i></b></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param tables		List of all available tables.
 	 * @param allowedUdfs	List of all allowed user defined functions.
 	 *                   	If NULL, no verification will be done (and so, all UDFs are allowed).
 	 *                   	If empty list, no "unknown" (or UDF) is allowed.
 	 *                   	<i>Note: match with items of this list are done case insensitively.</i>
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public DBChecker(final Collection<? extends DBTable> tables, final Collection<? extends FunctionDef> allowedUdfs){
@@ -228,7 +228,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Builds a {@link DBChecker} with the given list of known tables and with a restricted list of user defined functions.</p>
-	 * 
+	 *
 	 * <p>Verifications done by this object after creation:</p>
 	 * <ul>
 	 * 	<li>Existence of tables and columns:            <b>OK</b></li>
@@ -236,7 +236,7 @@ public class DBChecker implements QueryChecker {
 	 * 	<li>Support of geometrical functions:           <b>OK</b></li>
 	 * 	<li>Support of coordinate systems:              <b>OK</b></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param tables			List of all available tables.
 	 * @param allowedGeoFcts	List of all allowed geometrical functions (i.e. CONTAINS, POINT, UNION, CIRCLE, COORD1).
 	 *                      	If NULL, no verification will be done (and so, all geometries are allowed).
@@ -249,7 +249,7 @@ public class DBChecker implements QueryChecker {
 	 *                       	For instance: "ICRS (GEOCENTER|heliocenter) *".
 	 *                       	If the given list is NULL, no verification will be done (and so, all coordinate systems are allowed).
 	 *                       	If it is empty, no coordinate system is allowed (except the default values - generally expressed by an empty string: '').
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public DBChecker(final Collection<? extends DBTable> tables, final Collection<String> allowedGeoFcts, final Collection<String> allowedCoordSys) throws ParseException{
@@ -258,7 +258,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Builds a {@link DBChecker}.</p>
-	 * 
+	 *
 	 * <p>Verifications done by this object after creation:</p>
 	 * <ul>
 	 * 	<li>Existence of tables and columns:            <b>OK</b></li>
@@ -266,7 +266,7 @@ public class DBChecker implements QueryChecker {
 	 * 	<li>Support of geometrical functions:           <b>OK</b></li>
 	 * 	<li>Support of coordinate systems:              <b>OK</b></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param tables			List of all available tables.
 	 * @param allowedUdfs		List of all allowed user defined functions.
 	 *                   		If NULL, no verification will be done (and so, all UDFs are allowed).
@@ -283,7 +283,7 @@ public class DBChecker implements QueryChecker {
 	 *                       	For instance: "ICRS (GEOCENTER|heliocenter) *".
 	 *                       	If the given list is NULL, no verification will be done (and so, all coordinate systems are allowed).
 	 *                       	If it is empty, no coordinate system is allowed (except the default values - generally expressed by an empty string: '').
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public DBChecker(final Collection<? extends DBTable> tables, final Collection<? extends FunctionDef> allowedUdfs, final Collection<String> allowedGeoFcts, final Collection<String> allowedCoordSys) throws ParseException{
@@ -301,11 +301,11 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * Transform the given collection of string elements in a sorted array.
 	 * Only non-NULL and non-empty strings are kept.
-	 * 
+	 *
 	 * @param items	Items to copy and sort.
-	 * 
+	 *
 	 * @return	A sorted array containing all - except NULL and empty strings - items of the given collection.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected final static String[] specialSort(final Collection<String> items){
@@ -336,13 +336,13 @@ public class DBChecker implements QueryChecker {
 	/* ****** */
 	/**
 	 * <p>Sets the list of all available tables.</p>
-	 * 
+	 *
 	 * <p><i><u>Note:</u>
 	 * 	Only if the given collection is NOT an implementation of
 	 * 	{@link SearchTableApi}, the collection will be copied inside a new
 	 * 	{@link SearchTableList}, otherwise it is used as provided.
 	 * </i></p>
-	 * 
+	 *
 	 * @param tables	List of {@link DBTable}s.
 	 */
 	public final void setTables(final Collection<? extends DBTable> tables){
@@ -359,16 +359,16 @@ public class DBChecker implements QueryChecker {
 	/* ************* */
 	/**
 	 * <p>Check all the columns, tables and UDFs references inside the given query.</p>
-	 * 
+	 *
 	 * <p><i>
 	 * 	<u>Note:</u> This query has already been parsed ; thus it is already syntactically correct.
 	 * 	Only the consistency with the published tables, columns and all the defined UDFs must be checked.
 	 * </i></p>
-	 * 
+	 *
 	 * @param query		The query to check.
-	 * 
+	 *
 	 * @throws ParseException	An {@link UnresolvedIdentifiersException} if some tables or columns can not be resolved.
-	 * 
+	 *
 	 * @see #check(ADQLQuery, Stack)
 	 */
 	@Override
@@ -378,7 +378,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Process several (semantic) verifications in the given ADQL query.</p>
-	 * 
+	 *
 	 * <p>Main verifications done in this function:</p>
 	 * <ol>
 	 * 	<li>Existence of DB items (tables and columns)</li>
@@ -387,17 +387,17 @@ public class DBChecker implements QueryChecker {
 	 * 	<li>Support of every encountered geometries (functions, coordinate systems and STC-S expressions)</li>
 	 * 	<li>Consistency of types still unknown (because the syntactic parser could not yet resolve them)</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param query			The query to check.
 	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
 	 *                   	Each item of this stack is a list of columns available in each father-level query.
 	 *                   	<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
-	 * 
+	 *
 	 * @throws UnresolvedIdentifiersException	An {@link UnresolvedIdentifiersException} if one or several of the above listed tests have detected
 	 *                                       	some semantic errors (i.e. unresolved table, columns, function).
-	 * 
+	 *
 	 * @since 1.2
-	 * 
+	 *
 	 * @see #checkDBItems(ADQLQuery, Stack, UnresolvedIdentifiersException)
 	 * @see #checkSubQueries(ADQLQuery, Stack, SearchColumnList, UnresolvedIdentifiersException)
 	 * @see #checkUDFs(ADQLQuery, UnresolvedIdentifiersException)
@@ -434,26 +434,26 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Check DB items (tables and columns) used in the given ADQL query.</p>
-	 * 
+	 *
 	 * <p>Operations done in this function:</p>
 	 * <ol>
 	 * 	<li>Resolve all found tables</li>
 	 * 	<li>Get the whole list of all available columns <i>Note: this list is returned by this function.</i></li>
 	 * 	<li>Resolve all found columns</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param query			Query in which the existence of DB items must be checked.
 	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
 	 *                   	Each item of this stack is a list of columns available in each father-level query.
 	 *                   	<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
 	 * @param errors		List of errors to complete in this function each time an unknown table or column is encountered.
-	 * 
+	 *
 	 * @return	List of all columns available in the given query.
-	 * 
+	 *
 	 * @see #resolveTables(ADQLQuery, Stack, UnresolvedIdentifiersException)
 	 * @see FromContent#getDBColumns()
 	 * @see #resolveColumns(ADQLQuery, Stack, Map, SearchColumnList, UnresolvedIdentifiersException)
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected SearchColumnList checkDBItems(final ADQLQuery query, final Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors){
@@ -476,29 +476,54 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * <p>Search all table references inside the given query, resolve them against the available tables, and if there is only one match,
-	 * attach the matching metadata to them.</p>
-	 * 
+	 * Search all table references inside the given query, resolve them against
+	 * the available tables, and if there is only one match, attach the matching
+	 * metadata to them.
+	 *
 	 * <b>Management of sub-query tables</b>
 	 * <p>
-	 * 	If a table is not a DB table reference but a sub-query, this latter is first checked (using {@link #check(ADQLQuery, Stack)} ;
-	 * 	but the father list must not contain tables of the given query, because on the same level) and then corresponding table metadata
-	 * 	are generated (using {@link #generateDBTable(ADQLQuery, String)}) and attached to it.
+	 * 	If a table is not a DB table reference but a sub-query, this latter is
+	 * 	first checked (using {@link #check(ADQLQuery, Stack)} ; but the father
+	 * 	list must not contain tables of the given query, because on the same
+	 * 	level) and then corresponding table metadata are generated (using
+	 * 	{@link #generateDBTable(ADQLQuery, String)}) and attached to it.
 	 * </p>
-	 * 
+	 *
 	 * <b>Management of "{table}.*" in the SELECT clause</b>
 	 * <p>
-	 * 	For each of this SELECT item, this function tries to resolve the table name. If only one match is found, the corresponding ADQL table object
-	 * 	is got from the list of resolved tables and attached to this SELECT item (thus, the joker item will also have the good metadata,
-	 * 	particularly if the referenced table is a sub-query).
+	 * 	For each of this SELECT item, this function tries to resolve the table
+	 * 	name. If only one match is found, the corresponding ADQL table object
+	 * 	is got from the list of resolved tables and attached to this SELECT item
+	 * 	(thus, the joker item will also have the good metadata, particularly if
+	 * 	the referenced table is a sub-query).
 	 * </p>
-	 * 
-	 * @param query			Query in which the existence of tables must be checked.
-	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
-	 *                      Each item of this stack is a list of columns available in each father-level query.
-	 *                   	<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
-	 * @param errors		List of errors to complete in this function each time an unknown table or column is encountered.
-	 * 
+	 *
+	 * <b>Table alias</b>
+	 * <p>
+	 * 	When a simple table (i.e. not a sub-query) is aliased, the metadata of
+	 * 	this table will be wrapped inside a {@link DBTableAlias} in order to
+	 * 	keep the original metadata but still declare use the table with the
+	 * 	alias instead of its original name. The original name will be used
+	 * 	only when translating the corresponding FROM item ; the rest of the time
+	 * 	(i.e. for references when using a column), the alias name must be used.
+	 * </p>
+	 * <p>
+	 * 	In order to avoid unpredictable behavior at execution of the SQL query,
+	 * 	the alias will be put in lower case if not defined between double
+	 * 	quotes.
+	 * </p>
+	 *
+	 * @param query			Query in which the existence of tables must be
+	 *             			checked.
+	 * @param fathersList	List of all columns available in the father queries
+	 *                   	and that should be accessed in sub-queries.
+	 *                      Each item of this stack is a list of columns
+	 *                      available in each father-level query.
+	 *                   	<i>Note: this parameter is NULL if this function is
+	 *                   	called with the root/father query as parameter.</i>
+	 * @param errors		List of errors to complete in this function each
+	 *              		time an unknown table or column is encountered.
+	 *
 	 * @return	An associative map of all the resolved tables.
 	 */
 	protected Map<DBTable,ADQLTable> resolveTables(final ADQLQuery query, final Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors){
@@ -521,8 +546,9 @@ public class DBChecker implements QueryChecker {
 					dbTable = generateDBTable(table.getSubQuery(), table.getAlias());
 				}else{
 					dbTable = resolveTable(table);
-					if (table.hasAlias())
-						dbTable = dbTable.copy(null, table.getAlias());
+					// wrap this table metadata if an alias should be used:
+					if (dbTable != null && table.hasAlias())
+						dbTable = new DBTableAlias(dbTable, (table.isCaseSensitive(IdentifierField.ALIAS) ? table.getAlias() : table.getAlias().toLowerCase()));
 				}
 
 				// link with the matched DBTable:
@@ -569,11 +595,11 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Resolve the given table, that's to say search for the corresponding {@link DBTable}.
-	 * 
+	 *
 	 * @param table	The table to resolve.
-	 * 
+	 *
 	 * @return		The corresponding {@link DBTable} if found, <i>null</i> otherwise.
-	 * 
+	 *
 	 * @throws ParseException	An {@link UnresolvedTableException} if the given table can't be resolved.
 	 */
 	protected DBTable resolveTable(final ADQLTable table) throws ParseException{
@@ -593,7 +619,7 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * <p>Search all column references inside the given query, resolve them thanks to the given tables' metadata,
 	 * and if there is only one match, attach the matching metadata to them.</p>
-	 * 
+	 *
 	 * <b>Management of selected columns' references</b>
 	 * <p>
 	 * 	A column reference is not only a direct reference to a table column using a column name.
@@ -605,7 +631,7 @@ public class DBChecker implements QueryChecker {
 	 * 	These references are also checked, in a second step, in this function. Thus, column metadata are
 	 * 	also attached to them, as common columns.
 	 * </p>
-	 * 
+	 *
 	 * @param query			Query in which the existence of tables must be checked.
 	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
 	 *                      Each item of this stack is a list of columns available in each father-level query.
@@ -674,21 +700,21 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Resolve the given column, that's to say search for the corresponding {@link DBColumn}.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	The third parameter is used only if this function is called inside a sub-query. In this case,
 	 * 	the column is tried to be resolved with the first list (dbColumns). If no match is found,
 	 * 	the resolution is tried with the father columns list (fathersList).
 	 * </p>
-	 * 
+	 *
 	 * @param column		The column to resolve.
 	 * @param dbColumns		List of all available {@link DBColumn}s.
 	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
 	 *                      Each item of this stack is a list of columns available in each father-level query.
 	 *                   	<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
-	 * 
+	 *
 	 * @return 				The corresponding {@link DBColumn} if found. Otherwise an exception is thrown.
-	 * 
+	 *
 	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
 	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
 	 */
@@ -718,20 +744,20 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Check whether the given column corresponds to a selected item's alias or to an existing column.
-	 * 
+	 *
 	 * @param col			The column to check.
 	 * @param select		The SELECT clause of the ADQL query.
 	 * @param dbColumns		The list of all available columns.
-	 * 
+	 *
 	 * @return 	The corresponding {@link DBColumn} if this column corresponds to an existing column,
 	 *        	<i>NULL</i> otherwise.
-	 * 
+	 *
 	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
 	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
-	 * 
+	 *
 	 * @see ClauseSelect#searchByAlias(String)
 	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
-	 * 
+	 *
 	 * @since 1.4
 	 */
 	protected DBColumn checkGroupByItem(final ADQLColumn col, final ClauseSelect select, final SearchColumnList dbColumns) throws ParseException{
@@ -751,16 +777,16 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * Check whether the given column reference corresponds to a selected item (column or an expression with an alias)
 	 * or to an existing column.
-	 * 
+	 *
 	 * @param colRef		The column reference which must be checked.
 	 * @param select		The SELECT clause of the ADQL query.
 	 * @param dbColumns		The list of all available columns.
-	 * 
+	 *
 	 * @return 		The corresponding {@link DBColumn} if this reference is actually the name of a column, <i>null</i> otherwise.
-	 * 
+	 *
 	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
 	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
-	 * 
+	 *
 	 * @see ClauseSelect#searchByAlias(String)
 	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
 	 */
@@ -795,12 +821,12 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * Generate a {@link DBTable} corresponding to the given sub-query with the given table name.
 	 * This {@link DBTable} will contain all {@link DBColumn} returned by {@link ADQLQuery#getResultingColumns()}.
-	 * 
+	 *
 	 * @param subQuery	Sub-query in which the specified table must be searched.
 	 * @param tableName	Name of the table to search.
-	 * 
+	 *
 	 * @return	The corresponding {@link DBTable} if the table has been found in the given sub-query, <i>null</i> otherwise.
-	 * 
+	 *
 	 * @throws ParseException	Can be used to explain why the table has not been found. <i>Note: not used by default.</i>
 	 */
 	public static DBTable generateDBTable(final ADQLQuery subQuery, final String tableName) throws ParseException{
@@ -820,7 +846,7 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * <p>Search all UDFs (User Defined Functions) inside the given query, and then
 	 * check their signature against the list of allowed UDFs.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	When more than one allowed function match, the function is considered as correct
 	 * 	and no error is added.
@@ -830,10 +856,10 @@ public class DBChecker implements QueryChecker {
 	 * 	then need to cast some parameters to help the parser identifying the right function.
 	 * 	But the type-casting ability is not yet possible in ADQL.
 	 * </i></p>
-	 * 
+	 *
 	 * @param query		Query in which UDFs must be checked.
 	 * @param errors	List of errors to complete in this function each time a UDF does not match to any of the allowed UDFs.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkUDFs(final ADQLQuery query, final UnresolvedIdentifiersException errors){
@@ -903,18 +929,18 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * <p>Tell whether the type of all parameters of the given ADQL function
 	 * is resolved.</p>
-	 * 
+	 *
 	 * <p>A parameter type may not be resolved for 2 main reasons:</p>
 	 * <ul>
 	 * 	<li>the parameter is a <b>column</b>, but this column has not been successfully resolved. Thus its type is still unknown.</li>
 	 * 	<li>the parameter is a <b>UDF</b>, but this UDF has not been already resolved. Thus, as for the column, its return type is still unknown.
 	 * 		But it could be known later if the UDF is resolved later ; a second try should be done afterwards.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param fct	ADQL function whose the parameters' type should be checked.
-	 * 
+	 *
 	 * @return	<i>true</i> if the type of all parameters is known, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected final boolean isAllParamTypesResolved(final ADQLFunction fct){
@@ -931,7 +957,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Check all geometries.</p>
-	 * 
+	 *
 	 * <p>Operations done in this function:</p>
 	 * <ol>
 	 * 	<li>Check that all geometrical functions are supported</li>
@@ -939,14 +965,14 @@ public class DBChecker implements QueryChecker {
 	 * 	<li>Check all STC-S expressions (only in {@link RegionFunction} for the moment) and
 	 * 	    Apply the 2 previous checks on them</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param query		Query in which geometries must be checked.
 	 * @param errors	List of errors to complete in this function each time a geometry item is not supported.
-	 * 
+	 *
 	 * @see #resolveGeometryFunctions(ADQLQuery, BinarySearch, UnresolvedIdentifiersException)
 	 * @see #resolveCoordinateSystems(ADQLQuery, UnresolvedIdentifiersException)
 	 * @see #resolveSTCSExpressions(ADQLQuery, BinarySearch, UnresolvedIdentifiersException)
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkGeometries(final ADQLQuery query, final UnresolvedIdentifiersException errors){
@@ -972,12 +998,12 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Search for all geometrical functions and check whether they are allowed.
-	 * 
+	 *
 	 * @param query		Query in which geometrical functions must be checked.
 	 * @param errors	List of errors to complete in this function each time a geometrical function is not supported.
-	 * 
+	 *
 	 * @see #checkGeometryFunction(String, ADQLFunction, BinarySearch, UnresolvedIdentifiersException)
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void resolveGeometryFunctions(final ADQLQuery query, final BinarySearch<String,String> binSearch, final UnresolvedIdentifiersException errors){
@@ -993,12 +1019,12 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Check whether the specified geometrical function is allowed by this implementation.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If the list of allowed geometrical functions is empty, this function will always add an errors to the given list.
 	 * 	Indeed, it means that no geometrical function is allowed and so that the specified function is automatically not supported.
 	 * </i></p>
-	 * 
+	 *
 	 * @param fctName		Name of the geometrical function to test.
 	 * @param fct			The function instance being or containing the geometrical function to check. <i>Note: this function can be the function to test or a function embedding the function under test (i.e. RegionFunction).
 	 * @param binSearch		The object to use in order to search a function name inside the list of allowed functions.
@@ -1006,7 +1032,7 @@ public class DBChecker implements QueryChecker {
 	 *                 		this object is its compare function which must be overridden and tells how to compare the item
 	 *                 		to search and the items of the array (basically, a non-case-sensitive comparison between 2 strings).
 	 * @param errors		List of errors to complete in this function each time a geometrical function is not supported.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkGeometryFunction(final String fctName, final ADQLFunction fct, final BinarySearch<String,String> binSearch, final UnresolvedIdentifiersException errors){
@@ -1019,18 +1045,18 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Search all explicit coordinate system declarations, check their syntax and whether they are allowed by this implementation.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	"explicit" means here that all {@link StringConstant} instances. Only coordinate systems expressed as string can
 	 * 	be parsed and so checked. So if a coordinate system is specified by a column, no check can be done at this stage...
 	 * 	it will be possible to perform such test only at the execution.
 	 * </i></p>
-	 * 
+	 *
 	 * @param query		Query in which coordinate systems must be checked.
 	 * @param errors	List of errors to complete in this function each time a coordinate system has a wrong syntax or is not supported.
-	 * 
+	 *
 	 * @see #checkCoordinateSystem(StringConstant, UnresolvedIdentifiersException)
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void resolveCoordinateSystems(final ADQLQuery query, final UnresolvedIdentifiersException errors){
@@ -1042,13 +1068,13 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Parse and then check the coordinate system contained in the given {@link StringConstant} instance.
-	 * 
+	 *
 	 * @param adqlCoordSys	The {@link StringConstant} object containing the coordinate system to check.
 	 * @param errors		List of errors to complete in this function each time a coordinate system has a wrong syntax or is not supported.
-	 * 
+	 *
 	 * @see STCS#parseCoordSys(String)
 	 * @see #checkCoordinateSystem(adql.db.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkCoordinateSystem(final StringConstant adqlCoordSys, final UnresolvedIdentifiersException errors){
@@ -1062,11 +1088,11 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Check whether the given coordinate system is allowed by this implementation.
-	 * 
+	 *
 	 * @param coordSys	Coordinate system to test.
 	 * @param operand	The operand representing or containing the coordinate system under test.
 	 * @param errors	List of errors to complete in this function each time a coordinate system is not supported.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkCoordinateSystem(final CoordSys coordSys, final ADQLOperand operand, final UnresolvedIdentifiersException errors){
@@ -1090,21 +1116,21 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * <p>Search all STC-S expressions inside the given query, parse them (and so check their syntax) and then determine
 	 * whether the declared coordinate system and the expressed region are allowed in this implementation.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	In the current ADQL language definition, STC-S expressions can be found only as only parameter of the REGION function.
 	 * </i></p>
-	 * 
+	 *
 	 * @param query			Query in which STC-S expressions must be checked.
 	 * @param binSearch		The object to use in order to search a region name inside the list of allowed functions/regions.
 	 *                 		It is able to perform a binary search inside a sorted array of String objects. The interest of
 	 *                 		this object is its compare function which must be overridden and tells how to compare the item
 	 *                 		to search and the items of the array (basically, a non-case-sensitive comparison between 2 strings).
 	 * @param errors		List of errors to complete in this function each time the STC-S syntax is wrong or each time the declared coordinate system or region is not supported.
-	 * 
+	 *
 	 * @see STCS#parseRegion(String)
 	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void resolveSTCSExpressions(final ADQLQuery query, final BinarySearch<String,String> binSearch, final UnresolvedIdentifiersException errors){
@@ -1133,22 +1159,22 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Check the given region.</p>
-	 * 
+	 *
 	 * <p>The following points are checked in this function:</p>
 	 * <ul>
 	 * 	<li>whether the coordinate system is allowed</li>
 	 * 	<li>whether the type of region is allowed</li>
 	 * 	<li>whether the inner regions are correct (here this function is called recursively on each inner region).</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param r			The region to check.
 	 * @param fct		The REGION function containing the region to check.
 	 * @param errors	List of errors to complete in this function if the given region or its inner regions are not supported.
-	 * 
+	 *
 	 * @see #checkCoordinateSystem(adql.db.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 * @see #checkGeometryFunction(String, ADQLFunction, BinarySearch, UnresolvedIdentifiersException)
 	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkRegion(final Region r, final RegionFunction fct, final BinarySearch<String,String> binSearch, final UnresolvedIdentifiersException errors){
@@ -1181,13 +1207,13 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * <p>Search all operands whose the type is not yet known and try to resolve it now
 	 * and to check whether it matches the type expected by the syntactic parser.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Only two operands may have an unresolved type: columns and user defined functions.
 	 * 	Indeed, their type can be resolved only if the list of available columns and UDFs is known,
 	 * 	and if columns and UDFs used in the query are resolved successfully.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	When an operand type is still unknown, they will own the three kinds of type and
 	 * 	so this function won't raise an error: it is thus automatically on the expected type.
@@ -1195,17 +1221,17 @@ public class DBChecker implements QueryChecker {
 	 * 	that means the item/operand has not been resolved in the previous steps and so that
 	 * 	an error about this item has already been raised.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function does not check the types exactly, but just roughly by considering only three categories:
 	 * 	string, numeric and geometry.
 	 * </i></p>
-	 * 
+	 *
 	 * @param query		Query in which unknown types must be resolved and checked.
 	 * @param errors	List of errors to complete in this function each time a types does not match to the expected one.
-	 * 
+	 *
 	 * @see UnknownType
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkTypes(final ADQLQuery query, final UnresolvedIdentifiersException errors){
@@ -1244,7 +1270,7 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * <p>Search all sub-queries found in the given query but not in the clause FROM.
 	 * These sub-queries are then checked using {@link #check(ADQLQuery, Stack)}.</p>
-	 * 
+	 *
 	 * <b>Fathers stack</b>
 	 * <p>
 	 * 	Each time a sub-query must be checked with {@link #check(ADQLQuery, Stack)},
@@ -1257,15 +1283,15 @@ public class DBChecker implements QueryChecker {
 	 * 	This modification of the given stack is just the execution time of this function.
 	 * 	Before returning, this function removes the last item of the stack.
 	 * </p>
-	 * 
-	 * 
+	 *
+	 *
 	 * @param query				Query in which sub-queries must be checked.
 	 * @param fathersList		List of all columns available in the father queries and that should be accessed in sub-queries.
 	 *                      	Each item of this stack is a list of columns available in each father-level query.
 	 *                   		<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
 	 * @param availableColumns	List of all columns resolved in the given query.
 	 * @param errors			List of errors to complete in this function each time a semantic error is encountered.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected void checkSubQueries(final ADQLQuery query, Stack<SearchColumnList> fathersList, final SearchColumnList availableColumns, final UnresolvedIdentifiersException errors){
@@ -1301,12 +1327,12 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Lets searching all {@link ADQLColumn} in the given object, EXCEPT in the GROUP BY clause.
-	 * 
+	 *
 	 * <p>
 	 * 	{@link ADQLColumn}s of the GROUP BY may be aliases and so, they can not be checked
 	 *	exactly as a normal column.
 	 * </p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.4 (05/2017)
 	 * @since 1.4
@@ -1320,7 +1346,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Lets searching all tables.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 1.0 (07/2011)
 	 */
@@ -1333,7 +1359,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Lets searching all wildcards.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 1.0 (09/2011)
 	 */
@@ -1346,7 +1372,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Lets searching column references.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 1.0 (11/2011)
 	 */
@@ -1359,12 +1385,12 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Lets searching subqueries in every clause except the FROM one (hence the modification of the {@link #goInto(ADQLObject)}.</p>
-	 * 
+	 *
 	 * <p><i>
 	 * 	<u>Note:</u> The function {@link #addMatch(ADQLObject, ADQLIterator)} has been modified in order to
 	 * 	not have the root search object (here: the main query) in the list of results.
 	 * </i></p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.2 (12/2013)
 	 * @since 1.2
@@ -1389,7 +1415,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Let searching user defined functions.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
 	 * @since 1.3
@@ -1403,11 +1429,11 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Let replacing every {@link DefaultUDF}s whose a {@link FunctionDef} is set by their corresponding {@link UserDefinedFunction} class.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	If the replacer can not be created using the class returned by {@link FunctionDef#getUDFClass()}, no replacement is performed.
 	 * </i></p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (02/2015)
 	 * @since 1.3
@@ -1448,7 +1474,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Let searching geometrical functions.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
 	 * @since 1.3
@@ -1463,12 +1489,12 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * <p>Let searching all ADQL objects whose the type was not known while checking the syntax of the ADQL query.
 	 * These objects are {@link ADQLColumn}s and {@link UserDefinedFunction}s.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	Only {@link UnknownType} instances having an expected type equals to 'S' (or 's' ; for string) or 'N' (or 'n' ; for numeric)
 	 * 	are kept by this handler. Others are ignored.
 	 * </i></p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
 	 * @since 1.3
@@ -1487,7 +1513,7 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * Let searching all explicit declaration of coordinate systems.
 	 * So, only {@link StringConstant} objects will be returned.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
 	 * @since 1.3
@@ -1510,7 +1536,7 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * Let searching all {@link RegionFunction}s.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
 	 * @since 1.3
@@ -1528,23 +1554,23 @@ public class DBChecker implements QueryChecker {
 
 	/**
 	 * <p>Implement the binary search algorithm over a sorted array.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	The only difference with the standard implementation of Java is
 	 * 	that this object lets perform research with a different type
 	 * 	of object than the types of array items.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	For that reason, the "compare" function must always be implemented.
 	 * </p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
-	 * 
+	 *
 	 * @param <T>	Type of items stored in the array.
 	 * @param <S>	Type of the item to search.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected static abstract class BinarySearch< T, S > {
@@ -1552,16 +1578,16 @@ public class DBChecker implements QueryChecker {
 
 		/**
 		 * <p>Search the given item in the given array.</p>
-		 * 
+		 *
 		 * <p>
 		 * 	In case the given object matches to several items of the array,
 		 * 	this function will return the smallest index, pointing thus to the first
 		 * 	of all matches.
 		 * </p>
-		 * 
+		 *
 		 * @param searchItem	Object for which a corresponding array item must be searched.
 		 * @param array			Array in which the given object must be searched.
-		 * 
+		 *
 		 * @return	The array index of the first item of all matches.
 		 */
 		public int search(final S searchItem, final T[] array){
@@ -1587,10 +1613,10 @@ public class DBChecker implements QueryChecker {
 
 		/**
 		 * Compare the search item and the array item.
-		 * 
+		 *
 		 * @param searchItem	Item whose a corresponding value must be found in the array.
 		 * @param arrayItem		An item of the array.
-		 * 
+		 *
 		 * @return	Negative value if searchItem is less than arrayItem, 0 if they are equals, or a positive value if searchItem is greater.
 		 */
 		protected abstract int compare(final S searchItem, final T arrayItem);

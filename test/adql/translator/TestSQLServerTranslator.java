@@ -46,10 +46,10 @@ public class TestSQLServerTranslator {
 			SQLServerTranslator translator = new SQLServerTranslator();
 
 			// Test the FROM part:
-			assertEquals("\"aTable\" AS A INNER JOIN \"anotherTable\" AS B ON A.\"id\"=B.\"id\" AND A.\"name\"=B.\"name\"", translator.translate(query.getFrom()));
+			assertEquals("\"aTable\" AS \"a\" INNER JOIN \"anotherTable\" AS \"b\" ON \"a\".\"id\"=\"b\".\"id\" AND \"a\".\"name\"=\"b\".\"name\"", translator.translate(query.getFrom()));
 
 			// Test the SELECT part (in order to ensure the usual common columns (due to NATURAL) are actually translated as columns of the first joined table):
-			assertEquals("SELECT A.\"id\" AS \"id\" , A.\"name\" AS \"name\" , A.\"aColumn\" AS \"aColumn\" , B.\"anotherColumn\" AS \"anotherColumn\"", translator.translate(query.getSelect()));
+			assertEquals("SELECT \"a\".\"id\" AS \"id\" , \"a\".\"name\" AS \"name\" , \"a\".\"aColumn\" AS \"aColumn\" , \"b\".\"anotherColumn\" AS \"anotherColumn\"", translator.translate(query.getSelect()));
 
 		}catch(ParseException pe){
 			pe.printStackTrace();
@@ -69,10 +69,10 @@ public class TestSQLServerTranslator {
 			SQLServerTranslator translator = new SQLServerTranslator();
 
 			// Test the FROM part:
-			assertEquals("\"aTable\" AS A INNER JOIN \"anotherTable\" AS B ON A.\"name\"=B.\"name\"", translator.translate(query.getFrom()));
+			assertEquals("\"aTable\" AS \"a\" INNER JOIN \"anotherTable\" AS \"b\" ON \"a\".\"name\"=\"b\".\"name\"", translator.translate(query.getFrom()));
 
 			// Test the SELECT part (in order to ensure the usual common columns (due to USING) are actually translated as columns of the first joined table):
-			assertEquals("SELECT B.\"id\" AS \"id\" , A.\"name\" AS \"name\" , A.\"aColumn\" AS \"aColumn\" , B.\"anotherColumn\" AS \"anotherColumn\"", translator.translate(query.getSelect()));
+			assertEquals("SELECT \"b\".\"id\" AS \"id\" , \"a\".\"name\" AS \"name\" , \"a\".\"aColumn\" AS \"aColumn\" , \"b\".\"anotherColumn\" AS \"anotherColumn\"", translator.translate(query.getSelect()));
 
 		}catch(ParseException pe){
 			pe.printStackTrace();
