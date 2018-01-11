@@ -77,6 +77,21 @@ public class MySQLTranslator extends JDBCTranslator {
 	}
 
 	/**
+	 * Build a MySQLTranslator which always translates in SQL all identifiers
+	 * (schema, table and column) in the specified case sensitivity ; in other
+	 * words, schema, table and column names will all be surrounded or not by
+	 * back-quotes in the SQL translation.
+	 *
+	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a
+	 *                        	case sensitive manner
+	 *                        	(surrounded by back-quotes),
+	 *                        	<i>false</i> for case insensitivity.
+	 */
+	public MySQLTranslator(final boolean allCaseSensitive){
+		caseSensitivity = allCaseSensitive ? (byte)0x0F : (byte)0x00;
+	}
+
+	/**
 	 * Build a MySQLTranslator which will always translate in SQL identifiers
 	 * with the defined case sensitivity.
 	 *
@@ -88,21 +103,6 @@ public class MySQLTranslator extends JDBCTranslator {
 	 *             		(case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param column	<i>true</i> to translate column names with back-quotes
 	 *              	(case sensitive in the DBMS), <i>false</i> otherwise.
-	 */
-	public MySQLTranslator(final boolean allCaseSensitive){
-		caseSensitivity = allCaseSensitive ? (byte)0x0F : (byte)0x00;
-	}
-
-	/**
-	 * Build a MySQLTranslator which always translates in SQL all identifiers
-	 * (schema, table and column) in the specified case sensitivity ; in other
-	 * words, schema, table and column names will all be surrounded or not by
-	 * back-quotes in the SQL translation.
-	 *
-	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a
-	 *                        	case sensitive manner
-	 *                        	(surrounded by back-quotes),
-	 *                        	<i>false</i> for case insensitivity.
 	 */
 	public MySQLTranslator(final boolean catalog, final boolean schema, final boolean table, final boolean column){
 		caseSensitivity = IdentifierField.CATALOG.setCaseSensitive(caseSensitivity, catalog);

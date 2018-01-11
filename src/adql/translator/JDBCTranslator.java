@@ -896,7 +896,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * 	{@link #convertTypeFromDB(int, String, String, String[])}. So the value should always
 	 * 	be of the expected type and format. However, if it turns out that the type is wrong
 	 * 	and that the conversion is finally impossible, this function SHOULD throw a
-	 * 	{@link tap.data.DataReadException}.
+	 * 	{@link ParseException}.
 	 * </i></p>
 	 *
 	 * @param jdbcColValue	A JDBC column value (returned by ResultSet.getObject(int)).
