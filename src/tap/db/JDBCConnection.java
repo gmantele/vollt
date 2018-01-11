@@ -3271,7 +3271,8 @@ public class JDBCConnection implements DBConnection {
 			int cnt = 0;
 			String columnPattern = columnCaseSensitive ? columnName : null;
 			while(rsT.next()){
-				String rsSchema = nullifyIfNeeded(rsT.getString(2));
+                                int rsTSchemaIndex = dbms.equalsIgnoreCase(DBMS_MYSQL) ? 1 : 2;
+				String rsSchema = nullifyIfNeeded(rsT.getString(rsTSchemaIndex));
 				String rsTable = rsT.getString(3);
 				// test the schema name:
 				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)){

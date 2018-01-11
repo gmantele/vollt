@@ -160,13 +160,13 @@ public final class VotType {
 
 			case CHAR:
 				this.datatype = VotDatatype.CHAR;
-				this.arraysize = Integer.toString(tapType.length > 0 ? tapType.length : null);
+				this.arraysize = tapType.length > 0 ? Integer.toString(tapType.length) : null;
 				this.xtype = null;
 				break;
 
 			case BINARY:
 				this.datatype = VotDatatype.UNSIGNEDBYTE;
-				this.arraysize = Integer.toString(tapType.length > 0 ? tapType.length : null);
+				this.arraysize = tapType.length > 0 ? Integer.toString(tapType.length) : null;
 				this.xtype = null;
 				break;
 
