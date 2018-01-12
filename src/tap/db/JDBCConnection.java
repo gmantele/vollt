@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -181,7 +181,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (08/2017)
+ * @version 2.1 (01/2018)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -1170,16 +1170,16 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * Load all coordinate systems declared in the TAP_SCHEMA.
-	 * 
+	 *
 	 * @param tableDef		Definition of the table TAP_SCHEMA.coosys.
 	 * @param metadata		Metadata in which the found coordinate systems will be inserted (see {@link TAPMetadata#addCoosys(TAPCoosys)}).
 	 * @param stmt			Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @return	A map containing all declared coordinate systems (key=coosys ID, value={@link TAPCoosys}).
 	 *        	<i>note: this map is required by {@link #loadColumns(TAPTable, List, Map, Statement)}.</i>
-	 * 
+	 *
 	 * @throws DBException	If any error occurs while interacting with the database.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected Map<String,TAPCoosys> loadCoosys(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
@@ -1239,7 +1239,7 @@ public class JDBCConnection implements DBConnection {
 	 * @param stmt			Statement to use in order to interact with the database.
 	 *
 	 * @throws DBException	If a table can not be found, or if any other error occurs while interacting with the database.
-	 * 
+	 *
 	 * @deprecated	This method is now replaced by {@link #loadColumns(TAPTable, List, Map, Statement)} which has an additional parameter:
 	 *            	the list of declared coordinate systems.
 	 */
@@ -1250,24 +1250,24 @@ public class JDBCConnection implements DBConnection {
 
 	/**
 	 * <p>Load into the corresponding tables all columns listed in TAP_SCHEMA.columns.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Tables are searched in the given list by their ADQL name and case sensitively.
 	 * 	If they can not be found a {@link DBException} is thrown.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	If the column column_index exists, column entries are retrieved ordered by ascending table_name, then column_index, and finally column_name.
 	 * 	If this column does not exist, column entries are retrieved ordered by ascending table_name and then column_name.
 	 * </i></p>
-	 * 
+	 *
 	 * @param tableDef		Definition of the table TAP_SCHEMA.columns.
 	 * @param lstTables		List of all published tables (= all tables listed in TAP_SCHEMA.tables).
 	 * @param mapCoosys		List of all published coordinate systems (= all coordinates systems listed in TAP_SCHEMA.coosys).
 	 * @param stmt			Statement to use in order to interact with the database.
-	 * 
+	 *
 	 * @throws DBException	If a table can not be found, or if any other error occurs while interacting with the database.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Map<String,TAPCoosys> mapCoosys, final Statement stmt) throws DBException{
@@ -3091,6 +3091,95 @@ public class JDBCConnection implements DBConnection {
 	}
 
 	/**
+	 * Get the index of the column returning the schema name in the ResultSet
+	 * returned by {@link DatabaseMetaData#getTables(String, String, String, String[])}.
+	 *
+	 * <p>
+	 * 	The index returned by this function may be different from one DBMS from
+	 * 	another depending on how it deals with schemas. For instance, in MySQL
+	 * 	database, schemas are interpreted as catalogs (so the index would be 2
+	 * 	instead of 1).
+	 * </p>
+	 *
+	 * @return	Index of the column providing the table's schema name.
+	 *
+	 * @since 2.1
+	 */
+	protected int getTableSchemaIndexInMetadata(){
+		return dbms.equalsIgnoreCase(DBMS_MYSQL) ? 1 : 2;
+	}
+
+	/**
+	 * Get all schemas available in the database.
+	 *
+	 * @param dbMeta	Metadata of the database to investigate.
+	 *
+	 * @return	Metadata about all available schemas.
+	 *
+	 * @throws SQLException	If any error occurs while querying the database
+	 *                     	metadata.
+	 *
+	 * @since 2.1
+	 */
+	protected ResultSet getDBMetaSchemas(final DatabaseMetaData dbMeta) throws SQLException{
+		return (dbms.equalsIgnoreCase(DBMS_MYSQL) ? dbMeta.getCatalogs() : dbMeta.getSchemas());
+	}
+
+	/**
+	 * Get all tables matching the given table name pattern and being inside
+	 * the specified schema(s).
+	 *
+	 * @param dbMeta		Metadata of the database to investigate.
+	 * @param schemaPattern	Pattern matching the schema(s) name containing the
+	 *                     	target tables.
+	 *                     	<i>If NULL, the table will be searched in all
+	 *                     	schemas.</i>
+	 * @param tablePattern	Pattern matching the name of the tables to list.
+	 *
+	 * @return	Metadata about all matching tables.
+	 *
+	 * @throws SQLException	If any error occurs while querying the database
+	 *                     	metadata.
+	 *
+	 * @since 2.1
+	 */
+	protected ResultSet getDBMetaTables(final DatabaseMetaData dbMeta, final String schemaPattern, final String tablePattern) throws SQLException{
+		if (dbms.equalsIgnoreCase(DBMS_MYSQL))
+			return dbMeta.getTables(schemaPattern, null, tablePattern, null);
+		else
+			return dbMeta.getTables(null, schemaPattern, tablePattern, null);
+	}
+
+	/**
+	 * Get all columns matching the given column name pattern and being inside
+	 * the specified table(s) and schema(s).
+	 *
+	 * @param dbMeta		Metadata of the database to investigate.
+	 * @param schemaPattern	Pattern matching the schema(s) name containing the
+	 *                     	target columns.
+	 *                     	<i>If NULL, the columns will be searched in all
+	 *                     	schemas.</i>
+	 * @param tablePattern	Pattern matching the table(s) name containing the
+	 *                     	target columns.
+	 *                     	<i>If NULL, the columns will be searched in all
+	 *                     	tables.</i>
+	 * @param columnPattern	Pattern matching the name of the columns to list.
+	 *
+	 * @return	Metadata about all matching columns.
+	 *
+	 * @throws SQLException	If any error occurs while querying the database
+	 *                     	metadata.
+	 *
+	 * @since 2.1
+	 */
+	protected ResultSet getDBMetaColumns(final DatabaseMetaData dbMeta, final String schemaPattern, final String tablePattern, final String columnPattern) throws SQLException{
+		if (dbms.equalsIgnoreCase(DBMS_MYSQL))
+			return dbMeta.getColumns(schemaPattern, null, tablePattern, columnPattern);
+		else
+			return dbMeta.getColumns(null, schemaPattern, tablePattern, columnPattern);
+	}
+
+	/**
 	 * <p>Tell whether the specified schema exists in the database.
 	 * 	To do so, it is using the given {@link DatabaseMetaData} object to query the database and list all existing schemas.</p>
 	 *
@@ -3115,7 +3204,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws SQLException	If any error occurs while interrogating the database about existing schema.
 	 */
 	protected boolean isSchemaExisting(String schemaName, final DatabaseMetaData dbMeta) throws SQLException{
-		if (DBMS_MYSQL.equals(dbms) || !supportsSchema || schemaName == null || schemaName.length() == 0)
+		if (!supportsSchema || schemaName == null || schemaName.length() == 0)
 			return true;
 
 		// Determine the case sensitivity to use for the equality test:
@@ -3124,7 +3213,7 @@ public class JDBCConnection implements DBConnection {
 		ResultSet rs = null;
 		try{
 			// List all schemas available and stop when a schema name matches ignoring the case:
-			rs = dbMeta.getSchemas();
+			rs = getDBMetaSchemas(dbMeta);
 			boolean hasSchema = false;
 			while(!hasSchema && rs.next()){
 				hasSchema = equals(rs.getString(1), schemaName, caseSensitive);
@@ -3177,16 +3266,16 @@ public class JDBCConnection implements DBConnection {
 			if (supportsSchema){
 				String schemaPattern = schemaCaseSensitive ? schemaName : null;
 				String tablePattern = tableCaseSensitive ? tableName : null;
-				rs = dbMeta.getTables(null, schemaPattern, tablePattern, null);
+				rs = getDBMetaTables(dbMeta, schemaPattern, tablePattern);
 			}else{
 				String tablePattern = tableCaseSensitive ? tableName : null;
-				rs = dbMeta.getTables(null, null, tablePattern, null);
+				rs = getDBMetaTables(dbMeta, null, tablePattern);
 			}
 
 			// Stop on the first table which match completely (schema name + table name in function of their respective case sensitivity):
 			int cnt = 0;
 			while(rs.next()){
-				String rsSchema = nullifyIfNeeded(rs.getString(2));
+				String rsSchema = nullifyIfNeeded(rs.getString(getTableSchemaIndexInMetadata()));
 				String rsTable = rs.getString(3);
 				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)){
 					if (equals(rsTable, tableName, tableCaseSensitive))
@@ -3261,25 +3350,24 @@ public class JDBCConnection implements DBConnection {
 			if (supportsSchema){
 				String schemaPattern = schemaCaseSensitive ? schemaName : null;
 				String tablePattern = tableCaseSensitive ? tableName : null;
-				rsT = dbMeta.getTables(null, schemaPattern, tablePattern, null);
+				rsT = getDBMetaTables(dbMeta, schemaPattern, tablePattern);
 			}else{
 				String tablePattern = tableCaseSensitive ? tableName : null;
-				rsT = dbMeta.getTables(null, null, tablePattern, null);
+				rsT = getDBMetaTables(dbMeta, null, tablePattern);
 			}
 
 			// For each matching table:
 			int cnt = 0;
 			String columnPattern = columnCaseSensitive ? columnName : null;
 			while(rsT.next()){
-                                int rsTSchemaIndex = dbms.equalsIgnoreCase(DBMS_MYSQL) ? 1 : 2;
-				String rsSchema = nullifyIfNeeded(rsT.getString(rsTSchemaIndex));
+				String rsSchema = nullifyIfNeeded(rsT.getString(getTableSchemaIndexInMetadata()));
 				String rsTable = rsT.getString(3);
 				// test the schema name:
 				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)){
 					// test the table name:
 					if ((tableName == null || equals(rsTable, tableName, tableCaseSensitive))){
 						// list its columns:
-						rsC = dbMeta.getColumns(null, rsSchema, rsTable, columnPattern);
+						rsC = getDBMetaColumns(dbMeta, rsSchema, rsTable, columnPattern);
 						// count all matching columns:
 						while(rsC.next()){
 							String rsColumn = rsC.getString(4);
