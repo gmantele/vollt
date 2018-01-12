@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2017-2018 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Iterator;
@@ -78,55 +78,47 @@ import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
 
 /**
- * <p>Implementation of {@link ADQLTranslator} which translates ADQL queries in SQL queries.</p>
+ * Implementation of {@link ADQLTranslator} which translates ADQL queries in
+ * SQL queries.
  *
  * <p>
- * 	It is already able to translate all SQL standard features, but lets abstract the translation of all
- * 	geometrical functions. So, this translator must be extended as {@link PostgreSQLTranslator} and
- * 	{@link PgSphereTranslator} are doing.
+ * 	It is already able to translate all SQL standard features, but lets abstract
+ * 	the translation of all geometrical functions. So, this translator must be
+ * 	extended as {@link PostgreSQLTranslator}, {@link PgSphereTranslator},
+ * 	{@link MySQLTranslator} and {@link SQLServerTranslator} are doing.
  * </p>
  *
  * <p><i>Note:
- * 	Its default implementation of the SQL syntax has been inspired by the PostgreSQL one.
- * 	However, it should work also with SQLite and MySQL, but some translations might be needed
- * 	(as it is has been done for PostgreSQL about the mathematical functions).
+ * 	Its default implementation of the SQL syntax has been inspired by the
+ * 	PostgreSQL one. However, it should work also with other DBMS, although some
+ * 	translations might be needed (as it is has been done for PostgreSQL about
+ * 	the mathematical functions).
  * </i></p>
- *
- * <h3>PostgreSQLTranslator and PgSphereTranslator</h3>
- *
- * <p>
- * 	{@link PgSphereTranslator} extends {@link PostgreSQLTranslator} and is able to translate geometrical
- * 	functions according to the syntax given by PgSphere. But it can also convert geometrical types
- * 	(from and toward the database), translate PgSphere regions into STC expression and vice-versa.
- * </p>
- *
- * <p>
- * 	{@link PostgreSQLTranslator} overwrites the translation of mathematical functions whose some have
- * 	a different name or signature. Besides, it is also implementing the translation of the geometrical
- * 	functions. However, it does not really translate them. It is just returning the ADQL expression
- * 	(by calling {@link #getDefaultADQLFunction(ADQLFunction)}).
- * 	And so, of course, the execution of a SQL query containing geometrical functions and translated
- * 	using this translator will not work. It is just a default implementation in case there is no interest
- * 	of these geometrical functions.
- * </p>
  *
  * <h3>SQL with or without case sensitivity?</h3>
  *
  * <p>
- * 	In ADQL and in SQL, it is possible to tell the parser to respect the exact case or not of an identifier (schema, table or column name)
- * 	by surrounding it with double quotes. However ADQL identifiers and SQL ones may be different. In that way, the case sensitivity specified
- * 	in ADQL on the different identifiers can not be kept in SQL. That's why this translator lets specify a general rule on which types of
- * 	SQL identifier must be double quoted. This can be done by implementing the abstract function {@link #isCaseSensitive(IdentifierField)}.
- * 	The functions translating column and table names will call this function in order to surround the identifiers by double quotes or not.
- * 	So, <b>be careful if you want to override the functions translating columns and tables!</b>
+ * 	In ADQL and in SQL, it is possible to tell the parser to respect the exact
+ * 	case or not of an identifier (schema, table or column name) by surrounding
+ * 	it with double quotes. However ADQL identifiers and SQL ones may be
+ * 	different. In that way, the case sensitivity specified in ADQL on the
+ * 	different identifiers can not be kept in SQL. That's why this translator
+ * 	lets specify a general rule on which types of SQL identifier must be double
+ * 	quoted. This can be done by implementing the abstract function
+ * 	{@link #isCaseSensitive(IdentifierField)}. The functions translating column
+ * 	and table names will call this function in order to surround the identifiers
+ * 	by double quotes or not. So, <b>be careful if you want to override the
+ * 	functions translating columns and tables!</b>
  * </p>
  *
  * <h3>Translation of "SELECT TOP"</h3>
  *
  * <p>
- * 	The default behavior of this translator is to translate the ADQL "TOP" into the SQL "LIMIT" at the end of the query.
- * 	This is ok for some DBMS, but not all. So, if your DBMS does not know the "LIMIT" keyword, you should override the function
- * 	translating the whole query: {@link #translate(ADQLQuery)}. Here is its current implementation:
+ * 	The default behavior of this translator is to translate the ADQL "TOP" into
+ * 	the SQL "LIMIT" at the end of the query. This is ok for some DBMS, but not
+ * 	all. So, if your DBMS does not know the "LIMIT" keyword, you should override
+ * 	the function translating the whole query: {@link #translate(ADQLQuery)}.
+ * 	Here is its current implementation:
  * </p>
  * <pre>
  * 	StringBuffer sql = new StringBuffer(translate(query.getSelect()));
@@ -147,29 +139,35 @@ import adql.query.operand.function.geometry.RegionFunction;
  * <h3>Translation of ADQL functions</h3>
  *
  * <p>
- * 	All ADQL functions are by default not translated. Consequently, the SQL translation is
- * 	actually the ADQL expression. Generally the ADQL expression is generic enough. However some mathematical functions may need
- * 	to be translated differently. For instance {@link PostgreSQLTranslator} is translating differently: LOG, LOG10, RAND and TRUNC.
+ * 	All ADQL functions are by default not translated. Consequently, the SQL
+ * 	translation is actually the ADQL expression. Generally the ADQL expression
+ * 	is generic enough. However some mathematical functions may need to be
+ * 	translated differently. For instance {@link PostgreSQLTranslator} is
+ * 	translating differently: LOG, LOG10, RAND and TRUNC.
  * </p>
  *
  * <p><i>Note:
- * 	Geometrical regions and types have not been managed here. They stay abstract because it is obviously impossible to have a generic
- * 	translation and conversion ; it totally depends from the database system.
+ * 	Geometrical regions and types have not been managed here. They stay abstract
+ * 	because it is obviously impossible to have a generic translation and
+ * 	conversion ; it totally depends from the database system.
  * </i></p>
  *
  * <h3>Translation of "FROM" with JOINs</h3>
  *
  * <p>
- * 	The FROM clause is translated into SQL as written in ADQL. There is no differences except the identifiers that are replaced.
- * 	The tables' aliases and their case sensitivity are kept like in ADQL.
+ * 	The FROM clause is translated into SQL as written in ADQL. There is no
+ * 	differences except the identifiers that are replaced. The tables' aliases
+ * 	and their case sensitivity are kept like in ADQL.
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (11/2017)
+ * @version 1.4 (01/2018)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
  * @see PgSphereTranslator
+ * @see MySQLTranslator
+ * @see SQLServerTranslator
  */
 public abstract class JDBCTranslator implements ADQLTranslator {
 
@@ -389,6 +387,8 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			return translate((ClauseSelect)list);
 		else if (list instanceof ClauseConstraints)
 			return translate((ClauseConstraints)list);
+		else if (list instanceof Concatenation)
+			return getDefaultADQLList(list, false);
 		else
 			return getDefaultADQLList(list);
 	}
@@ -396,14 +396,40 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	/**
 	 * Gets the default SQL output for a list of ADQL objects.
 	 *
+	 * <p><i>Implementation note:</i>
+	 * 	This function just calls {@link #getDefaultADQLList(ADQLList, boolean)}
+	 * 	with the given list in first parameter and <code>true</code> in second
+	 * 	one. In other words, this function always prefixes the list items by
+	 * 	the list name.
+	 * </p>
+	 *
 	 * @param list	List to format into SQL.
 	 *
 	 * @return		The corresponding SQL.
 	 *
 	 * @throws TranslationException If there is an error during the translation.
+	 *
+	 * @see #getDefaultADQLList(ADQLList, boolean)
 	 */
-	protected String getDefaultADQLList(ADQLList<? extends ADQLObject> list) throws TranslationException{
-		String sql = (list.getName() == null) ? "" : (list.getName() + " ");
+	protected final String getDefaultADQLList(ADQLList<? extends ADQLObject> list) throws TranslationException{
+		return getDefaultADQLList(list, true);
+	}
+
+	/**
+	 * Gets the default SQL output for a list of ADQL objects.
+	 *
+	 * @param list				List to format into SQL.
+	 * @param withNamePrefix	Prefix the list by its name or not.
+	 *                      	(e.g. 'false' for a Concatenation)
+	 *
+	 * @return	The corresponding SQL.
+	 *
+	 * @throws TranslationException If there is an error during the translation.
+	 *
+	 * @since 1.4
+	 */
+	protected String getDefaultADQLList(ADQLList<? extends ADQLObject> list, final boolean withNamePrefix) throws TranslationException{
+		String sql = (list.getName() == null || !withNamePrefix) ? "" : (list.getName() + " ");
 
 		for(int i = 0; i < list.size(); i++)
 			sql += ((i == 0) ? "" : (" " + list.getSeparator(i) + " ")) + translate(list.get(i));
