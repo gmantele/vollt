@@ -476,7 +476,7 @@
 				<td>
 					<p>Frequency at which the UWS service (that's to say, all its users and jobs) must be backuped.</p>
 					<p>Allowed values are: <code>never</code> (no backup will never be done), <code>user_action</code> (each time a user does a writing action, like creating or execution a job), a time (must be positive and not null) in milliseconds.</p>
-					<p><em>The value <code>user_action</code> can be used ONLY IF <code>backup_mode=true</code>.</em></p>
+					<p><em>The value <code>user_action</code> can be used ONLY IF <code>backup_by_user=true</code>.</em></p>
 					<p><em>Default: <code>backup_frequency=never</code> (no backup)</em></p>
 				</td>
 				<td><ul><li>never <em>(default)</em></li><li>user_action</li><li>3600000 <em>(1 hour)</em></li></ul></td>
