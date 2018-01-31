@@ -96,7 +96,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	protected String accessURL = getName();
 
 	/** The path of the XSLT style-sheet to apply.
-	 * @version 2.1 */
+	 * @since 2.1 */
 	protected String xsltPath = null;
 
 	/**
@@ -131,7 +131,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 *
 	 * @return	XSLT path/url.
 	 *
-	 * @version 2.1
+	 * @since 2.1
 	 */
 	public final String getXSLTPath(){
 		return xsltPath;
@@ -142,7 +142,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 *
 	 * @param path	The new XSLT path/URL.
 	 *
-	 * @version 2.1
+	 * @since 2.1
 	 */
 	public final void setXSLTPath(final String path){
 		if (path == null)

@@ -745,7 +745,7 @@ public class TAP implements VOSIResource {
 	 * @param linePrefix	Tabulations/Spaces that should prefix all lines
 	 *                  	(for human readability).
 	 *
-	 * @see TAPMetadata#getRegTAPTable()
+	 * @see TAPMetadata#getRegTAPSchema()
 	 *
 	 * @since 2.1
 	 */
