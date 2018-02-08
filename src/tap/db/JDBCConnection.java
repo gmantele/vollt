@@ -181,7 +181,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (01/2018)
+ * @version 2.1 (02/2018)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -198,13 +198,14 @@ public class JDBCConnection implements DBConnection {
 	/** DBMS name of Oracle used in the database URL. */
 	protected final static String DBMS_ORACLE = "oracle";
 
-	/** Name of the database column giving the database name of a TAP column, table or schema. */
+	/** Name of the database column giving the database name of a TAP column,
+	 * table or schema. */
 	protected final static String DB_NAME_COLUMN = "dbname";
 
 	/** Name of the database column giving the coordinate system ID associated
 	 * with a TAP column.
 	 * @since 2.1 */
-	protected final static String COOSYS_ID_COLUMN = "dbname";
+	protected final static String COOSYS_ID_COLUMN = "coosys_id";
 
 	/** Connection ID (typically, the job ID). It lets identify the DB errors linked to the Job execution in the logs. */
 	protected final String ID;
