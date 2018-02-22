@@ -542,13 +542,27 @@
 				<td>
 					<p>Comma separated list of output formats for query results.</p>
 					<p>Allowed values are: votable (or 'vot'), fits, text, csv, tsv, json and html.</p>
-					<p>The special value "ALL" will select all formats provided by the library.</p>
-					<p>The VOTable format may be more detailed with the following syntax: (<code>serialization</code>,<code>version</code>):<code>mime_type</code>:<code>short_mime_type</code>.
-					The MIME type part and the parameters part may be omitted (e.g. votable:application/xml:votable , votable(td,1.3)]).
-					Empty string values are allowed for each values (e.g. votable():: , votable(td)::votable).</p>
-					<p>It is also possible to define a custom Separated Value format, different from CSV and TSV, thanks to the following syntax: sv(<code>separator</code>):<code>mime_type</code>:<code>short_mime_type</code>.
-					On the contrary to the VOTable syntax, the parameter (i.e. separator) MUST BE provided. The MIME type part may be omitted ; then the MIME type will be set by default to text/plain.</p>
-					<p>There is finally a last possible value: a class name of a class implementing OutputFormat and having at least one constructor with exactly one parameter of type tap.ServiceConnection.</p>
+					<p>The VOTable format may be more detailed with the following syntax:
+					(<code>serialization</code>,<code>version</code>):<code>mime_type</code>:<code>short_mime_type</code>.
+					The MIME type part and the parameters part may be omitted
+					(e.g. votable:application/xml:votable , votable(td,1.3)]).
+					Empty string values are allowed for each values (e.g. votable():: ,
+					votable(td)::votable).</p>
+					<p>The default VOTable format (i.e. serialization and version) is the one defined
+					with the short form `votable`. It is be default set to
+					`vot(binary,1.3)::votable` (see the special value `ALL` below). To change it
+					just define a VOTable format with the short form `votable`.</p>
+					<p>It is also possible to define a custom Separated Value format, different from
+					CSV and TSV, thanks to the following syntax:
+					sv(<code>separator</code>):<code>mime_type</code>:<code>short_mime_type</code>. On the contrary to the VOTable
+					syntax, the parameter (i.e. separator) MUST BE provided. The MIME type part
+					may be omitted ; then the MIME type will be set by default to text/plain.</p>
+					<p>There is finally a last possible value: a class name of a class implementing
+					OutputFormat and having at least one constructor with exactly one parameter of
+					type tap.ServiceConnection.</p>
+					<p>The special value <code>ALL</code> will select all formats provided by the library. It is
+					equivalent to the following:</p>
+					<pre>output_formats = vot(binary,1.3)::votable, vot(td,1.3)::votable/td, vot(binary,1.3)::votable/b, vot(binary2,1.3)::votable/b2, vot(fits,1.3)::votable/fits, fits, csv, tsv, text, html,json</pre>
 					<p><em>Default: <code>ALL</code></em></p>
 				</td>
 				<td><ul><li>votable</li><li>vot</li><li>vot(td,1.2)::votable</li><li>json,html ,csv, text</li><li>sv(|):text/psv:psv</li><li>sv([])</li><li>{apackage.FooOutputFormat}</li></ul></td>
@@ -669,14 +683,14 @@
 						values. A list of values must be indicated between parenthesis and values must be separated by a pipe.
 					</p>
 					<p>Allowed values for <code>Frame</code> are: <code>ICRS</code>, <code>FK4</code>,
-						<code>FK5</code>, <code>ECLIPTIC</code>, <code>GALACTIC</code> and <code>UNKNOWNFRAME</code>.</p>
+						<code>FK5</code>, <code>J2000</code>, <code>ECLIPTIC</code>, <code>GALACTIC</code> and <code>UNKNOWNFRAME</code>.</p>
 					<p>Allowed values for <code>RefPos</code> are:  <code>BARYCENTER</code>, <code>GEOCENTER</code>,
 						<code>HELIOCENTER</code>, <code>LSR</code>, <code>TOPOCENTER</code>, <code>RELOCATABLE</code>
 						and <code>UNKNOWNREFPOS</code>.</p>
 					<p>Allowed values for <code>Flavor</code> are: <code>CARTESIAN2</code>, <code>CARTESIAN3</code> and
 						<code>SPHERICAL2</code>.</p>
 					<p>
-						If the special value <em>NONE</em> is given instead of a list of allowed coordinate systems,
+						If the special value <code>NONE</code> is given instead of a list of allowed coordinate systems,
 						no coordinate system will be allowed. And if the list is empty, any coordinate system will be allowed.
 					</p>
 					<p><em>By default, any coordinate system is allowed.</em></p>
@@ -691,7 +705,7 @@
 					<p>Comma-separated list of all allowed geometries.</p>
 					<p>
 						Each item of the list must be the name (whatever is the case) of an ADQL geometrical function (e.g. INTERSECTS, COORDSYS, POINT) to allow.
-						If the list is empty (no item), all functions are allowed. And if the special value <em>NONE</em> is given, no ADQL function will be allowed.
+						If the list is empty (no item), all functions are allowed. And if the special value <code>NONE</code> is given, no ADQL function will be allowed.
 					</p>
 					<p><em>By default, all ADQL geometrical functions are allowed.</em></p>
 				</td>
@@ -711,7 +725,7 @@
 						(and more particularly a name) different in ADQL and in SQL.
 					</p>
 					<p>
-						If the list is empty (no item), all unknown functions are forbidden. And if the special value <em>ANY</em> is given, any unknown function is allowed ;
+						If the list is empty (no item), all unknown functions are forbidden. And if the special value <code>ANY</code> is given, any unknown function is allowed ;
 						consequently the unknown ADQL functions will be translated into SQL as they are in ADQL.
 					</p>
 					<p><em>By default, no unknown function is allowed.</em></p>
