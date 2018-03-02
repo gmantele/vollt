@@ -16,7 +16,7 @@ package uws.service.backup;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -87,7 +87,7 @@ import uws.service.request.UploadFile;
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (03/2018)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -548,6 +548,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 */
 	protected JSONObject getJSONJob(final UWSJob job, final String jlName) throws UWSException, JSONException{
 		JSONObject jsonJob = Json4Uws.getJson(job);
+
+		// Only for the backup, the quote must be stored as a nb of seconds:
+		jsonJob.put(UWSJob.PARAM_QUOTE, job.getQuote());
 
 		// Re-Build the parameters map, by separating the uploads and the "normal" parameters:
 		JSONArray uploads = new JSONArray();

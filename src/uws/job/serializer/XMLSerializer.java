@@ -16,7 +16,7 @@ package uws.job.serializer;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -41,7 +41,7 @@ import uws.service.request.UploadFile;
  * Lets serializing any UWS resource in XML.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (10/2017)
+ * @version 4.3 (03/2018)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -324,10 +324,12 @@ public class XMLSerializer extends UWSSerializer {
 	public String getQuote(final UWSJob job, final boolean root){
 		StringBuffer xml = new StringBuffer(root ? getHeader() : "");
 		xml.append("<quote").append(getUWSNamespace(root));
-		if (job.getQuote() <= 0)
+		if (job.getStartTime() == null || job.getQuote() <= 0)
 			xml.append(" xsi:nil=\"true\" />");
-		else
-			xml.append('>').append(job.getQuote()).append("</quote>");
+		else{
+			long quoteTime = job.getStartTime().getTime() + (1000 * job.getQuote());
+			xml.append('>').append(ISO8601Format.format(quoteTime)).append("</quote>");
+		}
 		return xml.toString();
 	}
 

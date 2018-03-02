@@ -16,7 +16,7 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -88,7 +88,9 @@ import uws.service.request.UploadFile;
  * 		If your job is executable, do not forget to set the <i>quote</i>
  * 		parameter ONLY by using the {@link #setQuote(long)} method (a negative
  * 		value or {@link #QUOTE_NOT_KNOWN} value indicates the quote is not
- * 		known ; {@link #QUOTE_NOT_KNOWN} is the default value).
+ * 		known ; {@link #QUOTE_NOT_KNOWN} is the default value). This duration in
+ * 		seconds will be added to the <i>startTime</i> and then automatically
+ * 		formatted into an ISO-8601 date by the used serializer.
  * 	</li>
  * </ul>
  *
@@ -128,7 +130,7 @@ import uws.service.request.UploadFile;
  * </ul>
  *
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.3 (09/2017)
+ * @version	4.3 (03/2018)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -273,10 +275,13 @@ public class UWSJob extends SerializableUWSObject {
 	public static final DateFormat dateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
 	/**
-	 * This time (in seconds) predicts when the job is likely to complete.
-	 * <p><b>WARNING:</b>
-	 * 	It CAN NOT be changed after the job creation!
-	 * 	By default if no ID is given, {@link #quote} is set to
+	 * This time predicts when the job is likely to complete.
+	 * <p>
+	 * 	It represents the estimated amount of time (in seconds) from the
+	 * 	job starting date-time to its successful end.
+	 * </p>
+	 * <p><i>Note:</i>
+	 * 	By default, if no ID is given, {@link #quote} is set to
 	 * 	{@link #QUOTE_NOT_KNOWN} (= {@value #QUOTE_NOT_KNOWN}).
 	 * </p>
 	 */
@@ -1055,14 +1060,18 @@ public class UWSJob extends SerializableUWSObject {
 	}
 
 	/**
-	 * Sets the quote attribute of this job ONLY IF the job can updated
-	 * (considering its current execution phase, see
-	 * {@link JobPhase#isJobUpdatable()}).
+	 * Sets the quote attribute of this job ONLY IF the job is not yet
+	 * finished according to its current status (i.e.
+	 * {@link JobPhase#isFinished()}).
+	 *
+	 * <p><i>Note:</i>
+	 * 	A negative or NULL value will be considered as 'no quote for this job'.
+	 * 	One could use the constant {@link #QUOTE_NOT_KNOWN}
+	 * 	(= {@value #QUOTE_NOT_KNOWN}) for this exact purpose.
+	 * </p>
 	 *
 	 * @param nbSeconds	The estimated duration of the job execution
 	 *                 	(in seconds).
-	 *
-	 * @see JobPhase#isJobUpdatable()
 	 */
 	public final void setQuote(long nbSeconds){
 		if (!phase.isFinished())

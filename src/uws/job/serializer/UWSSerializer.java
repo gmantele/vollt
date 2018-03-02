@@ -343,9 +343,20 @@ public abstract class UWSSerializer implements Serializable {
 	/**
 	 * Serializes the quote of the given job.
 	 *
+	 * <p><b>Warning!</b>
+	 * 	{@link UWSJob#getQuote()} is a long, BUT the UWS standard explicitly
+	 * 	requires a quote as an ISO-8601 date (cf section "2.2.1. Resources and
+	 * 	URIs").<br/>
+	 * 	<b>This function MUST return a quote only when the job is
+	 * 	started/finished and MUST add the quote duration to the startTime and
+	 * 	format it as an ISO-8601 date.</b>
+	 * </p>
+	 *
 	 * @param job			The job whose the quote must be serialized.
-	 * @param root			<i>false</i> if the quote to serialize will be included
-	 * 						in a top level serialization (for a quote: job), <i>true</i> otherwise.
+	 * @param root			<i>false</i> if the quote to serialize will be
+	 *            			included in a top level serialization (for a quote:
+	 *            			job),
+	 *            			<i>true</i> otherwise.
 	 *
 	 * @return				The serialization of the quote.
 	 *
