@@ -16,7 +16,7 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -1006,13 +1006,13 @@ public class JobList extends SerializableUWSObject implements Iterable<UWSJob> {
 
 	/**
 	 * Serializes the while object in the given output stream,
-	 * considering the given owner ID, the given job filters and thanks to the
+	 * considering the given owner, the given job filters and thanks to the
 	 * given serializer.
 	 *
 	 * @param output		The ouput stream in which this object must be
 	 *              		serialized.
 	 * @param serializer	The serializer to use.
-	 * @param ownerId		The ID of the current ID.
+	 * @param owner			The current user.
 	 * @param listRefiner	Special filter able to refine the list of jobs with
 	 *                   	job filters specified by the user
 	 *                   	(i.e. filter, sort and limit).

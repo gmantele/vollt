@@ -16,7 +16,7 @@ package uws.job.serializer.filter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2017-2018 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.text.ParseException;
@@ -119,7 +119,7 @@ public class JobListRefiner {
 
 	/**
 	 * Empty constructor. No filter and no sorting is done here.
-	 * All jobs given to the {@link #filter(Iterator)} function will then be
+	 * All jobs given to the {@link #refine(Iterator)} function will then be
 	 * allowed.
 	 */
 	protected JobListRefiner(){}

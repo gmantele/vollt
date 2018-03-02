@@ -16,7 +16,7 @@ package uws.job.serializer;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -245,7 +245,7 @@ public abstract class UWSSerializer implements Serializable {
 	 * @param owner			The user which has asked the serialization of the
 	 *             			given jobs list. If NULL, all anonymous jobs are
 	 *             			displayed.
-	 * @param phaseFilters	Represent all the specified job filters to apply ;
+	 * @param listRefiner	Represent all the specified job filters to apply ;
 	 *                    	only the job that pass through this filter should be
 	 *                    	displayed. If NULL, all jobs are displayed.
 	 * @param root			<code>false</code> if the jobs list to serialize

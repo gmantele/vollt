@@ -16,7 +16,7 @@ package uws.job.serializer.filter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2017-2018 - Astronomisches Rechen Institut (ARI)
  */
 
 import uws.job.UWSJob;
@@ -28,7 +28,7 @@ import uws.job.UWSJob;
  * @version 4.3 (10/2017)
  * @since 4.3
  *
- * @see JobFilters
+ * @see JobListRefiner
  */
 public interface JobFilter {
 
