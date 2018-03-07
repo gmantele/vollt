@@ -129,7 +129,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (02/2018)
+ * @version 2.3 (03/2018)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -1124,7 +1124,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	private final String REGEXP_CLASSPATH = "\\{[^{}]*\\}";
 
-	private final String REGEXP_DESCRIPTION = "\"((\\\"|[^\"])*)\"";
+	private final String REGEXP_DESCRIPTION = "\"((\\\\\"|[^\"])*)\"";
 
 	private final String REGEXP_UDF = "\\[\\s*(" + REGEXP_SIGNATURE + ")\\s*(,\\s*(" + REGEXP_CLASSPATH + ")?\\s*(,\\s*(" + REGEXP_DESCRIPTION + ")?\\s*)?)?\\]";
 

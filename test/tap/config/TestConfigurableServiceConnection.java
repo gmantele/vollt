@@ -308,7 +308,7 @@ public class TestConfigurableServiceConnection {
 		udfsWithClassNameProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
 
 		udfsWithClassNameAndDescriptionProp = (Properties)validProp.clone();
-		udfsWithClassNameAndDescriptionProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, \"Bla \"bla\".\"]");
+		udfsWithClassNameAndDescriptionProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, \"Bla \\\"bla\\\".\"], [ titi(b REAL) -> double, {adql.db.TestDBChecker$UDFToto}, \"Function titi.\"]");
 
 		udfsWithEmptyOptParamsProp = (Properties)validProp.clone();
 		udfsWithEmptyOptParamsProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR,,  	 ]");
@@ -1060,12 +1060,18 @@ public class TestConfigurableServiceConnection {
 		try{
 			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithClassNameAndDescriptionProp);
 			assertNotNull(connection.getUDFs());
-			assertEquals(1, connection.getUDFs().size());
-			FunctionDef def = connection.getUDFs().iterator().next();
+			assertEquals(2, connection.getUDFs().size());
+			Iterator<FunctionDef> itUdfs = connection.getUDFs().iterator();
+			FunctionDef def = itUdfs.next();
 			assertEquals("toto(a VARCHAR) -> VARCHAR", def.toString());
 			assertEquals(UDFToto.class, def.getUDFClass());
-			assertEquals("Bla \"bla\".", def.description);
+			assertEquals("Bla \\\"bla\\\".", def.description);
+			def = itUdfs.next();
+			assertEquals("titi(b REAL) -> DOUBLE", def.toString());
+			assertEquals(UDFToto.class, def.getUDFClass());
+			assertEquals("Function titi.", def.description);
 		}catch(Exception e){
+			e.printStackTrace();
 			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
 		}
 
