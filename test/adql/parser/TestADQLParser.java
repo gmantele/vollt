@@ -171,9 +171,9 @@ public class TestADQLParser {
 
 		// But in a string, delimited identifier or a comment, it is fine:
 		try{
-			(new ADQLParser()).parseQuery("select 'grégory' FROM aTable");
-			(new ADQLParser()).parseQuery("select \"grégory\" FROM aTable");
-			(new ADQLParser()).parseQuery("select * FROM aTable -- a comment by Grégory");
+			(new ADQLParser()).parseQuery("select 'gr\u00e9gory' FROM aTable");
+			(new ADQLParser()).parseQuery("select \"gr\u00e9gory\" FROM aTable");
+			(new ADQLParser()).parseQuery("select * FROM aTable -- a comment by Gr\u00e9gory");
 		}catch(Throwable t){
 			fail("This error should never occurs because all these queries have an accentuated character but at a correct place.");
 		}
