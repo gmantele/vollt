@@ -163,7 +163,7 @@ public class TestADQLParser {
 		/* An identifier must be written only with digits, an underscore or
 		 * regular latin characters: */
 		try{
-			(new ADQLParser()).parseQuery("select grégory FROM aTable");
+			(new ADQLParser()).parseQuery("select gr\u00e9gory FROM aTable");
 		}catch(Throwable t){
 			assertEquals(ParseException.class, t.getClass());
 			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.10: \"\\u00e9\" ('"));
