@@ -2,21 +2,21 @@ package tap.metadata;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
+ *
+ * Copyright 2015-2018 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -45,12 +45,12 @@ import tap.metadata.TAPTable.TableType;
 
 /**
  * <p>Let parse an XML document representing a table set, and return the corresponding {@link TAPMetadata} instance.</p>
- * 
+ *
  * <p><i>Note 1: the table set must follow the syntax specified by the XML Schema http://www.ivoa.net/xml/VODataService.</i></p>
  * <p><i>Note 2: only tags specified by VODataService are checked. If there is any other tag, they are merely ignored.</i></p>
- * 
+ *
  * <h3>Exceptions</h3>
- * 
+ *
  * <p>A {@link TAPException} is thrown in the following cases:</p>
  * <ul>
  * 	<li>the root node is not "tableset"</li>
@@ -63,11 +63,11 @@ import tap.metadata.TAPTable.TableType;
  * 	<li>missing "xsi:type" as attribute in a "dataType" node</li>
  * 	<li>unknown column datatype</li>
  * </ul>
- * 
+ *
  * <p><i>Note: catalog prefixes are not supported in this parser.</i></p>
- * 
+ *
  * <h3>Datatype</h3>
- * 
+ *
  * <p>
  * 	A column datatype may be specified either as a TAP or a VOTable datatype. Thus, the type of specification must be given with the attribute xsi:type of the
  * 	node "dataType". For instance:
@@ -76,9 +76,15 @@ import tap.metadata.TAPTable.TableType;
  * 	<li><code>&lt;dataType xsi:type="vs:VOTableType" arraysize="1"&gt;float&lt;/dataType&gt;</code> for a VOTable datatype</li>
  * 	<li><code>&lt;dataType xsi:type="vod:TAPType"&gt;VARCHAR&lt;/dataType&gt;</code> for a TAP datatype</li>
  * </ul>
- * 
+ *
+ * <p><b>WARNING:</b>
+ * 	When a vod:TAPType is set to <code>BOOLEAN</code>, this will be interpreted as a SMALLINT.
+ * 	Note that this is a convenient hack because BOOLEAN is not a valid TAPType,
+ * 	but it is however used a lot of time by TAP implementors.
+ * </p>
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (07/2016)
+ * @version 2.3 (04/2018)
  * @since 2.0
  */
 public class TableSetParser extends DefaultHandler {
@@ -91,16 +97,16 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Intermediary representation of a Foreign Key.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	An instance of this class lets save all information provided in the XML document and needed to create the corresponding TAP metadata ({@link TAPForeignKey})
 	 * 	at the end of XML document parsing, once all available tables are listed.
 	 * </p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 2.0 (02/2015)
 	 * @since 2.0
-	 * 
+	 *
 	 * @see TableSetParser#parseFKey(XMLStreamReader)
 	 * @see TableSetParser#parse(InputStream)
 	 */
@@ -125,14 +131,14 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * Parse the XML TableSet stored in the specified file.
-	 * 
+	 *
 	 * @param file	The regular file containing the TableSet to parse.
-	 * 
+	 *
 	 * @return	The corresponding TAP metadata.
-	 * 
+	 *
 	 * @throws IOException	If any error occurs while reading the given file.
 	 * @throws TAPException	If any error occurs in the XML parsing or in the TAP metadata creation.
-	 * 
+	 *
 	 * @since {@link #parse(InputStream)}
 	 */
 	public TAPMetadata parse(final File file) throws IOException, TAPException{
@@ -151,14 +157,14 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * Parse the XML TableSet stored in the given stream.
-	 * 
+	 *
 	 * @param input	The stream containing the TableSet to parse.
-	 * 
+	 *
 	 * @return	The corresponding TAP metadata.
-	 * 
+	 *
 	 * @throws IOException	If any error occurs while reading the given stream.
 	 * @throws TAPException	If any error occurs in the XML parsing or in the TAP metadata creation.
-	 * 
+	 *
 	 * @see #parseSchema(XMLStreamReader, List)
 	 */
 	public TAPMetadata parse(final InputStream input) throws IOException, TAPException{
@@ -220,15 +226,15 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Parse the XML representation of a TAP schema.</p>
-	 * 
+	 *
 	 * <p><b>Important: This function MUST be called just after the start element "schema" has been read!</b></p>
-	 * 
+	 *
 	 * <h3>Attributes</h3>
-	 * 
+	 *
 	 * <p>No attribute is expected in the start element "schema".</p>
-	 * 
+	 *
 	 * <h3>Children</h3>
-	 * 
+	 *
 	 * Only the following nodes are taken into account ; the others are ignored:
 	 * <ul>
 	 * 	<li>name <i>REQUIRED</i></li>
@@ -237,18 +243,18 @@ public class TableSetParser extends DefaultHandler {
 	 * 	<li>utype <i>{0..1}</i></li>
 	 * 	<li>table <i>{*}</i></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param reader					XML reader.
 	 * @param allForeignKeys			List to fill with all encountered foreign keys.
 	 *                      			<i>note: these keys are not the final TAP meta, but a collection of all information found in the XML document.
 	 *                      			The final TAP meta will be created later, once all available tables and columns are available.</i>
 	 * @throws IllegalStateException	If this function is called while the reader has not just read the START ELEMENT tag of "table".
-	 * 
+	 *
 	 * @return	The corresponding TAP schema.
-	 * 
+	 *
 	 * @throws XMLStreamException	If there is an error processing the underlying XML source.
 	 * @throws TAPException			If several "name" nodes are found, or if none such node is found ; exactly one "name" node must be found.
-	 * 
+	 *
 	 * @see #parseTable(XMLStreamReader, List)
 	 */
 	protected TAPSchema parseSchema(final XMLStreamReader reader, final List<ForeignKey> allForeignKeys) throws XMLStreamException, TAPException{
@@ -300,20 +306,20 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Parse the XML representation of a TAP table.</p>
-	 * 
+	 *
 	 * <p><b>Important: This function MUST be called just after the start element "table" has been read!</b></p>
-	 * 
+	 *
 	 * <h3>Attributes</h3>
-	 * 
+	 *
 	 * The attribute "type" may be provided in the start element "table". One of the following value is expected:
 	 * <ul>
 	 * 	<li>base_table <i>or table</i></li>
 	 * 	<li>output</li>
 	 * 	<li>view</li>
 	 * </ul>
-	 * 
+	 *
 	 * <h3>Children</h3>
-	 * 
+	 *
 	 * Only the following nodes are taken into account ; the others are ignored:
 	 * <ul>
 	 * 	<li>name <i>REQUIRED</i></li>
@@ -323,18 +329,18 @@ public class TableSetParser extends DefaultHandler {
 	 * 	<li>column <i>{*}</i></li>
 	 * 	<li>foreignKey <i>{*}</i></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param reader			XML reader.
 	 * @param keys				List to fill with all encountered foreign keys.
 	 *                      	<i>note: these keys are not the final TAP meta, but a collection of all information found in the XML document.
 	 *                      	The final TAP meta will be created later, once all available tables and columns are available.</i>
-	 * 
+	 *
 	 * @return	The corresponding TAP table.
-	 * 
+	 *
 	 * @throws XMLStreamException		If there is an error processing the underlying XML source.
 	 * @throws TAPException				If several "name" nodes are found, or if none such node is found ; exactly one "name" node must be found.
 	 * @throws IllegalStateException	If this function is called while the reader has not just read the START ELEMENT tag of "table".
-	 * 
+	 *
 	 * @see #parseColumn(XMLStreamReader)
 	 * @see #parseFKey(XMLStreamReader)
 	 */
@@ -411,19 +417,19 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Parse the XML representation of a TAP column.</p>
-	 * 
+	 *
 	 * <p><b>Important: This function MUST be called just after the start element "column" has been read!</b></p>
-	 * 
+	 *
 	 * <h3>Attributes</h3>
-	 * 
+	 *
 	 * The attribute "std" may be provided in the start element "column". One of the following value is expected:
 	 * <ul>
 	 * 	<li>false <i>(default value if the attribute is omitted)</i></li>
 	 * 	<li>true</li>
 	 * </ul>
-	 * 
+	 *
 	 * <h3>Children</h3>
-	 * 
+	 *
 	 * Only the following nodes are taken into account ; the others are ignored:
 	 * <ul>
 	 * 	<li>name <i>REQUIRED</i></li>
@@ -434,15 +440,15 @@ public class TableSetParser extends DefaultHandler {
 	 * 	<li>dataType <i>{0..1}</i></li>
 	 * 	<li>flag <i>{*}, but only the values 'nullable', 'indexed' and 'primary' are currently supported by the library)</i></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param reader	XML reader.
-	 * 
+	 *
 	 * @return	The corresponding TAP column.
-	 * 
+	 *
 	 * @throws XMLStreamException		If there is an error processing the underlying XML source.
 	 * @throws TAPException				If several "name" nodes are found, or if none such node is found ; exactly one "name" node must be found.
 	 * @throws IllegalStateException	If this function is called while the reader has not just read the START ELEMENT tag of "column".
-	 * 
+	 *
 	 * @see #parseDataType(XMLStreamReader)
 	 */
 	protected TAPColumn parseColumn(final XMLStreamReader reader) throws XMLStreamException, TAPException{
@@ -517,11 +523,11 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Parse the XML representation of a column datatype.</p>
-	 * 
+	 *
 	 * <p><b>Important: This function MUST be called just after the start element "dataType" has been read!</b></p>
-	 * 
+	 *
 	 * <h3>Attributes</h3>
-	 * 
+	 *
 	 * The attribute "xsi:type" (where xsi = http://www.w3.org/2001/XMLSchema-instance) MUST be provided. Only the following values are supported and accepted
 	 * <i>(below, vs = http://www.ivoa.net/xml/VODataService)</i>:
 	 * <ul>
@@ -532,23 +538,23 @@ public class TableSetParser extends DefaultHandler {
 	 * 		</ul></li>
 	 * 	<li><b>vs:TAPType</b>, and the attribute "size" may be also provided</li>
 	 * </ul>
-	 * 
+	 *
 	 * <h3>Children</h3>
-	 * 
+	 *
 	 * No child, but a text MUST be provided. Its value depends of the attribute "xsi:type": a VOTable datatype (e.g. char, float, short) if "xsi:type=vs:VOTableType",
 	 * or a TAP type (e.g. VARCHAR, REAL, SMALLINT) if "xsi:type=vs:TAPType". <i>Any other value will be rejected.</i>
-	 * 
+	 *
 	 * <p><i>IMPORTANT: All VOTable datatypes will be converted into TAPType automatically by the library.</i></p>
-	 * 
+	 *
 	 * @param reader	XML reader.
-	 * 
+	 *
 	 * @return	The corresponding column datatype.
-	 * 
+	 *
 	 * @throws XMLStreamException		If there is an error processing the underlying XML source.
 	 * @throws TAPException				If the attribute "xsi:type" is missing or incorrect,
 	 *                     				or if the datatype is unknown or not supported.
 	 * @throws IllegalStateException	If this function is called while the reader has not just read the START ELEMENT tag of "dataType".
-	 * 
+	 *
 	 * @see VOTableIterator#resolveVotType(String, String, String)
 	 * @see DBType#DBType(DBDatatype, int)
 	 */
@@ -614,7 +620,10 @@ public class TableSetParser extends DefaultHandler {
 			}
 			// build and return the corresponding type:
 			try{
-				return new DBType(DBDatatype.valueOf(datatype.toUpperCase()), colSize);
+				if ("BOOLEAN".equalsIgnoreCase(datatype)){
+					return new DBType(DBDatatype.SMALLINT, colSize);
+				}else
+					return new DBType(DBDatatype.valueOf(datatype.toUpperCase()), colSize);
 			}catch(IllegalArgumentException iae){
 				throw new TAPException(getPosition(reader) + " Unknown TAPType: \"" + datatype + "\"!");
 			}
@@ -626,15 +635,15 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Parse the XML representation of a TAP foreign key.</p>
-	 * 
+	 *
 	 * <p><b>Important: This function MUST be called just after the start element "foreignKey" has been read!</b></p>
-	 * 
+	 *
 	 * <h3>Attributes</h3>
-	 * 
+	 *
 	 * <p>No attribute is expected in the start element "foreignKey".</p>
-	 * 
+	 *
 	 * <h3>Children</h3>
-	 * 
+	 *
 	 * Only the following nodes are taken into account ; the others are ignored:
 	 * <ul>
 	 * 	<li>targetTable <i>REQUIRED</i></li>
@@ -646,16 +655,16 @@ public class TableSetParser extends DefaultHandler {
 	 * 			<li>targetColumn <i>REQUIRED</i></li>
 	 * 		</ul></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param reader	XML reader.
-	 * 
+	 *
 	 * @return	An object containing all information found in the XML node about the foreign key.
-	 * 
+	 *
 	 * @throws XMLStreamException		If there is an error processing the underlying XML source.
 	 * @throws TAPException				If "targetTable" node is missing,
 	 *                     				or if no "fkColumn" is provided.
 	 * @throws IllegalStateException	If this function is called while the reader has not just read the START ELEMENT tag of "foreignKey".
-	 * 
+	 *
 	 * @see #parseDataType(XMLStreamReader)
 	 */
 	protected ForeignKey parseFKey(final XMLStreamReader reader) throws XMLStreamException, TAPException{
@@ -729,20 +738,20 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Get the current position of the given reader.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	This position is returned as a string having the following syntax: "[l.x,c.y]"
 	 * 	(where x is the line number and y the column number ; x and y start at 1 ; x and y
 	 * 	are both -1 if the end of the XML document has been reached).
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	The column position is generally just after the read element (node start/end tag, characters).
 	 * 	However, with CHARACTERS items, this column position may be 2 characters after the real end.
 	 * </i></p>
-	 * 
+	 *
 	 * @param reader	XML reader whose the current position must be returned.
-	 * 
+	 *
 	 * @return	A string representing the current reader position.
 	 */
 	protected final String getPosition(final XMLStreamReader reader){
@@ -751,11 +760,11 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * Skip every elements until a START ELEMENT or an END ELEMENT is reached.
-	 * 
+	 *
 	 * @param reader	XML reader.
-	 * 
+	 *
 	 * @return	The event of the last read tag. <i>Here, either {@link XMLStreamConstants#START_ELEMENT} or {@link XMLStreamConstants#END_ELEMENT}.</i>
-	 * 
+	 *
 	 * @throws XMLStreamException	If there is an error processing the underlying XML source.
 	 */
 	protected final int nextTag(final XMLStreamReader reader) throws XMLStreamException{
@@ -768,19 +777,19 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Skip all tags from the current position to the end of the specified node.</p>
-	 * 
+	 *
 	 * <p><b>IMPORTANT:
 	 * 	This function MUST be called ONLY IF the reader is inside the node whose the end tag is searched.
 	 * 	It may be in a child of this node or not, but the most important is to be inside it.
 	 * </b></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	No tag will be read if the given startNode is NULL or an empty string.
 	 * </i></p>
-	 * 
+	 *
 	 * @param reader	XML reader.
 	 * @param startNode	Name of the node whose the end must be reached.
-	 * 
+	 *
 	 * @throws XMLStreamException	If there is an error processing the underlying XML source.
 	 * @throws TAPException			If the name of the only corresponding end element does not match the given one,
 	 *                     			or if the END ELEMENT can not be found <i>(2 possible reasons for that:
@@ -814,26 +823,26 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Get the text of the current node.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	This function iterates while the next tags are of type CHARACTERS.
 	 * 	Consequently, the next tag (start or end element) is already read when returning this function.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	All CHARACTERS elements are concatenated.
 	 * 	All leading and trailing space characters (\r \n \t and ' ') of every lines are deleted ; only the last or the first \n or \r are kept.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is also skipping all COMMENT elements. This is particularly useful if a COMMENT is splitting a node text content ;
 	 * 	in such case, the comment is ignored and both divided text are concatenated.
 	 * </i></p>
-	 * 
+	 *
 	 * @param reader	XML reader.
-	 * 
+	 *
 	 * @return	The whole text content of the current node.
-	 * 
+	 *
 	 * @throws XMLStreamException	If there is an error processing the underlying XML source.
 	 */
 	protected final String getText(final XMLStreamReader reader) throws XMLStreamException{
@@ -849,15 +858,15 @@ public class TableSetParser extends DefaultHandler {
 
 	/**
 	 * <p>Search for the specified table in the given TAP metadata.</p>
-	 * 
+	 *
 	 * <p><i>Note: This function is not case sensitive.</i></p>
-	 * 
+	 *
 	 * @param tableName	Name of the table to search. <i>The table name MAY be prefixed by a schema name (e.g. "mySchema.myTable").</i>
 	 * @param meta		All fetched TAP metadata.
 	 * @param position	Position of the table name in the XML document. <i>This parameter is ONLY used in case of error.</i>
-	 * 
+	 *
 	 * @return	The corresponding TAP table.
-	 * 
+	 *
 	 * @throws TAPException	If the table name syntax ([schema.]table) is incorrect,
 	 *                    	or if several tables match to the specified table name (which is not prefixed by a schema name),
 	 *                     	or if no match can be found.
