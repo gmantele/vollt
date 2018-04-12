@@ -25,7 +25,6 @@ import adql.parser.ParseException;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.geometry.*;
-import org.eso.asp.tap.adql.translator.CLRToRegionParser;
 
 /**
  * Class that implements the translation of ADQL spatial functions
