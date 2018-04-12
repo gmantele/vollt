@@ -84,7 +84,7 @@ public class CLRToRegionParser {
 
     private static double[] parseCoordinate(ByteBuffer buffer) {
         double y = buffer.getDouble();
-        double x = buffer.getDouble() + 180;
+        double x = 180 - buffer.getDouble();
         return new double[]{ x, y };
     }
 
@@ -94,9 +94,10 @@ public class CLRToRegionParser {
 
     private static Region parsePolygon(ByteBuffer buffer, int numPoints) {
         List<double[]> points = new ArrayList<>();
-        for (int point = 0; point < numPoints; point++) {
+        for (int point = 0; point < numPoints-1; point++) {
             points.add(parseCoordinate(buffer));
         }
+        parseCoordinate(buffer); // read and ignore last point
         return new Region(coordSys, points.toArray(new double[points.size()][2]));
     }
 
