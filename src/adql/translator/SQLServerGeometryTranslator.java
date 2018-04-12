@@ -1,4 +1,4 @@
-package org.eso.asp.tap.adql.translator;
+package adql.translator;
 
 /*
  * This file is part of ADQLLibrary.
@@ -25,8 +25,7 @@ import adql.parser.ParseException;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.geometry.*;
-import adql.translator.SQLServerTranslator;
-import adql.translator.TranslationException;
+import org.eso.asp.tap.adql.translator.CLRToRegionParser;
 
 /**
  * Class that implements the translation of ADQL spatial functions

@@ -1,4 +1,4 @@
-package org.eso.asp.tap.adql.translator;
+package adql.translator;
 
 /*
  * This file is part of ADQLLibrary.
