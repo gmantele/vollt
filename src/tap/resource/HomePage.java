@@ -2,21 +2,21 @@ package tap.resource;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2015-2016 - Astronomisches Rechen Institut (ARI)
+ *
+ * Copyright 2015-2018 - Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
@@ -34,25 +34,25 @@ import uws.UWSToolBox;
 
 /**
  * <p>Write the content of the TAP service's home page.</p>
- * 
+ *
  * <p><i>Note:
  * 	This class is using the two following {@link TAP} attributes in order to display the home page:
  * 	{@link TAP#homePageURI} and {@link TAP#homePageMimeType}. The MIME type is used only for the third case below (local file).
  * </i></p>
- * 
+ *
  * <p>
  * 	The home page URI is expected to be either relative/absolute path (both related to the Web Application
  * 	directory, NOT the local file system), a <code>file:</code> URI (pointing toward a local file system file)
  * 	or a URL (basically any URI whose the scheme is not <code>file:</code>).
  * </p>
- * 
+ *
  * <p>
  * 	To read/write the specified file, this class extends {@link ForwardResource} in order to use its function
  * 	{@link ForwardResource#forward(String, String, HttpServletRequest, HttpServletResponse)}.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (09/2016)
+ * @version 2.3 (04/2018)
  * @since 2.0
  */
 public class HomePage extends ForwardResource {
@@ -84,6 +84,9 @@ public class HomePage extends ForwardResource {
 
 	@Override
 	public boolean executeResource(final HttpServletRequest request, final HttpServletResponse response) throws IOException, TAPException{
+		// Share the TAP instance with JSPs:
+		request.setAttribute("tap", tap);
+
 		// Try by default a forward toward the specified file:
 		boolean written = forward(tap.homePageURI, tap.homePageMimeType, request, response);
 
