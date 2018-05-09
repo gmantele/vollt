@@ -250,8 +250,9 @@ public class TestJobListRefiner {
 			assertEquals(1, filter.filters.size());
 			assertEquals(PhasesFilter.class, filter.filters.get(0).getClass());
 			assertEquals(2, ((PhasesFilter)filter.filters.get(0)).phases.size());
-			assertEquals(ExecutionPhase.QUEUED, ((PhasesFilter)filter.filters.get(0)).phases.get(0));
-			assertEquals(ExecutionPhase.EXECUTING, ((PhasesFilter)filter.filters.get(0)).phases.get(1));
+			assertEquals(2, ((PhasesFilter)filter.filters.get(0)).phases.size());
+			assertTrue(((PhasesFilter)filter.filters.get(0)).phases.contains(ExecutionPhase.QUEUED));
+			assertTrue(((PhasesFilter)filter.filters.get(0)).phases.contains(ExecutionPhase.EXECUTING));
 			assertEquals(-1, filter.topSize);
 			assertFalse(filter.reverseOrder);
 			assertNull(filter.sortComp);
