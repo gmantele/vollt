@@ -87,7 +87,7 @@ import uws.service.request.UploadFile;
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (03/2018)
+ * @version 4.3 (05/2018)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -882,7 +882,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase("pseudo"))
 					pseudo = json.getString(key);
 				else
-					userData.put(key, json.getString(key));
+					userData.put(key, json.get(key));
 			}catch(JSONException je){
 				getLogger().logUWS(LogLevel.WARNING, null, "RESTORATION", "Incorrect JSON format for the serialization of the user \"" + ID + "\"! The restoration of this job may be incomplete.", je);
 			}
