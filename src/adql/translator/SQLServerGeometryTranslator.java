@@ -47,14 +47,7 @@ public class SQLServerGeometryTranslator extends SQLServerTranslator {
 
 	@Override
 	public String translate(final ExtractCoord extractCoord) throws TranslationException {
-		StringBuffer buf = new StringBuffer();
-		buf.append(translate(extractCoord.getParameter(0)));
-		if (extractCoord.getName().equals("COORD1"))
-			buf.append(".Long+180");
-		else
-			buf.append(".Lat");
-
-		return buf.toString();
+		throw new TranslationException(extractCoord.getName() + " is not supported");
 	}
 
 	@Override
@@ -167,7 +160,7 @@ public class SQLServerGeometryTranslator extends SQLServerTranslator {
 	private String translatePoint(ADQLOperand coord1, ADQLOperand coord2) throws TranslationException {
 		/*
 		 * the point needs to be translated to something like
-		 * 'POINT('+str(s_-ra+180.0, 11, 7)+' '+ str(s_dec, 11, 7)+')'
+		 * 'POINT('+str(180.0-s_ra, 11, 7)+' '+ str(s_dec, 11, 7)+')'
 		 */
 		StringBuffer buf = new StringBuffer();
 		buf.append("geography::STGeomFromText('POINT(");
