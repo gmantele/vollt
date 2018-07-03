@@ -13,7 +13,7 @@ This GitHub repository contains the sources of 3 libraries implementing [IVOA](h
 For a complete documentation/tutorial and a demo of the 3 libraries you should visit the following websites: [ADQLTuto](http://cdsportal.u-strasbg.fr/adqltuto), [UWSTuto](http://cdsportal.u-strasbg.fr/uwstuto) and [TAPTuto](http://cdsportal.u-strasbg.fr/taptuto).
 
 ### Java version
-These libraries are developed in **Java 1.6**.
+These libraries are developed in **Java 7**.
 
 ### License
 The three of these libraries are under the terms of the [LGPL v3 license](https://www.gnu.org/licenses/lgpl.html). You can find the full description and all the conditions of use in the files src/COPYING and src/COPYING.LESSER.
