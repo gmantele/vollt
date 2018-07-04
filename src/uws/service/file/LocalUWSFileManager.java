@@ -706,8 +706,9 @@ public class LocalUWSFileManager implements UWSFileManager {
 	@Override
 	public OutputStream getBackupOutput(JobOwner owner) throws IllegalArgumentException, IOException{
 		File backupFile = new File(getOwnerDirectory(owner), getBackupFileName(owner));
+		File tempBackupFile = new File(getOwnerDirectory(owner), getBackupFileName(owner) + ".temp-" + System.currentTimeMillis());
 		createParentDir(backupFile);
-		return new FileOutputStream(backupFile);
+		return new OutputStreamWithCloseAction(new FileOutputStream(tempBackupFile), new RotateFileAction(tempBackupFile, backupFile));
 	}
 
 	/**
