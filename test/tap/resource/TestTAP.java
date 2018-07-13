@@ -62,7 +62,7 @@ public class TestTAP {
 			obscore.addColumn("pol_xel", new DBType(DBDatatype.BIGINT), null, null, null, null);
 			xml.delete(0, xml.length());
 			tap.appendObsCoreDM(xml, "\t");
-			assertEquals("\t<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore/v1.1\">ObsCore-1.1</dataModel>\n", xml.toString());
+			assertEquals("\t<dataModel ivo-id=\"ivo://ivoa.net/std/ObsCore#core-1.1\">ObsCore-1.1</dataModel>\n", xml.toString());
 
 		}catch(Exception e){
 			e.printStackTrace();

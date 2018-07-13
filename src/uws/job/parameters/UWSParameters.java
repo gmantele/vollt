@@ -16,7 +16,7 @@ package uws.job.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -116,7 +116,7 @@ import uws.service.request.UploadFile;
  * <p><i><u>note 2:</u> If several values have been submitted for the same UWS standard parameter, just the last occurrence is taken into account.</i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (12/2014)
+ * @version 4.2 (09/2017)
  */
 public class UWSParameters implements Iterable<Entry<String,Object>> {
 
@@ -331,7 +331,7 @@ public class UWSParameters implements Iterable<Entry<String,Object>> {
 	 * 
 	 * @return Default list of controllers. <i><u>note:</u> This map can be modified !</i>
 	 */
-	protected HashMap<String,InputParamController> getDefaultControllers(){
+	protected Map<String,InputParamController> getDefaultControllers(){
 		HashMap<String,InputParamController> controllers = new HashMap<String,InputParamController>(2);
 		controllers.put(UWSJob.PARAM_EXECUTION_DURATION, new ExecutionDurationController());
 		controllers.put(UWSJob.PARAM_DESTRUCTION_TIME, new DestructionTimeController());

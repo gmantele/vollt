@@ -3,17 +3,14 @@ package adql.query;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
-import adql.query.ADQLObject;
-import adql.query.ADQLQuery;
-import adql.query.TextPosition;
 import adql.query.constraint.Comparison;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
@@ -75,7 +72,7 @@ public class TestADQLObjectPosition {
 			 *     the one of the first table of the clause FROM. */
 			assertEquality(new TextPosition(1, 26, 1, 49), query.getFrom().getPosition());
 			// Test ADQLTable
-			ArrayList<ADQLTable> tables = query.getFrom().getTables();
+			List<ADQLTable> tables = query.getFrom().getTables();
 			assertEquality(new TextPosition(1, 26, 1, 29), tables.get(0).getPosition());
 			assertEquality(new TextPosition(1, 35, 1, 38), tables.get(1).getPosition());
 			// Test the join condition:

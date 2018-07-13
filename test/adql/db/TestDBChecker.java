@@ -97,6 +97,41 @@ public class TestDBChecker {
 	}
 
 	@Test
+	public void testClauseADQLWithNameNull(){
+		/* The name of an ADQLClause is got in DBChecker by SearchColumnOutsideGroupByHandler.goInto(...)
+		 * and possibly in other locations in the future. If this name is NULL, no NullPointerException
+		 * should be thrown.
+		 *
+		 * This issue can be tested by creating a ConstraintsGroup (i.e. in a constraints location like WHERE or JOIN...ON,
+		 * a constraint (or more) between parenthesis). */
+		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
+		try{
+			parser.parseQuery("SELECT * FROM foo WHERE (colI BETWEEN 1 AND 10)");
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail();
+		}
+	}
+
+	@Test
+	public void testGroupByWithQualifiedColName(){
+		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
+		try{
+			// Not qualified column name:
+			parser.parseQuery("SELECT colI, COUNT(*) AS cnt FROM foo GROUP BY colI");
+			// Qualified with the table name:
+			parser.parseQuery("SELECT foo.colI, COUNT(*) AS cnt FROM foo GROUP BY foo.colI");
+			// Qualified with the table alias:
+			parser.parseQuery("SELECT f.colI, COUNT(*) AS cnt FROM foo AS f GROUP BY f.colI");
+			// With the SELECT item alias:
+			parser.parseQuery("SELECT colI AS mycol, COUNT(*) AS cnt FROM foo GROUP BY mycol");
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail();
+		}
+	}
+
+	@Test
 	public void testQualifiedName(){
 		ADQLParser parser = new ADQLParser(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 		try{
@@ -140,9 +175,15 @@ public class TestDBChecker {
 	public void testColRefWithDottedAlias(){
 		ADQLParser parser = new ADQLParser(new DBChecker(tables));
 		try{
+			// ORDER BY
 			ADQLQuery adql = parser.parseQuery("SELECT colI AS \"col.I\" FROM aschema.foo ORDER BY \"col.I\"");
 			assertNotNull(adql);
 			assertEquals("SELECT \"aschema\".\"foo\".\"colI\" AS \"col.I\"\nFROM \"aschema\".\"foo\"\nORDER BY \"col.I\" ASC", (new PostgreSQLTranslator()).translate(adql));
+
+			// GROUP BY
+			adql = parser.parseQuery("SELECT colI AS \"col.I\" FROM aschema.foo GROUP BY \"col.I\"");
+			assertNotNull(adql);
+			assertEquals("SELECT \"aschema\".\"foo\".\"colI\" AS \"col.I\"\nFROM \"aschema\".\"foo\"\nGROUP BY \"col.I\"", (new PostgreSQLTranslator()).translate(adql));
 		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail();
@@ -171,6 +212,9 @@ public class TestDBChecker {
 			assertNotNull(parser.parseQuery("SELECT toto FROM foo;"));
 			assertNotNull(parser.parseQuery("SELECT toto * 3 FROM foo;"));
 			assertNotNull(parser.parseQuery("SELECT toto || 'blabla' FROM foo;"));
+			assertNotNull(parser.parseQuery("SELECT 'toto' || 1 FROM foo;"));
+			assertNotNull(parser.parseQuery("SELECT 1 || 'toto' FROM foo;"));
+			assertNotNull(parser.parseQuery("SELECT 'toto' || (-1) FROM foo;"));
 		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail();
@@ -180,15 +224,15 @@ public class TestDBChecker {
 			fail();
 		}catch(ParseException pe){}
 		try{
+			parser.parseQuery("SELECT 'toto' || -1 FROM foo;");
+			fail();
+		}catch(ParseException pe){}
+		try{
+			parser.parseQuery("SELECT -1 || 'toto' FROM foo;");
+			fail();
+		}catch(ParseException pe){}
+		try{
 			parser.parseQuery("SELECT ABS(('toto' || 'blabla')) FROM foo;");
-			fail();
-		}catch(ParseException pe){}
-		try{
-			parser.parseQuery("SELECT 'toto' || 1 FROM foo;");
-			fail();
-		}catch(ParseException pe){}
-		try{
-			parser.parseQuery("SELECT 1 || 'toto' FROM foo;");
 			fail();
 		}catch(ParseException pe){}
 		try{
@@ -541,22 +585,16 @@ public class TestDBChecker {
 			fail("This query contains a concatenation between 2 strings: this test should have succeeded!");
 		}
 		try{
-			parser.parseQuery("SELECT colI || 'blabla' FROM foo;");
-			fail("This query contains a concatenation between an integer and a string: this test should have failed!");
+			assertNotNull(parser.parseQuery("SELECT colI || 'blabla' FROM foo;"));
 		}catch(ParseException e){
-			assertTrue(e instanceof UnresolvedIdentifiersException);
-			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
-			assertEquals(1, ex.getNbErrors());
-			assertEquals("Type mismatch! A string value was expected instead of \"colI\".", ex.getErrors().next().getMessage());
+			e.printStackTrace();
+			fail("This query contains a concatenation between a column (whatever its type) and a string: this test should have succeeded!");
 		}
 		try{
-			parser.parseQuery("SELECT colG || 'blabla' FROM foo;");
-			fail("This query contains a concatenation between a geometry and a string: this test should have failed!");
+			assertNotNull(parser.parseQuery("SELECT colG || 'blabla' FROM foo;"));
 		}catch(ParseException e){
-			assertTrue(e instanceof UnresolvedIdentifiersException);
-			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)e;
-			assertEquals(1, ex.getNbErrors());
-			assertEquals("Type mismatch! A string value was expected instead of \"colG\".", ex.getErrors().next().getMessage());
+			e.printStackTrace();
+			fail("This query contains a concatenation between a column (whatever its type) and a string: this test should have succeeded!");
 		}
 
 		// Test the expected type - GEOMETRY - generated by the parser:

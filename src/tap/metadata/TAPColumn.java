@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -69,7 +69,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2016)
+ * @version 2.1 (07/2017)
  */
 public class TAPColumn implements DBColumn {
 
@@ -132,6 +132,11 @@ public class TAPColumn implements DBColumn {
 	 * <i>Note: Standard TAP column field since TAP 1.1.</i>
 	 * @since 2.1 */
 	private int index = -1;
+	
+	/** Coordinate system used by this column values.
+	 * <i>Note: Of course, this attribute has to be set only on coordinate columns.</i>
+	 * @since 2.1 */
+	private TAPCoosys coosys = null;
 
 	/** Let add some information in addition of the ones of the TAP protocol.
 	 * <i>Note: This object can be anything: an {@link Integer}, a {@link String}, a {@link Map}, a {@link List}, ...
@@ -768,6 +773,28 @@ public class TAPColumn implements DBColumn {
 	 */
 	public final void setIndex(int columnIndex){
 		this.index = columnIndex;
+	}
+
+	/**
+	 * Get the used coordinate system.
+	 * 
+	 * @return	Its coordinate system.
+	 * 
+	 * @since 2.1
+	 */
+	public final TAPCoosys getCoosys(){
+		return coosys;
+	}
+
+	/**
+	 * Set the the coordinate system to use.
+	 * 
+	 * @param newCoosys	Its new coordinate system.
+	 * 
+	 * @since 2.1
+	 */
+	public final void setCoosys(final TAPCoosys newCoosys){
+		this.coosys = newCoosys;
 	}
 
 	/**

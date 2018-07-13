@@ -2,20 +2,20 @@ package uws.config;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
  */
 
@@ -67,9 +67,9 @@ import uws.service.request.UWSRequestParser;
 
 /**
  * Concrete implementation of a {@link UWSFactory} which is parameterized by a UWS configuration file.
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (06/2017)
+ * @version 4.3 (09/2017)
  * @since 4.2
  */
 public class ConfigurableUWSFactory implements UWSFactory {
@@ -85,7 +85,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 	protected Map<String,Map<String,InputParamController>> jobParams = new HashMap<String,Map<String,InputParamController>>(2);
 
 	/** Create an empty factory.
-	 * 
+	 *
 	 * <p>
 	 * 	Using this constructor, no {@link JobThread} can be created.
 	 * 	You have to add some in {@link #jobThreads} for each job list you have to support.
@@ -96,7 +96,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 
 	/**
 	 * Create and initialize a UWS factory thanks to properties coming from a UWS configuration file.
-	 * 
+	 *
 	 * <p>The following properties are supported by this constructor:</p>
 	 * <ul>
 	 * 	<li>{@link UWSConfiguration#KEY_REQUEST_PARSER  KEY_REQUEST_PARSER}</li>
@@ -107,9 +107,9 @@ public class ConfigurableUWSFactory implements UWSFactory {
 	 * 	<li>{@link UWSConfiguration#REGEXP_DEFAULT_DESTRUCTION_INTERVAL  KEY_REGEXP_DEFAULT_DESTRUCTION_INTERVAL}</li>
 	 * 	<li>{@link UWSConfiguration#KEY_REGEXP_MAX_DESTRUCTION_INTERVAL  KEY_REGEXP_MAX_DESTRUCTION_INTERVAL}</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param uwsConfig	Configuration of this factory.
-	 * 
+	 *
 	 * @throws UWSException	If the initialization fails.
 	 */
 	public ConfigurableUWSFactory(final Properties uwsConfig) throws UWSException{
@@ -296,7 +296,7 @@ public class ConfigurableUWSFactory implements UWSFactory {
 
 	/**
 	 * Regular Expression of a job parameters list.
-	 * 
+	 *
 	 * <p>The following parameter types are supported:</p>
 	 * <ul>
 	 * 	<li><em>Just a parameter name (i.e. no controller):</em>
@@ -369,20 +369,20 @@ public class ConfigurableUWSFactory implements UWSFactory {
 
 	/**
 	 * Parse the given list of parameters + their limits/controller and update the list of parameters for the specified job list.
-	 * 
+	 *
 	 * <p>
 	 * 	The given string is parsed using {@link #PATTERN_PARAMETER}. The expected syntax of one item of this list is explained
 	 * 	in the javadoc of {@link #PATTERN_PARAMETER}.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	If just a parameter name is given, it is anyway added to the map of parameters of the specified job list, but with a <code>null</code>
 	 * 	{@link InputParamController}. The idea is to indicate the parameter is expected with this name, but there is no specific restriction on its value.
 	 * </p>
-	 * 
+	 *
 	 * @param jlName		Name of the job list for which the given list of parameters is expected.
 	 * @param propValue		String expressing the list of expected parameters (and eventually their limits/controller).
-	 * 
+	 *
 	 * @throws UWSException	If the syntax of a parameter description is incorrect.
 	 */
 	protected void initParameters(final String jlName, final String propValue) throws UWSException{
@@ -632,8 +632,8 @@ public class ConfigurableUWSFactory implements UWSFactory {
 	}
 
 	@Override
-	public UWSJob createJob(String jobID, JobOwner owner, UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException{
-		return new UWSJob(jobID, owner, params, quote, startTime, endTime, results, error);
+	public UWSJob createJob(String jobID, long creationTime, JobOwner owner, UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException{
+		return new UWSJob(jobID, creationTime, owner, params, quote, startTime, endTime, results, error);
 	}
 
 	@Override

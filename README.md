@@ -6,14 +6,14 @@ Preambule
 
 This GitHub repository contains the sources of 3 libraries implementing [IVOA](http://www.ivoa.net/ "International Virtual Observatory Alliance") standards and protocols:
 * [ADQL](http://www.ivoa.net/documents/latest/ADQL.html "Astronomical Data Query Language")
-* [UWS](http://www.ivoa.net/documents/UWS/index.html "Universal Worker Service pattern")
+* [UWS-1.1](http://www.ivoa.net/documents/UWS/20161024/index.html "Universal Worker Service pattern")
 * [TAP](http://www.ivoa.net/documents/TAP/ "Table Access Protocol")
 
 ### Documentation
 For a complete documentation/tutorial and a demo of the 3 libraries you should visit the following websites: [ADQLTuto](http://cdsportal.u-strasbg.fr/adqltuto), [UWSTuto](http://cdsportal.u-strasbg.fr/uwstuto) and [TAPTuto](http://cdsportal.u-strasbg.fr/taptuto).
 
 ### Java version
-These libraries are developed in **Java 1.6**.
+These libraries are developed in **Java 7**.
 
 ### License
 The three of these libraries are under the terms of the [LGPL v3 license](https://www.gnu.org/licenses/lgpl.html). You can find the full description and all the conditions of use in the files src/COPYING and src/COPYING.LESSER.

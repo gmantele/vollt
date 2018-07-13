@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -46,7 +47,7 @@ import cds.utils.TextualSearchList;
  * </i></p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2015)
+ * @version 1.4 (09/2017)
  */
 public class SearchColumnList extends TextualSearchList<DBColumn> {
 	private static final long serialVersionUID = 1L;
@@ -55,10 +56,10 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	private boolean distinct = false;
 
 	/** Case-sensitive dictionary of table aliases. (tableAlias <-> TableName) */
-	private final HashMap<String,String> tableAliases = new HashMap<String,String>();
+	private final Map<String,String> tableAliases = new HashMap<String,String>();
 
 	/** Case-insensitive dictionary of table aliases. (tablealias <-> List&lt;TableName&gt;) */
-	private final HashMap<String,ArrayList<String>> mapAliases = new HashMap<String,ArrayList<String>>();
+	private final Map<String,List<String>> mapAliases = new HashMap<String,List<String>>();
 
 	/* ************ */
 	/* CONSTRUCTORS */
@@ -122,7 +123,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 		if (tableAlias != null && tableName != null){
 			tableAliases.put(tableAlias, tableName);
 
-			ArrayList<String> aliases = mapAliases.get(tableAlias.toLowerCase());
+			List<String> aliases = mapAliases.get(tableAlias.toLowerCase());
 			if (aliases == null){
 				aliases = new ArrayList<String>();
 				mapAliases.put(tableAlias.toLowerCase(), aliases);
@@ -139,7 +140,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	public final void removeTableAlias(final String tableAlias){
 		tableAliases.remove(tableAlias);
 
-		ArrayList<String> aliases = mapAliases.get(tableAlias.toLowerCase());
+		List<String> aliases = mapAliases.get(tableAlias.toLowerCase());
 		if (aliases != null){
 			aliases.remove(tableAlias);
 			if (aliases.isEmpty())
@@ -171,7 +172,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @see TextualSearchList#get(String)
 	 */
-	public ArrayList<DBColumn> search(final String columnName){
+	public List<DBColumn> search(final String columnName){
 		return get(columnName);
 	}
 
@@ -187,7 +188,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @see #search(String, String, String, String, byte)
 	 */
-	public final ArrayList<DBColumn> search(final String catalog, final String schema, final String table, final String column){
+	public final List<DBColumn> search(final String catalog, final String schema, final String table, final String column){
 		return search(catalog, schema, table, column, (byte)0);
 	}
 
@@ -200,7 +201,7 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @see #search(String, String, String, String, byte)
 	 */
-	public ArrayList<DBColumn> search(final ADQLColumn column){
+	public List<DBColumn> search(final ADQLColumn column){
 		return search(column.getCatalogName(), column.getSchemaName(), column.getTableName(), column.getColumnName(), column.getCaseSensitive());
 	}
 
@@ -217,15 +218,15 @@ public class SearchColumnList extends TextualSearchList<DBColumn> {
 	 * 
 	 * @see IdentifierField
 	 */
-	public ArrayList<DBColumn> search(final String catalog, final String schema, final String table, final String column, final byte caseSensitivity){
+	public List<DBColumn> search(final String catalog, final String schema, final String table, final String column, final byte caseSensitivity){
 
-		ArrayList<DBColumn> tmpResult = get(column, IdentifierField.COLUMN.isCaseSensitive(caseSensitivity));
+		List<DBColumn> tmpResult = get(column, IdentifierField.COLUMN.isCaseSensitive(caseSensitivity));
 
 		/* WITH TABLE PREFIX */
 		if (table != null){
 			/* 1. Figure out the table alias */
 			String tableName = null;
-			ArrayList<String> aliasMatches = null;
+			List<String> aliasMatches = null;
 
 			// Case sensitive => tableName is set , aliasMatches = null
 			if (IdentifierField.TABLE.isCaseSensitive(caseSensitivity)){

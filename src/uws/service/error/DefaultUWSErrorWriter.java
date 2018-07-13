@@ -16,7 +16,7 @@ package uws.service.error;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -69,7 +69,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (04/2015)
+ * @version 4.2 (09/2017)
  */
 public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 
@@ -149,7 +149,7 @@ public class DefaultUWSErrorWriter implements ServiceErrorWriter {
 		if (acceptHeader != null && !acceptHeader.trim().isEmpty()){
 			// Parse the given MIME types list:
 			AcceptHeader accept = new AcceptHeader(acceptHeader);
-			ArrayList<String> lstMimeTypes = accept.getOrderedMimeTypes();
+			List<String> lstMimeTypes = accept.getOrderedMimeTypes();
 			for(String acceptedFormat : lstMimeTypes){
 				for(String f : managedFormats){
 					if (acceptedFormat.equalsIgnoreCase(f))

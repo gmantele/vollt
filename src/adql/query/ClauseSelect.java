@@ -16,10 +16,12 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
+import java.util.List;
 
 import adql.query.operand.ADQLOperand;
 
@@ -30,8 +32,8 @@ import adql.query.operand.ADQLOperand;
  * <ul><li>The user can specify the maximum number of rows the query must return.</li>
  * <li>He can also ask that all the returned rows are unique according to the first returned column.</li></ul></p>
  * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 1.4 (09/2017)
  */
 public class ClauseSelect extends ClauseADQL<SelectItem> {
 
@@ -218,7 +220,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * @see #searchByAlias(String, boolean)
 	 */
 	public ADQLOperand searchByAlias(String alias){
-		ArrayList<SelectItem> founds = searchByAlias(alias, true);
+		List<SelectItem> founds = searchByAlias(alias, true);
 		if (founds.isEmpty())
 			return null;
 		else
@@ -231,7 +233,7 @@ public class ClauseSelect extends ClauseADQL<SelectItem> {
 	 * @param alias	Alias of the operand to retrieve.
 	 * @return		All the corresponding select items.
 	 */
-	public ArrayList<SelectItem> searchByAlias(String alias, boolean caseSensitive){
+	public List<SelectItem> searchByAlias(String alias, boolean caseSensitive){
 		if (alias == null)
 			return new ArrayList<SelectItem>(0);
 

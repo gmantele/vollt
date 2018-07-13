@@ -16,13 +16,14 @@ package cds.utils;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * <p>A TextualSearchList is an {@link ArrayList} with a textual search capability.</p>
@@ -39,7 +40,7 @@ import java.util.HashMap;
  * 
  * @param <E>	Type of object to manage in this list.
  * @author 		Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 	1.1 (11/2013)
+ * @version 	1.4 (09/2017)
  */
 public class TextualSearchList< E > extends ArrayList<E> {
 	private static final long serialVersionUID = 1L;
@@ -173,7 +174,7 @@ public class TextualSearchList< E > extends ArrayList<E> {
 	 * 
 	 * @return		The corresponding object or <code>null</code>.
 	 */
-	public final ArrayList<E> get(final String key){
+	public final List<E> get(final String key){
 		return get(key, false);
 	}
 
@@ -186,7 +187,7 @@ public class TextualSearchList< E > extends ArrayList<E> {
 	 * @return		All the objects whose the key is the same as the given one.
 	 */
 	@SuppressWarnings("unchecked")
-	public ArrayList<E> get(final String key, final boolean caseSensitive){
+	public List<E> get(final String key, final boolean caseSensitive){
 		if (key == null)
 			return new ArrayList<E>(0);
 
@@ -419,7 +420,7 @@ public class TextualSearchList< E > extends ArrayList<E> {
 	 * @param <E>	The type of objects managed in the given map.
 	 */
 	private static final < E > void removeFromMap(final HashMap<String,ArrayList<E>> map, final String key, final E value){
-		ArrayList<E> lst = map.get(key);
+		List<E> lst = map.get(key);
 		if (lst != null){
 			lst.remove(value);
 			if (lst.isEmpty())

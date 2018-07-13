@@ -167,10 +167,10 @@
 				<td>text</td>
 				<td>
 					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
-					<p>The TAP library supports only Postgresql (without spatial extension) and PgSphere for the moment. But you can provide your own SQL translator
+					<p>The TAP library supports only Postgresql (no spatial extension), PostgreSQL+PgSphere, SQLServer (no spatial extension) and MySQL (no spatial extension) for the moment. But you can provide your own SQL translator
 					(even if it does not have spatial features), by providing the name of a class (within brackets: {...}) that implements ADQLTranslator and which have at least an empty constructor.</p>
 				</td>
-				<td><ul><li>postgres</li><li>pgsphere</li><li>{apackage.MyADQLTranslator}</li></ul></td>
+				<td><ul><li>postgres</li><li>pgsphere</li><li>sqlserver</li><li>mysql</li><li>{apackage.MyADQLTranslator}</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">sync_fetch_size</td>
@@ -401,12 +401,36 @@
 			
 			<tr><td colspan="5">Log files</td></tr>
 			<tr class="optional">
+				<td class="done">logger</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Only two possibilities are already implemented.</p>
+					<ul>
+						<li><b>default</b>: default logger provided by the
+							library. Any logged message will be appended in the
+							file 'service.log' inside the root directory of this
+							service (cf property <code>file_root_path</code>).
+						</li>
+						<li><b><em>{...}</em></b>: a custom logger. A class name MUST be
+							provided (between {...}). The specified class must
+							reference an implementation of tap.log.TAPLog. This
+							implementation must have at least one constructor
+							with a single parameter of type
+							uws.service.file.UWSFileManager.
+						</li>
+					</ul>
+	 				<p><em>Default: <code>default</code> (i.e. tap.log.DefaultTAPLog)</em></p>
+				</td>
+				<td><ul><li>default</li><li>{aPackage.MyLogger}</li></ul></td>
+			</tr>
+			<tr class="optional">
 				<td class="done">min_log_level</td>
 				<td></td>
 				<td>text</td>
 				<td>
 					<p>Minimum level that a message must have in order to be logged.</p>
-					<p>5 possible values:</p>p>
+					<p>5 possible values:</p>
 	 				<ul>
 	 					<li><b>DEBUG</b>: every messages are logged.</li>
 	 					<li><b>INFO</b>: every messages EXCEPT DEBUG are logged.</li>
@@ -452,7 +476,7 @@
 				<td>
 					<p>Frequency at which the UWS service (that's to say, all its users and jobs) must be backuped.</p>
 					<p>Allowed values are: <code>never</code> (no backup will never be done), <code>user_action</code> (each time a user does a writing action, like creating or execution a job), a time (must be positive and not null) in milliseconds.</p>
-					<p><em>The value <code>user_action</code> can be used ONLY IF <code>backup_mode=true</code>.</em></p>
+					<p><em>The value <code>user_action</code> can be used ONLY IF <code>backup_by_user=true</code>.</em></p>
 					<p><em>Default: <code>backup_frequency=never</code> (no backup)</em></p>
 				</td>
 				<td><ul><li>never <em>(default)</em></li><li>user_action</li><li>3600000 <em>(1 hour)</em></li></ul></td>
@@ -518,13 +542,27 @@
 				<td>
 					<p>Comma separated list of output formats for query results.</p>
 					<p>Allowed values are: votable (or 'vot'), fits, text, csv, tsv, json and html.</p>
-					<p>The special value "ALL" will select all formats provided by the library.</p>
-					<p>The VOTable format may be more detailed with the following syntax: (<code>serialization</code>,<code>version</code>):<code>mime_type</code>:<code>short_mime_type</code>.
-					The MIME type part and the parameters part may be omitted (e.g. votable:application/xml:votable , votable(td,1.3)]).
-					Empty string values are allowed for each values (e.g. votable():: , votable(td)::votable).</p>
-					<p>It is also possible to define a custom Separated Value format, different from CSV and TSV, thanks to the following syntax: sv(<code>separator</code>):<code>mime_type</code>:<code>short_mime_type</code>.
-					On the contrary to the VOTable syntax, the parameter (i.e. separator) MUST BE provided. The MIME type part may be omitted ; then the MIME type will be set by default to text/plain.</p>
-					<p>There is finally a last possible value: a class name of a class implementing OutputFormat and having at least one constructor with exactly one parameter of type tap.ServiceConnection.</p>
+					<p>The VOTable format may be more detailed with the following syntax:
+					(<code>serialization</code>,<code>version</code>):<code>mime_type</code>:<code>short_mime_type</code>.
+					The MIME type part and the parameters part may be omitted
+					(e.g. votable:application/xml:votable , votable(td,1.3)]).
+					Empty string values are allowed for each values (e.g. votable():: ,
+					votable(td)::votable).</p>
+					<p>The default VOTable format (i.e. serialization and version) is the one defined
+					with the short form `votable`. It is be default set to
+					`vot(binary,1.3)::votable` (see the special value `ALL` below). To change it
+					just define a VOTable format with the short form `votable`.</p>
+					<p>It is also possible to define a custom Separated Value format, different from
+					CSV and TSV, thanks to the following syntax:
+					sv(<code>separator</code>):<code>mime_type</code>:<code>short_mime_type</code>. On the contrary to the VOTable
+					syntax, the parameter (i.e. separator) MUST BE provided. The MIME type part
+					may be omitted ; then the MIME type will be set by default to text/plain.</p>
+					<p>There is finally a last possible value: a class name of a class implementing
+					OutputFormat and having at least one constructor with exactly one parameter of
+					type tap.ServiceConnection.</p>
+					<p>The special value <code>ALL</code> will select all formats provided by the library. It is
+					equivalent to the following:</p>
+					<pre>output_formats = vot(binary,1.3)::votable, vot(td,1.3)::votable/td, vot(binary,1.3)::votable/b, vot(binary2,1.3)::votable/b2, vot(fits,1.3)::votable/fits, fits, csv, tsv, text, html,json</pre>
 					<p><em>Default: <code>ALL</code></em></p>
 				</td>
 				<td><ul><li>votable</li><li>vot</li><li>vot(td,1.2)::votable</li><li>json,html ,csv, text</li><li>sv(|):text/psv:psv</li><li>sv([])</li><li>{apackage.FooOutputFormat}</li></ul></td>
@@ -645,14 +683,14 @@
 						values. A list of values must be indicated between parenthesis and values must be separated by a pipe.
 					</p>
 					<p>Allowed values for <code>Frame</code> are: <code>ICRS</code>, <code>FK4</code>,
-						<code>FK5</code>, <code>ECLIPTIC</code>, <code>GALACTIC</code> and <code>UNKNOWNFRAME</code>.</p>
+						<code>FK5</code>, <code>J2000</code>, <code>ECLIPTIC</code>, <code>GALACTIC</code> and <code>UNKNOWNFRAME</code>.</p>
 					<p>Allowed values for <code>RefPos</code> are:  <code>BARYCENTER</code>, <code>GEOCENTER</code>,
 						<code>HELIOCENTER</code>, <code>LSR</code>, <code>TOPOCENTER</code>, <code>RELOCATABLE</code>
 						and <code>UNKNOWNREFPOS</code>.</p>
 					<p>Allowed values for <code>Flavor</code> are: <code>CARTESIAN2</code>, <code>CARTESIAN3</code> and
 						<code>SPHERICAL2</code>.</p>
 					<p>
-						If the special value <em>NONE</em> is given instead of a list of allowed coordinate systems,
+						If the special value <code>NONE</code> is given instead of a list of allowed coordinate systems,
 						no coordinate system will be allowed. And if the list is empty, any coordinate system will be allowed.
 					</p>
 					<p><em>By default, any coordinate system is allowed.</em></p>
@@ -667,7 +705,7 @@
 					<p>Comma-separated list of all allowed geometries.</p>
 					<p>
 						Each item of the list must be the name (whatever is the case) of an ADQL geometrical function (e.g. INTERSECTS, COORDSYS, POINT) to allow.
-						If the list is empty (no item), all functions are allowed. And if the special value <em>NONE</em> is given, no ADQL function will be allowed.
+						If the list is empty (no item), all functions are allowed. And if the special value <code>NONE</code> is given, no ADQL function will be allowed.
 					</p>
 					<p><em>By default, all ADQL geometrical functions are allowed.</em></p>
 				</td>
@@ -680,19 +718,32 @@
 				<td>
 					<p>Comma-separated list of all allowed UDFs (User Defined Functions).</p>
 					<p>
-						Each item of the list must have the following syntax: <code>[fct_signature]</code> or <code>[fct_signature, className]</code>.
-						<i>fct_function</i> is the function signature. Its syntax is the same as in <a href="http://www.ivoa.net/documents/TAPRegExt/20120827/REC-TAPRegExt-1.0.html#langs">TAPRegExt</a>.
-						<i>className</i> is the name of a class extending UserDefinedFunction. An instance of this class will replace any reference of a UDF
-						written in an ADQL function with the associated signature. A class name must be specified if the function to represent has a signature
-						(and more particularly a name) different in ADQL and in SQL.
+						
+						Each item of the list must have the following syntax: <code>[fct_signature]</code>,
+						<code>[fct_signature, className]</code> or <code>[fct_signature, className, description]</code>.
+						<i>fct_function</i> is the function signature. Its syntax is the same as in
+						<a href="http://www.ivoa.net/documents/TAPRegExt/20120827/REC-TAPRegExt-1.0.html#langs">TAPRegExt</a>.
+						<i>className</i> is the name of a class extending UserDefinedFunction.
+						An instance of this class will replace any reference of a UDF written in an
+						ADQL function with the associated signature. A class name must be specified if
+						the function to represent has a signature (and more particularly a name)
+						different in ADQL and in SQL. <i>description</i> is the human description of the
+						function to be displayed in the <i>/capabilities</i> of the TAP service. It must be
+						written between double quotes.
 					</p>
 					<p>
-						If the list is empty (no item), all unknown functions are forbidden. And if the special value <em>ANY</em> is given, any unknown function is allowed ;
+						If the list is empty (no item), all unknown functions are forbidden. And if the special value <code>ANY</code> is given, any unknown function is allowed ;
 						consequently the unknown ADQL functions will be translated into SQL as they are in ADQL.
 					</p>
 					<p><em>By default, no unknown function is allowed.</em></p>
 				</td>
-				<td><ul><li>ø <em>(default)</em></li><li>ANY</li><li>[trim(txt String) -&gt; String], [random() -&gt; DOUBLE]</li><li>[newFct(x double)-&gt;double, {apackage.MyNewFunction}]</li></ul></td>
+				<td><ul><li>ø <em>(default)</em></li>
+						<li>ANY</li>
+						<li>[trim(txt String) -&gt; String], [random() -&gt; DOUBLE]</li>
+						<li>[newFct(x double)-&gt;double, {apackage.MyNewFunction}]</li>
+						<li>[ivo_healpix_index(hpxOrder integer, ra double, dec double) -&gt; bigint, {adql.query.operand.function.healpix.HealpixIndex}, "Compute the index of the \"Healpix cell\" containing the specified position at the given Healpix order."]</li>
+						<li>[random() -&gt; DOUBLE,,"Generate a random number."]</li>
+				</ul></td>
 			</tr>
 			
 			<tr><td colspan="5">Additional TAP Resources</td></tr>

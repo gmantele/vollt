@@ -16,11 +16,11 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import java.util.ArrayList;
+import java.util.List;
 
 import adql.db.DBColumn;
 import adql.db.SearchColumnList;
@@ -33,7 +33,7 @@ import adql.query.TextPosition;
  * It could be either a table ({@link ADQLTable}) or a join ({@link ADQLJoin}).
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 1.4 (09/2017)
  */
 public interface FromContent extends ADQLObject {
 
@@ -52,7 +52,7 @@ public interface FromContent extends ADQLObject {
 	 * 
 	 * @return	The list of all {@link ADQLTable}s found.
 	 */
-	public ArrayList<ADQLTable> getTables();
+	public List<ADQLTable> getTables();
 
 	/**
 	 * <p>Gets all the table whose the alias is equals to the given one.</p>
@@ -66,7 +66,7 @@ public interface FromContent extends ADQLObject {
 	 * 
 	 * @return	The list of all tables found.
 	 */
-	public ArrayList<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive);
+	public List<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive);
 
 	/**
 	 * Set the position of this {@link FromContent} in the given ADQL query string.

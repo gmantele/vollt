@@ -2,20 +2,20 @@ package uws.service.request;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2017 - Astronomisches Rechen Institut (ARI)
  */
 
@@ -47,23 +47,23 @@ import uws.service.file.UWSFileManager;
 /**
  * This parser aims to copy the full content of an HTTP request if it is
  * identified as an XML document.
- * 
+ *
  * <p><b>UWS's Job Description</b></p>
- * 
+ *
  * <p>
  * 	Actually, this parser implements the possibility defined in the UWS 1.0
  * 	standard to provide an XML document describing the parameters of a UWS job.
  * 	This XML document is then called "Job Description".
  * </p>
- * 
+ *
  * <p><b>Validation</b></p>
- * 
+ *
  * <p>
  * 	In the UWS 1.0 standard, it is said that this Job Description has to follow
  * 	a Job Description Language (JDL ; that's to say a known pattern describing
  * 	the expected job parameters) dependent of the UWS service implementation.
  * </p>
- * 
+ *
  * <p>
  * 	By default, this parser copies the request content and checks it is an XML
  * 	document. Nothing else is done, and particularly not the validation of
@@ -71,24 +71,24 @@ import uws.service.file.UWSFileManager;
  * 	class and overwrite its function {@link #validate(InputStream)}. By default
  * 	this function just ensures the request content is a valid XML document.
  * </p>
- * 
+ *
  * <p><b>Document access</b></p>
- * 
+ *
  * <p>
  * 	Once parsed, the request content will be made accessible through an
  * 	{@link HttpServletRequest} attribute under the name
  * 	<b>{@value uws.service.UWS#REQ_ATTRIBUTE_JOB_DESCRIPTION}</b>.
  * 	The associated object <b>is typed as an {@link XMLJobInfo}</b>.
  * </p>
- * 
+ *
  * <p><i>Note:
  * 	Afterwards, it is intended to be attached to a {@link uws.job.UWSJob} and
  * 	then made accessible through its function
  * 	{@link uws.job.UWSJob#getJobInfo()}.
  * </i></p>
- * 
+ *
  * <p><b>Document storage</b></p>
- * 
+ *
  * <p>{@link XMLJobInfo} gives two storage possibility:</p>
  * <ol>
  * 	<li><i>in memory</i> with the constructor
@@ -96,7 +96,7 @@ import uws.service.file.UWSFileManager;
  * 	<li><i>in a file</i> with the constructor
  * 		{@link XMLJobInfo#XMLJobInfo(UploadFile) XMLJobInfo(UploadFile)}</li>
  * </ol>
- * 
+ *
  * <p>
  * 	The storage chosen by this parser depends on the size of the input document.
  * 	If it exceeds {@link #SMALL_XML_THRESHOLD} (expressed in bytes), then
@@ -105,7 +105,7 @@ import uws.service.file.UWSFileManager;
  * 	field {@link #SMALL_XML_THRESHOLD} to the desired value (in bytes).
  * 	By default, it is set to {@value #DEFAULT_SMALL_XML_THRESHOLD} bytes.
  * </p>
- * 
+ *
  * <p><b>Important:</b>
  * 	It is possible to prevent the unwanted storage of a very large document
  * 	by setting the limit {@link #SIZE_LIMIT} to a different value (in bytes).
@@ -113,7 +113,7 @@ import uws.service.file.UWSFileManager;
  * 	an 413 (REQUEST ENTITY TOO LARGE) error.
  * 	By default this limit is set to {@value #DEFAULT_SIZE_LIMIT} bytes.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
  * @version 4.2 (06/2017)
  * @since 4.2
@@ -150,7 +150,7 @@ public class XMLRequestParser implements RequestParser {
 
 	/**
 	 * Build the request parser.
-	 * 
+	 *
 	 * @param fileManager	A file manager. <i>Must NOT be NULL.</i>
 	 */
 	public XMLRequestParser(final UWSFileManager fileManager){
@@ -273,16 +273,16 @@ public class XMLRequestParser implements RequestParser {
 
 	/**
 	 * Validate the given XML document.
-	 * 
+	 *
 	 * <p>
 	 * 	By default, it is only ensured this document is an XML one.
 	 * </p>
-	 * 
+	 *
 	 * @param smallXML		The document to check.
-	 * 
+	 *
 	 * @throws UWSException	If the given document is not valid.
-	 * 
-	 * @see {@link #validate(InputStream)}
+	 *
+	 * @see #validate(InputStream)
 	 */
 	protected void validate(final String smallXML) throws UWSException{
 		validate(new ByteArrayInputStream(smallXML.getBytes()));
@@ -290,16 +290,16 @@ public class XMLRequestParser implements RequestParser {
 
 	/**
 	 * Validate the specified XML document.
-	 * 
+	 *
 	 * <p>
 	 * 	By default, it is only ensured this document is an XML one.
 	 * </p>
-	 * 
+	 *
 	 * @param xmlFile		The file containing the document to check.
-	 * 
+	 *
 	 * @throws UWSException	If the specified document is not valid.
-	 * 
-	 * @see {@link #validate(InputStream)}
+	 *
+	 * @see #validate(InputStream)
 	 */
 	protected void validate(final File xmlFile) throws UWSException{
 		InputStream input = null;
@@ -319,13 +319,13 @@ public class XMLRequestParser implements RequestParser {
 
 	/**
 	 * Validate the given XML document.
-	 * 
+	 *
 	 * <p>
 	 * 	By default, it is only ensured this document is an XML one.
 	 * </p>
-	 * 
+	 *
 	 * @param input			Stream toward the document to check.
-	 * 
+	 *
 	 * @throws UWSException	If the given document is not valid.
 	 */
 	protected void validate(final InputStream input) throws UWSException{
@@ -346,7 +346,7 @@ public class XMLRequestParser implements RequestParser {
 	/**
 	 * Utility method that determines whether the content of the given
 	 * request is an XML (or XML-derived) document.
-	 * 
+	 *
 	 * <p><b>Important:</b>
 	 * 	This function just tests the content-type of the request.
 	 * 	Neither the HTTP method (e.g. GET, POST, ...) nor the content is tested.

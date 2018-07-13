@@ -2,20 +2,20 @@ package tap.metadata;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -23,8 +23,11 @@ package tap.metadata;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -47,24 +50,33 @@ import uws.UWSToolBox;
 /**
  * <p>Let listing all schemas, tables and columns available in a TAP service.
  * This list also corresponds to the TAP resource "/tables".</p>
- * 
+ *
  * <p>
- * 	Only schemas are stored in this object. So that's why only schemas can be added and removed
- * 	from this class. However, {@link TAPSchema} objects are listing tables, whose the object
- * 	representation is listing columns. So to add tables, you must first embed them in a schema.
+ * 	Only schemas are stored in this object. So that's why only schemas can be
+ * 	added and removed from this class. However, {@link TAPSchema} objects are
+ * 	listing tables, whose the object representation is listing columns. So to
+ * 	add tables, you must first embed them in a schema.
  * </p>
- * 
+ *
  * <p>
- * 	All metadata have two names: one to use in ADQL queries and the other to use when really querying
- * 	the database. This is very useful to hide the real complexity of the database and propose
- * 	a simpler view of the query-able data. It is particularly useful if a schema does not exist in the
- * 	database but has been added in the TAP schema for more logical separation on the user point of view.
- * 	In a such case, the schema would have an ADQL name but no DB name (NULL value ; which is possible only
- * 	with {@link TAPSchema} objects).
+ * 	All metadata have two names: one to use in ADQL queries and the other to use
+ * 	when really querying the database. This is very useful to hide the real
+ * 	complexity of the database and propose a simpler view of the query-able
+ * 	data. It is particularly useful if a schema does not exist in the database
+ * 	but has been added in the TAP schema for more logical separation on the user
+ * 	point of view. In a such case, the schema would have an ADQL name but no DB
+ * 	name (NULL value ; which is possible only with {@link TAPSchema} objects).
  * </p>
- * 
+ *
+ * <p>
+ * 	This class lets also detect the ObsCore and RegTAP data models, thanks to
+ * 	the functions {@link #getObsCoreTable()} and {@link #getRegTAPSchema()}
+ * 	which return resp. the ObsCore table and the RegTAP schema if matching the
+ * 	IVOA specification.
+ * </p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (03/2017)
+ * @version 2.1 (11/2017)
  */
 public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResource {
 
@@ -75,17 +87,21 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	/** List of all schemas available through the TAP service. */
 	protected final Map<String,TAPSchema> schemas;
 
+	/** List of all coordinate systems used by columns published in the TAP_SCHEMA.
+	 * @since 2.1 */
+	protected final Map<String,TAPCoosys> coordinateSystems;
+
 	/** Part of the TAP URI which identify this TAP resource.
 	 * By default, it is the resource name ; so here, the corresponding TAP URI would be: "/tables". */
 	protected String accessURL = getName();
 
 	/** The path of the XSLT style-sheet to apply.
-	 * @version 2.1 */
+	 * @since 2.1 */
 	protected String xsltPath = null;
 
 	/**
 	 * <p>Build an empty list of metadata.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	By default, a TAP service must have at least a TAP_SCHEMA schema which contains a set of 5 tables
 	 * 	(schemas, tables, columns, keys and key_columns). This schema is not created here by default
@@ -107,14 +123,15 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 */
 	public TAPMetadata(){
 		schemas = new LinkedHashMap<String,TAPSchema>();
+		coordinateSystems = new HashMap<String,TAPCoosys>();
 	}
 
 	/**
 	 * Gets the path/URL of the XSLT style-sheet to use.
-	 * 
+	 *
 	 * @return	XSLT path/url.
-	 * 
-	 * @version 2.1
+	 *
+	 * @since 2.1
 	 */
 	public final String getXSLTPath(){
 		return xsltPath;
@@ -122,10 +139,10 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Sets the path/URL of the XSLT style-sheet to use.
-	 * 
+	 *
 	 * @param path	The new XSLT path/URL.
-	 * 
-	 * @version 2.1
+	 *
+	 * @since 2.1
 	 */
 	public final void setXSLTPath(final String path){
 		if (path == null)
@@ -139,11 +156,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Add the given schema inside this TAP metadata set.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If the given schema is NULL, nothing will be done.
 	 * </i></p>
-	 * 
+	 *
 	 * @param s	The schema to add.
 	 */
 	public final void addSchema(TAPSchema s){
@@ -154,16 +171,16 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	/**
 	 * <p>Build a new {@link TAPSchema} object with the given ADQL name.
 	 * Then, add it inside this TAP metadata set.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	The built {@link TAPSchema} object is returned, so that being modified afterwards if needed.
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	ADQL name of the schema to create and add inside this TAP metadata set.
-	 * 
+	 *
 	 * @return	The created and added schema,
 	 *        	or NULL if the given schema is NULL or an empty string.
-	 * 
+	 *
 	 * @see TAPSchema#TAPSchema(String)
 	 * @see #addSchema(TAPSchema)
 	 */
@@ -179,18 +196,18 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	/**
 	 * <p>Build a new {@link TAPSchema} object with the given ADQL name.
 	 * Then, add it inside this TAP metadata set.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	The built {@link TAPSchema} object is returned, so that being modified afterwards if needed.
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	ADQL name of the schema to create and add inside this TAP metadata set.
 	 * @param description	Description of the new schema. <i>MAY be NULL</i>
 	 * @param utype			UType associating the new schema with a data-model. <i>MAY be NULL</i>
-	 * 
+	 *
 	 * @return	The created and added schema,
 	 *        	or NULL if the given schema is NULL or an empty string.
-	 * 
+	 *
 	 * @see TAPSchema#TAPSchema(String, String, String)
 	 * @see #addSchema(TAPSchema)
 	 */
@@ -205,13 +222,13 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Tell whether there is a schema with the given ADQL name.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function is case sensitive!
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	ADQL name of the schema whose the existence must be checked.
-	 * 
+	 *
 	 * @return	<i>true</i> if a schema with the given ADQL name exists, <i>false</i> otherwise.
 	 */
 	public final boolean hasSchema(String schemaName){
@@ -223,13 +240,13 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Search for a schema having the given ADQL name.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function is case sensitive!
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	ADQL name of the schema to search.
-	 * 
+	 *
 	 * @return	The schema having the given ADQL name,
 	 *        	or NULL if no such schema can be found.
 	 */
@@ -242,7 +259,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Get the number of schemas contained in this TAP metadata set.
-	 * 
+	 *
 	 * @return	Number of all schemas.
 	 */
 	public final int getNbSchemas(){
@@ -251,7 +268,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Tell whether this TAP metadata set contains no schema.
-	 * 
+	 *
 	 * @return	<i>true</i> if this TAP metadata set has no schema,
 	 *        	<i>false</i> if it contains at least one schema.
 	 */
@@ -261,20 +278,20 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Remove the schema having the given ADQL name.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function is case sensitive!
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i><b>WARNING:</b>
 	 * 	If the goal of this function's call is to delete definitely the specified schema
 	 * 	from the metadata, you SHOULD also call {@link TAPTable#removeAllForeignKeys()} on the
 	 * 	removed table. Indeed, foreign keys of this table would still link the removed table
 	 * 	with other tables AND columns of the whole metadata set.
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	ADQL name of the schema to remove from this TAP metadata set.
-	 * 
+	 *
 	 * @return	The removed schema,
 	 *        	or NULL if no such schema can be found.
 	 */
@@ -299,7 +316,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Get the list of all tables available in this TAP metadata set.
-	 * 
+	 *
 	 * @return	An iterator over the list of all tables contained in this TAP metadata set.
 	 */
 	public Iterator<TAPTable> getTables(){
@@ -308,14 +325,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Tell whether this TAP metadata set contains the specified table.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is case sensitive!
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	ADQL name of the schema owning the table to search.
 	 * @param tableName		ADQL name of the table to search.
-	 * 
+	 *
 	 * @return	<i>true</i> if the specified table exists, <i>false</i> otherwise.
 	 */
 	public boolean hasTable(String schemaName, String tableName){
@@ -328,13 +345,13 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Tell whether this TAP metadata set contains a table with the given ADQL name, whatever is its schema.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is case sensitive!
 	 * </i></p>
-	 * 
+	 *
 	 * @param tableName	ADQL name of the table to search.
-	 * 
+	 *
 	 * @return	<i>true</i> if the specified table exists, <i>false</i> otherwise.
 	 */
 	public boolean hasTable(String tableName){
@@ -346,14 +363,14 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Search for the specified table in this TAP metadata set.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is case sensitive!
 	 * </i></p>
-	 * 
+	 *
 	 * @param schemaName	ADQL name of the schema owning the table to search.
 	 * @param tableName		ADQL name of the table to search.
-	 * 
+	 *
 	 * @return	The table which has the given ADQL name and which is inside the specified schema,
 	 *        	or NULL if no such table can be found.
 	 */
@@ -368,17 +385,17 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	/**
 	 * <p>Search in this TAP metadata set for all tables whose the ADQL name matches the given one,
 	 * whatever is their schema.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function is case sensitive!
 	 * </i></p>
-	 * 
+	 *
 	 * @param tableName		ADQL name of the tables to search.
-	 * 
+	 *
 	 * @return	A list of all the tables which have the given ADQL name,
 	 *        	or an empty list if no such table can be found.
 	 */
-	public ArrayList<DBTable> getTable(String tableName){
+	public List<DBTable> getTable(String tableName){
 		ArrayList<DBTable> tables = new ArrayList<DBTable>();
 		for(TAPSchema s : this)
 			if (s.hasTable(tableName))
@@ -388,24 +405,25 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Get the description of the ObsCore table, if it is defined.
-	 * 
+	 *
 	 * <p>
 	 * 	This function is case sensitive only on the schema name
 	 * 	(i.e. <code>ivoa</code>) which must be defined in full lower case.
 	 * 	The table name (i.e. <code>ObsCore</code>) will be found whatever
-	 * 	the case it is written in.
+	 * 	the case it is written in and whether it is prefixed or not.
 	 * </p>
-	 * 
+	 *
 	 * @return	Description of the ObsCore table,
-	 *        	or <code>NULL</code> if this table is not provided by this TAP service.
-	 * 
+	 *        	or <code>NULL</code> if this table is not provided by this TAP
+	 *        	service.
+	 *
 	 * @since 2.1
 	 */
 	public TAPTable getObsCoreTable(){
 		TAPSchema ivoaSchema = getSchema("ivoa");
 		if (ivoaSchema != null){
 			for(TAPTable t : ivoaSchema){
-				if (t.getADQLName().equalsIgnoreCase("obscore"))
+				if (t.getADQLName().matches("(?i)(ivoa\\.)?obscore"))
 					return t;
 			}
 		}
@@ -413,8 +431,46 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	/**
+	 * Get the description of the RegTAP schema, if it is defined.
+	 *
+	 * <p>
+	 * 	This function is case sensitive only on the schema name
+	 * 	(i.e. <code>rr</code>) which must be defined in full lower case.
+	 * 	The tables name (e.g. <code>capability</code>) will be searched case
+	 * 	sensitively as well. However, it does not matter if the table name is
+	 * 	prefixed or not.
+	 * </p>
+	 *
+	 * @return	Description of the RegTAP schema,
+	 *        	or <code>NULL</code> if RegTAP is not supported in this TAP
+	 *        	service.
+	 *
+	 * @since 2.1
+	 */
+	public TAPSchema getRegTAPSchema(){
+		// Get the RegTAP schema if existing:
+		TAPSchema rrSchema = getSchema("rr");
+
+		// If there is one, check its content:
+		if (rrSchema != null){
+			// search for all mandatory tables of RegTAP:
+			HashSet<String> matchedTables = new HashSet<String>(13);
+			for(TAPTable t : rrSchema){
+				if (t.getADQLName().matches("(rr\\.)?(capability|interface|intf_param|relationship|res_date|res_detail|res_role|res_schema|res_subject|res_table|resource|table_column|validation)"))
+					matchedTables.add(t.getADQLName());
+			}
+			// if all columns have been found, return the RegTAP schema:
+			if (matchedTables.size() == 13)
+				return rrSchema;
+		}
+
+		// NULL, if no schema rr or if it does match the IVOA specification:
+		return null;
+	}
+
+	/**
 	 * Get the number of all tables contained in this TAP metadata set.
-	 * 
+	 *
 	 * @return	Number of all its tables.
 	 */
 	public int getNbTables(){
@@ -425,8 +481,62 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	/**
+	 * Get the coordinate system definition associated with the given ID.
+	 *
+	 * @param coosysId	ID of the coordinate system to get. <i>(case sensitive)</i>
+	 *
+	 * @return	The corresponding coordinate system definition,
+	 *        	or NULL if no match for the given ID.
+	 *
+	 * @since 2.1
+	 */
+	public TAPCoosys getCoosys(final String coosysId){
+		return (coosysId == null ? null : coordinateSystems.get(coosysId));
+	}
+
+	/**
+	 * Add the given coordinate system definition.
+	 *
+	 * <p><b>Important:</b>
+	 * 	If a coordinate system with the same ID (case sensitive) is already declared in
+	 * 	this {@link TAPMetadata}, it will be replaced by the given one. The replaced
+	 * 	coordinate system is returned by this function.
+	 * </p>
+	 *
+	 * @param newCoosys	The coordinate system definition to add.
+	 *
+	 * @return	The coordinate system definition previously declared with the same ID in this {@link TAPMetadata},
+	 *        	or NULL if no coord. sys. was declared with this ID.
+	 *
+	 * @since 2.1
+	 */
+	public TAPCoosys addCoosys(final TAPCoosys newCoosys){
+		if (newCoosys == null)
+			return null;
+		else{
+			TAPCoosys formerValue = coordinateSystems.get(newCoosys.getId());
+			coordinateSystems.put(newCoosys.getId(), newCoosys);
+			return formerValue;
+		}
+	}
+
+	/**
+	 * Remove the coordinate system declared with the given ID.
+	 *
+	 * @param coosysId	The ID of the coordinate system definition to remove.
+	 *
+	 * @return	The removed coordinate system definition,
+	 *        	or NULL if none is declared with the given ID.
+	 *
+	 * @since 2.1
+	 */
+	public TAPCoosys removeCoosys(final String coosysId){
+		return (coosysId == null) ? null : coordinateSystems.remove(coosysId);
+	}
+
+	/**
 	 * Let iterating over the list of all tables contained in a given {@link TAPMetadata} object.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
 	 * @version 2.0 (08/2014)
 	 */
@@ -524,11 +634,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Format in XML this whole metadata set and write it in the given writer.
-	 * 
+	 *
 	 * @param writer	Stream in which the XML representation of this metadata must be written.
-	 * 
+	 *
 	 * @throws IOException	If there is any error while writing the XML in the given writer.
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	public void write(final PrintWriter writer) throws IOException{
@@ -555,7 +665,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Format in XML the given schema and then write it in the given writer.</p>
-	 * 
+	 *
 	 * <p>Written lines:</p>
 	 * <pre>
 	 * &lt;schema&gt;
@@ -566,16 +676,16 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 		// call #writeTable(TAPTable, PrintWriter) for each table
 	 * &lt;/schema&gt;
 	 * </pre>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	When NULL an attribute or a field is not written. Here this rule concerns: description and utype.
 	 * </i></p>
-	 * 
+	 *
 	 * @param s			The schema to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given schema must be written.
-	 * 
+	 *
 	 * @throws IOException	If the connection with the HTTP client has been either canceled or closed for another reason.
-	 * 
+	 *
 	 * @see #writeTable(TAPTable, PrintWriter)
 	 */
 	protected void writeSchema(TAPSchema s, PrintWriter writer) throws IOException{
@@ -613,7 +723,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Format in XML the given table and then write it in the given writer.</p>
-	 * 
+	 *
 	 * <p>Written lines:</p>
 	 * <pre>
 	 * &lt;table type="..."&gt;
@@ -625,20 +735,20 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 		// call #writeForeignKey(TAPForeignKey, PrintWriter) for each foreign key
 	 * &lt;/table&gt;
 	 * </pre>
-	 * 
+	 *
 	 * <p><i>Note 1:
 	 * 	When NULL an attribute or a field is not written. Here this rule concerns: description and utype.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note 2:
 	 * 	The PrintWriter buffer is flushed all the 10 columns. At that moment the writer is checked for errors.
 	 * 	If the error flag is set, a {@link ClientAbortException} is thrown in order to stop the metadata writing.
 	 * 	This is particularly useful if the metadata data is pretty large.
 	 * </i></p>
-	 * 
+	 *
 	 * @param t			The table to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given table must be written.
-	 * 
+	 *
 	 * @return	The total number of written columns.
 	 */
 	protected int writeTable(TAPTable t, PrintWriter writer){
@@ -674,7 +784,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Format in XML the given column and then write it in the given writer.</p>
-	 * 
+	 *
 	 * <p>Written lines:</p>
 	 * <pre>
 	 * &lt;column std="true|false"&gt; // the value of this field is TAPColumn#isStd()
@@ -688,11 +798,11 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 	&lt;flag&gt;primary&lt;/flag&gt; // if TAPColumn#isPrincipal()
 	 * &lt;/column&gt;
 	 * </pre>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	When NULL an attribute or a field is not written. Here this rule concerns: description, unit, utype, ucd and flags.
 	 * </i></p>
-	 * 
+	 *
 	 * @param c			The column to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given column must be written.
 	 */
@@ -735,25 +845,25 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Format in XML the given foreign key and then write it in the given writer.</p>
-	 * 
+	 *
 	 * <p>Written lines:</p>
 	 * <pre>
 	 * &lt;foreignKey&gt;
 	 * 	&lt;targetTable&gt;...&lt;/targetTable&gt;
-	 * 	&lt;description&gt;...&lt;/description&gt;
-	 * 	&lt;utype&gt;...&lt;/utype&gt;
 	 * 	&lt;fkColumn&gt;
 	 * 		&lt;fromColumn&gt;...&lt;/fromColumn&gt;
 	 * 		&lt;targetColumn&gt;...&lt;/targetColumn&gt;
 	 * 	&lt;/fkColumn&gt;
 	 * 	...
+	 * 	&lt;description&gt;...&lt;/description&gt;
+	 * 	&lt;utype&gt;...&lt;/utype&gt;
 	 * &lt;/foreignKey&gt;
 	 * </pre>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	When NULL an attribute or a field is not written. Here this rule concerns: description and utype.
 	 * </i></p>
-	 * 
+	 *
 	 * @param fk		The foreign key to format and to write in XML.
 	 * @param writer	Output in which the XML serialization of the given foreign key must be written.
 	 */
@@ -763,8 +873,6 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 		writer.println("\t\t\t<foreignKey>");
 
 		writeAtt(prefix, "targetTable", fk.getTargetTable().getRawName(), false, writer);
-		writeAtt(prefix, "description", fk.getDescription(), true, writer);
-		writeAtt(prefix, "utype", fk.getUtype(), true, writer);
 
 		final String prefix2 = prefix + "\t";
 		for(Map.Entry<String,String> entry : fk){
@@ -776,12 +884,15 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 			writer.println("</fkColumn>");
 		}
 
+		writeAtt(prefix, "description", fk.getDescription(), true, writer);
+		writeAtt(prefix, "utype", fk.getUtype(), true, writer);
+
 		writer.println("\t\t\t</foreignKey>");
 	}
 
 	/**
 	 * Write the specified metadata attribute as a simple XML node.
-	 * 
+	 *
 	 * @param prefix			Prefix of the XML node. (generally, space characters)
 	 * @param attributeName		Name of the metadata attribute to write (= Name of the XML node).
 	 * @param attributeValue	Value of the metadata attribute (= Value of the XML node).
@@ -803,19 +914,19 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	 * 	Get the definition of the whole standard TAP_SCHEMA. Thus, all standard TAP_SCHEMA tables
 	 * 	(with all their columns) are also included in this object.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function create the {@link TAPSchema} and all its {@link TAPTable}s objects on the fly.
 	 * </p>
-	 * 
+	 *
 	 * @param isSchemaSupported	<i>false</i> if the DB name must be prefixed by "TAP_SCHEMA_", <i>true</i> otherwise.
-	 * 
+	 *
 	 * @return	The whole TAP_SCHEMA definition.
-	 * 
+	 *
 	 * @see STDSchema#TAPSCHEMA
 	 * @see STDTable
 	 * @see #getStdTable(STDTable)
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	public static final TAPSchema getStdSchema(final boolean isSchemaSupported){
@@ -832,21 +943,38 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 	}
 
 	/**
+	 * Get the minimum definition of the table TAP_SCHEMA.coosys as expected by
+	 * the library (see {@link tap.db.JDBCConnection#getTAPSchema()}.
+	 *
+	 * @return	The created definition of TAP_SCHEMA.coosys.
+	 *
+	 * @since 2.1
+	 */
+	public static final TAPTable getCoosysTable(){
+		TAPTable coosys = new TAPTable(STDSchema.TAPSCHEMA + ".coosys", TableType.table, "List of coordinate systems of coordinate columns published in this TAP service.", null);
+		coosys.addColumn("id", new DBType(DBDatatype.VARCHAR), "ID of the coordinate system definition as it must be in the VOTable.", null, null, null, true, true, false);
+		coosys.addColumn("system", new DBType(DBDatatype.VARCHAR), "The coordinate system (among \"ICRS\", \"eq_FK5\", \"eq_FK4\", \"ecl_FK4\", \"ecl_FK5\", \"galactic\", \"supergalactic\", \"xy\", \"barycentric\", \"geo_app\").", null, null, null, false, false, false);
+		coosys.addColumn("equinox", new DBType(DBDatatype.VARCHAR), "Required to fix the equatorial or ecliptic systems (as e.g. \"J2000\" as the default for \"eq_FK5\" or \"B1950\" as the default for \"eq_FK4\").", null, null, null, false, false, false);
+		coosys.addColumn("epoch", new DBType(DBDatatype.VARCHAR), "Epoch of the positions (if necessary).", null, null, null, false, false, false);
+		return coosys;
+	}
+
+	/**
 	 * <p>Get the definition of the specified standard TAP table.</p>
-	 * 
+	 *
 	 * <p><i><b>Important note:</b>
 	 * 	The returned table is not linked at all with a schema, on the contrary of {@link #getStdSchema(boolean)} which returns tables linked with the returned schema.
 	 * 	So, you may have to linked this table to schema (by using {@link TAPSchema#addTable(TAPTable)}) whose the ADQL name is TAP_SCHEMA after calling this function.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function create the {@link TAPTable} object on the fly.
 	 * </p>
-	 * 
+	 *
 	 * @param tableId	ID of the TAP table to return.
-	 * 
+	 *
 	 * @return	The corresponding table definition (with no schema).
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	public static final TAPTable getStdTable(final STDTable tableId){
@@ -910,16 +1038,16 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * <p>Tell whether the given table name is a standard TAP table.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 *	This function is case sensitive. Indeed TAP_SCHEMA tables are defined by the TAP standard by a given case.
 	 *	Thus, this case is expected here.
 	 * </i></p>
-	 * 
+	 *
 	 * @param tableName	Unqualified table name.
-	 * 
+	 *
 	 * @return	The corresponding {@link STDTable} or NULL if the given table is not part of the TAP standard.
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	public static final STDTable resolveStdTable(String tableName){
@@ -936,7 +1064,7 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Enumeration of all schemas defined in the TAP standard.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 2.0 (07/2014)
 	 * @since 2.0
@@ -959,9 +1087,9 @@ public class TAPMetadata implements Iterable<TAPSchema>, VOSIResource, TAPResour
 
 	/**
 	 * Enumeration of all tables of TAP_SCHEMA.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 2.0 (07/2014)
+	 * @version 2.1 (09/2017)
 	 * @since 2.0
 	 */
 	public enum STDTable{

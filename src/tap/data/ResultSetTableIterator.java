@@ -2,23 +2,25 @@ package tap.data;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -40,13 +42,13 @@ import uws.ISO8601Format;
 
 /**
  * <p>{@link TableIterator} which lets iterate over a SQL {@link ResultSet}.</p>
- * 
+ *
  * <p><i>Note:
  * 	{@link #getColType()} will return a TAP type based on the one declared in the {@link ResultSetMetaData} object.
  * </i></p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (02/2017)
+ * @version 2.1 (07/2017)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -83,25 +85,25 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
 	 * 	from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #defaultTypeConversion(String, String[], String)}
 	 * 	which proceeds a default conversion using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * @param dataSet		Dataset over which this iterator must iterate.
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
 	 */
 	public ResultSetTableIterator(final ResultSet dataSet) throws NullPointerException, DataReadException{
@@ -110,42 +112,42 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is reading first the given metadata (if any),
 	 * 	and then, try to guess the datatype from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Provided metadata</h3>
-	 * 
+	 *
 	 * <p>The second parameter of this constructor aims to provide the metadata expected for each column of the ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	For that, it is expected that all these metadata are {@link TAPColumn} objects. Indeed, simple {@link DBColumn}
 	 * 	instances do not have the type information. If just {@link DBColumn}s are provided, the ADQL name it provides will be kept
 	 * 	but the type will be guessed from the type provided by the ResultSetMetadata.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If this parameter is incomplete (array length less than the column count returned by the ResultSet or some array items are NULL),
 	 * 	column metadata will be associated in the same order as the ResultSet columns. Missing metadata will be built from the
 	 * 	{@link ResultSetMetaData} and so the types will be guessed.
 	 * </i></p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #defaultTypeConversion(String, String[], String)}
 	 * 	which proceeds a default conversion using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
 	 */
 	public ResultSetTableIterator(final ResultSet dataSet, final DBColumn[] resultMeta) throws NullPointerException, DataReadException{
@@ -154,36 +156,36 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
 	 * 	from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(int, String, String)}
 	 * 	which deals with the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by a translator. That's why it is recommended
 	 * 	to use one of the constructor having a {@link JDBCTranslator} in parameter.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important</b>:
 	 * 	The second parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
 	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
-	 * 
+	 *
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
-	 * 
+	 *
 	 * @deprecated	Use {@link #ResultSetTableIterator(ResultSet, JDBCTranslator, String)} instead ; using the translator without the DBMS name is generally not enough.
 	 *            	It is then preferable to give also the DBMS name.
 	 */
@@ -194,14 +196,14 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
 	 * 	from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(int, String, String)}
 	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
@@ -209,16 +211,16 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
 	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
-	 * 
+	 *
 	 * @deprecated	Use {@link #ResultSetTableIterator(ResultSet, JDBCTranslator, String)} instead ; using the translator without the DBMS name is generally not enough.
 	 *            	It is then preferable to give also the DBMS name.
 	 */
@@ -229,14 +231,14 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
 	 * 	from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(int, String, String)}
 	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
@@ -244,22 +246,22 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important</b>:
 	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
 	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
-	 * 
+	 *
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
 	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
 	 */
 	public ResultSetTableIterator(final ResultSet dataSet, final JDBCTranslator translator, final String dbms) throws NullPointerException, DataReadException{
@@ -268,30 +270,30 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is reading first the given metadata (if any),
 	 * 	and then, try to guess the datatype from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Provided metadata</h3>
-	 * 
+	 *
 	 * <p>The third parameter of this constructor aims to provide the metadata expected for each column of the ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	For that, it is expected that all these metadata are {@link TAPColumn} objects. Indeed, simple {@link DBColumn}
 	 * 	instances do not have the type information. If just {@link DBColumn}s are provided, the ADQL name it provides will be kept
 	 * 	but the type will be guessed from the type provide by the ResultSetMetadata.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If this parameter is incomplete (array length less than the column count returned by the ResultSet or some array items are NULL),
 	 * 	column metadata will be associated in the same order as the ResultSet columns. Missing metadata will be built from the
 	 * 	{@link ResultSetMetaData} and so the types will be guessed.
 	 * </i></p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(int, String, String)}
 	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
@@ -299,25 +301,25 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important</b>:
 	 * 	The third parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
 	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
-	 * 
+	 *
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
 	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
 	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
-	 * 
+	 *
 	 * @deprecated Use {@link #ResultSetTableIterator(ResultSet, DBColumn[], JDBCTranslator, String)} instead ; only the position of the parameters has changed.
 	 */
 	@Deprecated
@@ -327,30 +329,30 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is reading first the given metadata (if any),
 	 * 	and then, try to guess the datatype from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Provided metadata</h3>
-	 * 
+	 *
 	 * <p>The second parameter of this constructor aims to provide the metadata expected for each column of the ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	For that, it is expected that all these metadata are {@link TAPColumn} objects. Indeed, simple {@link DBColumn}
 	 * 	instances do not have the type information. If just {@link DBColumn}s are provided, the ADQL name it provides will be kept
 	 * 	but the type will be guessed from the type provided by the ResultSetMetadata.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If this parameter is incomplete (array length less than the column count returned by the ResultSet or some array items are NULL),
 	 * 	column metadata will be associated in the same order as the ResultSet columns. Missing metadata will be built from the
 	 * 	{@link ResultSetMetaData} and so the types will be guessed.
 	 * </i></p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(int, String, String)}
 	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
@@ -358,23 +360,23 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important</b>:
 	 * 	The fourth parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
 	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
-	 * 
+	 *
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
 	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
 	 */
 	public ResultSetTableIterator(final ResultSet dataSet, final DBColumn[] resultMeta, final JDBCTranslator translator, final String dbms) throws NullPointerException, DataReadException{
@@ -383,28 +385,28 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
 	 * 	from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #defaultTypeConversion(String, String[], String)}
 	 * 	which proceeds a default conversion using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * @param dbConn		{@link DBConnection} instance which has provided the given result.
 	 * @param dataSet		Dataset over which this iterator must iterate.
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public ResultSetTableIterator(final DBConnection dbConn, final ResultSet dataSet) throws NullPointerException, DataReadException{
@@ -413,45 +415,45 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
 	 * 	from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Provided metadata</h3>
-	 * 
+	 *
 	 * <p>The third parameter of this constructor aims to provide the metadata expected for each column of the ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	For that, it is expected that all these metadata are {@link TAPColumn} objects. Indeed, simple {@link DBColumn}
 	 * 	instances do not have the type information. If just {@link DBColumn}s are provided, the ADQL name it provides will be kept
 	 * 	but the type will be guessed from the type provided by the ResultSetMetadata.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If this parameter is incomplete (array length less than the column count returned by the ResultSet or some array items are NULL),
 	 * 	column metadata will be associated in the same order as the ResultSet columns. Missing metadata will be built from the
 	 * 	{@link ResultSetMetaData} and so the types will be guessed.
 	 * </i></p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #defaultTypeConversion(String, String[], String)}
 	 * 	which proceeds a default conversion using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * @param dbConn		{@link DBConnection} instance which has provided the given result.
 	 * @param dataSet		Dataset over which this iterator must iterate.
-	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
-	 * 
+	 * @param metadata		List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public ResultSetTableIterator(final DBConnection dbConn, final ResultSet dataSet, final DBColumn[] metadata) throws NullPointerException, DataReadException{
@@ -460,14 +462,14 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is trying to guess the datatype
 	 * 	from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(int, String, String)}
 	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
@@ -475,25 +477,25 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important</b>:
 	 * 	The fourth parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
 	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
-	 * 
+	 *
 	 * @param dbConn		{@link DBConnection} instance which has provided the given result.
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
 	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the given ResultSet is closed or if the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public ResultSetTableIterator(final DBConnection dbConn, final ResultSet dataSet, final JDBCTranslator translator, final String dbms) throws NullPointerException, DataReadException{
@@ -502,30 +504,30 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Build a TableIterator able to read rows and columns of the given ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to provide the metadata through {@link #getMetadata()}, this constructor is reading first the given metadata (if any),
 	 * 	and then, try to guess the datatype from the DBMS column datatype (using {@link #convertType(int, String, String)}).
 	 * </p>
-	 * 
+	 *
 	 * <h3>Provided metadata</h3>
-	 * 
+	 *
 	 * <p>The third parameter of this constructor aims to provide the metadata expected for each column of the ResultSet.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	For that, it is expected that all these metadata are {@link TAPColumn} objects. Indeed, simple {@link DBColumn}
 	 * 	instances do not have the type information. If just {@link DBColumn}s are provided, the ADQL name it provides will be kept
 	 * 	but the type will be guessed from the type provided by the ResultSetMetadata.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If this parameter is incomplete (array length less than the column count returned by the ResultSet or some array items are NULL),
 	 * 	column metadata will be associated in the same order as the ResultSet columns. Missing metadata will be built from the
 	 * 	{@link ResultSetMetaData} and so the types will be guessed.
 	 * </i></p>
-	 * 
+	 *
 	 * <h3>Type guessing</h3>
-	 * 
+	 *
 	 * <p>
 	 * 	In order to guess a TAP type from a DBMS type, this constructor will call {@link #convertType(int, String, String)}
 	 * 	which will ask to the given translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])})
@@ -533,26 +535,26 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	using the most common standard datatypes known in Postgres, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * 	This conversion is therefore not as precise as the one expected by the translator.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>Important</b>:
 	 * 	The fifth parameter of this constructor is given as second parameter of {@link #convertType(int, String, String)}.
 	 * 	<b>This parameter is really used ONLY when the translator conversion failed and when the DBMS is SQLite ("sqlite").</b>
 	 * 	Indeed, SQLite has so many datatype restrictions that it is absolutely needed to know it is the DBMS from which the
 	 * 	ResultSet is coming. Without this information, type guessing will be unpredictable!
 	 * </i></p>
-	 * 
+	 *
 	 * @param dbConn		{@link DBConnection} instance which has provided the given result.
 	 * @param dataSet		Dataset over which this iterator must iterate.
 	 * @param resultMeta	List of expected columns. <i>note: these metadata are expected to be really {@link TAPColumn} objects ; MAY be NULL.</i>
 	 * @param translator	The {@link JDBCTranslator} used to transform the ADQL query into SQL query. This translator is also able to convert
 	 *                  	JDBC types and to parse geometrical values. <i>note: MAY be NULL</i>
 	 * @param dbms			Lower-case string which indicates from which DBMS the given ResultSet is coming. <i>note: MAY be NULL.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If NULL is given in parameter.
 	 * @throws DataReadException	If the metadata (columns count and types) can not be fetched.
-	 * 
+	 *
 	 * @see #convertType(int, String, String)
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public ResultSetTableIterator(final DBConnection dbConn, final ResultSet dataSet, final DBColumn[] resultMeta, final JDBCTranslator translator, final String dbms) throws NullPointerException, DataReadException{
@@ -640,7 +642,7 @@ public class ResultSetTableIterator implements TableIterator {
 	 * 	<li>the row iteration has started = the first row has been read = a first call of {@link #nextRow()} has been done</li>
 	 * 	<li>AND the row iteration is not finished = the last row has been read.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @throws IllegalStateException
 	 */
 	private void checkReadState() throws IllegalStateException{
@@ -661,15 +663,15 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Return the value of the next column and format it (see {@link #formatColValue(Object)}).</p>
-	 * 
+	 *
 	 * <p><i>Note: The column type can be fetched using {@link #getColType()} <b>after</b> a call to {@link #nextCol()}.</i></p>
-	 * 
+	 *
 	 * @return	Get the value of the next column.
-	 * 
+	 *
 	 * @throws NoSuchElementException	If no more column value is available.
 	 * @throws IllegalStateException	If {@link #nextRow()} has not yet been called.
 	 * @throws DataReadException	If an error occurs while reading the table dataset.
-	 * 
+	 *
 	 * @see tap.data.TableIterator#nextCol()
 	 * @see #formatColValue(Object)
 	 */
@@ -690,25 +692,25 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Format the given column value.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	This function should be overwritten if a different or additional formatting
 	 * 	should be performed before, after or instead of the one implemented here by default.
 	 * </p>
-	 * 
+	 *
 	 * <p>By default, the following function performs the following formatting:</p>
 	 * <ul>
 	 * 	<li><b>If {@link Timestamp}, {@link Date} or {@link Time}:</b> the date-time is converted into a string with the ISO8601 format (see {@link ISO8601Format}).</li>
 	 * 	<li><b>If a single CHAR is declared and a String is given:</b> only the first character is returned as a {@link Character} object.</li>
 	 * 	<li><b>If the value is declared as a Geometry:</b> the geometry is formatted as a STC-S expression.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param colValue	A column value as provided by a {@link ResultSet}.
-	 * 
+	 *
 	 * @return	The formatted column value.
-	 * 
+	 *
 	 * @throws DataReadException	In case a formatting can not be performed.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	protected Object formatColValue(Object colValue) throws DataReadException{
@@ -724,6 +726,13 @@ public class ResultSetTableIterator implements TableIterator {
 			// note: java.sql.Timestamp extends java.util.Date. That's why the next condition also works for java.sql.Timestamp.
 			else if (colValue instanceof java.util.Date)
 				colValue = ISO8601Format.format((java.util.Date)colValue);
+			// if the type is a BigDecimal object (this is possible for instance with PostgreSQL "numeric" datatype,
+			// but this type can not be supported in FITS and VOTable):
+			else if (colValue instanceof BigDecimal)
+				colValue = ((BigDecimal)colValue).doubleValue();
+			// if the type is a BigInteger object (as BigDecimal, this type can not be supported in FITS and VOTable):
+			else if (colValue instanceof BigInteger)
+				colValue = ((BigInteger)colValue).longValue();
 			// if the type is Integer but it is declared as a SMALLINT cast the value (absolutely required for the FITS format):
 			else if (colValue instanceof Integer && colType != null && colValue != null && colType.type == DBDatatype.SMALLINT)
 				colValue = new Short(((Integer)colValue).shortValue());
@@ -734,7 +743,7 @@ public class ResultSetTableIterator implements TableIterator {
 			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)
 				colValue = ((String)colValue).charAt(0);
 			// if the column value is a geometrical object, it must be serialized in STC-S:
-			else if (translator != null && colType != null && colType.isGeometry()) {
+			else if (translator != null && colType != null && colType.isGeometry()){
 				try{
 					Region region = translator.translateGeometryFromDB(colValue);
 					if (region != null)
@@ -764,24 +773,24 @@ public class ResultSetTableIterator implements TableIterator {
 
 	/**
 	 * <p>Convert the given DBMS type into the corresponding {@link DBType} instance.</p>
-	 * 
+	 *
 	 * <p>
 	 *	This function first tries the conversion using the translator ({@link JDBCTranslator#convertTypeFromDB(int, String, String, String[])}).
 	 * 	If the translator fails, a default conversion is done.
 	 * </p>
-	 * 
+	 *
 	 * <p><b>Warning:
 	 * 	It is not recommended to rely on the default conversion.
 	 * 	This conversion is just a matter of guessing the better matching {@link DBType}
 	 * 	considering the types of the following DBMS: PostgreSQL, SQLite, MySQL, Oracle and Java/DB/Derby.
 	 * </b></p>
-	 * 
+	 *
 	 * @param dbmsType	DBMS column data-type name.
 	 * @param dbms		Lower-case string which indicates which DBMS the ResultSet is coming from. <i>note: MAY be NULL.</i>
-	 * 
+	 *
 	 * @return	The best suited {@link DBType} object,
 	 *        	or an {@link DBDatatype#UNKNOWN UNKNOWN} type if none can be found.
-	 * 
+	 *
 	 * @see JDBCTranslator#convertTypeFromDB(int, String, String, String[])
 	 * @see #defaultTypeConversion(String, String[], String)
 	 */
@@ -813,33 +822,33 @@ public class ResultSetTableIterator implements TableIterator {
 	 * <p>Convert the given DBMS type into the better matching {@link DBType} instance.
 	 * This function is used to <b>guess</b> the TAP type of a column when it is not provided in the constructor.
 	 * It aims not to be exhaustive, but just to provide a type when the given TAP metadata are incomplete.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Any unknown DBMS data-type will be considered and translated as a VARCHAR.
 	 * 	This latter will be also returned if the given parameter is an empty string or NULL.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This type conversion function has been designed to work with all standard data-types of the following DBMS:
 	 * 	PostgreSQL, SQLite, MySQL, Oracle and JavaDB/Derby.
 	 * </i></p>
-	 * 
+	 *
 	 * <p><i><b>Important</b>:
 	 * 	<b>The third parameter is REALLY NEEDED when the DBMS is SQLite ("sqlite")!</b>
 	 * 	Indeed, SQLite has a so restrictive list of data-types that this function can reliably convert
 	 * 	only if it knows the DBMS is SQLite. Otherwise, the conversion result would be unpredictable.
 	 * 	</i>In this default implementation of this function, all other DBMS values are ignored.<i>
 	 * </i></p>
-	 * 
+	 *
 	 * <p><b>Warning</b>:
 	 * 	This function is not translating the geometrical data-types. If a such data-type is encountered,
 	 * 	it will considered as unknown and so, a VARCHAR TAP type will be returned.
 	 * </p>
-	 * 
+	 *
 	 * @param dbmsTypeName	Name of type, without the eventual parameters.
 	 * @param params		The eventual type parameters (e.g. char string length).
 	 * @param dbms			The targeted DBMS.
-	 * 
+	 *
 	 * @return	The corresponding ADQL/TAP type. <i>NEVER NULL ;
 	 *        	an {@link DBDatatype#UNKNOWN UNKNOWN} type is returned in case no match can be found.</i>
 	 */

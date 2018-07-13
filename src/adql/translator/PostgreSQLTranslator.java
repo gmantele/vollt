@@ -2,20 +2,20 @@ package adql.translator;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -26,6 +26,7 @@ import adql.db.STCS.Region;
 import adql.parser.ParseException;
 import adql.query.IdentifierField;
 import adql.query.operand.StringConstant;
+import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -41,23 +42,36 @@ import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
 
 /**
- * <p>Translates all ADQL objects into an SQL interrogation query designed for PostgreSQL.</p>
- * 
+ * Translates all ADQL objects into an SQL interrogation query designed for
+ * PostgreSQL.
+ *
+ * <p>
+ * 	It overwrites the translation of mathematical functions whose some have
+ * 	a different name or signature. Besides, it is also implementing the
+ * 	translation of the geometrical functions. However, it does not really
+ * 	translate them. It is just returning the ADQL expression (by calling
+ * 	{@link #getDefaultADQLFunction(ADQLFunction)}). And so, of course, the
+ * 	execution of a SQL query containing geometrical functions and translated
+ * 	using this translator will not work. It is just a default implementation in
+ * 	case there is no interest of these geometrical functions.
+ * </p>
+ *
  * <p><i><b>Important</b>:
  * 	The geometrical functions are translated exactly as in ADQL.
- * 	You will probably need to extend this translator to correctly manage the geometrical functions.
- * 	An extension is already available for PgSphere: {@link PgSphereTranslator}.
+ * 	You will probably need to extend this translator to correctly manage the
+ * 	geometrical functions. An extension is already available for PgSphere:
+ * 	{@link PgSphereTranslator}.
  * </i></p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 1.4 (08/2016)
- * 
+ *
  * @see PgSphereTranslator
  */
 public class PostgreSQLTranslator extends JDBCTranslator {
 
 	/** <p>Indicate the case sensitivity to apply to each SQL identifier (only SCHEMA, TABLE and COLUMN).</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	In this implementation, this field is set by the constructor and never modified elsewhere.
 	 * 	It would be better to never modify it after the construction in order to keep a certain consistency.
@@ -76,7 +90,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	/**
 	 * Builds a PostgreSQLTranslator which always translates in SQL all identifiers (schema, table and column) in the specified case sensitivity ;
 	 * in other words, schema, table and column names will all be surrounded or not by double quotes in the SQL translation.
-	 * 
+	 *
 	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity.
 	 */
 	public PostgreSQLTranslator(final boolean allCaseSensitive){
@@ -85,7 +99,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 
 	/**
 	 * Builds a PostgreSQLTranslator which will always translate in SQL identifiers with the defined case sensitivity.
-	 * 
+	 *
 	 * @param catalog	<i>true</i> to translate catalog names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param schema	<i>true</i> to translate schema names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param table		<i>true</i> to translate table names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.

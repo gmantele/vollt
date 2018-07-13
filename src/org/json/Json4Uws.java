@@ -2,21 +2,21 @@ package org.json;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,15 +29,16 @@ import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.jobInfo.JobInfo;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
 
 /**
  * Useful conversion functions from UWS to JSON.
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.3 (03/2018)
  */
 public final class Json4Uws {
 
@@ -55,6 +56,7 @@ public final class Json4Uws {
 		JSONObject json = new JSONObject();
 		if (uws != null){
 			json.put("name", uws.getName());
+			json.put("version", UWS.VERSION);
 			json.put("description", uws.getDescription());
 
 			JSONArray jobLists = new JSONArray();
@@ -74,24 +76,65 @@ public final class Json4Uws {
 
 	/**
 	 * Gets the JSON representation of the given jobs list.
-	 * @param jobsList			The jobs list to represent in JSON.
-	 * @param owner				The user who asks to serialize the given jobs list. (MAY BE NULL)
-	 * @return					Its JSON representation.
-	 * @throws JSONException	If there is an error while building the JSON object.
+	 *
+	 * @param jobsList	The jobs list to represent in JSON.
+	 * @param owner		The user who asks to serialize the given jobs list.
+	 *             		(MAY BE NULL)
+	 *
+	 * @return	Its JSON representation.
+	 *
+	 * @throws JSONException	If there is an error while building the JSON
+	 *                      	object.
+	 *
+	 * @see #getJson(JobList, JobOwner, JobListRefiner)
 	 */
 	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner) throws JSONException{
+		return getJson(jobsList, owner, null);
+	}
+
+	/**
+	 * Gets the JSON representation of the given jobs list by filtering by owner
+	 * and some user-filters (e.g. on phase, creation time).
+	 *
+	 * @param jobsList		The jobs list to represent in JSON.
+	 * @param owner			The user who asks to serialize the given jobs list.
+	 *             			(MAY BE NULL)
+	 * @param listRefiner	Represent all the specified job filters to apply ;
+	 *                   	only the job that pass through this filter should be
+	 *                   	displayed. If NULL, all jobs are displayed.
+	 *
+	 * @return	Its JSON representation.
+	 *
+	 * @throws JSONException	If there is an error while building the JSON
+	 *                      	object.
+	 *
+	 * @since 4.3
+	 */
+	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (jobsList != null){
 			json.put("name", jobsList.getName());
+			json.put("version", UWS.VERSION);
 			JSONArray jsonJobs = new JSONArray();
 			UWSUrl jobsListUrl = jobsList.getUrl();
+
+			// Security filter: retrieve only the jobs of the specified owner:
 			Iterator<UWSJob> it = jobsList.getJobs(owner);
+
+			/* User filter: filter the jobs in function of filters specified by
+			 * the user:  */
+			if (listRefiner != null)
+				it = listRefiner.refine(it);
+
+			// Append the JSON serialization of all filtered jobs:
 			JSONObject jsonObj = null;
 			while(it.hasNext()){
 				jsonObj = getJson(it.next(), jobsListUrl, true);
 				if (jsonObj != null)
 					jsonJobs.put(jsonObj);
+
 			}
+
 			json.put("jobs", jsonJobs);
 		}
 		return json;
@@ -119,20 +162,26 @@ public final class Json4Uws {
 	public final static JSONObject getJson(final UWSJob job, final UWSUrl jobsListUrl, final boolean reference) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (job != null){
+			json.put("version", UWS.VERSION);
 			json.put(UWSJob.PARAM_JOB_ID, job.getJobId());
 			json.put(UWSJob.PARAM_PHASE, job.getPhase());
+			json.put(UWSJob.PARAM_RUN_ID, job.getRunId());
+			if (job.getOwner() != null)
+				json.put(UWSJob.PARAM_OWNER, job.getOwner().getPseudo());
+			json.put(UWSJob.PARAM_CREATION_TIME, ISO8601Format.format(job.getCreationTime()));
 			if (reference){
 				if (jobsListUrl != null){
 					jobsListUrl.setJobId(job.getJobId());
 					json.put("href", jobsListUrl.getRequestURL());
 				}
 			}else{
-				json.put(UWSJob.PARAM_RUN_ID, job.getRunId());
-				if (job.getOwner() != null)
-					json.put(UWSJob.PARAM_OWNER, job.getOwner().getPseudo());
-				json.put(UWSJob.PARAM_QUOTE, job.getQuote());
-				if (job.getStartTime() != null)
+				if (job.getStartTime() != null){
+					if (job.getQuote() > 0){
+						long quoteTime = job.getStartTime().getTime() + (1000 * job.getQuote());
+						json.put(UWSJob.PARAM_QUOTE, ISO8601Format.format(quoteTime));
+					}
 					json.put(UWSJob.PARAM_START_TIME, ISO8601Format.format(job.getStartTime()));
+				}
 				if (job.getEndTime() != null)
 					json.put(UWSJob.PARAM_END_TIME, ISO8601Format.format(job.getEndTime()));
 				if (job.getDestructionTime() != null)
@@ -150,24 +199,24 @@ public final class Json4Uws {
 
 	/**
 	 * Gets the JSON representation of the jobInfo of the given job.
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	This function transforms the XML returned by
 	 * 	{@link JobInfo#getXML(String)} into a JSON object
 	 * 	(see {@link XML#toJSONObject(String)}).
 	 * </p>
-	 * 
+	 *
 	 * @param job				The job whose the jobInfo must be represented
 	 *           				in JSON.
-	 * 
+	 *
 	 * @return					The JSON representation of its jobInfo.
-	 * 
+	 *
 	 * @throws JSONException	If there is an error while building the JSON
 	 *                      	object.
-	 * 
+	 *
 	 * @see JobInfo#getXML(String)
 	 * @see XML#toJSONObject(String)
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	public final static JSONObject getJobInfoJson(final UWSJob job) throws JSONException{
@@ -242,7 +291,8 @@ public final class Json4Uws {
 			resultJson.put("id", r.getId());
 			resultJson.put("type", r.getType());
 			resultJson.put("href", r.getHref());
-			resultJson.put("mime", r.getMimeType());
+			if (r.getMimeType() != null)
+				resultJson.put("mime-type", r.getMimeType());
 			if (r.getSize() >= 0)
 				resultJson.put("size", r.getSize());
 			resultJson.put("redirection", r.isRedirectionRequired());

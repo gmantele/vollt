@@ -16,7 +16,8 @@ package uws;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
@@ -25,16 +26,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Parser of HTTP Accept header.
  * It takes into account the order of the different MIME types and their respective quality.
  * 
  * @author Brice Gassmann (CDS) & modified by Gr&eacute;gory Mantelet (CDS)
- * @version 12/2010
+ * @version 4.2 (09/2017)
  */
 public class AcceptHeader {
 
@@ -136,7 +136,7 @@ public class AcceptHeader {
 	 * 
 	 * @return	The ordered list of the extracted MIME types.
 	 */
-	public ArrayList<String> getOrderedMimeTypes(){
+	public List<String> getOrderedMimeTypes(){
 		Float[] qualities = mSortedMimeTypes.keySet().toArray(new Float[0]);
 		Arrays.sort(qualities, Collections.reverseOrder());
 

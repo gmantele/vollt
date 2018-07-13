@@ -2,21 +2,21 @@ package uws.service.file;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import uws.UWSException;
@@ -46,30 +47,32 @@ import uws.job.ErrorSummary;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
+import uws.service.file.io.OutputStreamWithCloseAction;
+import uws.service.file.io.RotateFileAction;
 import uws.service.log.UWSLog.LogLevel;
 import uws.service.request.UploadFile;
 
 /**
  * <p>All UWS files are stored in the local machine into the specified directory.</p>
- * 
+ *
  * <p>
  * 	The name of the log file, the result files and the backup files may be customized by overriding the following functions:
  * 	{@link #getLogFileName(uws.service.log.UWSLog.LogLevel, String)}, {@link #getResultFileName(Result, UWSJob)}, {@link #getBackupFileName(JobOwner)} and {@link #getBackupFileName()}.
  * </p>
- * 
+ *
  * <p>
  * 	By default, results and backups are grouped by owner/user and owners/users are grouped thanks to {@link DefaultOwnerGroupIdentifier}.
  * 	By using the appropriate constructor, you can change these default behaviors.
  * </p>
- * 
+ *
  * <p>
  * 	A log file rotation is set by default so that avoiding a too big log file after several months/years of use.
  * 	By default the rotation is done every month on the 1st at 6am. This frequency can be changed easily thanks to the function
  * 	{@link #setLogRotationFreq(String)}.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (02/2015)
+ * @version 4.4 (07/2018)
  */
 public class LocalUWSFileManager implements UWSFileManager {
 
@@ -105,12 +108,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 	There will be one directory for each owner ID and owner directories will be grouped
 	 * 	thanks to {@link DefaultOwnerGroupIdentifier}.
 	 * </p>
-	 * 
+	 *
 	 * @param root				UWS root directory.
 	 *
 	 * @throws NullPointerException	If the given root directory is <i>null</i>.
 	 * @throws UWSException			If the given file is not a directory or has not the READ and WRITE permissions.
-	 * 
+	 *
 	 * @see #LocalUWSFileManager(File, boolean, boolean, OwnerGroupIdentifier)
 	 */
 	public LocalUWSFileManager(final File root) throws UWSException{
@@ -123,7 +126,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 	If, according to the third parameter, the owner directories must be grouped,
 	 * 	the {@link DefaultOwnerGroupIdentifier} will be used.
 	 * </p>
-	 * 
+	 *
 	 * @param root						UWS root directory.
 	 * @param oneDirectoryForEachUser	<i>true</i> to create one directory for each owner ID, <i>false</i> otherwise.
 	 * @param groupUserDirectories		<i>true</i> to group user directories, <i>false</i> otherwise.
@@ -131,7 +134,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 *
 	 * @throws NullPointerException	If the given root directory is <i>null</i>.
 	 * @throws UWSException			If the given file is not a directory or has not the READ and WRITE permissions.
-	 * 
+	 *
 	 * @see #LocalUWSFileManager(File, boolean, boolean, OwnerGroupIdentifier)
 	 */
 	public LocalUWSFileManager(final File root, final boolean oneDirectoryForEachUser, final boolean groupUserDirectories) throws UWSException{
@@ -140,7 +143,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Builds a {@link UWSFileManager} which manages all UWS files in the given directory.
-	 * 
+	 *
 	 * @param root						UWS root directory.
 	 * @param oneDirectoryForEachUser	<i>true</i> to create one directory for each owner ID, <i>false</i> otherwise.
 	 * @param groupUserDirectories		<i>true</i> to group user directories, <i>false</i> otherwise.
@@ -188,7 +191,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Gets the directory of the given owner.
-	 * 
+	 *
 	 * @param owner	A job owner.
 	 * @return		Its directory.
 	 */
@@ -209,9 +212,9 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Removes the owner directory if there is no more file in it (except the backup file which is no more required).
-	 * 
+	 *
 	 * @param owner			The user whose the directory must be removed.
-	 * 
+	 *
 	 * @throws IOException	If there is an error while removing the owner directory.
 	 */
 	protected void cleanOwnerDirectory(final JobOwner owner) throws IOException{
@@ -247,7 +250,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	/**
 	 * Get the frequency of the log file rotation
 	 * in a human readable way.
-	 * 
+	 *
 	 * @return	A human readable frequency of the log file rotation.
 	 */
 	public final String getLogRotationFreq(){
@@ -256,12 +259,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * <p>Set the frequency at which a rotation of the log file must be done.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	"rotation" means here, to close the currently used log file, to rename it so that suffixing it
 	 * 	with the date at which the first log has been written in it, and to create a new log file.
 	 * </p>
-	 * 
+	 *
 	 * <p>The frequency string must respect the following syntax:</p>
 	 * <ul>
 	 * 	<li>'D' hh mm : daily schedule at hh:mm</li>
@@ -272,12 +275,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * </ul>
 	 * <p><i>Where: hh = integer between 0 and 23, mm = integer between 0 and 59, dd (for 'W') = integer between 1 and 7 (1:sunday, 2:monday, ..., 7:saturday),
 	 * dd (for 'M') = integer between 1 and 31.</i></p>
-	 * 
+	 *
 	 * <p><i><b>Warning:</b>
 	 * 	The frequency type is case sensitive! Then you should particularly pay attention at the case
 	 * 	when using the frequency types 'M' (monthly) and 'm' (every minute).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	Parsing errors are not thrown but "resolved" silently. The "solution" depends of the error.
 	 * 	2 cases of errors are considered:
@@ -286,7 +289,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 	<li><b>Frequency type mismatch:</b> It happens when the first character is not one of the expected (D, W, M, h, m).
 	 * 	                                    That means: bad case (i.e. 'd' rather than 'D'), another character.
 	 * 	                                    In this case, the frequency will be: <b>daily at 00:00</b>.</li>
-	 * 
+	 *
 	 * 	<li><b>Parameter(s) missing or incorrect:</b> With the "daily" frequency ('D'), at least 2 parameters must be provided ;
 	 * 	                                             3 for "weekly" ('W') and "monthly" ('M') ; only 1 for "hourly" ('h') ; none for "every minute" ('m').
 	 * 	                                             This number of parameters is a minimum: only the n first parameters will be considered while
@@ -295,7 +298,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 	                                             <b>all parameters will be set to their default value</b>
 	 * 	                                             (which is 0 for all parameter except dd for which it is 1).</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p>Examples:</p>
 	 * <ul>
 	 * 	<li><i>"" or NULL</i> = every day at 00:00</li>
@@ -308,7 +311,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * 	<li><i>"M 32 6 30"</i> = every month on the 1st at 00:00, because with 'M' dd must respect the rule: 1 &le; dd &le; 31</li>
 	 * 	<li><i>"M 5 6 30 12"</i> = every month on the 5th at 06:30, because at least 3 parameters are expected and so considered: "12" and eventual other parameters are ignored</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param interval	Interval between two log rotations.
 	 */
 	public final void setLogRotationFreq(final String interval){
@@ -317,12 +320,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * <p>Gets the name of the UWS log file.</p>
-	 * 
+	 *
 	 * <p>By default: {@link #DEFAULT_LOG_FILE_NAME}.</p>
-	 * 
+	 *
 	 * @param level		Level of the message to log (DEBUG, INFO, WARNING, ERROR, FATAL).
 	 * @param context	Context of the message to log (UWS, HTTP, THREAD, JOB, ...).
-	 * 
+	 *
 	 * @return	The name of the UWS log file.
 	 */
 	protected String getLogFileName(final LogLevel level, final String context){
@@ -331,12 +334,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Gets the UWS log file.
-	 * 
+	 *
 	 * @param level		Level of the message to log (DEBUG, INFO, WARNING, ERROR, FATAL).
 	 * @param context	Context of the message to log (UWS, HTTP, THREAD, JOB, ...).
-	 * 
+	 *
 	 * @return	The UWS log file.
-	 * 
+	 *
 	 * @see #getLogFileName(uws.service.log.UWSLog.LogLevel, String)
 	 */
 	protected File getLogFile(final LogLevel level, final String context){
@@ -417,12 +420,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Create a File instance from the given upload file description.
-	 * This function is able to deal with location as URI and as file path. 
-	 * 
+	 * This function is able to deal with location as URI and as file path.
+	 *
 	 * @param upload	Description of an uploaded file.
-	 * 
+	 *
 	 * @return	The corresponding File object.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected final File getFile(final UploadFile upload){
@@ -509,18 +512,21 @@ public class LocalUWSFileManager implements UWSFileManager {
 			if (output != null){
 				try{
 					output.close();
-				}catch(IOException ioe){}
+				}catch(IOException ioe){
+				}
 			}
 			if (input != null){
 				try{
 					input.close();
-				}catch(IOException ioe){}
+				}catch(IOException ioe){
+				}
 			}
 			// In case of problem, the copy must be deleted:
 			if (!done && copy.exists()){
 				try{
 					copy.delete();
-				}catch(SecurityException ioe){}
+				}catch(SecurityException ioe){
+				}
 			}
 		}
 	}
@@ -532,12 +538,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 	 * <p>Gets the name of the file in which the given result is/must be written.</p>
 	 * <p>By default: jobID + "_" + resultID + "." + {@link UWSToolBox#getFileExtension(String) getFileExtension(resultMIMEType)}</p>
 	 * <p><i><u>note:</u> there is no file extension if the MIME type of the result is unknown !</i></p>
-	 * 
+	 *
 	 * @param result	The result whose the file name is asked.
 	 * @param job		The job which owns the given result.
-	 * 
+	 *
 	 * @return			Name of the file corresponding to the given result.
-	 * 
+	 *
 	 * @see UWSToolBox#getFileExtension(String)
 	 */
 	protected String getResultFileName(final Result result, final UWSJob job){
@@ -557,12 +563,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Gets the file corresponding to the given result.
-	 * 
+	 *
 	 * @param result	The result whose the file is asked.
 	 * @param job		The job which owns the given result.
-	 * 
+	 *
 	 * @return			The file corresponding to the given result.
-	 * 
+	 *
 	 * @see #getOwnerDirectory(JobOwner)
 	 * @see #getResultFileName(Result, UWSJob)
 	 */
@@ -609,10 +615,10 @@ public class LocalUWSFileManager implements UWSFileManager {
 	/**
 	 * <p>Gets the name of the file in which the described error is/must be written.</p>
 	 * <p>By default: jobID + "_ERROR.log"</p>
-	 * 
+	 *
 	 * @param error		The description of the error whose the file name is asked.
 	 * @param job		The job which owns the given error.
-	 * 
+	 *
 	 * @return			Name of the file corresponding to the described error.
 	 */
 	protected String getErrorFileName(final ErrorSummary error, final UWSJob job){
@@ -621,12 +627,12 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Gets the file corresponding to the described error.
-	 * 
+	 *
 	 * @param error		The error whose the file is asked.
 	 * @param job		The job which owns the given error.
-	 * 
+	 *
 	 * @return			The file corresponding to the described error.
-	 * 
+	 *
 	 * @see #getOwnerDirectory(JobOwner)
 	 * @see #getErrorFileName(ErrorSummary, UWSJob)
 	 */
@@ -673,11 +679,11 @@ public class LocalUWSFileManager implements UWSFileManager {
 	/**
 	 * <p>Gets the name of the backup file of the given job owner (~ UWS user).</p>
 	 * <p>By default: ownerID + ".backup"</p>
-	 * 
+	 *
 	 * @param owner	The job owner whose the name of the backup file is asked.
-	 * 
+	 *
 	 * @return		The name of the backup file of the given owner.
-	 * 
+	 *
 	 * @throws IllegalArgumentException	If the given owner is <i>null</i> or an empty string.
 	 */
 	protected String getBackupFileName(final JobOwner owner) throws IllegalArgumentException{
@@ -700,14 +706,15 @@ public class LocalUWSFileManager implements UWSFileManager {
 	@Override
 	public OutputStream getBackupOutput(JobOwner owner) throws IllegalArgumentException, IOException{
 		File backupFile = new File(getOwnerDirectory(owner), getBackupFileName(owner));
+		File tempBackupFile = new File(getOwnerDirectory(owner), getBackupFileName(owner) + ".temp-" + System.currentTimeMillis());
 		createParentDir(backupFile);
-		return new FileOutputStream(backupFile);
+		return new OutputStreamWithCloseAction(new FileOutputStream(tempBackupFile), new RotateFileAction(tempBackupFile, backupFile));
 	}
 
 	/**
 	 * <p>Gets the name of the UWS general backup file.</p>
 	 * <p>By default: {@link #DEFAULT_BACKUP_FILE_NAME}</p>
-	 * 
+	 *
 	 * @return		The name of the UWS general backup file.
 	 */
 	protected String getBackupFileName(){
@@ -723,8 +730,9 @@ public class LocalUWSFileManager implements UWSFileManager {
 	@Override
 	public OutputStream getBackupOutput() throws IOException{
 		File backupFile = new File(rootDirectory, getBackupFileName());
+		File tempBackupFile = new File(rootDirectory, getBackupFileName() + ".temp-" + System.currentTimeMillis());
 		createParentDir(backupFile);
-		return new FileOutputStream(backupFile);
+		return new OutputStreamWithCloseAction(new FileOutputStream(tempBackupFile), new RotateFileAction(tempBackupFile, backupFile));
 	}
 
 	/* ************** */
@@ -733,9 +741,9 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Creates the parent directory(ies) if it(they) does/do not exist.
-	 * 
+	 *
 	 * @param f	The file whose the parent directory must exist after the call of this function.
-	 * 
+	 *
 	 * @return	<i>true</i> if the parent directory now exists, <i>false</i> otherwise.
 	 */
 	protected boolean createParentDir(final File f){
@@ -748,7 +756,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	/**
 	 * Lets iterating on all user backup files.
 	 * The {@link #next()} function creates and returns the {@link InputStream} for the next backup file.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 05/2012
 	 */
@@ -765,7 +773,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 			itBackupFiles = loadAllBackupFiles().iterator();
 		}
 
-		private ArrayList<File> loadAllBackupFiles(){
+		private List<File> loadAllBackupFiles(){
 			ArrayList<File> backupFiles = new ArrayList<File>();
 
 			// If there must be 1 directory by user:
@@ -806,7 +814,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 		/**
 		 * If the file whose the input stream must be created and returned does not exist
 		 * or has not the READ permission, <i>null</i> will be returned.
-		 * 
+		 *
 		 * @see java.util.Iterator#next()
 		 */
 		@Override
@@ -835,7 +843,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Filter which lets returning only the directories.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 05/2012
 	 */
@@ -848,7 +856,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/**
 	 * Filter which lets returning only the backup file(s) of the specified user/owner.
-	 * 
+	 *
 	 * @author Gr&ecaute;gory Mantelet (CDS)
 	 * @version 05/2012
 	 */
@@ -858,7 +866,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 		/**
 		 * Sets the ID of the user whose the backup file must be returned.
 		 * If <i>null</i>, all the found backup files will be returned EXCEPT the backup file for the whole UWS.
-		 * 
+		 *
 		 * @param ownerID	ID of the user whose the backup file must be returned. (MAY BE NULL)
 		 */
 		public void setOwnerID(final String ownerID){

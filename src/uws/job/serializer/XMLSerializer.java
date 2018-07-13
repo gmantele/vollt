@@ -2,21 +2,21 @@ package uws.job.serializer;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -31,6 +31,7 @@ import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
 import uws.job.jobInfo.JobInfo;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
@@ -38,9 +39,9 @@ import uws.service.request.UploadFile;
 
 /**
  * Lets serializing any UWS resource in XML.
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.3 (03/2018)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;
@@ -60,7 +61,7 @@ public class XMLSerializer extends UWSSerializer {
 
 	/**
 	 * Builds a XML serializer with a XSLT link.
-	 * 
+	 *
 	 * @param xsltPath	Path of a XSLT style-sheet.
 	 */
 	public XMLSerializer(final String xsltPath){
@@ -69,7 +70,7 @@ public class XMLSerializer extends UWSSerializer {
 
 	/**
 	 * Gets the path/URL of the XSLT style-sheet to use.
-	 * 
+	 *
 	 * @return	XSLT path/url.
 	 */
 	public final String getXSLTPath(){
@@ -78,7 +79,7 @@ public class XMLSerializer extends UWSSerializer {
 
 	/**
 	 * Sets the path/URL of the XSLT style-sheet to use.
-	 * 
+	 *
 	 * @param path	The new XSLT path/URL.
 	 */
 	public final void setXSLTPath(final String path){
@@ -94,12 +95,12 @@ public class XMLSerializer extends UWSSerializer {
 	/**
 	 * Gets the XML file header (xml version, encoding and the xslt
 	 * style-sheet link if any).
-	 * 
+	 *
 	 * <p>
 	 * 	It is always called by the implementation of the UWSSerializer functions
 	 * 	if their boolean parameter (<i>root</i>) is <i>true</i>.
 	 * </p>
-	 * 
+	 *
 	 * @return	The XML file header.
 	 */
 	public String getHeader(){
@@ -112,7 +113,7 @@ public class XMLSerializer extends UWSSerializer {
 	/**
 	 * Gets all UWS namespaces declarations needed for an XML representation of
 	 * a UWS object.
-	 * 
+	 *
 	 * @return	The UWS namespaces: <br /> (i.e. <i>= "xmlns:uws=[...]
 	 *        	xmlns:xlink=[...] xmlns:xs=[...] xmlns:xsi=[...]
 	 *        	xsi:schemaLocation=[...]"</i>).
@@ -123,14 +124,14 @@ public class XMLSerializer extends UWSSerializer {
 
 	/**
 	 * Gets the node attributes which declare the UWS namespace.
-	 * 
+	 *
 	 * @param root	<i>false</i> if the attribute to serialize will be included
 	 * 				in a top level serialization (for a job attribute: job),
 	 *            	<i>true</i> otherwise.
-	 * 
+	 *
 	 * @return		"" if <i>root</i> is <i>false</i>, " "+UWSNamespace
 	 *        		otherwise.
-	 * 
+	 *
 	 * @see #getUWSNamespace()
 	 */
 	protected final String getUWSNamespace(boolean root){
@@ -150,9 +151,9 @@ public class XMLSerializer extends UWSSerializer {
 		String name = uws.getName(), description = uws.getDescription();
 		StringBuffer xml = new StringBuffer(getHeader());
 
-		xml.append("<uws").append(getUWSNamespace(true));
+		xml.append("<uws version=\"").append(UWS.VERSION).append('"').append(getUWSNamespace(true));
 		if (name != null)
-			xml.append(" name=\"").append(escapeXMLAttribute(name)).append("\"");
+			xml.append(" name=\"").append(escapeXMLAttribute(name)).append('"');
 		xml.append(">\n");
 
 		if (description != null)
@@ -161,10 +162,14 @@ public class XMLSerializer extends UWSSerializer {
 		xml.append("\t<jobLists>\n");
 		for(JobList jobList : uws){
 			UWSUrl jlUrl = jobList.getUrl();
-			xml.append("\t\t<jobListRef name=\"").append(escapeXMLAttribute(jobList.getName())).append("\" href=\"");
+			xml.append("\t\t<jobListRef name=\"").append(escapeXMLAttribute(jobList.getName())).append('"');
+
+			/* The XLink attributes are optional. So if no URL is available for
+			 * this Job List reference, none is written here: */
 			if (jlUrl != null && jlUrl.getRequestURL() != null)
-				xml.append(escapeXMLAttribute(jlUrl.getRequestURL()));
-			xml.append("\" />\n");
+				xml.append(" xlink:type=\"simple\" xlink:href=\"").append(escapeXMLAttribute(jlUrl.getRequestURL())).append('"');
+
+			xml.append(" />\n");
 		}
 		xml.append("\t</jobLists>\n");
 
@@ -174,19 +179,28 @@ public class XMLSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root){
+	public String getJobList(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner, final boolean root) throws Exception{
 		StringBuffer xml = new StringBuffer(getHeader());
 
-		xml.append("<jobs").append(getUWSNamespace(true));
+		xml.append("<jobs version=\"").append(UWS.VERSION).append('"').append(getUWSNamespace(true));
 		/* NOTE: NO ATTRIBUTE "name" IN THE XML SCHEMA!
 		 * String name = jobsList.getName();
 		 * if (name != null)
 		 * 	xml.append(" name=\"").append(escapeXMLAttribute(name)).append("\"");
 		 */
-		xml.append(">");
+		xml.append('>');
 
 		UWSUrl jobsListUrl = jobsList.getUrl();
+
+		// Security filter: retrieve only the jobs of the specified owner:
 		Iterator<UWSJob> it = jobsList.getJobs(owner);
+
+		/* User filter: filter the jobs in function of filters specified by the
+		 * user: */
+		if (listRefiner != null)
+			it = listRefiner.refine(it);
+
+		// Append the jobs' description:
 		while(it.hasNext())
 			xml.append("\n\t").append(getJobRef(it.next(), jobsListUrl));
 
@@ -201,13 +215,14 @@ public class XMLSerializer extends UWSSerializer {
 		String newLine = "\n\t";
 
 		// general information:
-		xml.append("<job").append(getUWSNamespace(root)).append(">");
+		xml.append("<job version=\"").append(UWS.VERSION).append('"').append(getUWSNamespace(root)).append('>');
 		xml.append(newLine).append(getJobID(job, false));
 		if (job.getRunId() != null)
 			xml.append(newLine).append(getRunID(job, false));
 		xml.append(newLine).append(getOwnerID(job, false));
 		xml.append(newLine).append(getPhase(job, false));
 		xml.append(newLine).append(getQuote(job, false));
+		xml.append(newLine).append(getCreationTime(job, false));
 		xml.append(newLine).append(getStartTime(job, false));
 		xml.append(newLine).append(getEndTime(job, false));
 		xml.append(newLine).append(getExecutionDuration(job, false));
@@ -243,22 +258,39 @@ public class XMLSerializer extends UWSSerializer {
 		}
 
 		StringBuffer xml = new StringBuffer("<jobref id=\"");
-		xml.append(escapeXMLAttribute(job.getJobId()));
-		/* NOTE: NO ATTRIBUTE "runId" IN THE XML SCHEMA!
-		 * if (job.getRunId() != null && job.getRunId().length() > 0)
-		 * 	xml.append("\" runId=\"").append(escapeXMLAttribute(job.getRunId()));
-		 */
-		xml.append("\" xlink:href=\"");
+
+		// [MANDATORY] Set the job ID as an attribute:
+		xml.append(escapeXMLAttribute(job.getJobId())).append('"');
+
+		/* [OPTIONAL] Set the XLink attributes. If no URL is available for this
+		 * Job reference, none is written here: */
 		if (url != null)
-			xml.append(escapeXMLAttribute(url));
-		xml.append("\">\n\t\t").append(getPhase(job, false)).append("\n\t</jobref>");
+			xml.append(" xlink:type=\"simple\" xlink:href=\"").append(escapeXMLAttribute(url)).append('"');
+
+		xml.append('>');
+
+		// [MANDATORY] Append the execution phase:
+		xml.append("\n\t\t").append(getPhase(job, false));
+
+		// [OPTIONAL] Append the RUN ID (name/label of the job set by the user), if any:
+		if (job.getRunId() != null)
+			xml.append("\n\t\t").append(getRunID(job, false));
+
+		// [OPTIONAL] Append the job owner, if any:
+		if (job.getOwner() != null)
+			xml.append("\n\t\t").append(getOwnerID(job, false));
+
+		// [OPTIONAL] Append the creation time:
+		xml.append("\n\t\t").append(getCreationTime(job, false));
+
+		xml.append("\n\t</jobref>");
 
 		return xml.toString();
 	}
 
 	@Override
 	public String getJobID(final UWSJob job, final boolean root){
-		return (new StringBuffer(root ? getHeader() : "")).append("<jobId").append(getUWSNamespace(root)).append(">").append(escapeXMLData(job.getJobId())).append("</jobId>").toString();
+		return (new StringBuffer(root ? getHeader() : "")).append("<jobId").append(getUWSNamespace(root)).append('>').append(escapeXMLData(job.getJobId())).append("</jobId>").toString();
 	}
 
 	@Override
@@ -266,7 +298,7 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getRunId() != null){
 			StringBuffer xml = new StringBuffer(root ? getHeader() : "");
 			xml.append("<runId").append(getUWSNamespace(root));
-			xml.append(">").append(escapeXMLData(job.getRunId())).append("</runId>");
+			xml.append('>').append(escapeXMLData(job.getRunId())).append("</runId>");
 			return xml.toString();
 		}else
 			return "";
@@ -279,24 +311,31 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getOwner() == null)
 			xml.append(" xsi:nil=\"true\" />");
 		else
-			xml.append(">").append(escapeXMLData(job.getOwner().getPseudo())).append("</ownerId>");
+			xml.append('>').append(escapeXMLData(job.getOwner().getPseudo())).append("</ownerId>");
 		return xml.toString();
 	}
 
 	@Override
 	public String getPhase(final UWSJob job, final boolean root){
-		return (new StringBuffer(root ? getHeader() : "")).append("<phase").append(getUWSNamespace(root)).append(">").append(job.getPhase()).append("</phase>").toString();
+		return (new StringBuffer(root ? getHeader() : "")).append("<phase").append(getUWSNamespace(root)).append('>').append(job.getPhase()).append("</phase>").toString();
 	}
 
 	@Override
 	public String getQuote(final UWSJob job, final boolean root){
 		StringBuffer xml = new StringBuffer(root ? getHeader() : "");
 		xml.append("<quote").append(getUWSNamespace(root));
-		if (job.getQuote() <= 0)
+		if (job.getStartTime() == null || job.getQuote() <= 0)
 			xml.append(" xsi:nil=\"true\" />");
-		else
-			xml.append(">").append(job.getQuote()).append("</quote>");
+		else{
+			long quoteTime = job.getStartTime().getTime() + (1000 * job.getQuote());
+			xml.append('>').append(ISO8601Format.format(quoteTime)).append("</quote>");
+		}
 		return xml.toString();
+	}
+
+	@Override
+	public String getCreationTime(final UWSJob job, final boolean root){
+		return (new StringBuffer(root ? getHeader() : "")).append("<creationTime").append(getUWSNamespace(root)).append('>').append(ISO8601Format.format(job.getCreationTime())).append("</creationTime>").toString();
 	}
 
 	@Override
@@ -306,7 +345,7 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getStartTime() == null)
 			xml.append(" xsi:nil=\"true\" />");
 		else
-			xml.append(">").append(ISO8601Format.format(job.getStartTime())).append("</startTime>");
+			xml.append('>').append(ISO8601Format.format(job.getStartTime())).append("</startTime>");
 		return xml.toString();
 	}
 
@@ -317,7 +356,7 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getEndTime() == null)
 			xml.append(" xsi:nil=\"true\" />");
 		else
-			xml.append(">").append(ISO8601Format.format(job.getEndTime())).append("</endTime>");
+			xml.append('>').append(ISO8601Format.format(job.getEndTime())).append("</endTime>");
 		return xml.toString();
 	}
 
@@ -328,13 +367,13 @@ public class XMLSerializer extends UWSSerializer {
 		if (job.getDestructionTime() == null)
 			xml.append(" xsi:nil=\"true\" />");
 		else
-			xml.append(">").append(ISO8601Format.format(job.getDestructionTime())).append("</destruction>");
+			xml.append('>').append(ISO8601Format.format(job.getDestructionTime())).append("</destruction>");
 		return xml.toString();
 	}
 
 	@Override
 	public String getExecutionDuration(final UWSJob job, final boolean root){
-		return (new StringBuffer(root ? getHeader() : "")).append("<executionDuration").append(getUWSNamespace(root)).append(">").append(job.getExecutionDuration()).append("</executionDuration>").toString();
+		return (new StringBuffer(root ? getHeader() : "")).append("<executionDuration").append(getUWSNamespace(root)).append('>').append(job.getExecutionDuration()).append("</executionDuration>").toString();
 	}
 
 	@Override
@@ -342,9 +381,9 @@ public class XMLSerializer extends UWSSerializer {
 		if (error != null){
 			StringBuffer xml = new StringBuffer(root ? getHeader() : "");
 			xml.append(tabPrefix).append("<errorSummary").append(getUWSNamespace(root));
-			xml.append(" type=\"").append(error.getType()).append("\"").append(" hasDetail=\"").append(error.hasDetail()).append("\">");
+			xml.append(" type=\"").append(error.getType()).append('"').append(" hasDetail=\"").append(error.hasDetail()).append("\">");
 			xml.append("\n\t").append(tabPrefix).append("<message>").append(escapeXMLData(error.getMessage())).append("</message>");
-			xml.append("\n").append(tabPrefix).append("</errorSummary>");
+			xml.append('\n').append(tabPrefix).append("</errorSummary>");
 			return xml.toString();
 		}else
 			return "";
@@ -357,7 +396,7 @@ public class XMLSerializer extends UWSSerializer {
 		String newLine = "\n\t" + tabPrefix;
 		for(String paramName : job.getAdditionalParameters())
 			xml.append(newLine).append(getAdditionalParameter(paramName, job.getAdditionalParameterValue(paramName), false));
-		xml.append("\n").append(tabPrefix).append("</parameters>");
+		xml.append('\n').append(tabPrefix).append("</parameters>");
 		return xml.toString();
 	}
 
@@ -390,10 +429,21 @@ public class XMLSerializer extends UWSSerializer {
 				}
 				// otherwise, just return the XML parameter description:
 				else{
-					buf.append("<parameter").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(paramName));
+					buf.append("<parameter").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(paramName)).append('"');
+
+					// set if it is an uploaded file:
 					if (paramValue instanceof UploadFile)
-						buf.append("\" byReference=\"true");
-					buf.append("\">").append(escapeXMLData(paramValue.toString())).append("</parameter>");
+						buf.append(" byReference=\"true");
+
+					/*
+					 * Note:
+					 *   The attribute isPost is not supported in this library.
+					 *   This information is not stored by the UWS Library and
+					 *   so is never reported in the XML serialization of the
+					 *   job. Besides, this attribute is optional.
+					 */
+
+					buf.append('>').append(escapeXMLData(paramValue.toString())).append("</parameter>");
 				}
 				return buf.toString();
 			}
@@ -412,46 +462,47 @@ public class XMLSerializer extends UWSSerializer {
 		String newLine = "\n\t" + tabPrefix;
 		while(it.hasNext())
 			xml.append(newLine).append(getResult(it.next(), false));
-		xml.append("\n").append(tabPrefix).append("</results>");
+		xml.append('\n').append(tabPrefix).append("</results>");
 		return xml.toString();
 	}
 
 	@Override
 	public String getResult(final Result result, final boolean root){
 		StringBuffer xml = new StringBuffer(root ? getHeader() : "");
-		xml.append("<result").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(result.getId())).append("\"");
+		xml.append("<result").append(getUWSNamespace(root)).append(" id=\"").append(escapeXMLAttribute(result.getId())).append('"');
+
+		/* The XLink attributes are optional. So if no URL is available, none
+		 * will be written here: */
 		if (result.getHref() != null){
-			if (result.getType() != null)
-				xml.append(" xlink:type=\"").append(escapeXMLAttribute(result.getType())).append("\"");
-			xml.append(" xlink:href=\"").append(escapeXMLAttribute(result.getHref())).append("\"");
+			xml.append(" xlink:type=\"").append((result.getType() == null) ? "simple" : escapeXMLAttribute(result.getType())).append('"');
+			xml.append(" xlink:href=\"").append(escapeXMLAttribute(result.getHref())).append('"');
 		}
 
-		/* NOTE: THE FOLLOWING ATTRIBUTES MAY PROVIDE USEFUL INFORMATION TO USERS, BUT THEY ARE NOT ALLOWED BY THE CURRENT UWS STANDARD.
-		 *       HOWEVER, IF, ONE DAY, THEY ARE, THE FOLLOWING LINES SHOULD BE UNCOMNENTED.
-		 *
-		 * if (result.getMimeType() != null)
-		 * 	xml.append(" mime=\"").append(escapeXMLAttribute(result.getMimeType())).append("\"");
-		 * if (result.getSize() >= 0)
-		 * 	xml.append(" size=\"").append(result.getSize()).append("\"");
-		 */
+		// Append the MIME type, if any:
+		if (result.getMimeType() != null)
+			xml.append(" mime-type=\"").append(escapeXMLAttribute(result.getMimeType())).append('"');
+
+		// Append the result size (in bytes), if any:
+		if (result.getSize() >= 0)
+			xml.append(" size=\"").append(result.getSize()).append('"');
 
 		return xml.append(" />").toString();
 	}
 
 	/**
 	 * Serialize into XML the {@link JobInfo} of the given job, if any.
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	By default, this function wrap the XML content returned by
 	 * 	{@link JobInfo#getXML(String)} inside an XML node "jobInfo".
 	 * 	To change this behavior, you should overwrite this function.
 	 * </p>
-	 * 
+	 *
 	 * @param job	The job whose the jobInfo must be serialized into XML.
-	 * 
+	 *
 	 * @return	The XML serialization of the given job's jobInfo,
 	 *        	or an empty string if the given job has no jobInfo.
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	public String getJobInfo(final UWSJob job) throws UWSException{
@@ -470,9 +521,9 @@ public class XMLSerializer extends UWSSerializer {
 	/* ************** */
 	/**
 	 * Escapes the content of a node (data between the open and the close tags).
-	 * 
+	 *
 	 * @param data	Data to escape.
-	 * 
+	 *
 	 * @return		Escaped data.
 	 */
 	public static String escapeXMLData(final String data){
@@ -498,9 +549,9 @@ public class XMLSerializer extends UWSSerializer {
 
 	/**
 	 * Escapes the given value of an XML attribute.
-	 * 
+	 *
 	 * @param value	Value of an XML attribute.
-	 * 
+	 *
 	 * @return		The escaped value.
 	 */
 	public static String escapeXMLAttribute(final String value){
@@ -529,11 +580,11 @@ public class XMLSerializer extends UWSSerializer {
 
 	/**
 	 * Escapes the given URL.
-	 * 
+	 *
 	 * @param url	URL to escape.
-	 * 
+	 *
 	 * @return		The escaped URL.
-	 * 
+	 *
 	 * @see URLEncoder
 	 * @see #escapeXMLAttribute(String)
 	 */
@@ -551,14 +602,14 @@ public class XMLSerializer extends UWSSerializer {
 	 * If the input character is legal in XML, it is returned;
 	 * otherwise some other weird but legal character
 	 * (currently the inverted question mark, "\u00BF") is returned instead.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	copy of the STILTS VOSerializer.ensureLegalXml(char) function.
 	 * </i></p>
 	 *
 	 * @param   c  input character
 	 * @return  legal XML character, <code>c</code> if possible
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	public static char ensureLegalXml(char c){
@@ -585,7 +636,7 @@ public class XMLSerializer extends UWSSerializer {
 	/**
 	 * Determine whether the given name is a valid XML node name
 	 * according to the W3C (XML 1.1).
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	In addition of validating the given name against the regular expression
 	 * 	provided by the W3C (see {@link #XML_NODE_NAME_REGEX}), this function
@@ -593,12 +644,12 @@ public class XMLSerializer extends UWSSerializer {
 	 * 	following W3C note:
 	 * 		<a href="https://www.w3.org/TR/2006/REC-xml11-20060816/#dt-name">https://www.w3.org/TR/2006/REC-xml11-20060816/#dt-name</a>
 	 * </i></p>
-	 * 
+	 *
 	 * @param nodeName	XML node name to test.
-	 * 
+	 *
 	 * @return	<code>true</code> if the given node name is valid,
 	 *        	<code>false</code> otherwise.
-	 * 
+	 *
 	 * @since 4.2
 	 */
 	public static boolean isValidXMLNodeName(final String nodeName){

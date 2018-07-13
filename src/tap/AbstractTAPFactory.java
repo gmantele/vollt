@@ -2,21 +2,21 @@ package tap;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -28,6 +28,12 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import adql.db.DBChecker;
+import adql.parser.ADQLParser;
+import adql.parser.ADQLQueryFactory;
+import adql.parser.ParseException;
+import adql.parser.QueryChecker;
+import adql.query.ADQLQuery;
 import tap.db.DBConnection;
 import tap.error.DefaultTAPErrorWriter;
 import tap.metadata.TAPMetadata;
@@ -43,19 +49,13 @@ import uws.service.UWS;
 import uws.service.UWSService;
 import uws.service.backup.UWSBackupManager;
 import uws.service.error.ServiceErrorWriter;
-import adql.db.DBChecker;
-import adql.parser.ADQLParser;
-import adql.parser.ADQLQueryFactory;
-import adql.parser.ParseException;
-import adql.parser.QueryChecker;
-import adql.query.ADQLQuery;
 
 /**
  * Default implementation of most of the {@link TAPFactory} function.
  * Only the functions related with the database connection stay abstract.
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (01/2016)
+ * @version 2.2 (09/2017)
  * 
  * TODO:  needs merge (Updated by G.Landais for VizieR)
  *     - createQueryChecker is not final!
@@ -68,11 +68,11 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	/**
 	 * Build a basic TAPFactory.
 	 * Nothing is done except setting the service connection.
-	 * 
+	 *
 	 * @param service	Configuration of the TAP service. <i>MUST NOT be NULL</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If the given {@link ServiceConnection} is NULL.
-	 * 
+	 *
 	 * @see AbstractTAPFactory#AbstractTAPFactory(ServiceConnection, ServiceErrorWriter)
 	 */
 	protected AbstractTAPFactory(ServiceConnection service) throws NullPointerException{
@@ -82,14 +82,14 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	/**
 	 * <p>Build a basic TAPFactory.
 	 * Nothing is done except setting the service connection and the given error writer.</p>
-	 * 
+	 *
 	 * <p>Then the error writer will be used when creating a UWS service and a job thread.</p>
-	 * 
+	 *
 	 * @param service		Configuration of the TAP service. <i>MUST NOT be NULL</i>
 	 * @param errorWriter	Object to use to format and write the errors for the user.
-	 * 
+	 *
 	 * @throws NullPointerException	If the given {@link ServiceConnection} is NULL.
-	 * 
+	 *
 	 * @see TAPFactory#TAPFactory(ServiceConnection)
 	 */
 	protected AbstractTAPFactory(final ServiceConnection service, final ServiceErrorWriter errorWriter) throws NullPointerException{
@@ -144,7 +144,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * by the user. Then it calls {@link #createQueryChecker(Collection)} with this list in order
 	 * to create a query checked.
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function can not be overridded, but {@link #createQueryChecker(Collection)} can be.
 	 * </i></p>
@@ -177,15 +177,15 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * <p>Create an object able to check the consistency between the ADQL query and the database.
 	 * That's to say, it checks whether the tables and columns used in the query really exist
 	 * in the database.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This implementation just create a {@link DBChecker} instance with the list given in parameter.
 	 * </i></p>
-	 * 
+	 *
 	 * @param tables	List of all available tables (and indirectly, columns).
-	 * 
+	 *
 	 * @return	A new ADQL query checker.
-	 * 
+	 *
 	 * @throws TAPException	If any error occurs while creating the query checker.
 	 */
 	protected QueryChecker createQueryChecker(final Collection<TAPTable> tables) throws TAPException{
@@ -202,7 +202,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/**
 	 * <p>This implementation just create an {@link Uploader} instance with the given database connection.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function should be overrided if you need to change the DB name of the TAP_UPLOAD schema.
 	 * 	Indeed, by overriding this function you can specify a given TAPSchema to use as TAP_UPLOAD schema
@@ -221,7 +221,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/**
 	 * <p>This implementation just create a {@link UWSService} instance.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This implementation is largely enough for a TAP service. It is not recommended to override
 	 * 	this function.
@@ -242,7 +242,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	/**
 	 * <p>This implementation does not provided a backup manager.
 	 * It means that no asynchronous job will be restored and backuped.</p>
-	 * 
+	 *
 	 * <p>You must override this function if you want enable the backup feature.</p>
 	 */
 	@Override
@@ -252,7 +252,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/**
 	 * <p>This implementation provides a basic {@link TAPJob} instance.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	If you need to add or modify the behavior of some functions of a {@link TAPJob},
 	 * 	you must override this function and return your own extension of {@link TAPJob}.
@@ -261,7 +261,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	@Override
 	protected TAPJob createTAPJob(final HttpServletRequest request, final JobOwner owner) throws UWSException{
 		try{
-			// Extract the HTTP request ID (the job ID should be the same, if not already used by another job): 
+			// Extract the HTTP request ID (the job ID should be the same, if not already used by another job):
 			String requestID = null;
 			if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) instanceof String)
 				requestID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID).toString();
@@ -281,16 +281,17 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/**
 	 * <p>This implementation provides a basic {@link TAPJob} instance.</p>
-	 * 
+	 *
 	 * <p>
-	 * 	If you need to add or modify the behavior of some functions of a {@link TAPJob},
-	 * 	you must override this function and return your own extension of {@link TAPJob}.
+	 * 	If you need to add or modify the behavior of some functions of a
+	 * 	{@link TAPJob}, you must override this function and return your own
+	 * 	extension of {@link TAPJob}.
 	 * </p>
 	 */
 	@Override
-	protected TAPJob createTAPJob(final String jobId, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
+	protected TAPJob createTAPJob(final String jobId, final long creationTime, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
 		try{
-			return new TAPJob(jobId, owner, params, quote, startTime, endTime, results, error);
+			return new TAPJob(jobId, creationTime, owner, params, quote, startTime, endTime, results, error);
 		}catch(TAPException te){
 			if (te.getCause() != null && te.getCause() instanceof UWSException)
 				throw (UWSException)te.getCause();
@@ -301,7 +302,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/**
 	 * <p>This implementation extracts standard TAP parameters from the given request.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Non-standard TAP parameters are added in a map inside the returned {@link TAPParameters} object
 	 * 	and are accessible with {@link TAPParameters#get(String)} and {@link TAPParameters#getAdditionalParameters()}.
@@ -316,7 +317,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/**
 	 * <p>This implementation extracts standard TAP parameters from the given request.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Non-standard TAP parameters are added in a map inside the returned {@link TAPParameters} object
 	 * 	and are accessible with {@link TAPParameters#get(String)} and {@link TAPParameters#getAdditionalParameters()}.

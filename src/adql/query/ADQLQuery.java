@@ -2,20 +2,20 @@ package adql.query;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -45,9 +45,9 @@ import adql.search.ISearchHandler;
 /**
  * <p>Object representation of an ADQL query or sub-query.</p>
  * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (04/2017)
+ * @version 1.4 (11/2017)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -87,7 +87,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Builds an ADQL query by copying the given one.
-	 * 
+	 *
 	 * @param toCopy		The ADQL query to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
@@ -120,7 +120,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Gets the SELECT clause of this query.
-	 * 
+	 *
 	 * @return	Its SELECT clause.
 	 */
 	public final ClauseSelect getSelect(){
@@ -129,11 +129,11 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * <p>Replaces its SELECT clause by the given one.</p>
-	 * 
+	 *
 	 * <p><i>note: the position of the query is erased.</i></p>
-	 * 
+	 *
 	 * @param newSelect					The new SELECT clause.
-	 * 
+	 *
 	 * @throws NullPointerException		If the given SELECT clause is <i>null</i>.
 	 */
 	public void setSelect(ClauseSelect newSelect) throws NullPointerException{
@@ -146,7 +146,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Gets the FROM clause of this query.
-	 * 
+	 *
 	 * @return	Its FROM clause.
 	 */
 	public final FromContent getFrom(){
@@ -155,11 +155,11 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * <p>Replaces its FROM clause by the given one.</p>
-	 * 
+	 *
 	 * <p><i>note: the position of the query is erased.</i></p>
-	 * 
+	 *
 	 * @param newFrom					The new FROM clause.
-	 * 
+	 *
 	 * @throws NullPointerException		If the given FROM clause is <i>null</i>.
 	 */
 	public void setFrom(FromContent newFrom) throws NullPointerException{
@@ -172,7 +172,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Gets the WHERE clause of this query.
-	 * 
+	 *
 	 * @return	Its WHERE clause.
 	 */
 	public final ClauseConstraints getWhere(){
@@ -181,11 +181,11 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * <p>Replaces its WHERE clause by the given one.</p>
-	 * 
+	 *
 	 * <p><i>note: the position of the query is erased.</i></p>
-	 * 
+	 *
 	 * @param newWhere					The new WHERE clause.
-	 * 
+	 *
 	 * @throws NullPointerException		If the given WHERE clause is <i>null</i>.
 	 */
 	public void setWhere(ClauseConstraints newWhere) throws NullPointerException{
@@ -198,7 +198,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Gets the GROUP BY clause of this query.
-	 * 
+	 *
 	 * @return	Its GROUP BY clause.
 	 */
 	public final ClauseADQL<ADQLColumn> getGroupBy(){
@@ -207,9 +207,9 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * <p>Replaces its GROUP BY clause by the given one.</p>
-	 * 
+	 *
 	 * <p><i>note: the position of the query is erased.</i></p>
-	 * 
+	 *
 	 * @param newGroupBy				The new GROUP BY clause.
 	 * @throws NullPointerException		If the given GROUP BY clause is <i>null</i>.
 	 */
@@ -223,7 +223,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Gets the HAVING clause of this query.
-	 * 
+	 *
 	 * @return	Its HAVING clause.
 	 */
 	public final ClauseConstraints getHaving(){
@@ -232,9 +232,9 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * <p>Replaces its HAVING clause by the given one.</p>
-	 * 
+	 *
 	 * <p><i>note: the position of the query is erased.</i></p>
-	 * 
+	 *
 	 * @param newHaving					The new HAVING clause.
 	 * @throws NullPointerException		If the given HAVING clause is <i>null</i>.
 	 */
@@ -248,7 +248,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Gets the ORDER BY clause of this query.
-	 * 
+	 *
 	 * @return	Its ORDER BY clause.
 	 */
 	public final ClauseADQL<ADQLOrder> getOrderBy(){
@@ -257,9 +257,9 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * <p>Replaces its ORDER BY clause by the given one.</p>
-	 * 
+	 *
 	 * <p><i>note: the position of the query is erased.</i></p>
-	 * 
+	 *
 	 * @param newOrderBy				The new ORDER BY clause.
 	 * @throws NullPointerException		If the given ORDER BY clause is <i>null</i>.
 	 */
@@ -278,7 +278,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Set the position of this {@link ADQLQuery} (or sub-query) inside the whole given ADQL query string.
-	 * 
+	 *
 	 * @param position New position of this {@link ADQLQuery}.
 	 * @since 1.4
 	 */
@@ -298,9 +298,9 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * <p>Gets the list of columns (database metadata) selected by this query.</p>
-	 * 
+	 *
 	 * <p><i><u>Note:</u> The list is generated on the fly !</i></p>
-	 * 
+	 *
 	 * @return	Selected columns metadata.
 	 */
 	public DBColumn[] getResultingColumns(){
@@ -324,11 +324,20 @@ public class ADQLQuery implements ADQLObject {
 				DBColumn col = null;
 				// ...whose the name will be set with the SELECT item's alias:
 				if (item.hasAlias()){
+					// put the alias in lower case if not written between "":
+					/* Note: This aims to avoid unexpected behavior at execution
+					 *       time in the DBMS (i.e. the case sensitivity is
+					 *       forced for every references to this column alias). */
+					String alias = item.getAlias();
+					if (!item.isCaseSensitive())
+						alias = alias.toLowerCase();
+
+					// create the DBColumn:
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null){
 						col = ((ADQLColumn)operand).getDBLink();
-						col = col.copy(col.getDBName(), item.getAlias(), col.getTable());
+						col = col.copy(col.getDBName(), alias, col.getTable());
 					}else
-						col = new DefaultDBColumn(item.getAlias(), null);
+						col = new DefaultDBColumn(alias, null);
 				}
 				// ...or whose the name will be the name of the SELECT item:
 				else{
@@ -374,9 +383,9 @@ public class ADQLQuery implements ADQLObject {
 
 	/**
 	 * Lets searching ADQL objects into this ADQL query thanks to the given search handler.
-	 * 
+	 *
 	 * @param sHandler	A search handler.
-	 * 
+	 *
 	 * @return An iterator on all ADQL objects found.
 	 */
 	public Iterator<ADQLObject> search(ISearchHandler sHandler){

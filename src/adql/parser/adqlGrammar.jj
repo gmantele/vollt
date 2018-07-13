@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  *
  *  TODO:  needs merge (Updated by G.Landais for VizieR)
@@ -28,7 +28,7 @@
 *  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-*  Version: 1.4 (09/2016)
+*  Version: 1.4 (01/2018)
 *
 *  TODO:  needs merge (Updated by G.Landais for VizieR)
 *               - TRIM function
@@ -83,22 +83,37 @@ import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
 /**
-* <p>Parses an ADQL query thanks to the {@link ADQLParser#Query()} function. </p>
+* Parses an ADQL query thanks to the {@link ADQLParser#Query()} function.
 * 
-* <p>This parser is able, thanks to a {@link QueryChecker} object, to check each ADQLQuery just after its generation.
-* It could be used to check the consistency between the ADQL query to parse and the "database" on which the query must be executed.
-* By default, there is no {@link QueryChecker}. Thus you must extend {@link QueryChecker} to check semantically all generated ADQLQuery objects.</p>
+* <p>
+*   This parser is able, thanks to a {@link QueryChecker} object, to check each
+*   {@link ADQLQuery} just after its generation. It could be used to check the
+*   consistency between the ADQL query to parse and the "database" on which the
+*   query must be executed. By default, there is no {@link QueryChecker}. Thus
+*   you must extend {@link QueryChecker} to check semantically all generated
+*   ADQLQuery objects.
+* </p>
 * 
-* <p>To create an object representation of the given ADQL query, this parser uses a {@link ADQLQueryFactory} object. So if you want customize some object (ie. CONTAINS) of this representation
-* you just have to extend the corresponding default object (ie. ContainsFunction) and to extend the corresponding function of {@link ADQLQueryFactory} (ie. createContains(...)).</p>
+* <p>
+*   To create an object representation of the given ADQL query, this parser uses
+*   a {@link ADQLQueryFactory} object. So if you want customize some object
+*   (ie. CONTAINS) of this representation you just have to extend the
+*   corresponding default object (ie. ContainsFunction) and to extend the
+*   corresponding function of {@link ADQLQueryFactory}
+*   (ie. createContains(...)).
+* </p>
 * 
-* <p><b><u>WARNING:</u> To modify this class it's strongly encouraged to modify the .jj file in the section between <i>PARSER_BEGIN</i> and <i>PARSER_END</i> and to re-compile it with JavaCC.</b></p>
+* <p><b><u>WARNING:</u>
+*   To modify this class it's strongly encouraged to modify the .jj file in the
+*   section between <i>PARSER_BEGIN</i> and <i>PARSER_END</i> and to re-compile
+*   it with JavaCC.
+* </b></p>
 *
 * @see QueryChecker
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
-* @version 1.4 (09/2016)
+* @version 1.4 (01/2018)
 */
 public class ADQLParser {
 	
@@ -108,13 +123,16 @@ public class ADQLParser {
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
 	
-	/** The object representation of the ADQL query to parse. (ONLY USED DURING THE PARSING, else it is always <i>null</i>). */
+	/** The object representation of the ADQL query to parse.
+	 * (ONLY USED DURING THE PARSING, else it is always <i>null</i>). */
 	private ADQLQuery query = null;
 	
-	/** Checks each ADQLQuery (sub-query or not) just after their generation. */
+	/** Checks each {@link ADQLQuery} (sub-query or not) just after their
+	 * generation. */
 	private QueryChecker queryChecker = null;
 	
-	/** The first token of a table/column name. This token is extracted by {@link #Identifier()}. */
+	/** The first token of a table/column name. This token is extracted by
+	 * {@link #Identifier()}. */
 	private Token currentIdentifierToken = null;
 	
 	/**
@@ -126,10 +144,12 @@ public class ADQLParser {
 	}
 	
 	/**
-	* Builds an ADQL parser without a query to parse but with a QueryChecker and a ADQLQueryFactory.
+	* Builds an ADQL parser without a query to parse but with a
+	* {@link QueryChecker} and a {@link ADQLQueryFactory}.
 	*
-	* @param checker	The object to use to check each ADQLQuery.
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(QueryChecker checker, ADQLQueryFactory factory) {
 		this();
@@ -141,18 +161,21 @@ public class ADQLParser {
 	}
 	
 	/**
-	* Builds an ADQL parser without a query to parse but with a QueryChecker.
+	* Builds an ADQL parser without a query to parse but with a
+	* {@link QueryChecker}.
 	*
-	* @param checker	The object to use to check each ADQLQuery.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(QueryChecker checker) {
 		this(checker, null);
 	}
 	
 	/**
-	* Builds an ADQL parser without a query to parse but with a ADQLQueryFactory.
+	* Builds an ADQL parser without a query to parse but with a
+	* {@link ADQLQueryFactory}.
 	*
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(ADQLQueryFactory factory) {
 		this((QueryChecker)null, factory);
@@ -162,8 +185,9 @@ public class ADQLParser {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each ADQLQuery.
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
@@ -181,7 +205,7 @@ public class ADQLParser {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each ADQLQuery.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker) {
 		this(stream, checker, null);
@@ -191,7 +215,8 @@ public class ADQLParser {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param factory	The object to use to build an object representation of the given ADQL query.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, ADQLQueryFactory factory) {
 		this(stream, (QueryChecker)null, factory);
@@ -200,10 +225,11 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream			The stream in which the ADQL query to parse is given.
-	* @param encoding		The supplied encoding.
-	* @param checker		The object to use to check each ADQLQuery.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param encoding	The supplied encoding.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream, encoding);
@@ -218,9 +244,9 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream			The stream in which the ADQL query to parse is given.
-	* @param encoding		The supplied encoding.
-	* @param checker		The object to use to check each ADQLQuery.
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param encoding	The supplied encoding.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker) {
 		this(stream, encoding, checker, null);
@@ -229,9 +255,10 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream			The stream in which the ADQL query to parse is given.
-	* @param encoding		The supplied encoding.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param stream		The stream in which the ADQL query to parse is given.
+	* @param encoding	The supplied encoding.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, ADQLQueryFactory factory) {
 		this(stream, encoding, null, factory);
@@ -240,9 +267,10 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a reader containing the query to parse.
 	*
-	* @param reader			The reader in which the ADQL query to parse is given.
-	* @param checker		The object to use to check each ADQLQuery.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param reader		The reader in which the ADQL query to parse is given.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
@@ -259,8 +287,8 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a reader containing the query to parse.
 	*
-	* @param reader			The reader in which the ADQL query to parse is given.
-	* @param checker		The object to use to check each ADQLQuery.
+	* @param reader		The reader in which the ADQL query to parse is given.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker) {
 		this(reader, checker, null);
@@ -270,7 +298,8 @@ public class ADQLParser {
 	* Builds a parser with a reader containing the query to parse.
 	*
 	* @param reader		The reader in which the ADQL query to parse is given.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(java.io.Reader reader, ADQLQueryFactory factory) {
 		this(reader, null, factory);
@@ -279,9 +308,10 @@ public class ADQLParser {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm				The manager which associates a token to a numeric code.
-	* @param checker		The object to use to check each ADQLQuery.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param tm			The manager which associates a token to a numeric code.
+	* @param checker	The object to use to check each {@link ADQLQuery }.
+	* @param factory	The object to use to build an object representation
+	*               	of the given ADQL query.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
@@ -298,8 +328,8 @@ public class ADQLParser {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm				The manager which associates a token to a numeric code.
-	* @param checker		The object to use to check each ADQLQuery.
+	* @param tm			The manager which associates a token to a numeric code.
+	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker) {
 		this(tm, checker, null);
@@ -308,17 +338,20 @@ public class ADQLParser {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm				The manager which associates a token to a numeric code.
-	* @param factory		The object to use to build an object representation of the given ADQL query.
+	* @param tm			The manager which associates a token to a numeric code.
+	* @param factory	The object to use to build an object representation of
+	*               	the given ADQL query.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, ADQLQueryFactory factory) {
 		this(tm, null, factory);
 	}
 	
 	/**
-	* Parses the query given at the creation of this parser or in the <i>ReInit</i> functions.
+	* Parses the query given at the creation of this parser or in the
+	* <i>ReInit</i> functions.
 	*
-	* @return 					The object representation of the given ADQL query.
+	* @return 	The object representation of the given ADQL query.
+	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
 	* @see ADQLParser#Query()
@@ -326,14 +359,20 @@ public class ADQLParser {
 	public final ADQLQuery parseQuery() throws ParseException {
 		stackQuery.clear();
 		query = null;
-		return Query();
+		try { 
+			return Query();
+		}catch(TokenMgrError tme) {
+			throw new ParseException(tme.getMessage(), new TextPosition(tme.getErrorLine(), tme.getErrorColumn()));
+		}
 	}
 	
 	/**
 	* Parses the query given in parameter.
 	*
-	* @param q					The ADQL query to parse.
-	* @return 					The object representation of the given ADQL query.
+	* @param q	The ADQL query to parse.
+	* 
+	* @return	The object representation of the given ADQL query.
+	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
 	* @see ADQLParser#ReInit(java.io.InputStream)
@@ -344,14 +383,20 @@ public class ADQLParser {
 		stackQuery.clear();
 		query = null;
 		ReInit(new java.io.ByteArrayInputStream(q.getBytes()));
-		return Query();
+		try { 
+			return Query();
+		}catch(TokenMgrError tme) {
+			throw new ParseException(tme.getMessage(), new TextPosition(tme.getErrorLine(), tme.getErrorColumn()));
+		}
 	}
 	
 	/**
 	* Parses the query contained in the stream given in parameter.
 	*
-	* @param stream				The stream which contains the ADQL query to parse.
-	* @return 					The object representation of the given ADQL query.
+	* @param stream		The stream which contains the ADQL query to parse.
+	* 
+	* @return	The object representation of the given ADQL query.
+	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
 	* @see ADQLParser#ReInit(java.io.InputStream)
@@ -362,7 +407,11 @@ public class ADQLParser {
 		stackQuery.clear();
 		query = null;
 		ReInit(stream);
-		return Query();
+		try { 
+			return Query();
+		}catch(TokenMgrError tme) {
+			throw new ParseException(tme.getMessage(), new TextPosition(tme.getErrorLine(), tme.getErrorColumn()));
+		}
 	}
 	
 	public final void setDebug(boolean debug){
@@ -396,11 +445,23 @@ public class ADQLParser {
 	}
 
 	/**
-	* <p>Gets the specified ADQL query and parses the given ADQL query. The SQL translation is then printed if the syntax is correct.</p>
-	* <p><b>ONLY the syntax is checked: the query is NOT EXECUTED !</b></p>
-	* <p>Supplied parameters are: <ul><li>[-debug] -url http://...</li><li>[-debug] -file ...</li><li>[-debug] -query SELECT...</li></ul></p>
+	* Gets the specified ADQL query and parses the given ADQL query. The SQL
+	* translation is then printed if the syntax is correct.
+	* 
+	* <p>
+	*     <b>ONLY the syntax is checked: the query is NOT EXECUTED !</b>
+	* </p>
+	* 
+	* <p>Supplied parameters are:
+	*     <ul>
+	*       <li>[-debug] -url http://...</li>
+	*       <li>[-debug] -file ...</li>
+	*       <li>[-debug] -query SELECT...</li>
+	*     </ul>
+	* </p>
 	*
 	* @param args
+	
 	* @throws Exception
 	*/
 	public static final void main(String[] args) throws Exception {
@@ -506,6 +567,20 @@ PARSER_END(ADQLParser)
 /* ******************** */
 SKIP : { < " " | "\t" | "\n" | "\r" | "\r\n" > }
 
+/* ************************************************************************** */
+/* Reserved SQL words                                                         */
+/*                                                                            */
+/* NOTE:                                                                      */
+/*   This list is the one provided by the ADQL-2.0 standard after removal of  */
+/*   all ADQL used words (e.g. SELECT, AS, LIKE, AVG, ABS, COS, POINT).       */
+/*   (see ParseException.initialise(Token, int[][], String[]) for more        */
+/*   details)                                                                 */
+/* ************************************************************************** */
+
+TOKEN : {
+	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CAST"|"CATALOG"|"CHAR"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COALESCE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DOUBLE"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPT"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTEGER"|"INTERSECT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"LOWER"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PRECISION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REAL"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SMALLINT"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMESTAMP"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNION"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"UPPER"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARCHAR"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WITH"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
+}
+
 /* *********** */
 /* Punctuation */
 /* *********** */
@@ -595,9 +670,10 @@ TOKEN : {
 /* Other clauses' tokens */
 /* ********************* */
 TOKEN : {
-	< GROUP_BY: "GROUP BY" >
+	< BY: "BY" >
+|	< GROUP: "GROUP" >
 |	< HAVING: "HAVING" >
-|	< ORDER_BY: "ORDER BY" >
+|	< ORDER: "ORDER" >
 |	< ASC: "ASC" >
 |	< DESC: "DESC" >
 }
@@ -881,7 +957,7 @@ void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condit
 }
 
 void GroupBy(): {ClauseADQL<ADQLColumn> groupBy = query.getGroupBy(); ADQLColumn colRef = null; Token start;} {
-	start=<GROUP_BY> colRef=Column() { groupBy.add(colRef); }
+	start=<GROUP> <BY> colRef=Column() { groupBy.add(colRef); }
 	( <COMMA> colRef=Column() { groupBy.add(colRef); } )*
 	{ groupBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, colRef.getPosition().endLine, colRef.getPosition().endColumn)); }
 }
@@ -895,7 +971,7 @@ void Having(): {ClauseConstraints having = query.getHaving(); Token start;} {
 }
 
 void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder order = null; Token start;} {
-	start=<ORDER_BY> order=OrderItem() {orderBy.add(order);}
+	start=<ORDER> <BY> order=OrderItem() {orderBy.add(order);}
 	( <COMMA> order=OrderItem() {orderBy.add(order);} )*
 	{ orderBy.setPosition(new TextPosition(start, token)); }
 }
@@ -956,7 +1032,6 @@ IdentifierItems TableName(): {IdentifierItems identifiers=new IdentifierItems(tr
 IdentifierItems ColumnName(): {IdentifierItem id; IdentifierItems table=null, identifiers=new IdentifierItems(false);} {
     ( id=Identifier() (<DOT> table=TableName())?)
     {
-        
         identifiers.append(id);
         if (table != null){
             for(int i=0; i<table.size(); i++)
@@ -964,14 +1039,14 @@ IdentifierItems ColumnName(): {IdentifierItem id; IdentifierItems table=null, id
             return identifiers;
         }
         /* added by G.Landais (10/12/2012) 
-           if next token begin by "." then the next token is a column */
+           if next token begin by "." then the next token is a column 
         if (id.token == null) return identifiers;
         if (id.token.next !=null)
         {
            if (id.token.next.image == null || id.token.next.image.length() == 0)  return identifiers;
            if (id.token.next.image.charAt(0)=='.')
                   throw new ParseException("Try quoting after "+id.toString()+" "+id.position);
-        }
+        }*/
         return identifiers;
       }
 }
@@ -1181,10 +1256,14 @@ ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn col
 	try{
 		(// string
 		  expr=String() {return expr;}
+		// unsigned numeric
+		| op=UnsignedNumeric() {return op;}
+		// set_function_specification
+		| op=SqlFunction() {return op;}
 		// column_reference
-		| column=Column() {column.setExpectedType('S'); return column;}
+		| column=Column() {column.setExpectedType('*'); return column;}
 		// LEFT_PAR value_expression RIGHT_PAR
-		| (left=<LEFT_PAR> (op=StringExpression()) right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop; })
+		| (left=<LEFT_PAR> (op=ValueExpression()) right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop; })
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
@@ -1196,10 +1275,21 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
-		| valueExpr=GeometryValueFunction()
+		| LOOKAHEAD(2) valueExpr=GeometryValueFunction()
 		| LOOKAHEAD(Column()) valueExpr=Column()
 		| LOOKAHEAD(String()) valueExpr=StringFactor()
-		| valueExpr=Factor())
+		| LOOKAHEAD(3) valueExpr=Factor()
+
+		/* At this position in this switch, all possibilities (including
+		 * Column()) have already been tested and failed.
+		 * 
+		 * So, this final choice actually aims to throw an error set with the
+		 * current token and with an error message implying that a column name
+		 * was expected (which is generally the case in an ADQL query).
+		 *
+		 * Note: This choice will generally be reached if an unexpected ADQL/SQL
+		 *       word is ending the query. */
+		| valueExpr=Column() )
 		{return valueExpr;}
 	}catch(Exception ex){
 		throw generateParseException(ex);

@@ -1,9 +1,29 @@
 package tap.config;
 
+/*
+ * This file is part of TAPLibrary.
+ *
+ * TAPLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * TAPLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2016-2018 - Astronomisches Rechen Institut (ARI)
+ */
+
 import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.DEFAULT_LOGGER;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
@@ -19,6 +39,7 @@ import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
 import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
+import static tap.config.TAPConfiguration.KEY_LOGGER;
 import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
@@ -68,25 +89,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
-
-/*
- * This file is part of TAPLibrary.
- * 
- * TAPLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * TAPLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
- */
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import adql.db.FunctionDef;
 import adql.db.STCS;
@@ -118,14 +122,14 @@ import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Concrete implementation of {@link ServiceConnection}, fully parameterized with a TAP configuration file.</p>
- * 
+ *
  * <p>
  * 	Every aspects of the TAP service are configured here. This instance is also creating the {@link TAPFactory} using the
  * 	TAP configuration file thanks to the implementation {@link ConfigurableTAPFactory}.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (09/2016)
+ * @version 2.3 (03/2018)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -204,9 +208,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Create a TAP service description thanks to the given TAP configuration file.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws NullPointerException	If the given properties set is NULL.
 	 * @throws TAPException			If a property is wrong or missing.
 	 */
@@ -216,12 +220,12 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Create a TAP service description thanks to the given TAP configuration file.
-	 * 
+	 *
 	 * @param tapConfig		The content of the TAP configuration file.
 	 * @param webAppRootDir	The directory of the Web Application running this TAP service.
 	 *                     	<em>In this directory another directory may be created in order to store all TAP service files
 	 *                     	if none is specified in the given TAP configuration file.</em>
-	 * 
+	 *
 	 * @throws NullPointerException	If the given properties set is NULL.
 	 * @throws TAPException			If a property is wrong or missing.
 	 */
@@ -277,12 +281,12 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the management of TAP service files using the given TAP configuration file.
-	 * 
+	 *
 	 * @param tapConfig		The content of the TAP configuration file.
 	 * @param webAppRootDir	The directory of the Web Application running this TAP service.
 	 *                     	<em>This directory may be used only to search the root TAP directory
 	 *                     	if specified with a relative path in the TAP configuration file.</em>
-	 * 
+	 *
 	 * @throws TAPException	If a property is wrong or missing, or if an error occurs while creating the file manager.
 	 */
 	private void initFileManager(final Properties tapConfig, final String webAppRootDir) throws TAPException{
@@ -323,16 +327,16 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Resolve the given file name/path.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	If not an absolute path, the given path may be either relative or absolute. A relative path is always considered
 	 * 	as relative from the Web Application directory (supposed to be given in 2nd parameter).
 	 * </p>
-	 * 
+	 *
 	 * @param filePath			Path/Name of the file to get.
 	 * @param webAppRootPath	Web Application directory local path.
 	 * @param propertyName		Name of the property which gives the given file path.
-	 * 
+	 *
 	 * @return	The specified File instance.
 	 *
 	 * @throws ParseException	If the given file path is a URI/URL.
@@ -352,17 +356,24 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the TAP logger with the given TAP configuration file.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
+	 *
+	 * @throws TAPException	If no instance of the specified custom logger can
+	 *                     	be created.
 	 */
-	private void initLogger(final Properties tapConfig){
+	private void initLogger(final Properties tapConfig) throws TAPException{
 		// Create the logger:
-		logger = new DefaultTAPLog(fileManager);
+		String propValue = getProperty(tapConfig, KEY_LOGGER);
+		if (propValue == null || propValue.trim().equalsIgnoreCase(DEFAULT_LOGGER))
+			logger = new DefaultTAPLog(fileManager);
+		else
+			logger = newInstance(propValue, KEY_LOGGER, TAPLog.class, new Class<?>[]{UWSFileManager.class}, new Object[]{fileManager});
 
 		StringBuffer buf = new StringBuffer("Logger initialized");
 
 		// Set the minimum log level:
-		String propValue = getProperty(tapConfig, KEY_MIN_LOG_LEVEL);
+		propValue = getProperty(tapConfig, KEY_MIN_LOG_LEVEL);
 		if (propValue != null){
 			try{
 				((DefaultTAPLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));
@@ -385,16 +396,16 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Initialize the {@link TAPFactory} to use.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	The built factory is either a {@link ConfigurableTAPFactory} instance (by default) or
 	 * 	an instance of the class specified in the TAP configuration file.
 	 * </p>
-	 * 
+	 *
 	 * @param tapConfig		The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If an error occurs while building the specified {@link TAPFactory}.
-	 * 
+	 *
 	 * @see ConfigurableTAPFactory
 	 */
 	private void initFactory(final Properties tapConfig) throws TAPException{
@@ -409,16 +420,16 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the TAP metadata (i.e. database schemas, tables and columns and their attached metadata).
-	 * 
+	 *
 	 * @param tapConfig		The content of the TAP configuration file.
 	 * @param webAppRootDir	Web Application directory local path.
 	 *                     	<em>This directory may be used if a relative path is given for an XML metadata file.</em>
-	 * 
+	 *
 	 * @return	The extracted TAP metadata.
-	 * 
+	 *
 	 * @throws TAPException	If some TAP configuration file properties are wrong or missing,
 	 *                     	or if an error has occurred while extracting the metadata from the database or the XML file.
-	 * 
+	 *
 	 * @see DBConnection#getTAPSchema()
 	 * @see TableSetParser
 	 */
@@ -583,9 +594,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the maximum number of asynchronous jobs.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration property is wrong.
 	 */
 	private void initMaxAsyncJobs(final Properties tapConfig) throws TAPException{
@@ -601,9 +612,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the default and maximum retention period.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initRetentionPeriod(final Properties tapConfig) throws TAPException{
@@ -633,9 +644,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the default and maximum execution duration.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initExecutionDuration(final Properties tapConfig) throws TAPException{
@@ -665,15 +676,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Initialize the list of all output format that the TAP service must support.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	This function ensures that at least one VOTable format is part of the returned list,
 	 * 	even if none has been specified in the TAP configuration file. Indeed, the VOTable format is the only
 	 * 	format required for a TAP service.
 	 * </p>
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void addOutputFormats(final Properties tapConfig) throws TAPException{
@@ -796,13 +807,13 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Parse the given VOTable format specification.</p>
-	 * 
+	 *
 	 * <p>This specification is expected to be an item of the property {@link TAPConfiguration#KEY_OUTPUT_FORMATS}.</p>
-	 * 
+	 *
 	 * @param propValue	A single VOTable format specification.
-	 * 
+	 *
 	 * @return	The corresponding configured {@link VOTableFormat} instance.
-	 * 
+	 *
 	 * @throws TAPException	If the syntax of the given specification is incorrect,
 	 *                     	or if the specified VOTable version or serialization does not exist.
 	 */
@@ -884,9 +895,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the default and maximum output limits.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initOutputLimits(final Properties tapConfig) throws TAPException{
@@ -901,9 +912,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the fetch size for the synchronous and for the asynchronous resources.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initFetchSize(final Properties tapConfig) throws TAPException{
@@ -940,9 +951,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the default and maximum upload limits.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initUploadLimits(final Properties tapConfig) throws TAPException{
@@ -960,9 +971,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the maximum size (in bytes) of a VOTable files set upload.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration property is wrong.
 	 */
 	private void initMaxUploadSize(final Properties tapConfig) throws TAPException{
@@ -984,9 +995,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the TAP user identification method.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration property is wrong.
 	 */
 	private void initUserIdentifier(final Properties tapConfig) throws TAPException{
@@ -998,9 +1009,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the list of all allowed coordinate systems.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initCoordSys(final Properties tapConfig) throws TAPException{
@@ -1056,9 +1067,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Initialize the list of all allowed ADQL geometrical functions.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initADQLGeometries(final Properties tapConfig) throws TAPException{
@@ -1109,11 +1120,25 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		}
 	}
 
+	private final String REGEXP_SIGNATURE = "(\\([^()]*\\)|[^,])*";
+
+	private final String REGEXP_CLASSPATH = "\\{[^{}]*\\}";
+
+	private final String REGEXP_DESCRIPTION = "\"((\\\\\"|[^\"])*)\"";
+
+	private final String REGEXP_UDF = "\\[\\s*(" + REGEXP_SIGNATURE + ")\\s*(,\\s*(" + REGEXP_CLASSPATH + ")?\\s*(,\\s*(" + REGEXP_DESCRIPTION + ")?\\s*)?)?\\]";
+
+	private final String REGEXP_UDFS = "\\s*(" + REGEXP_UDF + ")\\s*(,(.*))?";
+	private final int GROUP_SIGNATURE = 2;
+	private final int GROUP_CLASSPATH = 5;
+	private final int GROUP_DESCRIPTION = 8;
+	private final int GROUP_NEXT_UDFs = 11;
+
 	/**
 	 * Initialize the list of all known and allowed User Defined Functions.
-	 * 
+	 *
 	 * @param tapConfig	The content of the TAP configuration file.
-	 * 
+	 *
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initUDFs(final Properties tapConfig) throws TAPException{
@@ -1121,7 +1146,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		String propValue = getProperty(tapConfig, KEY_UDFS);
 
 		// NO VALUE => NO UNKNOWN FCT ALLOWED!
-		if (propValue == null)
+		if (propValue == null || propValue.trim().length() == 0)
 			udfs = new ArrayList<FunctionDef>(0);
 
 		// "NONE" => NO UNKNOWN FCT ALLOWED (= none of the unknown functions are allowed)!
@@ -1135,139 +1160,69 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// OTHERWISE, JUST THE ALLOWED ONE ARE LISTED:
 		else{
 
-			char c;
-			int ind = 0;
-			short nbComma = 0;
-			boolean within_item = false, within_params = false,
-					within_classpath = false;
-			StringBuffer buf = new StringBuffer();
-			String signature, classpath;
-			int[] posSignature = new int[]{-1,-1},
-					posClassPath = new int[]{-1,-1};
+			Pattern patternUDFS = Pattern.compile(REGEXP_UDFS);
+			String udfList = propValue;
+			int udfOffset = 1;
+			while(udfList != null){
+				Matcher matcher = patternUDFS.matcher(udfList);
+				if (matcher.matches()){
 
-			signature = null;
-			classpath = null;
-			buf.delete(0, buf.length());
+					// Fetch the signature, classpath and description:
+					String signature = matcher.group(GROUP_SIGNATURE),
+							classpath = matcher.group(GROUP_CLASSPATH),
+							description = matcher.group(GROUP_DESCRIPTION);
 
-			while(ind < propValue.length()){
-				// Get the character:
-				c = propValue.charAt(ind++);
-				// If space => ignore
-				if (!within_params && Character.isWhitespace(c))
-					continue;
-				// If inside a parameters list, keep all characters until the list end (')'):
-				if (within_params){
-					if (c == ')')
-						within_params = false;
-					buf.append(c);
-				}
-				// If inside a classpath, keep all characters until the classpath end ('}'):
-				else if (within_classpath){
-					if (c == '}')
-						within_classpath = false;
-					buf.append(c);
-				}
-				// If inside an UDF declaration:
-				else if (within_item){
-					switch(c){
-						case '(': /* start of a parameters list */
-							within_params = true;
-							buf.append(c);
-							break;
-						case '{': /* start of a class name */
-							within_classpath = true;
-							buf.append(c);
-							break;
-						case ',': /* separation between the signature and the class name */
-							// count commas within this item:
-							if (++nbComma > 1)
-								// if more than 1, throw an error:
-								throw new TAPException("Wrong UDF declaration syntax: only two items (signature and class name) can be given within brackets. (position in the property " + KEY_UDFS + ": " + ind + ")");
-							else{
-								// end of the signature and start of the class name:
-								signature = buf.toString();
-								buf.delete(0, buf.length());
-								posSignature[1] = ind;
-								posClassPath[0] = ind + 1;
-							}
-							break;
-						case ']': /* end of a UDF declaration */
-							within_item = false;
-							if (nbComma == 0){
-								signature = buf.toString();
-								posSignature[1] = ind;
-							}else{
-								classpath = (buf.length() == 0 ? null : buf.toString());
-								if (classpath != null)
-									posClassPath[1] = ind;
-							}
-							buf.delete(0, buf.length());
-
-							// no signature...
-							if (signature == null || signature.length() == 0){
-								// ...BUT a class name => error
-								if (classpath != null)
-									throw new TAPException("Missing UDF declaration! (position in the property " + KEY_UDFS + ": " + posSignature[0] + "-" + posSignature[1] + ")");
-								// ... => ignore this item
-								else
-									continue;
-							}
-
-							// add the new UDF in the list:
-							try{
-								// resolve the function signature:
-								FunctionDef def = FunctionDef.parse(signature);
-								// resolve the class name:
-								if (classpath != null){
-									if (isClassName(classpath)){
-										Class<? extends UserDefinedFunction> fctClass = null;
-										try{
-											// fetch the class:
-											fctClass = fetchClass(classpath, KEY_UDFS, UserDefinedFunction.class);
-											// set the class inside the UDF definition:
-											def.setUDFClass(fctClass);
-										}catch(TAPException te){
-											throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": " + te.getMessage() + " (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")", te);
-										}catch(IllegalArgumentException iae){
-											throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": missing a constructor with a single parameter of type ADQLOperand[] " + (fctClass != null ? "in the class \"" + fctClass.getName() + "\"" : "") + "! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
-										}
-									}else
-										throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": \"" + classpath + "\" is not a class name (or is not surrounding by {} as expected in this property file)! (position in the property " + KEY_UDFS + ": " + posClassPath[0] + "-" + posClassPath[1] + ")");
-								}
-								// add the UDF:
-								udfs.add(def);
-							}catch(ParseException pe){
-								throw new TAPException("Wrong UDF declaration syntax: " + pe.getMessage() + " (position in the property " + KEY_UDFS + ": " + posSignature[0] + "-" + posSignature[1] + ")", pe);
-							}
-
-							// reset some variables:
-							nbComma = 0;
-							signature = null;
-							classpath = null;
-							break;
-						default: /* keep all other characters */
-							buf.append(c);
-							break;
+					// If no signature...
+					boolean ignoreUdf = false;
+					if (signature == null || signature.length() == 0){
+						// ...BUT a class name => error
+						if (classpath != null)
+							throw new TAPException("Missing UDF declaration! (position in the property " + KEY_UDFS + ": " + (udfOffset + matcher.start(GROUP_SIGNATURE)) + "-" + (udfOffset + matcher.end(GROUP_SIGNATURE)) + ")");
+						// ... => ignore this item
+						else
+							ignoreUdf = true;
 					}
-				}
-				// If outside of everything, just starting a UDF declaration or separate each declaration is allowed:
-				else{
-					switch(c){
-						case '[':
-							within_item = true;
-							posSignature[0] = ind + 1;
-							break;
-						case ',':
-							break;
-						default:
-							throw new TAPException("Wrong UDF declaration syntax: unexpected character at position " + ind + " in the property " + KEY_UDFS + ": \"" + c + "\"! A UDF declaration must have one of the following syntaxes: \"[signature]\" or \"[signature,{className}]\".");
+
+					if (!ignoreUdf){
+						// Add the new UDF in the list:
+						try{
+							// resolve the function signature:
+							FunctionDef def = FunctionDef.parse(signature);
+							// resolve the class name:
+							if (classpath != null){
+								if (isClassName(classpath)){
+									Class<? extends UserDefinedFunction> fctClass = null;
+									try{
+										// fetch the class:
+										fctClass = fetchClass(classpath, KEY_UDFS, UserDefinedFunction.class);
+										// set the class inside the UDF definition:
+										def.setUDFClass(fctClass);
+									}catch(TAPException te){
+										throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": " + te.getMessage() + " (position in the property " + KEY_UDFS + ": " + (udfOffset + matcher.start(GROUP_CLASSPATH)) + "-" + (udfOffset + matcher.end(GROUP_CLASSPATH)) + ")", te);
+									}catch(IllegalArgumentException iae){
+										throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": missing a constructor with a single parameter of type ADQLOperand[] " + (fctClass != null ? "in the class \"" + fctClass.getName() + "\"" : "") + "! (position in the property " + KEY_UDFS + ": " + (udfOffset + matcher.start(GROUP_CLASSPATH)) + "-" + (udfOffset + matcher.end(GROUP_CLASSPATH)) + ")");
+									}
+								}else
+									throw new TAPException("Invalid class name for the UDF definition \"" + def + "\": \"" + classpath + "\" is not a class name (or is not surrounding by {} as expected in this property file)! (position in the property " + KEY_UDFS + ": " + (udfOffset + matcher.start(GROUP_CLASSPATH)) + "-" + (udfOffset + matcher.end(GROUP_CLASSPATH)) + ")");
+							}
+							// set the description if any:
+							if (description != null)
+								def.description = description;
+							// add the UDF:
+							udfs.add(def);
+						}catch(ParseException pe){
+							throw new TAPException("Wrong UDF declaration syntax: " + pe.getMessage() + " (position in the property " + KEY_UDFS + ": " + (udfOffset + matcher.start(GROUP_SIGNATURE)) + "-" + (udfOffset + matcher.end(GROUP_SIGNATURE)) + ")", pe);
+						}
 					}
-				}
+
+					// Prepare the next iteration (i.e. the other UDFs):
+					udfList = matcher.group(GROUP_NEXT_UDFs);
+					if (udfList != null && udfList.trim().length() == 0)
+						udfList = null;
+					udfOffset += matcher.start(GROUP_NEXT_UDFs);
+				}else
+					throw new TAPException("Wrong UDF declaration syntax: \"" + udfList + "\"! (position in the property " + KEY_UDFS + ": " + udfOffset + "-" + (propValue.length() + 1) + ")");
 			}
-
-			// If the parsing is not finished, throw an error:
-			if (within_item)
-				throw new TAPException("Wrong UDF declaration syntax: missing closing bracket at position " + propValue.length() + "!");
 		}
 	}
 
@@ -1304,16 +1259,16 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the default retention period.</p>
-	 * 
+	 *
 	 * <p>This period is set by default if the user did not specify one before the execution of his query.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function will apply the given retention period only if legal compared to the currently set maximum value.
 	 * 	In other words, if the given value is less or equals to the current maximum retention period.
 	 * </em></p>
-	 * 
+	 *
 	 * @param period	New default retention period (in seconds).
-	 * 
+	 *
 	 * @return	<i>true</i> if the given retention period has been successfully set, <i>false</i> otherwise.
 	 */
 	public boolean setDefaultRetentionPeriod(final int period){
@@ -1326,15 +1281,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the maximum retention period.</p>
-	 * 
+	 *
 	 * <p>This period limits the default retention period and the retention period specified by a user.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function may reduce the default retention period if the current default retention period is bigger
 	 * 	to the new maximum retention period. In a such case, the default retention period is set to the
 	 * 	new maximum retention period.
 	 * </em></p>
-	 * 
+	 *
 	 * @param period	New maximum retention period (in seconds).
 	 */
 	public void setMaxRetentionPeriod(final int period){
@@ -1352,16 +1307,16 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the default execution duration.</p>
-	 * 
+	 *
 	 * <p>This duration is set by default if the user did not specify one before the execution of his query.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function will apply the given execution duration only if legal compared to the currently set maximum value.
 	 * 	In other words, if the given value is less or equals to the current maximum execution duration.
 	 * </em></p>
-	 * 
+	 *
 	 * @param duration	New default execution duration (in milliseconds).
-	 * 
+	 *
 	 * @return	<i>true</i> if the given execution duration has been successfully set, <i>false</i> otherwise.
 	 */
 	public boolean setDefaultExecutionDuration(final int duration){
@@ -1374,15 +1329,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the maximum execution duration.</p>
-	 * 
+	 *
 	 * <p>This duration limits the default execution duration and the execution duration specified by a user.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function may reduce the default execution duration if the current default execution duration is bigger
 	 * 	to the new maximum execution duration. In a such case, the default execution duration is set to the
 	 * 	new maximum execution duration.
 	 * </em></p>
-	 * 
+	 *
 	 * @param duration	New maximum execution duration (in milliseconds).
 	 */
 	public void setMaxExecutionDuration(final int duration){
@@ -1412,12 +1367,12 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Add the given {@link OutputFormat} in the list of output formats supported by the TAP service.</p>
-	 * 
+	 *
 	 * <p><b>Warning:
 	 * 	No verification is done in order to avoid duplicated output formats in the list.
 	 * 	NULL objects are merely ignored silently.
 	 * </b></p>
-	 * 
+	 *
 	 * @param newOutputFormat	New output format.
 	 */
 	public void addOutputFormat(final OutputFormat newOutputFormat){
@@ -1427,9 +1382,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Remove the specified output format.
-	 * 
+	 *
 	 * @param mimeOrAlias	Full or short MIME type of the output format to remove.
-	 * 
+	 *
 	 * @return	<i>true</i> if the specified format has been found and successfully removed from the list,
 	 *        	<i>false</i> otherwise.
 	 */
@@ -1448,16 +1403,16 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the default output limit.</p>
-	 * 
+	 *
 	 * <p>This limit is set by default if the user did not specify one before the execution of his query.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function will apply the given output limit only if legal compared to the currently set maximum value.
 	 * 	In other words, if the given value is less or equals to the current maximum output limit.
 	 * </em></p>
-	 * 
+	 *
 	 * @param limit	New default output limit (in number of rows).
-	 * 
+	 *
 	 * @return	<i>true</i> if the given output limit has been successfully set, <i>false</i> otherwise.
 	 */
 	public boolean setDefaultOutputLimit(final int limit){
@@ -1470,15 +1425,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the maximum output limit.</p>
-	 * 
+	 *
 	 * <p>This output limit limits the default output limit and the output limit specified by a user.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function may reduce the default output limit if the current default output limit is bigger
 	 * 	to the new maximum output limit. In a such case, the default output limit is set to the
 	 * 	new maximum output limit.
 	 * </em></p>
-	 * 
+	 *
 	 * @param limit	New maximum output limit (in number of rows).
 	 */
 	public void setMaxOutputLimit(final int limit){
@@ -1535,7 +1490,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * Set the unit of the upload limit.
-	 * 
+	 *
 	 * @param type	Unit of upload limit (rows or bytes).
 	 */
 	public void setUploadLimitType(final LimitUnit type){
@@ -1545,14 +1500,14 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the default upload limit.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function will apply the given upload limit only if legal compared to the currently set maximum value.
 	 * 	In other words, if the given value is less or equals to the current maximum upload limit.
 	 * </em></p>
-	 * 
+	 *
 	 * @param limit	New default upload limit.
-	 * 
+	 *
 	 * @return	<i>true</i> if the given upload limit has been successfully set, <i>false</i> otherwise.
 	 */
 	public boolean setDefaultUploadLimit(final int limit){
@@ -1567,15 +1522,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the maximum upload limit.</p>
-	 * 
+	 *
 	 * <p>This upload limit limits the default upload limit.</p>
-	 * 
+	 *
 	 * <p><em><b>Important note:</b>
 	 * 	This function may reduce the default upload limit if the current default upload limit is bigger
 	 * 	to the new maximum upload limit. In a such case, the default upload limit is set to the
 	 * 	new maximum upload limit.
 	 * </em></p>
-	 * 
+	 *
 	 * @param limit	New maximum upload limit.
 	 */
 	public void setMaxUploadLimit(final int limit){
@@ -1595,16 +1550,16 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/**
 	 * <p>Set the maximum size of a VOTable files set that can be uploaded in once.</p>
-	 * 
+	 *
 	 * <p><b>Warning:
 	 * 	This size can not be negative or 0. If the given value is in this case, nothing will be done
 	 * 	and <i>false</i> will be returned.
 	 * 	On the contrary to the other limits, no "unlimited" limit is possible here ; only the
 	 * 	maximum value can be set (i.e. maximum positive integer value).
 	 * </b></p>
-	 * 
+	 *
 	 * @param maxSize	New maximum size (in bytes).
-	 * 
+	 *
 	 * @return	<i>true</i> if the size has been successfully set, <i>false</i> otherwise.
 	 */
 	public boolean setMaxUploadSize(final int maxSize){

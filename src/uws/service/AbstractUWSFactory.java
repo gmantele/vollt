@@ -2,20 +2,20 @@ package uws.service;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -45,11 +45,12 @@ import uws.service.request.RequestParser;
 import uws.service.request.UWSRequestParser;
 
 /**
- * <p>Abstract implementation of {@link UWSFactory}.
- * Only the function which creates a {@link JobThread} from a {@link UWSJob} needs to be implemented.</p>
- * 
+ * Abstract implementation of {@link UWSFactory}.
+ * Only the function which creates a {@link JobThread} from a {@link UWSJob}
+ * needs to be implemented.
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.3 (09/2017)
  */
 public abstract class AbstractUWSFactory implements UWSFactory {
 
@@ -67,7 +68,7 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	 * Builds a factory with a list of the name of all expected additional parameters.
 	 * These parameters will be identified by {@link UWSParameters} without taking into account their case
 	 * and they will stored with the case of their name in the given list.
-	 * 
+	 *
 	 * @param expectedAdditionalParams	Names of the expected parameters.
 	 */
 	public AbstractUWSFactory(final String[] expectedAdditionalParams){
@@ -102,8 +103,8 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	}
 
 	@Override
-	public UWSJob createJob(String jobID, JobOwner owner, UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException{
-		return new UWSJob(jobID, owner, params, quote, startTime, endTime, results, error);
+	public UWSJob createJob(String jobID, long creationTime, JobOwner owner, UWSParameters params, long quote, long startTime, long endTime, List<Result> results, ErrorSummary error) throws UWSException{
+		return new UWSJob(jobID, creationTime, owner, params, quote, startTime, endTime, results, error);
 	}
 
 	@Override
@@ -124,7 +125,7 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	/**
 	 * Adds the name of an additional parameter which must be identified without taking into account its case
 	 * and then stored with the case of the given name.
-	 * 
+	 *
 	 * @param paramName		Name of an additional parameter.
 	 */
 	public final void addExpectedAdditionalParameter(final String paramName){
@@ -134,7 +135,7 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 
 	/**
 	 * Gets the number of additional parameters which must be identified with no case sensitivity.
-	 * 
+	 *
 	 * @return	Number of expected additional parameters.
 	 */
 	public final int getNbExpectedAdditionalParameters(){
@@ -144,16 +145,16 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	/**
 	 * Gets the names of the expected additional parameters. These parameters are identified with no case sensitivity
 	 * and stored in the given case.
-	 * 
+	 *
 	 * @return	Names of the expected additional parameters.
 	 */
-	public final ArrayList<String> getExpectedAdditionalParameters(){
+	public final List<String> getExpectedAdditionalParameters(){
 		return expectedAdditionalParams;
 	}
 
 	/**
 	 * Gets an iterator on the names of the expected additional parameters.
-	 * 
+	 *
 	 * @return	An iterator on the names of the expected additional parameters.
 	 */
 	public final Iterator<String> expectedAdditionalParametersIterator(){
@@ -164,7 +165,7 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 	 * Removes the name of an expected additional parameter.
 	 * This parameter will never be identify specifically and so, it will be stored in the same case as
 	 * in the initial Map or HttpServletRequest.
-	 * 
+	 *
 	 * @param paramName	Name of an additional parameter.
 	 */
 	public final void removeExpectedAdditionalParam(final String paramName){
@@ -199,10 +200,10 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 
 	/**
 	 * Sets the controller of the specified input UWS job parameter.
-	 * 
+	 *
 	 * @param paramName		Name of the parameter with which the given controller will be associated.
 	 * @param controller	An input parameter controller.
-	 * 
+	 *
 	 * @return				The former controller associated with the specified parameter
 	 * 						or <i>null</i> if there is no controller before this call
 	 * 						or if the given parameter name is <i>null</i> or an empty string.
@@ -218,9 +219,9 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 
 	/**
 	 * Removes the controller of the specified input UWS job parameter.
-	 * 
+	 *
 	 * @param paramName	Name of the parameter whose the controller must be removed.
-	 * 
+	 *
 	 * @return	The removed controller
 	 * 			or <i>null</i> if there were no controller
 	 * 			or if the given name is <i>null</i> or an empty string.
@@ -231,14 +232,14 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 
 	/**
 	 * <p>Lets configuring the execution duration default and maximum value.</p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> A new controller is created if needed.
 	 * Otherwise the current one (if it is an instance of {@link DestructionTimeController}) is updated.</i></p>
-	 * 
+	 *
 	 * @param defaultDuration	Default duration between the start and the end of the execution of a job.
 	 * @param maxDuration		Maximum duration between the start and the end of the execution of a job that a user can set when creating/initializing a job.
 	 * @param allowModif		<i>true</i> to allow the modification of this parameter after its initialization, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @see ExecutionDurationController
 	 */
 	public final void configureExecution(final long defaultDuration, final long maxDuration, final boolean allowModif){
@@ -258,16 +259,16 @@ public abstract class AbstractUWSFactory implements UWSFactory {
 
 	/**
 	 * <p>Lets configuring the destruction time default and maximum value.</p>
-	 * 
+	 *
 	 * <p><i><u>note:</u> A new controller is created if needed.
 	 * Otherwise the current one (if it is an instance of {@link ExecutionDurationController}) is updated.</i></p>
-	 * 
+	 *
 	 * @param defaultTime		Default time since the job creation and its destruction.
 	 * @param defaultTimeUnit	Unit of the default time (i.e. minutes, days, ...).
 	 * @param maxTime			Maximum time since the job creation and its destruction that a user can set when creating/initializing a job.
 	 * @param maxTimeUnit		Unit of the maximum time (i.e. minutes, days, ...).
 	 * @param allowModif		<i>true</i> to allow the modification of this parameter after its initialization, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @see DestructionTimeController
 	 */
 	public final void configureDestruction(final int defaultTime, final DateField defaultTimeUnit, final int maxTime, final DateField maxTimeUnit, final boolean allowModif){

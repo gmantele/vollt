@@ -2,20 +2,20 @@ package adql.translator;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -44,10 +44,13 @@ import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 
 /**
- * <p>Translates all ADQL objects into the SQL adaptation of Postgres+PgSphere.
- * Actually only the geometrical functions are translated in this class.
- * The other functions are managed by {@link PostgreSQLTranslator}.</p>
- * 
+ * Translates all ADQL objects into the SQL adaptation of Postgres+PgSphere.
+ *
+ * <p>
+ * 	Actually only the geometrical functions and types are translated in this
+ * 	class. The other functions are managed by {@link PostgreSQLTranslator}.
+ * </p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 1.4 (07/2017)
  */
@@ -62,7 +65,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	/**
 	 * Builds a PgSphereTranslator which always translates in SQL all identifiers (schema, table and column) in a case sensitive manner ;
 	 * in other words, schema, table and column names will be surrounded by double quotes in the SQL translation.
-	 * 
+	 *
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator()
 	 */
 	public PgSphereTranslator(){
@@ -72,9 +75,9 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	/**
 	 * Builds a PgSphereTranslator which always translates in SQL all identifiers (schema, table and column) in the specified case sensitivity ;
 	 * in other words, schema, table and column names will all be surrounded or not by double quotes in the SQL translation.
-	 * 
+	 *
 	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity.
-	 * 
+	 *
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean)
 	 */
 	public PgSphereTranslator(boolean allCaseSensitive){
@@ -83,12 +86,12 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 	/**
 	 * Builds a PgSphereTranslator which will always translate in SQL identifiers with the defined case sensitivity.
-	 * 
+	 *
 	 * @param catalog	<i>true</i> to translate catalog names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param schema	<i>true</i> to translate schema names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param table		<i>true</i> to translate table names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param column	<i>true</i> to translate column names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
-	 * 
+	 *
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean, boolean, boolean, boolean)
 	 */
 	public PgSphereTranslator(boolean catalog, boolean schema, boolean table, boolean column){
@@ -330,16 +333,16 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	/**
 	 * <p>Convert the specified circle into a polygon.
 	 * The generated polygon is formatted using the PgSphere syntax.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	The center coordinates and the radius are expected in degrees.
 	 * </i></p>
-	 * 
+	 *
 	 * @param center	Center of the circle ([0]=ra and [1]=dec).
 	 * @param radius	Radius of the circle.
-	 * 
+	 *
 	 * @return	The PgSphere serialization of the corresponding polygon.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	protected String circleToPolygon(final double[] center, final double radius){
@@ -358,13 +361,13 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 	/**
 	 * <p>Let parse a geometry serialized with the PgSphere syntax.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	There is one function parseXxx(String) for each supported geometry.
 	 * 	These functions always return a {@link Region} object,
 	 * 	which is the object representation of an STC region.
 	 * </p>
-	 * 
+	 *
 	 * <p>Only the following geometries are supported:</p>
 	 * <ul>
 	 * 	<li>spoint =&gt; Position</li>
@@ -372,12 +375,12 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 * 	<li>sbox =&gt; Box</li>
 	 * 	<li>spoly =&gt; Polygon</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p>
 	 * 	This parser supports all the known PgSphere representations of an angle.
 	 * 	However, it always returns angle (coordinates, radius, width and height) in degrees.
 	 * </p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (11/2014)
 	 * @since 1.3
@@ -407,7 +410,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		/**
 		 * Exception sent when the end of the expression
 		 * (EOE = End Of Expression) is reached.
-		 * 
+		 *
 		 * @author Gr&eacute;gory Mantelet (ARI)
 		 * @version 1.3 (11/2014)
 		 * @since 1.3
@@ -428,7 +431,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * Prepare the parser in order to read the given PgSphere expression.
-		 * 
+		 *
 		 * @param newStcs	New PgSphere expression to parse from now.
 		 */
 		private void init(final String newExpr){
@@ -441,7 +444,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		/**
 		 * Finalize the parsing.
 		 * No more characters (except eventually some space characters) should remain in the PgSphere expression to parse.
-		 * 
+		 *
 		 * @throws ParseException	If other non-space characters remains.
 		 */
 		private void end() throws ParseException{
@@ -469,12 +472,12 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		/**
 		 * <p>Get the next meaningful word. This word can be a numeric, any string constant or a separator.
 		 * This function returns this token but also stores it in the class attribute {@link #token}.</p>
-		 * 
+		 *
 		 * <p>
 		 * 	In case the end of the expression is reached before getting any meaningful character,
 		 * 	an {@link EOEException} is thrown.
 		 * </p>
-		 * 
+		 *
 		 * @return	The full read word/token, or NULL if the end has been reached.
 		 */
 		private String nextToken() throws EOEException{
@@ -504,12 +507,12 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * <p>Tell whether the given character is a separator defined in the syntax.</p>
-		 * 
+		 *
 		 * <p>Here, the following characters are considered as separators/specials:
 		 * ',', 'd', 'h', 'm', 's', '(', ')', '&lt;', '&gt;', '{' and '}'.</p>
-		 * 
+		 *
 		 * @param c	Character to test.
-		 * 
+		 *
 		 * @return	<i>true</i> if the given character must be considered as a separator, <i>false</i> otherwise.
 		 */
 		private static boolean isSyntaxSeparator(final char c){
@@ -519,9 +522,9 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		/**
 		 * Get the next character and ensure it is the same as the character given in parameter.
 		 * If the read character is not matching the expected one, a {@link ParseException} is thrown.
-		 * 
+		 *
 		 * @param expected	Expected character.
-		 * 
+		 *
 		 * @throws ParseException	If the next character is not matching the given one.
 		 */
 		private void nextToken(final char expected) throws ParseException{
@@ -544,11 +547,11 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * Parse the given PgSphere geometry as a point.
-		 * 
+		 *
 		 * @param pgsphereExpr	The PgSphere expression to parse as a point.
-		 * 
+		 *
 		 * @return	A {@link Region} implementing a STC Position region.
-		 * 
+		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a point.
 		 */
 		public Region parsePoint(final String pgsphereExpr) throws ParseException{
@@ -564,11 +567,11 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * Internal spoint parsing function. It parses the PgSphere expression stored in this parser as a point.
-		 * 
+		 *
 		 * @return	The ra and dec coordinates (in degrees) of the parsed point.
-		 * 
+		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a point.
-		 * 
+		 *
 		 * @see #parseAngle()
 		 * @see #parsePoint(String)
 		 */
@@ -583,11 +586,11 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * Parse the given PgSphere geometry as a circle.
-		 * 
+		 *
 		 * @param pgsphereExpr	The PgSphere expression to parse as a circle.
-		 * 
+		 *
 		 * @return	A {@link Region} implementing a STC Circle region.
-		 * 
+		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a circle.
 		 */
 		public Region parseCircle(final String pgsphereExpr) throws ParseException{
@@ -610,11 +613,11 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * Parse the given PgSphere geometry as a box.
-		 * 
+		 *
 		 * @param pgsphereExpr	The PgSphere expression to parse as a box.
-		 * 
+		 *
 		 * @return	A {@link Region} implementing a STC Box region.
-		 * 
+		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a box.
 		 */
 		public Region parseBox(final String pgsphereExpr) throws ParseException{
@@ -640,11 +643,11 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * Parse the given PgSphere geometry as a point.
-		 * 
+		 *
 		 * @param pgsphereExpr	The PgSphere expression to parse as a point.
-		 * 
+		 *
 		 * @return	A {@link Region} implementing a STC Position region.
-		 * 
+		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a point.
 		 */
 		public Region parsePolygon(final String pgsphereExpr) throws ParseException{
@@ -676,7 +679,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 		/**
 		 * <p>Read the next tokens as an angle expression and returns the corresponding angle in <b>degrees</b>.</p>
-		 * 
+		 *
 		 * <p>This function supports the 4 following syntaxes:</p>
 		 * <ul>
 		 * 	<li><b>RAD:</b> {number}</li>
@@ -684,9 +687,9 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 * 	<li><b>DMS:</b> {number}d {number}m {number}s</li>
 		 * 	<li><b>HMS:</b> {number}h {number}m {number}s</li>
 		 * </ul>
-		 * 
+		 *
 		 * @return	The corresponding angle in degrees.
-		 * 
+		 *
 		 * @throws ParseException	If the angle syntax is wrong or not supported.
 		 */
 		private double parseAngle() throws ParseException{

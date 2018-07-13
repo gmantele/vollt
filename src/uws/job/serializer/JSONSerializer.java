@@ -2,21 +2,21 @@ package uws.job.serializer;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -28,16 +28,17 @@ import uws.job.ErrorSummary;
 import uws.job.JobList;
 import uws.job.Result;
 import uws.job.UWSJob;
+import uws.job.serializer.filter.JobListRefiner;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
 import uws.service.UWSUrl;
 
 /**
  * Lets serializing any UWS resource in JSON.
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
- * 
+ * @version 4.3 (03/2018)
+ *
  * @see Json4Uws
  */
 public class JSONSerializer extends UWSSerializer {
@@ -54,8 +55,8 @@ public class JSONSerializer extends UWSSerializer {
 	}
 
 	@Override
-	public String getJobList(final JobList jobsList, final JobOwner owner, final boolean root) throws JSONException{
-		return Json4Uws.getJson(jobsList, owner).toString();
+	public String getJobList(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner, final boolean root) throws JSONException{
+		return Json4Uws.getJson(jobsList, owner, listRefiner).toString();
 	}
 
 	@Override
@@ -93,7 +94,17 @@ public class JSONSerializer extends UWSSerializer {
 
 	@Override
 	public String getQuote(final UWSJob job, final boolean root) throws JSONException{
-		return Json4Uws.getJson(UWSJob.PARAM_QUOTE, job.getQuote()).toString();
+		String quoteDate = null;
+		if (job.getStartTime() != null && job.getQuote() > 0){
+			long quoteTime = job.getStartTime().getTime() + (1000 * job.getQuote());
+			quoteDate = ISO8601Format.format(quoteTime);
+		}
+		return Json4Uws.getJson(UWSJob.PARAM_QUOTE, quoteDate).toString();
+	}
+
+	@Override
+	public String getCreationTime(final UWSJob job, final boolean root) throws JSONException{
+		return Json4Uws.getJson(UWSJob.PARAM_CREATION_TIME, ISO8601Format.format(job.getCreationTime())).toString();
 	}
 
 	@Override

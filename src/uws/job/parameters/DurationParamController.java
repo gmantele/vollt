@@ -2,20 +2,20 @@ package uws.job.parameters;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2016 - Astronomisches Rechen Institut (ARI)
  */
 
@@ -30,7 +30,7 @@ import uws.UWSException;
  * 	Let controlling a duration parameter. Thus it is possible to set a default but also a minimum and a maximum value.
  * 	Moreover you can indicate whether the value of the parameter can be modified by the user or not after initialization.
  * </p>
- * 
+ *
  * <p>This controller behaves like a {@link NumericParamController} EXCEPT on two points:</p>
  * <ul>
  * 	<li>Every given value is casted into a long value.
@@ -39,7 +39,7 @@ import uws.UWSException;
  * 		This string must be prefixed by a unit. See {@link #parseDuration(String)} (and its reverse operation {@link #toString(Long)})
  * 		for more details.</li>
  * </ul>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
  * @version 4.2 (06/2016)
  * @since 4.2
@@ -49,7 +49,7 @@ public class DurationParamController extends NumericParamController {
 
 	/**
 	 * Create a parameter controller for duration value with no restriction.
-	 * 
+	 *
 	 * <p>
 	 * 	A default, minimum and/or maximum value can be set after creation using {@link #setDefault(Number)},
 	 * 	{@link #setMinimum(Number)} and {@link #setMaximum(Number)}. By default this parameter can always be modified,
@@ -65,17 +65,17 @@ public class DurationParamController extends NumericParamController {
 	 * The default and the maximum value are initialized with the given parameters (expressed in milliseconds).
 	 * The third parameter allows also to forbid the modification of the parameter value by the user,
 	 * if set to <i>false</i>.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	A default and/or maximum value can be modified after creation using {@link #setDefault(Number)}
 	 * 	and {@link #setMaximum(Number)}. The flag telling whether this parameter can be modified by the user
 	 * 	can be changed using {@link #allowModification(boolean)}.
 	 * </p>
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	Values given in this constructor MUST be expressed in milliseconds.
 	 * </p>
-	 * 
+	 *
 	 * @param defaultValue		Value (in ms) set by default to the parameter, when none is specified.
 	 * @param minValue			Minimum value (in ms) that can be set. If a smaller value is provided by the user, an exception will be thrown by {@link #check(Object)}.
 	 * @param maxValue			Maximum value (in ms) that can be set. If a bigger value is provided by the user, an exception will be thrown by {@link #check(Object)}.
@@ -87,7 +87,7 @@ public class DurationParamController extends NumericParamController {
 
 	/**
 	 * Cast the given value as a long value and call {@link NumericParamController#setDefault(Number)}.
-	 * 
+	 *
 	 * @see uws.job.parameters.NumericParamController#setMinimum(java.lang.Number)
 	 */
 	@Override
@@ -97,7 +97,7 @@ public class DurationParamController extends NumericParamController {
 
 	/**
 	 * Cast the given value as a long value and call {@link NumericParamController#setMinimum(Number)}.
-	 * 
+	 *
 	 * @see uws.job.parameters.NumericParamController#setMinimum(java.lang.Number)
 	 */
 	@Override
@@ -107,7 +107,7 @@ public class DurationParamController extends NumericParamController {
 
 	/**
 	 * Cast the given value as a long value and call {@link NumericParamController#setMaximum(Number)}.
-	 * 
+	 *
 	 * @see uws.job.parameters.NumericParamController#setMinimum(java.lang.Number)
 	 */
 	@Override
@@ -158,7 +158,7 @@ public class DurationParamController extends NumericParamController {
 	protected final static long MULT_MIN = 60000;
 
 	/** Multiplication factor between milliseconds and hours.
-	 * <p>An hour is here defined as 60 minutes. So the value is computed as follows: {@link #MULT_MINUTES}*60.</p> */
+	 * <p>An hour is here defined as 60 minutes. So the value is computed as follows: {@link #MULT_MIN}*60.</p> */
 	protected final static long MULT_HOURS = 3600000;
 
 	/** Multiplication factor between milliseconds and days.
@@ -232,11 +232,11 @@ public class DurationParamController extends NumericParamController {
 	 * 	<li>months, M</li>
 	 * 	<li>years, Y</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p><b>Important:</b>
 	 * 	Units are case <b>sensitive</b>!
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Space characters are ignored only if leading or trailing the whole string,
 	 * 	or if between the duration and its unit.
@@ -245,7 +245,7 @@ public class DurationParamController extends NumericParamController {
 
 	/**
 	 * Parse the given duration string.
-	 * 
+	 *
 	 * <p>
 	 * 	Such string MUST be a positive integer/long value eventually suffixed by a unit.
 	 * 	Allowed unit strings are the following:
@@ -260,24 +260,24 @@ public class DurationParamController extends NumericParamController {
 	 * 	<li>months, M</li>
 	 * 	<li>years, Y</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p><b>Important:</b>
 	 * 	Units are case <b>sensitive</b>!
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	Space characters are ignored only if leading or trailing the whole string,
 	 * 	or if between the duration and its unit.
 	 * </i></p>
-	 * 
+	 *
 	 * @param duration	The duration string.
-	 * 
+	 *
 	 * @return	The parsed duration converted into milliseconds,
 	 *        	or <code>-1</code> if the given string is <code>null</code> or negative.
-	 * 
+	 *
 	 * @throws ParseException	If the given string is using an unknown unit string,
 	 *                       	or if the string does not start digits.
-	 * 
+	 *
 	 * @see #toString(Long)
 	 */
 	public long parseDuration(final String duration) throws ParseException{
@@ -319,12 +319,12 @@ public class DurationParamController extends NumericParamController {
 
 	/**
 	 * Convert a duration value (expressed in milliseconds) into the best human readable unit value.
-	 * 
+	 *
 	 * @param duration	A duration in milliseconds.
-	 * 
+	 *
 	 * @return	An empty string if the given duration is <code>null</code>,
 	 *        	or a string expressing the given duration in the best integer value with a unit suffix.
-	 * 
+	 *
 	 * @see #parseDuration(String)
 	 */
 	public String toString(Long duration){

@@ -2,21 +2,21 @@ package tap.config;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2016 - Astronomisches Rechen Institut (ARI)
+ *
+ * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_BACKUP_BY_USER;
@@ -33,9 +33,11 @@ import static tap.config.TAPConfiguration.KEY_SQL_TRANSLATOR;
 import static tap.config.TAPConfiguration.VALUE_JDBC;
 import static tap.config.TAPConfiguration.VALUE_JDBC_DRIVERS;
 import static tap.config.TAPConfiguration.VALUE_JNDI;
+import static tap.config.TAPConfiguration.VALUE_MYSQL;
 import static tap.config.TAPConfiguration.VALUE_NEVER;
 import static tap.config.TAPConfiguration.VALUE_PGSPHERE;
 import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
+import static tap.config.TAPConfiguration.VALUE_SQLSERVER;
 import static tap.config.TAPConfiguration.VALUE_USER_ACTION;
 import static tap.config.TAPConfiguration.getProperty;
 
@@ -50,8 +52,10 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import adql.translator.JDBCTranslator;
+import adql.translator.MySQLTranslator;
 import adql.translator.PgSphereTranslator;
 import adql.translator.PostgreSQLTranslator;
+import adql.translator.SQLServerTranslator;
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
 import tap.TAPException;
@@ -66,15 +70,15 @@ import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Concrete implementation of a {@link TAPFactory} which is parameterized by a TAP configuration file.</p>
- * 
+ *
  * <p>
  * 	All abstract or NULL-implemented methods/functions left by {@link AbstractTAPFactory} are implemented using values
  *  of a TAP configuration file. The concerned methods are: {@link #getConnection(String)}, {@link #freeConnection(DBConnection)},
  *  {@link #destroy()}, {@link #createADQLTranslator()} and {@link #createUWSBackupManager(UWSService)}.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (04/2016)
+ * @version 2.1 (08/2017)
  * @since 2.0
  */
 public class ConfigurableTAPFactory extends AbstractTAPFactory {
@@ -111,10 +115,10 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 
 	/**
 	 * Build a {@link TAPFactory} using the given TAP service description and TAP configuration file.
-	 * 
+	 *
 	 * @param service		The TAP service description.
 	 * @param tapConfig		The TAP configuration file containing particularly information about the database access.
-	 * 
+	 *
 	 * @throws NullPointerException	If one of the parameter is NULL.
 	 * @throws TAPException			If some properties of the TAP configuration file are wrong.
 	 */
@@ -200,11 +204,19 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 		else if (sqlTranslator.equalsIgnoreCase(VALUE_PGSPHERE))
 			translator = PgSphereTranslator.class;
 
-		// case d: a client defined ADQLTranslator (with the provided class name)
+		// case d: SQLServer translator
+		else if (sqlTranslator.equalsIgnoreCase(VALUE_SQLSERVER))
+			translator = SQLServerTranslator.class;
+
+		// case e: MySQL translator
+		else if (sqlTranslator.equalsIgnoreCase(VALUE_MYSQL))
+			translator = MySQLTranslator.class;
+
+		// case f: a client defined ADQLTranslator (with the provided class name)
 		else if (TAPConfiguration.isClassName(sqlTranslator))
 			translator = TAPConfiguration.fetchClass(sqlTranslator, KEY_SQL_TRANSLATOR, JDBCTranslator.class);
 
-		// case e: unsupported value
+		// case g: unsupported value
 		else
 			throw new TAPException("Unsupported value for the property " + KEY_SQL_TRANSLATOR + ": \"" + sqlTranslator + "\" !");
 
@@ -244,7 +256,7 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 	 * Build a {@link JDBCTranslator} instance with the given class ({@link #translator} ;
 	 * specified by the property sql_translator). If the instance can not be build,
 	 * whatever is the reason, a TAPException MUST be thrown.
-	 * 
+	 *
 	 * Note: This function is called at the initialization of {@link ConfigurableTAPFactory}
 	 * in order to check that a translator can be created.
 	 */
@@ -262,7 +274,7 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 	/**
 	 * Build a {@link JDBCConnection} thanks to the database parameters specified
 	 * in the TAP configuration file (the properties: jdbc_driver_path, db_url, db_user, db_password).
-	 * 
+	 *
 	 * @see JDBCConnection#JDBCConnection(java.sql.Connection, JDBCTranslator, String, tap.log.TAPLog)
 	 * @see JDBCConnection#JDBCConnection(String, String, String, String, JDBCTranslator, String, tap.log.TAPLog)
 	 */
@@ -317,11 +329,11 @@ public class ConfigurableTAPFactory extends AbstractTAPFactory {
 	/**
 	 * Build an {@link DefaultTAPBackupManager} thanks to the backup manager parameters specified
 	 * in the TAP configuration file (the properties: backup_frequency, backup_by_user).
-	 * 
+	 *
 	 * Note: If the specified backup_frequency is negative, no backup manager is returned.
-	 * 
+	 *
 	 * @return	null if the specified backup frequency is negative, or an instance of {@link DefaultTAPBackupManager} otherwise.
-	 * 
+	 *
 	 * @see tap.AbstractTAPFactory#createUWSBackupManager(uws.service.UWSService)
 	 * @see DefaultTAPBackupManager
 	 */
