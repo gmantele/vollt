@@ -2,21 +2,21 @@ package uws.service.file;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2014-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2014-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -32,9 +32,9 @@ import java.util.regex.MatchResult;
 
 /**
  * <p>Let interpret and computing a frequency.</p>
- * 
+ *
  * <h3>Frequency syntax</h3>
- * 
+ *
  * <p>The frequency is expressed as a string at initialization of this object. This string must respect the following syntax:</p>
  * <ul>
  * 	<li>'D' hh mm : daily schedule at hh:mm</li>
@@ -45,12 +45,12 @@ import java.util.regex.MatchResult;
  * </ul>
  * <p><i>Where: hh = integer between 0 and 23, mm = integer between 0 and 59, dd (for 'W') = integer between 1 and 7 (1:sunday, 2:monday, ..., 7:saturday),
  * dd (for 'M') = integer between 1 and 31.</i></p>
- * 
+ *
  * <p><i><b>Warning:</b>
  * 	The frequency type is case sensitive! Then you should particularly pay attention at the case
  * 	when using the frequency types 'M' (monthly) and 'm' (every minute).
  * </i></p>
- * 
+ *
  * <p>
  * 	Parsing errors are not thrown but "resolved" silently. The "solution" depends of the error.
  * 	2 cases of errors are considered:
@@ -59,7 +59,7 @@ import java.util.regex.MatchResult;
  * 	<li><b>Frequency type mismatch:</b> It happens when the first character is not one of the expected (D, W, M, h, m).
  * 	                                    That means: bad case (i.e. 'd' rather than 'D'), another character.
  * 	                                    In this case, the frequency will be: <b>daily at 00:00</b>.</li>
- * 
+ *
  * 	<li><b>Parameter(s) missing or incorrect:</b> With the "daily" frequency ('D'), at least 2 parameters must be provided ;
  * 	                                             3 for "weekly" ('W') and "monthly" ('M') ; only 1 for "hourly" ('h') ; none for "every minute" ('m').
  * 	                                             This number of parameters is a minimum: only the n first parameters will be considered while
@@ -68,7 +68,7 @@ import java.util.regex.MatchResult;
  * 	                                             <b>all parameters will be set to their default value</b>
  * 	                                             (which is 0 for all parameter except dd for which it is 1).</li>
  * </ul>
- * 
+ *
  * <p>Examples:</p>
  * <ul>
  * 	<li><i>"" or NULL</i> = every day at 00:00</li>
@@ -81,28 +81,28 @@ import java.util.regex.MatchResult;
  * 	<li><i>"M 32 6 30"</i> = every month on the 1st at 00:00, because with 'M' dd must respect the rule: 1 &le; dd &le; 31</li>
  * 	<li><i>"M 5 6 30 12"</i> = every month on the 5th at 06:30, because at least 3 parameters are expected and so considered: "12" and eventual other parameters are ignored</li>
  * </ul>
- * 
+ *
  * <h3>Computing next event date</h3>
- * 
+ *
  * <p>
  * 	When this class is initialized with a frequency, it is able to compute the date of the event following a given date.
  * 	The functions {@link #nextEvent()} and {@link #nextEvent(Date)} will compute this next event date
  * 	from, respectively, now (current date/time) and the given date (the date of the last event). Both are computing the date of the next
  * 	event by "adding" the frequency to the given date. And finally, the computed date is stored and returned.
  * </p>
- * 
+ *
  * <p>Then, you have 2 possibilities to trigger the desired event:</p>
  * <ul>
  * 	<li>By calling {@link #isTimeElapsed()}, you can test whether at the current moment the date of the next event has been reached or not.
  * 	    In function of the value returned by this function you will be then able to process the desired action or not.</li>
  * 	<li>By creating a Timer with the next date event. Thus, the desired action will be automatically triggered at the exact moment.</li>
  * </p>
- *  
- * 
+ *
+ *
  * @author Marc Wenger (CDS)
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.1 (02/2015)
- * @since 4.1
+ * @author Gr&eacute;gory Mantelet (ARI;CDS)
+ * @version 4.4 (07/2018)
+ * @since 4.4
  */
 public final class EventFrequency {
 
@@ -113,10 +113,10 @@ public final class EventFrequency {
 	private static final DateFormat EVENT_ID_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmm");
 
 	/** Ordered list of all week days (there, the first week day is Sunday). */
-	private static final String[] WEEK_DAYS = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+	private static final String[] WEEK_DAYS = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
 	/** Ordinal day number suffix (1<b>st</b>, 2<b>nd</b>, 3<b>rd</b> and <b>th</b> for the others). */
-	private static final String[] DAY_SUFFIX = {"st","nd","rd","th"};
+	private static final String[] DAY_SUFFIX = { "st", "nd", "rd", "th" };
 
 	/** Frequency type (D, W, M, h, m). Default value: 'D' */
 	private char dwm = 'D';
@@ -136,7 +136,7 @@ public final class EventFrequency {
 
 	/**
 	 * <p>Create a new event frequency.</p>
-	 * 
+	 *
 	 * <p>The frequency string must respect the following syntax:</p>
 	 * <ul>
 	 * 	<li>'D' hh mm : daily schedule at hh:mm</li>
@@ -147,12 +147,12 @@ public final class EventFrequency {
 	 * </ul>
 	 * <p><i>Where: hh = integer between 0 and 23, mm = integer between 0 and 59, dd (for 'W') = integer between 1 and 7 (1:sunday, 2:monday, ..., 7:saturday),
 	 * dd (for 'M') = integer between 1 and 31.</i></p>
-	 * 
+	 *
 	 * <p><i><b>Warning:</b>
 	 * 	The frequency type is case sensitive! Then you should particularly pay attention at the case
 	 * 	when using the frequency types 'M' (monthly) and 'm' (every minute).
 	 * </i></p>
-	 * 
+	 *
 	 * <p>
 	 * 	Parsing errors are not thrown but "resolved" silently. The "solution" depends of the error.
 	 * 	2 cases of errors are considered:
@@ -161,7 +161,7 @@ public final class EventFrequency {
 	 * 	<li><b>Frequency type mismatch:</b> It happens when the first character is not one of the expected (D, W, M, h, m).
 	 * 	                                    That means: bad case (i.e. 'd' rather than 'D'), another character.
 	 * 	                                    In this case, the frequency will be: <b>daily at 00:00</b>.</li>
-	 * 
+	 *
 	 * 	<li><b>Parameter(s) missing or incorrect:</b> With the "daily" frequency ('D'), at least 2 parameters must be provided ;
 	 * 	                                             3 for "weekly" ('W') and "monthly" ('M') ; only 1 for "hourly" ('h') ; none for "every minute" ('m').
 	 * 	                                             This number of parameters is a minimum: only the n first parameters will be considered while
@@ -170,7 +170,7 @@ public final class EventFrequency {
 	 * 	                                             <b>all parameters will be set to their default value</b>
 	 * 	                                             (which is 0 for all parameter except dd for which it is 1).</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p>Examples:</p>
 	 * <ul>
 	 * 	<li><i>"" or NULL</i> = every day at 00:00</li>
@@ -183,7 +183,7 @@ public final class EventFrequency {
 	 * 	<li><i>"M 32 6 30"</i> = every month on the 1st at 00:00, because with 'M' dd must respect the rule: 1 &le; dd &le; 31</li>
 	 * 	<li><i>"M 5 6 30 12"</i> = every month on the 5th at 06:30, because at least 3 parameters are expected and so considered: "12" and eventual other parameters are ignored</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param interval	A string defining the event frequency (see above for the string format).
 	 */
 	public EventFrequency(String interval){
@@ -211,7 +211,7 @@ public final class EventFrequency {
 
 			// Extract the parameters in function of the frequency type:
 			switch(dwm){
-			// CASE: DAILY
+				// CASE: DAILY
 				case 'D':
 					scan.findInLine("(\\d{1,2}) (\\d{1,2})");
 					try{
@@ -266,11 +266,11 @@ public final class EventFrequency {
 
 	/**
 	 * Parse a string representing the day of the week (as a number).
-	 * 
+	 *
 	 * @param dayNbStr	String containing an integer representing a week day.
-	 * 
+	 *
 	 * @return	The identified week day. (integer between 0 and 6 (included))
-	 * 
+	 *
 	 * @throws IllegalStateException	If the given string does not contain an integer or is not between 1 and 7 (included).
 	 */
 	private int parseDayOfWeek(final String dayNbStr) throws IllegalStateException{
@@ -278,17 +278,18 @@ public final class EventFrequency {
 			int d = Integer.parseInt(dayNbStr);
 			if (d >= 1 && d <= WEEK_DAYS.length)
 				return d - 1;
-		}catch(Exception e){}
+		}catch(Exception e){
+		}
 		throw new IllegalStateException("Incorrect day of week (" + dayNbStr + ") ; it should be between 1 and 7 (both included)!");
 	}
 
 	/**
 	 * Parse a string representing the day of the month.
-	 * 
+	 *
 	 * @param dayStr	String containing an integer representing a month day.
-	 * 
+	 *
 	 * @return	The identified month day. (integer between 1 and 31 (included))
-	 * 
+	 *
 	 * @throws IllegalStateException	If the given string does not contain an integer or is not between 1 and 31 (included).
 	 */
 	private int parseDayOfMonth(final String dayStr) throws IllegalStateException{
@@ -296,17 +297,18 @@ public final class EventFrequency {
 			int d = Integer.parseInt(dayStr);
 			if (d >= 1 && d <= 31)
 				return d;
-		}catch(Exception e){}
+		}catch(Exception e){
+		}
 		throw new IllegalStateException("Incorrect day of month (" + dayStr + ") ; it should be between 1 and 31 (both included)!");
 	}
 
 	/**
 	 * Parse a string representing the hour part of a time (<b>hh</b>:mm).
-	 * 
+	 *
 	 * @param hourStr	String containing an integer representing an hour.
-	 * 
+	 *
 	 * @return	The identified hour. (integer between 0 and 23 (included))
-	 * 
+	 *
 	 * @throws IllegalStateException	If the given string does not contain an integer or is not between 0 and 23 (included).
 	 */
 	private int parseHour(final String hourStr) throws IllegalStateException{
@@ -314,17 +316,18 @@ public final class EventFrequency {
 			int h = Integer.parseInt(hourStr);
 			if (h >= 0 && h <= 23)
 				return h;
-		}catch(Exception e){}
+		}catch(Exception e){
+		}
 		throw new IllegalStateException("Incorrect hour number(" + hourStr + ") ; it should be between 0 and 23 (both included)!");
 	}
 
 	/**
 	 * Parse a string representing the minute part of a time (hh:<b>mm</b>).
-	 * 
+	 *
 	 * @param minStr	String containing an integer representing a minute.
-	 * 
+	 *
 	 * @return	The identified minute. (integer between 0 and 59 (included))
-	 * 
+	 *
 	 * @throws IllegalStateException	If the given string does not contain an integer or is not between 0 and 59 (included).
 	 */
 	private int parseMinute(final String minStr) throws IllegalStateException{
@@ -332,13 +335,14 @@ public final class EventFrequency {
 			int m = Integer.parseInt(minStr);
 			if (m >= 0 && m <= 59)
 				return m;
-		}catch(Exception e){}
+		}catch(Exception e){
+		}
 		throw new IllegalStateException("Incorrect minute number (" + minStr + ") ; it should be between 0 and 59 (both included)!");
 	}
 
 	/**
 	 * Tell whether the interval between the last event and now is greater or equals to the frequency represented by this object.
-	 * 
+	 *
 	 * @return	<i>true</i> if the next event date has been reached, <i>false</i> otherwise.
 	 */
 	public boolean isTimeElapsed(){
@@ -347,7 +351,7 @@ public final class EventFrequency {
 
 	/**
 	 * Get the date of the next event.
-	 * 
+	 *
 	 * @return	Date of the next event, or NULL if no date has yet been computed.
 	 */
 	public Date getNextEvent(){
@@ -356,9 +360,9 @@ public final class EventFrequency {
 
 	/**
 	 * <p>Get a string which identity the period between the last event and the next one (whose the date has been computed by this object).</p>
-	 * 
+	 *
 	 * <p>This ID is built by formatting in string the given date of the last event.</p>
-	 * 
+	 *
 	 * @return	ID of the period before the next event.
 	 */
 	public String getEventID(){
@@ -367,18 +371,18 @@ public final class EventFrequency {
 
 	/**
 	 * <p>Compute the date of the event, by adding the interval represented by this object to the current date/time.</p>
-	 * 	
+	 *
 	 * <p>
 	 * 	The role of this function is to compute the next event date, not to get it. After computation, you can get this date
 	 * 	thanks to {@link #getNextEvent()}. Furthermore, using {@link #isTimeElapsed()} after having called this function will
 	 * 	let you test whether the next event should (have) occur(red).
 	 * </p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function computes the next event date by taking the current date as the date of the last event. However,
 	 * 	if the last event occurred at a different date, you should use {@link #nextEvent(Date)}.
 	 * </i></p>
-	 * 
+	 *
 	 * @return	Date at which the next event should occur. (basically, it is: NOW + frequency)
 	 */
 	public Date nextEvent(){
@@ -387,13 +391,13 @@ public final class EventFrequency {
 
 	/**
 	 * <p>Compute the date of the event, by adding the interval represented by this object to the given date/time.</p>
-	 * 	
+	 *
 	 * <p>
 	 * 	The role of this function is to compute the next event date, not to get it. After computation, you can get this date
 	 * 	thanks to {@link #getNextEvent()}. Furthermore, using {@link #isTimeElapsed()} after having called this function will
 	 * 	let you test whether the next event should (have) occur(red).
 	 * </p>
-	 * 
+	 *
 	 * @return	Date at which the next event should occur. (basically, it is lastEventDate + frequency)
 	 */
 	public Date nextEvent(final Date lastEventDate){
@@ -403,7 +407,7 @@ public final class EventFrequency {
 
 		// Compute the date of the next event:
 		switch(dwm){
-		// CASE: DAILY
+			// CASE: DAILY
 			case 'D':
 				date.add(Calendar.DAY_OF_YEAR, 1);
 				date.set(Calendar.HOUR_OF_DAY, hour);
@@ -414,7 +418,7 @@ public final class EventFrequency {
 			// CASE: WEEKLY
 			case 'W':
 				// find the next right day to trigger the rotation
-				int weekday = date.get(Calendar.DAY_OF_WEEK);	// sunday=1, ... saturday=7
+				int weekday = date.get(Calendar.DAY_OF_WEEK) - 1;	// sunday=0, ... saturday=6
 				if (weekday == day){
 					date.add(Calendar.WEEK_OF_YEAR, 1);
 				}else{
@@ -451,7 +455,7 @@ public final class EventFrequency {
 				date.set(Calendar.SECOND, 0);
 				break;
 
-		/* OTHERWISE, the next event date is the given date! */
+			/* OTHERWISE, the next event date is the given date! */
 		}
 
 		// Save it in millisecond for afterward comparison with the current time (so that telling whether the time is elapsed or not):
@@ -466,7 +470,7 @@ public final class EventFrequency {
 
 	/**
 	 * Display in a human readable way the frequency represented by this object.
-	 * 
+	 *
 	 * @return a string, i.e. weekly on Sunday at HH:MM
 	 */
 	@Override
@@ -478,7 +482,7 @@ public final class EventFrequency {
 				str.append(" at ").append(NN.format(hour)).append(':').append(NN.format(min));
 				break;
 			case 'W':
-				str.append("weekly on ").append(WEEK_DAYS[day % 7]);
+				str.append("weekly on ").append(WEEK_DAYS[day % 6]);
 				str.append(" at ").append(NN.format(hour)).append(':').append(NN.format(min));
 				break;
 			case 'M':
