@@ -14,8 +14,12 @@
 
 	<property name="cosJarName" value="cos-1.5beta.jar" />
 	<property name="cosJar" value="${libDir}/${cosJarName}" />
+	
 	<property name="stilJarName" value="stil_3.1.jar" />
 	<property name="stilJar" value="${libDir}/${stilJarName}" />
+
+	<property name="slf4jApiJarName" value="slf4j-api-1.7.25.jar" />
+	<property name="slf4jApiJar" value="${libDir}/${slf4jApiJarName}" />
 
 	<property name="sqliteJarName" value="sqlite-jdbc-3.16.1.jar" />
 	<property name="sqliteJar" value="${libDir}/${sqliteJarName}" />
@@ -29,7 +33,7 @@
 	<property name="astroh2JarName" value="astroh2-0.3.jar" />
 	<property name="astroh2Jar" value="${libDir}/${astroh2JarName}" />
 		
-	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
+	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**,datalink/**,puzzlibs/**" />
 	<property name="jsonPath" value="org/json/**" />
 	<property name="extLibsPath" value="com/oreilly/servlet/**,nom/tam/**,org/apache/tools/bzip2/**,uk/ac/starlink/**" />
 	<property name="licensePath" value="COPYING.LESSER" />
@@ -67,6 +71,7 @@
 	<!-- CLASSPATHS -->
 	<path id="tap.classpath">
 		<pathelement location="${cosJar}" />
+		<pathelement location="${slf4jApiJar}" />
 		<pathelement location="${jsonJar}" />
 		<pathelement location="${stilJar}" />
 		<pathelement location="${POSTGRES}" />

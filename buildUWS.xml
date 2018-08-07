@@ -2,7 +2,7 @@
 <!DOCTYPE project>
 <project name="uws" basedir="." default="buildLib">
 	
-	<property name="version" value="4.3" />
+	<property name="version" value="4.4" />
 
 	<property name="srcDir" value="src" />
 	<property name="testDir" value="test" />
@@ -14,6 +14,9 @@
 
 	<property name="cosJarName" value="cos-1.5beta.jar" />
 	<property name="cosJar" value="${libDir}/${cosJarName}" />
+
+	<property name="slf4jApiJarName" value="slf4j-api-1.7.25.jar" />
+	<property name="slf4jApiJar" value="${libDir}/${slf4jApiJarName}" />
 	
 	<property name="uwsPath" value="uws/**" />
 	<property name="jsonPath" value="org/json/**" />
@@ -36,6 +39,7 @@
 	<!-- CLASSPATHS -->
 	<path id="uws.classpath">
 		<pathelement location="${cosJar}" />
+		<pathelement location="${slf4jApiJar}" />
 		<pathelement location="${SERVLET-API}" />
 	</path>
 	

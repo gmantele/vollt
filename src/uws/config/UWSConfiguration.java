@@ -2,21 +2,22 @@ package uws.config;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
+ *
+ * Copyright 2016-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.lang.reflect.Constructor;
@@ -34,13 +35,13 @@ import uws.service.request.UWSRequestParser;
 
 /**
  * <p>Utility class gathering tool functions and properties' names useful to deal with a UWS configuration file.</p>
- * 
+ *
  * <p><i>This class implements the Design Pattern "Utility": no instance of this class can be created, it can not be extended,
  * and it must be used only thanks to its static classes and attributes.</i></p>
- * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (09/2017)
- * @since 4.2
+ *
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.3 (07/2018)
+ * @since 4.3
  */
 public final class UWSConfiguration {
 
@@ -181,14 +182,26 @@ public final class UWSConfiguration {
 	/** Name/Key of the property specifying the logger to use.
 	 * By default, {@link uws.service.log.DefaultUWSLog} is used. */
 	public final static String KEY_LOGGER = "logger";
-	/** Default value of the property {@link #KEY_LOGGER}: {@value #DEFAULT_LOGGER}. */
+	/** Default value of the property {@link #KEY_LOGGER}:
+	 * {@value #DEFAULT_LOGGER}. */
 	public final static String DEFAULT_LOGGER = "default";
-	/** Name/Key of the property specifying the minimum type of messages (i.e. DEBUG, INFO, WARNING, ERROR, FATAL)
-	 * that must be logged. By default all messages are logged...which is equivalent to set this property to "DEBUG". */
+	/** Name/Key of the property specifying the minimum type of messages
+	 * (i.e. DEBUG, INFO, WARNING, ERROR, FATAL) that must be logged by the
+	 * <strong>default logger</strong>.
+	 * <p>By default all messages are logged...which is equivalent to set this
+	 * property to "DEBUG".</p>
+	 * <p><i><b>Note:</b> If {@link #KEY_LOGGER} is set to a value different
+	 * from {@value #DEFAULT_LOGGER}, this property is ignored.</i></p> */
 	public final static String KEY_MIN_LOG_LEVEL = "min_log_level";
-	/** Name/Key of the property specifying the frequency of the log file rotation.
-	 * By default the log rotation occurs every day at midnight. */
+	/** Name/Key of the property specifying the frequency of the log file
+	 * rotation to set in the <strong>default logger</strong>.
+	 * <p>By default the log rotation occurs every day at midnight.</p>
+	 * <p><i><b>Note:</b> If {@link #KEY_LOGGER} is set to a value different
+	 * from {@value #DEFAULT_LOGGER}, this property is ignored.</i></p> */
 	public final static String KEY_LOG_ROTATION = "log_rotation";
+	/** SLF4J logger value: {@value #SLF4J_LOGGER}.
+	 * @since 4.3 */
+	public final static String SLF4J_LOGGER = "slf4j";
 
 	/* UWS BACKUP */
 
@@ -243,7 +256,8 @@ public final class UWSConfiguration {
 	public final static String KEY_UWS_FACTORY = "uws_factory";
 
 	/** No instance of this class should be created. */
-	private UWSConfiguration(){}
+	private UWSConfiguration(){
+	}
 
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>
@@ -251,10 +265,10 @@ public final class UWSConfiguration {
 	 * 	<li>The returned property value is trimmed (no space at the beginning and at the end of the string).</li>
 	 * 	<li>If the value is empty (length=0), NULL is returned.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param prop	List of property
 	 * @param key	Property whose the value is requested.
-	 * 
+	 *
 	 * @return		Return property value.
 	 */
 	public final static String getProperty(final Properties prop, final String key){
@@ -272,14 +286,14 @@ public final class UWSConfiguration {
 
 	/**
 	 * Extract the job list name prefixing the given property name.
-	 * 
+	 *
 	 * <p><b>Important:</b>
 	 * 	This function aims to be used for properties prefixed by a job list name such as
 	 * 	{@link #REGEXP_JOB_THREAD}, {@link #REGEXP_PARAMETERS}, ...
 	 * </p>
-	 * 
+	 *
 	 * @param compoundPropertyName	Property name prefixed by a job list name.
-	 * 
+	 *
 	 * @return	The prefix of the given property name,
 	 *        	or <code>null</code> if the given name is <code>null</code>
 	 *             or if it is not prefixed by a valid job list name.
@@ -293,11 +307,11 @@ public final class UWSConfiguration {
 	/**
 	 * Test whether a property value is a class name.
 	 * Expected syntax: a non-empty string surrounded by brackets ('{' and '}').
-	 * 
+	 *
 	 * Note: The class name itself is not checked!
-	 * 
+	 *
 	 * @param value	Property value.
-	 * 
+	 *
 	 * @return <i>true</i> if the given value is formatted as a class name, <i>false</i> otherwise.
 	 */
 	public final static boolean isClassName(final String value){
@@ -306,20 +320,20 @@ public final class UWSConfiguration {
 
 	/**
 	 * Fetch the class object corresponding to the class name provided between brackets in the given value.
-	 * 
+	 *
 	 * @param value			Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propertyName	Name of the property associated with the parameter "value".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
-	 * 
+	 *
 	 * @return	The corresponding Class object.
-	 * 
+	 *
 	 * @throws UWSException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
-	 * 
+	 *
 	 * @see #isClassName(String)
 	 */
 	@SuppressWarnings("unchecked")
-	public final static < C > Class<? extends C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws UWSException{
+	public final static <C> Class<? extends C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws UWSException{
 		if (!isClassName(value))
 			return null;
 
@@ -342,19 +356,19 @@ public final class UWSConfiguration {
 
 	/**
 	 * Test whether the specified class has a constructor with the specified parameters.
-	 * 
+	 *
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
-	 * 
+	 *
 	 * @return	<code>true</code> if the specified class has a constructor with the specified parameters,
 	 *        	<code>false</code> otherwise.
-	 * 
+	 *
 	 * @throws UWSException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType").
 	 */
-	public final static < C > boolean hasConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws UWSException{
+	public final static <C> boolean hasConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws UWSException{
 		// Ensure the given name is a class name specification:
 		if (!isClassName(propValue))
 			throw new UWSException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
@@ -375,23 +389,23 @@ public final class UWSConfiguration {
 
 	/**
 	 * Fetch the specified constructor of the class corresponding to the class name provided between brackets in the given value.
-	 * 
+	 *
 	 * <p><b>IMPORTANT:</b>
 	 * 	The number and types of given parameters MUST match exactly to the list of parameter types.
 	 * </p>
-	 * 
+	 *
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
-	 * 
+	 *
 	 * @return	The corresponding constructor.
-	 * 
+	 *
 	 * @throws UWSException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType")
 	 *                     	or if the constructor with the specified parameters can not be found.
 	 */
-	public final static < C > Constructor<? extends C> fetchConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws UWSException{
+	public final static <C> Constructor<? extends C> fetchConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws UWSException{
 		// Ensure the given name is a class name specification:
 		if (!isClassName(propValue))
 			throw new UWSException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
@@ -424,52 +438,52 @@ public final class UWSConfiguration {
 
 	/**
 	 * <p>Create an instance of the specified class. The class name is expected to be surrounded by {} in the given value.</p>
-	 * 
+	 *
 	 * <p>The instance is created using the empty constructor of the specified class.</p>
-	 * 
+	 *
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
-	 * 
+	 *
 	 * @return	The corresponding instance.
-	 * 
+	 *
 	 * @throws UWSException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType")
 	 *                     	or if the specified class has no empty constructor
 	 *                     	or if an error occurred while calling this constructor.
-	 * 
+	 *
 	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
-	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType) throws UWSException{
+	public final static <C> C newInstance(final String propValue, final String propName, final Class<C> expectedType) throws UWSException{
 		return newInstance(propValue, propName, expectedType, null, null);
 	}
 
 	/**
 	 * <p>Create an instance of the specified class. The class name is expected to be surrounded by {} in the given value.</p>
-	 * 
+	 *
 	 * <p><b>IMPORTANT:</b>
 	 * 	The instance is created using the constructor whose the declaration matches exactly with the given list of parameter types.
 	 * 	The number and types of given parameters MUST match exactly to the list of parameter types.
 	 * </p>
-	 * 
+	 *
 	 * @param propValue		Value which is supposed to contain the class name between brackets (see {@link #isClassName(String)} for more details)
 	 * @param propName		Name of the property associated with the parameter "propValue".
 	 * @param expectedType	Type of the class expected to be returned ; it is also the type which parameterizes this function: C.
 	 * @param pTypes		List of each constructor parameter type. Each type MUST be exactly the type declared in the class constructor to select. <i>NULL or empty array if no parameter.</i>
 	 * @param parameters	List of all constructor parameters. The number of object MUST match exactly the number of classes provided in the parameter pTypes. <i>NULL or empty array if no parameter.</i>
-	 * 
+	 *
 	 * @return	The corresponding instance.
-	 * 
+	 *
 	 * @throws UWSException	If the class name is incorrect
 	 *                     	or if its type is not compatible with the parameterized type C (represented by the parameter "expectedType")
 	 *                     	or if the constructor with the specified parameters can not be found
 	 *                     	or if an error occurred while calling this constructor.
-	 * 
+	 *
 	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
-	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes, final Object[] parameters) throws UWSException{
+	public final static <C> C newInstance(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes, final Object[] parameters) throws UWSException{
 		// Ensure the given name is a class name specification:
 		if (!isClassName(propValue))
 			throw new UWSException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
@@ -525,13 +539,13 @@ public final class UWSConfiguration {
 	 * 	If the unit is not specified, it is set by default to BYTES.
 	 * </p>
 	 * <p><i>Note: If the value is strictly less than 0 (whatever is the unit), the returned value will be -1.</i></p>
-	 * 
+	 *
 	 * @param value				Property value (must follow the limit syntax: num_val[unit] ; ex: 20kB or 2000 (for 2000 bytes)).
 	 * @param propertyName		Name of the property which specify the limit.
-	 * 
+	 *
 	 * @return	The expressed unit in bytes
 	 *        	or -1, if the given value was incorrect or negative.
-	 * 
+	 *
 	 * @throws UWSException	If the syntax is incorrect or if a not allowed unit has been used.
 	 */
 	public final static long parseLimit(String value, final String propertyName) throws UWSException{

@@ -16,7 +16,8 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2015-2017 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.lang.reflect.Constructor;
@@ -35,8 +36,8 @@ import tap.backup.DefaultTAPBackupManager;
  * <p><i>This class implements the Design Pattern "Utility": no instance of this class can be created, it can not be extended,
  * and it must be used only thanks to its static classes and attributes.</i></p>
  *
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (09/2017)
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.3 (07/2018)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -83,14 +84,26 @@ public final class TAPConfiguration {
 	/** Name/Key of the property specifying the logger to use.
 	 * By default, {@link tap.log.DefaultTAPLog} is used. */
 	public final static String KEY_LOGGER = "logger";
-	/** Default value of the property {@link #KEY_LOGGER}: {@value #DEFAULT_LOGGER}. */
+	/** Default value of the property {@link #KEY_LOGGER}:
+	 * {@value #DEFAULT_LOGGER}. */
 	public final static String DEFAULT_LOGGER = "default";
-	/** Name/Key of the property specifying the minimum type of messages (i.e. DEBUG, INFO, WARNING, ERROR, FATAL)
-	 * that must be logged. By default all messages are logged...which is equivalent to set this property to "DEBUG". */
+	/** Name/Key of the property specifying the minimum type of messages
+	 * (i.e. DEBUG, INFO, WARNING, ERROR, FATAL) that must be logged by the
+	 * <strong>default logger</strong>.
+	 * <p>By default all messages are logged...which is equivalent to set this
+	 * property to "DEBUG".</p>
+	 * <p><i><b>Note:</b> If {@link #KEY_LOGGER} is set to a value different
+	 * from {@value #DEFAULT_LOGGER}, this property is ignored.</i></p> */
 	public final static String KEY_MIN_LOG_LEVEL = "min_log_level";
-	/** Name/Key of the property specifying the frequency of the log file rotation.
-	 * By default the log rotation occurs every day at midnight. */
+	/** Name/Key of the property specifying the frequency of the log file
+	 * rotation to set in the <strong>default logger</strong>.
+	 * <p>By default the log rotation occurs every day at midnight.</p>
+	 * <p><i><b>Note:</b> If {@link #KEY_LOGGER} is set to a value different
+	 * from {@value #DEFAULT_LOGGER}, this property is ignored.</i></p> */
 	public final static String KEY_LOG_ROTATION = "log_rotation";
+	/** SLF4J logger value: {@value #SLF4J_LOGGER}.
+	 * @since 2.3 */
+	public final static String SLF4J_LOGGER = "slf4j";
 
 	/* UWS BACKUP */
 	/** Name/Key of the property specifying the frequency (in milliseconds) of jobs backup.
@@ -164,7 +177,7 @@ public final class TAPConfiguration {
 	/** List of the most known JDBC drivers. For the moment this list contains 4 drivers:
 	 * oracle ("oracle.jdbc.OracleDriver"), postgresql ("org.postgresql.Driver"), mysql ("com.mysql.jdbc.Driver"),
 	 * sqlite ("org.sqlite.JDBC") and h2 ("org.h2.Driver"). */
-	public final static HashMap<String,String> VALUE_JDBC_DRIVERS = new HashMap<String,String>(4);
+	public final static HashMap<String, String> VALUE_JDBC_DRIVERS = new HashMap<String, String>(4);
 	static{
 		VALUE_JDBC_DRIVERS.put("oracle", "oracle.jdbc.OracleDriver");
 		VALUE_JDBC_DRIVERS.put("postgresql", "org.postgresql.Driver");
@@ -190,6 +203,11 @@ public final class TAPConfiguration {
 	public final static String VALUE_DB = "db";
 	/** Name/Key of the property specifying the local file path of the XML file containing the TAP metadata to load. */
 	public final static String KEY_METADATA_FILE = "metadata_file";
+
+	/* DATALINK KEY */
+	/** Name/Key of the property providing the API for the Datalink capability.
+	 * @since 2.3 */
+	public final static String KEY_DATALINK = "datalink";
 
 	/* HOME PAGE KEY */
 	/** Name/Key of the property specifying the TAP home page to use.
@@ -298,7 +316,8 @@ public final class TAPConfiguration {
 	public final static String KEY_TAP_FACTORY = "tap_factory";
 
 	/** No instance of this class should be created. */
-	private TAPConfiguration(){}
+	private TAPConfiguration(){
+	}
 
 	/**
 	 * <p>Read the asked property from the given Properties object.</p>
@@ -354,7 +373,7 @@ public final class TAPConfiguration {
 	 * @see #isClassName(String)
 	 */
 	@SuppressWarnings("unchecked")
-	public final static < C > Class<? extends C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws TAPException{
+	public final static <C> Class<? extends C> fetchClass(final String value, final String propertyName, final Class<C> expectedType) throws TAPException{
 		if (!isClassName(value))
 			return null;
 
@@ -391,7 +410,7 @@ public final class TAPConfiguration {
 	 *
 	 * @since 2.1
 	 */
-	public final static < C > boolean hasConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws TAPException{
+	public final static <C> boolean hasConstructor(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes) throws TAPException{
 		// Ensure the given name is a class name specification:
 		if (!isClassName(propValue))
 			throw new TAPException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
@@ -429,7 +448,7 @@ public final class TAPConfiguration {
 	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
-	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType) throws TAPException{
+	public final static <C> C newInstance(final String propValue, final String propName, final Class<C> expectedType) throws TAPException{
 		return newInstance(propValue, propName, expectedType, null, null);
 	}
 
@@ -457,7 +476,7 @@ public final class TAPConfiguration {
 	 * @see #isClassName(String)
 	 * @see #fetchClass(String, String, Class)
 	 */
-	public final static < C > C newInstance(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes, final Object[] parameters) throws TAPException{
+	public final static <C> C newInstance(final String propValue, final String propName, final Class<C> expectedType, final Class<?>[] pTypes, final Object[] parameters) throws TAPException{
 		// Ensure the given name is a class name specification:
 		if (!isClassName(propValue))
 			throw new TAPException("Class name expected for the property \"" + propName + "\" instead of: \"" + propValue + "\"! The specified class must extend/implement " + expectedType.getName() + ".");
@@ -529,7 +548,7 @@ public final class TAPConfiguration {
 
 		// If empty value, return an infinite limit:
 		if (value == null || value.length() == 0)
-			return new Object[]{-1,LimitUnit.rows};
+			return new Object[]{ -1, LimitUnit.rows };
 
 		// A. Parse the string from the end in order to extract the unit part.
 		//    The final step of the loop is the extraction of the numeric value, when the first digit is encountered.
@@ -596,7 +615,7 @@ public final class TAPConfiguration {
 			}
 		}
 
-		return new Object[]{((numValue < 0) ? -1 : numValue),unit};
+		return new Object[]{ ((numValue < 0) ? -1 : numValue), unit };
 	}
 
 }

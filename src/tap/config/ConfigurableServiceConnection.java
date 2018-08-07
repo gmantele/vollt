@@ -58,6 +58,7 @@ import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
+import static tap.config.TAPConfiguration.SLF4J_LOGGER;
 import static tap.config.TAPConfiguration.VALUE_ALL;
 import static tap.config.TAPConfiguration.VALUE_ANY;
 import static tap.config.TAPConfiguration.VALUE_CSV;
@@ -109,6 +110,7 @@ import tap.formatter.SVFormat;
 import tap.formatter.TextFormat;
 import tap.formatter.VOTableFormat;
 import tap.log.DefaultTAPLog;
+import tap.log.Slf4jTAPLog;
 import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TableSetParser;
@@ -129,7 +131,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.3 (03/2018)
+ * @version 2.3 (04/2018)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -171,7 +173,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/** Array of 2 integers: resp. default and maximum output limit.
 	 * <em>Each limit is expressed in a unit specified in the array {@link #outputLimitTypes}.</em> */
-	private int[] outputLimits = new int[]{-1,-1};
+	private int[] outputLimits = new int[]{ -1, -1 };
 	/** Array of 2 limit units: resp. unit of the default output limit and unit of the maximum output limit. */
 	private LimitUnit[] outputLimitTypes = new LimitUnit[2];
 
@@ -179,7 +181,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private boolean isUploadEnabled = false;
 	/** Array of 2 integers: resp. default and maximum upload limit.
 	 * <em>Each limit is expressed in a unit specified in the array {@link #uploadLimitTypes}.</em> */
-	private int[] uploadLimits = new int[]{-1,-1};
+	private int[] uploadLimits = new int[]{ -1, -1 };
 	/** Array of 2 limit units: resp. unit of the default upload limit and unit of the maximum upload limit. */
 	private LimitUnit[] uploadLimitTypes = new LimitUnit[2];
 	/** The maximum size of a set of uploaded files.
@@ -188,7 +190,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	/** Array of 2 integers: resp. default and maximum fetch size.
 	 * <em>Both sizes are expressed in number of rows.</em> */
-	private int[] fetchSize = new int[]{DEFAULT_ASYNC_FETCH_SIZE,DEFAULT_SYNC_FETCH_SIZE};
+	private int[] fetchSize = new int[]{ DEFAULT_ASYNC_FETCH_SIZE, DEFAULT_SYNC_FETCH_SIZE };
 
 	/** The method to use in order to identify a TAP user. */
 	private UserIdentifier userIdentifier = null;
@@ -322,7 +324,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		}
 		// CUSTOM file manager:
 		else
-			fileManager = newInstance(fileManagerType, KEY_FILE_MANAGER, UWSFileManager.class, new Class<?>[]{Properties.class}, new Object[]{tapConfig});
+			fileManager = newInstance(fileManagerType, KEY_FILE_MANAGER, UWSFileManager.class, new Class<?>[]{ Properties.class }, new Object[]{ tapConfig });
 	}
 
 	/**
@@ -355,7 +357,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	/**
-	 * Initialize the TAP logger with the given TAP configuration file.
+	 * Initialise the TAP logger with the given TAP configuration file.
 	 *
 	 * @param tapConfig	The content of the TAP configuration file.
 	 *
@@ -367,31 +369,33 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		String propValue = getProperty(tapConfig, KEY_LOGGER);
 		if (propValue == null || propValue.trim().equalsIgnoreCase(DEFAULT_LOGGER))
 			logger = new DefaultTAPLog(fileManager);
+		else if (propValue == null || propValue.trim().equalsIgnoreCase(SLF4J_LOGGER))
+			logger = new Slf4jTAPLog();
 		else
-			logger = newInstance(propValue, KEY_LOGGER, TAPLog.class, new Class<?>[]{UWSFileManager.class}, new Object[]{fileManager});
+			logger = newInstance(propValue, KEY_LOGGER, TAPLog.class, new Class<?>[]{ UWSFileManager.class }, new Object[]{ fileManager });
 
-		StringBuffer buf = new StringBuffer("Logger initialized");
+		// Set some options for the default logger:
+		if (propValue == null || propValue.trim().equalsIgnoreCase(DEFAULT_LOGGER)){
 
-		// Set the minimum log level:
-		propValue = getProperty(tapConfig, KEY_MIN_LOG_LEVEL);
-		if (propValue != null){
-			try{
-				((DefaultTAPLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));
-			}catch(IllegalArgumentException iae){}
+			// Set the minimum log level:
+			propValue = getProperty(tapConfig, KEY_MIN_LOG_LEVEL);
+			if (propValue != null){
+				try{
+					((DefaultTAPLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));
+				}catch(IllegalArgumentException iae){
+				}
+			}
+
+			// Set the log rotation period, if any:
+			if (fileManager instanceof LocalUWSFileManager){
+				propValue = getProperty(tapConfig, KEY_LOG_ROTATION);
+				if (propValue != null)
+					((LocalUWSFileManager)fileManager).setLogRotationFreq(propValue);
+			}
 		}
-		buf.append(" (minimum log level: ").append(((DefaultTAPLog)logger).getMinLogLevel());
 
-		// Set the log rotation period, if any:
-		if (fileManager instanceof LocalUWSFileManager){
-			propValue = getProperty(tapConfig, KEY_LOG_ROTATION);
-			if (propValue != null)
-				((LocalUWSFileManager)fileManager).setLogRotationFreq(propValue);
-			buf.append(", log rotation: ").append(((LocalUWSFileManager)fileManager).getLogRotationFreq());
-		}
-
-		// Log the successful initialization with set parameters:
-		buf.append(").");
-		logger.info(buf.toString());
+		// Log the successful initialisation of the logger:
+		logger.info("Logger initialized - {" + logger.getConfigString() + "}");
 	}
 
 	/**
@@ -412,10 +416,10 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		String propValue = getProperty(tapConfig, KEY_TAP_FACTORY);
 		if (propValue == null)
 			tapFactory = new ConfigurableTAPFactory(this, tapConfig);
-		else if (hasConstructor(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class,Properties.class}))
-			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class,Properties.class}, new Object[]{this,tapConfig});
+		else if (hasConstructor(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ ServiceConnection.class, Properties.class }))
+			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ ServiceConnection.class, Properties.class }, new Object[]{ this, tapConfig });
 		else
-			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ServiceConnection.class}, new Object[]{this});
+			tapFactory = newInstance(propValue, KEY_TAP_FACTORY, TAPFactory.class, new Class<?>[]{ ServiceConnection.class }, new Object[]{ this });
 	}
 
 	/**
@@ -486,7 +490,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 				// fetch and set the ADQL<->DB mapping for all standard TAP_SCHEMA items:
 				if (conn instanceof JDBCConnection){
-					HashMap<String,String> dbMapping = new HashMap<String,String>(10);
+					HashMap<String, String> dbMapping = new HashMap<String, String>(10);
 					// fetch the mapping from the Property file:
 					for(String key : tapConfig.stringPropertyNames()){
 						if (key.trim().startsWith("TAP_SCHEMA") && tapConfig.getProperty(key) != null && tapConfig.getProperty(key).trim().length() > 0)
@@ -794,7 +798,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			}
 			// custom OutputFormat
 			else if (isClassName(f))
-				outputFormats.add(TAPConfiguration.newInstance(f, KEY_OUTPUT_FORMATS, OutputFormat.class, new Class<?>[]{ServiceConnection.class}, new Object[]{this}));
+				outputFormats.add(TAPConfiguration.newInstance(f, KEY_OUTPUT_FORMATS, OutputFormat.class, new Class<?>[]{ ServiceConnection.class }, new Object[]{ this }));
 			// unknown format
 			else
 				throw new TAPException("Unknown output format: " + f);
@@ -1050,7 +1054,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 					// parse the coordinate system regular expression in order to check it:
 					else{
 						try{
-							STCS.buildCoordSysRegExp(new String[]{item});
+							STCS.buildCoordSysRegExp(new String[]{ item });
 							lstCoordSys.add(item);
 						}catch(ParseException pe){
 							throw new TAPException("Incorrect coordinate system regular expression (\"" + item + "\"): " + pe.getMessage(), pe);
@@ -1446,7 +1450,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 	@Override
 	public final LimitUnit[] getOutputLimitType(){
-		return new LimitUnit[]{LimitUnit.rows,LimitUnit.rows};
+		return new LimitUnit[]{ LimitUnit.rows, LimitUnit.rows };
 	}
 
 	@Override
@@ -1495,7 +1499,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 */
 	public void setUploadLimitType(final LimitUnit type){
 		if (type != null)
-			uploadLimitTypes = new LimitUnit[]{type,type};
+			uploadLimitTypes = new LimitUnit[]{ type, type };
 	}
 
 	/**
@@ -1516,7 +1520,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 				uploadLimits[0] = limit;
 				return true;
 			}
-		}catch(TAPException e){}
+		}catch(TAPException e){
+		}
 		return false;
 	}
 
@@ -1540,7 +1545,8 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 				uploadLimits[0] = limit;
 			// Set the new maximum output limit:
 			uploadLimits[1] = limit;
-		}catch(TAPException e){}
+		}catch(TAPException e){
+		}
 	}
 
 	@Override
