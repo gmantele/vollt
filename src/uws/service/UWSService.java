@@ -139,7 +139,7 @@ import uws.service.wait.BlockingPolicy;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (11/2017)
+ * @version 4.4 (08/2018)
  */
 public class UWSService implements UWS {
 
@@ -150,13 +150,13 @@ public class UWSService implements UWS {
 	protected String description = null;
 
 	/** List of all managed jobs lists. <i>(it is a LinkedHashMap so that jobs lists are ordered by insertion)</i> */
-	protected final Map<String,JobList> mapJobLists;
+	protected final Map<String, JobList> mapJobLists;
 
 	/** The "interpreter" of UWS URLs. */
 	protected UWSUrl urlInterpreter = null;
 
 	/** List of available serializers. */
-	protected final Map<String,UWSSerializer> serializers;
+	protected final Map<String, UWSSerializer> serializers;
 
 	/** The MIME type of the default serialization format. */
 	protected String defaultSerializer = null;
@@ -275,10 +275,10 @@ public class UWSService implements UWS {
 		errorWriter = new DefaultUWSErrorWriter(this.logger);
 
 		// Initialize the list of jobs:
-		mapJobLists = new LinkedHashMap<String,JobList>();
+		mapJobLists = new LinkedHashMap<String, JobList>();
 
 		// Initialize the list of available serializers:
-		serializers = new HashMap<String,UWSSerializer>();
+		serializers = new HashMap<String, UWSSerializer>();
 		addSerializer(new XMLSerializer());
 		addSerializer(new JSONSerializer());
 
@@ -337,7 +337,7 @@ public class UWSService implements UWS {
 			name = urlInterpreter.getUWSName();
 
 			// Log the successful initialization:
-			logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized!", null);
+			this.logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized!", null);
 
 		}catch(NullPointerException ex){
 			// Log the exception:
@@ -380,7 +380,7 @@ public class UWSService implements UWS {
 		this(jobFactory, fileManager, logger);
 		setUrlInterpreter(urlInterpreter);
 		if (this.urlInterpreter != null)
-			logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized.", null);
+			this.logger.logUWS(LogLevel.INFO, this, "INIT", "UWS successfully initialized.", null);
 	}
 
 	@Override
