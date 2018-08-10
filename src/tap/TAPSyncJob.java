@@ -2,26 +2,27 @@ package tap;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Iterator;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,24 +30,25 @@ import tap.parameters.TAPParameters;
 import uws.UWSException;
 import uws.job.JobThread;
 import uws.service.log.UWSLog.LogLevel;
+import uws.service.request.UploadFile;
 
 /**
  * <p>This class represent a TAP synchronous job.
  * A such job must execute an ADQL query and return immediately its result.</p>
- * 
+ *
  * <h3>Timeout</h3>
- * 
+ *
  * <p>
  * 	The execution of a such job is limited to a short time. Once this time elapsed, the job is stopped.
  * 	For a longer job, an asynchronous job should be used.
  * </p>
- * 
+ *
  * <h3>Error management</h3>
- * 
+ *
  * <p>
  * 	If an error occurs it must be propagated ; it will be written later in the HTTP response on a top level.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.1 (03/2017)
  */
@@ -74,17 +76,17 @@ public class TAPSyncJob {
 	protected TAPExecutionReport execReport = null;
 
 	/** Date at which this synchronous job has really started. It is NULL when the job has never been started.
-	 * 
+	 *
 	 * <p><i>Note: A synchronous job can be run just once ; so if an attempt of executing it again, the start date will be tested:
 	 * if NULL, the second starting is not considered and an exception is thrown.</i></p> */
 	private Date startedAt = null;
 
 	/**
 	 * Create a synchronous TAP job.
-	 * 
+	 *
 	 * @param service	Description of the TAP service which is in charge of this synchronous job.
 	 * @param params	Parameters of the query to execute. It must mainly contain the ADQL query to execute.
-	 * 
+	 *
 	 * @throws NullPointerException	If one of the parameters is NULL.
 	 */
 	public TAPSyncJob(final ServiceConnection service, final TAPParameters params) throws NullPointerException{
@@ -103,14 +105,14 @@ public class TAPSyncJob {
 	/**
 	 * Create a synchronous TAP job.
 	 * The given HTTP request ID will be used as Job ID if not already used by another job.
-	 * 
+	 *
 	 * @param service	Description of the TAP service which is in charge of this synchronous job.
 	 * @param params	Parameters of the query to execute. It must mainly contain the ADQL query to execute.
 	 * @param requestID	ID of the HTTP request which has initiated the creation of this job.
 	 *                 	<i>Note: if NULL, empty or already used, a job ID will be generated thanks to {@link #generateId()}.</i>
-	 * 
+	 *
 	 * @throws NullPointerException	If one of the 2 first parameters is NULL.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public TAPSyncJob(final ServiceConnection service, final TAPParameters params, final String requestID) throws NullPointerException{
@@ -135,13 +137,13 @@ public class TAPSyncJob {
 
 	/**
 	 * <p>This function lets generating a unique ID.</p>
-	 * 
+	 *
 	 * <p><i><b>By default:</b> "S"+System.currentTimeMillis()+UpperCharacter (UpperCharacter: one upper-case character: A, B, C, ....)</i></p>
-	 * 
+	 *
 	 * <p><i><u>note: </u> DO NOT USE in this function any of the following functions: {@link ServiceConnection#getLogger()},
 	 * {@link ServiceConnection#getFileManager()} and {@link ServiceConnection#getFactory()}. All of them will return NULL, because this job does not
 	 * yet know its jobs list (which is needed to know the UWS and so, all of the objects returned by these functions).</i></p>
-	 * 
+	 *
 	 * @return	A unique job identifier.
 	 */
 	protected String generateId(){
@@ -158,7 +160,7 @@ public class TAPSyncJob {
 
 	/**
 	 * Get the ID of this synchronous job.
-	 * 
+	 *
 	 * @return	The job ID.
 	 */
 	public final String getID(){
@@ -167,7 +169,7 @@ public class TAPSyncJob {
 
 	/**
 	 * Get the TAP parameters provided by the user and which will be used for the execution of this job.
-	 * 
+	 *
 	 * @return	Job parameters.
 	 */
 	public final TAPParameters getTapParams(){
@@ -177,7 +179,7 @@ public class TAPSyncJob {
 	/**
 	 * Get the report of the execution of this job.
 	 * This report is NULL if the execution has not yet started.
-	 * 
+	 *
 	 * @return	Report of this job execution.
 	 */
 	public final TAPExecutionReport getExecReport(){
@@ -186,21 +188,21 @@ public class TAPSyncJob {
 
 	/**
 	 * <p>Start the execution of this job in order to execute the given ADQL query.</p>
-	 * 
+	 *
 	 * <p>The execution itself will be processed by an {@link ADQLExecutor} inside a thread ({@link SyncThread}).</p>
-	 * 
+	 *
 	 * <p><b>Important:</b>
 	 * 	No error should be written in this function. If any error occurs it should be thrown, in order to be manager on a top level.
 	 * </p>
-	 * 
+	 *
 	 * @param response	Response in which the result must be written.
-	 * 
+	 *
 	 * @return	<i>true</i> if the execution was successful, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws IllegalStateException	If this synchronous job has already been started before.
 	 * @throws IOException				If any error occurs while writing the query result in the given {@link HttpServletResponse}.
 	 * @throws TAPException				If any error occurs while executing the ADQL query.
-	 * 
+	 *
 	 * @see SyncThread
 	 */
 	public synchronized boolean start(final HttpServletResponse response) throws IllegalStateException, IOException, TAPException{
@@ -240,6 +242,9 @@ public class TAPSyncJob {
 		}finally{
 			// Whatever the way the execution stops (normal, cancel or error), an execution report must be fulfilled:
 			execReport = thread.getExecutionReport();
+
+			// Delete uploaded files:
+			deleteUploads(tapParams);
 		}
 
 		// Report any error that may have occurred while the thread execution:
@@ -297,13 +302,32 @@ public class TAPSyncJob {
 	}
 
 	/**
+	 * Delete all uploaded files.
+	 *
+	 * @param tapParams	Input parameters (listing all uploaded files, if any).
+	 *
+	 * @since 2.3
+	 */
+	protected void deleteUploads(final TAPParameters tapParams){
+		Iterator<UploadFile> itFiles = tapParams.getFiles();
+		while(itFiles.hasNext()){
+			UploadFile uf = itFiles.next();
+			try{
+				uf.deleteFile();
+			}catch(IOException ioe){
+				service.getLogger().logTAP(LogLevel.WARNING, this, "END", "Unable to delete the uploaded file \"" + uf.getLocation() + "\"!", ioe);
+			}
+		}
+	}
+
+	/**
 	 * <p>Thread which will process the job execution.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Actually, it will basically just call {@link ADQLExecutor#start(Thread, String, TAPParameters, HttpServletResponse)}
 	 * 	with the given {@link ADQLExecutor} and TAP parameters (containing the ADQL query to execute).
 	 * </p>
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
 	 * @version 2.1 (03/2017)
 	 */
@@ -326,7 +350,7 @@ public class TAPSyncJob {
 
 		/**
 		 * Create a thread that will run the given executor with the given parameters.
-		 * 
+		 *
 		 * @param executor	Object to execute and which knows how to execute an ADQL query.
 		 * @param ID		ID of the synchronous job owning this thread.
 		 * @param tapParams	TAP parameters to use to get the query to execute and the execution parameters.
@@ -342,7 +366,7 @@ public class TAPSyncJob {
 
 		/**
 		 * Tell whether the execution has ended with success.
-		 * 
+		 *
 		 * @return	<i>true</i> if the query has been successfully executed,
 		 *        	<i>false</i> otherwise (or if this thread is still executed).
 		 */
@@ -353,7 +377,7 @@ public class TAPSyncJob {
 		/**
 		 * Get the error that has interrupted/stopped this thread.
 		 * This function returns NULL if the query has been successfully executed.
-		 * 
+		 *
 		 * @return	Error that occurs while executing the query
 		 *        	or NULL if the execution was a success.
 		 */
@@ -363,7 +387,7 @@ public class TAPSyncJob {
 
 		/**
 		 * Get the report of the query execution.
-		 * 
+		 *
 		 * @return	Query execution report.
 		 */
 		public final TAPExecutionReport getExecutionReport(){

@@ -2,26 +2,28 @@ package tap.upload;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import com.oreilly.servlet.multipart.ExceededSizeException;
 
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
@@ -31,6 +33,7 @@ import tap.data.LimitedTableIterator;
 import tap.data.TableIterator;
 import tap.data.VOTableIterator;
 import tap.db.DBConnection;
+import tap.db.DBException;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPMetadata.STDSchema;
@@ -40,33 +43,34 @@ import tap.parameters.DALIUpload;
 import uws.UWSException;
 import uws.service.file.UnsupportedURIProtocolException;
 
-import com.oreilly.servlet.multipart.ExceededSizeException;
-
 /**
- * <p>Let create properly given VOTable inputs in the "database".</p>
- * 
+ * Let create properly given VOTable inputs in the "database".
+ *
  * <p>
- * 	This class manages particularly the upload limit in rows and in bytes by creating a {@link LimitedTableIterator}
- * 	with a {@link VOTableIterator}.
+ * 	This class manages particularly the upload limit in rows and in bytes by
+ * 	creating a {@link LimitedTableIterator} with a {@link VOTableIterator}.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
- * 
+ * @version 2.3 (08/2018)
+ *
  * @see LimitedTableIterator
  * @see VOTableIterator
  */
 public class Uploader {
 	/** Specification of the TAP service. */
 	protected final ServiceConnection service;
-	/** Connection to the "database" (which lets upload the content of any given VOTable). */
+	/** Connection to the "database" (which lets upload the content of any given
+	 * VOTable). */
 	protected final DBConnection dbConn;
 	/** Description of the TAP_UPLOAD schema to use.
 	 * @since 2.0 */
 	protected final TAPSchema uploadSchema;
-	/** Type of limit to set: ROWS or BYTES. <i>MAY be NULL ; if NULL, no limit will be set.</i> */
+	/** Type of limit to set: ROWS or BYTES. <i>MAY be NULL ; if NULL, no limit
+	 * will be set.</i> */
 	protected final LimitUnit limitUnit;
-	/** Limit on the number of rows or bytes (depending of {@link #limitUnit}) allowed to be uploaded in once (whatever is the number of tables). */
+	/** Limit on the number of rows or bytes (depending of {@link #limitUnit})
+	 * allowed to be uploaded in once (whatever is the number of tables). */
 	protected final int limit;
 
 	/** Number of rows already loaded. */
@@ -74,11 +78,12 @@ public class Uploader {
 
 	/**
 	 * Build an {@link Uploader} object.
-	 * 
+	 *
 	 * @param service	Specification of the TAP service using this uploader.
 	 * @param dbConn	A valid (open) connection to the "database".
-	 * 
-	 * @throws TAPException	If any error occurs while building this {@link Uploader}.
+	 *
+	 * @throws TAPException	If any error occurs while building this
+	 *                     	{@link Uploader}.
 	 */
 	public Uploader(final ServiceConnection service, final DBConnection dbConn) throws TAPException{
 		this(service, dbConn, null);
@@ -86,12 +91,13 @@ public class Uploader {
 
 	/**
 	 * Build an {@link Uploader} object.
-	 * 
+	 *
 	 * @param service	Specification of the TAP service using this uploader.
 	 * @param dbConn	A valid (open) connection to the "database".
-	 * 
-	 * @throws TAPException	If any error occurs while building this {@link Uploader}.
-	 * 
+	 *
+	 * @throws TAPException	If any error occurs while building this
+	 *                     	{@link Uploader}.
+	 *
 	 * @since 2.0
 	 */
 	public Uploader(final ServiceConnection service, final DBConnection dbConn, final TAPSchema uplSchema) throws TAPException{
@@ -131,20 +137,31 @@ public class Uploader {
 	}
 
 	/**
-	 * <p>Upload all the given VOTable inputs.</p>
-	 * 
-	 * <p><i>Note:
-	 * 	The {@link TAPTable} objects representing the uploaded tables will be associated with the TAP_UPLOAD schema specified at the creation of this {@link Uploader}.
-	 * 	If no such schema was specified, a default one (whose DB name will be equals to the ADQL name, that's to say {@link STDSchema#UPLOADSCHEMA})
-	 * 	is created, will be associated with the uploaded tables and will be returned by this function.
-	 * </i></p>
-	 * 
+	 * Upload all the given VOTable inputs.
+	 *
+	 * <p><b>Note 1:</b>
+	 * 	The {@link TAPTable} objects representing the uploaded tables will be
+	 *  associated with the TAP_UPLOAD schema specified at the creation of this
+	 *  {@link Uploader}. If no such schema was specified, a default one (whose
+	 *  DB name will be equals to the ADQL name, that's to say
+	 *  {@link STDSchema#UPLOADSCHEMA}) is created, will be associated with the
+	 *  uploaded tables and will be returned by this function.
+	 * </p>
+	 *
+	 * <p><b>Note 2:</b>
+	 * 	In case of error while ingesting one or all of the uploaded tables,
+	 * 	all tables created in the database before the error occurs are dropped
+	 *  <i>(see {@link #dropUploadedTables()})</i>.
+	 * </p>
+	 *
 	 * @param uploads	Array of tables to upload.
-	 * 
-	 * @return	A {@link TAPSchema} containing the list and the description of all uploaded tables.
-	 * 
-	 * @throws TAPException	If any error occurs while reading the VOTable inputs or while uploading the table into the "database".
-	 * 
+	 *
+	 * @return	A {@link TAPSchema} containing the list and the description of
+	 *        	all uploaded tables.
+	 *
+	 * @throws TAPException	If any error occurs while reading the VOTable inputs
+	 *                     	or while uploading the table into the "database".
+	 *
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
 	public TAPSchema upload(final DALIUpload[] uploads) throws TAPException{
@@ -181,14 +198,28 @@ public class Uploader {
 				votable = null;
 			}
 		}catch(DataReadException dre){
+			// Drop uploaded tables:
+			dropUploadedTables();
+			// Report the error:
 			if (dre.getCause() instanceof ExceededSizeException)
 				throw dre;
 			else
 				throw new TAPException("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
 		}catch(IOException ioe){
+			// Drop uploaded tables:
+			dropUploadedTables();
+			// Report the error:
 			throw new TAPException("IO error while reading the VOTable of \"" + tableName + "\"!", ioe);
 		}catch(UnsupportedURIProtocolException e){
+			// Drop uploaded tables:
+			dropUploadedTables();
+			// Report the error:
 			throw new TAPException("URI error while trying to open the VOTable of \"" + tableName + "\"!", e);
+		}catch(TAPException te){
+			// Drop uploaded tables:
+			dropUploadedTables();
+			// Report the error:
+			throw te;
 		}finally{
 			try{
 				if (dataIt != null)
@@ -200,8 +231,27 @@ public class Uploader {
 			}
 		}
 
-		// Return the TAP_UPLOAD schema (containing just the description of the uploaded tables):
+		/* Return the TAP_UPLOAD schema (containing just the description of the
+		 * uploaded tables): */
 		return uploadSchema;
+	}
+
+	/**
+	 * Drop all tables already uploaded in the database.
+	 *
+	 * @since 2.3
+	 */
+	protected void dropUploadedTables(){
+		if (uploadSchema == null || uploadSchema.getNbTables() == 0)
+			return;
+
+		for(TAPTable table : uploadSchema){
+			try{
+				dbConn.dropUploadedTable(table);
+			}catch(DBException e){
+				service.getLogger().error("Unable to drop the uploaded table " + table.getFullName() + "!", e);
+			}
+		}
 	}
 
 }
