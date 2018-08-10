@@ -22,6 +22,7 @@ package tap.upload;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 
 import com.oreilly.servlet.multipart.ExceededSizeException;
 
@@ -167,11 +168,17 @@ public class Uploader {
 	public TAPSchema upload(final DALIUpload[] uploads) throws TAPException{
 		TableIterator dataIt = null;
 		InputStream votable = null;
+		HashSet<String> tableNames = new HashSet<String>(uploads.length);
 		String tableName = null;
 		try{
 			// Iterate over the full list of uploaded tables:
 			for(DALIUpload upl : uploads){
 				tableName = upl.label;
+
+				// Check uniqueness of the table name inside TAP_UPLOAD:
+				boolean uniqueTableName = tableNames.add(tableName.toLowerCase());
+				if (!uniqueTableName)
+					throw new TAPException("Non unique table name (case insensitive) among all tables to upload: \"" + tableName + "\"!", UWSException.BAD_REQUEST);
 
 				// Open a stream toward the VOTable:
 				votable = upl.open();
@@ -181,6 +188,15 @@ public class Uploader {
 
 				// Define the table to upload:
 				TAPColumn[] columns = dataIt.getMetadata();
+
+				// Check uniqueness of all column names:
+				HashSet<String> columnNames = new HashSet<String>(columns.length);
+				for(TAPColumn col : columns){
+					boolean uniqueColumnName = columnNames.add(col.getADQLName().toLowerCase());
+					if (!uniqueColumnName)
+						throw new TAPException("Non unique column name (case insensitive) among all columns of the table \"" + tableName + "\": \"" + col.getADQLName() + "\"!", UWSException.BAD_REQUEST);
+				}
+
 				TAPTable table = new TAPTable(tableName);
 				table.setDBName(tableName + "_" + System.currentTimeMillis());
 				for(TAPColumn col : columns)
