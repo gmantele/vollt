@@ -2,21 +2,22 @@ package uws.service.request;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2014-2015 - Astronomisches Rechen Institut (ARI)
+ *
+ * Copyright 2014-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -35,23 +36,26 @@ import javax.servlet.http.HttpServletRequest;
 import uws.UWSException;
 
 /**
- * <p>Extract parameters encoded using the HTTP-GET method or the Content-type application/x-www-form-urlencoded
- * with the HTTP-POST or HTTP-PUT method in an {@link HttpServletRequest}.</p>
- * 
+ * Extract parameters encoded using the HTTP-GET method or the Content-type
+ * application/x-www-form-urlencoded with the HTTP-POST or HTTP-PUT method in
+ * an {@link HttpServletRequest}.
+ *
  * <p>
- * 	By default, this {@link RequestParser} overwrite parameter occurrences in the map: that's to say if a parameter is provided several times,
- * 	only the last value will be kept. This behavior can be changed by overwriting the function {@link #consumeParameter(String, Object, Map)}
- * 	of this class.
+ * 	By default, this {@link RequestParser} overwrite parameter occurrences in
+ * 	the map: that's to say if a parameter is provided several times, only the
+ * 	last value will be kept. This behavior can be changed by overwriting the
+ * 	function {@link #consumeParameter(String, Object, Map)} of this class.
  * </p>
- * 
+ *
  * <p><i>Note:
- * 	When HTTP-POST is used, these parameters are actually already extracted by the server application (like Apache/Tomcat)
- * 	and are available with {@link HttpServletRequest#getParameterMap()}.
- * 	However, when using HTTP-PUT, the parameters are extracted manually from the request content.
+ * 	When HTTP-POST is used, these parameters are actually already extracted by
+ * 	the server application (like Apache/Tomcat) and are available with
+ * 	{@link HttpServletRequest#getParameterMap()}. However, when using HTTP-PUT,
+ * 	the parameters are extracted manually from the request content.
  * </i></p>
- * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (07/2015)
+ *
+ * @author Gr&eacute;gory Mantelet (ARI;CDS)
+ * @version 4.3 (08/2018)
  * @since 4.1
  */
 public class FormEncodedParser implements RequestParser {
@@ -60,11 +64,11 @@ public class FormEncodedParser implements RequestParser {
 	public final static String EXPECTED_CONTENT_TYPE = "application/x-www-form-urlencoded";
 
 	@Override
-	public final Map<String,Object> parse(HttpServletRequest request) throws UWSException{
+	public final Map<String, Object> parse(HttpServletRequest request) throws UWSException{
 		if (request == null)
-			return new HashMap<String,Object>();
+			return new HashMap<String, Object>();
 
-		HashMap<String,Object> params = new HashMap<String,Object>();
+		HashMap<String, Object> params = new HashMap<String, Object>();
 
 		// Normal extraction for HTTP-POST and other HTTP methods:
 		if (request.getMethod() == null || !request.getMethod().equalsIgnoreCase("put")){
@@ -88,6 +92,7 @@ public class FormEncodedParser implements RequestParser {
 		 * This block is doing this extraction manually. */
 		else{
 			InputStream input = null;
+			Scanner scanner = null;
 			try{
 
 				// Get the character encoding:
@@ -102,7 +107,7 @@ public class FormEncodedParser implements RequestParser {
 				// Get a stream on the request content:
 				input = new BufferedInputStream(request.getInputStream());
 				// Read the stream by iterating on each parameter pairs:
-				Scanner scanner = new Scanner(input);
+				scanner = new Scanner(input);
 				scanner.useDelimiter("&");
 				String pair;
 				int indSep;
@@ -124,11 +129,15 @@ public class FormEncodedParser implements RequestParser {
 					}
 				}
 
-			}catch(IOException ioe){}finally{
+			}catch(IOException ioe){
+			}finally{
+				if (scanner != null)
+					scanner.close();
 				if (input != null){
 					try{
 						input.close();
-					}catch(IOException ioe2){}
+					}catch(IOException ioe2){
+					}
 				}
 			}
 		}
@@ -138,23 +147,23 @@ public class FormEncodedParser implements RequestParser {
 
 	/**
 	 * <p>Consume the specified parameter: add it inside the given map.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	By default, this function is just putting the given value inside the map. So, if the parameter already exists in the map,
 	 * 	its old value will be overwritten by the given one.
 	 * </p>
-	 * 
+	 *
 	 * @param name		Name of the parameter to consume.
 	 * @param value		Its value.
 	 * @param allParams	The list of all parameters read until now.
 	 */
-	protected void consumeParameter(final String name, final Object value, final Map<String,Object> allParams){
+	protected void consumeParameter(final String name, final Object value, final Map<String, Object> allParams){
 		allParams.put(name, value);
 	}
 
 	/**
 	 * <p>Utility method that determines whether the content of the given request is a application/x-www-form-urlencoded.</p>
-	 * 
+	 *
 	 * <p><i>Important:
 	 * 	This function just test the content-type of the request. The HTTP method (e.g. GET, POST, ...) is not tested.
 	 * </i></p>
