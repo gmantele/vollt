@@ -40,15 +40,14 @@ import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.xml.bind.DatatypeConverter;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONWriter;
 import org.json.Json4Uws;
-
-import com.oreilly.servlet.Base64Decoder;
-import com.oreilly.servlet.Base64Encoder;
 
 import uws.ISO8601Format;
 import uws.UWSException;
@@ -87,7 +86,7 @@ import uws.service.request.UploadFile;
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (05/2018)
+ * @version 4.4 (08/2018)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -148,7 +147,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		if (backupFreq > 0){
 			timAutoBackup = new Timer();
-			timAutoBackup.scheduleAtFixedRate(new TimerTask(){
+			timAutoBackup.scheduleAtFixedRate(new TimerTask() {
 				@Override
 				public void run(){
 					saveAll();
@@ -193,7 +192,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			backupFreq = MANUAL;
 		else if (backupFreq > 0){
 			timAutoBackup = new Timer();
-			timAutoBackup.scheduleAtFixedRate(new TimerTask(){
+			timAutoBackup.scheduleAtFixedRate(new TimerTask() {
 				@Override
 				public void run(){
 					saveAll();
@@ -219,7 +218,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			if (this.enabled){
 				if (timAutoBackup == null){
 					timAutoBackup = new Timer();
-					timAutoBackup.scheduleAtFixedRate(new TimerTask(){
+					timAutoBackup.scheduleAtFixedRate(new TimerTask() {
 						@Override
 						public void run(){
 							saveAll();
@@ -271,7 +270,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		if (enabled && backupFreq > 0){
 			timAutoBackup = new Timer();
-			timAutoBackup.scheduleAtFixedRate(new TimerTask(){
+			timAutoBackup.scheduleAtFixedRate(new TimerTask() {
 				@Override
 				public void run(){
 					saveAll();
@@ -326,7 +325,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		int nbJobs = 0, nbOwners = 0;
 
 		// List all users of this UWS:
-		HashMap<String,JobOwner> users = new HashMap<String,JobOwner>();
+		HashMap<String, JobOwner> users = new HashMap<String, JobOwner>();
 		for(JobList jl : uws){
 			Iterator<JobOwner> it = jl.getUsers();
 			while(it.hasNext()){
@@ -409,7 +408,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		}
 
 		// Build the report and log it:
-		int[] report = new int[]{nbSavedJobs,nbJobs,nbSavedOwners,nbOwners};
+		int[] report = new int[]{ nbSavedJobs, nbJobs, nbSavedOwners, nbOwners };
 		getLogger().logUWS(LogLevel.INFO, report, "BACKUPED", "UWS Service \"" + uws.getName() + "\" backuped!", null);
 
 		lastBackup = new Date();
@@ -431,10 +430,10 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		// DO NOTHING if the "save" order does not come from saveAll():
 		if (!fromSaveAll && backupFreq != AT_USER_ACTION)
-			return new int[]{-1,-1};
+			return new int[]{ -1, -1 };
 
 		UWSFileManager fileManager = uws.getFileManager();
-		int[] saveReport = new int[]{0,0};
+		int[] saveReport = new int[]{ 0, 0 };
 		PrintWriter writer = null;
 		try{
 			// Create a writer toward the backup file:
@@ -520,9 +519,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		jsonUser.put("id", user.getID());
 		jsonUser.put("pseudo", user.getPseudo());
 		if (user.getDataToSave() != null){
-			Iterator<Map.Entry<String,Object>> itUserData = user.getDataToSave().entrySet().iterator();
+			Iterator<Map.Entry<String, Object>> itUserData = user.getDataToSave().entrySet().iterator();
 			while(itUserData.hasNext()){
-				Map.Entry<String,Object> userData = itUserData.next();
+				Map.Entry<String, Object> userData = itUserData.next();
 				jsonUser.put(userData.getKey(), userData.getValue());
 			}
 		}
@@ -619,19 +618,21 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			oOutput = new ObjectOutputStream(bArray);
 			oOutput.writeObject(jobInfo);
 			oOutput.flush();
-			return Base64Encoder.encode(bArray.toByteArray());
+			return toBase64(bArray.toByteArray());
 		}catch(IOException ioe){
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Unexpected error while serializing the given JobInfo!");
 		}finally{
 			if (oOutput != null){
 				try{
 					oOutput.close();
-				}catch(IOException ioe){}
+				}catch(IOException ioe){
+				}
 			}
 			if (bArray != null){
 				try{
 					bArray.close();
-				}catch(IOException ioe){}
+				}catch(IOException ioe){
+				}
 			}
 		}
 	}
@@ -656,7 +657,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	protected JobInfo restoreJobInfo(final Object jsonValue) throws UWSException, JSONException{
 		ObjectInputStream oInput = null;
 		try{
-			byte[] bArray = Base64Decoder.decodeToBytes((String)jsonValue);
+			byte[] bArray = fromBase64((String)jsonValue);
 			oInput = new ObjectInputStream(new ByteArrayInputStream(bArray));
 			return (JobInfo)oInput.readObject();
 		}catch(Exception ex){
@@ -665,9 +666,40 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			if (oInput != null){
 				try{
 					oInput.close();
-				}catch(IOException ioe){}
+				}catch(IOException ioe){
+				}
 			}
 		}
+	}
+
+	/**
+	 * Encode the given bytes into a Base-64 string.
+	 *
+	 * @param bytes	Bytes to encode.
+	 *
+	 * @return	Base-64 encoded string.
+	 *
+	 * @since 4.4
+	 *
+	 * @see #fromBase64(String)
+	 */
+	protected final String toBase64(final byte[] bytes){
+		return DatatypeConverter.printBase64Binary(bytes);
+	}
+
+	/**
+	 * Decode the given Base-64 string into a bytes array.
+	 *
+	 * @param base64Str	Base-64 string to decode.
+	 *
+	 * @return	Decoded bytes.
+	 *
+	 * @since 4.4
+	 *
+	 * @see #toBase64(byte[])
+	 */
+	protected final byte[] fromBase64(final String base64Str){
+		return DatatypeConverter.parseBase64Binary(base64Str);
 	}
 
 	/**
@@ -736,7 +768,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			// Create the JSON reader:
 			JSONTokener in = new JSONTokener(new InputStreamReader(inputStream));
 
-			HashMap<String,JobOwner> users = new HashMap<String,JobOwner>();
+			HashMap<String, JobOwner> users = new HashMap<String, JobOwner>();
 			String key;
 			JSONObject object = null;
 
@@ -850,7 +882,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			getLogger().logUWS(LogLevel.WARNING, null, "RESTORATION", nbUsers + " job owners have not been restored because the user identification is disabled in this UWS! => Jobs of these users have not been restored.", null);
 
 		// Build the restoration report and log it:
-		int[] report = new int[]{nbRestoredJobs,nbJobs,nbRestoredUsers,nbUsers};
+		int[] report = new int[]{ nbRestoredJobs, nbJobs, nbRestoredUsers, nbUsers };
 		getLogger().logUWS(LogLevel.INFO, report, "RESTORED", "UWS restored!", null);
 
 		return report;
@@ -874,7 +906,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		// Fetch all user data:
 		String ID = null, pseudo = null;
 		String[] keys = JSONObject.getNames(json);
-		Map<String,Object> userData = new HashMap<String,Object>(keys.length - 2);
+		Map<String, Object> userData = new HashMap<String, Object>(keys.length - 2);
 		for(String key : keys){
 			try{
 				if (key.equalsIgnoreCase("id"))
@@ -907,7 +939,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * 						or if the job list name is incorrect,
 	 * 						or if there is an error with "parameters", "error" and "results".
 	 */
-	protected boolean restoreJob(final JSONObject json, Map<String,JobOwner> users) throws UWSException{
+	protected boolean restoreJob(final JSONObject json, Map<String, JobOwner> users) throws UWSException{
 		if (json == null || json.length() == 0)
 			return false;
 
@@ -916,7 +948,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		long quote = UWSJob.UNLIMITED_DURATION,
 				/*duration = UWSJob.UNLIMITED_DURATION, */startTime = -1,
 				endTime = -1, creationTime = -1;
-		HashMap<String,Object> inputParams = new HashMap<String,Object>(10);
+		HashMap<String, Object> inputParams = new HashMap<String, Object>(10);
 		//Map<String, Object> params = null;
 		List<Result> results = null;
 		ErrorSummary error = null;
@@ -1028,11 +1060,12 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		// Re-Build all the uploaded files' pointers for this job:
 		if (uploads != null){
 			@SuppressWarnings("unchecked")
-			Map<String,Object> params = (Map<String,Object>)(inputParams.get(UWSJob.PARAM_PARAMETERS));
+			Map<String, Object> params = (Map<String, Object>)(inputParams.get(UWSJob.PARAM_PARAMETERS));
 			UploadFile upl;
 			try{
 				for(int i = 0; i < uploads.length(); i++){
-					upl = getUploadFile(uploads.getJSONObject(i));;
+					upl = getUploadFile(uploads.getJSONObject(i));
+					;
 					if (upl != null)
 						params.put(upl.paramName, upl);
 				}
@@ -1117,11 +1150,11 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 	 * @return					The corresponding list of parameters
 	 * 							or <i>null</i> if the given object is empty.
 	 */
-	protected Map<String,Object> getParameters(final JSONObject obj){
+	protected Map<String, Object> getParameters(final JSONObject obj){
 		if (obj == null || obj.length() == 0)
 			return null;
 
-		HashMap<String,Object> params = new HashMap<String,Object>(obj.length());
+		HashMap<String, Object> params = new HashMap<String, Object>(obj.length());
 		String[] names = JSONObject.getNames(obj);
 		for(String n : names){
 			try{
@@ -1150,7 +1183,8 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			try{
 				if (obj.has("length"))
 					upl.length = Long.parseLong(obj.getString("length"));
-			}catch(NumberFormatException ex){}
+			}catch(NumberFormatException ex){
+			}
 			return upl;
 		}catch(JSONException je){
 			getLogger().logUWS(LogLevel.ERROR, obj, "RESTORATION", "Incorrect JSON format for the serialization of an uploaded file!", je);
