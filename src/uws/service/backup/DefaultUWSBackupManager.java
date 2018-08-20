@@ -721,7 +721,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		o.put("fileName", upl.fileName);
 		o.put("location", upl.getLocation());
 		o.put("mime", upl.mimeType);
-		o.put("lenght", upl.length);
+		o.put("length", upl.length);
 		return o;
 	}
 
@@ -1048,8 +1048,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				else if (key.equalsIgnoreCase(UWSJob.PARAM_JOB_INFO)){
 					jobInfo = restoreJobInfo(json.get(key));
 
-				}// Ignore any other key but with a warning message:
-				else
+				}
+				// Ignore any other key but with a warning message:
+				else if (!key.equalsIgnoreCase("version"))
 					getLogger().logUWS(LogLevel.WARNING, json, "RESTORATION", "The job attribute '" + key + "' has been ignored because unknown! A job may be not completely restored!", null);
 
 			}catch(JSONException je){
@@ -1247,7 +1248,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 				type = obj.getString(n);
 			else if (n.equalsIgnoreCase("href"))
 				href = obj.getString(n);
-			else if (n.equalsIgnoreCase("mime"))
+			else if (n.equalsIgnoreCase("mime-type"))
 				mime = obj.getString(n);
 			else if (n.equalsIgnoreCase("redirection"))
 				redirection = obj.getBoolean(n);
