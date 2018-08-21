@@ -22,15 +22,21 @@ package uws.service.request;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.oreilly.servlet.MultipartRequest;
-import com.oreilly.servlet.multipart.FileRenamePolicy;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.util.Streams;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import uws.UWSException;
 import uws.service.UWS;
@@ -72,11 +78,15 @@ public class MultipartParser implements RequestParser {
 	/** Default maximum allowed size for an HTTP request content: 10 MiB. */
 	public static final int DEFAULT_SIZE_LIMIT = 10 * 1024 * 1024;
 
-	/** <p>Maximum allowed size for an HTTP request content. Over this limit, an exception is thrown and the request is aborted.</p>
-	 * <p><i>Note:
-	 * 	The default value is {@link #DEFAULT_SIZE_LIMIT} (= {@value #DEFAULT_SIZE_LIMIT} MiB).
+	/** Maximum allowed size for an HTTP request content. Over this limit, an
+	 * exception is thrown and the request is aborted.
+	 *
+	 * <p><i><b>Note 1:</b>
+	 * 	The default value is {@link #DEFAULT_SIZE_LIMIT}
+	 * 	(= {@value #DEFAULT_SIZE_LIMIT} MiB).
 	 * </i></p>
-	 * <p><i>Note:
+	 *
+	 * <p><i><b>Note 2:</b>
 	 * 	This limit is expressed in bytes and can not be negative.
 	 *  Its smallest possible value is 0. If the set value is though negative,
 	 *  it will be ignored and {@link #DEFAULT_SIZE_LIMIT} will be used instead.
@@ -87,14 +97,20 @@ public class MultipartParser implements RequestParser {
 	public final boolean allowUpload;
 
 	/** File manager to use to create {@link UploadFile} instances.
-	 * It is required by this new object to execute open, move and delete operations whenever it could be asked. */
+	 * It is required by this new object to execute open, move and delete
+	 * operations whenever it could be asked. */
 	protected final UWSFileManager fileManager;
 
+	/** Tool to parse Multipart HTTP request and fetch files when necessary.
+	 * @since 4.4 */
+	protected final ServletFileUpload fileUpload;
+
 	/**
-	 * <p>Build a {@link MultipartParser} forbidding uploads (i.e. inline files).</p>
+	 * Build a {@link MultipartParser} forbidding uploads (i.e. inline files).
 	 *
 	 * <p>
-	 * 	With this parser, when an upload (i.e. submitted inline files) is detected, an exception is thrown by {@link #parse(HttpServletRequest)}
+	 * 	With this parser, when an upload (i.e. submitted inline files) is
+	 * 	detected, an exception is thrown by {@link #parse(HttpServletRequest)}
 	 * 	which cancels immediately the request.
 	 * </p>
 	 */
@@ -105,23 +121,28 @@ public class MultipartParser implements RequestParser {
 	/**
 	 * Build a {@link MultipartParser} allowing uploads (i.e. inline files).
 	 *
-	 * @param fileManager	The file manager to use in order to store any eventual upload. <b>MUST NOT be NULL</b>
+	 * @param fileManager	The file manager to use in order to store any
+	 *                   	eventual upload. <b>MUST NOT be NULL</b>
 	 */
 	public MultipartParser(final UWSFileManager fileManager){
 		this(true, fileManager);
 	}
 
 	/**
-	 * <p>Build a {@link MultipartParser}.</p>
+	 * Build a {@link MultipartParser}.
 	 *
 	 * <p>
-	 * 	If the first parameter is <i>false</i>, then when an upload (i.e. submitted inline files) is detected, an exception is thrown
-	 * 	by {@link #parse(HttpServletRequest)} which cancels immediately the request.
+	 * 	If the first parameter is <i>false</i>, then when an upload
+	 * 	(i.e. submitted inline files) is detected, an exception is thrown
+	 * 	by {@link #parse(HttpServletRequest)} which cancels immediately the
+	 * 	request.
 	 * </p>
 	 *
-	 * @param uploadEnabled					<i>true</i> to allow uploads (i.e. inline files), <i>false</i> otherwise.
-	 *                     					If <i>false</i>, the two other parameters are useless.
-	 * @param fileManager					The file manager to use in order to store any eventual upload. <b>MUST NOT be NULL</b>
+	 * @param uploadEnabled	<i>true</i> to allow uploads (i.e. inline files),
+	 *                     	<i>false</i> otherwise. If <i>false</i>, the two
+	 *                     	other parameters are useless.
+	 * @param fileManager	The file manager to use in order to store any
+	 *                   	eventual upload. <b>MUST NOT be NULL</b>
 	 */
 	protected MultipartParser(final boolean uploadEnabled, final UWSFileManager fileManager){
 		if (uploadEnabled && fileManager == null)
@@ -129,88 +150,99 @@ public class MultipartParser implements RequestParser {
 
 		this.allowUpload = uploadEnabled;
 		this.fileManager = fileManager;
+
+		// Create a factory for disk-based file items:
+		DiskFileItemFactory factory = new DiskFileItemFactory();
+
+		// Configure a repository:
+		factory.setRepository(fileManager.getTmpDirectory());
+
+		// Create a new file upload handler
+		fileUpload = new ServletFileUpload(factory);
+		fileUpload.setFileSizeMax(SIZE_LIMIT);
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public final Map<String, Object> parse(final HttpServletRequest request) throws UWSException{
 		LinkedHashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
-		MultipartRequest multipart = null;
 
 		try{
-
-			// Parse the request body:
-			multipart = new MultipartRequest(request, fileManager.getTmpDirectory().getPath(), (SIZE_LIMIT < 0 ? DEFAULT_SIZE_LIMIT : SIZE_LIMIT), new FileRenamePolicy() {
-				@Override
-				public File rename(File file){
-					Object reqID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID);
-					if (reqID == null || !(reqID instanceof String))
-						reqID = (new Date()).getTime();
-					char uniq = 'A';
-					File f = new File(file.getParentFile(), "UPLOAD_" + reqID + uniq + "_" + file.getName());
-					while(f.exists()){
-						uniq++;
-						f = new File(file.getParentFile(), "UPLOAD_" + reqID + "_" + file.getName());
+			List<FileItem> fileItems = fileUpload.parseRequest(request);
+			for(FileItem item : fileItems){
+				String name = item.getFieldName();
+				InputStream stream = item.getInputStream();
+				if (item.isFormField())
+					consumeParameter(name, Streams.asString(stream), parameters);
+				else{
+					if (!allowUpload)
+						throw new UWSException(UWSException.BAD_REQUEST, "Uploads are not allowed by this service!");
+					else{
+						// keep the file:
+						File file = getFileFromParam(request, fileManager.getTmpDirectory().getPath(), FilenameUtils.getName(item.getName()));
+						FileUtils.copyInputStreamToFile(stream, file);
+						// build its description/pointer:
+						UploadFile lob = new UploadFile(name, FilenameUtils.getName(item.getName()), file.toURI().toString(), fileManager);
+						lob.mimeType = item.getContentType();
+						lob.length = file.length();
+						// add it inside the parameters map:
+						consumeParameter(name, lob, parameters);
 					}
-					return f;
 				}
-			});
-
-			// Extract all "normal" parameters:
-			String param;
-			Enumeration<String> e = multipart.getParameterNames();
-			while(e.hasMoreElements()){
-				param = e.nextElement();
-				for(String occurence : multipart.getParameterValues(param))
-					consumeParameter(param, occurence, parameters);
+				// finally delete the file item stored by FileUpload:
+				item.delete();
 			}
-
-			// Extract all inline files as additional parameters:
-			e = multipart.getFileNames();
-			if (!allowUpload && e.hasMoreElements())
-				throw new UWSException(UWSException.BAD_REQUEST, "Uploads are not allowed by this service!");
-			while(e.hasMoreElements()){
-				param = e.nextElement();
-				if (multipart.getFile(param) == null)
-					continue;
-
-				/*
-				 * TODO !!!POSSIBLE ISSUE!!!
-				 * MultipartRequest is not able to deal with multiple files having the same parameter name. However, all files are created/uploaded
-				 * but only the last one is accessible through this object....so only the last can be deleted, which could be a problem later
-				 * (hence the usage of the system temporary directory).
-				 */
-
-				// build its description/pointer:
-				UploadFile lob = new UploadFile(param, multipart.getOriginalFileName(param), multipart.getFile(param).toURI().toString(), fileManager);
-				lob.mimeType = multipart.getContentType(param);
-				lob.length = multipart.getFile(param).length();
-				// add it inside the parameters map:
-				consumeParameter(param, lob, parameters);
-			}
-
+		}catch(FileUploadException fue){
+			throw new UWSException(UWSException.BAD_REQUEST, fue, "Incorrect HTTP request: " + fue.getMessage() + ".");
 		}catch(IOException ioe){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Internal Error => Impossible to extract parameters from the Multipart HTTP request!");
+			throw new UWSException(UWSException.BAD_REQUEST, ioe, "Incorrect HTTP request: " + ioe.getMessage() + ".");
 		}catch(IllegalArgumentException iae){
 			String confError = iae.getMessage();
 			if (fileManager.getTmpDirectory() == null)
 				confError = "Missing upload directory!";
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, iae, "Internal Error: Incorrect UPLOAD configuration: " + confError);
+			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, iae, "Internal Error! Incorrect UPLOAD configuration: " + confError);
 		}
 
 		return parameters;
 	}
 
 	/**
-	 * <p>Consume the specified parameter: add it inside the given map.</p>
+	 * Return the path of a non-existing file inside the given directory and
+	 * whose the name is built using the given file name and the HTTP request
+	 * ID.
+	 *
+	 * @param request		The received HTTP request.
+	 * @param parentFile	The directory in which the file should be created.
+	 * @param inputFileName	The file name provided by the user.
+	 *
+	 * @return	Path of a non-existing file for the specified input file.
+	 *
+	 * @since 4.4
+	 */
+	protected File getFileFromParam(final HttpServletRequest request, final String parentFile, final String inputFileName){
+		Object reqID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID);
+		if (reqID == null || !(reqID instanceof String))
+			reqID = (new Date()).getTime();
+		char uniq = 'A';
+		File f = new File(parentFile, "UPLOAD_" + reqID + uniq + "_" + inputFileName);
+		while(f.exists()){
+			uniq++;
+			f = new File(parentFile, "UPLOAD_" + reqID + "_" + inputFileName);
+		}
+		return f;
+	}
+
+	/**
+	 * Consume the specified parameter: add it inside the given map.
 	 *
 	 * <p>
-	 * 	By default, this function is just putting the given value inside the map. So, if the parameter already exists in the map,
-	 * 	its old value will be overwritten by the given one.
+	 * 	By default, this function is just putting the given value inside the
+	 * 	map. So, if the parameter already exists in the map, its old value will
+	 * 	be overwritten by the given one.
 	 * </p>
 	 *
-	 * <p><i>Note:
-	 * 	If the old value was a file, it will be deleted from the file system before its replacement in the map.
+	 * <p><i><b>Note:</b>
+	 * 	If the old value was a file, it will be deleted from the file system
+	 * 	before its replacement in the map.
 	 * </i></p>
 	 *
 	 * @param name		Name of the parameter to consume.
@@ -245,14 +277,7 @@ public class MultipartParser implements RequestParser {
 	 *        	<code>false</code> otherwise.
 	 */
 	public static final boolean isMultipartContent(final HttpServletRequest request){
-		// Extract the content type and determine if it is a multipart request (its content type should start by multipart/form-data"):
-		String contentType = request.getContentType();
-		if (contentType == null)
-			return false;
-		else if (contentType.toLowerCase().startsWith(EXPECTED_CONTENT_TYPE))
-			return true;
-		else
-			return false;
+		return ServletFileUpload.isMultipartContent(request);
 	}
 
 }

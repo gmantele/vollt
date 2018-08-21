@@ -12,8 +12,10 @@
 	<property name="classesDir" value="${compileDir}"/>
 	<property name="javadocDir" value="javadoc/uws" />
 
-	<property name="cosJarName" value="cos-1.5beta.jar" />
-	<property name="cosJar" value="${libDir}/${cosJarName}" />
+	<property name="commonsIOJarName" value="commons-io-2.6.jar" />
+	<property name="commonsIOJar" value="${libDir}/${commonsIOJarName}" />
+	<property name="commonsFileUploadJarName" value="commons-fileupload-1.3.3.jar" />
+	<property name="commonsFileUploadJar" value="${libDir}/${commonsFileUploadJarName}" />
 
 	<property name="slf4jApiJarName" value="slf4j-api-1.7.25.jar" />
 	<property name="slf4jApiJar" value="${libDir}/${slf4jApiJarName}" />
@@ -38,7 +40,8 @@
 
 	<!-- CLASSPATHS -->
 	<path id="uws.classpath">
-		<pathelement location="${cosJar}" />
+		<pathelement location="${commonsIOJar}" />
+		<pathelement location="${commonsFileUploadJar}" />
 		<pathelement location="${slf4jApiJar}" />
 		<pathelement location="${SERVLET-API}" />
 	</path>
@@ -110,7 +113,8 @@
 	<target name="buildLib" depends="compileLib,junitValidation" description="After 'clean', build the library JAR (only classes).">
 		<echo>Generate the library:</echo>
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
-			<zipfileset src="${cosJar}" excludes="META-INF/*" />
+			<zipfileset src="${commonsIOJar}" excludes="META-INF/**" />
+			<zipfileset src="${commonsFileUploadJar}" excludes="META-INF/**" />
 			<zipfileset dir="${srcDir}" includes="${licensePath}" />
 		</jar>
 		<delete dir="${compileDir}" failonerror="true" />
@@ -119,7 +123,8 @@
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
 		<jar compress="false" destfile="${srcJarFile}">
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
-			<zipfileset dir="${libDir}" includes="${cosJarName}" fullPath="${cosJar}" />
+			<zipfileset dir="${libDir}" includes="${commonsIOJarName}" fullPath="${commonsIOJar}" />
+			<zipfileset dir="${libDir}" includes="${commonsFileUploadJarName}" fullPath="${commonsFileUploadJar}" />
 		</jar>
 	</target>
 	

@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -153,7 +153,7 @@ import uws.service.wait.BlockingPolicy;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (11/2017)
+ * @version 4.4 (08/2018)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -165,10 +165,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	protected String description = null;
 
 	/** List of all managed jobs lists. <i>(it is a LinkedHashMap so that jobs lists are ordered by insertion)</i> */
-	private Map<String,JobList> mapJobLists;
+	private Map<String, JobList> mapJobLists;
 
 	/** List of available serializers. */
-	private Map<String,UWSSerializer> serializers;
+	private Map<String, UWSSerializer> serializers;
 
 	/** The MIME type of the default serialization format. */
 	protected String defaultSerializer = null;
@@ -183,7 +183,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	protected final ArrayList<String> expectedAdditionalParams = new ArrayList<String>(10);
 
 	/** List the controllers of all the input parameters. See {@link UWSParameters} and {@link InputParamController} for more details. */
-	protected final HashMap<String,InputParamController> inputParamControllers = new HashMap<String,InputParamController>(10);
+	protected final HashMap<String, InputParamController> inputParamControllers = new HashMap<String, InputParamController>(10);
 
 	/** Lets managing all UWS files (i.e. log, result, backup, ...). */
 	private UWSFileManager fileManager = null;
@@ -247,10 +247,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		}
 
 		// Initialize the list of jobs:
-		mapJobLists = new LinkedHashMap<String,JobList>();
+		mapJobLists = new LinkedHashMap<String, JobList>();
 
 		// Initialize the list of available serializers:
-		serializers = new HashMap<String,UWSSerializer>();
+		serializers = new HashMap<String, UWSSerializer>();
 		addSerializer(new XMLSerializer());
 		addSerializer(new JSONSerializer());
 
@@ -348,13 +348,6 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 		final String reqID = generateRequestID(req);
 		req.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
-		// Extract all parameters:
-		try{
-			req.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(req));
-		}catch(UWSException ue){
-			logger.log(LogLevel.WARNING, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
-		}
-
 		// Log the reception of the request:
 		logger.logHttp(LogLevel.INFO, req, reqID, null, null);
 
@@ -374,6 +367,9 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 
 			// Set the character encoding:
 			resp.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
+			// Extract all parameters:
+			req.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(req));
 
 			// METHOD GET:
 			if (method.equals("GET")){
@@ -843,7 +839,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	}
 
 	@Override
-	public UWSParameters createUWSParameters(final Map<String,Object> params) throws UWSException{
+	public UWSParameters createUWSParameters(final Map<String, Object> params) throws UWSException{
 		return new UWSParameters(params, expectedAdditionalParams, inputParamControllers);
 	}
 
@@ -1029,7 +1025,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * Gets the list of all UWS input parameter controllers.
 	 * @return	All parameter controllers.
 	 */
-	public final Map<String,InputParamController> getInputParamControllers(){
+	public final Map<String, InputParamController> getInputParamControllers(){
 		return inputParamControllers;
 	}
 
@@ -1037,7 +1033,7 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 	 * Gets an iterator on the list of all UWS input parameter controllers.
 	 * @return	An iterator on all parameter controllers.
 	 */
-	public final Iterator<Map.Entry<String,InputParamController>> getInputParamControllersIterator(){
+	public final Iterator<Map.Entry<String, InputParamController>> getInputParamControllersIterator(){
 		return inputParamControllers.entrySet().iterator();
 	}
 

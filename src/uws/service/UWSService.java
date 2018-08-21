@@ -1142,15 +1142,6 @@ public class UWSService implements UWS {
 		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
 			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
-		// Extract all parameters:
-		if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null){
-			try{
-				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
-			}catch(UWSException ue){
-				logger.log(LogLevel.ERROR, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
-			}
-		}
-
 		// Log the reception of the request:
 		logger.logHttp(LogLevel.INFO, request, reqID, null, null);
 
@@ -1176,6 +1167,10 @@ public class UWSService implements UWS {
 
 			// Set the character encoding:
 			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
+			// Extract all parameters:
+			if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null)
+				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, requestParser.parse(request));
 
 			// Apply the appropriate UWS action:
 			for(int i = 0; action == null && i < uwsActions.size(); i++){

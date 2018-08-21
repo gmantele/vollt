@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -51,12 +51,16 @@ import uws.service.error.ServiceErrorWriter;
 import uws.service.log.UWSLog.LogLevel;
 
 /**
- * <p>Root/Home of the TAP service. It is also the resource (HOME) which gathers all the others of the same TAP service.</p>
+ * Root/Home of the TAP service. It is also the resource (HOME) which gathers
+ * all the others of the same TAP service.
  *
- * <p>At its creation it is creating and configuring the other resources in function of the given description of the TAP service.</p>
+ * <p>
+ * 	At its creation it is creating and configuring the other resources in
+ * 	function of the given description of the TAP service.
+ * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (09/2017)
+ * @version 2.3 (08/2018)
  */
 public class TAP implements VOSIResource {
 
@@ -64,29 +68,77 @@ public class TAP implements VOSIResource {
 	 * @since 2.1 */
 	public final static String VERSION = "1.0";
 
-	/** <p>Name of the TAP AVAILABILITY resource.
-	 * This resource tells whether the TAP service is available (i.e. whether it accepts queries or not).</p>
-	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+	/**
+	 * Name of the TAP AVAILABILITY resource.
+	 *
+	 * <p>
+	 * 	This resource tells whether the TAP service is available (i.e. whether
+	 * 	it accepts queries or not).
+	 * </p>
+	 *
+	 * <p><i>Note:
+	 * 	This name is suffixing the root TAP URL in order to access one of its
+	 * 	resources.
+	 * </i></p>
+	 *
 	 * @since 2.0 */
 	public final static String RESOURCE_AVAILABILITY = "availability";
-	/** <p>Name of the TAP CAPABILITIES resource.
-	 * This resource list all capabilities (e.g. output limits and formats, uploads, ...) of this TAP resource.</p>
-	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+
+	/**
+	 * Name of the TAP CAPABILITIES resource.
+	 *
+	 * <p>
+	 * 	This resource list all capabilities (e.g. output limits and formats,
+	 * 	uploads, ...) of this TAP resource.
+	 * </p>
+	 *
+	 * <p><i>Note:
+	 * 	This name is suffixing the root TAP URL in order to access one of its
+	 * 	resources.
+	 * </i></p>
+	 *
 	 * @since 2.0 */
 	public final static String RESOURCE_CAPABILITIES = "capabilities";
-	/** <p>Name of the TAP HOME PAGE resource.
-	 * This resource lists and describes all published and query-able schemas, tables and columns.</p>
-	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+
+	/**
+	 * Name of the TAP TABLES resource.
+	 *
+	 * <p>
+	 * 	This resource lists and describes all published and query-able schemas,
+	 * 	tables and columns.
+	 * </p>
+	 *
+	 * <p><i>Note:
+	 * 	This name is suffixing the root TAP URL in order to access one of its
+	 * 	resources.
+	 * </i></p>
+	 *
 	 * @since 2.0 */
 	public final static String RESOURCE_METADATA = "tables";
-	/** <p>Name of the TAP HOME PAGE resource.
-	 * This resource is used to submit ADQL queries to run asynchronously.</p>
-	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+
+	/**
+	 * Name of the TAP ASYNC resource.
+	 *
+	 * <p>This resource is used to submit ADQL queries to run asynchronously.</p>
+	 *
+	 * <p><i>Note:
+	 * 	This name is suffixing the root TAP URL in order to access one of its
+	 * 	resources.
+	 * </i></p>
+	 *
 	 * @since 2.0 */
 	public final static String RESOURCE_ASYNC = "async";
-	/** <p>Name of the TAP HOME PAGE resource.
-	 * This resource is used to submit ADQL queries to run synchronously.</p>
-	 * <p><i>Note: this name is suffixing the root TAP URL in order to access one of its resources.</i></p>
+
+	/**
+	 * Name of the TAP SYNC resource.
+	 *
+	 * <p>This resource is used to submit ADQL queries to run synchronously.</p>
+	 *
+	 * <p><i>Note:
+	 * 	This name is suffixing the root TAP URL in order to access one of its
+	 * 	resources.
+	 * </i></p>
+	 *
 	 * @since 2.0 */
 	public final static String RESOURCE_SYNC = "sync";
 
@@ -94,7 +146,7 @@ public class TAP implements VOSIResource {
 	protected final ServiceConnection service;
 
 	/** List of all the other TAP resources of the service. */
-	protected final Map<String,TAPResource> resources;
+	protected final Map<String, TAPResource> resources;
 
 	/** Base URL of the TAP service. It is also the URL of this resource (HOME). */
 	protected String tapBaseURL = null;
@@ -126,17 +178,19 @@ public class TAP implements VOSIResource {
 	protected static String lastRequestID = null;
 
 	/**
-	 * Build a HOME resource of a TAP service whose the description is given in parameter.
-	 * All the other TAP resources will be created and configured here thanks to the given {@link ServiceConnection}.
+	 * Build a HOME resource of a TAP service whose the description is given in
+	 * parameter. All the other TAP resources will be created and configured
+	 * here thanks to the given {@link ServiceConnection}.
 	 *
 	 * @param serviceConnection	Description of the TAP service.
 	 *
-	 * @throws UWSException	If an error occurs while creating the /async resource.
+	 * @throws UWSException	If an error occurs while creating the /async
+	 *                     	resource.
 	 * @throws TAPException	If any other error occurs.
 	 */
 	public TAP(final ServiceConnection serviceConnection) throws UWSException, TAPException{
 		service = serviceConnection;
-		resources = new HashMap<String,TAPResource>();
+		resources = new HashMap<String, TAPResource>();
 
 		// Get the error writer to use, or create a default instance if none are provided by the factory:
 		errorWriter = serviceConnection.getFactory().getErrorWriter();
@@ -922,15 +976,6 @@ public class TAP implements VOSIResource {
 		if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) == null)
 			request.setAttribute(UWS.REQ_ATTRIBUTE_ID, reqID);
 
-		// Extract all parameters:
-		if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null){
-			try{
-				request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, getUWS().getRequestParser().parse(request));
-			}catch(UWSException ue){
-				getLogger().log(LogLevel.WARNING, "REQUEST_PARSER", "Can not extract the HTTP request parameters!", ue);
-			}
-		}
-
 		// Retrieve the resource path parts:
 		String[] resourcePath = (request.getPathInfo() == null) ? null : request.getPathInfo().split("/");
 		String resourceName = (resourcePath == null || resourcePath.length < 1) ? "" : resourcePath[1].trim();
@@ -959,6 +1004,15 @@ public class TAP implements VOSIResource {
 
 			// Set the character encoding:
 			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
+
+			// Extract all parameters:
+			if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) == null){
+				try{
+					request.setAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS, getUWS().getRequestParser().parse(request));
+				}catch(UWSException ue){
+					throw new TAPException(ue, ue.getHttpErrorCode());
+				}
+			}
 
 			// Display the TAP Home Page:
 			if (resourceName.length() == 0){

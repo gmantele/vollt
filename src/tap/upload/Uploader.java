@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 
-import com.oreilly.servlet.multipart.ExceededSizeException;
+import tap.upload.ExceededSizeException;
 
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
