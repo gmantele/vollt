@@ -2,20 +2,20 @@ package uws.service.request;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2014 - Astronomisches Rechen Institut (ARI)
  */
 
@@ -37,21 +37,24 @@ import uws.service.UWS;
 import uws.service.file.UWSFileManager;
 
 /**
- * <p>This parser merely copies the whole HTTP request content inside a file.
- * It names this file: "JDL" (Job Description Language).</p>
- * 
+ * This parser merely copies the whole HTTP request content inside a file.
+ * It names this file: "JDL" (Job Description Language).
+ *
  * <p>
- * 	The created file is stored in the temporary upload directory ({@link UWSFileManager#TMP_UPLOAD_DIR} ; this attribute can be modified if needed).
- * 	This directory is supposed to be emptied regularly in case it is forgotten at any moment by the UWS service implementation to delete unused request files.
+ * 	The created file is stored in the temporary upload directory
+ * 	({@link UWSFileManager#getTmpDirectory()}. This directory is supposed to be
+ * 	emptied regularly in case it is forgotten at any moment by the service
+ * 	implementation to delete unused request files.
  * </p>
- * 
+ *
  * <p>
- * 	The size of the JDL is limited by the static attribute {@link #SIZE_LIMIT} before the creation of the file.
- * 	Its default value is: {@link #DEFAULT_SIZE_LIMIT}={@value #DEFAULT_SIZE_LIMIT} bytes.
+ * 	The size of the JDL is limited by the static attribute {@link #SIZE_LIMIT}
+ * 	before the creation of the file. Its default value is:
+ * 	{@link #DEFAULT_SIZE_LIMIT}={@value #DEFAULT_SIZE_LIMIT} bytes.
  * </p>
- * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.1 (11/2014)
+ *
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.4 (08/2018)
  * @since 4.1
  */
 public class NoEncodingParser implements RequestParser {
@@ -76,7 +79,7 @@ public class NoEncodingParser implements RequestParser {
 
 	/**
 	 * Build the request parser.
-	 * 
+	 *
 	 * @param fileManager	A file manager. <b>MUST NOT be NULL</b>
 	 */
 	public NoEncodingParser(final UWSFileManager fileManager){
@@ -86,10 +89,10 @@ public class NoEncodingParser implements RequestParser {
 	}
 
 	@Override
-	public Map<String,Object> parse(final HttpServletRequest request) throws UWSException{
+	public Map<String, Object> parse(final HttpServletRequest request) throws UWSException{
 		// Check the request size:
 		if (request.getContentLength() <= 0)
-			return new HashMap<String,Object>();
+			return new HashMap<String, Object>();
 		else if (request.getContentLength() > (SIZE_LIMIT < 0 ? DEFAULT_SIZE_LIMIT : SIZE_LIMIT))
 			throw new UWSException("JDL too big (>" + SIZE_LIMIT + " bytes) => Request rejected! You should see with the service administrator to extend this limit.");
 
@@ -106,7 +109,7 @@ public class NoEncodingParser implements RequestParser {
 		Object reqID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID);
 		if (reqID == null || !(reqID instanceof String))
 			reqID = (new Date()).getTime();
-		File f = new File(UWSFileManager.TMP_UPLOAD_DIR, "REQUESTBODY_" + reqID);
+		File f = new File(fileManager.getTmpDirectory(), "REQUESTBODY_" + reqID);
 		OutputStream output = null;
 		InputStream input = null;
 		long totalLength = 0;
@@ -119,13 +122,13 @@ public class NoEncodingParser implements RequestParser {
 			if (len <= 0){
 				output.close();
 				f.delete();
-				HashMap<String,Object> params = new HashMap<String,Object>(1);
+				HashMap<String, Object> params = new HashMap<String, Object>(1);
 				params.put(paramName, "");
 				return params;
 			}else if (len <= 2048 && request.getMethod() != null && request.getMethod().equalsIgnoreCase("put") && request.getContentType() != null && request.getContentType().toLowerCase().startsWith("text/plain")){
 				output.close();
 				f.delete();
-				HashMap<String,Object> params = new HashMap<String,Object>(1);
+				HashMap<String, Object> params = new HashMap<String, Object>(1);
 				params.put(paramName, new String(buffer, 0, len));
 				return params;
 			}else{
@@ -141,12 +144,14 @@ public class NoEncodingParser implements RequestParser {
 			if (input != null){
 				try{
 					input.close();
-				}catch(IOException ioe2){}
+				}catch(IOException ioe2){
+				}
 			}
 			if (output != null){
 				try{
 					output.close();
-				}catch(IOException ioe2){}
+				}catch(IOException ioe2){
+				}
 			}
 		}
 
@@ -156,7 +161,7 @@ public class NoEncodingParser implements RequestParser {
 		lob.length = totalLength;
 
 		// Create the parameters map:
-		HashMap<String,Object> parameters = new HashMap<String,Object>();
+		HashMap<String, Object> parameters = new HashMap<String, Object>();
 		parameters.put(paramName, lob);
 
 		return parameters;
