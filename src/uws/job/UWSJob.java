@@ -130,7 +130,7 @@ import uws.service.request.UploadFile;
  * </ul>
  *
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.3 (03/2018)
+ * @version	4.4 (09/2018)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -302,7 +302,7 @@ public class UWSJob extends SerializableUWSObject {
 	protected ErrorSummary errorSummary = null;
 
 	/** This is a list of all results of this job. */
-	protected Map<String,Result> results;
+	protected Map<String, Result> results;
 
 	/** List of all input parameters (UWS standard and non-standard parameters). */
 	protected final UWSParameters inputParams;
@@ -370,7 +370,7 @@ public class UWSJob extends SerializableUWSObject {
 
 		phase = new JobPhase(this);
 
-		results = new HashMap<String,Result>();
+		results = new HashMap<String, Result>();
 
 		inputParams = (params == null ? new UWSParameters() : params);
 		inputParams.init();
@@ -383,7 +383,8 @@ public class UWSJob extends SerializableUWSObject {
 		while(files.hasNext()){
 			try{
 				files.next().move(this);
-			}catch(IOException ioe){}
+			}catch(IOException ioe){
+			}
 		}
 	}
 
@@ -417,7 +418,7 @@ public class UWSJob extends SerializableUWSObject {
 
 		phase = new JobPhase(this);
 
-		results = new HashMap<String,Result>();
+		results = new HashMap<String, Result>();
 
 		inputParams = (params == null ? new UWSParameters() : params);
 		inputParams.init();
@@ -438,7 +439,8 @@ public class UWSJob extends SerializableUWSObject {
 		while(files.hasNext()){
 			try{
 				files.next().move(this);
-			}catch(IOException ioe){}
+			}catch(IOException ioe){
+			}
 		}
 	}
 
@@ -491,7 +493,7 @@ public class UWSJob extends SerializableUWSObject {
 		if (endTime > 0)
 			this.endTime = new Date(endTime);
 
-		this.results = new HashMap<String,Result>();
+		this.results = new HashMap<String, Result>();
 		if (results != null){
 			for(Result r : results){
 				if (r != null)
@@ -1964,7 +1966,7 @@ public class UWSJob extends SerializableUWSObject {
 			}
 		}
 
-		if (!fullClean){
+		if (fullClean){
 			// Clear the error file:
 			if (errorSummary != null && errorSummary.hasDetail()){
 				try{
