@@ -43,8 +43,10 @@ import uws.service.UWS;
 import uws.service.file.UWSFileManager;
 
 /**
- * Extract parameters encoded using the Content-type multipart/form-data
- * in an {@link HttpServletRequest}.
+ * Extract parameters encoded using the Content-type
+ * <code>multipart/form-data</code> in an {@link HttpServletRequest}.
+ *
+ * <h4>Uploaded file storage</h4>
  *
  * <p>
  * 	The created file(s) is(are) stored in the temporary upload directory
@@ -53,11 +55,26 @@ import uws.service.file.UWSFileManager;
  * 	implementation to delete unused request files.
  * </p>
  *
+ * <h4>Upload limits</h4>
+ *
  * <p>
- * 	The size of the full request body is limited by the static attribute
- * 	{@link #SIZE_LIMIT} before the creation of the file. Its default value is:
- * 	{@link #DEFAULT_SIZE_LIMIT}={@value #DEFAULT_SIZE_LIMIT} bytes.
+ * 	The size of the full request body as well as the size of a single uploaded
+ * 	file are both limited. To get and/or change these limits, use the functions:
  * </p>
+ * <ul>
+ * 	<li><i>single file limit:</i> {@link #getMaxFileSize()} and
+ * 	    {@link #setMaxFileSize(long)}</li>
+ * 	<li><i>multipart request limit:</i> {@link #getMaxRequestSize()} and
+ * 	    {@link #setMaxRequestSize(long)}</li>
+ * </ul>
+ * <p>
+ * 	By default, the limit for an uploaded file is
+ * 	{@value #DEFAULT_FILE_SIZE_LIMIT} (i.e. unlimited) and the limit for the
+ * 	whole request (i.e. all uploaded files together + HTTP header) is
+ * 	{@value #DEFAULT_SIZE_LIMIT} (i.e. unlimited}).
+ * </p>
+ *
+ * <h4>Parameter consumption</h4>
  *
  * <p>
  * 	By default, this {@link RequestParser} overwrite parameter occurrences in
@@ -67,16 +84,28 @@ import uws.service.file.UWSFileManager;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 4.4 (08/2018)
- * @since 4.4
+ * @version 4.4 (09/2018)
+ * @since 4.1
  */
 public class MultipartParser implements RequestParser {
 
 	/** HTTP content-type for HTTP request formated in multipart. */
 	public static final String EXPECTED_CONTENT_TYPE = "multipart/form-data";
 
-	/** Default maximum allowed size for an HTTP request content: 10 MiB. */
-	public static final int DEFAULT_SIZE_LIMIT = 10 * 1024 * 1024;
+	/** Default maximum allowed size for a single uploaded file:
+	 * -1 (i.e. unlimited).
+	 * @since 4.4 */
+	public static final int DEFAULT_FILE_SIZE_LIMIT = -1;
+
+	/** Default maximum allowed size for an HTTP request content:
+	 * -1 (i.e. unlimited). */
+	public static final int DEFAULT_SIZE_LIMIT = -1;
+
+	/** Size threshold (in bytes) for an individual file before being stored on
+	 * disk. Below this threshold, the file is only stored in memory.
+	 * <p><i><b>Note:</b> By default, set to 10 kiB.</i></p>
+	 * @since 4.4 */
+	protected final static int SIZE_BEFORE_DISK_STORAGE = 10 * 1024;
 
 	/** Maximum allowed size for an HTTP request content. Over this limit, an
 	 * exception is thrown and the request is aborted.
@@ -90,7 +119,10 @@ public class MultipartParser implements RequestParser {
 	 * 	This limit is expressed in bytes and can not be negative.
 	 *  Its smallest possible value is 0. If the set value is though negative,
 	 *  it will be ignored and {@link #DEFAULT_SIZE_LIMIT} will be used instead.
-	 * </i></p> */
+	 * </i></p>
+	 *
+	 *  @deprecated Since 4.4 ; barely used and never worked (with COS). */
+	@Deprecated
 	public static int SIZE_LIMIT = DEFAULT_SIZE_LIMIT;
 
 	/** Indicates whether this parser should allow inline files or not. */
@@ -145,6 +177,33 @@ public class MultipartParser implements RequestParser {
 	 *                   	eventual upload. <b>MUST NOT be NULL</b>
 	 */
 	protected MultipartParser(final boolean uploadEnabled, final UWSFileManager fileManager){
+		this(uploadEnabled, fileManager, DEFAULT_FILE_SIZE_LIMIT, DEFAULT_SIZE_LIMIT);
+	}
+
+	/**
+	 * Build a {@link MultipartParser}.
+	 *
+	 * <p>
+	 * 	If the first parameter is <i>false</i>, then when an upload
+	 * 	(i.e. submitted inline files) is detected, an exception is thrown
+	 * 	by {@link #parse(HttpServletRequest)} which cancels immediately the
+	 * 	request.
+	 * </p>
+	 *
+	 * @param uploadEnabled		<i>true</i> to allow uploads (i.e. inline files),
+	 *                     		<i>false</i> otherwise. If <i>false</i>, the two
+	 *                     		other parameters are useless.
+	 * @param fileManager		The file manager to use in order to store any
+	 *                   		eventual upload. <b>MUST NOT be NULL</b>
+	 * @param maxFileSize		Maximum size of a single upload file (in bytes).
+	 *                   		<i>A negative value for "unlimited".</i>
+	 * @param maxRequestSize	Maximum size of a whole multipart request (in
+	 *                      	bytes).
+	 *                   		<i>A negative value for "unlimited".</i>
+	 *
+	 * @since 4.4
+	 */
+	protected MultipartParser(final boolean uploadEnabled, final UWSFileManager fileManager, final long maxFileSize, final long maxRequestSize){
 		if (uploadEnabled && fileManager == null)
 			throw new NullPointerException("Missing file manager although the upload capability is enabled => can not create a MultipartParser!");
 
@@ -157,9 +216,67 @@ public class MultipartParser implements RequestParser {
 		// Configure a repository:
 		factory.setRepository(fileManager.getTmpDirectory());
 
-		// Create a new file upload handler
+		/* Set the maximum size of an in-memory file before being stored on the
+		 * disk: */
+		factory.setSizeThreshold(SIZE_BEFORE_DISK_STORAGE);
+
+		// Create a new file upload handler:
 		fileUpload = new ServletFileUpload(factory);
-		fileUpload.setFileSizeMax(SIZE_LIMIT);
+
+		// Set the maximum size for each single file:
+		fileUpload.setFileSizeMax(maxFileSize);
+
+		/* Set the maximum size for a whole multipart HTTP request
+		 * (i.e. all files together): */
+		fileUpload.setSizeMax(maxRequestSize);
+	}
+
+	/**
+	 * Get the maximum size (in bytes) of a single uploaded file.
+	 *
+	 * @return	Maximum upload file size (in bytes),
+	 *        	or -1 if no limit.
+	 *
+	 * @since 4.4
+	 */
+	public final long getMaxFileSize(){
+		return fileUpload.getFileSizeMax();
+	}
+
+	/**
+	 * Set the maximum size (in bytes) of a single uploaded file.
+	 *
+	 * @param maxFileSize	New maximum upload file size (in bytes).
+	 *                      If <code>-1</code>, then there will be no limit.
+	 *
+	 * @since 4.4
+	 */
+	public void setMaxFileSize(final long maxFileSize){
+		fileUpload.setFileSizeMax(maxFileSize);
+	}
+
+	/**
+	 * Get the maximum size (in bytes) of a whole multipart request.
+	 *
+	 * @return	Maximum multipart request size (in bytes),
+	 *        	or -1 if no limit.
+	 *
+	 * @since 4.4
+	 */
+	public final long getMaxRequestSize(){
+		return fileUpload.getSizeMax();
+	}
+
+	/**
+	 * Set the maximum size (in bytes) of a whole multipart request.
+	 *
+	 * @param maxRequestSize	New maximum multipart request size (in bytes).
+	 *                      	If <code>-1</code>, then there will be no limit.
+	 *
+	 * @since 4.4
+	 */
+	public void setMaxRequestSize(final long maxRequestSize){
+		fileUpload.setSizeMax((maxRequestSize < 0) ? -1 : maxRequestSize);
 	}
 
 	@Override
@@ -192,9 +309,9 @@ public class MultipartParser implements RequestParser {
 				item.delete();
 			}
 		}catch(FileUploadException fue){
-			throw new UWSException(UWSException.BAD_REQUEST, fue, "Incorrect HTTP request: " + fue.getMessage() + ".");
+			throw new UWSException(UWSException.BAD_REQUEST, fue, "Incorrect HTTP request: " + fue.getMessage() + " (server limits: each file/parameter <= " + (fileUpload.getFileSizeMax() <= 0 ? "unlimited" : fileUpload.getFileSizeMax() + " bytes") + " and the whole request <= " + (fileUpload.getSizeMax() <= 0 ? "unlimited" : fileUpload.getSizeMax()) + " bytes)");
 		}catch(IOException ioe){
-			throw new UWSException(UWSException.BAD_REQUEST, ioe, "Incorrect HTTP request: " + ioe.getMessage() + ".");
+			throw new UWSException(UWSException.BAD_REQUEST, ioe, "Incorrect HTTP request: " + ioe.getMessage());
 		}catch(IllegalArgumentException iae){
 			String confError = iae.getMessage();
 			if (fileManager.getTmpDirectory() == null)

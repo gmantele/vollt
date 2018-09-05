@@ -13,12 +13,14 @@ import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_COORD_SYS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_DEFAULT_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
 import static tap.config.TAPConfiguration.KEY_LOGGER;
 import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
 import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
 import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
+import static tap.config.TAPConfiguration.KEY_MAX_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_METADATA;
 import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
 import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
@@ -101,7 +103,8 @@ public class TestConfigurableServiceConnection {
 			badVotFormat6Prop, unknownFormatProp, maxAsyncProp,
 			negativeMaxAsyncProp, notIntMaxAsyncProp, defaultOutputLimitProp,
 			maxOutputLimitProp, bothOutputLimitGoodProp, bothOutputLimitBadProp,
-			syncFetchSizeProp, notIntSyncFetchSizeProp,
+			defaultUploadLimitProp, maxUploadLimitProp, bothUploadLimitGoodProp,
+			bothUploadLimitBadProp, syncFetchSizeProp, notIntSyncFetchSizeProp,
 			negativeSyncFetchSizeProp, notIntAsyncFetchSizeProp,
 			negativeAsyncFetchSizeProp, asyncFetchSizeProp, userIdentProp,
 			notClassPathUserIdentProp, coordSysProp, noneCoordSysProp,
@@ -240,6 +243,20 @@ public class TestConfigurableServiceConnection {
 		bothOutputLimitBadProp = (Properties)validProp.clone();
 		bothOutputLimitBadProp.setProperty(KEY_DEFAULT_OUTPUT_LIMIT, "1000");
 		bothOutputLimitBadProp.setProperty(KEY_MAX_OUTPUT_LIMIT, "100");
+
+		defaultUploadLimitProp = (Properties)validProp.clone();
+		defaultUploadLimitProp.setProperty(KEY_DEFAULT_UPLOAD_LIMIT, "100r");
+
+		maxUploadLimitProp = (Properties)validProp.clone();
+		maxUploadLimitProp.setProperty(KEY_MAX_UPLOAD_LIMIT, "1000R");
+
+		bothUploadLimitGoodProp = (Properties)validProp.clone();
+		bothUploadLimitGoodProp.setProperty(KEY_DEFAULT_UPLOAD_LIMIT, "100R");
+		bothUploadLimitGoodProp.setProperty(KEY_MAX_UPLOAD_LIMIT, "10kB");
+
+		bothUploadLimitBadProp = (Properties)validProp.clone();
+		bothUploadLimitBadProp.setProperty(KEY_DEFAULT_UPLOAD_LIMIT, "1000r");
+		bothUploadLimitBadProp.setProperty(KEY_MAX_UPLOAD_LIMIT, "100R");
 
 		syncFetchSizeProp = (Properties)validProp.clone();
 		syncFetchSizeProp.setProperty(KEY_SYNC_FETCH_SIZE, "50");
@@ -843,6 +860,62 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have succeeded because the default output limit is set automatically to the maximum one if bigger! \nCaught exception: " + getPertinentMessage(e));
 		}
 
+		// Test with no upload limit specified:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(validProp);
+			assertEquals(1000000, connection.getUploadLimit()[1]);
+			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
+			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
+			assertEquals(connection.getUploadLimitType()[1], connection.getUploadLimitType()[0]);
+		}catch(Exception e){
+			fail("This MUST have succeeded because providing no upload limit is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with only a set default upload limit:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(defaultUploadLimitProp);
+			assertEquals(100, connection.getUploadLimit()[1]);
+			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
+			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
+			assertEquals(connection.getUploadLimitType()[1], connection.getUploadLimitType()[0]);
+		}catch(Exception e){
+			fail("This MUST have succeeded because setting the default upload limit is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with only a set maximum upload limit:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(maxUploadLimitProp);
+			assertEquals(1000, connection.getUploadLimit()[1]);
+			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
+			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
+			assertEquals(connection.getUploadLimitType()[1], connection.getUploadLimitType()[0]);
+		}catch(Exception e){
+			fail("This MUST have succeeded because setting only the maximum upload limit is valid! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with both a default and a maximum upload limits where default <= max:
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(bothUploadLimitGoodProp);
+			assertEquals(10, connection.getUploadLimit()[1]);
+			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
+			assertEquals(LimitUnit.kilobytes, connection.getUploadLimitType()[1]);
+			assertEquals(connection.getUploadLimitType()[1], connection.getUploadLimitType()[0]);
+		}catch(Exception e){
+			fail("This MUST have succeeded because the default upload limit is less or equal the maximum one! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Test with both a default and a maximum output limits BUT where default > max:
+		/* In a such case, the default value is set silently to the maximum one. */
+		try{
+			ServiceConnection connection = new ConfigurableServiceConnection(bothUploadLimitBadProp);
+			assertEquals(100, connection.getUploadLimit()[1]);
+			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
+			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
+			assertEquals(connection.getUploadLimitType()[1], connection.getUploadLimitType()[0]);
+		}catch(Exception e){
+			fail("This MUST have succeeded because the default upload limit is set automatically to the maximum one if bigger! \nCaught exception: " + getPertinentMessage(e));
+		}
+
 		// Test with a not integer sync. fetch size:
 		try{
 			new ConfigurableServiceConnection(notIntSyncFetchSizeProp);
@@ -1280,7 +1353,7 @@ public class TestConfigurableServiceConnection {
 		}
 
 		@Override
-		public JobOwner restoreUser(String id, String pseudo, Map<String,Object> otherData) throws UWSException{
+		public JobOwner restoreUser(String id, String pseudo, Map<String, Object> otherData) throws UWSException{
 			return everybody;
 		}
 
@@ -1307,13 +1380,15 @@ public class TestConfigurableServiceConnection {
 		}
 
 		@Override
-		public void freeConnection(final DBConnection conn){}
+		public void freeConnection(final DBConnection conn){
+		}
 
 		@Override
 		public void destroy(){
 			try{
 				dbConn.getInnerConnection().close();
-			}catch(Exception ex){}
+			}catch(Exception ex){
+			}
 		}
 
 	}
@@ -1340,13 +1415,15 @@ public class TestConfigurableServiceConnection {
 		}
 
 		@Override
-		public void freeConnection(final DBConnection conn){}
+		public void freeConnection(final DBConnection conn){
+		}
 
 		@Override
 		public void destroy(){
 			try{
 				dbConn.getInnerConnection().close();
-			}catch(Exception ex){}
+			}catch(Exception ex){
+			}
 		}
 
 	}
@@ -1369,10 +1446,12 @@ public class TestConfigurableServiceConnection {
 		}
 
 		@Override
-		public void freeConnection(final DBConnection conn){}
+		public void freeConnection(final DBConnection conn){
+		}
 
 		@Override
-		public void destroy(){}
+		public void destroy(){
+		}
 
 	}
 

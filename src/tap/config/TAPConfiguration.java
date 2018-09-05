@@ -31,13 +31,17 @@ import tap.TAPFactory;
 import tap.backup.DefaultTAPBackupManager;
 
 /**
- * <p>Utility class gathering tool functions and properties' names useful to deal with a TAP configuration file.</p>
+ * Utility class gathering tool functions and properties' names useful to
+ * deal with a TAP configuration file.
  *
- * <p><i>This class implements the Design Pattern "Utility": no instance of this class can be created, it can not be extended,
- * and it must be used only thanks to its static classes and attributes.</i></p>
+ * <p><i>
+ * 	This class implements the Design Pattern "Utility": no instance of this
+ * 	class can be created, it can not be extended, and it must be used only
+ * 	thanks to its static classes and attributes.
+ * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (07/2018)
+ * @version 2.3 (09/2018)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -234,17 +238,42 @@ public final class TAPConfiguration {
 	public final static String KEY_SERVICE_DESCRIPTION = "service_description";
 
 	/* UPLOAD KEYS */
-	/** Name/Key of the property indicating whether the UPLOAD feature must be enabled or not.
-	 * By default, this feature is disabled. */
+	/** Name/Key of the property indicating whether the UPLOAD feature must be
+	 * enabled or not. By default, this feature is disabled. */
 	public final static String KEY_UPLOAD_ENABLED = "upload_enabled";
-	/** Name/Key of the property specifying the default limit (in rows or bytes) on the uploaded VOTable(s). */
+	/** Name/Key of the property specifying the default limit (in rows or bytes)
+	 * on the uploaded VOTable(s).
+	 * @deprecated	Since 2.3, use the property {@value #KEY_MAX_UPLOAD_LIMIT}
+	 *            	instead. */
+	@Deprecated
 	public final static String KEY_DEFAULT_UPLOAD_LIMIT = "upload_default_db_limit";
-	/** Name/Key of the property specifying the maximum limit (in rows or bytes) on the uploaded VOTable(s). */
+	/** Name/Key of the property specifying the maximum limit (in rows or bytes)
+	 * on the uploaded VOTable(s). */
 	public final static String KEY_MAX_UPLOAD_LIMIT = "upload_max_db_limit";
-	/** Name/Key of the property specifying the maximum size of all VOTable(s) uploaded in a query. */
+	/** Default value of the property {@value #KEY_MAX_UPLOAD_LIMIT} =
+	 * {@value #DEFAULT_MAX_UPLOAD_LIMIT}.
+	 * @since 2.3 */
+	public final static String DEFAULT_MAX_UPLOAD_LIMIT = "1000000r";
+	/** Name/Key of the property specifying the maximum size of all VOTable(s)
+	 * uploaded in a query.
+	 * @deprecated	Since 2.3, use the property {@value #KEY_MAX_UPLOAD_LIMIT}
+	 *            	and {@value #KEY_MAX_REQUEST_LIMIT} instead. */
+	@Deprecated
 	public final static String KEY_UPLOAD_MAX_FILE_SIZE = "upload_max_file_size";
-	/** Default value of the property {@link #KEY_UPLOAD_MAX_FILE_SIZE}: {@value #DEFAULT_UPLOAD_MAX_FILE_SIZE}.  */
+	/** Default value of the property {@value #KEY_UPLOAD_MAX_FILE_SIZE} =
+	 * {@value #DEFAULT_UPLOAD_MAX_FILE_SIZE}.
+	 * @deprecated	Since 2.3, use the property {@value #KEY_MAX_UPLOAD_LIMIT}
+	 *            	and {@value #KEY_MAX_REQUEST_LIMIT} instead. */
+	@Deprecated
 	public final static int DEFAULT_UPLOAD_MAX_FILE_SIZE = Integer.MAX_VALUE;
+	/** Name/Key of the property specifying the maximum size of a whole HTTP
+	 * Multipart Request.
+	 * @since 2.3 */
+	public final static String KEY_UPLOAD_MAX_REQUEST_SIZE = "upload_max_request_size";
+	/** Default value of the property {@value #KEY_UPLOAD_MAX_REQUEST_SIZE} =
+	 * {@value #DEFAULT_UPLOAD_MAX_REQUEST_SIZE}.
+	 * @since 2.3 */
+	public final static int DEFAULT_UPLOAD_MAX_REQUEST_SIZE = 250 * 1024 * 1024;
 
 	/* OUTPUT KEYS */
 	/** Name/Key of the property specifying the list of all result output formats to support.
@@ -525,41 +554,97 @@ public final class TAPConfiguration {
 	}
 
 	/**
-	 * <p>Lets parsing a limit (for output, upload, ...) with its numeric value and its unit.</p>
+	 * Lets parsing a limit (for output, upload, ...) with its numeric value
+	 * and its unit.
+	 *
 	 * <p>
 	 * 	Here is the expected syntax: num_val[unit].
-	 * 	Where unit is optional and should be one of the following values: r or R, B, kB, MB, GB.
-	 * 	If the unit is not specified, it is set by default to ROWS.
+	 * 	Where unit is optional and should be one of the following values:
+	 * 	r or R, B, kB, MB, GB. If the unit is not specified, it is set by
+	 * 	default to ROWS.
 	 * </p>
-	 * <p><i>Note: If the value is strictly less than 0 (whatever is the unit), the returned value will be -1.</i></p>
 	 *
-	 * @param value				Property value (must follow the limit syntax: num_val[unit] ; ex: 20kB or 2000 (for 2000 rows)).
+	 * <p><i>Note:
+	 * 	If the value is strictly less than 0 (whatever is the unit), the
+	 * 	returned value will be -1.
+	 * </i></p>
+	 *
+	 * @param value				Property value (must follow the limit syntax:
+	 *             				num_val[unit] ; ex: 20kB or 2000
+	 *             				(for 2000 rows)).
 	 * @param propertyName		Name of the property which specify the limit.
-	 * @param areBytesAllowed	Tells whether the unit BYTES is allowed. If not and a BYTES unit is encountered, then an exception is thrown.
+	 * @param areBytesAllowed	Tells whether the unit BYTES is allowed. If not
+	 *                       	and a BYTES unit is encountered, then an
+	 *                       	exception is thrown.
 	 *
-	 * @return	An array with always 2 items: [0]=numeric value (of type Integer), [1]=unit (of type {@link LimitUnit}).
+	 * @return	An array with always 2 items:
+	 *        	[0]=numeric value (of type Integer),
+	 *        	[1]=unit (of type {@link LimitUnit}).
 	 *
-	 * @throws TAPException	If the syntax is incorrect or if a not allowed unit has been used.
+	 * @throws TAPException	If the syntax is incorrect
+	 *                     	or if a not allowed unit has been used.
+	 *
+	 * @see #parseLimit(String, String, boolean, boolean)
 	 */
 	public final static Object[] parseLimit(String value, final String propertyName, final boolean areBytesAllowed) throws TAPException{
+		return parseLimit(value, propertyName, areBytesAllowed, false);
+	}
+
+	/**
+	 * Lets parsing a limit (for output, upload, ...) with its numeric value
+	 * and its unit.
+	 *
+	 * <p>
+	 * 	Here is the expected syntax: num_val[unit].
+	 * 	Where unit is optional and should be one of the following values:
+	 * 	r or R, B, kB, MB, GB. If the unit is not specified, it is set by
+	 * 	default to ROWS.
+	 * </p>
+	 *
+	 * <p><i>Note:
+	 * 	If the value is strictly less than 0 (whatever is the unit), the
+	 * 	returned value will be -1.
+	 * </i></p>
+	 *
+	 * @param value				Property value (must follow the limit syntax:
+	 *             				num_val[unit] ; ex: 20kB or 2000
+	 *             				(for 2000 rows)).
+	 * @param propertyName		Name of the property which specify the limit.
+	 * @param areBytesAllowed	Tells whether the unit BYTES is allowed. If not
+	 *                       	and a BYTES unit is encountered, then an
+	 *                       	exception is thrown.
+	 * @param longValue			<code>true</code> to get the limit as a long,
+	 *                 			<code>false</code> to get it as an int.
+	 *
+	 * @return	An array with always 2 items:
+	 *        	[0]=numeric value (of type Integer or Long in function of the
+	 *        	    parameter longValue),
+	 *        	[1]=unit (of type {@link LimitUnit}).
+	 *
+	 * @throws TAPException	If the syntax is incorrect
+	 *                     	or if a not allowed unit has been used.
+	 *
+	 * @since 2.3
+	 */
+	public final static Object[] parseLimit(String value, final String propertyName, final boolean areBytesAllowed, final boolean longValue) throws TAPException{
 		// Remove any whitespace inside or outside the numeric value and its unit:
 		if (value != null)
 			value = value.replaceAll("\\s", "");
 
 		// If empty value, return an infinite limit:
 		if (value == null || value.length() == 0)
-			return new Object[]{ -1, LimitUnit.rows };
+			return (longValue ? new Object[]{ new Long(-1L), LimitUnit.rows } : new Object[]{ new Integer(-1), LimitUnit.rows });
 
 		// A. Parse the string from the end in order to extract the unit part.
 		//    The final step of the loop is the extraction of the numeric value, when the first digit is encountered.
-		int numValue = -1;
+		long numValue = -1;
 		LimitUnit unit;
 		StringBuffer buf = new StringBuffer();
 		for(int i = value.length() - 1; i >= 0; i--){
 			// if a digit, extract the numeric value:
 			if (value.charAt(i) >= '0' && value.charAt(i) <= '9'){
 				try{
-					numValue = Integer.parseInt(value.substring(0, i + 1));
+					numValue = Long.parseLong(value.substring(0, i + 1));
 					break;
 				}catch(NumberFormatException nfe){
 					throw new TAPException("Integer expected for the property " + propertyName + " for the substring \"" + value.substring(0, i + 1) + "\" of the whole value: \"" + value + "\"!");
@@ -615,7 +700,10 @@ public final class TAPConfiguration {
 			}
 		}
 
-		return new Object[]{ ((numValue < 0) ? -1 : numValue), unit };
+		if (numValue < 0)
+			return (longValue ? new Object[]{ new Long(-1L), unit } : new Object[]{ new Integer(-1), unit });
+		else
+			return (longValue ? new Object[]{ new Long(numValue), unit } : new Object[]{ new Integer((int)numValue), unit });
 	}
 
 }

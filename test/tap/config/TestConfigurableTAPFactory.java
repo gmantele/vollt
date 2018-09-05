@@ -183,7 +183,8 @@ public class TestConfigurableTAPFactory {
 				try{
 					((JDBCConnection)connection).getInnerConnection().close();
 					connection = null;
-				}catch(SQLException se){}
+				}catch(SQLException se){
+				}
 			}
 		}
 
@@ -199,7 +200,8 @@ public class TestConfigurableTAPFactory {
 				try{
 					((JDBCConnection)connection).getInnerConnection().close();
 					connection = null;
-				}catch(SQLException se){}
+				}catch(SQLException se){
+				}
 			}
 		}
 
@@ -344,11 +346,11 @@ public class TestConfigurableTAPFactory {
 		// User backup:
 		try{
 			UWSService uws;
-			UserIdentifier userIdent = new UserIdentifier(){
+			UserIdentifier userIdent = new UserIdentifier() {
 				private static final long serialVersionUID = 1L;
 
 				@Override
-				public JobOwner restoreUser(String id, String pseudo, Map<String,Object> otherData) throws UWSException{
+				public JobOwner restoreUser(String id, String pseudo, Map<String, Object> otherData) throws UWSException{
 					return null;
 				}
 
@@ -445,7 +447,7 @@ public class TestConfigurableTAPFactory {
 		}
 
 		@Override
-		public int[] getUploadLimit(){
+		public long[] getUploadLimit(){
 			return null;
 		}
 
@@ -455,8 +457,8 @@ public class TestConfigurableTAPFactory {
 		}
 
 		@Override
-		public int getMaxUploadSize(){
-			return 0;
+		public long getMaxUploadSize(){
+			return 0L;
 		}
 
 		@Override

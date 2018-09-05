@@ -660,7 +660,7 @@ public class TAP implements VOSIResource {
 		// Upload limits
 		if (service.uploadEnabled()){
 			// Write upload limits:
-			int[] uploadLimit = service.getUploadLimit();
+			long[] uploadLimit = service.getUploadLimit();
 			LimitUnit[] uploadLimitType = service.getUploadLimitType();
 			if (uploadLimit != null && uploadLimit.length >= 2 && uploadLimitType != null && uploadLimitType.length >= 2){
 				if (uploadLimit[0] > -1 || uploadLimit[1] > -1){

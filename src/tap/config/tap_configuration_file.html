@@ -44,6 +44,9 @@
 			td:nth-child(5) {
 				font-family: monospace;
 			}
+			tr.deprecated td:first-child {
+				text-decoration: line-through;
+			}
 			table ul  { list-style-position:inside; padding: 0; margin: 0; }
 			table p   { margin: 0; padding: 0; text-align: left; text-indent: 0; }
 			table p+p { padding-top: .5em; }
@@ -650,25 +653,27 @@
 				<td></td>
 				<td>boolean</td>
 				<td>
-					<p>Tells whether the Upload must be enabled. If enabled, files can be uploaded in the file_root_path, 
-					the corresponding tables can be added inside the UPLOAD_SCHEMA of the database, queried and then deleted.</p>
-					<p><i>By default, the Upload is disabled: upload_enabled=false.</i></p>
+					<p>Tells whether the Upload must be enabled. If enabled, files can be uploaded in the <code>file_root_path</code>, 
+					the corresponding tables can be added inside the <code>UPLOAD_SCHEMA</code> of the database, queried and then deleted.</p>
+					<p><i><b>Note:</b> Before being stored in the directory file_root_path, it is first
+					uploaded in the temporary directory (defined in the JVM ; generally
+					<code>/tmp</code> on Unix system and <code>c:\temp</code> ; it can be changed at start of the
+					JVM with the property <code>java.io.tmpdir</code>). When the upload is complete,
+					the file is finally moved in <code>file_root_path</code>.</i></p>
+					<p><i>By default, the Upload is disabled: <code>upload_enabled=false</code>.</i></p>
 				</td>
 				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
 			</tr>
-			<tr class="optional">
+			<tr class="deprecated optional" title="Deprecated since 2.3. Use upload_max_db_limit instead.">
 				<td class="done">upload_default_db_limit</td>
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>Default limit for the number of uploaded records that can be inserted inside the database. The prefix "default" means here that this value will be set if the client does not provide one.</p>
-					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case)
-					or by nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
-					Here, unit is case sensitive. No other storage unit is allowed.</p>
-					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
-					<p><b>Warning!</b> Obviously this limit MUST be less or equal than upload_max_db_limit, and MUST be of the same type as it.
-					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
-					<p><em>Default: <code>upload_default_db_limit=-1</code> (no restriction)</em></p>
+					<p>Default limit for the number of uploaded records that can be inserted inside the database.</p>
+					<p><em>This property is DEPRECATED. You should use <code>upload_max_db_limit</code> instead.
+					If it is set anyway, its value will be used as value for
+					<code>upload_max_db_limit</code> ONLY IF this latter is not set.</em></p>
+					<p><em>Default: <code>upload_default_db_limit=-1</code> (i.e. unlimited)</em></p>
 				</td>
 				<td><ul><li>-1 <em>(default)</em></li><li>20</li><li>20r</li><li>20R</li><li>200kB</li></ul></td>
 			</tr>
@@ -677,30 +682,63 @@
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>Maximum limit for the number of uploaded records that can be inserted inside the database. The prefix "max" means here that the client can not set a limit greater than this one.</p>
+					<p>Maximum limit for the number of uploaded records that can be inserted inside the database.</p>
 					<p>This limit can be expressed with 2 types: rows or bytes. For rows, you just have to suffix the value by a "r" (upper- or lower-case),
 					with nothing (by default, nothing will mean "rows"). For bytes, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
 					Here, unit is case sensitive. No other storage unit is allowed.</p>
 					<p>A negative value means there is no restriction on this limit. Float values are not allowed.</p>
-					<p><b>Warning!</b> Obviously this limit MUST be greater or equal than upload_default_db_limit, and MUST be of the same type as it.
-					If the chosen type is rows, this limit MUST also be strictly less than upload_max_file_size.</p>
-					<p><em>Default: <code>upload_max_db_limit=-1</code> (no restriction)</em></p>
+					<p><b>Important note:</b> the specified limit will be checked at a different step of
+					a query processing in function of its unit.
+					If expressed in bytes, the file size will be checked when
+					uploading the file on disk. Thus, when the uploading file
+					starts to exceed the set limit, it will be no longer uploaded
+					and the whole request will be immediately rejected.
+					On the contrary, if the limit is expressed in rows, it will
+					be tested only when ingesting the whole uploaded file
+					(whatever is its size) in the database ; so, after it has been
+					uploaded. As soon as, the rows insertion in the database
+					exceeds the limit, the query is rejected.
+					Consequently, a very huge file could potentially be
+					completely uploaded before being rejected if this property is
+					expressed in rows. Then, it is very important to set the
+					property <code>upload_max_request_size</code> limiting the size of a
+					whole HTTP request in order to better preserve your machine
+					from running out of disk space.</p>
+					<p><em>Default: <code>upload_max_db_limit=1000000r</code> (i.e. 1 million rows)</em></p>
 				</td>
-				<td><ul><li>-1 <em>(default)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
+				<td><ul><li>1000000r <em>(default)</em></li><li>-1 <em>(unlimited)</em></li><li>10000</li><li>10000r</li><li>10000R</li><li>1MB</li></ul></td>
 			</tr>
-			<tr class="optional">
+			<tr class="deprecated optional" title="Deprecated since 2.3. Use upload_max_db_limit and upload_max_request_size instead.">
 				<td class="done">upload_max_file_size</td>
 				<td></td>
 				<td>text</td>
 				<td>
 					<p>Maximum allowed size for the uploaded file.</p>
-					<p>This limit MUST be expressed in bytes. Thus, you have to suffix the numeric value by "B", "kB", "MB" or "GB".
-					Here, unit is case sensitive. No other storage unit is allowed.</p>
-					<p><b>Warning!</b> When the upload is enabled, there must be a maximum file size. Here, no "unlimited" value is possible ; 0 and any negative value are not allowed.</p>
-					<p><b>Warning!</b> In function of the chosen upload_max_db_limit type, upload_max_file_size MUST be greater in order to figure out the file metadata part.</p>
-					<p><em>Default: <code>upload_max_file_size=2147483647B</code> (~2GB ; maximum possible value)</em></p>
+					<p><em>This property is DEPRECATED. You should use <code>upload_max_db_limit</code> with a value
+					expressed in bytes instead. If it is set anyway, its value will be used as
+					value for <code>upload_max_db_limit</code> ONLY IF this latter and
+					<code>upload_default_db_limit</code> are not set.</em></p>
+					<p><em>Default: <code>upload_max_file_size=-1</code> (i.e. unlimited)</em></p>
 				</td>
-				<td><ul><li>2147483647B <em>(default)</em></li><li>2MB</li></ul></td>
+				<td><ul><li>-1 <em>(default)</em></li><li>2147483647B</li><li>2MB</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">upload_max_request_size</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>Maximum allowed size for a whole HTTP multipart request (i.e. request with uploads).</p>
+					<p>This limit MUST be expressed in bytes. Thus, you have to suffix the numeric
+					value by "B", "kB", "MB" or "GB". Here, unit is case sensitive. No other
+					storage unit is allowed.</p>
+					<p>A negative value means there is no restriction on this limit. Float values are
+					not allowed.</p>
+					<p><b>Warning:</b> It is highly recommended to set this property in order to prevent
+					exceeding the disk storage space/quota (especially if
+					<code>upload_max_db_limit</code> is not set or is set in rows).</p> 
+					<p><em>Default: <code>upload_max_request_size=250MB</code></em></p>
+				</td>
+				<td><ul><li>250MB <em>(default)</em></li><li>-1 <em>(unlimited)</em></li></ul></td>
 			</tr>
 			
 			<tr><td colspan="5">User identification</td></tr>

@@ -17,7 +17,8 @@ public class ServiceConnection4Test implements ServiceConnection {
 	private TAPFactory factory = null;
 	private UWSFileManager fileManager = null;
 
-	public ServiceConnection4Test(){}
+	public ServiceConnection4Test(){
+	}
 
 	public ServiceConnection4Test(final TAPMetadata metadata, final UWSFileManager fileManager){
 		this.metadata = metadata;
@@ -26,12 +27,12 @@ public class ServiceConnection4Test implements ServiceConnection {
 
 	@Override
 	public int[] getOutputLimit(){
-		return new int[]{1000000,1000000};
+		return new int[]{ 1000000, 1000000 };
 	}
 
 	@Override
 	public LimitUnit[] getOutputLimitType(){
-		return new LimitUnit[]{LimitUnit.bytes,LimitUnit.bytes};
+		return new LimitUnit[]{ LimitUnit.bytes, LimitUnit.bytes };
 	}
 
 	@Override
@@ -75,7 +76,7 @@ public class ServiceConnection4Test implements ServiceConnection {
 	}
 
 	@Override
-	public int[] getUploadLimit(){
+	public long[] getUploadLimit(){
 		return null;
 	}
 
@@ -85,8 +86,8 @@ public class ServiceConnection4Test implements ServiceConnection {
 	}
 
 	@Override
-	public int getMaxUploadSize(){
-		return 0;
+	public long getMaxUploadSize(){
+		return 0L;
 	}
 
 	@Override
@@ -144,7 +145,8 @@ public class ServiceConnection4Test implements ServiceConnection {
 	}
 
 	@Override
-	public void setAvailable(boolean isAvailable, String message){}
+	public void setAvailable(boolean isAvailable, String message){
+	}
 
 	@Override
 	public int[] getFetchSize(){

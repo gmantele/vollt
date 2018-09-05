@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,6 +29,7 @@ import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.QueryChecker;
 import adql.query.ADQLQuery;
+import tap.ServiceConnection.LimitUnit;
 import tap.db.DBConnection;
 import tap.metadata.TAPSchema;
 import tap.parameters.TAPParameters;
@@ -63,7 +64,7 @@ import uws.service.request.RequestParser;
  * </ul>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.2 (09/2017)
+ * @version 2.3 (09/2018)
  */
 public abstract class TAPFactory implements UWSFactory {
 
@@ -457,7 +458,7 @@ public abstract class TAPFactory implements UWSFactory {
 	 * @see #createTAPParameters(Map)
 	 */
 	@Override
-	public final UWSParameters createUWSParameters(Map<String,Object> params) throws UWSException{
+	public final UWSParameters createUWSParameters(Map<String, Object> params) throws UWSException{
 		try{
 			return createTAPParameters(params);
 		}catch(TAPException te){
@@ -481,11 +482,18 @@ public abstract class TAPFactory implements UWSFactory {
 	 *
 	 * @throws TAPException	If any error occurs while creating the {@link TAPParameters} object.
 	 */
-	public abstract TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException;
+	public abstract TAPParameters createTAPParameters(final Map<String, Object> params) throws TAPException;
 
 	@Override
 	public RequestParser createRequestParser(final UWSFileManager fileManager) throws UWSException{
-		return new TAPRequestParser(fileManager);
+		/* Fetch the maximum size for each uploaded file:
+		 * ....only if set to a positive value and expressed in bytes. */
+		long maxFileSize = -1;
+		if (service.getUploadLimit() != null && service.getUploadLimit().length >= 2 && service.getUploadLimit()[1] > 0 && service.getUploadLimitType() != null && service.getUploadLimitType().length == service.getUploadLimit().length && service.getUploadLimitType()[1] != LimitUnit.rows){
+			maxFileSize = service.getUploadLimit()[1] * service.getUploadLimitType()[1].bytesFactor();
+		}
+		// Finally create the appropriate RequestParser:
+		return new TAPRequestParser(fileManager, service.uploadEnabled(), maxFileSize, service.getMaxUploadSize());
 	}
 
 }

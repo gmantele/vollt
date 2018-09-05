@@ -16,7 +16,8 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2016-2018 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2016-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
@@ -25,9 +26,10 @@ import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
 import static tap.config.TAPConfiguration.DEFAULT_LOGGER;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
+import static tap.config.TAPConfiguration.DEFAULT_MAX_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
 import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
-import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE;
+import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_REQUEST_SIZE;
 import static tap.config.TAPConfiguration.KEY_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_COORD_SYS;
 import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
@@ -56,7 +58,7 @@ import static tap.config.TAPConfiguration.KEY_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
-import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
+import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_REQUEST_SIZE;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
 import static tap.config.TAPConfiguration.SLF4J_LOGGER;
 import static tap.config.TAPConfiguration.VALUE_ALL;
@@ -130,8 +132,8 @@ import uws.service.log.UWSLog.LogLevel;
  * 	TAP configuration file thanks to the implementation {@link ConfigurableTAPFactory}.
  * </p>
  *
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.3 (04/2018)
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.3 (09/2018)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -180,13 +182,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	/** Indicate whether the UPLOAD feature is enabled or not. */
 	private boolean isUploadEnabled = false;
 	/** Array of 2 integers: resp. default and maximum upload limit.
-	 * <em>Each limit is expressed in a unit specified in the array {@link #uploadLimitTypes}.</em> */
-	private int[] uploadLimits = new int[]{ -1, -1 };
-	/** Array of 2 limit units: resp. unit of the default upload limit and unit of the maximum upload limit. */
+	 * <p><em>Each limit is expressed in a unit specified in the array
+	 * {@link #uploadLimitTypes}.</em></p> */
+	private long[] uploadLimits = new long[]{ -1L, -1L };
+	/** Array of 2 limit units: resp. unit of the default upload limit and unit
+	 * of the maximum upload limit. */
 	private LimitUnit[] uploadLimitTypes = new LimitUnit[2];
 	/** The maximum size of a set of uploaded files.
-	 * <em>This size is expressed in bytes.</em> */
-	private int maxUploadSize = DEFAULT_UPLOAD_MAX_FILE_SIZE;
+	 * <p><em>This size is expressed in bytes.</em></p> */
+	private long maxUploadSize = DEFAULT_UPLOAD_MAX_REQUEST_SIZE;
 
 	/** Array of 2 integers: resp. default and maximum fetch size.
 	 * <em>Both sizes are expressed in number of rows.</em> */
@@ -247,14 +251,14 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// 4. GET THE METADATA:
 		metadata = initMetadata(tapConfig, webAppRootDir);
 
-		// 5. SET ALL GENERAL SERVICE CONNECTION INFORMATION:
+		// 6. SET ALL GENERAL SERVICE CONNECTION INFORMATION:
 		providerName = getProperty(tapConfig, KEY_PROVIDER_NAME);
 		serviceDescription = getProperty(tapConfig, KEY_SERVICE_DESCRIPTION);
 		initMaxAsyncJobs(tapConfig);
 		initRetentionPeriod(tapConfig);
 		initExecutionDuration(tapConfig);
 
-		// 6. CONFIGURE OUTPUT:
+		// 7. CONFIGURE OUTPUT:
 		// default output format = VOTable:
 		outputFormats = new ArrayList<OutputFormat>(1);
 		// set output formats:
@@ -264,7 +268,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// set fetch size:
 		initFetchSize(tapConfig);
 
-		// 7. CONFIGURE THE UPLOAD:
+		// 8. CONFIGURE THE UPLOAD:
 		// is upload enabled ?
 		isUploadEnabled = Boolean.parseBoolean(getProperty(tapConfig, KEY_UPLOAD_ENABLED));
 		// set upload limits:
@@ -272,10 +276,10 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// set the maximum upload file size:
 		initMaxUploadSize(tapConfig);
 
-		// 8. SET A USER IDENTIFIER:
+		// 9. SET A USER IDENTIFIER:
 		initUserIdentifier(tapConfig);
 
-		// 9. CONFIGURE ADQL:
+		// 10. CONFIGURE ADQL:
 		initCoordSys(tapConfig);
 		initADQLGeometries(tapConfig);
 		initUDFs(tapConfig);
@@ -954,45 +958,69 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	/**
-	 * Initialize the default and maximum upload limits.
+	 * Initialize the maximum upload limit.
+	 *
+	 * <p><em><b>Note:</b>
+	 * 	The default upload limit is still fetched in this function, but only
+	 * 	in case no maximum limit is provided, just for backward compatibility
+	 * 	with versions 2.2 or less.
+	 * </em></p>
 	 *
 	 * @param tapConfig	The content of the TAP configuration file.
 	 *
-	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
+	 * @throws TAPException	If the corresponding TAP configuration properties
+	 *                     	are wrong.
 	 */
 	private void initUploadLimits(final Properties tapConfig) throws TAPException{
-		Object[] limit = parseLimit(getProperty(tapConfig, KEY_DEFAULT_UPLOAD_LIMIT), KEY_DEFAULT_UPLOAD_LIMIT, true);
-		uploadLimitTypes[0] = (LimitUnit)limit[1];
-		setDefaultUploadLimit((Integer)limit[0]);
+		// Fetch the given default and maximum limits:
+		String defaultDBLimit = getProperty(tapConfig, KEY_DEFAULT_UPLOAD_LIMIT);
+		String maxDBLimit = getProperty(tapConfig, KEY_MAX_UPLOAD_LIMIT);
+		Object[] limit = null;
 
-		limit = parseLimit(getProperty(tapConfig, KEY_MAX_UPLOAD_LIMIT), KEY_MAX_UPLOAD_LIMIT, true);
-		if (!((LimitUnit)limit[1]).isCompatibleWith(uploadLimitTypes[0]))
-			throw new TAPException("The default upload limit (in " + uploadLimitTypes[0] + ") and the maximum upload limit (in " + limit[1] + ") MUST be expressed in the same unit!");
+		/* Parse the given maximum limit. */
+		if (maxDBLimit != null)
+			limit = parseLimit(maxDBLimit, KEY_MAX_UPLOAD_LIMIT, true, true);
+
+		/* If none is provided, try to use the deprecated default limit
+		 * (just for backward compatibility). */
+		else if (defaultDBLimit != null)
+			limit = parseLimit(defaultDBLimit, KEY_DEFAULT_UPLOAD_LIMIT, true, true);
+
+		/* If still no value is provided, set the default value. */
 		else
-			uploadLimitTypes[1] = (LimitUnit)limit[1];
-		setMaxUploadLimit((Integer)limit[0]);
+			limit = parseLimit(DEFAULT_MAX_UPLOAD_LIMIT, KEY_DEFAULT_UPLOAD_LIMIT, true, true);
+
+		// Finally, set the new limits:
+		uploadLimitTypes[0] = uploadLimitTypes[1] = (LimitUnit)limit[1];
+		setDefaultUploadLimit((Long)limit[0]);
+		setMaxUploadLimit((Long)limit[0]);
+
 	}
 
 	/**
-	 * Initialize the maximum size (in bytes) of a VOTable files set upload.
+	 * Initialize the maximum size (in bytes) of a whole HTTP Multipart request.
+	 *
+	 * <p><em><b>Note:</b>
+	 * 	This maximum size includes the HTTP header (normal parameters included)
+	 * 	and the sum of the size of all uploaded files.
+	 * </em></p>
 	 *
 	 * @param tapConfig	The content of the TAP configuration file.
 	 *
-	 * @throws TAPException	If the corresponding TAP configuration property is wrong.
+	 * @throws TAPException	If the corresponding TAP configuration property is
+	 *                     	wrong.
 	 */
 	private void initMaxUploadSize(final Properties tapConfig) throws TAPException{
-		String propValue = getProperty(tapConfig, KEY_UPLOAD_MAX_FILE_SIZE);
+		String propValue = getProperty(tapConfig, KEY_UPLOAD_MAX_REQUEST_SIZE);
 		// If a value is specified...
 		if (propValue != null){
 			// ...parse the value:
-			Object[] limit = parseLimit(propValue, KEY_UPLOAD_MAX_FILE_SIZE, true);
-			if (((Integer)limit[0]).intValue() <= 0)
-				limit[0] = new Integer(TAPConfiguration.DEFAULT_UPLOAD_MAX_FILE_SIZE);
+			Object[] limit = parseLimit(propValue, KEY_UPLOAD_MAX_REQUEST_SIZE, true, true);
 			// ...check that the unit is correct (bytes):
 			if (!LimitUnit.bytes.isCompatibleWith((LimitUnit)limit[1]))
-				throw new TAPException("The maximum upload file size " + KEY_UPLOAD_MAX_FILE_SIZE + " (here: " + propValue + ") can not be expressed in a unit different from bytes (B, kB, MB, GB)!");
-			// ...set the max file size:
-			int value = (int)((Integer)limit[0] * ((LimitUnit)limit[1]).bytesFactor());
+				throw new TAPException("The maximum upload request size " + KEY_UPLOAD_MAX_REQUEST_SIZE + " (here: " + propValue + ") can not be expressed in a unit different from bytes (B, kB, MB, GB)!");
+			// ...set the max request size:
+			long value = (Long)limit[0] * ((LimitUnit)limit[1]).bytesFactor();
 			setMaxUploadSize(value);
 		}
 	}
@@ -1483,7 +1511,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	@Override
-	public int[] getUploadLimit(){
+	public long[] getUploadLimit(){
 		return uploadLimits;
 	}
 
@@ -1503,18 +1531,43 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	/**
-	 * <p>Set the default upload limit.</p>
+	 * Set the default upload limit.
 	 *
 	 * <p><em><b>Important note:</b>
-	 * 	This function will apply the given upload limit only if legal compared to the currently set maximum value.
-	 * 	In other words, if the given value is less or equals to the current maximum upload limit.
+	 * 	This function will apply the given upload limit only if legal compared
+	 * 	to the currently set maximum value. In other words, if the given value
+	 * 	is less or equals to the current maximum upload limit.
 	 * </em></p>
 	 *
 	 * @param limit	New default upload limit.
 	 *
-	 * @return	<i>true</i> if the given upload limit has been successfully set, <i>false</i> otherwise.
+	 * @return	<i>true</i> if the given upload limit has been successfully set,
+	 *        	<i>false</i> otherwise.
+	 *
+	 * @deprecated	Since 2.3, use {@link #setDefaultUploadLimit(long)} instead.
 	 */
+	@Deprecated
 	public boolean setDefaultUploadLimit(final int limit){
+		return setDefaultUploadLimit((long)limit);
+	}
+
+	/**
+	 * Set the default upload limit.
+	 *
+	 * <p><em><b>Important note:</b>
+	 * 	This function will apply the given upload limit only if legal compared
+	 * 	to the currently set maximum value. In other words, if the given value
+	 * 	is less or equals to the current maximum upload limit.
+	 * </em></p>
+	 *
+	 * @param limit	New default upload limit.
+	 *
+	 * @return	<i>true</i> if the given upload limit has been successfully set,
+	 *        	<i>false</i> otherwise.
+	 *
+	 * @since 2.3
+	 */
+	public boolean setDefaultUploadLimit(final long limit){
 		try{
 			if ((uploadLimits[1] <= 0) || (limit > 0 && LimitUnit.compare(limit, uploadLimitTypes[0], uploadLimits[1], uploadLimitTypes[1]) <= 0)){
 				uploadLimits[0] = limit;
@@ -1526,19 +1579,41 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	/**
-	 * <p>Set the maximum upload limit.</p>
+	 * Set the maximum upload limit.
 	 *
 	 * <p>This upload limit limits the default upload limit.</p>
 	 *
 	 * <p><em><b>Important note:</b>
-	 * 	This function may reduce the default upload limit if the current default upload limit is bigger
-	 * 	to the new maximum upload limit. In a such case, the default upload limit is set to the
-	 * 	new maximum upload limit.
+	 * 	This function may reduce the default upload limit if the current default
+	 * 	upload limit is bigger to the new maximum upload limit. In a such case,
+	 * 	the default upload limit is set to the new maximum upload limit.
 	 * </em></p>
 	 *
 	 * @param limit	New maximum upload limit.
+	 *
+	 * @deprecated	Since 2.3, use {@link #setMaxUploadLimit(long)} instead.
 	 */
+	@Deprecated
 	public void setMaxUploadLimit(final int limit){
+		setMaxUploadLimit((long)limit);
+	}
+
+	/**
+	 * Set the maximum upload limit.
+	 *
+	 * <p>This upload limit limits the default upload limit.</p>
+	 *
+	 * <p><em><b>Important note:</b>
+	 * 	This function may reduce the default upload limit if the current default
+	 * 	upload limit is bigger to the new maximum upload limit. In a such case,
+	 * 	the default upload limit is set to the new maximum upload limit.
+	 * </em></p>
+	 *
+	 * @param limit	New maximum upload limit.
+	 *
+	 * @since 2.3
+	 */
+	public void setMaxUploadLimit(final long limit){
 		try{
 			// Decrease the default output limit if it will be bigger than the new maximum output limit:
 			if (limit > 0 && (uploadLimits[0] <= 0 || LimitUnit.compare(limit, uploadLimitTypes[1], uploadLimits[0], uploadLimitTypes[0]) < 0))
@@ -1550,25 +1625,56 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	@Override
-	public int getMaxUploadSize(){
+	public long getMaxUploadSize(){
 		return maxUploadSize;
 	}
 
 	/**
-	 * <p>Set the maximum size of a VOTable files set that can be uploaded in once.</p>
+	 * Set the maximum size of a VOTable files set that can be uploaded in once.
 	 *
 	 * <p><b>Warning:
-	 * 	This size can not be negative or 0. If the given value is in this case, nothing will be done
-	 * 	and <i>false</i> will be returned.
-	 * 	On the contrary to the other limits, no "unlimited" limit is possible here ; only the
+	 * 	This size can not be negative or 0. If the given value is in this case,
+	 * 	nothing will be done and <i>false</i> will be returned. On the contrary
+	 * 	to the other limits, no "unlimited" limit is possible here ; only the
 	 * 	maximum value can be set (i.e. maximum positive integer value).
 	 * </b></p>
 	 *
 	 * @param maxSize	New maximum size (in bytes).
 	 *
-	 * @return	<i>true</i> if the size has been successfully set, <i>false</i> otherwise.
+	 * @return	<i>true</i> if the size has been successfully set,
+	 *        	<i>false</i> otherwise.
+	 *
+	 * @deprecated	Since 2.3, use {@link #setMaxUploadSize(long)} instead.
 	 */
+	@Deprecated
 	public boolean setMaxUploadSize(final int maxSize){
+		// No "unlimited" value possible there:
+		if (maxSize <= 0)
+			return false;
+
+		// Otherwise, set the maximum upload file size:
+		maxUploadSize = maxSize;
+		return true;
+	}
+
+	/**
+	 * Set the maximum size of a VOTable files set that can be uploaded in once.
+	 *
+	 * <p><b>Warning:
+	 * 	This size can not be negative or 0. If the given value is in this case,
+	 * 	nothing will be done and <i>false</i> will be returned. On the contrary
+	 * 	to the other limits, no "unlimited" limit is possible here ; only the
+	 * 	maximum value can be set (i.e. maximum positive integer value).
+	 * </b></p>
+	 *
+	 * @param maxSize	New maximum size (in bytes).
+	 *
+	 * @return	<i>true</i> if the size has been successfully set,
+	 *        	<i>false</i> otherwise.
+	 *
+	 * @since 2.3
+	 */
+	public boolean setMaxUploadSize(final long maxSize){
 		// No "unlimited" value possible there:
 		if (maxSize <= 0)
 			return false;
