@@ -40,6 +40,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.regex.Pattern;
 
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -214,7 +215,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 			if (ownerGroup != null)
 				ownerDir = new File(rootDirectory, ownerGroup);
 		}
-		ownerDir = new File(ownerDir, owner.getID().replaceAll(File.separator, "_"));
+		ownerDir = new File(ownerDir, owner.getID().replaceAll(Pattern.quote(File.separator), "_"));
 
 		return ownerDir;
 	}
