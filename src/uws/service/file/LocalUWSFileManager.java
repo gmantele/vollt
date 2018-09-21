@@ -714,7 +714,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	protected String getBackupFileName(final JobOwner owner) throws IllegalArgumentException{
 		if (owner == null || owner.getID() == null || owner.getID().trim().isEmpty())
 			throw new IllegalArgumentException("Missing owner! Can not get the backup file of an unknown owner.");
-		return owner.getID().replaceAll(File.separator, "_") + ".backup";
+		return owner.getID().replaceAll(Pattern.quote(File.separator), "_") + ".backup";
 	}
 
 	@Override
