@@ -728,9 +728,15 @@ public class ResultSetTableIterator implements TableIterator {
 				colValue = ISO8601Format.format((java.util.Date)colValue);
 			// if the type is a BigDecimal object (this is possible for instance with PostgreSQL "numeric" datatype,
 			// but this type can not be supported in FITS and VOTable): 
-			else if (colValue instanceof BigDecimal)
-				colValue = ((BigDecimal)colValue).doubleValue();
-			// if the type is a BigInteger object (as BigDecimal, this type can not be supported in FITS and VOTable): 
+			else if (colValue instanceof BigDecimal) {
+				// https://github.com/gmantele/taplib/issues/97
+				BigDecimal bd = (BigDecimal) colValue;
+				if (bd.doubleValue() - bd.intValue() == 0.0)
+					colValue = bd.intValue();
+				else
+					colValue = bd.doubleValue();
+			}
+			// if the type is a BigInteger object (as BigDecimal, this type can not be supported in FITS and VOTable):
 			else if (colValue instanceof BigInteger)
 				colValue = ((BigInteger)colValue).longValue();
 			// if the type is Integer but it is declared as a SMALLINT cast the value (absolutely required for the FITS format):
