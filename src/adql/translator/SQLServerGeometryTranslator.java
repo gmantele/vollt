@@ -1,4 +1,4 @@
-package org.eso.asp.tap.adql.translator;
+package adql.translator;
 
 /*
  * This file is part of ADQLLibrary.
@@ -25,8 +25,6 @@ import adql.parser.ParseException;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.geometry.*;
-import adql.translator.SQLServerTranslator;
-import adql.translator.TranslationException;
 
 /**
  * Class that implements the translation of ADQL spatial functions
@@ -49,14 +47,7 @@ public class SQLServerGeometryTranslator extends SQLServerTranslator {
 
 	@Override
 	public String translate(final ExtractCoord extractCoord) throws TranslationException {
-		StringBuffer buf = new StringBuffer();
-		buf.append(translate(extractCoord.getParameter(0)));
-		if (extractCoord.getName().equals("COORD1"))
-			buf.append(".Long+180");
-		else
-			buf.append(".Lat");
-
-		return buf.toString();
+		throw new TranslationException(extractCoord.getName() + " is not supported");
 	}
 
 	@Override
@@ -169,13 +160,13 @@ public class SQLServerGeometryTranslator extends SQLServerTranslator {
 	private String translatePoint(ADQLOperand coord1, ADQLOperand coord2) throws TranslationException {
 		/*
 		 * the point needs to be translated to something like
-		 * 'POINT('+str(s_ra-180.0, 11, 7)+' '+ str(s_dec, 11, 7)+')'
+		 * 'POINT('+str(180.0-s_ra, 11, 7)+' '+ str(s_dec, 11, 7)+')'
 		 */
 		StringBuffer buf = new StringBuffer();
 		buf.append("geography::STGeomFromText('POINT(");
-		buf.append("'+str(");
+		buf.append("'+str(180 -(");
 		buf.append(translate(coord1));
-		buf.append("-180").append(strPrecision).append(")+' '+str(");
+		buf.append(")").append(strPrecision).append(")+' '+str(");
 		buf.append(translate(coord2)).append(strPrecision);
 		buf.append(")+')', 104001)");
 		return buf.toString();
@@ -192,17 +183,17 @@ public class SQLServerGeometryTranslator extends SQLServerTranslator {
 		buf.append("geography::STGeomFromText('POLYGON((");
 
 		for (int i = 1; i < polygon.getNbParameters(); i+=2) {
-			buf.append("'+str(");
+			buf.append("'+str(180-(");
 			buf.append(translate(polygon.getParameter(i)));
-			buf.append("-180").append(strPrecision).append(")+' '+str(");
+			buf.append(")").append(strPrecision).append(")+' '+str(");
 			buf.append(translate(polygon.getParameter(i+1))).append(strPrecision);
 			buf.append(")+',");
 		}
 
 		/* In SQLServer the polygon has to be closed, so we add the first point again */
-		buf.append("'+str(");
+		buf.append("'+str(180 - (");
 		buf.append(translate(polygon.getParameter(1)));
-		buf.append("-180").append(strPrecision).append(")+' '+str(");
+		buf.append(")").append(strPrecision).append(")+' '+str(");
 		buf.append(translate(polygon.getParameter(2))).append(strPrecision);
 		buf.append(")+'))', 104001)");
 		return buf.toString();
