@@ -371,7 +371,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 		else if (dbmsTypeName.equals("int"))
 			return new DBType(DBDatatype.INTEGER);
 		// BIGINT
-		else if (dbmsTypeName.equals("bigint"))
+		else if (dbmsTypeName.equals("bigint") || dbmsTypeName.equals("unsigned bigint"))
 			return new DBType(DBDatatype.BIGINT);
 		// REAL (cf https://msdn.microsoft.com/fr-fr/library/ms173773(v=sql.120).aspx)
 		else if (dbmsTypeName.equals("real") || (dbmsTypeName.equals("float") && lengthParam >= 1 && lengthParam <= 24))
