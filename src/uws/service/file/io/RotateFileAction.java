@@ -22,13 +22,14 @@ package uws.service.file.io;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 /**
  * This close action rename a given file into another one. The target file is
  * deleted if it already exists.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 4.4 (07/2018)
+ * @version 4.4 (10/2018)
  * @since 4.4
  */
 public class RotateFileAction implements CloseAction {
@@ -81,7 +82,7 @@ public class RotateFileAction implements CloseAction {
 
 		// Finally rename the source file into the given target file:
 		try{
-			Files.move(sourceFile.toPath(), targetFile.toPath());
+			Files.move(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		}catch(IOException ioe){
 			throw new IOException("Impossible to perform the file rotation! Cause: [" + ioe.getClass() + "] " + ioe.getMessage(), ioe);
 		}
