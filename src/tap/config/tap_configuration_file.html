@@ -169,11 +169,17 @@
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>The translator to use in order to translate ADQL to a SQL compatible with the used DBMS and its spatial extension.</p>
-					<p>The TAP library supports only Postgresql (no spatial extension), PostgreSQL+PgSphere, SQLServer (no spatial extension) and MySQL (no spatial extension) for the moment. But you can provide your own SQL translator
-					(even if it does not have spatial features), by providing the name of a class (within brackets: {...}) that implements ADQLTranslator and which have at least an empty constructor.</p>
+					<p>The translator to use in order to translate ADQL to a SQL compatible with the
+					used DBMS and its spatial extension.</p>
+					<p>The TAP library supports only Postgresql (no spatial extension),
+					PostgreSQL+PgSphere, SQLServer (no spatial extension), MySQL (no spatial
+					extension) and H2 (no spatial extension) for the moment. But you can provide
+					your own SQL translator (even if it does not have spatial features), by
+					providing the name of a class (within brackets: {...}) that implements
+					ADQLTranslator (for instance: {apackage.MyADQLTranslator}) and which have at
+					least an empty constructor.</p>
 				</td>
-				<td><ul><li>postgres</li><li>pgsphere</li><li>sqlserver</li><li>mysql</li><li>{apackage.MyADQLTranslator}</li></ul></td>
+				<td><ul><li>postgres</li><li>pgsphere</li><li>sqlserver</li><li>mysql</li><li>h2</li><li>{apackage.MyADQLTranslator}</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">sync_fetch_size</td>
@@ -321,6 +327,13 @@
 						The property value MUST be NOT qualified. Just the item name is required.
 						The value will be used as provided (with the same case).
 					</p>
+					<p><em>
+						<strong>Note:</strong>
+						The column dbName in the database TAP_SCHEMA declaring the standard
+						TAP_SCHEMA entries (e.g. TAP_SCHEMA.schemas.dbName) is now ignored. Thus,
+						only the mapping defined here, in the configuration file, is taken into
+						account.
+					</em></p>
 				</td>
 				<td>
 					<ul>

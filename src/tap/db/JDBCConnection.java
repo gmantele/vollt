@@ -181,7 +181,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (02/2018)
+ * @version 2.3 (10/2018)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
