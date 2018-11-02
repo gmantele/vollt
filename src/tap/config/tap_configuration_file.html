@@ -193,9 +193,9 @@
 	 				too much waiting time from the TAP /sync users (and thus, avoiding some HTTP client timeouts).</p>
 	 				<p>A negative or null value means that the default value of the JDBC driver will be used. Generally,
 	 				it means that the database must wait to have collected all data before sending them to the library.</p>
-					<p><em>Default: <code>sync_fetch_size=10000</code></em></p>
+					<p><em>Default: <code>sync_fetch_size=1000</code></em></p>
 				</td>
-				<td><ul><li>10000 <em>(default)</em><li>0 <em>(wait for the the whole result)</em></li><li>100000</li></ul></td>
+				<td><ul><li>1000 <em>(default)</em><li>0 <em>(wait for the the whole result)</em></li><li>100000</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">async_fetch_size</td>
@@ -208,9 +208,9 @@
 	 				If supported by the DBMS and the JDBC driver, this feature may help sparing memory.</p>
 	 				<p>A negative or null value means that the default value of the JDBC driver will be used. Generally,
 	 				it means that the database must wait to have collected all data before sending them to the library.</p>
-					<p><em>Default: <code>async_fetch_size=100000</code></em></p>
+					<p><em>Default: <code>async_fetch_size=10000</code></em></p>
 				</td>
-				<td><ul><li>100000 <em>(default)</em><li>0 <em>(wait for the the whole result)</em></li><li>1000000</li></ul></td>
+				<td><ul><li>10000 <em>(default)</em><li>0 <em>(wait for the the whole result)</em></li><li>1000000</li></ul></td>
 			</tr>
 			
 			<tr><td colspan="5">&#10551; JNDI datasource <i>(only if database_access=jndi)</i></td></tr>

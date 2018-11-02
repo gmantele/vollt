@@ -2,34 +2,39 @@ package cds.util;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ *
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.ArrayList;
 
 /**
- * An object of this class manages an ascii table: it receives lines to add,
+ * An object of this class manages an ASCII table: it receives lines to add,
  * made of columns separated by a given separator char. Columns can be aligned
  * (RIGHT, LEFT or CENTER) before display
+ *
  * @author Marc Wenger/CDS
- * @version 1.0 May 2008 Creation<br>
- * @version 1.1 May 2008 Fix a bug: lines are kept without a newline at the end<br>
- * @version 1.2 Jun 2008 Add a toString method (items aligned).<br>
- *                       Fix a bug in align() when the last line is not full
+ * @author Gr&eacute;gory Mantelet/CDS
+ *
+ * @version 1.0 May 2008 MW Creation
+ * @version 1.1 May 2008 MW Fix a bug: lines are kept without a newline at the
+ *                          end
+ * @version 1.2 Jun 2008 MW Add a toString method (items aligned) ;
+ *                          Fix a bug in align() when the last line is not full
+ * @version 1.3 Nov 2018 GM Make the alignment process - align() - interruptible
  */
 public class AsciiTable {
 	public static final int LEFT = 0;
@@ -86,8 +91,8 @@ public class AsciiTable {
 	/**
 	 * Add a line to the table
 	 * @param line string containing the line with all the columns separated by the column separator.
-	 * The line should not end up with a newline char. If it is the case, alignement errors can be experienced
-	 * depending on the alignement type of the last column.
+	 * The line should not end up with a newline char. If it is the case, alignment errors can be experienced
+	 * depending on the alignment type of the last column.
 	 */
 	public void addLine(String line){
 		// compute the number of columns, if we add the first line
@@ -129,7 +134,7 @@ public class AsciiTable {
 	}
 
 	/**
-	 * Get all the lines without alignement, as they were entered
+	 * Get all the lines without alignment, as they were entered
 	 * @return the array of the lines in the table
 	 */
 	public String[] displayRaw(){
@@ -137,7 +142,7 @@ public class AsciiTable {
 	}
 
 	/**
-	 * Get all the lines without alignement, as they were entered, with separator control
+	 * Get all the lines without alignment, as they were entered, with separator control
 	 * @param newsep separator to use, replacing the original one
 	 * @return the array of the lines in the table
 	 */
@@ -156,49 +161,121 @@ public class AsciiTable {
 
 	/**
 	 * Get all the lines in the table, properly aligned.
-	 * @param pos array of flags, indicating how each column should be justified.
-	 * The array must have as many columns as the table has. Each column can contain
-	 * either AsciiTable.LEFT, AsciiTable.CENTER or AsciiTable.RIGHT<br>
-	 * if the array contains ONE item, it will be used for every column.
-	 * @return an array of the table lines, aligned and justified
+	 *
+	 * <p><strong>IMPORTANT:</strong>
+	 * 	The array must have as many columns as the table has. Each column can
+	 * 	contain either {@link AsciiTable#LEFT}, {@link AsciiTable#CENTER} or
+	 * 	{@link AsciiTable#RIGHT}. If the array contains ONE item, it will be
+	 * 	used for every column.
+	 * </p>
+	 *
+	 * @param pos	Array of flags, indicating how each column should be
+	 *           	justified.
+	 *
+	 * @return	An array of the table lines, aligned and justified.
+	 *
+	 * @throws InterruptedException	If the current thread has been interrupted.
+	 *                             	<em>This interruption is useful when this
+	 *                             	alignment operation becomes time and memory
+	 *                             	consuming.</em>
 	 */
-	public String[] displayAligned(int[] pos){
-		return align(pos, '\0');
+	public String[] displayAligned(int[] pos) throws InterruptedException{
+		return align(pos, '\0', null);
 	}
 
 	/**
 	 * Get all the lines in the table, properly aligned.
-	 * @param pos array of flags, indicating how each column should be justified.
-	 * The array must have as many columns as the table has. Each column can contain
-	 * either AsciiTable.LEFT, AsciiTable.CENTER or AsciiTable.RIGHT<br>
-	 * if the array contains ONE item, it will be used for every column.
-	 * @param newsep separator to use, replacing the original one
-	 * @return an array of the table lines, aligned and justified
+	 *
+	 * <p><strong>IMPORTANT:</strong>
+	 * 	The array must have as many columns as the table has. Each column can
+	 * 	contain either {@link AsciiTable#LEFT}, {@link AsciiTable#CENTER} or
+	 * 	{@link AsciiTable#RIGHT}. If the array contains ONE item, it will be
+	 * 	used for every column.
+	 * </p>
+	 *
+	 * @param pos		Array of flags, indicating how each column should be
+	 *           		justified.
+	 * @param newsep	Separator to use, replacing the original one.
+	 *
+	 * @return	An array of the table lines, aligned and justified.
+	 *
+	 * @throws InterruptedException	If the current thread has been interrupted.
+	 *                             	<em>This interruption is useful when this
+	 *                             	alignment operation becomes time and memory
+	 *                             	consuming.</em>
 	 */
-	public String[] displayAligned(int[] pos, char newsep){
+	public String[] displayAligned(int[] pos, char newsep) throws InterruptedException{
+		return displayAligned(pos, newsep, null);
+	}
+
+	/**
+	 * Get all the lines in the table, properly aligned.
+	 *
+	 * <p><strong>IMPORTANT:</strong>
+	 * 	The array must have as many columns as the table has. Each column can
+	 * 	contain either {@link AsciiTable#LEFT}, {@link AsciiTable#CENTER} or
+	 * 	{@link AsciiTable#RIGHT}. If the array contains ONE item, it will be
+	 * 	used for every column.
+	 * </p>
+	 *
+	 * @param pos		Array of flags, indicating how each column should be
+	 *           		justified.
+	 * @param newsep	Separator to use, replacing the original one.
+	 * @param thread	Thread to watch. If it is interrupted, this task should
+	 *              	be as well.
+	 *
+	 * @return	An array of the table lines, aligned and justified.
+	 *
+	 * @throws InterruptedException	If the current thread has been interrupted.
+	 *                             	<em>This interruption is useful when this
+	 *                             	alignment operation becomes time and memory
+	 *                             	consuming.</em>
+	 */
+	public String[] displayAligned(int[] pos, char newsep, final Thread thread) throws InterruptedException{
 		if (newsep == csep)
 			newsep = '\0';
-		return align(pos, newsep);
+		return align(pos, newsep, thread);
 	}
 
 	/**
 	 * Get the array of lines in which all the columns are aligned
-	 * @param pos array of flags, indicating how each column should be justified.
-	 * The array must have as many columns as the table has. Each column can contain
-	 * either AsciiTable.LEFT, AsciiTable.CENTER or AsciiTable.RIGHT<br>
-	 * if the array contains ONE item, it will be used for every column.
-	 * @param newsep separator to use, replacing the original one (no replacement if '\0')
-	 * @return an array of the table lines, aligned and justified
+	 *
+	 * <p><strong>IMPORTANT:</strong>
+	 * 	The array must have as many columns as the table has. Each column can
+	 * 	contain either {@link AsciiTable#LEFT}, {@link AsciiTable#CENTER} or
+	 * 	{@link AsciiTable#RIGHT}. If the array contains ONE item, it will be
+	 * 	used for every column.
+	 * </p>
+	 *
+	 * @param pos		Array of flags, indicating how each column should be
+	 *           		justified.
+	 * @param newsep	Separator to use, replacing the original one.
+	 * @param thread	Thread to watch. If it is interrupted, this task should
+	 *              	be as well.
+	 *
+	 * @return	An array of the table lines, aligned and justified.
+	 *
+	 * @throws InterruptedException	If the current thread has been interrupted.
+	 *                             	<em>This interruption is useful when this
+	 *                             	alignment operation becomes time and memory
+	 *                             	consuming.</em>
 	 */
-	private String[] align(int[] pos, char newsep){
+	private String[] align(int[] pos, char newsep, final Thread thread) throws InterruptedException{
 		int nblines = lines.size();
 		String[] result = new String[nblines];
 		StringBuffer buf = new StringBuffer();
 		int p0, p1, col, fldsize, colsize, n1, inserted;
 		boolean inHeader = header;	// A header can contain several lines. The end is detected by a line
+
 		// beginning by the separator char
 		int uniqueJustif = pos.length == 1 ? pos[0] : -1;
 		for(int i = 0; i < nblines; i++){
+
+			/* stop everything if this thread or the given one has been
+			 * interrupted: */
+			if (Thread.currentThread().isInterrupted() || (thread != null && thread.isInterrupted()))
+				throw new InterruptedException();
+
 			buf.delete(0, buf.length());
 			String line = lines.get(i);
 			p0 = 0;
@@ -277,20 +354,24 @@ public class AsciiTable {
 	}
 
 	/**
-	 * Display the whole table, with left alignement
+	 * Display the whole table, with left alignment
 	 * @return the table as a unique string
 	 */
 	@Override
 	public String toString(){
-		StringBuffer buf = new StringBuffer();
-		String[] ids = displayAligned(new int[]{AsciiTable.LEFT});
+		try{
+			StringBuffer buf = new StringBuffer();
+			String[] ids = displayAligned(new int[]{ AsciiTable.LEFT });
 
-		for(int i = 0; i < ids.length; i++){
-			if (i > 0)
-				buf.append("\n");
-			buf.append(ids[i]);
+			for(int i = 0; i < ids.length; i++){
+				if (i > 0)
+					buf.append("\n");
+				buf.append(ids[i]);
+			}
+
+			return buf.toString();
+		}catch(InterruptedException ie){
+			return "!!! Operation unexpectedly interrupted !!!";
 		}
-
-		return buf.toString();
 	}
 }

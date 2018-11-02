@@ -2,21 +2,21 @@ package tap.formatter;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -35,9 +35,9 @@ import tap.data.TableIterator;
 /**
  * Format any given query (table) result into a simple table ASCII representation
  * (columns' width are adjusted so that all columns are well aligned and of the same width).
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
+ * @version 2.3 (11/2018)
  */
 public class TextFormat implements OutputFormat {
 
@@ -51,9 +51,9 @@ public class TextFormat implements OutputFormat {
 
 	/**
 	 * Build a {@link TextFormat}.
-	 * 
+	 *
 	 * @param service	Description of the TAP service.
-	 * 
+	 *
 	 * @throws NullPointerException	If the given service connection is <code>null</code>.
 	 */
 	public TextFormat(final ServiceConnection service) throws NullPointerException{
@@ -101,10 +101,10 @@ public class TextFormat implements OutputFormat {
 
 		// Finally write the formatted ASCII table (header + data) in the output stream:
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
-		String[] lines = asciiTable.displayAligned(new int[]{AsciiTable.LEFT}, '|');
+		String[] lines = asciiTable.displayAligned(new int[]{ AsciiTable.LEFT }, '|', thread);
 		execReport.nbRows = 0;
 		for(String l : lines){
-			// stop right now the formatting if the job has been aborted/canceled/interrupted:
+			// stop right now the formatting if the job has been aborted/cancelled/interrupted:
 			if (thread.isInterrupted())
 				throw new InterruptedException();
 			// write the line:
@@ -128,13 +128,13 @@ public class TextFormat implements OutputFormat {
 
 	/**
 	 * Get the whole header (one row whose columns are just the columns' name).
-	 * 
+	 *
 	 * @param result		Result to write later (but it contains also metadata that was extracted from the result itself).
 	 * @param execReport	Execution report (which contains the metadata extracted/guessed from the ADQL query).
 	 * @param thread		Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
-	 * 
+	 *
 	 * @return	All the written metadata.
-	 * 
+	 *
 	 * @throws TAPException	If any other error occurs.
 	 */
 	protected String getHeader(final TableIterator result, final TAPExecutionReport execReport, final Thread thread) throws TAPException{
@@ -159,14 +159,14 @@ public class TextFormat implements OutputFormat {
 
 	/**
 	 * Write all the data rows into the given {@link AsciiTable} object.
-	 * 
+	 *
 	 * @param queryResult		Result to write.
 	 * @param asciiTable		Output in which the rows (as string) must be written.
 	 * @param execReport		Execution report (which contains the maximum allowed number of records to output).
 	 * @param thread			Thread which has asked for this formatting (it must be used in order to test the {@link Thread#isInterrupted()} flag and so interrupt everything if need).
-	 * 
+	 *
 	 * @return	<i>true</i> if an overflow (i.e. nbDBRows > MAXREC) is detected, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If any other error occurs.
 	 */
@@ -180,7 +180,7 @@ public class TextFormat implements OutputFormat {
 
 		StringBuffer line = new StringBuffer();
 		while(queryResult.nextRow()){
-			// Stop right now the formatting if the job has been aborted/canceled/interrupted:
+			// Stop right now the formatting if the job has been aborted/cancelled/interrupted:
 			if (thread.isInterrupted())
 				throw new InterruptedException();
 
@@ -215,7 +215,7 @@ public class TextFormat implements OutputFormat {
 
 	/**
 	 * Writes the given field value in the given buffer.
-	 * 
+	 *
 	 * @param value		The value to write.
 	 * @param tapCol	The corresponding column metadata.
 	 * @param line		The buffer in which the field value must be written.

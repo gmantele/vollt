@@ -41,7 +41,7 @@ import tap.backup.DefaultTAPBackupManager;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (09/2018)
+ * @version 2.3 (11/2018)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -157,21 +157,21 @@ public final class TAPConfiguration {
 	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a PgSphere translator. */
 	public final static String VALUE_PGSPHERE = "pgsphere";
 	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select an SQLServer translator.
-	 * @since 2.1*/
+	 * @since 2.1 */
 	public final static String VALUE_SQLSERVER = "sqlserver";
 	/** Value of the property {@link #KEY_SQL_TRANSLATOR} to select a MySQL translator.
-	 * @since 2.1*/
+	 * @since 2.1 */
 	public final static String VALUE_MYSQL = "mysql";
 	/** Name/Key of the property specifying by how many rows the library should fetch a query result from the database.
 	 * This is the fetch size for to apply for synchronous queries. */
 	public final static String KEY_SYNC_FETCH_SIZE = "sync_fetch_size";
 	/** Default value of the property {@link #KEY_SYNC_FETCH_SIZE}: {@value #DEFAULT_SYNC_FETCH_SIZE}. */
-	public final static int DEFAULT_SYNC_FETCH_SIZE = 10000;
+	public final static int DEFAULT_SYNC_FETCH_SIZE = 1000;
 	/** Name/Key of the property specifying by how many rows the library should fetch a query result from the database.
 	 * This is the fetch size for to apply for asynchronous queries. */
 	public final static String KEY_ASYNC_FETCH_SIZE = "async_fetch_size";
 	/** Default value of the property {@link #KEY_ASYNC_FETCH_SIZE}: {@value #DEFAULT_ASYNC_FETCH_SIZE}. */
-	public final static int DEFAULT_ASYNC_FETCH_SIZE = 100000;
+	public final static int DEFAULT_ASYNC_FETCH_SIZE = 10000;
 	/** Name/Key of the property specifying the name of the DataSource into the JDNI. */
 	public final static String KEY_DATASOURCE_JNDI_NAME = "datasource_jndi_name";
 	/** Name/Key of the property specifying the full class name of the JDBC driver.
