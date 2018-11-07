@@ -52,6 +52,7 @@
 	<property name="adqlJunitReportsDir" value="reports/adql" />
 	<property name="uwsJunitReportsDir" value="reports/uws" />
 	<property name="tapJunitReportsDir" value="reports/tap" />
+	<property name="cdsJunitReportsDir" value="reports/cds" />
 	
 	<fail message="The property POSTGRES must be set! It provides the path toward a directory or a JAR which contains all classes inside org.postgresql.">
 		<condition><not><isset property="POSTGRES"/></not></condition>
@@ -114,12 +115,14 @@
 		<delete dir="${adqlJunitReportsDir}" failonerror="false" />
 		<delete dir="${uwsJunitReportsDir}" failonerror="false" />
 		<delete dir="${tapJunitReportsDir}" failonerror="false" />
+		<delete dir="${cdsJunitReportsDir}" failonerror="false" />
 	</target>
 	
 	<target name="junitValidation" depends="cleanJUnitReports,compileJUnit" description="Executes all JUnit tests before building the library and stop ANT at any error.">
 		<mkdir dir="${adqlJunitReportsDir}"/>
 		<mkdir dir="${uwsJunitReportsDir}"/>
 		<mkdir dir="${tapJunitReportsDir}"/>
+		<mkdir dir="${cdsJunitReportsDir}"/>
 		<junit fork="true" errorproperty="testsFailure" failureproperty="testsFailure">
 			<classpath refid="junit.class.path" />
 			<classpath>
@@ -135,6 +138,9 @@
 			</batchtest>
 			<batchtest todir="${tapJunitReportsDir}">
 				<fileset dir="${testsDir}" includes="tap/**/Test*.java" />
+			</batchtest>
+			<batchtest todir="${cdsJunitReportsDir}">
+				<fileset dir="${testsDir}" includes="cds/**/Test*.java" />
 			</batchtest>
 		</junit>
 		<delete dir="${junitBuildDir}" failonerror="false" />

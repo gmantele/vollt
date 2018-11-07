@@ -35,7 +35,12 @@ import java.util.ArrayList;
  * @version 1.2 Jun 2008 MW Add a toString method (items aligned) ;
  *                          Fix a bug in align() when the last line is not full
  * @version 1.3 Nov 2018 GM Make the alignment process - align() - interruptible
+ *
+ * @deprecated	This class suffers a lot of memory issues when dealing with
+ *            	large tables. {@link LargeAsciiTable} should be
+ *            	used instead.
  */
+@Deprecated
 public class AsciiTable {
 	public static final int LEFT = 0;
 	public static final int CENTER = 1;
@@ -178,7 +183,11 @@ public class AsciiTable {
 	 *                             	<em>This interruption is useful when this
 	 *                             	alignment operation becomes time and memory
 	 *                             	consuming.</em>
+	 *
+	 * @deprecated	Deprecated because of memory issues. Instead, you should use
+	 *            	{@link LargeAsciiTable#streamAligned(cds.util.LargeAsciiTable.LineProcessor, int[])}.
 	 */
+	@Deprecated
 	public String[] displayAligned(int[] pos) throws InterruptedException{
 		return align(pos, '\0', null);
 	}
@@ -203,7 +212,11 @@ public class AsciiTable {
 	 *                             	<em>This interruption is useful when this
 	 *                             	alignment operation becomes time and memory
 	 *                             	consuming.</em>
+	 *
+	 * @deprecated	Deprecated because of memory issues. Instead, you should use
+	 *            	{@link LargeAsciiTable#streamAligned(cds.util.LargeAsciiTable.LineProcessor, int[], char)}.
 	 */
+	@Deprecated
 	public String[] displayAligned(int[] pos, char newsep) throws InterruptedException{
 		return displayAligned(pos, newsep, null);
 	}
@@ -213,8 +226,8 @@ public class AsciiTable {
 	 *
 	 * <p><strong>IMPORTANT:</strong>
 	 * 	The array must have as many columns as the table has. Each column can
-	 * 	contain either {@link AsciiTable#LEFT}, {@link AsciiTable#CENTER} or
-	 * 	{@link AsciiTable#RIGHT}. If the array contains ONE item, it will be
+	 * 	contain either {@link #LEFT}, {@link #CENTER} or
+	 * 	{@link #RIGHT}. If the array contains ONE item, it will be
 	 * 	used for every column.
 	 * </p>
 	 *
@@ -230,7 +243,11 @@ public class AsciiTable {
 	 *                             	<em>This interruption is useful when this
 	 *                             	alignment operation becomes time and memory
 	 *                             	consuming.</em>
+	 *
+	 * @deprecated	Deprecated because of memory issues. Instead, you should use
+	 *            	{@link LargeAsciiTable#streamAligned(cds.util.LargeAsciiTable.LineProcessor, int[], char, Thread)}.
 	 */
+	@Deprecated
 	public String[] displayAligned(int[] pos, char newsep, final Thread thread) throws InterruptedException{
 		if (newsep == csep)
 			newsep = '\0';
