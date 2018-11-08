@@ -1336,6 +1336,11 @@ public class LargeAsciiTable implements AutoCloseable {
 			// Nothing to close in this iterator!
 		}
 
+		@Override
+		public void remove() throws UnsupportedOperationException{
+			throw new UnsupportedOperationException("Impossible to modify a LargeAsciiTable!");
+		}
+
 	}
 
 	/**
@@ -1464,6 +1469,11 @@ public class LargeAsciiTable implements AutoCloseable {
 				in.close();
 				in = null;
 			}
+		}
+
+		@Override
+		public void remove() throws UnsupportedOperationException{
+			throw new UnsupportedOperationException("Impossible to modify a LargeAsciiTable!");
 		}
 
 	}
