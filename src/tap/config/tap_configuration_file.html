@@ -728,9 +728,10 @@
 				<td>
 					<p>Maximum allowed size for the uploaded file.</p>
 					<p><em>This property is DEPRECATED. You should use <code>upload_max_db_limit</code> with a value
-					expressed in bytes instead. If it is set anyway, its value will be used as
-					value for <code>upload_max_db_limit</code> ONLY IF this latter and
-					<code>upload_default_db_limit</code> are not set.</em></p>
+					expressed in bytes if you wanted to limit the size of each uploaded file, or
+					<code>upload_max_request_size</code> if your goal was to limit the input HTTP request
+					size. If it is set anyway, its value will be used as value for
+					<code>upload_max_request_size</code> ONLY IF this latter is not set.
 					<p><em>Default: <code>upload_max_file_size=-1</code> (i.e. unlimited)</em></p>
 				</td>
 				<td><ul><li>-1 <em>(default)</em></li><li>2147483647B</li><li>2MB</li></ul></td>
