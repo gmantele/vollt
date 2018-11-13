@@ -58,6 +58,7 @@ import static tap.config.TAPConfiguration.KEY_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.KEY_UDFS;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
+import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
 import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_REQUEST_SIZE;
 import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
 import static tap.config.TAPConfiguration.SLF4J_LOGGER;
@@ -133,7 +134,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (09/2018)
+ * @version 2.3 (11/2018)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -958,7 +959,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	/**
-	 * Initialize the maximum upload limit.
+	 * Initialise the maximum upload limit.
 	 *
 	 * <p><em><b>Note:</b>
 	 * 	The default upload limit is still fetched in this function, but only
@@ -983,8 +984,10 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 
 		/* If none is provided, try to use the deprecated default limit
 		 * (just for backward compatibility). */
-		else if (defaultDBLimit != null)
+		else if (defaultDBLimit != null){
+			logger.warning("The property `" + KEY_DEFAULT_UPLOAD_LIMIT + "` has been deprecated! This value is currently used anyway, but not forever. You should now use only `" + KEY_MAX_UPLOAD_LIMIT + "` instead. (comment or delete the property `" + KEY_DEFAULT_UPLOAD_LIMIT + "` from your configuration file to remove this WARNING)");
 			limit = parseLimit(defaultDBLimit, KEY_DEFAULT_UPLOAD_LIMIT, true, true);
+		}
 
 		/* If still no value is provided, set the default value. */
 		else
@@ -998,11 +1001,19 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	/**
-	 * Initialize the maximum size (in bytes) of a whole HTTP Multipart request.
+	 * Initialise the maximum size (in bytes) of a whole HTTP Multipart request.
 	 *
-	 * <p><em><b>Note:</b>
+	 * <p><em><b>Note 1:</b>
 	 * 	This maximum size includes the HTTP header (normal parameters included)
 	 * 	and the sum of the size of all uploaded files.
+	 * </em></p>
+	 *
+	 * <p><em><b>Note 2:</b>
+	 * 	The former property name
+	 * 	({@link TAPConfiguration#KEY_UPLOAD_MAX_FILE_SIZE KEY_UPLOAD_MAX_FILE_SIZE})
+	 * 	for this limit is still supported yet for some time....but ONLY IF the
+	 * 	new one ({@link TAPConfiguration#KEY_UPLOAD_MAX_REQUEST_SIZE KEY_UPLOAD_MAX_REQUEST_SIZE})
+	 * 	is not defined.
 	 * </em></p>
 	 *
 	 * @param tapConfig	The content of the TAP configuration file.
@@ -1011,14 +1022,24 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 *                     	wrong.
 	 */
 	private void initMaxUploadSize(final Properties tapConfig) throws TAPException{
-		String propValue = getProperty(tapConfig, KEY_UPLOAD_MAX_REQUEST_SIZE);
+		String propName = KEY_UPLOAD_MAX_REQUEST_SIZE;
+		String propValue = getProperty(tapConfig, propName);
+
+		// temporary backward compatibility with the deprecated property name:
+		if (propValue == null){
+			propName = KEY_UPLOAD_MAX_FILE_SIZE;
+			propValue = getProperty(tapConfig, propName);
+			if (propValue != null)
+				logger.warning("The property `" + KEY_UPLOAD_MAX_FILE_SIZE + "` has been replaced by `" + KEY_UPLOAD_MAX_REQUEST_SIZE + "`! This value is currently used anyway, but not forever. You should rename it into `" + KEY_UPLOAD_MAX_REQUEST_SIZE + "`.");
+		}
+
 		// If a value is specified...
 		if (propValue != null){
 			// ...parse the value:
-			Object[] limit = parseLimit(propValue, KEY_UPLOAD_MAX_REQUEST_SIZE, true, true);
+			Object[] limit = parseLimit(propValue, propName, true, true);
 			// ...check that the unit is correct (bytes):
 			if (!LimitUnit.bytes.isCompatibleWith((LimitUnit)limit[1]))
-				throw new TAPException("The maximum upload request size " + KEY_UPLOAD_MAX_REQUEST_SIZE + " (here: " + propValue + ") can not be expressed in a unit different from bytes (B, kB, MB, GB)!");
+				throw new TAPException("The maximum upload request size " + propName + " (here: " + propValue + ") can not be expressed in a unit different from bytes (B, kB, MB, GB)!");
 			// ...set the max request size:
 			long value = (Long)limit[0] * ((LimitUnit)limit[1]).bytesFactor();
 			setMaxUploadSize(value);
