@@ -20,26 +20,6 @@ package uws;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import uws.job.ErrorSummary;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
@@ -50,6 +30,20 @@ import uws.service.log.DefaultUWSLog;
 import uws.service.log.UWSLog;
 import uws.service.request.RequestParser;
 import uws.service.request.UploadFile;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.lang.reflect.Array;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Some useful functions for the managing of a UWS service.
@@ -527,8 +521,8 @@ public class UWSToolBox {
 
 			// Set the HTTP content length:
 			if (contentSize > 0)
-				response.setContentLength((int)contentSize);
-
+				response.setHeader("Content-Length", String.valueOf(contentSize));
+		
 			// Write the file into the HTTP response:
 			output = response.getOutputStream();
 			byte[] buffer = new byte[1024];
