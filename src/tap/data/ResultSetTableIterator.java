@@ -19,17 +19,6 @@ package tap.data;
  * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
  */
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.NoSuchElementException;
-
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
@@ -39,6 +28,12 @@ import adql.translator.JDBCTranslator;
 import tap.db.DBConnection;
 import tap.metadata.TAPColumn;
 import uws.ISO8601Format;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.NoSuchElementException;
 
 /**
  * <p>{@link TableIterator} which lets iterate over a SQL {@link ResultSet}.</p>
@@ -731,8 +726,12 @@ public class ResultSetTableIterator implements TableIterator {
 			else if (colValue instanceof BigDecimal) {
 				// https://github.com/gmantele/taplib/issues/97
 				BigDecimal bd = (BigDecimal) colValue;
-				if (bd.doubleValue() - bd.intValue() == 0.0)
+				if (colType.type == DBDatatype.BIGINT)
+					colValue = bd.longValue();
+				else if (colType.type == DBDatatype.INTEGER || colType.type == DBDatatype.SMALLINT)
 					colValue = bd.intValue();
+				else if (colType.type == DBDatatype.REAL)
+					colValue = bd.floatValue();
 				else
 					colValue = bd.doubleValue();
 			}
