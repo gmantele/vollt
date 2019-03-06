@@ -287,13 +287,6 @@ public class ADQLTable implements ADQLObject, FromContent {
 		// Ensure no sub-query is set:
 		if (table != null)
 			subQuery = null;
-
-		// Finally set this table name as default table alias:
-		/* Note: this aims to avoid ambiguous error messages coming from the
-		 *       database when the DB and the ADQL names of a table are
-		 *       different. */
-		setAlias(this.table);
-		setCaseSensitive(IdentifierField.ALIAS, isCaseSensitive(IdentifierField.TABLE));
 	}
 
 	/**
