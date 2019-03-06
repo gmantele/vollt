@@ -2,21 +2,22 @@ package tap.resource;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2015-2017 - Astronomisches Rechen Institut (ARI)
+ *
+ * Copyright 2015-2019 - Astronomisches Rechen Institut (ARI),
+ *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.io.BufferedReader;
@@ -39,7 +40,7 @@ import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>A {@link TAPResource} which is able to "forward" an HTTP request toward a specified URI.</p>
- * 
+ *
  * <p>
  * 	In function of the URI shape (i.e. what is the scheme? none/file:/other) and the servlet path,
  * 	the HTTP request will be internally forwarded to the Web Application file (using
@@ -47,11 +48,11 @@ import uws.service.log.UWSLog.LogLevel;
  * 	the content of the specified file will be copied in the HTTP response or a redirection toward
  * 	the given URL will be performed.
  * </p>
- * 
+ *
  * <p><i>See {@link #forward(String, String, HttpServletRequest, HttpServletResponse)} for more details</i></p>
- * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (03/2017)
+ *
+ * @author Gr&eacute;gory Mantelet (ARI;CDS)
+ * @version 2.2 (03/2019)
  * @since 2.1
  */
 public abstract class ForwardResource implements TAPResource {
@@ -62,7 +63,7 @@ public abstract class ForwardResource implements TAPResource {
 
 	/**
 	 * Builds a {@link ForwardResource} with a logger to use in case of "small" errors.
-	 * 
+	 *
 	 * @param logger	A TAP logger.
 	 */
 	protected ForwardResource(final TAPLog logger){
@@ -71,7 +72,7 @@ public abstract class ForwardResource implements TAPResource {
 
 	/**
 	 * <p>Write the content of the specified file in the given HTTP response.</p>
-	 * 
+	 *
 	 * <p>Three cases are taken into account in this function, in function of the given URI:</p>
 	 * <ol>
 	 * 	<li><b>a file inside WebContent</b> if the given URI has no scheme (e.g. "tapIndex.jsp" or "/myFiles/tapIndex.html").
@@ -83,7 +84,7 @@ public abstract class ForwardResource implements TAPResource {
 	 * <li><b>a distance document</b> in all other cases. Indeed, if there is a scheme different from "file:" the given URI will be considered as a URL.
 	 *                                In this case, any request to the TAP home page is redirected to this URL.</li>
 	 * </ol>
-	 * 
+	 *
 	 * <p><b>Important note:</b>
 	 * 	The 1st option is applied ONLY IF the path of the TAP servlet is NOT the root path of the web application:
 	 * 	that's to say <code>/*</code>. In the case where a URI without scheme is provided though the servlet path
@@ -92,14 +93,14 @@ public abstract class ForwardResource implements TAPResource {
 	 * 	specified file is not a JSP or does not need any kind of interpretation by the function
 	 * 	{@link RequestDispatcher#forward(javax.servlet.ServletRequest, javax.servlet.ServletResponse)}.
 	 * </p>
-	 * 
+	 *
 	 * @param file		URI/URL/path of the file to write/forward/redirect in the given HTTP response.
 	 * @param mimeType	MIME type of the specified file.
 	 * @param request	HTTP request which require the specified file.
 	 * @param response	HTTP response in which the specified file must be written/forwarded/redirected.
-	 * 
+	 *
 	 * @return	<code>true</code> if the forward/redirection was successful, <code>false</code> otherwise.
-	 * 
+	 *
 	 * @throws IOException				When an error occur while forwarding toward the specified Web application resource,
 	 *                    				or while writing the specified local file
 	 *                    				or while redirection toward the specified URL
@@ -154,7 +155,7 @@ public abstract class ForwardResource implements TAPResource {
 						File f = new File(uri.getPath());
 						if (f.exists() && !f.isDirectory() && f.canRead()){
 							// set the content length:
-							response.setContentLength((int)f.length());
+							UWSToolBox.setContentLength(response, f.length());
 
 							// get the input stream:
 							input = new BufferedReader(new FileReader(f));
@@ -231,12 +232,12 @@ public abstract class ForwardResource implements TAPResource {
 
 	/**
 	 * <p>Log the given error as a TAP log message with the {@link LogLevel} ERROR, and the event corresponding to the resource name.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	The logged message starts with: <code>Can not write the specified content ({file})</code>.
 	 * 	After the specified error message, the following is appended: <code>! => A default content may be displayed.</code>.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * 	If the message parameter is missing, the {@link Throwable} message will be taken instead.
 	 * 	And if this latter is also missing, none will be written.

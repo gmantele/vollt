@@ -1,5 +1,25 @@
 package uws;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 /*
  * This file is part of UWSLibrary.
  *
@@ -31,25 +51,11 @@ import uws.service.log.UWSLog;
 import uws.service.request.RequestParser;
 import uws.service.request.UploadFile;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.lang.reflect.Array;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Some useful functions for the managing of a UWS service.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (01/2019)
+ * @version 4.4 (03/2019)
  */
 public class UWSToolBox {
 
@@ -525,9 +531,8 @@ public class UWSToolBox {
 			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 			// Set the HTTP content length:
-			if (contentSize > 0)
-				response.setHeader("Content-Length", String.valueOf(contentSize));
-		
+			setContentLength(response, contentSize);
+
 			// Write the file into the HTTP response:
 			output = response.getOutputStream();
 			byte[] buffer = new byte[1024];
@@ -687,5 +692,32 @@ public class UWSToolBox {
 				return fileExts[i];
 
 		return null;
+	}
+
+	/**
+	 * Set the content length in the given {@link HttpServletResponse}.
+	 *
+	 * <p><i><b>Implementation note:</b>
+	 * 	This could perfectly be done using
+	 * 	{@link HttpServletResponse#setContentLength(int)}, <b>but only if the
+	 * 	content size is encoded or fit in an integer value</b>. Otherwise, that
+	 * 	function will set no content length.
+	 * 	On the contrary, this current function takes a long value and set
+	 * 	manually the content type header.
+	 * </i></p>
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	This function has no effect if the given {@link HttpServletResponse} is
+	 * 	NULL or if the given content size is &le; 0.
+	 * </i></p>
+	 *
+	 * @param response		HTTP response.
+	 * @param contentSize	The content size to set.
+	 *
+	 * @since 4.4
+	 */
+	public static final void setContentLength(final HttpServletResponse response, final long contentSize){
+		if (response != null && contentSize > 0)
+			response.setHeader("Content-Length", String.valueOf(contentSize));
 	}
 }
