@@ -52,7 +52,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p><i>See {@link #forward(String, String, HttpServletRequest, HttpServletResponse)} for more details</i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.2 (03/2019)
+ * @version 2.3 (03/2019)
  * @since 2.1
  */
 public abstract class ForwardResource implements TAPResource {

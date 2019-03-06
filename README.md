@@ -47,8 +47,8 @@ Below are summed up the dependencies of each library:
 | STIL Library           |      |     |  X  |
 
 In the `lib` directory, you will find 2 JAR files:
-* The *HTTP Multipart Library*: `cos-1.5beta.jar` (i.e. package `com.oreilly.servlet`). This library helps dealing with uploads.
-* The *[STIL Library](http://www.star.bris.ac.uk/~mbt/stil/)*: `stil3.1.jar` (i.e. packages `nom.tap`, `org.apache.tools.bzip2`, `uk.ac.starlink`). This library helps supporting VOTable (read and write) and some other output formats. 
+* The *HTTP Multipart Library*: `commons-fileupload-1.3.3.jar` (and `commons-io-2.6.jar`). This library helps dealing with uploads.
+* The *[STIL Library](http://www.star.bris.ac.uk/~mbt/stil/)*: `stil_3.3-2.jar` (i.e. packages `nom.tap`, `org.apache.tools.bzip2`, `uk.ac.starlink`). This library helps supporting VOTable (read and write) and some other output formats. 
 
 The *Postgres JDBC Driver* is needed ONLY IF you want to use (and keep) `adql.translator.PgSphereTranslator`. You can get this driver on the [PostgreSQL website](https://jdbc.postgresql.org/download.html). The required package for the ADQL and TAP libraries is `org.postgresql` (and particularly the class `org.postgresql.Driver`).
 

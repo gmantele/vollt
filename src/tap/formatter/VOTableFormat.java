@@ -86,7 +86,7 @@ import uk.ac.starlink.votable.VOTableVersion;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.2 (03/2019)
+ * @version 2.3 (03/2019)
  */
 public class VOTableFormat implements OutputFormat {
 

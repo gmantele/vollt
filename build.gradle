@@ -8,7 +8,7 @@ repositories {
 }
 
 dependencies {
-    compile fileTree(dir: 'lib', includes: ['stil_3.1.jar'])
+    compile fileTree(dir: 'lib', includes: ['stil_3.3-2.jar'])
     compile 'javax.servlet:javax.servlet-api:3.0.1'
     compile 'postgresql:postgresql:9.1-901.jdbc4'
     compile 'org.slf4j:slf4j-api:1.7.25'

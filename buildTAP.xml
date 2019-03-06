@@ -17,7 +17,7 @@
 	<property name="commonsFileUploadJarName" value="commons-fileupload-1.3.3.jar" />
 	<property name="commonsFileUploadJar" value="${libDir}/${commonsFileUploadJarName}" />
 	
-	<property name="stilJarName" value="stil_3.1.jar" />
+	<property name="stilJarName" value="stil_3.3-2.jar" />
 	<property name="stilJar" value="${libDir}/${stilJarName}" />
 
 	<property name="slf4jApiJarName" value="slf4j-api-1.7.25.jar" />
