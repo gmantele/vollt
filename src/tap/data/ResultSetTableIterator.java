@@ -16,7 +16,8 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2014-2017 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2019 - Astronomisches Rechen Institut (ARI),
+ *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.math.BigDecimal;
@@ -47,8 +48,8 @@ import uws.ISO8601Format;
  * 	{@link #getColType()} will return a TAP type based on the one declared in the {@link ResultSetMetaData} object.
  * </i></p>
  *
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.1 (07/2017)
+ * @author Gr&eacute;gory Mantelet (ARI;CDS)
+ * @version 2.3 (03/2019)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {
@@ -716,32 +717,59 @@ public class ResultSetTableIterator implements TableIterator {
 	protected Object formatColValue(Object colValue) throws DataReadException{
 		if (colValue != null){
 			DBType colType = getColType();
+
 			// if the column value is a java.sql.Time object, format it into an ISO8601 time (i.e. with the format: HH:mm:ss):
 			if (colValue instanceof java.sql.Time)
 				colValue = timeFormat.format((java.sql.Time)colValue);
+
 			// if the column value is a java.sql.Date object, format it into an ISO8601 date (i.e. with the format: yyyy-MM-dd):
 			else if (colValue instanceof java.sql.Date)
 				colValue = dateFormat.format((java.sql.Date)colValue);
+
 			// if the column value is a Timestamp (or java.util.Date) object, format it into an ISO8601 date-time:
 			// note: java.sql.Timestamp extends java.util.Date. That's why the next condition also works for java.sql.Timestamp.
 			else if (colValue instanceof java.util.Date)
 				colValue = ISO8601Format.format((java.util.Date)colValue);
-			// if the type is a BigDecimal object (this is possible for instance with PostgreSQL "numeric" datatype,
+
+			// if the type is a BigDecimal object (this is possible for instance with PostgreSQL "numeric" datatype or Sybase IQ,
 			// but this type can not be supported in FITS and VOTable):
-			else if (colValue instanceof BigDecimal)
-				colValue = ((BigDecimal)colValue).doubleValue();
+			else if (colValue instanceof BigDecimal){
+				BigDecimal bd = (BigDecimal)colValue;
+				if (colType.type == DBDatatype.BIGINT)
+					colValue = bd.longValue();
+				else if (colType.type == DBDatatype.INTEGER)
+					colValue = bd.intValue();
+				else if (colType.type == DBDatatype.SMALLINT)
+					colValue = bd.shortValue();
+				else if (colType.type == DBDatatype.REAL)
+					colValue = bd.floatValue();
+				else
+					colValue = bd.doubleValue();
+			}
+
 			// if the type is a BigInteger object (as BigDecimal, this type can not be supported in FITS and VOTable):
-			else if (colValue instanceof BigInteger)
-				colValue = ((BigInteger)colValue).longValue();
+			else if (colValue instanceof BigInteger){
+				BigInteger bi = (BigInteger)colValue;
+				if (colType.type == DBDatatype.INTEGER)
+					colValue = bi.intValue();
+				else if (colType.type == DBDatatype.SMALLINT)
+					colValue = bi.shortValue();
+				else
+					colValue = bi.longValue();
+			}
+
 			// if the type is Integer but it is declared as a SMALLINT cast the value (absolutely required for the FITS format):
 			else if (colValue instanceof Integer && colType != null && colValue != null && colType.type == DBDatatype.SMALLINT)
 				colValue = new Short(((Integer)colValue).shortValue());
+
 			// if the column value is a Boolean object, format it as a SMALLINT:
 			else if (colValue instanceof Boolean)
 				colValue = ((Boolean)colValue) ? new Short((short)1) : new Short((short)0);
+
 			// if the column should be only a character:
 			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)
 				colValue = ((String)colValue).charAt(0);
+
 			// if the column value is a geometrical object, it must be serialized in STC-S:
 			else if (translator != null && colType != null && colType.isGeometry()){
 				try{
@@ -753,6 +781,7 @@ public class ResultSetTableIterator implements TableIterator {
 				}
 			}
 		}
+
 		return colValue;
 	}
 
@@ -858,7 +887,8 @@ public class ResultSetTableIterator implements TableIterator {
 		if (params != null && params.length > 0){
 			try{
 				lengthParam = Integer.parseInt(params[0]);
-			}catch(NumberFormatException nfe){}
+			}catch(NumberFormatException nfe){
+			}
 		}
 
 		// CASE: SQLITE
