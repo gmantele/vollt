@@ -22,6 +22,9 @@
 
 	<property name="slf4jApiJarName" value="slf4j-api-1.7.25.jar" />
 	<property name="slf4jApiJar" value="${libDir}/${slf4jApiJarName}" />
+	
+	<property name="jsonJarName" value="json-20180813.jar" />
+	<property name="jsonJar" value="${libDir}/${jsonJarName}" />
 
 	<property name="sqliteJarName" value="sqlite-jdbc-3.16.1.jar" />
 	<property name="sqliteJar" value="${libDir}/${sqliteJarName}" />
@@ -35,9 +38,9 @@
 	<property name="astroh2JarName" value="astroh2-0.3.jar" />
 	<property name="astroh2Jar" value="${libDir}/${astroh2JarName}" />
 		
-	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**,datalink/**,puzzlibs/**" />
+	<property name="tapPath" value="tap/**,adql/**,uws/**,cds/**" />
 	<property name="jsonPath" value="org/json/**" />
-	<property name="extLibsPath" value="com/oreilly/servlet/**,nom/tam/**,org/apache/tools/bzip2/**,uk/ac/starlink/**" />
+	<property name="extLibsPath" value="org/slf4j/**,org/apache/commons/fileupload/**,org/apache/commons/io/**,nom/tam/**,org/apache/tools/bzip2/**,edu/jhu/**,gov/fnal/eag/healpix/**,uk/ac/**" />
 	<property name="licensePath" value="COPYING.LESSER" />
 	<property name="includesList" value="${tapPath},${jsonPath},${extLibsPath}" />
 
@@ -180,12 +183,14 @@
 	<target name="buildLib" depends="compileLib,junitValidation" description="After 'clean', build the library JAR (only classes).">
 		<echo>Generate the library:</echo>
 		<jar basedir="${classesDir}" destfile="${libJarFileWithSTIL}" includes="${includesList}">
+			<zipfileset src="${jsonJar}" excludes="META-INF/*" />
 			<zipfileset src="${commonsIOJar}" excludes="META-INF/**" />
 			<zipfileset src="${commonsFileUploadJar}" excludes="META-INF/**" />
 			<zipfileset src="${stilJar}" excludes="META-INF/*" />
 			<zipfileset dir="${srcDir}" includes="${licensePath}" />
 		</jar>
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
+			<zipfileset src="${jsonJar}" excludes="META-INF/**" />
 			<zipfileset src="${commonsIOJar}" excludes="META-INF/**" />
 			<zipfileset src="${commonsFileUploadJar}" excludes="META-INF/**" />
 			<zipfileset dir="${srcDir}" includes="${licensePath}" />
@@ -196,12 +201,14 @@
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
 		<jar compress="false" destfile="${srcJarFileWithSTIL}">
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
+			<zipfileset dir="${libDir}" includes="${jsonJarName}" fullPath="${jsonJar}" />
 			<zipfileset dir="${libDir}" includes="${commonsIOJarName}" fullPath="${commonsIOJar}" />
 			<zipfileset dir="${libDir}" includes="${commonsFileUploadJarName}" fullPath="${commonsFileUploadJar}" />
 			<zipfileset dir="${libDir}" includes="${stilJarName}" fullPath="${stilJar}" />
 		</jar>
 		<jar compress="false" destfile="${srcJarFile}">
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
+			<zipfileset dir="${libDir}" includes="${jsonJarName}" fullPath="${jsonJar}" />
 			<zipfileset dir="${libDir}" includes="${commonsIOJarName}" fullPath="${commonsIOJar}" />
 			<zipfileset dir="${libDir}" includes="${commonsFileUploadJarName}" fullPath="${commonsFileUploadJar}" />
 		</jar>
