@@ -19,16 +19,20 @@ import adql.query.operand.StringConstant;
 public class TestADQLParser {
 
 	@BeforeClass
-	public static void setUpBeforeClass() throws Exception{}
+	public static void setUpBeforeClass() throws Exception{
+	}
 
 	@AfterClass
-	public static void tearDownAfterClass() throws Exception{}
+	public static void tearDownAfterClass() throws Exception{
+	}
 
 	@Before
-	public void setUp() throws Exception{}
+	public void setUp() throws Exception{
+	}
 
 	@After
-	public void tearDown() throws Exception{}
+	public void tearDown() throws Exception{
+	}
 
 	@Test
 	public void testColumnReference(){
@@ -75,7 +79,7 @@ public class TestADQLParser {
 			fail("A SELECT item index is forbidden in GROUP BY! This test should have failed.");
 		}catch(Exception e){
 			assertEquals(ParseException.class, e.getClass());
-			assertEquals(" Encountered \"1\". Was expecting one of: \"\\\"\" <REGULAR_IDENTIFIER> ", e.getMessage());
+			assertEquals(" Encountered \"1\". Was expecting one of: \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> ", e.getMessage());
 		}
 
 		try{
@@ -93,7 +97,7 @@ public class TestADQLParser {
 			fail("A column index is forbidden in USING(...)! This test should have failed.");
 		}catch(Exception e){
 			assertEquals(ParseException.class, e.getClass());
-			assertEquals(" Encountered \"1\". Was expecting one of: \"\\\"\" <REGULAR_IDENTIFIER> ", e.getMessage());
+			assertEquals(" Encountered \"1\". Was expecting one of: \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> ", e.getMessage());
 		}
 	}
 
@@ -113,7 +117,7 @@ public class TestADQLParser {
 	public void testJoinTree(){
 		ADQLParser parser = new ADQLParser();
 		try{
-			String[] queries = new String[]{"SELECT * FROM aTable A JOIN aSecondTable B ON A.id = B.id JOIN aThirdTable C ON B.id = C.id;","SELECT * FROM aTable A NATURAL JOIN aSecondTable B NATURAL JOIN aThirdTable C;"};
+			String[] queries = new String[]{ "SELECT * FROM aTable A JOIN aSecondTable B ON A.id = B.id JOIN aThirdTable C ON B.id = C.id;", "SELECT * FROM aTable A NATURAL JOIN aSecondTable B NATURAL JOIN aThirdTable C;" };
 			for(String q : queries){
 				ADQLQuery query = parser.parseQuery(q);
 
@@ -167,6 +171,16 @@ public class TestADQLParser {
 		}catch(Throwable t){
 			assertEquals(ParseException.class, t.getClass());
 			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.10: "));
+			assertTrue(t.getMessage().endsWith("Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it)."));
+		}
+
+		/* Un-finished double/single quoted string: */
+		try{
+			(new ADQLParser()).parseQuery("select \"stuff FROM aTable");
+		}catch(Throwable t){
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.26: <EOF>"));
+			assertTrue(t.getMessage().endsWith("Possible cause: a string between single or double quotes which is never closed (solution: well...just close it!)."));
 		}
 
 		// But in a string, delimited identifier or a comment, it is fine:
@@ -302,6 +316,69 @@ public class TestADQLParser {
 		}catch(Throwable t){
 			assertEquals(ParseException.class, t.getClass());
 			assertTrue(t.getMessage().endsWith("\n(HINT: \"CASE\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)"));
+		}
+	}
+
+	@Test
+	public void testUDFName(){
+		ADQLParser parser = new ADQLParser();
+
+		// CASE: Valid UDF name => OK
+		try{
+			parser.parseQuery("SELECT foo(p1,p2) FROM aTable");
+		}catch(Throwable t){
+			t.printStackTrace();
+			fail("Unexpected parsing error! This query should have passed. (see console for more details)");
+		}
+
+		// CASE: Invalid UDF name => ParseException
+		final String[] functionsToTest = new String[]{ "_foo", "2do", "do!" };
+		for(String fct : functionsToTest){
+			try{
+				parser.parseQuery("SELECT " + fct + "(p1,p2) FROM aTable");
+				fail("A UDF name like \"" + fct + "\" is not allowed by the ADQL grammar. This query should not pass.");
+			}catch(Throwable t){
+				assertEquals(ParseException.class, t.getClass());
+				assertEquals("Invalid (User Defined) Function name: \"" + fct + "\"!", t.getMessage());
+			}
+		}
+	}
+
+	@Test
+	public void testTryQuickFix(){
+		ADQLParser parser = new ADQLParser();
+
+		try{
+			/* CASE: Nothing to fix => exactly the same as provided */
+			// raw ASCII query with perfectly regular ADQL identifiers:
+			assertEquals("SELECT foo, bar FROM aTable", parser.tryQuickFix("SELECT foo, bar FROM aTable"));
+			// same with \n, \r and \t (replaced by 4 spaces):
+			assertEquals("SELECT foo," + System.getProperty("line.separator") + "    bar" + System.getProperty("line.separator") + "FROM aTable", parser.tryQuickFix("SELECT foo,\r\n\tbar\nFROM aTable"));
+			// still ASCII query with delimited identifiers and ADQL functions:
+			assertEquals("SELECT \"foo\"," + System.getProperty("line.separator") + "    \"_bar\", AVG(col1)" + System.getProperty("line.separator") + "FROM \"public\".aTable", parser.tryQuickFix("SELECT \"foo\",\r\n\t\"_bar\", AVG(col1)\nFROM \"public\".aTable"));
+
+			/* CASE: Unicode confusable characters => replace by their ASCII alternative */
+			assertEquals("SELECT \"_bar\" FROM aTable", parser.tryQuickFix("SELECT \"\uFE4Dbar\" FROM aTable"));
+
+			/* CASE: incorrect regular identifier */
+			assertEquals("SELECT \"_bar\" FROM aTable", parser.tryQuickFix("SELECT _bar FROM aTable"));
+			assertEquals("SELECT \"_bar\" FROM aTable", parser.tryQuickFix("SELECT \uFE4Dbar FROM aTable"));
+			assertEquals("SELECT \"2mass_id\" FROM aTable", parser.tryQuickFix("SELECT 2mass_id FROM aTable"));
+			assertEquals("SELECT \"col?\" FROM aTable", parser.tryQuickFix("SELECT col? FROM aTable"));
+			assertEquals("SELECT \"col[2]\" FROM aTable", parser.tryQuickFix("SELECT col[2] FROM aTable"));
+
+			/* CASE: SQL reserved keyword */
+			assertEquals("SELECT \"date\", \"year\", \"user\" FROM \"public\".aTable", parser.tryQuickFix("SELECT date, year, user FROM public.aTable"));
+
+			/* CASE: ADQL function name without parameters list */
+			assertEquals("SELECT \"count\", \"distance\" FROM \"schema\".aTable", parser.tryQuickFix("SELECT count, distance FROM schema.aTable"));
+
+			/* CASE: a nice combination of everything (with comments at beginning, middle and end) */
+			assertEquals("-- begin comment" + System.getProperty("line.separator") + "SELECT id, \"_raj2000\", \"distance\", (\"date\")," + System.getProperty("line.separator") + "    \"min\",min(mag), \"_dej2000\" -- in-between commment" + System.getProperty("line.separator") + "FROM \"public\".mytable -- end comment", parser.tryQuickFix("-- begin comment\r\nSELECT id, \uFE4Draj2000, distance, (date),\r\tmin,min(mag), \"_dej2000\" -- in-between commment\nFROM public.mytable -- end comment"));
+
+		}catch(Throwable t){
+			t.printStackTrace();
+			fail("Unexpected parsing error! This query should have passed. (see console for more details)");
 		}
 	}
 

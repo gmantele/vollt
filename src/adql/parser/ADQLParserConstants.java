@@ -189,19 +189,19 @@ public interface ADQLParserConstants {
   /** RegularExpression Id. */
   int STRING_LITERAL = 93;
   /** RegularExpression Id. */
-  int DELIMITED_IDENTIFIER = 96;
+  int SCIENTIFIC_NUMBER = 94;
   /** RegularExpression Id. */
-  int REGULAR_IDENTIFIER = 97;
+  int UNSIGNED_FLOAT = 95;
   /** RegularExpression Id. */
-  int Letter = 98;
+  int UNSIGNED_INTEGER = 96;
   /** RegularExpression Id. */
-  int SCIENTIFIC_NUMBER = 99;
+  int DIGIT = 97;
   /** RegularExpression Id. */
-  int UNSIGNED_FLOAT = 100;
+  int DELIMITED_IDENTIFIER = 100;
   /** RegularExpression Id. */
-  int UNSIGNED_INTEGER = 101;
+  int REGULAR_IDENTIFIER_CANDIDATE = 101;
   /** RegularExpression Id. */
-  int DIGIT = 102;
+  int Letter = 102;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -306,15 +306,15 @@ public interface ADQLParserConstants {
     "\"\\\'\"",
     "<token of kind 92>",
     "\"\\\'\"",
-    "\"\\\"\"",
-    "<token of kind 95>",
-    "\"\\\"\"",
-    "<REGULAR_IDENTIFIER>",
-    "<Letter>",
     "<SCIENTIFIC_NUMBER>",
     "<UNSIGNED_FLOAT>",
     "<UNSIGNED_INTEGER>",
     "<DIGIT>",
+    "\"\\\"\"",
+    "<token of kind 99>",
+    "\"\\\"\"",
+    "<REGULAR_IDENTIFIER_CANDIDATE>",
+    "<Letter>",
   };
 
 }
