@@ -153,4 +153,9 @@ public class ServiceConnection4Test implements ServiceConnection {
 		return null;
 	}
 
+	@Override
+	public boolean fixOnFailEnabled(){
+		return false;
+	}
+
 }

@@ -415,6 +415,13 @@ public class VOTableFormat implements OutputFormat {
 			out.newLine();
 		}
 
+		// Append the fixed ADQL query, if any:	[OPTIONAL]
+		String fixedQuery = execReport.fixedQuery;
+		if (adqlQuery != null){
+			out.write("<INFO name=\"QUERY_AFTER_AUTO_FIX\"" + VOSerializer.formatAttribute("value", fixedQuery) + "/>");
+			out.newLine();
+		}
+
 		// Insert the definition of all used coordinate systems:
 		HashSet<String> insertedCoosys = new HashSet<String>(10);
 		for(DBColumn col : execReport.resultingColumns){

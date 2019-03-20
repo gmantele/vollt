@@ -16,13 +16,14 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2016-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2016-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
+import static tap.config.TAPConfiguration.DEFAULT_FIX_ON_FAIL;
 import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
 import static tap.config.TAPConfiguration.DEFAULT_LOGGER;
 import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
@@ -39,6 +40,7 @@ import static tap.config.TAPConfiguration.KEY_DEFAULT_UPLOAD_LIMIT;
 import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
 import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
 import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
+import static tap.config.TAPConfiguration.KEY_FIX_ON_FAIL;
 import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
 import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
 import static tap.config.TAPConfiguration.KEY_LOGGER;
@@ -126,15 +128,17 @@ import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog.LogLevel;
 
 /**
- * <p>Concrete implementation of {@link ServiceConnection}, fully parameterized with a TAP configuration file.</p>
+ * Concrete implementation of {@link ServiceConnection}, fully parameterized
+ * with a TAP configuration file.
  *
  * <p>
- * 	Every aspects of the TAP service are configured here. This instance is also creating the {@link TAPFactory} using the
- * 	TAP configuration file thanks to the implementation {@link ConfigurableTAPFactory}.
+ * 	Every aspects of the TAP service are configured here. This instance is also
+ * 	creating the {@link TAPFactory} using the TAP configuration file thanks to
+ * 	the implementation {@link ConfigurableTAPFactory}.
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (11/2018)
+ * @version 2.3 (03/2019)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -142,10 +146,12 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	/** File manager to use in the TAP service. */
 	private UWSFileManager fileManager;
 
-	/** Object to use in the TAP service in order to log different types of messages (e.g. DEBUG, INFO, WARNING, ERROR, FATAL). */
+	/** Object to use in the TAP service in order to log different types of
+	 * messages (e.g. DEBUG, INFO, WARNING, ERROR, FATAL). */
 	private TAPLog logger;
 
-	/** Factory which can create different types of objects for the TAP service (e.g. database connection). */
+	/** Factory which can create different types of objects for the TAP service
+	 * (e.g. database connection). */
 	private TAPFactory tapFactory;
 
 	/** Object gathering all metadata of this TAP service. */
@@ -175,9 +181,11 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private final ArrayList<OutputFormat> outputFormats;
 
 	/** Array of 2 integers: resp. default and maximum output limit.
-	 * <em>Each limit is expressed in a unit specified in the array {@link #outputLimitTypes}.</em> */
+	 * <em>Each limit is expressed in a unit specified in the array
+	 * {@link #outputLimitTypes}.</em> */
 	private int[] outputLimits = new int[]{ -1, -1 };
-	/** Array of 2 limit units: resp. unit of the default output limit and unit of the maximum output limit. */
+	/** Array of 2 limit units: resp. unit of the default output limit and unit
+	 * of the maximum output limit. */
 	private LimitUnit[] outputLimitTypes = new LimitUnit[2];
 
 	/** Indicate whether the UPLOAD feature is enabled or not. */
@@ -201,20 +209,31 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private UserIdentifier userIdentifier = null;
 
 	/** List of all allowed coordinate systems.
-	 * <em>If NULL, all coord. sys. are allowed. If empty list, none is allowed.</em> */
+	 * <em>
+	 * 	If NULL, all coord. sys. are allowed. If empty list, none is allowed.
+	 * </em> */
 	private ArrayList<String> lstCoordSys = null;
 
 	/** List of all allowed ADQL geometrical functions.
-	 * <em>If NULL, all geometries are allowed. If empty list, none is allowed.</em> */
+	 * <em>
+	 * 	If NULL, all geometries are allowed. If empty list, none is allowed.
+	 * </em> */
 	private ArrayList<String> geometries = null;
 	private final String GEOMETRY_REGEXP = "(AREA|BOX|CENTROID|CIRCLE|CONTAINS|DISTANCE|COORD1|COORD2|COORDSYS|INTERSECTS|POINT|POLYGON|REGION)";
 
 	/** List of all known and allowed User Defined Functions.
-	 * <em>If NULL, any unknown function is allowed. If empty list, none is allowed.</em> */
+	 * <em>If NULL, any unknown function is allowed. If empty list, none is
+	 * allowed.</em> */
 	private Collection<FunctionDef> udfs = new ArrayList<FunctionDef>(0);
 
+	/** Indicate whether the input ADQL query should be automatically fixed
+	 * if its parsing fails because of an incorrect tokenization.
+	 * @since 2.3 */
+	private boolean isFixOnFailEnabled = DEFAULT_FIX_ON_FAIL;
+
 	/**
-	 * Create a TAP service description thanks to the given TAP configuration file.
+	 * Create a TAP service description thanks to the given TAP configuration
+	 * file.
 	 *
 	 * @param tapConfig	The content of the TAP configuration file.
 	 *
@@ -226,12 +245,15 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	}
 
 	/**
-	 * Create a TAP service description thanks to the given TAP configuration file.
+	 * Create a TAP service description thanks to the given TAP configuration
+	 * file.
 	 *
 	 * @param tapConfig		The content of the TAP configuration file.
-	 * @param webAppRootDir	The directory of the Web Application running this TAP service.
-	 *                     	<em>In this directory another directory may be created in order to store all TAP service files
-	 *                     	if none is specified in the given TAP configuration file.</em>
+	 * @param webAppRootDir	The directory of the Web Application running this
+	 *                     	TAP service. <em>In this directory another directory
+	 *                     	may be created in order to store all TAP service
+	 *                     	files if none is specified in the given TAP
+	 *                     	configuration file.</em>
 	 *
 	 * @throws NullPointerException	If the given properties set is NULL.
 	 * @throws TAPException			If a property is wrong or missing.
@@ -284,6 +306,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		initCoordSys(tapConfig);
 		initADQLGeometries(tapConfig);
 		initUDFs(tapConfig);
+		isFixOnFailEnabled = Boolean.parseBoolean(getProperty(tapConfig, KEY_FIX_ON_FAIL));
 	}
 
 	/**
@@ -1733,6 +1756,11 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	@Override
 	public int[] getFetchSize(){
 		return fetchSize;
+	}
+
+	@Override
+	public boolean fixOnFailEnabled(){
+		return isFixOnFailEnabled;
 	}
 
 }
