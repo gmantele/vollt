@@ -38,3 +38,7 @@ test{
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
+
+/* Set the minimum Java version compatibility: */
+sourceCompatibility = '1.7'
+targetCompatibility = '1.7'

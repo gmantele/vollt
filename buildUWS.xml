@@ -40,6 +40,10 @@
 	<fail message="The property SERVLET-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.servlet.">
 		<condition><not><isset property="SERVLET-API"/></not></condition>
 	</fail>
+	
+	<!-- JAVA VERSION COMPATIBILITY -->
+	<property name="ant.build.javac.source" value="1.7"/>
+	<property name="ant.build.javac.target" value="1.7"/>
 
 	<!-- CLASSPATHS -->
 	<path id="uws.classpath">
