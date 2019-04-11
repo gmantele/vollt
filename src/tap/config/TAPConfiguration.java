@@ -266,13 +266,13 @@ public final class TAPConfiguration {
 	/** Name/Key of the property specifying the maximum size of all VOTable(s)
 	 * uploaded in a query.
 	 * @deprecated	Since 2.3, use the property {@value #KEY_MAX_UPLOAD_LIMIT}
-	 *            	and {@value #KEY_MAX_REQUEST_LIMIT} instead. */
+	 *            	and {@value #KEY_UPLOAD_MAX_REQUEST_SIZE} instead. */
 	@Deprecated
 	public final static String KEY_UPLOAD_MAX_FILE_SIZE = "upload_max_file_size";
 	/** Default value of the property {@value #KEY_UPLOAD_MAX_FILE_SIZE} =
 	 * {@value #DEFAULT_UPLOAD_MAX_FILE_SIZE}.
 	 * @deprecated	Since 2.3, use the property {@value #KEY_MAX_UPLOAD_LIMIT}
-	 *            	and {@value #KEY_MAX_REQUEST_LIMIT} instead. */
+	 *            	and {@value #KEY_UPLOAD_MAX_REQUEST_SIZE} instead. */
 	@Deprecated
 	public final static int DEFAULT_UPLOAD_MAX_FILE_SIZE = Integer.MAX_VALUE;
 	/** Name/Key of the property specifying the maximum size of a whole HTTP

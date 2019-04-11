@@ -44,7 +44,7 @@ import uws.service.file.UWSFileManager;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (03/2019)
+ * @version 2.3 (04/2019)
  */
 public interface ServiceConnection {
 
@@ -52,7 +52,7 @@ public interface ServiceConnection {
 	 * List of possible limit units.
 	 *
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (01/2015)
+	 * @version 2.3 (04/2019)
 	 */
 	public static enum LimitUnit {
 		rows("row"), bytes("byte"), kilobytes("kilobyte"), megabytes("megabyte"), gigabytes("gigabyte");
@@ -120,12 +120,12 @@ public interface ServiceConnection {
 		 *
 		 * @throws TAPException If the two given units are not compatible.
 		 *
-		 * @see #compare(long, LimitUnit, long, LimitUnit)
+		 * @see #compare(long, tap.ServiceConnection.LimitUnit, long, tap.ServiceConnection.LimitUnit)
 		 *
 		 * @since 1.1
 		 */
 		public static int compare(final int leftLimit, final LimitUnit leftUnit, final int rightLimit, final LimitUnit rightUnit) throws TAPException{
-			return compare(leftLimit, leftUnit, rightLimit, rightUnit);
+			return compare((long)leftLimit, leftUnit, (long)rightLimit, rightUnit);
 		}
 
 		/**

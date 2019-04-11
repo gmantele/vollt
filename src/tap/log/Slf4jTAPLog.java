@@ -63,9 +63,11 @@ import uws.service.log.Slf4jUWSLog;
  * 	The ID of the general/root logger is just
  * 	<code>{@value #DEFAULT_ROOT_LOG_ID}</code>. For all the other specific
  * 	loggers, <code>{SUFFIX}</code> is a dot followed by one among
- * 	{@value #UWS_LOG_ID_SUFFIX}, {@value #HTTP_LOG_ID_SUFFIX},
- * 	{@value #JOB_LOG_ID_SUFFIX} and {@value #THREAD_LOG_ID_SUFFIX}. Thus, the
- * 	full ID of the logger for the HTTP requests is:
+ * 	{@value uws.service.log.Slf4jUWSLog#UWS_LOG_ID_SUFFIX},
+ * 	{@value uws.service.log.Slf4jUWSLog#HTTP_LOG_ID_SUFFIX},
+ * 	{@value uws.service.log.Slf4jUWSLog#JOB_LOG_ID_SUFFIX} and
+ * 	{@value uws.service.log.Slf4jUWSLog#THREAD_LOG_ID_SUFFIX}. Thus, the full ID
+ * 	of the logger for the HTTP requests is:
  * </p>
  * <pre>uws.service.http</pre>
  *
