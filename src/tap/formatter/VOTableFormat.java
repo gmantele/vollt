@@ -417,7 +417,7 @@ public class VOTableFormat implements OutputFormat {
 
 		// Append the fixed ADQL query, if any:	[OPTIONAL]
 		String fixedQuery = execReport.fixedQuery;
-		if (adqlQuery != null){
+		if (fixedQuery != null){
 			out.write("<INFO name=\"QUERY_AFTER_AUTO_FIX\"" + VOSerializer.formatAttribute("value", fixedQuery) + "/>");
 			out.newLine();
 		}
