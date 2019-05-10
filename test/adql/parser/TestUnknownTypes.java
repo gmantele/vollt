@@ -28,55 +28,60 @@ import adql.query.ADQLQuery;
 
 public class TestUnknownTypes {
 
+	ADQLParserFactory parserFactory = new ADQLParserFactory();
+
 	@BeforeClass
-	public static void setUpBeforeClass() throws Exception{}
+	public static void setUpBeforeClass() throws Exception {
+	}
 
 	@AfterClass
-	public static void tearDownAfterClass() throws Exception{
+	public static void tearDownAfterClass() throws Exception {
 		DBType.DBDatatype.UNKNOWN.setCustomType(null);
 	}
 
 	@Before
-	public void setUp() throws Exception{}
+	public void setUp() throws Exception {
+	}
 
 	@After
-	public void tearDown() throws Exception{}
+	public void tearDown() throws Exception {
+	}
 
-	public void testForFctDef(){
+	public void testForFctDef() {
 		// Test with the return type:
-		try{
+		try {
 			FunctionDef fct = FunctionDef.parse("foo()->aType");
 			assertTrue(fct.isUnknown());
 			assertFalse(fct.isString());
 			assertFalse(fct.isNumeric());
 			assertFalse(fct.isGeometry());
 			assertEquals("?aType?", fct.returnType.type.toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
 		}
 
 		// Test with a parameter type:
-		try{
+		try {
 			FunctionDef fct = FunctionDef.parse("foo(param1 aType)");
 			assertTrue(fct.getParam(0).type.isUnknown());
 			assertFalse(fct.getParam(0).type.isString());
 			assertFalse(fct.getParam(0).type.isNumeric());
 			assertFalse(fct.getParam(0).type.isGeometry());
 			assertEquals("?aType?", fct.getParam(0).type.toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
 		}
 	}
 
 	@Test
-	public void testForColumns(){
+	public void testForColumns() {
 		final String QUERY_TXT = "SELECT FOO(C1), FOO(C2), FOO(C4), C1, C2, C3, C4 FROM T1";
 
-		try{
+		try {
 			// Create the parser:
-			ADQLParser parser = new ADQLParser();
+			ADQLParser parser = parserFactory.createParser();
 
 			// Create table/column metadata:
 			DefaultDBTable table1 = new DefaultDBTable("T1");
@@ -84,7 +89,7 @@ public class TestUnknownTypes {
 			table1.addColumn(new DefaultDBColumn("C2", new DBType(DBDatatype.UNKNOWN), table1));
 			table1.addColumn(new DefaultDBColumn("C3", new DBType(DBDatatype.VARCHAR), table1));
 			table1.addColumn(new DefaultDBColumn("C4", new DBType(DBDatatype.UNKNOWN_NUMERIC), table1));
-			Collection<DBTable> tList = Arrays.asList(new DBTable[]{table1});
+			Collection<DBTable> tList = Arrays.asList(new DBTable[]{ table1 });
 
 			// Check the type of the column T1.C1:
 			DBColumn col = table1.getColumn("C1", true);
@@ -113,7 +118,7 @@ public class TestUnknownTypes {
 
 			// Define a UDF, and allow all geometrical functions and coordinate systems:
 			FunctionDef udf1 = FunctionDef.parse("FOO(x INTEGER) -> INTEGER");
-			Collection<FunctionDef> udfList = Arrays.asList(new FunctionDef[]{udf1});
+			Collection<FunctionDef> udfList = Arrays.asList(new FunctionDef[]{ udf1 });
 			Collection<String> geoList = null;
 			Collection<String> csList = null;
 
@@ -155,7 +160,7 @@ public class TestUnknownTypes {
 			assertTrue(pq.getSelect().get(6).getOperand().isNumeric());
 			assertFalse(pq.getSelect().get(6).getOperand().isString());
 			assertFalse(pq.getSelect().get(6).getOperand().isGeometry());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("The construction, configuration and usage of the parser are correct. Nothing should have failed here. (see console for more details)");
 		}

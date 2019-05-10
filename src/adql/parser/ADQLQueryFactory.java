@@ -2,21 +2,21 @@ package adql.parser;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -76,41 +76,46 @@ import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
+import adql.query.operand.function.string.LowerFunction;
 
 /**
- * <p>This class lets the {@link ADQLParser} to build an object representation of an ADQL query.</p>
- * 
- * <p>To customize the object representation you merely have to extends the appropriate functions of this class.</p>
- * 
+ * This class lets the {@link ADQLParser} to build an object representation of
+ * an ADQL query.
+ *
+ * <p>
+ * 	To customize the object representation you merely have to extends the
+ * 	appropriate functions of this class.
+ * </p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (04/2017)
- * 
+ * @version 2.0 (04/2019)
+ *
  * @see ADQLParser
  */
 public class ADQLQueryFactory {
 
 	/**
 	 * Type of table JOIN.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
 	 * @version 1.0 (08/2011)
 	 */
-	public static enum JoinType{
+	public static enum JoinType {
 		CROSS, INNER, OUTER_LEFT, OUTER_RIGHT, OUTER_FULL;
 	}
 
 	/**
 	 * Create a query factory.
 	 */
-	public ADQLQueryFactory(){
+	public ADQLQueryFactory() {
 		;
 	}
 
-	public ADQLQuery createQuery() throws Exception{
+	public ADQLQuery createQuery() throws Exception {
 		return new ADQLQuery();
 	}
 
-	public ADQLTable createTable(final IdentifierItems idItems, final IdentifierItem alias) throws Exception{
+	public ADQLTable createTable(final IdentifierItems idItems, final IdentifierItem alias) throws Exception {
 		ADQLTable t = new ADQLTable(idItems.getCatalog(), idItems.getSchema(), idItems.getTable());
 
 		// Set the table alias:
@@ -126,10 +131,10 @@ public class ADQLQueryFactory {
 		return t;
 	}
 
-	public ADQLTable createTable(ADQLQuery query, IdentifierItem alias) throws Exception{
+	public ADQLTable createTable(ADQLQuery query, IdentifierItem alias) throws Exception {
 		ADQLTable t = new ADQLTable(query);
 
-		if (alias != null){
+		if (alias != null) {
 			// Set the table alias:
 			t.setAlias(alias.identifier);
 			// Set the case sensitivity:
@@ -139,8 +144,8 @@ public class ADQLQueryFactory {
 		return t;
 	}
 
-	public ADQLJoin createJoin(JoinType type, FromContent leftTable, FromContent rightTable) throws Exception{
-		switch(type){
+	public ADQLJoin createJoin(JoinType type, FromContent leftTable, FromContent rightTable) throws Exception {
+		switch(type) {
 			case CROSS:
 				return new CrossJoin(leftTable, rightTable);
 			case INNER:
@@ -156,8 +161,8 @@ public class ADQLQueryFactory {
 		}
 	}
 
-	public ADQLJoin createJoin(JoinType type, FromContent leftTable, FromContent rightTable, ClauseConstraints condition) throws Exception{
-		switch(type){
+	public ADQLJoin createJoin(JoinType type, FromContent leftTable, FromContent rightTable, ClauseConstraints condition) throws Exception {
+		switch(type) {
 			case CROSS:
 				throw new Exception("A cross join must have no condition (that's to say: no part ON) !");
 			default:
@@ -167,8 +172,8 @@ public class ADQLQueryFactory {
 		}
 	}
 
-	public ADQLJoin createJoin(JoinType type, FromContent leftTable, FromContent rightTable, Collection<ADQLColumn> lstColumns) throws Exception{
-		switch(type){
+	public ADQLJoin createJoin(JoinType type, FromContent leftTable, FromContent rightTable, Collection<ADQLColumn> lstColumns) throws Exception {
+		switch(type) {
 			case CROSS:
 				throw new Exception("A cross join must have no columns list (that's to say: no part USING) !");
 			default:
@@ -178,11 +183,11 @@ public class ADQLQueryFactory {
 		}
 	}
 
-	public SelectItem createSelectItem(ADQLOperand operand, String alias) throws Exception{
+	public SelectItem createSelectItem(ADQLOperand operand, String alias) throws Exception {
 		return new SelectItem(operand, alias);
 	}
 
-	public ADQLColumn createColumn(final IdentifierItems idItems) throws Exception{
+	public ADQLColumn createColumn(final IdentifierItems idItems) throws Exception {
 		ADQLColumn col = new ADQLColumn(idItems.getCatalog(), idItems.getSchema(), idItems.getTable(), idItems.getColumn());
 
 		// Set the case sensitivity:
@@ -194,7 +199,7 @@ public class ADQLQueryFactory {
 		return col;
 	}
 
-	public ADQLColumn createColumn(final IdentifierItem columnName) throws Exception{
+	public ADQLColumn createColumn(final IdentifierItem columnName) throws Exception {
 		ADQLColumn col = new ADQLColumn(null, null, null, columnName.identifier);
 
 		// Set the case sensitivity:
@@ -205,182 +210,194 @@ public class ADQLQueryFactory {
 		return col;
 	}
 
-	public NumericConstant createNumericConstant(String value) throws Exception{
+	public NumericConstant createNumericConstant(String value) throws Exception {
 		return new NumericConstant(value, true);
 	}
 
-	public StringConstant createStringConstant(String value) throws Exception{
+	public StringConstant createStringConstant(String value) throws Exception {
 		return new StringConstant(value);
 	}
 
-	public Operation createOperation(ADQLOperand leftOp, OperationType op, ADQLOperand rightOp) throws Exception{
+	public Operation createOperation(ADQLOperand leftOp, OperationType op, ADQLOperand rightOp) throws Exception {
 		return new Operation(leftOp, op, rightOp);
 	}
 
-	public NegativeOperand createNegativeOperand(ADQLOperand opToNegativate) throws Exception{
+	public NegativeOperand createNegativeOperand(ADQLOperand opToNegativate) throws Exception {
 		return new NegativeOperand(opToNegativate);
 	}
 
-	public Concatenation createConcatenation() throws Exception{
+	public Concatenation createConcatenation() throws Exception {
 		return new Concatenation();
 	}
 
-	public WrappedOperand createWrappedOperand(ADQLOperand opToWrap) throws Exception{
+	public WrappedOperand createWrappedOperand(ADQLOperand opToWrap) throws Exception {
 		return new WrappedOperand(opToWrap);
 	}
 
-	public ConstraintsGroup createGroupOfConstraints() throws Exception{
+	public ConstraintsGroup createGroupOfConstraints() throws Exception {
 		return new ConstraintsGroup();
 	}
 
-	public NotConstraint createNot(ADQLConstraint constraintToNot) throws Exception{
+	public NotConstraint createNot(ADQLConstraint constraintToNot) throws Exception {
 		return new NotConstraint(constraintToNot);
 	}
 
-	public Comparison createComparison(ADQLOperand leftOp, ComparisonOperator op, ADQLOperand rightOp) throws Exception{
+	public Comparison createComparison(ADQLOperand leftOp, ComparisonOperator op, ADQLOperand rightOp) throws Exception {
 		return new Comparison(leftOp, op, rightOp);
 	}
 
-	public Between createBetween(boolean not, ADQLOperand value, ADQLOperand min, ADQLOperand max) throws Exception{
+	public Between createBetween(boolean not, ADQLOperand value, ADQLOperand min, ADQLOperand max) throws Exception {
 		return new Between(value, min, max, not);
 	}
 
-	public IsNull createIsNull(boolean notNull, ADQLColumn column) throws Exception{
+	public IsNull createIsNull(boolean notNull, ADQLColumn column) throws Exception {
 		return new IsNull(column, notNull);
 	}
 
-	public Exists createExists(ADQLQuery query) throws Exception{
+	public Exists createExists(ADQLQuery query) throws Exception {
 		return new Exists(query);
 	}
 
-	public In createIn(ADQLOperand leftOp, ADQLQuery query, boolean notIn) throws Exception{
+	public In createIn(ADQLOperand leftOp, ADQLQuery query, boolean notIn) throws Exception {
 		return new In(leftOp, query, notIn);
 	}
 
-	public In createIn(ADQLOperand leftOp, ADQLOperand[] valuesList, boolean notIn) throws Exception{
+	public In createIn(ADQLOperand leftOp, ADQLOperand[] valuesList, boolean notIn) throws Exception {
 		return new In(leftOp, valuesList, notIn);
 	}
 
-	public SQLFunction createSQLFunction(SQLFunctionType type, ADQLOperand op, boolean distinctValues) throws Exception{
+	public SQLFunction createSQLFunction(SQLFunctionType type, ADQLOperand op, boolean distinctValues) throws Exception {
 		return new SQLFunction(type, op, distinctValues);
 	}
 
-	public MathFunction createMathFunction(MathFunctionType type, ADQLOperand param1, ADQLOperand param2) throws Exception{
+	/** @since 2.0 */
+	public LowerFunction createLowerFunction(ADQLOperand op) throws Exception {
+		return new LowerFunction(op);
+	}
+
+	public MathFunction createMathFunction(MathFunctionType type, ADQLOperand param1, ADQLOperand param2) throws Exception {
 		return new MathFunction(type, param1, param2);
 	}
 
 	/**
-	 * <p>Creates the user defined functions called as the given name and with the given parameters.</p>
-	 * 
+	 * Creates the user defined functions called as the given name and with
+	 * the given parameters.
+	 *
 	 * <p>
-	 * 	By default, this function returns a {@link DefaultUDF} instance. It is generic enough to cover every kind of functions.
-	 * 	But you can of course override this function in order to return your own instance of {@link UserDefinedFunction}.
-	 * 	In this case, you may not forget to call the super function (super.createUserDefinedFunction(name, params)) so that
-	 * 	all other unknown functions are still returned as {@link DefaultUDF} instances.
+	 * 	By default, this function returns a {@link DefaultUDF} instance. It is
+	 * 	generic enough to cover every kind of functions. But you can of course
+	 * 	override this function in order to return your own instance of
+	 * 	{@link UserDefinedFunction}. In this case, you may not forget to call
+	 * 	the super function (super.createUserDefinedFunction(name, params)) so
+	 * 	that all other unknown functions are still returned as
+	 * 	{@link DefaultUDF} instances.
 	 * </p>
-	 * 
+	 *
 	 * <p><i><b>IMPORTANT:</b>
-	 * 	The tests done to check whether a user defined function is allowed/managed in this implementation, is done later by the parser.
-	 * 	Only declared UDF will pass the test of the parser. For that, you should give it a list of allowed UDFs (each UDF will be then
-	 * 	represented by a {@link FunctionDef} object).
+	 * 	The tests done to check whether a user defined function is
+	 * 	allowed/managed in this implementation, is done later by the parser.
+	 * 	Only declared UDF will pass the test of the parser. For that, you should
+	 * 	give it a list of allowed UDFs (each UDF will be then represented by a
+	 * 	{@link FunctionDef} object).
 	 * </i></p>
-	 * 
+	 *
 	 * @param name			Name of the user defined function to create.
 	 * @param params		Parameters of the user defined function to create.
-	 * 
-	 * @return				The corresponding user defined function (by default an instance of {@link DefaultUDF}).
-	 * 
+	 *
+	 * @return				The corresponding user defined function (by default
+	 *        				an instance of {@link DefaultUDF}).
+	 *
 	 * @throws Exception	If there is a problem while creating the function.
 	 */
-	public UserDefinedFunction createUserDefinedFunction(String name, ADQLOperand[] params) throws Exception{
+	public UserDefinedFunction createUserDefinedFunction(String name, ADQLOperand[] params) throws Exception {
 		return new DefaultUDF(name, params);
 	}
 
-	public DistanceFunction createDistance(PointFunction point1, PointFunction point2) throws Exception{
+	public DistanceFunction createDistance(PointFunction point1, PointFunction point2) throws Exception {
 		return new DistanceFunction(new GeometryValue<PointFunction>(point1), new GeometryValue<PointFunction>(point2));
 	}
 
-	public DistanceFunction createDistance(GeometryValue<PointFunction> point1, GeometryValue<PointFunction> point2) throws Exception{
+	public DistanceFunction createDistance(GeometryValue<PointFunction> point1, GeometryValue<PointFunction> point2) throws Exception {
 		return new DistanceFunction(point1, point2);
 	}
 
-	public PointFunction createPoint(ADQLOperand coordSys, ADQLOperand coords, ADQLOperand coords2) throws Exception{
+	public PointFunction createPoint(ADQLOperand coordSys, ADQLOperand coords, ADQLOperand coords2) throws Exception {
 		return new PointFunction(coordSys, coords, coords2);
 	}
 
-	public BoxFunction createBox(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord, ADQLOperand boxWidth, ADQLOperand boxHeight) throws Exception{
+	public BoxFunction createBox(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord, ADQLOperand boxWidth, ADQLOperand boxHeight) throws Exception {
 		return new BoxFunction(coordinateSystem, firstCoord, secondCoord, boxWidth, boxHeight);
 	}
 
-	public CircleFunction createCircle(ADQLOperand coordSys, ADQLOperand coord1, ADQLOperand coord2, ADQLOperand radius) throws Exception{
+	public CircleFunction createCircle(ADQLOperand coordSys, ADQLOperand coord1, ADQLOperand coord2, ADQLOperand radius) throws Exception {
 		return new CircleFunction(coordSys, coord1, coord2, radius);
 	}
 
-	public CentroidFunction createCentroid(GeometryFunction param) throws Exception{
+	public CentroidFunction createCentroid(GeometryFunction param) throws Exception {
 		return new CentroidFunction(new GeometryValue<GeometryFunction>(param));
 	}
 
-	public CentroidFunction createCentroid(GeometryValue<GeometryFunction> param) throws Exception{
+	public CentroidFunction createCentroid(GeometryValue<GeometryFunction> param) throws Exception {
 		return new CentroidFunction(param);
 	}
 
-	public RegionFunction createRegion(ADQLOperand param) throws Exception{
+	public RegionFunction createRegion(ADQLOperand param) throws Exception {
 		return new RegionFunction(param);
 	}
 
-	public PolygonFunction createPolygon(ADQLOperand coordSys, Collection<? extends ADQLOperand> coords) throws Exception{
+	public PolygonFunction createPolygon(ADQLOperand coordSys, Collection<? extends ADQLOperand> coords) throws Exception {
 		return new PolygonFunction(coordSys, coords);
 	}
 
-	public AreaFunction createArea(GeometryFunction param) throws Exception{
+	public AreaFunction createArea(GeometryFunction param) throws Exception {
 		return new AreaFunction(new GeometryValue<GeometryFunction>(param));
 	}
 
-	public AreaFunction createArea(GeometryValue<GeometryFunction> param) throws Exception{
+	public AreaFunction createArea(GeometryValue<GeometryFunction> param) throws Exception {
 		return new AreaFunction(param);
 	}
 
-	public ExtractCoord createCoord1(PointFunction point) throws Exception{
+	public ExtractCoord createCoord1(PointFunction point) throws Exception {
 		return new ExtractCoord(1, new GeometryValue<PointFunction>(point));
 	}
 
-	public ExtractCoord createCoord1(ADQLColumn point) throws Exception{
+	public ExtractCoord createCoord1(ADQLColumn point) throws Exception {
 		return new ExtractCoord(1, new GeometryValue<PointFunction>(point));
 	}
 
-	public ExtractCoord createCoord2(PointFunction point) throws Exception{
+	public ExtractCoord createCoord2(PointFunction point) throws Exception {
 		return new ExtractCoord(2, new GeometryValue<PointFunction>(point));
 	}
 
-	public ExtractCoord createCoord2(ADQLColumn point) throws Exception{
+	public ExtractCoord createCoord2(ADQLColumn point) throws Exception {
 		return new ExtractCoord(2, new GeometryValue<PointFunction>(point));
 	}
 
-	public ExtractCoordSys createExtractCoordSys(GeometryFunction param) throws Exception{
+	public ExtractCoordSys createExtractCoordSys(GeometryFunction param) throws Exception {
 		return new ExtractCoordSys(new GeometryValue<GeometryFunction>(param));
 	}
 
-	public ExtractCoordSys createExtractCoordSys(ADQLColumn param) throws Exception{
+	public ExtractCoordSys createExtractCoordSys(ADQLColumn param) throws Exception {
 		return new ExtractCoordSys(new GeometryValue<GeometryFunction>(param));
 	}
 
-	public ExtractCoordSys createExtractCoordSys(GeometryValue<GeometryFunction> param) throws Exception{
+	public ExtractCoordSys createExtractCoordSys(GeometryValue<GeometryFunction> param) throws Exception {
 		return new ExtractCoordSys(new GeometryValue<GeometryFunction>(param));
 	}
 
-	public ContainsFunction createContains(GeometryFunction left, GeometryFunction right) throws Exception{
+	public ContainsFunction createContains(GeometryFunction left, GeometryFunction right) throws Exception {
 		return new ContainsFunction(new GeometryValue<GeometryFunction>(left), new GeometryValue<GeometryFunction>(right));
 	}
 
-	public ContainsFunction createContains(GeometryValue<GeometryFunction> left, GeometryValue<GeometryFunction> right) throws Exception{
+	public ContainsFunction createContains(GeometryValue<GeometryFunction> left, GeometryValue<GeometryFunction> right) throws Exception {
 		return new ContainsFunction(left, right);
 	}
 
-	public IntersectsFunction createIntersects(GeometryFunction left, GeometryFunction right) throws Exception{
+	public IntersectsFunction createIntersects(GeometryFunction left, GeometryFunction right) throws Exception {
 		return new IntersectsFunction(new GeometryValue<GeometryFunction>(left), new GeometryValue<GeometryFunction>(right));
 	}
 
-	public IntersectsFunction createIntersects(GeometryValue<GeometryFunction> left, GeometryValue<GeometryFunction> right) throws Exception{
+	public IntersectsFunction createIntersects(GeometryValue<GeometryFunction> left, GeometryValue<GeometryFunction> right) throws Exception {
 		return new IntersectsFunction(left, right);
 	}
 
@@ -388,7 +405,7 @@ public class ADQLQueryFactory {
 	 * Replace {@link #createOrder(int, boolean, TextPosition)}.
 	 * @since 1.4
 	 */
-	public ADQLOrder createOrder(final int ind, final boolean desc) throws Exception{
+	public ADQLOrder createOrder(final int ind, final boolean desc) throws Exception {
 		return new ADQLOrder(ind, desc);
 	}
 
@@ -396,14 +413,14 @@ public class ADQLQueryFactory {
 	 * @deprecated since 1.4 ; Replaced by {@link #createOrder(int, boolean)}
 	 */
 	@Deprecated
-	public ADQLOrder createOrder(final int ind, final boolean desc, final TextPosition position) throws Exception{
+	public ADQLOrder createOrder(final int ind, final boolean desc, final TextPosition position) throws Exception {
 		ADQLOrder order = new ADQLOrder(ind, desc);
 		if (order != null)
 			order.setPosition(position);
 		return order;
 	}
 
-	public ADQLOrder createOrder(final IdentifierItem colName, final boolean desc) throws Exception{
+	public ADQLOrder createOrder(final IdentifierItem colName, final boolean desc) throws Exception {
 		ADQLOrder order = new ADQLOrder(colName.identifier, desc);
 		if (order != null)
 			order.setCaseSensitive(colName.caseSensitivity);
@@ -411,35 +428,39 @@ public class ADQLQueryFactory {
 	}
 
 	/**
-	 * @deprecated since 1.4 ; Former version's mistake: an ORDER BY item is either a regular/delimited column name or an integer, not a qualified column name ; Replaced by {@link #createOrder(adql.parser.IdentifierItems.IdentifierItem, boolean)} ; This function is no longer used by ADQLParser.
+	 * @deprecated since 1.4 ; Former version's mistake: an ORDER BY item is
+	 *                         either a regular/delimited column name or an
+	 *                         integer, not a qualified column name ; Replaced
+	 *                         by {@link #createOrder(adql.parser.IdentifierItems.IdentifierItem, boolean)} ;
+	 *                         This function is no longer used by ADQLParser.
 	 */
 	@Deprecated
-	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception{
+	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception {
 		ADQLOrder order = new ADQLOrder(idItems.join("."), desc);
 		if (order != null)
 			order.setCaseSensitive(idItems.getColumnCaseSensitivity());
 		return order;
 	}
 
-	public ColumnReference createColRef(final IdentifierItem idItem) throws Exception{
+	public ColumnReference createColRef(final IdentifierItem idItem) throws Exception {
 		ColumnReference colRef = new ColumnReference(idItem.identifier);
-		if (colRef != null){
+		if (colRef != null) {
 			colRef.setPosition(idItem.position);
 			colRef.setCaseSensitive(idItem.caseSensitivity);
 		}
 		return colRef;
 	}
 
-	public ColumnReference createColRef(final IdentifierItems idItems) throws Exception{
+	public ColumnReference createColRef(final IdentifierItems idItems) throws Exception {
 		ColumnReference colRef = new ColumnReference(idItems.join("."));
-		if (colRef != null){
+		if (colRef != null) {
 			colRef.setPosition(idItems.getPosition());
 			colRef.setCaseSensitive(idItems.getColumnCaseSensitivity());
 		}
 		return colRef;
 	}
 
-	public ColumnReference createColRef(final int index, final TextPosition position) throws Exception{
+	public ColumnReference createColRef(final int index, final TextPosition position) throws Exception {
 		ColumnReference colRef = new ColumnReference(index);
 		if (colRef != null)
 			colRef.setPosition(position);

@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import adql.parser.ADQLParser;
+import adql.parser.ADQLParserFactory;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.ParseException;
 import adql.query.ADQLQuery;
@@ -105,7 +106,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (03/2019)
+ * @version 3.0 (04/2019)
  */
 public class ADQLExecutor {
 
@@ -142,7 +143,7 @@ public class ADQLExecutor {
 	 *
 	 * @param service	The description of the TAP service.
 	 */
-	public ADQLExecutor(final ServiceConnection service){
+	public ADQLExecutor(final ServiceConnection service) {
 		this.service = service;
 		this.logger = service.getLogger();
 	}
@@ -152,7 +153,7 @@ public class ADQLExecutor {
 	 *
 	 * @return	The used logger.
 	 */
-	public final TAPLog getLogger(){
+	public final TAPLog getLogger() {
 		return logger;
 	}
 
@@ -166,7 +167,7 @@ public class ADQLExecutor {
 	 *
 	 * @return	The execution report.
 	 */
-	public final TAPExecutionReport getExecReport(){
+	public final TAPExecutionReport getExecReport() {
 		return report;
 	}
 
@@ -180,7 +181,7 @@ public class ADQLExecutor {
 	 *
 	 * @see ServiceConnection#getOutputFormat(String)
 	 */
-	protected OutputFormat getFormatter() throws TAPException{
+	protected OutputFormat getFormatter() throws TAPException {
 		// Search for the corresponding formatter:
 		String format = tapParams.getFormat();
 		OutputFormat formatter = service.getOutputFormat((format == null) ? "votable" : format);
@@ -211,7 +212,7 @@ public class ADQLExecutor {
 	 *
 	 * @see #start()
 	 */
-	public final TAPExecutionReport start(final AsyncThread thread) throws UWSException, InterruptedException{
+	public final TAPExecutionReport start(final AsyncThread thread) throws UWSException, InterruptedException {
 		if (this.thread != null || this.report != null)
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "This ADQLExecutor has already been executed!");
 
@@ -222,19 +223,19 @@ public class ADQLExecutor {
 		this.report = new TAPExecutionReport(tapJob.getJobId(), false, tapParams);
 		this.response = null;
 
-		try{
+		try {
 			return start();
-		}catch(IOException ioe){
+		} catch(IOException ioe) {
 			if (thread.isInterrupted())
 				return report;
 			else
 				throw new UWSException(ioe);
-		}catch(TAPException te){
+		} catch(TAPException te) {
 			if (thread.isInterrupted())
 				return report;
 			else
 				throw new UWSException(te.getHttpErrorCode(), te);
-		}catch(UWSException ue){
+		} catch(UWSException ue) {
 			if (thread.isInterrupted())
 				return report;
 			else
@@ -256,7 +257,7 @@ public class ADQLExecutor {
 	 *
 	 * @since 2.0
 	 */
-	public final void initDBConnection(final String jobID) throws TAPException{
+	public final void initDBConnection(final String jobID) throws TAPException {
 		if (dbConn == null)
 			dbConn = service.getFactory().getConnection(jobID);
 	}
@@ -267,7 +268,7 @@ public class ADQLExecutor {
 	 *
 	 * @since 2.1
 	 */
-	public final void cancelQuery(){
+	public final void cancelQuery() {
 		if (dbConn != null && (progression == ExecutionProgression.EXECUTING_ADQL || progression == ExecutionProgression.UPLOADING))
 			dbConn.cancel(true);
 	}
@@ -290,7 +291,7 @@ public class ADQLExecutor {
 	 *
 	 * @see #start()
 	 */
-	public final TAPExecutionReport start(final Thread thread, final String jobId, final TAPParameters params, final HttpServletResponse response) throws TAPException, IOException, InterruptedException{
+	public final TAPExecutionReport start(final Thread thread, final String jobId, final TAPParameters params, final HttpServletResponse response) throws TAPException, IOException, InterruptedException {
 		if (this.thread != null || this.report != null)
 			throw new TAPException("This ADQLExecutor has already been executed!");
 
@@ -299,9 +300,9 @@ public class ADQLExecutor {
 		this.report = new TAPExecutionReport(jobId, true, tapParams);
 		this.response = response;
 
-		try{
+		try {
 			return start();
-		}catch(UWSException ue){
+		} catch(UWSException ue) {
 			throw new TAPException(ue, ue.getHttpErrorCode());
 		}
 	}
@@ -336,7 +337,7 @@ public class ADQLExecutor {
 	 *                    			In asynchronous, the error is stored as job error report and is never propagated.</i>
 	 * @throws InterruptedException	If the job has been interrupted (by the user or a time-out).
 	 */
-	protected final TAPExecutionReport start() throws TAPException, UWSException, IOException, InterruptedException{
+	protected final TAPExecutionReport start() throws TAPException, UWSException, IOException, InterruptedException {
 		logger.logTAP(LogLevel.INFO, report, "START_EXEC", (report.synchronous ? "Synchronous" : "Asynchronous") + " execution of an ADQL query STARTED.", null);
 
 		// Save the start time (for reporting usage):
@@ -344,12 +345,12 @@ public class ADQLExecutor {
 
 		TableIterator queryResult = null;
 
-		try{
+		try {
 			// Get a "database" connection:
 			initDBConnection(report.jobID);
 
 			// 1. UPLOAD TABLES, if there is any:
-			if (tapParams.getUploadedTables() != null && tapParams.getUploadedTables().length > 0){
+			if (tapParams.getUploadedTables() != null && tapParams.getUploadedTables().length > 0) {
 				startStep(ExecutionProgression.UPLOADING);
 				uploadTables();
 				endStep();
@@ -362,9 +363,9 @@ public class ADQLExecutor {
 			startStep(ExecutionProgression.PARSING);
 			// Parse the query:
 			ADQLQuery adqlQuery = null;
-			try{
+			try {
 				adqlQuery = parseADQL();
-			}catch(ParseException pe){
+			} catch(ParseException pe) {
 				if (report.synchronous)
 					throw new TAPException("Incorrect ADQL query: " + pe.getMessage(), pe, UWSException.BAD_REQUEST, tapParams.getQuery(), progression);
 				else
@@ -404,27 +405,27 @@ public class ADQLExecutor {
 
 			return report;
 
-		}catch(DBCancelledException dce){
+		} catch(DBCancelledException dce) {
 			throw new InterruptedException();
-		}finally{
+		} finally {
 			// Close the result if any:
-			if (queryResult != null){
-				try{
+			if (queryResult != null) {
+				try {
 					queryResult.close();
-				}catch(DataReadException dre){
+				} catch(DataReadException dre) {
 					logger.logTAP(LogLevel.WARNING, report, "END_EXEC", "Can not close the database query result!", dre);
 				}
 			}
 
 			// Drop all the uploaded tables (they are not supposed to exist after the query execution):
-			try{
+			try {
 				dropUploadedTables();
-			}catch(TAPException e){
+			} catch(TAPException e) {
 				logger.logTAP(LogLevel.WARNING, report, "END_EXEC", "Can not drop the uploaded tables from the database!", e);
 			}
 
 			// Free the connection (so that giving it back to a pool if any, otherwise just free resources):
-			if (dbConn != null){
+			if (dbConn != null) {
 				service.getFactory().freeConnection(dbConn);
 				dbConn = null;
 			}
@@ -448,15 +449,15 @@ public class ADQLExecutor {
 	 *
 	 * @see #endStep()
 	 */
-	private void startStep(final ExecutionProgression progression){
+	private void startStep(final ExecutionProgression progression) {
 		// Save the start time (for report usage):
 		startStep = System.currentTimeMillis();
 		// Memorize the current step:
 		this.progression = progression;
 		// Update the job parameter "progression", to notify the user about the progression of the query processing:
-		try{
+		try {
 			tapParams.set(TAPJob.PARAM_PROGRESSION, this.progression);
-		}catch(UWSException ue){
+		} catch(UWSException ue) {
 			// should not happen, but just in case...
 			logger.logTAP(LogLevel.WARNING, report, "START_STEP", "Can not set/update the informative job parameter \"" + TAPJob.PARAM_PROGRESSION + "\" (this parameter would be just for notification purpose about the execution progression)!", ue);
 		}
@@ -476,8 +477,8 @@ public class ADQLExecutor {
 	 *
 	 * @see #startStep(ExecutionProgression)
 	 */
-	private void endStep(){
-		if (progression != null){
+	private void endStep() {
+		if (progression != null) {
 			// Set the duration of this step in the execution report:
 			report.setDuration(progression, System.currentTimeMillis() - startStep);
 			// No start time:
@@ -497,12 +498,12 @@ public class ADQLExecutor {
 	 * @throws TAPException	If any error occurs while reading the uploaded table
 	 *                     	or while importing them in the database.
 	 */
-	private final void uploadTables() throws TAPException{
+	private final void uploadTables() throws TAPException {
 		// Fetch the tables to upload:
 		DALIUpload[] tables = tapParams.getUploadedTables();
 
 		// Upload them, if needed:
-		if (tables.length > 0){
+		if (tables.length > 0) {
 			logger.logTAP(LogLevel.INFO, report, "UPLOADING", "Loading uploaded tables (" + tables.length + ")", null);
 			uploadSchema = service.getFactory().createUploader(dbConn).upload(tables);
 		}
@@ -531,15 +532,15 @@ public class ADQLExecutor {
 	 * @throws InterruptedException		If the thread has been interrupted.
 	 * @throws TAPException				If the TAP factory is unable to create the ADQL factory or the query checker.
 	 */
-	protected ADQLQuery parseADQL() throws ParseException, InterruptedException, TAPException{
+	protected ADQLQuery parseADQL() throws ParseException, InterruptedException, TAPException {
 		// Log the start of the parsing:
 		logger.logTAP(LogLevel.INFO, report, "PARSING", "Parsing ADQL: " + tapParams.getQuery().replaceAll("(\t|\r?\n)+", " "), null);
 
 		// Create the ADQL parser:
 		ADQLParser parser = service.getFactory().createADQLParser();
-		if (parser == null){
+		if (parser == null) {
 			logger.logTAP(LogLevel.WARNING, null, "PARSING", "No ADQL parser returned by the TAPFactory! The default implementation is used instead.", null);
-			parser = new ADQLParser();
+			parser = ADQLParserFactory.createDefaultParser();
 		}
 
 		// Set the ADQL factory:
@@ -553,11 +554,11 @@ public class ADQLExecutor {
 		// Parse the ADQL query:
 		ADQLQuery query = null;
 		// if the fixOnFail option is enabled...
-		if (service.fixOnFailEnabled()){
-			try{
+		if (service.fixOnFailEnabled()) {
+			try {
 				// try parsing the query:
 				query = parser.parseQuery(tapParams.getQuery());
-			}catch(ParseException pe){
+			} catch(ParseException pe) {
 				// if it fails...
 				// ...log the auto fix attempt:
 				logger.logTAP(LogLevel.INFO, report, "PARSING", "Parse attempt of the original input query failed! Trying auto-fix...", null);
@@ -572,14 +573,14 @@ public class ADQLExecutor {
 			}
 		}
 		// if not enabled, parse immediately the query:
-		else{
+		else {
 			query = parser.parseQuery(tapParams.getQuery());
 		}
 
 		// Set or check the row limit:
 		final int limit = query.getSelect().getLimit();
 		final Integer maxRec = tapParams.getMaxRec();
-		if (maxRec != null && maxRec > -1){
+		if (maxRec != null && maxRec > -1) {
 			if (limit <= -1 || limit > maxRec)
 				query.getSelect().setLimit(maxRec + 1);
 		}
@@ -607,19 +608,19 @@ public class ADQLExecutor {
 	 *
 	 * @see DBConnection#executeQuery(ADQLQuery)
 	 */
-	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, DBCancelledException, TAPException{
+	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, DBCancelledException, TAPException {
 		// Log the start of execution:
 		logger.logTAP(LogLevel.INFO, report, "START_DB_EXECUTION", "ADQL query: " + adql.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 
 		// Set the fetch size, if any:
-		if (service.getFetchSize() != null && service.getFetchSize().length >= 1){
+		if (service.getFetchSize() != null && service.getFetchSize().length >= 1) {
 			if (report.synchronous && service.getFetchSize().length >= 2)
 				dbConn.setFetchSize(service.getFetchSize()[1]);
 			else
 				dbConn.setFetchSize(service.getFetchSize()[0]);
 		}
 
-		try{
+		try {
 			// Execute the ADQL query:
 			TableIterator result = dbConn.executeQuery(adql);
 
@@ -631,7 +632,7 @@ public class ADQLExecutor {
 			logger.logTAP(LogLevel.INFO, report, "END_DB_EXECUTION", "Query successfully executed in " + (System.currentTimeMillis() - startStep) + "ms!", null);
 
 			return result;
-		}catch(DBCancelledException dce){
+		} catch(DBCancelledException dce) {
 			logger.logTAP(LogLevel.INFO, report, "END_DB_EXECUTION", "Query execution aborted after " + (System.currentTimeMillis() - startStep) + "ms!", null);
 			throw dce;
 		}
@@ -657,7 +658,7 @@ public class ADQLExecutor {
 	 *
 	 * @see #writeResult(TableIterator, OutputFormat, OutputStream)
 	 */
-	protected final void writeResult(final TableIterator queryResult) throws InterruptedException, IOException, TAPException, UWSException{
+	protected final void writeResult(final TableIterator queryResult) throws InterruptedException, IOException, TAPException, UWSException {
 		// Log the start of the writing:
 		logger.logTAP(LogLevel.INFO, report, "WRITING_RESULT", "Writing the query result", null);
 
@@ -665,7 +666,7 @@ public class ADQLExecutor {
 		OutputFormat formatter = getFormatter();
 
 		// CASE SYNCHRONOUS:
-		if (response != null){
+		if (response != null) {
 			long start = -1;
 
 			// Set the HTTP content type to the MIME type of the result format:
@@ -681,12 +682,12 @@ public class ADQLExecutor {
 			logger.logTAP(LogLevel.INFO, report, "RESULT_WRITTEN", "Result formatted (in " + formatter.getMimeType() + " ; " + (report.nbRows < 0 ? "?" : report.nbRows) + " rows ; " + ((report.resultingColumns == null) ? "?" : report.resultingColumns.length) + " columns) in " + ((start <= 0) ? "?" : (System.currentTimeMillis() - start)) + "ms!", null);
 		}
 		// CASE ASYNCHRONOUS:
-		else{
+		else {
 			boolean completed = false;
 			long start = -1, end = -1;
 			Result result = null;
 			JobThread jobThread = (JobThread)thread;
-			try{
+			try {
 				// Create a UWS Result object to store the result
 				// (the result will be stored in a file and this object is the association between the job and the result file):
 				result = jobThread.createResult();
@@ -709,17 +710,17 @@ public class ADQLExecutor {
 
 				logger.logTAP(LogLevel.INFO, report, "RESULT_WRITTEN", "Result formatted (in " + formatter.getMimeType() + " ; " + (report.nbRows < 0 ? "?" : report.nbRows) + " rows ; " + ((report.resultingColumns == null) ? "?" : report.resultingColumns.length) + " columns) in " + ((start <= 0 || end <= 0) ? "?" : (end - start)) + "ms!", null);
 
-			}catch(IOException ioe){
+			} catch(IOException ioe) {
 				// Propagate the exception:
 				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to write in the file into which the result of the job " + report.jobID + " must be written!");
-			}finally{
-				if (!completed){
+			} finally {
+				if (!completed) {
 					// Delete the result file (it is either incomplete or incorrect ;
 					// it is then not reliable and is anyway not associated with the job and so could not be later deleted when the job will be):
-					if (result != null){
-						try{
+					if (result != null) {
+						try {
 							service.getFileManager().deleteResult(result, jobThread.getJob());
-						}catch(IOException ioe){
+						} catch(IOException ioe) {
 							logger.logTAP(LogLevel.ERROR, report, "WRITING_RESULT", "The result writting has failed and the produced partial result must be deleted, but this deletion also failed! (job: " + report.jobID + ")", ioe);
 						}
 					}
@@ -746,7 +747,7 @@ public class ADQLExecutor {
 	 * @throws IOException			If there is an error while writing the result in the given stream.
 	 * @throws TAPException			If there is an error while formatting the result.
 	 */
-	protected void writeResult(TableIterator queryResult, OutputFormat formatter, OutputStream output) throws InterruptedException, IOException, TAPException{
+	protected void writeResult(TableIterator queryResult, OutputFormat formatter, OutputStream output) throws InterruptedException, IOException, TAPException {
 		formatter.writeResult(queryResult, output, report, thread);
 	}
 
@@ -759,13 +760,13 @@ public class ADQLExecutor {
 	 *
 	 * @throws TAPException	If a grave error occurs. <i>By default, no exception is thrown ; they are just logged.</i>
 	 */
-	protected void dropUploadedTables() throws TAPException{
-		if (uploadSchema != null){
+	protected void dropUploadedTables() throws TAPException {
+		if (uploadSchema != null) {
 			// Drop all uploaded tables:
-			for(TAPTable t : uploadSchema){
-				try{
+			for(TAPTable t : uploadSchema) {
+				try {
 					dbConn.dropUploadedTable(t);
-				}catch(DBException dbe){
+				} catch(DBException dbe) {
 					logger.logTAP(LogLevel.ERROR, report, "DROP_UPLOAD", "Can not drop the uploaded table \"" + t.getDBName() + "\" (in adql \"" + t.getADQLName() + "\") from the database!", dbe);
 				}
 			}
