@@ -31,7 +31,7 @@
 * printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS)
-*  Version: 2.0 (04/2019)
+*  Version: 2.0 (07/2019)
 */
 
 							/* ########### */
@@ -142,7 +142,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS)
-* @version 2.0 (04/2019)
+* @version 2.0 (07/2019)
 * @since 2.0
 */
 public class ADQLParser201 implements ADQLParser {
@@ -2032,8 +2032,9 @@ GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand
 				end=<RIGHT_PAR>)
 		  { gf = queryFactory.createPolygon(coordSys, vCoords); }
 		  
-		// REGION:
-		| (fct=<REGION> <LEFT_PAR> op=StringExpression() end=<RIGHT_PAR>) {gf = queryFactory.createRegion(op);})
+		/* // REGION (REMOVED SINCE 2.1):
+		| (fct=<REGION> <LEFT_PAR> op=StringExpression() end=<RIGHT_PAR>) {gf = queryFactory.createRegion(op);}*/
+		)
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
