@@ -4,9 +4,7 @@
  * Modified by Gr&eacute;gory Mantelet (CDS), on Sept. 2017
  * Modifications:
  *     - addition of position (line and column) in the original text
- *     - adapt the error message so that being more explicit for humans
- *       and display the incorrect character as a character instead of an
- *       integer value
+ *     - display the incorrect character as a character instead of an integer
  * 
  * /!\ DO NOT RE-GENERATE THIS FILE /!\
  * In case of re-generation, replace it by TokenMgrError.java.backup (but maybe

@@ -20,11 +20,6 @@
  *     - addition of a constructor with a TokenMgrError which adds a piece of
  *       advice to fix the token issue (see buildExpandedMessage(...))
  *
- * Modified by Gr&eacute;gory Mantelet (ARI), on April 2019
- * Modifications:
- *     - change the way ADQL and SQL reserved keywords are identified for the
- *       generation of the appropriate HINT in the error message
- *
  * /!\ DO NOT RE-GENERATE THIS FILE /!\
  * In case of re-generation, replace it by ParseException.java.backup (but maybe
  * after a diff in case of significant modifications have been done by a new
@@ -58,7 +53,7 @@ public class ParseException extends Exception {
 	 * a new object of this type with the fields "currentToken",
 	 * "expectedTokenSequences", and "tokenImage" set.
 	 */
-	public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, String[] tokenImageVal) {
+	public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, String[] tokenImageVal){
 		super(initialise(currentTokenVal, expectedTokenSequencesVal, tokenImageVal));
 		currentToken = currentTokenVal;
 		expectedTokenSequences = expectedTokenSequencesVal;
@@ -77,25 +72,25 @@ public class ParseException extends Exception {
 	 * these constructors.
 	 */
 
-	public ParseException() {
+	public ParseException(){
 		super();
 	}
 
 	/** Constructor with message. */
-	public ParseException(String message) {
+	public ParseException(String message){
 		super(message);
 	}
 
-	public ParseException(String message, TextPosition errorPosition) {
+	public ParseException(String message, TextPosition errorPosition){
 		this(message);
 		position = errorPosition;
 	}
 
-	public ParseException(TokenMgrError err) {
+	public ParseException(TokenMgrError err){
 		this(buildExpandedMessage(err), new TextPosition(err.getErrorLine(), err.getErrorColumn()));
 	}
 
-	private final static String buildExpandedMessage(final TokenMgrError err) {
+	private final static String buildExpandedMessage(final TokenMgrError err){
 		if (err.getMessage().indexOf("<EOF>") > 0)
 			return err.getMessage() + "! Possible cause: a string between single or double quotes which is never closed (solution: well...just close it!).";
 		else
@@ -126,12 +121,44 @@ public class ParseException extends Exception {
 	/** Line in the ADQL query where the exception occurs. */
 	protected TextPosition position = null;
 
+	/** Regular expression listing all ADQL reserved words.
+	 *
+	 * <p><i>Note 1:
+	 * 	This list is built NOT from the list given in the ADQL-2.0 standard,
+	 * 	but from the collation of all words potentially used in an ADQL query
+	 * 	(including standard function names).
+	 * </i></p>
+	 *
+	 * <p><i>Note 2:
+	 * 	This regular expression is only used to display an appropriate hint
+	 * 	to the user in the error message if a such word is at the origin of
+	 * 	the error. (see {@link #initialise(Token, int[][], String[])} for more
+	 * 	details).
+	 * </i></p> */
+	private final static String ADQL_RESERVED_WORDS_REGEX = "(ABS|ACOS|AREA|ASIN|ATAN|ATAN2|BOX|CEILING|CENTROID|CIRCLE|CONTAINS|COORD1|COORD2|COORDSYS|COS|DEGREES|DISTANCE|EXP|FLOOR|INTERSECTS|LOG|LOG10|MOD|PI|POINT|POLYGON|POWER|RADIANS|REGION|RAND|ROUND|SIN|SQRT|TOP|TAN|TRUNCATE|SELECT|TOP|DISTINCT|ALL|AS|COUNT|AVG|MAX|MIN|SUM|FROM|JOIN|CROSS|INNER|OUTER|LEFT|RIGHT|FULL|NATURAL|USING|ON|WHERE|IS|NOT|AND|OR|EXISTS|IN|LIKE|NULL|BETWEEN|ORDER|ASC|DESC|GROUP|BY|HAVING)";
+
+	/** Regular expression listing all SQL reserved words.
+	 *
+	 * <p><i>Note 1:
+	 * 	This list is built from the list given in the ADQL-2.0 standard,
+	 * 	after removal of all words potentially used in an ADQL query
+	 * 	(see {@link #ADQL_RESERVED_WORDS_REGEX}).
+	 * </i></p>
+	 *
+	 * <p><i>Note 2:
+	 * 	This regular expression is only used to display an appropriate hint
+	 * 	to the user in the error message if a such word is at the origin of
+	 * 	the error. (see {@link #initialise(Token, int[][], String[])} for more
+	 * 	details).
+	 * </i></p> */
+	private final static String SQL_RESERVED_WORDS_REGEX = "(ABSOLUTE|ACTION|ADD|ALLOCATE|ALTER|ANY|ARE|ASSERTION|AT|AUTHORIZATION|BEGIN|BIT|BIT_LENGTH|BOTH|CASCADE|CASCADED|CASE|CAST|CATALOG|CHAR|CHARACTER|CHAR_LENGTH|CHARACTER_LENGTH|CHECK|CLOSE|COALESCE|COLLATE|COLLATION|COLUMN|COMMIT|CONNECT|CONNECTION|CONSTRAINT|CONSTRAINTS|CONTINUE|CONVERT|CORRESPONDING|CREATE|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATE|DAY|DEALLOCATE|DECIMAL|DECLARE|DEFAULT|DEFERRABLE|DEFERRED|DELETE|DESCRIBE|DESCRIPTOR|DIAGNOSTICS|DISCONNECT|DOMAIN|DOUBLE|DROP|ELSE|END|END-EXEC|ESCAPE|EXCEPT|EXCEPTION|EXEC|EXECUTE|EXTERNAL|EXTRACT|FALSE|FETCH|FIRST|FLOAT|FOR|FOREIGN|FOUND|GET|GLOBAL|GO|GOTO|GRANT|HOUR|IDENTITY|IMMEDIATE|INDICATOR|INITIALLY|INPUT|INSENSITIVE|INSERT|INT|INTEGER|INTERSECT|INTERVAL|INTO|ISOLATION|KEY|LANGUAGE|LAST|LEADING|LEVEL|LOCAL|LOWER|MATCH|MINUTE|MODULE|MONTH|NAMES|NATIONAL|NCHAR|NEXT|NO|NULLIF|NUMERIC|OCTET_LENGTH|OF|ONLY|OPEN|OPTION|OUTPUT|OVERLAPS|PAD|PARTIAL|POSITION|PRECISION|PREPARE|PRESERVE|PRIMARY|PRIOR|PRIVILEGES|PROCEDURE|PUBLIC|READ|REAL|REFERENCES|RELATIVE|RESTRICT|REVOKE|ROLLBACK|ROWS|SCHEMA|SCROLL|SECOND|SECTION|SESSION|SESSION_USER|SET|SIZE|SMALLINT|SOME|SPACE|SQL|SQLCODE|SQLERROR|SQLSTATE|SUBSTRING|SYSTEM_USER|TABLE|TEMPORARY|THEN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TO|TRAILING|TRANSACTION|TRANSLATE|TRANSLATION|TRIM|TRUE|UNION|UNIQUE|UNKNOWN|UPDATE|UPPER|USAGE|USER|VALUE|VALUES|VARCHAR|VARYING|VIEW|WHEN|WHENEVER|WITH|WORK|WRITE|YEAR|ZONE)";
+
 	/**
 	 * Gets the position in the ADQL query of the token which generates this exception.
 	 *
 	 * @return Position or <code>null</code> if unknown.
 	 */
-	public final TextPosition getPosition() {
+	public final TextPosition getPosition(){
 		return position;
 	}
 
@@ -142,16 +169,16 @@ public class ParseException extends Exception {
 	 * from the parser) the correct error message
 	 * gets displayed.
 	 */
-	private static String initialise(Token currentToken, int[][] expectedTokenSequences, String[] tokenImage) {
+	private static String initialise(Token currentToken, int[][] expectedTokenSequences, String[] tokenImage){
 		int maxSize = 0;
 
 		// Build the list of expected tokens:
 		StringBuffer expected = new StringBuffer();
-		for(int i = 0; i < expectedTokenSequences.length; i++) {
-			if (maxSize < expectedTokenSequences[i].length) {
+		for(int i = 0; i < expectedTokenSequences.length; i++){
+			if (maxSize < expectedTokenSequences[i].length){
 				maxSize = expectedTokenSequences[i].length;
 			}
-			for(int j = 0; j < expectedTokenSequences[i].length; j++) {
+			for(int j = 0; j < expectedTokenSequences[i].length; j++){
 				expected.append(tokenImage[expectedTokenSequences[i][j]]);
 			}
 			expected.append(" ");
@@ -162,10 +189,10 @@ public class ParseException extends Exception {
 		msg.append(" Encountered \"");
 		Token tok = currentToken.next;
 		StringBuffer tokenName = new StringBuffer();
-		for(int i = 0; i < maxSize; i++) {
+		for(int i = 0; i < maxSize; i++){
 			if (i != 0)
 				tokenName.append(' ');
-			if (tok.kind == 0) {
+			if (tok.kind == 0){
 				tokenName.append(tokenImage[0]);
 				break;
 			}
@@ -175,21 +202,19 @@ public class ParseException extends Exception {
 		msg.append(tokenName.toString()).append("\".");
 
 		// Append the expected tokens list:
-		if (expectedTokenSequences.length == 1) {
+		if (expectedTokenSequences.length == 1){
 			msg.append(" Was expecting: ");
-		} else {
+		}else{
 			msg.append(" Was expecting one of: ");
 		}
 		msg.append(expected);
 
 		// Append a hint about reserved words if it is one:
-		if (maxSize == 1) {
-			tok = currentToken.next;
-			if (tok.adqlReserved)
-				msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(tok.image).append("\" is a reserved ADQL word in " + currentToken.next.adqlVersion + ". To use it as a column/table/schema name/alias, write it between double quotes.)");
-			else if (tok.sqlReserved)
-				msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(tok.image).append("\" is not supported in ADQL " + currentToken.next.adqlVersion + ", but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)");
-		}
+		String word = tokenName.toString().trim();
+		if (word.toUpperCase().matches(ADQL_RESERVED_WORDS_REGEX))
+			msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(word).append("\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)");
+		else if (word.toUpperCase().matches(SQL_RESERVED_WORDS_REGEX))
+			msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(word).append("\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)");
 
 		return msg.toString();
 		/*String eol = System.getProperty("line.separator", "\n");
@@ -242,11 +267,11 @@ public class ParseException extends Exception {
 	 * when these raw version cannot be used as part of an ASCII
 	 * string literal.
 	 */
-	static String add_escapes(String str) {
+	static String add_escapes(String str){
 		StringBuffer retval = new StringBuffer();
 		char ch;
-		for(int i = 0; i < str.length(); i++) {
-			switch(str.charAt(i)) {
+		for(int i = 0; i < str.length(); i++){
+			switch(str.charAt(i)){
 				case 0:
 					continue;
 				case '\b':
@@ -274,10 +299,10 @@ public class ParseException extends Exception {
 					retval.append("\\\\");
 					continue;
 				default:
-					if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e) {
+					if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e){
 						String s = "0000" + Integer.toString(ch, 16);
 						retval.append("\\u" + s.substring(s.length() - 4, s.length()));
-					} else {
+					}else{
 						retval.append(ch);
 					}
 					continue;

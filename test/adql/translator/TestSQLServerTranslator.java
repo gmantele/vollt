@@ -14,19 +14,16 @@ import adql.db.DBTable;
 import adql.db.DefaultDBColumn;
 import adql.db.DefaultDBTable;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
 import adql.parser.ParseException;
 import adql.parser.SQLServer_ADQLQueryFactory;
 import adql.query.ADQLQuery;
 
 public class TestSQLServerTranslator {
 
-	ADQLParserFactory parserFactory = new ADQLParserFactory();
-
 	private List<DBTable> tables = null;
 
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() throws Exception{
 		tables = new ArrayList<DBTable>(2);
 		DefaultDBTable t = new DefaultDBTable("aTable");
 		t.addColumn(new DefaultDBColumn("id", t));
@@ -41,14 +38,11 @@ public class TestSQLServerTranslator {
 	}
 
 	@Test
-	public void testNaturalJoin() {
+	public void testNaturalJoin(){
 		final String adqlquery = "SELECT id, name, aColumn, anotherColumn FROM aTable A NATURAL JOIN anotherTable B;";
 
-		try {
-			ADQLParser parser = parserFactory.createParser();
-			parser.setQueryChecker(new DBChecker(tables));
-			parser.setQueryFactory(new SQLServer_ADQLQueryFactory());
-			ADQLQuery query = parser.parseQuery(adqlquery);
+		try{
+			ADQLQuery query = (new ADQLParser(new DBChecker(tables), new SQLServer_ADQLQueryFactory())).parseQuery(adqlquery);
 			SQLServerTranslator translator = new SQLServerTranslator();
 
 			// Test the FROM part:
@@ -57,24 +51,21 @@ public class TestSQLServerTranslator {
 			// Test the SELECT part (in order to ensure the usual common columns (due to NATURAL) are actually translated as columns of the first joined table):
 			assertEquals("SELECT \"a\".\"id\" AS \"id\" , \"a\".\"name\" AS \"name\" , \"a\".\"aColumn\" AS \"aColumn\" , \"b\".\"anotherColumn\" AS \"anotherColumn\"", translator.translate(query.getSelect()));
 
-		} catch(ParseException pe) {
+		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail("The given ADQL query is completely correct. No error should have occurred while parsing it. (see the console for more details)");
-		} catch(TranslationException te) {
+		}catch(TranslationException te){
 			te.printStackTrace();
 			fail("No error was expected from this translation. (see the console for more details)");
 		}
 	}
 
 	@Test
-	public void testJoinWithUSING() {
+	public void testJoinWithUSING(){
 		final String adqlquery = "SELECT B.id, name, aColumn, anotherColumn FROM aTable A JOIN anotherTable B USING(name);";
 
-		try {
-			ADQLParser parser = parserFactory.createParser();
-			parser.setQueryChecker(new DBChecker(tables));
-			parser.setQueryFactory(new SQLServer_ADQLQueryFactory());
-			ADQLQuery query = parser.parseQuery(adqlquery);
+		try{
+			ADQLQuery query = (new ADQLParser(new DBChecker(tables), new SQLServer_ADQLQueryFactory())).parseQuery(adqlquery);
 			SQLServerTranslator translator = new SQLServerTranslator();
 
 			// Test the FROM part:
@@ -83,35 +74,32 @@ public class TestSQLServerTranslator {
 			// Test the SELECT part (in order to ensure the usual common columns (due to USING) are actually translated as columns of the first joined table):
 			assertEquals("SELECT \"b\".\"id\" AS \"id\" , \"a\".\"name\" AS \"name\" , \"a\".\"aColumn\" AS \"aColumn\" , \"b\".\"anotherColumn\" AS \"anotherColumn\"", translator.translate(query.getSelect()));
 
-		} catch(ParseException pe) {
+		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail("The given ADQL query is completely correct. No error should have occurred while parsing it. (see the console for more details)");
-		} catch(TranslationException te) {
+		}catch(TranslationException te){
 			te.printStackTrace();
 			fail("No error was expected from this translation. (see the console for more details)");
 		}
 	}
 
 	@Test
-	public void testConcat() {
-		try {
+	public void testConcat(){
+		try{
 			SQLServerTranslator translator = new SQLServerTranslator();
 
-			ADQLParser parser = parserFactory.createParser();
-			parser.setQueryFactory(new SQLServer_ADQLQueryFactory());
-
 			// Test with an easy translation:
-			ADQLQuery query = parser.parseQuery("SELECT 'abc' || ' ' || 'def' FROM aTable");
+			ADQLQuery query = (new ADQLParser(new SQLServer_ADQLQueryFactory())).parseQuery("SELECT 'abc' || ' ' || 'def' FROM aTable");
 			assertEquals("SELECT 'abc' + ' ' + 'def' AS \"concat\"", translator.translate(query.getSelect()));
 
 			// Test with an easy translation:
-			query = parser.parseQuery("SELECT 'a||b||c' || ' ' || 'd+e|f' FROM aTable");
+			query = (new ADQLParser(new SQLServer_ADQLQueryFactory())).parseQuery("SELECT 'a||b||c' || ' ' || 'd+e|f' FROM aTable");
 			assertEquals("SELECT 'a||b||c' + ' ' + 'd+e|f' AS \"concat\"", translator.translate(query.getSelect()));
 
-		} catch(ParseException pe) {
+		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail("The given ADQL query is completely correct. No error should have occurred while parsing it. (see the console for more details)");
-		} catch(TranslationException te) {
+		}catch(TranslationException te){
 			te.printStackTrace();
 			fail("No error was expected from this translation. (see the console for more details)");
 		}

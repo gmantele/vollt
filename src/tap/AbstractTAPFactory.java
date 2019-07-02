@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -30,7 +30,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import adql.db.DBChecker;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.ParseException;
 import adql.parser.QueryChecker;
@@ -56,17 +55,12 @@ import uws.service.error.ServiceErrorWriter;
  * Only the functions related with the database connection stay abstract.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 3.0 (04/2019)
+ * @version 2.2 (09/2017)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/** The error writer to use when any error occurs while executing a resource or to format an error occurring while executing an asynchronous job. */
 	protected final ServiceErrorWriter errorWriter;
-
-	/** Factory of ADQL parsers. This factory can be configured to work with a
-	 * different version of the ADQL grammar.
-	 * @since 3.0 */
-	protected ADQLParserFactory parserFactory;
 
 	/**
 	 * Build a basic TAPFactory.
@@ -78,7 +72,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 *
 	 * @see AbstractTAPFactory#AbstractTAPFactory(ServiceConnection, ServiceErrorWriter)
 	 */
-	protected AbstractTAPFactory(ServiceConnection service) throws NullPointerException {
+	protected AbstractTAPFactory(ServiceConnection service) throws NullPointerException{
 		this(service, new DefaultTAPErrorWriter(service));
 	}
 
@@ -95,14 +89,13 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 *
 	 * @see TAPFactory#TAPFactory(ServiceConnection)
 	 */
-	protected AbstractTAPFactory(final ServiceConnection service, final ServiceErrorWriter errorWriter) throws NullPointerException {
+	protected AbstractTAPFactory(final ServiceConnection service, final ServiceErrorWriter errorWriter) throws NullPointerException{
 		super(service);
 		this.errorWriter = errorWriter;
-		this.parserFactory = new ADQLParserFactory();
 	}
 
 	@Override
-	public final ServiceErrorWriter getErrorWriter() {
+	public final ServiceErrorWriter getErrorWriter(){
 		return errorWriter;
 	}
 
@@ -117,7 +110,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </i></p>
 	 */
 	@Override
-	public ADQLExecutor createADQLExecutor() throws TAPException {
+	public ADQLExecutor createADQLExecutor() throws TAPException{
 		return new ADQLExecutor(service);
 	}
 
@@ -127,8 +120,8 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </i></p>
 	 */
 	@Override
-	public ADQLParser createADQLParser() throws TAPException {
-		return parserFactory.createParser();
+	public ADQLParser createADQLParser() throws TAPException{
+		return new ADQLParser();
 	}
 
 	/**
@@ -139,7 +132,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </i></p>
 	 */
 	@Override
-	public ADQLQueryFactory createQueryFactory() throws TAPException {
+	public ADQLQueryFactory createQueryFactory() throws TAPException{
 		return new ADQLQueryFactory();
 	}
 
@@ -154,7 +147,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </i></p>
 	 */
 	@Override
-	public final QueryChecker createQueryChecker(final TAPSchema uploadSchema) throws TAPException {
+	public final QueryChecker createQueryChecker(final TAPSchema uploadSchema) throws TAPException{
 		// Get all tables published in this TAP service:
 		TAPMetadata meta = service.getTAPMetadata();
 
@@ -167,7 +160,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 			tables.add(it.next());
 
 		// Add all tables uploaded by the user:
-		if (uploadSchema != null) {
+		if (uploadSchema != null){
 			for(TAPTable table : uploadSchema)
 				tables.add(table);
 		}
@@ -191,10 +184,10 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 *
 	 * @throws TAPException	If any error occurs while creating the query checker.
 	 */
-	protected QueryChecker createQueryChecker(final Collection<TAPTable> tables) throws TAPException {
-		try {
+	protected QueryChecker createQueryChecker(final Collection<TAPTable> tables) throws TAPException{
+		try{
 			return new DBChecker(tables, service.getUDFs(), service.getGeometries(), service.getCoordinateSystems());
-		} catch(ParseException e) {
+		}catch(ParseException e){
 			throw new TAPException("Unable to build a DBChecker instance! " + e.getMessage(), e, UWSException.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -214,7 +207,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </i></p>
 	 */
 	@Override
-	public Uploader createUploader(final DBConnection dbConn) throws TAPException {
+	public Uploader createUploader(final DBConnection dbConn) throws TAPException{
 		return new Uploader(service, dbConn);
 	}
 
@@ -231,13 +224,13 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </i></p>
 	 */
 	@Override
-	public UWSService createUWS() throws TAPException {
-		try {
+	public UWSService createUWS() throws TAPException{
+		try{
 			UWSService uws = new UWSService(this, this.service.getFileManager(), this.service.getLogger());
 			uws.setName("TAP/async");
 			uws.setErrorWriter(errorWriter);
 			return uws;
-		} catch(UWSException ue) {
+		}catch(UWSException ue){
 			throw new TAPException("Can not create a UWS service (asynchronous resource of TAP)!", ue, UWSException.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -249,7 +242,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * <p>You must override this function if you want enable the backup feature.</p>
 	 */
 	@Override
-	public UWSBackupManager createUWSBackupManager(final UWSService uws) throws TAPException {
+	public UWSBackupManager createUWSBackupManager(final UWSService uws) throws TAPException{
 		return null;
 	}
 
@@ -262,8 +255,8 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </p>
 	 */
 	@Override
-	protected TAPJob createTAPJob(final HttpServletRequest request, final JobOwner owner) throws UWSException {
-		try {
+	protected TAPJob createTAPJob(final HttpServletRequest request, final JobOwner owner) throws UWSException{
+		try{
 			// Extract the HTTP request ID (the job ID should be the same, if not already used by another job):
 			String requestID = null;
 			if (request.getAttribute(UWS.REQ_ATTRIBUTE_ID) != null && request.getAttribute(UWS.REQ_ATTRIBUTE_ID) instanceof String)
@@ -274,7 +267,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 
 			// Create the job:
 			return new TAPJob(owner, tapParams, requestID);
-		} catch(TAPException te) {
+		}catch(TAPException te){
 			if (te.getCause() != null && te.getCause() instanceof UWSException)
 				throw (UWSException)te.getCause();
 			else
@@ -292,10 +285,10 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </p>
 	 */
 	@Override
-	protected TAPJob createTAPJob(final String jobId, final long creationTime, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException {
-		try {
+	protected TAPJob createTAPJob(final String jobId, final long creationTime, final JobOwner owner, final TAPParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws UWSException{
+		try{
 			return new TAPJob(jobId, creationTime, owner, params, quote, startTime, endTime, results, error);
-		} catch(TAPException te) {
+		}catch(TAPException te){
 			if (te.getCause() != null && te.getCause() instanceof UWSException)
 				throw (UWSException)te.getCause();
 			else
@@ -314,7 +307,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </p>
 	 */
 	@Override
-	public TAPParameters createTAPParameters(final HttpServletRequest request) throws TAPException {
+	public TAPParameters createTAPParameters(final HttpServletRequest request) throws TAPException{
 		return new TAPParameters(request, service);
 	}
 
@@ -329,7 +322,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * </p>
 	 */
 	@Override
-	public TAPParameters createTAPParameters(final Map<String, Object> params) throws TAPException {
+	public TAPParameters createTAPParameters(final Map<String,Object> params) throws TAPException{
 		return new TAPParameters(service, params);
 	}
 

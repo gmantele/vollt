@@ -9,7 +9,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import adql.parser.ADQLParserFactory;
+import adql.parser.ADQLParser;
 import adql.parser.ParseException;
 import adql.query.constraint.Comparison;
 import adql.query.from.ADQLJoin;
@@ -21,37 +21,37 @@ import adql.search.SimpleSearchHandler;
 
 public class TestADQLObjectPosition {
 
-	private ADQLParserFactory parserFactory = new ADQLParserFactory();
+	private ADQLParser parser = new ADQLParser();
 
 	@Before
-	public void setUp() {
+	public void setUp(){
 
 	}
 
 	@Test
-	public void testPositionInAllClauses() {
-		try {
-			ADQLQuery query = parserFactory.createParser().parseQuery("SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors");
+	public void testPositionInAllClauses(){
+		try{
+			ADQLQuery query = parser.parseQuery("SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors");
 
-			Iterator<ADQLObject> results = query.search(new SimpleSearchHandler(true) {
+			Iterator<ADQLObject> results = query.search(new SimpleSearchHandler(true){
 				@Override
-				protected boolean match(ADQLObject obj) {
+				protected boolean match(ADQLObject obj){
 					return obj.getPosition() == null;
 				}
 			});
-			if (results.hasNext()) {
+			if (results.hasNext()){
 				System.err.println("OBJECT WITH NO DEFINED POSITION:");
 				while(results.hasNext())
 					System.err.println("    * " + results.next().toADQL());
 				fail("At least one item of the generated ADQL tree does not have a position information! (see System.err for more details)");
 			}
-		} catch(ParseException pe) {
+		}catch(ParseException pe){
 			pe.printStackTrace();
 			fail("No error should have occured here: the ADQL query is syntactically correct!");
 		}
 	}
 
-	private void assertEquality(final TextPosition expected, final TextPosition realPos) {
+	private void assertEquality(final TextPosition expected, final TextPosition realPos){
 		assertEquals(expected.beginLine, realPos.beginLine);
 		assertEquals(expected.beginColumn, realPos.beginColumn);
 		assertEquals(expected.endLine, realPos.endLine);
@@ -59,9 +59,9 @@ public class TestADQLObjectPosition {
 	}
 
 	@Test
-	public void testPositionAccuracy() {
-		try {
-			ADQLQuery query = parserFactory.createParser().parseQuery("SELECT TOP 1000 oid FROM foo JOIN bar USING(oid)\nWHERE foo || toto = 'truc'\n      AND 2 > 1+0 GROUP BY oid HAVING COUNT(oid) > 10\n\tORDER BY 1 DESC");
+	public void testPositionAccuracy(){
+		try{
+			ADQLQuery query = parser.parseQuery("SELECT TOP 1000 oid FROM foo JOIN bar USING(oid)\nWHERE foo || toto = 'truc'\n      AND 2 > 1+0 GROUP BY oid HAVING COUNT(oid) > 10\n\tORDER BY 1 DESC");
 			// Test SELECT
 			assertEquality(new TextPosition(1, 1, 1, 20), query.getSelect().getPosition());
 			// Test ADQLColumn (here: "oid")
@@ -130,7 +130,7 @@ public class TestADQLObjectPosition {
 			// Test column index:
 			assertEquality(new TextPosition(4, 18, 4, 19), query.getOrderBy().get(0).getPosition());
 
-		} catch(ParseException pe) {
+		}catch(ParseException pe){
 			System.err.println("ERROR IN THE ADQL QUERY AT " + pe.getPosition());
 			pe.printStackTrace();
 			fail("No error should have occured here: the ADQL query is syntactically correct!");

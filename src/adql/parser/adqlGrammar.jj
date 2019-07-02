@@ -14,7 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institute (ARI)
  */
 
 /*
@@ -29,8 +30,8 @@
 * If the syntax is not conform to the ADQL definition an error message is
 * printed else it will be the message "Correct syntax".
 *
-*  Author:  Gr&eacute;gory Mantelet (CDS)
-*  Version: 2.0 (04/2019)
+*  Author:  Gr&eacute;gory Mantelet (CDS;ARI)
+*  Version: 1.5 (03/2019)
 */
 
 							/* ########### */
@@ -40,35 +41,14 @@ options {
 	STATIC = false;
 	IGNORE_CASE = true;
 	DEBUG_PARSER = true;
-	KEEP_LINE_COLUMN = true;
-	COMMON_TOKEN_ACTION = true;
 }
 
 							/* ########## */
 							/* # PARSER # */
 							/* ########## */
-PARSER_BEGIN(ADQLParser200)
+PARSER_BEGIN(ADQLParser)
 
 package adql.parser;
-
-/*
- * This file is part of ADQLLibrary.
- * 
- * ADQLLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * ADQLLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
- */
 
 import java.util.Stack;
 import java.util.Vector;
@@ -99,7 +79,7 @@ import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
 /**
-* Parses an ADQL-2.0 query thanks to the {@link ADQLParser200#Query() Query()} function.
+* Parses an ADQL query thanks to the {@link ADQLParser#Query()} function.
 * 
 * <p>
 *   This parser is able, thanks to a {@link QueryChecker} object, to check each
@@ -138,11 +118,10 @@ import adql.translator.TranslationException;
 * @see QueryChecker
 * @see ADQLQueryFactory
 *
-* @author Gr&eacute;gory Mantelet (CDS)
-* @version 2.0 (04/2019)
-* @since 2.0
+* @author Gr&eacute;gory Mantelet (CDS;ARI)
+* @version 1.5 (03/2019)
 */
-public class ADQLParser200 implements ADQLParser {
+public class ADQLParser {
 	
 	/** Tools to build the object representation of the ADQL query. */
 	private ADQLQueryFactory queryFactory = new ADQLQueryFactory();
@@ -165,7 +144,7 @@ public class ADQLParser200 implements ADQLParser {
 	/**
 	* Builds an ADQL parser without a query to parse.
 	*/
-	public ADQLParser200(){
+	public ADQLParser(){
 		this(new java.io.ByteArrayInputStream("".getBytes()));
 		setDebug(false);
 	}
@@ -178,7 +157,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation of
 	*               	the given ADQL query.
 	*/
-	public ADQLParser200(QueryChecker checker, ADQLQueryFactory factory) {
+	public ADQLParser(QueryChecker checker, ADQLQueryFactory factory) {
 		this();
 		
 		queryChecker = checker;
@@ -193,7 +172,7 @@ public class ADQLParser200 implements ADQLParser {
 	*
 	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
-	public ADQLParser200(QueryChecker checker) {
+	public ADQLParser(QueryChecker checker) {
 		this(checker, null);
 	}
 	
@@ -204,7 +183,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation of
 	*               	the given ADQL query.
 	*/
-	public ADQLParser200(ADQLQueryFactory factory) {
+	public ADQLParser(ADQLQueryFactory factory) {
 		this((QueryChecker)null, factory);
 	}
 	
@@ -216,7 +195,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation of
 	*               	the given ADQL query.
 	*/
-	public ADQLParser200(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
+	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
 		setDebug(false);
 		
@@ -234,7 +213,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param stream		The stream in which the ADQL query to parse is given.
 	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
-	public ADQLParser200(java.io.InputStream stream, QueryChecker checker) {
+	public ADQLParser(java.io.InputStream stream, QueryChecker checker) {
 		this(stream, checker, null);
 	}
 	
@@ -245,7 +224,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation of
 	*               	the given ADQL query.
 	*/
-	public ADQLParser200(java.io.InputStream stream, ADQLQueryFactory factory) {
+	public ADQLParser(java.io.InputStream stream, ADQLQueryFactory factory) {
 		this(stream, (QueryChecker)null, factory);
 	}
 	
@@ -258,7 +237,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation
 	*               	of the given ADQL query.
 	*/
-	public ADQLParser200(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
+	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream, encoding);
 		setDebug(false);
 		
@@ -275,7 +254,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param encoding	The supplied encoding.
 	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
-	public ADQLParser200(java.io.InputStream stream, String encoding, QueryChecker checker) {
+	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker) {
 		this(stream, encoding, checker, null);
 	}
 	
@@ -287,7 +266,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation
 	*               	of the given ADQL query.
 	*/
-	public ADQLParser200(java.io.InputStream stream, String encoding, ADQLQueryFactory factory) {
+	public ADQLParser(java.io.InputStream stream, String encoding, ADQLQueryFactory factory) {
 		this(stream, encoding, null, factory);
 	}
 	
@@ -299,7 +278,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation
 	*               	of the given ADQL query.
 	*/
-	public ADQLParser200(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
+	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
 		setDebug(false);
 		
@@ -317,7 +296,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param reader		The reader in which the ADQL query to parse is given.
 	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
-	public ADQLParser200(java.io.Reader reader, QueryChecker checker) {
+	public ADQLParser(java.io.Reader reader, QueryChecker checker) {
 		this(reader, checker, null);
 	}
 	
@@ -328,7 +307,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation
 	*               	of the given ADQL query.
 	*/
-	public ADQLParser200(java.io.Reader reader, ADQLQueryFactory factory) {
+	public ADQLParser(java.io.Reader reader, ADQLQueryFactory factory) {
 		this(reader, null, factory);
 	}
 	
@@ -340,7 +319,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation
 	*               	of the given ADQL query.
 	*/
-	public ADQLParser200(ADQLParser200TokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
+	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
 		setDebug(false);
 		
@@ -358,7 +337,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param tm			The manager which associates a token to a numeric code.
 	* @param checker	The object to use to check each {@link ADQLQuery}.
 	*/
-	public ADQLParser200(ADQLParser200TokenManager tm, QueryChecker checker) {
+	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker) {
 		this(tm, checker, null);
 	}
 	
@@ -369,7 +348,7 @@ public class ADQLParser200 implements ADQLParser {
 	* @param factory	The object to use to build an object representation of
 	*               	the given ADQL query.
 	*/
-	public ADQLParser200(ADQLParser200TokenManager tm, ADQLQueryFactory factory) {
+	public ADQLParser(ADQLParserTokenManager tm, ADQLQueryFactory factory) {
 		this(tm, null, factory);
 	}
 
@@ -466,7 +445,7 @@ public class ADQLParser200 implements ADQLParser {
 	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
-	* @see ADQLParser200#Query()
+	* @see ADQLParser#Query()
 	*/
 	public final ADQLQuery parseQuery() throws ParseException {
 		stackQuery.clear();
@@ -487,9 +466,9 @@ public class ADQLParser200 implements ADQLParser {
 	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
-	* @see ADQLParser200#ReInit(java.io.InputStream)
-	* @see ADQLParser200#setDebug(boolean)
-	* @see ADQLParser200#Query()
+	* @see ADQLParser#ReInit(java.io.InputStream)
+	* @see ADQLParser#setDebug(boolean)
+	* @see ADQLParser#Query()
 	*/
 	public final ADQLQuery parseQuery(String q) throws ParseException {
 		stackQuery.clear();
@@ -511,9 +490,9 @@ public class ADQLParser200 implements ADQLParser {
 	* 
 	* @throws ParseException	If there is at least one syntactic error.
 	*
-	* @see ADQLParser200#ReInit(java.io.InputStream)
-	* @see ADQLParser200#setDebug(boolean)
-	* @see ADQLParser200#Query()
+	* @see ADQLParser#ReInit(java.io.InputStream)
+	* @see ADQLParser#setDebug(boolean)
+	* @see ADQLParser#Query()
 	*/
 	public final ADQLQuery parseQuery(java.io.InputStream stream) throws ParseException {
 		stackQuery.clear();
@@ -523,116 +502,6 @@ public class ADQLParser200 implements ADQLParser {
 			return Query();
 		}catch(TokenMgrError tme) {
 			throw new ParseException(tme);
-		}
-	}
-
-	@Override
-	public final ClauseSelect parseSelect(java.lang.String adql) throws ParseException {
-	    // Set the string to parse:
-		ReInit(new java.io.ByteArrayInputStream(adql.getBytes()));
-		
-		try {
-			// Create the query:
-			query = queryFactory.createQuery();
-
-			// Parse the string as a SELECT clause:
-			Select();
-
-			// Return what's just got parsed:
-			return query.getSelect();
-			
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	}
-	
-	@Override
-	public final FromContent parseFrom(java.lang.String adql) throws ParseException {
-		// Set the string to parse:
-		ReInit(new java.io.ByteArrayInputStream(adql.getBytes()));
-		
-		try {
-			// Create the query:
-			query = queryFactory.createQuery();
-
-			// Parse the string as a FROM clause:
-			From();
-
-			// Return what's just got parsed:
-			return query.getFrom();
-			
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	}
-	
-	@Override
-	public final ClauseConstraints parseWhere(java.lang.String adql) throws ParseException {
-		// Set the string to parse:
-		ReInit(new java.io.ByteArrayInputStream(adql.getBytes()));
-		
-		try {
-			// Create the query:
-			query = queryFactory.createQuery();
-
-			// Parse the string as a WHERE clause:
-			Where();
-
-			// Return what's just got parsed:
-			return query.getWhere();
-			
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	}
-	
-	@Override
-	public final ClauseADQL<ADQLOrder> parseOrderBy(java.lang.String adql) throws ParseException {
-		// Set the string to parse:
-		ReInit(new java.io.ByteArrayInputStream(adql.getBytes()));
-		
-		try {
-			// Create the query:
-			query = queryFactory.createQuery();
-
-			// Parse the string as a ORDER BY clause:
-			OrderBy();
-
-			// Return what's just got parsed:
-			return query.getOrderBy();
-			
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	}
-	
-	@Override
-	public final ClauseADQL<ADQLColumn> parseGroupBy(java.lang.String adql) throws ParseException {
-		// Set the string to parse:
-		ReInit(new java.io.ByteArrayInputStream(adql.getBytes()));
-		
-		try {
-			// Create the query:
-			query = queryFactory.createQuery();
-
-			// Parse the string as a GROUP BY clause:
-			GroupBy();
-
-			// Return what's just got parsed:
-			return query.getGroupBy();
-			
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}catch(Exception ex){
-			throw generateParseException(ex);
 		}
 	}
 
@@ -749,7 +618,7 @@ public class ADQLParser200 implements ADQLParser {
 		adqlQuery = adqlQuery.replaceAll("(\r\n|\r|\n)", System.getProperty("line.separator")).replaceAll("\t", "    ");
 
 		// 2. Analyse the query token by token:
-		ADQLParser200TokenManager parser = new ADQLParser200TokenManager(new SimpleCharStream(new java.io.ByteArrayInputStream(adqlQuery.getBytes())));
+		ADQLParserTokenManager parser = new ADQLParserTokenManager(new SimpleCharStream(new java.io.ByteArrayInputStream(adqlQuery.getBytes())));
 		
 		final String[] lines = adqlQuery.split(System.getProperty("line.separator"));
 
@@ -898,7 +767,7 @@ public class ADQLParser200 implements ADQLParser {
 	 * @since 1.5
 	 */
 	protected boolean isEnd(final Token token){
-		return token.kind == ADQLParser200Constants.EOF || token.kind == ADQLParser200Constants.EOQ;
+		return token.kind == ADQLParserConstants.EOF || token.kind == ADQLParserConstants.EOQ;
 	}
 
 	/**
@@ -925,27 +794,222 @@ public class ADQLParser200 implements ADQLParser {
 	 */
 	protected boolean mustEscape(final Token token, final Token nextToken){
 		switch(token.kind){
-			case ADQLParser200Constants.SQL_RESERVED_WORD:
+			case ADQLParserConstants.SQL_RESERVED_WORD:
 				return true;
-			case ADQLParser200Constants.REGULAR_IDENTIFIER_CANDIDATE:
+			case ADQLParserConstants.REGULAR_IDENTIFIER_CANDIDATE:
 				return !isRegularIdentifier(token.image);
 			default:
-				return token.isFunctionName && (nextToken == null || nextToken.kind != ADQLParser200Constants.LEFT_PAR);
+				return isFunctionName(token) && (nextToken == null || nextToken.kind != ADQLParserConstants.LEFT_PAR);
 		}
 	}
+
+	/**
+	 * Tell whether the given token matches to an ADQL function name.
+	 *
+	 * @param token	The token to analyze.
+	 *
+	 * @return	<code>true</code> if the given token is an ADQL function name,
+	 *        	<code>false</code> otherwise.
+	 *
+	 * @since 1.5
+	 */
+	protected boolean isFunctionName(final Token token){
+		switch(token.kind){
+			case ADQLParserConstants.COUNT:
+			case ADQLParserConstants.EXISTS:
+			case ADQLParserConstants.AVG:
+			case ADQLParserConstants.MAX:
+			case ADQLParserConstants.MIN:
+			case ADQLParserConstants.SUM:
+			case ADQLParserConstants.BOX:
+			case ADQLParserConstants.CENTROID:
+			case ADQLParserConstants.CIRCLE:
+			case ADQLParserConstants.POINT:
+			case ADQLParserConstants.POLYGON:
+			case ADQLParserConstants.REGION:
+			case ADQLParserConstants.CONTAINS:
+			case ADQLParserConstants.INTERSECTS:
+			case ADQLParserConstants.AREA:
+			case ADQLParserConstants.COORD1:
+			case ADQLParserConstants.COORD2:
+			case ADQLParserConstants.COORDSYS:
+			case ADQLParserConstants.DISTANCE:
+			case ADQLParserConstants.ABS:
+			case ADQLParserConstants.CEILING:
+			case ADQLParserConstants.DEGREES:
+			case ADQLParserConstants.EXP:
+			case ADQLParserConstants.FLOOR:
+			case ADQLParserConstants.LOG:
+			case ADQLParserConstants.LOG10:
+			case ADQLParserConstants.MOD:
+			case ADQLParserConstants.PI:
+			case ADQLParserConstants.POWER:
+			case ADQLParserConstants.RADIANS:
+			case ADQLParserConstants.RAND:
+			case ADQLParserConstants.ROUND:
+			case ADQLParserConstants.SQRT:
+			case ADQLParserConstants.TRUNCATE:
+			case ADQLParserConstants.ACOS:
+			case ADQLParserConstants.ASIN:
+			case ADQLParserConstants.ATAN:
+			case ADQLParserConstants.ATAN2:
+			case ADQLParserConstants.COS:
+			case ADQLParserConstants.COT:
+			case ADQLParserConstants.SIN:
+			case ADQLParserConstants.TAN:
+			case ADQLParserConstants.USING:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	/* MAIN PROGRAM */
+
+	/**
+	* Gets the specified ADQL query and parses the given ADQL query. The SQL
+	* translation is then printed if the syntax is correct.
+	* 
+	* <p>
+	*     <b>ONLY the syntax is checked: the query is NOT EXECUTED !</b>
+	* </p>
+	*
+	* @param args
+	
+	* @throws Exception
+	*/
+	public static final void main(String[] args) throws Exception {
+		final String USAGE = "Usage:\n    adqlParser.jar [-d] [-v] [-e] [-a|-s] [-f] [<FILE>|<URL>]\n\nNOTE: If no file or URL is given, the ADQL query is expected in the standard\n      input. This query must end with a ';' or <Ctrl+D>!\n\nParameters:\n    -v or --verbose : Print the main steps of the parsing\n    -d or --debug   : Print stack traces when a grave error occurs\n    -e or --explain : Explain the ADQL parsing (or Expand the parsing tree)\n    -a or --adql    : Display the understood ADQL query\n    -s or --sql     : Ask the SQL translation of the given ADQL query\n                      (SQL compatible with PostgreSQL)\n    -f or --try-fix : Try fixing the most common ADQL query issues before\n                      attempting to parse the query.\n\nReturn:\n    By default: nothing if the query is correct. Otherwise a message explaining\n                why the query is not correct is displayed.\n    With the -s option, the SQL translation of the given ADQL query will be\n    returned.\n    With the -a option, the ADQL query is returned as it has been understood.\n\nExit status:\n    0  OK !\n    1  Parameter error (missing or incorrect parameter)\n    2  File error (incorrect file/url, reading error, ...)\n    3  Parsing error (syntactic or semantic error)\n    4  Translation error (a problem has occurred during the translation of the\n       given ADQL query in SQL).";
+
+		ADQLParser parser;
+
+		final String urlRegex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+
+		String file = null, metaFile = null;
+		short mode = -1;
+		boolean verbose=false, debug=false, explain=false, tryFix=false;
+
+		// Parameters reading:
+		for(int i=0; i<args.length; i++){
+			if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("--debug"))
+				debug = true;
+			else if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("--verbose"))
+				verbose = true;
+			else if (args[i].equalsIgnoreCase("-e") || args[i].equalsIgnoreCase("--explain"))
+				explain = true;
+			else if (args[i].equalsIgnoreCase("-a") || args[i].equalsIgnoreCase("--adql")){
+				if (mode != -1){
+					System.err.println("((!)) Too much parameter: you must choose between -s, -c, -a or nothing ((!))\n"+USAGE);
+					System.exit(1);
+				}else
+					mode = 1;
+			}else if (args[i].equalsIgnoreCase("-s") || args[i].equalsIgnoreCase("--sql")){
+				if (mode != -1){
+					System.err.println("((!)) Too much parameter: you must choose between -s, -c, -a or nothing ((!))\n"+USAGE);
+					System.exit(1);
+				}else
+					mode = 2;
+			}else if (args[i].equalsIgnoreCase("-f") || args[i].equalsIgnoreCase("--try-fix"))
+				tryFix = true;
+			else if (args[i].equalsIgnoreCase("-h") || args[i].equalsIgnoreCase("--help")){
+				System.out.println(USAGE);
+				System.exit(0);
+			}else if (args[i].startsWith("-")){
+				System.err.println("((!)) Unknown parameter: \""+args[i]+"\" ((!))\u005cn"+USAGE);
+				System.exit(1);
+			}else
+				file = args[i].trim();
+		}
+
+		try{
+
+			// Try fixing the query, if asked:
+			if (tryFix) {
+				if (verbose)
+					System.out.println("((i)) Trying to automatically fix the query...");
+
+				String query;
+				java.io.InputStream in = null;
+				try {
+					// get the input stream...
+					if (file == null || file.length() == 0)
+						in = System.in;
+					else if (file.matches(urlRegex))
+						in = (new java.net.URL(file)).openStream();
+					else
+						in = new java.io.FileInputStream(file);
+					
+					// ...and try fixing the query:
+					query = (new ADQLParser()).tryQuickFix(in);
+				} finally {
+					// close the stream (if opened):
+					if (in != null)
+						in.close();
+					in = null;
+				}
+				
+				if (verbose)
+					System.out.println("((i)) SUGGESTED QUERY:\n" + query);
+
+				// Initialise the parser with this fixed query:
+				parser = new ADQLParser(new java.io.ByteArrayInputStream(query.getBytes()));	
+			}
+			// Otherwise, take the query as provided:
+			else {
+				// Initialise the parser with the specified input:
+				if (file == null || file.length() == 0)
+					parser = new ADQLParser(System.in);
+				else if (file.matches(urlRegex))
+					parser = new ADQLParser((new java.net.URL(file)).openStream());
+				else
+					parser = new ADQLParser(new java.io.FileInputStream(file));
+			}
+
+			// Enable/Disable the debugging in function of the parameters:
+			parser.setDebug(explain);
+
+			// Query parsing:
+			try{
+				if (verbose)	System.out.print("((i)) Parsing ADQL query...");
+				ADQLQuery q = parser.parseQuery();
+				if (verbose)	System.out.println("((i)) CORRECT ADQL QUERY ((i))");
+				if (mode==2){
+					PostgreSQLTranslator translator = new PostgreSQLTranslator();
+					if (verbose)	System.out.print("((i)) Translating in SQL...");
+					String sql = translator.translate(q);
+					if (verbose)	System.out.println("ok");
+					System.out.println(sql);
+				}else if (mode==1){
+					System.out.println(q.toADQL());
+				}
+			}catch(UnresolvedIdentifiersException uie){
+				System.err.println("((X)) "+uie.getNbErrors()+" unresolved identifiers:");
+				for(ParseException pe : uie)
+					System.err.println("\t - at "+pe.getPosition()+": "+uie.getMessage());
+				if (debug)		uie.printStackTrace(System.err);
+				System.exit(3);
+			}catch(ParseException pe){
+				System.err.println("((X)) Syntax error: "+pe.getMessage()+" ((X))");
+				if (debug)		pe.printStackTrace(System.err);
+				System.exit(3);
+			}catch(TranslationException te){
+				if (verbose)	System.out.println("error");
+				System.err.println("((X)) Translation error: "+te.getMessage()+" ((X))");
+				if (debug)		te.printStackTrace(System.err);
+				System.exit(4);
+			}
+
+		}catch(IOException ioe){
+			System.err.println("\n((X)) Error while reading the file \""+file+"\": "+ioe.getMessage()+" ((X))");
+			if (debug)		ioe.printStackTrace(System.err);
+			System.exit(2);
+		}
+    	
+    }
 }
 
-PARSER_END(ADQLParser200)
+PARSER_END(ADQLParser)
 
-				/* ################################### */
-				/* # CUSTOMIZATION OF TOKEN CREATION # */
-				/* ################################### */
-
-TOKEN_MGR_DECLS: {
-	protected void CommonTokenAction(final Token t) {
-		t.adqlVersion = ADQLParserFactory.ADQLVersion.V2_0;
-	} 
-}
 
 							/* ########### */
 							/* # GRAMMAR # */
@@ -967,7 +1031,6 @@ SKIP : { < " " | "\t" | "\n" | "\r" | "\r\n" > }
 
 TOKEN : {
 	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CAST"|"CATALOG"|"CHAR"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COALESCE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DOUBLE"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPT"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTEGER"|"INTERSECT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"LOWER"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PRECISION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REAL"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SMALLINT"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMESTAMP"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNION"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"UPPER"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARCHAR"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WITH"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
-	{ matchedToken.sqlReserved = true; }
 }
 
 /* *********** */
@@ -1008,124 +1071,120 @@ TOKEN : {
 /* SELECT's tokens */
 /* *************** */
 TOKEN : {
-	< SELECT: "SELECT" >               { matchedToken.adqlReserved = true; }
-|	< QUANTIFIER: "DISTINCT" | "ALL" > { matchedToken.adqlReserved = true; }
-|	< TOP: "TOP" >                     { matchedToken.adqlReserved = true; }
+	< SELECT: "SELECT" >
+|	< QUANTIFIER: "DISTINCT" | "ALL" >
+|	< TOP: "TOP" >
 }
 
 /* ************* */
 /* FROM's tokens */
 /* ************* */
 TOKEN : {
-	< FROM: "FROM" >       { matchedToken.adqlReserved = true; }
-|	< AS: "AS" >           { matchedToken.adqlReserved = true; }
-|	< NATURAL: "NATURAL" > { matchedToken.adqlReserved = true; }
-|	< INNER: "INNER" >     { matchedToken.adqlReserved = true; }
-|	< OUTER: "OUTER" >     { matchedToken.adqlReserved = true; }
-|	< RIGHT: "RIGHT" >     { matchedToken.adqlReserved = true; }
-|	< LEFT: "LEFT" >       { matchedToken.adqlReserved = true; }
-|	< FULL: "FULL" >       { matchedToken.adqlReserved = true; }
-|	< JOIN: "JOIN" >       { matchedToken.adqlReserved = true; }
-|	< ON: "ON" >           { matchedToken.adqlReserved = true; }
-}
-TOKEN : { 
-	< USING: "USING" > { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
+	< FROM: "FROM" >
+|	< AS: "AS" >
+|	< NATURAL: "NATURAL" >
+|	< INNER: "INNER" >
+|	< OUTER: "OUTER" >
+|	< RIGHT: "RIGHT" >
+|	< LEFT: "LEFT" >
+|	< FULL: "FULL" >
+|	< JOIN: "JOIN" >
+|	< ON: "ON" >
+|	< USING: "USING" >
 }
 
 /* ************** */
 /* WHERE's tokens */
 /* ************** */
 TOKEN : {
-	< WHERE: "WHERE" >     { matchedToken.adqlReserved = true; }
-|	< AND: "AND" >         { matchedToken.adqlReserved = true; }
-|	< OR: "OR" >           { matchedToken.adqlReserved = true; }
-|	< NOT: "NOT" >         { matchedToken.adqlReserved = true; }
-|	< IS: "IS" >           { matchedToken.adqlReserved = true; }
-|	< NULL: "NULL" >       { matchedToken.adqlReserved = true; }
-|	< BETWEEN: "BETWEEN" > { matchedToken.adqlReserved = true; }
-|	< LIKE: "LIKE" >       { matchedToken.adqlReserved = true; }
-}
-TOKEN : { 
-	< IN: "IN" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< EXISTS: "EXISTS" > { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
+	< WHERE: "WHERE" >
+|	< AND: "AND" >
+|	< OR: "OR" >
+|	< NOT: "NOT" >
+|	< IS: "IS" >
+|	< NULL: "NULL" >
+|	< BETWEEN: "BETWEEN" >
+|	< LIKE: "LIKE" >
+|	< IN: "IN" >
+|	< EXISTS: "EXISTS" >
 }
 
 /* ********************* */
 /* Other clauses' tokens */
 /* ********************* */
 TOKEN : {
-	< BY: "BY" >         { matchedToken.adqlReserved = true; }
-|	< GROUP: "GROUP" >   { matchedToken.adqlReserved = true; }
-|	< HAVING: "HAVING" > { matchedToken.adqlReserved = true; }
-|	< ORDER: "ORDER" >   { matchedToken.adqlReserved = true; }
-|	< ASC: "ASC" >       { matchedToken.adqlReserved = true; }
-|	< DESC: "DESC" >     { matchedToken.adqlReserved = true; }
+	< BY: "BY" >
+|	< GROUP: "GROUP" >
+|	< HAVING: "HAVING" >
+|	< ORDER: "ORDER" >
+|	< ASC: "ASC" >
+|	< DESC: "DESC" >
 }
 
 /* ************* */
 /* SQL functions */
 /* ************* */
 TOKEN : {
-	< AVG: "AVG" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< MAX: "MAX" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< MIN: "MIN" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< SUM: "SUM" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< COUNT: "COUNT" > { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
+	< AVG: "AVG" >
+|	< MAX: "MAX" >
+|	< MIN: "MIN" >
+|	< SUM: "SUM" >
+|	< COUNT: "COUNT" >
 }
 
 /* ************** */
 /* ADQL functions */
 /* ************** */
 TOKEN : {
-	< BOX: "BOX" >               { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< CENTROID: "CENTROID" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< CIRCLE: "CIRCLE" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< POINT: "POINT" >           { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< POLYGON: "POLYGON" >       { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< REGION: "REGION" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
+	< BOX: "BOX" >
+|	< CENTROID: "CENTROID" >
+|	< CIRCLE: "CIRCLE" >
+|	< POINT: "POINT" >
+|	< POLYGON: "POLYGON" >
+|	< REGION: "REGION" >
 
-|	< CONTAINS: "CONTAINS" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< INTERSECTS: "INTERSECTS" > { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< AREA: "AREA" >             { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< COORD1: "COORD1" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< COORD2: "COORD2" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< COORDSYS: "COORDSYS" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< DISTANCE: "DISTANCE" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
+|	< CONTAINS: "CONTAINS" >
+|	< INTERSECTS: "INTERSECTS" >
+|	< AREA: "AREA" >
+|	< COORD1: "COORD1" >
+|	< COORD2: "COORD2" >
+|	< COORDSYS: "COORDSYS" >
+|	< DISTANCE: "DISTANCE" >
 }
 
 /* ********************** */
 /* Mathematical functions */
 /* ********************** */
 TOKEN : {
-	< ABS: "ABS" >           { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< CEILING: "CEILING" >   { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< DEGREES: "DEGREES" >   { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< EXP: "EXP" >           { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< FLOOR: "FLOOR" >       { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< LOG: "LOG" >           { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< LOG10: "LOG10" >       { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< MOD: "MOD" >           { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< PI: "PI" >             { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< POWER: "POWER" >       { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< RADIANS: "RADIANS" >   { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< RAND: "RAND" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< ROUND: "ROUND" >       { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< SQRT: "SQRT" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< TRUNCATE: "TRUNCATE" > { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
+	< ABS: "ABS" >
+|	< CEILING: "CEILING" >
+|	< DEGREES: "DEGREES" >
+|	< EXP: "EXP" >
+|	< FLOOR: "FLOOR" >
+|	< LOG: "LOG" >
+|	< LOG10: "LOG10" >
+|	< MOD: "MOD" >
+|	< PI: "PI" >
+|	< POWER: "POWER" >
+|	< RADIANS: "RADIANS" >
+|	< RAND: "RAND" >
+|	< ROUND: "ROUND" >
+|	< SQRT: "SQRT" >
+|	< TRUNCATE: "TRUNCATE" >
 }
 
 /* ************************* */
 /* Trigonometrical functions */
 /* ************************* */
 TOKEN : {
-	< ACOS: "ACOS" >   { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< ASIN: "ASIN" >   { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< ATAN: "ATAN" >   { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< ATAN2: "ATAN2" > { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< COS: "COS" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< COT: "COT" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< SIN: "SIN" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
-|	< TAN: "TAN" >     { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
+	< ACOS: "ACOS" >
+|	< ASIN: "ASIN" >
+|	< ATAN: "ATAN" >
+|	< ATAN2: "ATAN2" >
+|	< COS: "COS" >
+|	< COT: "COT" >
+|	< SIN: "SIN" >
+|	< TAN: "TAN" >
 }
 
 /* ******* */
@@ -1170,7 +1229,7 @@ TOKEN : {
 /* GENERAL ADQL SYNTAX */
 /* ******************* */
 /**
-* Parses the ADQL query given at the parser creation or in the {@link ADQLParser200#ReInit(java.io.InputStream)}
+* Parses the ADQL query given at the parser creation or in the {@link ADQLParser#ReInit(java.io.InputStream)}
 * or in the <i>parseQuery</i> functions.
 *
 * @return					The object representation of the query.
@@ -2118,7 +2177,7 @@ UserDefinedFunction UserDefinedFunction(): {Token fct, end; Vector<ADQLOperand> 
 		if (!isRegularIdentifier(fct.image))
 			throw new ParseException("Invalid (User Defined) Function name: \""+fct.image+"\"!", new TextPosition(fct));
 		
-		//System.out.println("INFO [ADQLParser200]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
+		//System.out.println("INFO [ADQLParser]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
 		
 		try{
 			//  Build the parameters list:
