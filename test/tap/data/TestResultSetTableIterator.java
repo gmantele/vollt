@@ -13,7 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import adql.db.DBType;
-import adql.parser.ADQLParser;
+import adql.parser.ADQLParserFactory;
 import adql.query.ADQLQuery;
 import adql.translator.AstroH2Translator;
 import tap.db_testtools.DBTools;
@@ -23,33 +23,35 @@ public class TestResultSetTableIterator {
 
 	private static Connection conn;
 
+	ADQLParserFactory parserFactory = new ADQLParserFactory();
+
 	@BeforeClass
-	public static void setUpBeforeClass() throws Exception{
+	public static void setUpBeforeClass() throws Exception {
 		DBTools.createTestDB();
 		conn = DBTools.createConnection("h2", null, null, DBTools.DB_TEST_PATH, DBTools.DB_TEST_USER, DBTools.DB_TEST_PWD);
 	}
 
 	@AfterClass
-	public static void tearDownAfterClass() throws Exception{
+	public static void tearDownAfterClass() throws Exception {
 		DBTools.closeConnection(conn);
 		DBTools.dropTestDB();
 	}
 
 	@Test
-	public void testWithRSNULL(){
-		try{
+	public void testWithRSNULL() {
+		try {
 			new ResultSetTableIterator(null);
 			fail("The constructor should have failed, because: the given ResultSet is NULL.");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals("java.lang.NullPointerException", ex.getClass().getName());
 			assertEquals("Missing ResultSet object over which to iterate!", ex.getMessage());
 		}
 	}
 
 	@Test
-	public void testWithData(){
+	public void testWithData() {
 		TableIterator it = null;
-		try{
+		try {
 			ResultSet rs = DBTools.select(conn, "SELECT hip, ra, dec, vmag FROM hipparcos LIMIT 10;");
 
 			it = new ResultSetTableIterator(rs);
@@ -57,12 +59,12 @@ public class TestResultSetTableIterator {
 			assertTrue(it.getMetadata() != null);
 			final int expectedNbLines = 10, expectedNbColumns = 4;
 			int countLines = 0, countColumns = 0;
-			while(it.nextRow()){
+			while(it.nextRow()) {
 				// count lines:
 				countLines++;
 				// reset columns count:
 				countColumns = 0;
-				while(it.hasNextCol()){
+				while(it.hasNextCol()) {
 					it.nextCol();
 					// count columns
 					countColumns++;
@@ -75,22 +77,23 @@ public class TestResultSetTableIterator {
 			// TEST that all lines have been read:
 			assertEquals(expectedNbLines, countLines);
 
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("An exception occurs while reading a correct ResultSet (containing some valid rows).");
-		}finally{
-			if (it != null){
-				try{
+		} finally {
+			if (it != null) {
+				try {
 					it.close();
-				}catch(DataReadException dre){}
+				} catch(DataReadException dre) {
+				}
 			}
 		}
 	}
 
 	@Test
-	public void testWithEmptySet(){
+	public void testWithEmptySet() {
 		TableIterator it = null;
-		try{
+		try {
 			ResultSet rs = DBTools.select(conn, "SELECT * FROM hipparcos WHERE hip = 1056;");
 
 			it = new ResultSetTableIterator(rs);
@@ -103,21 +106,22 @@ public class TestResultSetTableIterator {
 			// TEST that no line has been read:
 			assertEquals(countLines, 0);
 
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("An exception occurs while reading a correct ResultSet (containing some valid rows).");
-		}finally{
-			if (it != null){
-				try{
+		} finally {
+			if (it != null) {
+				try {
 					it.close();
-				}catch(DataReadException dre){}
+				} catch(DataReadException dre) {
+				}
 			}
 		}
 	}
 
 	@Test
-	public void testWithClosedSet(){
-		try{
+	public void testWithClosedSet() {
+		try {
 			// create a valid ResultSet:
 			ResultSet rs = DBTools.select(conn, "SELECT * FROM hipparcos WHERE hip = 1056;");
 
@@ -128,15 +132,15 @@ public class TestResultSetTableIterator {
 			new ResultSetTableIterator(rs);
 
 			fail("The constructor should have failed, because: the given ResultSet is closed.");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(ex.getClass().getName(), "tap.data.DataReadException");
 		}
 	}
 
 	@Test
-	public void testDateFormat(){
+	public void testDateFormat() {
 		ResultSet rs = null;
-		try{
+		try {
 			// create a valid ResultSet:
 			rs = DBTools.select(conn, "SELECT * FROM hipparcos LIMIT 1;");
 
@@ -161,23 +165,24 @@ public class TestResultSetTableIterator {
 			// Try to format it into a simple time (no date indication):
 			assertEquals("15:13:56", rsit.formatColValue(new java.sql.Time(cal.getTimeInMillis())));
 
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("An exception occurs while formatting dates/times.");
-		}finally{
-			if (rs != null){
-				try{
+		} finally {
+			if (rs != null) {
+				try {
 					rs.close();
-				}catch(Exception ex){}
+				} catch(Exception ex) {
+				}
 			}
 		}
 	}
 
 	@Test
-	public void testGeometryColumns(){
+	public void testGeometryColumns() {
 		ResultSet rs = null;
-		try{
-			ADQLQuery query = (new ADQLParser()).parseQuery("SELECT TOP 1 POINT('', ra, dec), CENTROID(CIRCLE('', ra, dec, 2)), BOX('', ra-1, dec-2, ra+1, dec+2), CIRCLE('', ra, dec, 2) FROM hipparcos;");
+		try {
+			ADQLQuery query = (parserFactory.createParser()).parseQuery("SELECT TOP 1 POINT('', ra, dec), CENTROID(CIRCLE('', ra, dec, 2)), BOX('', ra-1, dec-2, ra+1, dec+2), CIRCLE('', ra, dec, 2) FROM hipparcos;");
 
 			// create a valid ResultSet:
 			rs = DBTools.select(conn, (new AstroH2Translator()).translate(query));
@@ -198,23 +203,24 @@ public class TestResultSetTableIterator {
 			for(int i = 2; i < 3; i++)
 				assertEquals(DBType.DBDatatype.REGION, cols[i].getDatatype().type);
 
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("An exception occurs while checking geometrical functions datatypes.");
-		}finally{
-			if (rs != null){
-				try{
+		} finally {
+			if (rs != null) {
+				try {
 					rs.close();
-				}catch(Exception ex){}
+				} catch(Exception ex) {
+				}
 			}
 		}
 	}
 
 	@Test
-	public void testSQLFunctions(){
+	public void testSQLFunctions() {
 		ResultSet rs = null;
-		try{
-			ADQLQuery query = (new ADQLParser()).parseQuery("SELECT COUNT(*), MIN(vmag), AVG(plx) FROM hipparcos;");
+		try {
+			ADQLQuery query = (parserFactory.createParser()).parseQuery("SELECT COUNT(*), MIN(vmag), AVG(plx) FROM hipparcos;");
 
 			// create a valid ResultSet:
 			rs = DBTools.select(conn, (new AstroH2Translator()).translate(query));
@@ -234,14 +240,15 @@ public class TestResultSetTableIterator {
 			for(int i = 1; i < 3; i++)
 				assertEquals(DBType.DBDatatype.REAL, cols[i].getDatatype().type);
 
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("An exception occurs while checking SQL functions datatypes");
-		}finally{
-			if (rs != null){
-				try{
+		} finally {
+			if (rs != null) {
+				try {
 					rs.close();
-				}catch(Exception ex){}
+				} catch(Exception ex) {
+				}
 			}
 		}
 	}

@@ -18,6 +18,8 @@ import adql.query.operand.StringConstant;
 
 public class TestADQLParser {
 
+	ADQLParserFactory parserFactory = new ADQLParserFactory();
+
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 	}
@@ -35,9 +37,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testColumnReference() {
-		ADQLParser parser = new ADQLParser();
-		try {
+	public void testColumnReference(){
+		ADQLParser parser = parserFactory.createParser();
+		try{
 			// ORDER BY
 			parser.parseQuery("SELECT * FROM cat ORDER BY oid;");
 			parser.parseQuery("SELECT * FROM cat ORDER BY oid ASC;");
@@ -102,9 +104,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testDelimitedIdentifiersWithDot() {
-		ADQLParser parser = new ADQLParser();
-		try {
+	public void testDelimitedIdentifiersWithDot(){
+		ADQLParser parser = parserFactory.createParser();
+		try{
 			ADQLQuery query = parser.parseQuery("SELECT * FROM \"B/avo.rad/catalog\";");
 			assertEquals("B/avo.rad/catalog", query.getFrom().getTables().get(0).getTableName());
 		} catch(Exception e) {
@@ -114,9 +116,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testJoinTree() {
-		ADQLParser parser = new ADQLParser();
-		try {
+	public void testJoinTree(){
+		ADQLParser parser = parserFactory.createParser();
+		try{
 			String[] queries = new String[]{ "SELECT * FROM aTable A JOIN aSecondTable B ON A.id = B.id JOIN aThirdTable C ON B.id = C.id;", "SELECT * FROM aTable A NATURAL JOIN aSecondTable B NATURAL JOIN aThirdTable C;" };
 			for(String q : queries) {
 				ADQLQuery query = parser.parseQuery(q);
@@ -141,9 +143,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void test() {
-		ADQLParser parser = new ADQLParser();
-		try {
+	public void test(){
+		ADQLParser parser = parserFactory.createParser();
+		try{
 			ADQLQuery query = parser.parseQuery("SELECT 'truc''machin'  	'bidule' --- why not a comment now ^^\n'FIN' FROM foo;");
 			assertNotNull(query);
 			assertEquals("truc'machinbiduleFIN", ((StringConstant)(query.getSelect().get(0).getOperand())).getValue());
@@ -166,37 +168,37 @@ public class TestADQLParser {
 	public void testIncorrectCharacter() {
 		/* An identifier must be written only with digits, an underscore or
 		 * regular latin characters: */
-		try {
-			(new ADQLParser()).parseQuery("select gr\u00e9gory FROM aTable");
-		} catch(Throwable t) {
+		try{
+			(parserFactory.createParser()).parseQuery("select gr\u00e9gory FROM aTable");
+		}catch(Throwable t){
 			assertEquals(ParseException.class, t.getClass());
 			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.10: "));
 			assertTrue(t.getMessage().endsWith("Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it)."));
 		}
 
 		/* Un-finished double/single quoted string: */
-		try {
-			(new ADQLParser()).parseQuery("select \"stuff FROM aTable");
-		} catch(Throwable t) {
+		try{
+			(parserFactory.createParser()).parseQuery("select \"stuff FROM aTable");
+		}catch(Throwable t){
 			assertEquals(ParseException.class, t.getClass());
 			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.26: <EOF>"));
 			assertTrue(t.getMessage().endsWith("Possible cause: a string between single or double quotes which is never closed (solution: well...just close it!)."));
 		}
 
 		// But in a string, delimited identifier or a comment, it is fine:
-		try {
-			(new ADQLParser()).parseQuery("select 'gr\u00e9gory' FROM aTable");
-			(new ADQLParser()).parseQuery("select \"gr\u00e9gory\" FROM aTable");
-			(new ADQLParser()).parseQuery("select * FROM aTable -- a comment by Gr\u00e9gory");
-		} catch(Throwable t) {
+		try{
+			(parserFactory.createParser()).parseQuery("select 'gr\u00e9gory' FROM aTable");
+			(parserFactory.createParser()).parseQuery("select \"gr\u00e9gory\" FROM aTable");
+			(parserFactory.createParser()).parseQuery("select * FROM aTable -- a comment by Gr\u00e9gory");
+		}catch(Throwable t){
 			fail("This error should never occurs because all these queries have an accentuated character but at a correct place.");
 		}
 	}
 
 	@Test
-	public void testMultipleSpacesInOrderAndGroupBy() {
-		try {
-			ADQLParser parser = new ADQLParser();
+	public void testMultipleSpacesInOrderAndGroupBy(){
+		try{
+			ADQLParser parser = parserFactory.createParser();
 
 			// Single space:
 			parser.parseQuery("select * from aTable ORDER BY aCol");
@@ -221,13 +223,13 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testADQLReservedWord() {
-		ADQLParser parser = new ADQLParser();
+	public void testADQLReservedWord(){
+		ADQLParser parser = parserFactory.createParser();
 
-		final String hintAbs = "\n(HINT: \"abs\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
-		final String hintPoint = "\n(HINT: \"point\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
-		final String hintExists = "\n(HINT: \"exists\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
-		final String hintLike = "\n(HINT: \"LIKE\" is a reserved ADQL word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+		final String hintAbs = ".*\n\\(HINT: \"abs\" is a reserved ADQL word in v[0-9]+\\.[0-9]+\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)";
+		final String hintPoint = ".*\n\\(HINT: \"point\" is a reserved ADQL word in v[0-9]+\\.[0-9]+\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)";
+		final String hintExists = ".*\n\\(HINT: \"exists\" is a reserved ADQL word in v[0-9]+\\.[0-9]+\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)";
+		final String hintLike = ".*\n\\(HINT: \"LIKE\" is a reserved ADQL word in v[0-9]+\\.[0-9]+\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)";
 
 		/* TEST AS A COLUMN/TABLE/SCHEMA NAME... */
 		// ...with a numeric function name (but no param):
@@ -235,28 +237,28 @@ public class TestADQLParser {
 			parser.parseQuery("select abs from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintAbs));
+			assertTrue(t.getMessage().matches(hintAbs));
 		}
 		// ...with a geometric function name (but no param):
 		try {
 			parser.parseQuery("select point from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintPoint));
+			assertTrue(t.getMessage().matches(hintPoint));
 		}
 		// ...with an ADQL function name (but no param):
 		try {
 			parser.parseQuery("select exists from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintExists));
+			assertTrue(t.getMessage().matches(hintExists));
 		}
 		// ...with an ADQL syntax item:
 		try {
 			parser.parseQuery("select LIKE from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintLike));
+			assertTrue(t.getMessage().matches(hintLike));
 		}
 
 		/* TEST AS AN ALIAS... */
@@ -265,28 +267,28 @@ public class TestADQLParser {
 			parser.parseQuery("select aCol AS abs from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintAbs));
+			assertTrue(t.getMessage().matches(hintAbs));
 		}
 		// ...with a geometric function name (but no param):
 		try {
 			parser.parseQuery("select aCol AS point from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintPoint));
+			assertTrue(t.getMessage().matches(hintPoint));
 		}
 		// ...with an ADQL function name (but no param):
 		try {
 			parser.parseQuery("select aCol AS exists from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintExists));
+			assertTrue(t.getMessage().matches(hintExists));
 		}
 		// ...with an ADQL syntax item:
 		try {
 			parser.parseQuery("select aCol AS LIKE from aTable");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintLike));
+			assertTrue(t.getMessage().matches(hintLike));
 		}
 
 		/* TEST AT THE END OF THE QUERY (AND IN A WHERE) */
@@ -294,20 +296,20 @@ public class TestADQLParser {
 			parser.parseQuery("select aCol from aTable WHERE toto = abs");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith(hintAbs));
+			assertTrue(t.getMessage().matches(hintAbs));
 		}
 	}
 
 	@Test
-	public void testSQLReservedWord() {
-		ADQLParser parser = new ADQLParser();
+	public void testSQLReservedWord(){
+		ADQLParser parser = parserFactory.createParser();
 
 		try {
 			parser.parseQuery("SELECT rows FROM aTable");
 			fail("\"ROWS\" is an SQL reserved word. This query should not pass.");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith("\n(HINT: \"rows\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)"));
+			assertTrue(t.getMessage().matches(".*\n\\(HINT: \"rows\" is not supported in ADQL v[0-9]+\\.[0-9]+, but is however a reserved word\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)"));
 		}
 
 		try {
@@ -315,13 +317,13 @@ public class TestADQLParser {
 			fail("ADQL does not support the CASE syntax. This query should not pass.");
 		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
-			assertTrue(t.getMessage().endsWith("\n(HINT: \"CASE\" is not supported in ADQL, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)"));
+			assertTrue(t.getMessage().matches(".*\n\\(HINT: \"CASE\" is not supported in ADQL v[0-9]+\\.[0-9]+, but is however a reserved word\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)"));
 		}
 	}
 
 	@Test
-	public void testUDFName() {
-		ADQLParser parser = new ADQLParser();
+	public void testUDFName(){
+		ADQLParser parser = parserFactory.createParser();
 
 		// CASE: Valid UDF name => OK
 		try {
@@ -332,9 +334,9 @@ public class TestADQLParser {
 		}
 
 		// CASE: Invalid UDF name => ParseException
-		final String[] functionsToTest = new String[]{ "_foo", "2do", "do?" };
-		for(String fct : functionsToTest) {
-			try {
+		final String[] functionsToTest = new String[]{ "_foo", "2do", "do!" };
+		for(String fct : functionsToTest){
+			try{
 				parser.parseQuery("SELECT " + fct + "(p1,p2) FROM aTable");
 				fail("A UDF name like \"" + fct + "\" is not allowed by the ADQL grammar. This query should not pass.");
 			} catch(Throwable t) {
@@ -345,8 +347,8 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testTryQuickFix() {
-		ADQLParser parser = new ADQLParser();
+	public void testTryQuickFix(){
+		ADQLParser parser = parserFactory.createParser();
 
 		try {
 			/* CASE: Nothing to fix => exactly the same as provided */
@@ -376,8 +378,8 @@ public class TestADQLParser {
 			/* CASE: a nice combination of everything (with comments at beginning, middle and end) */
 			assertEquals("-- begin comment" + System.getProperty("line.separator") + "SELECT id, \"_raj2000\", \"distance\", (\"date\")," + System.getProperty("line.separator") + "    \"min\",min(mag), \"_dej2000\" -- in-between commment" + System.getProperty("line.separator") + "FROM \"public\".mytable -- end comment", parser.tryQuickFix("-- begin comment\r\nSELECT id, \uFE4Draj2000, distance, (date),\r\tmin,min(mag), \"_dej2000\" -- in-between commment\nFROM public.mytable -- end comment"));
 
-		} catch(Throwable t) {
-			t.printStackTrace();
+		} catch(ParseException pe) {
+			pe.printStackTrace();
 			fail("Unexpected parsing error! This query should have passed. (see console for more details)");
 		}
 	}

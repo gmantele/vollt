@@ -2,7 +2,7 @@
 <!DOCTYPE project>
 <project name="adql" basedir="." default="buildLib">
 	
-	<property name="version" value="1.5-1" />
+	<property name="version" value="2.0" />
 
 	<property name="srcDir" value="src" />
 	<property name="testDir" value="test" />

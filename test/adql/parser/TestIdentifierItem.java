@@ -1,7 +1,7 @@
 package adql.parser;
 
-import static adql.parser.ADQLParserConstants.DELIMITED_IDENTIFIER;
-import static adql.parser.ADQLParserConstants.REGULAR_IDENTIFIER_CANDIDATE;
+import static adql.parser.ADQLParser201Constants.DELIMITED_IDENTIFIER;
+import static adql.parser.ADQLParser201Constants.REGULAR_IDENTIFIER_CANDIDATE;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
