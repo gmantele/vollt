@@ -31,7 +31,7 @@
 * printed else it will be the message "Correct syntax".
 *
 *  Author:  Gr&eacute;gory Mantelet (CDS;ARI)
-*  Version: 1.5 (03/2019)
+*  Version: 1.5-1 (07/2019)
 */
 
 							/* ########### */
@@ -119,7 +119,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-* @version 1.5 (03/2019)
+* @version 1.5-1 (07/2019)
 */
 public class ADQLParser {
 	
@@ -644,7 +644,10 @@ public class ADQLParser {
 				/* same line, just get the space characters between the last
 				 * token and the one to append: */
 				if (lastLine == token.beginLine){
-					suggestedQuery.append(lines[lastLine - 1].substring(lastCol - 1, token.beginColumn - (isEnd(token) ? 0 : 1)));
+					if (token.kind == ADQLParserConstants.EOF)
+						suggestedQuery.append(lines[lastLine - 1].substring(lastCol - 1));
+					else
+						suggestedQuery.append(lines[lastLine - 1].substring(lastCol - 1, token.beginColumn - (isEnd(token) ? 0 : 1)));
 					lastCol = token.endColumn + 1;
 				}
 				// not the same line...
