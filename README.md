@@ -8,7 +8,7 @@ This GitHub repository contains the sources of the library-set named VOLLT. It
 contains 3 libraries implementing [IVOA](http://www.ivoa.net/ "International Virtual Observatory Alliance")
 standards and protocols:
 
-* [ADQL](http://www.ivoa.net/documents/latest/ADQL.html "Astronomical Data Query Language")
+* [ADQL-2.1](http://www.ivoa.net/documents/ADQL/20180112/index.html "Astronomical Data Query Language")
 * [UWS-1.1](http://www.ivoa.net/documents/UWS/20161024/index.html "Universal Worker Service pattern")
 * [TAP](http://www.ivoa.net/documents/TAP/ "Table Access Protocol")
 
