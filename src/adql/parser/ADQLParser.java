@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
+import adql.parser.ADQLParserFactory.ADQLVersion;
+import adql.parser.feature.FeatureSet;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
@@ -45,6 +47,8 @@ public interface ADQLParser {
 	 *                           GETTERS & SETTERS
 	 * ********************************************************************** */
 
+	public ADQLVersion getADQLVersion();
+
 	public QueryChecker getQueryChecker();
 
 	public void setQueryChecker(final QueryChecker checker);
@@ -52,6 +56,10 @@ public interface ADQLParser {
 	public ADQLQueryFactory getQueryFactory();
 
 	public void setQueryFactory(final ADQLQueryFactory factory);
+
+	public FeatureSet getSupportedFeatures();
+
+	public void setSupportedFeatures(final FeatureSet features);
 
 	/* **********************************************************************
 	 *                         PARSING DEBUG FUNCTIONS

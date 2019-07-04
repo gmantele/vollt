@@ -16,7 +16,7 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -30,6 +30,7 @@ import adql.db.DBType.DBDatatype;
 import adql.db.DefaultDBColumn;
 import adql.parser.ADQLParser;
 import adql.parser.ParseException;
+import adql.parser.feature.LanguageFeature;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
@@ -43,13 +44,20 @@ import adql.query.operand.function.geometry.RegionFunction;
 import adql.search.ISearchHandler;
 
 /**
- * <p>Object representation of an ADQL query or sub-query.</p>
- * <p>The resulting object of the {@link ADQLParser} is an object of this class.</p>
+ * Object representation of an ADQL query or sub-query.
+ *
+ * <p>
+ * 	The resulting object of the {@link ADQLParser} is an object of this class.
+ * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (11/2017)
+ * @version 2.0 (07/2019)
  */
 public class ADQLQuery implements ADQLObject {
+
+	/** Description of this ADQL Feature.
+	 * @since 2.0 */
+	public static final LanguageFeature FEATURE = new LanguageFeature(null, "QUERY", false, "An entire ADQL (sub-)query.");
 
 	/** The ADQL clause SELECT. */
 	private ClauseSelect select;
@@ -69,14 +77,15 @@ public class ADQLQuery implements ADQLObject {
 	/** The ADQL clause ORDER BY. */
 	private ClauseADQL<ADQLOrder> orderBy;
 
-	/** Position of this Query (or sub-query) inside the whole given ADQL query string.
+	/** Position of this Query (or sub-query) inside the whole given ADQL query
+	 * string.
 	 * @since 1.4 */
 	private TextPosition position = null;
 
 	/**
 	 * Builds an empty ADQL query.
 	 */
-	public ADQLQuery(){
+	public ADQLQuery() {
 		select = new ClauseSelect();
 		from = null;
 		where = new ClauseConstraints("WHERE");
@@ -88,11 +97,12 @@ public class ADQLQuery implements ADQLObject {
 	/**
 	 * Builds an ADQL query by copying the given one.
 	 *
-	 * @param toCopy		The ADQL query to copy.
+	 * @param toCopy	The ADQL query to copy.
+	 *
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
-	public ADQLQuery(ADQLQuery toCopy) throws Exception{
+	public ADQLQuery(ADQLQuery toCopy) throws Exception {
 		select = (ClauseSelect)toCopy.select.getCopy();
 		from = (FromContent)toCopy.from.getCopy();
 		where = (ClauseConstraints)toCopy.where.getCopy();
@@ -102,10 +112,15 @@ public class ADQLQuery implements ADQLObject {
 		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
+	@Override
+	public final LanguageFeature getFeatureDescription() {
+		return FEATURE;
+	}
+
 	/**
 	 * Clear all the clauses.
 	 */
-	public void reset(){
+	public void reset() {
 		select.clear();
 		select.setDistinctColumns(false);
 		select.setNoLimit();
@@ -123,22 +138,24 @@ public class ADQLQuery implements ADQLObject {
 	 *
 	 * @return	Its SELECT clause.
 	 */
-	public final ClauseSelect getSelect(){
+	public final ClauseSelect getSelect() {
 		return select;
 	}
 
 	/**
-	 * <p>Replaces its SELECT clause by the given one.</p>
+	 * Replaces its SELECT clause by the given one.
 	 *
-	 * <p><i>note: the position of the query is erased.</i></p>
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>
 	 *
-	 * @param newSelect					The new SELECT clause.
+	 * @param newSelect	The new SELECT clause.
 	 *
-	 * @throws NullPointerException		If the given SELECT clause is <i>null</i>.
+	 * @throws NullPointerException	If the given SELECT clause is NULL.
 	 */
-	public void setSelect(ClauseSelect newSelect) throws NullPointerException{
+	public void setSelect(ClauseSelect newSelect) throws NullPointerException {
 		if (newSelect == null)
-			throw new NullPointerException("Impossible to replace the SELECT clause of a query by NULL !");
+			throw new NullPointerException("Impossible to replace the SELECT clause of a query by NULL!");
 		else
 			select = newSelect;
 		position = null;
@@ -149,22 +166,24 @@ public class ADQLQuery implements ADQLObject {
 	 *
 	 * @return	Its FROM clause.
 	 */
-	public final FromContent getFrom(){
+	public final FromContent getFrom() {
 		return from;
 	}
 
 	/**
-	 * <p>Replaces its FROM clause by the given one.</p>
+	 * Replaces its FROM clause by the given one.
 	 *
-	 * <p><i>note: the position of the query is erased.</i></p>
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>
 	 *
-	 * @param newFrom					The new FROM clause.
+	 * @param newFrom	The new FROM clause.
 	 *
-	 * @throws NullPointerException		If the given FROM clause is <i>null</i>.
+	 * @throws NullPointerException	If the given FROM clause is NULL.
 	 */
-	public void setFrom(FromContent newFrom) throws NullPointerException{
+	public void setFrom(FromContent newFrom) throws NullPointerException {
 		if (newFrom == null)
-			throw new NullPointerException("Impossible to replace the FROM clause of a query by NULL !");
+			throw new NullPointerException("Impossible to replace the FROM clause of a query by NULL!");
 		else
 			from = newFrom;
 		position = null;
@@ -175,20 +194,22 @@ public class ADQLQuery implements ADQLObject {
 	 *
 	 * @return	Its WHERE clause.
 	 */
-	public final ClauseConstraints getWhere(){
+	public final ClauseConstraints getWhere() {
 		return where;
 	}
 
 	/**
-	 * <p>Replaces its WHERE clause by the given one.</p>
+	 * Replaces its WHERE clause by the given one.
 	 *
-	 * <p><i>note: the position of the query is erased.</i></p>
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>
 	 *
-	 * @param newWhere					The new WHERE clause.
+	 * @param newWhere	The new WHERE clause.
 	 *
-	 * @throws NullPointerException		If the given WHERE clause is <i>null</i>.
+	 * @throws NullPointerException	If the given WHERE clause is NULL.
 	 */
-	public void setWhere(ClauseConstraints newWhere) throws NullPointerException{
+	public void setWhere(ClauseConstraints newWhere) throws NullPointerException {
 		if (newWhere == null)
 			where.clear();
 		else
@@ -201,19 +222,22 @@ public class ADQLQuery implements ADQLObject {
 	 *
 	 * @return	Its GROUP BY clause.
 	 */
-	public final ClauseADQL<ADQLColumn> getGroupBy(){
+	public final ClauseADQL<ADQLColumn> getGroupBy() {
 		return groupBy;
 	}
 
 	/**
-	 * <p>Replaces its GROUP BY clause by the given one.</p>
+	 * Replaces its GROUP BY clause by the given one.
 	 *
-	 * <p><i>note: the position of the query is erased.</i></p>
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>
 	 *
-	 * @param newGroupBy				The new GROUP BY clause.
-	 * @throws NullPointerException		If the given GROUP BY clause is <i>null</i>.
+	 * @param newGroupBy	The new GROUP BY clause.
+	 *
+	 * @throws NullPointerException	If the given GROUP BY clause is NULL.
 	 */
-	public void setGroupBy(ClauseADQL<ADQLColumn> newGroupBy) throws NullPointerException{
+	public void setGroupBy(ClauseADQL<ADQLColumn> newGroupBy) throws NullPointerException {
 		if (newGroupBy == null)
 			groupBy.clear();
 		else
@@ -226,19 +250,22 @@ public class ADQLQuery implements ADQLObject {
 	 *
 	 * @return	Its HAVING clause.
 	 */
-	public final ClauseConstraints getHaving(){
+	public final ClauseConstraints getHaving() {
 		return having;
 	}
 
 	/**
-	 * <p>Replaces its HAVING clause by the given one.</p>
+	 * Replaces its HAVING clause by the given one.
 	 *
-	 * <p><i>note: the position of the query is erased.</i></p>
+	 * <p><i><b>Note:<b>
+	 * 	The position of the query is erased.
+	 * </i></p>
 	 *
-	 * @param newHaving					The new HAVING clause.
-	 * @throws NullPointerException		If the given HAVING clause is <i>null</i>.
+	 * @param newHaving	The new HAVING clause.
+	 *
+	 * @throws NullPointerException	If the given HAVING clause is NULL.
 	 */
-	public void setHaving(ClauseConstraints newHaving) throws NullPointerException{
+	public void setHaving(ClauseConstraints newHaving) throws NullPointerException {
 		if (newHaving == null)
 			having.clear();
 		else
@@ -251,19 +278,22 @@ public class ADQLQuery implements ADQLObject {
 	 *
 	 * @return	Its ORDER BY clause.
 	 */
-	public final ClauseADQL<ADQLOrder> getOrderBy(){
+	public final ClauseADQL<ADQLOrder> getOrderBy() {
 		return orderBy;
 	}
 
 	/**
-	 * <p>Replaces its ORDER BY clause by the given one.</p>
+	 * Replaces its ORDER BY clause by the given one.
 	 *
-	 * <p><i>note: the position of the query is erased.</i></p>
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>
 	 *
-	 * @param newOrderBy				The new ORDER BY clause.
-	 * @throws NullPointerException		If the given ORDER BY clause is <i>null</i>.
+	 * @param newOrderBy	The new ORDER BY clause.
+	 *
+	 * @throws NullPointerException	If the given ORDER BY clause is NULL.
 	 */
-	public void setOrderBy(ClauseADQL<ADQLOrder> newOrderBy) throws NullPointerException{
+	public void setOrderBy(ClauseADQL<ADQLOrder> newOrderBy) throws NullPointerException {
 		if (newOrderBy == null)
 			orderBy.clear();
 		else
@@ -272,58 +302,61 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	@Override
-	public final TextPosition getPosition(){
+	public final TextPosition getPosition() {
 		return position;
 	}
 
 	/**
-	 * Set the position of this {@link ADQLQuery} (or sub-query) inside the whole given ADQL query string.
+	 * Set the position of this {@link ADQLQuery} (or sub-query) inside the
+	 * whole given ADQL query string.
 	 *
 	 * @param position New position of this {@link ADQLQuery}.
 	 * @since 1.4
 	 */
-	public final void setPosition(final TextPosition position){
+	public final void setPosition(final TextPosition position) {
 		this.position = position;
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception{
+	public ADQLObject getCopy() throws Exception {
 		return new ADQLQuery(this);
 	}
 
 	@Override
-	public String getName(){
+	public String getName() {
 		return "{ADQL query}";
 	}
 
 	/**
-	 * <p>Gets the list of columns (database metadata) selected by this query.</p>
+	 * Gets the list of columns (database metadata) selected by this query.
 	 *
-	 * <p><i><u>Note:</u> The list is generated on the fly !</i></p>
+	 * <p><i><b>Note:</b>
+	 * 	The list is generated on the fly!
+	 * </i></p>
 	 *
 	 * @return	Selected columns metadata.
 	 */
-	public DBColumn[] getResultingColumns(){
+	public DBColumn[] getResultingColumns() {
 		ArrayList<DBColumn> columns = new ArrayList<DBColumn>(select.size());
 
-		for(SelectItem item : select){
+		for(SelectItem item : select) {
 			ADQLOperand operand = item.getOperand();
-			if (item instanceof SelectAllColumns){
-				try{
+			if (item instanceof SelectAllColumns) {
+				try {
 					// If "{table}.*", add all columns of the specified table:
 					if (((SelectAllColumns)item).getAdqlTable() != null)
 						columns.addAll(((SelectAllColumns)item).getAdqlTable().getDBColumns());
 					// Otherwise ("*"), add all columns of all selected tables:
 					else
 						columns.addAll(from.getDBColumns());
-				}catch(ParseException pe){
+				} catch(ParseException pe) {
 					// Here, this error should not occur any more, since it must have been caught by the DBChecker!
 				}
-			}else{
+			} else {
 				// Create the DBColumn:
 				DBColumn col = null;
 				// ...whose the name will be set with the SELECT item's alias:
-				if (item.hasAlias()){
+				if (item.hasAlias()) {
 					// put the alias in lower case if not written between "":
 					/* Note: This aims to avoid unexpected behavior at execution
 					 *       time in the DBMS (i.e. the case sensitivity is
@@ -333,14 +366,14 @@ public class ADQLQuery implements ADQLObject {
 						alias = alias.toLowerCase();
 
 					// create the DBColumn:
-					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null){
+					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null) {
 						col = ((ADQLColumn)operand).getDBLink();
 						col = col.copy(col.getDBName(), alias, col.getTable());
-					}else
+					} else
 						col = new DefaultDBColumn(alias, null);
 				}
 				// ...or whose the name will be the name of the SELECT item:
-				else{
+				else {
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null)
 						col = ((ADQLColumn)operand).getDBLink();
 					else
@@ -350,7 +383,7 @@ public class ADQLQuery implements ADQLObject {
 				/* For columns created by default (from functions and operations generally),
 				 * set the adequate type if known: */
 				// CASE: Well-defined UDF
-				if (operand instanceof DefaultUDF && ((DefaultUDF)operand).getDefinition() != null){
+				if (operand instanceof DefaultUDF && ((DefaultUDF)operand).getDefinition() != null) {
 					DBType type = ((DefaultUDF)operand).getDefinition().returnType;
 					((DefaultDBColumn)col).setDatatype(type);
 				}
@@ -361,7 +394,7 @@ public class ADQLQuery implements ADQLObject {
 				else if (operand instanceof RegionFunction || operand instanceof CircleFunction || operand instanceof BoxFunction || operand instanceof PolygonFunction)
 					((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.REGION));
 				// CASE: String and numeric types
-				else if (col instanceof DefaultDBColumn && col.getDatatype() == null && operand.isNumeric() != operand.isString()){
+				else if (col instanceof DefaultDBColumn && col.getDatatype() == null && operand.isNumeric() != operand.isString()) {
 					// CASE: String types
 					if (operand.isString())
 						((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.VARCHAR));
@@ -382,28 +415,29 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Lets searching ADQL objects into this ADQL query thanks to the given search handler.
+	 * Lets searching ADQL objects into this ADQL query thanks to the given
+	 * search handler.
 	 *
 	 * @param sHandler	A search handler.
 	 *
 	 * @return An iterator on all ADQL objects found.
 	 */
-	public Iterator<ADQLObject> search(ISearchHandler sHandler){
+	public Iterator<ADQLObject> search(ISearchHandler sHandler) {
 		sHandler.search(this);
 		return sHandler.iterator();
 	}
 
 	@Override
-	public ADQLIterator adqlIterator(){
-		return new ADQLIterator(){
+	public ADQLIterator adqlIterator() {
+		return new ADQLIterator() {
 
 			private int index = -1;
 			private ClauseADQL<?> currentClause = null;
 
 			@Override
-			public ADQLObject next(){
+			public ADQLObject next() {
 				index++;
-				switch(index){
+				switch(index) {
 					case 0:
 						currentClause = select;
 						break;
@@ -429,55 +463,55 @@ public class ADQLQuery implements ADQLObject {
 			}
 
 			@Override
-			public boolean hasNext(){
+			public boolean hasNext() {
 				return index + 1 < 6;
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
 				if (index <= -1)
-					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
+					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called!");
 
 				if (replacer == null)
 					remove();
-				else{
-					switch(index){
+				else {
+					switch(index) {
 						case 0:
 							if (replacer instanceof ClauseSelect)
 								select = (ClauseSelect)replacer;
 							else
-								throw new UnsupportedOperationException("Impossible to replace a ClauseSelect (" + select.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+								throw new UnsupportedOperationException("Impossible to replace a ClauseSelect (" + select.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
 						case 1:
 							if (replacer instanceof FromContent)
 								from = (FromContent)replacer;
 							else
-								throw new UnsupportedOperationException("Impossible to replace a FromContent (" + from.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+								throw new UnsupportedOperationException("Impossible to replace a FromContent (" + from.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
 						case 2:
 							if (replacer instanceof ClauseConstraints)
 								where = (ClauseConstraints)replacer;
 							else
-								throw new UnsupportedOperationException("Impossible to replace a ClauseConstraints (" + where.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+								throw new UnsupportedOperationException("Impossible to replace a ClauseConstraints (" + where.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
 						case 3:
 							if (replacer instanceof ClauseADQL)
 								groupBy = (ClauseADQL<ADQLColumn>)replacer;
 							else
-								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + groupBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + groupBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
 						case 4:
 							if (replacer instanceof ClauseConstraints)
 								having = (ClauseConstraints)replacer;
 							else
-								throw new UnsupportedOperationException("Impossible to replace a ClauseConstraints (" + having.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+								throw new UnsupportedOperationException("Impossible to replace a ClauseConstraints (" + having.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
 						case 5:
 							if (replacer instanceof ClauseADQL)
 								orderBy = (ClauseADQL<ADQLOrder>)replacer;
 							else
-								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + orderBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + orderBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
 					}
 					position = null;
@@ -485,13 +519,13 @@ public class ADQLQuery implements ADQLObject {
 			}
 
 			@Override
-			public void remove(){
+			public void remove() {
 				if (index <= -1)
-					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
+					throw new IllegalStateException("remove() impossible: next() has not yet been called!");
 
 				if (index == 0 || index == 1)
-					throw new UnsupportedOperationException("Impossible to remove a " + ((index == 0) ? "SELECT" : "FROM") + " clause from a query !");
-				else{
+					throw new UnsupportedOperationException("Impossible to remove a " + ((index == 0) ? "SELECT" : "FROM") + " clause from a query!");
+				else {
 					currentClause.clear();
 					position = null;
 				}
@@ -500,7 +534,7 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	@Override
-	public String toADQL(){
+	public String toADQL() {
 		StringBuffer adql = new StringBuffer(select.toADQL());
 		adql.append("\nFROM ").append(from.toADQL());
 

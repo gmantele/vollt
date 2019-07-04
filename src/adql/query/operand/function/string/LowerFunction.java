@@ -19,6 +19,7 @@ package adql.query.operand.function.string;
  * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
+import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLObject;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.ADQLFunction;
@@ -26,19 +27,32 @@ import adql.query.operand.function.ADQLFunction;
 /**
  * It represents the LOWER function of ADQL.
  *
- * <p>This function put the given text in lower case.</p>
+ * <p>This function converts its string parameter to lower case.</p>
  *
- * <p><i><u>Example:</u><br/>
- * 	<code>LOWER('Francis Albert Augustus Charles Emmanuel')</code><br/>
- * 	which should return:<br/>
- * 	<code>francis albert augustus charles emmanuel</code>
- * </i></p>
+ * <p>
+ * 	Since case folding is a nontrivial operation in a multi-encoding world,
+ * 	ADQL requires standard behaviour for the ASCII characters, and
+ * 	recommends following algorithm R2 described in Section 3.13,
+ * 	"Default Case Algorithms" of The Unicode Consortium (2012) for characters
+ * 	outside the ASCII set.
+ * </p>
+ *
+ * <i>
+ * <p><b>Example:</b></p>
+ * <pre>LOWER('Francis Albert Augustus Charles Emmanuel')</pre>
+ * <p>which should return:</p>
+ * <pre>francis albert augustus charles emmanuel</pre>
+ * </i>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (04/2019)
+ * @version 2.0 (07/2019)
  * @since 2.0
  */
 public class LowerFunction extends ADQLFunction {
+
+	/** Description of this ADQL Feature.
+	 * @since 2.0 */
+	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_STRING, "LOWER", true, "Convert all characters of the given string in lower case.");
 
 	/** Constant name of this function. */
 	protected final String FCT_NAME = "LOWER";
@@ -50,7 +64,7 @@ public class LowerFunction extends ADQLFunction {
 	 * Builds a LOWER function with its parameter.
 	 *
 	 * @param param					Parameter of LOWER.
-	 * @throws NullPointerException	If the given operand is <i>null</i>
+	 * @throws NullPointerException	If the given operand is NULL
 	 *                             	or if it's not a string parameter.
 	 */
 	public LowerFunction(final ADQLOperand strParam) {
@@ -61,6 +75,11 @@ public class LowerFunction extends ADQLFunction {
 			throw new NullPointerException("The ADQL function " + FCT_NAME + " must have one parameter of type VARCHAR (i.e. a String)!");
 
 		this.strParam = strParam;
+	}
+
+	@Override
+	public final LanguageFeature getFeatureDescription() {
+		return FEATURE;
 	}
 
 	@Override
@@ -103,7 +122,7 @@ public class LowerFunction extends ADQLFunction {
 		if (index == 0)
 			return strParam;
 		else
-			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + FCT_NAME + "\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + FCT_NAME + "\"!");
 	}
 
 	@Override
@@ -115,11 +134,11 @@ public class LowerFunction extends ADQLFunction {
 			else if (replacer.isString())
 				strParam = replacer;
 			else
-				throw new Exception("Impossible to replace a String parameter by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+				throw new Exception("Impossible to replace a String parameter by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 			setPosition(null);
 			return replaced;
 		} else
-			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + FCT_NAME + "\" !");
+			throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + FCT_NAME + "\"!");
 	}
 
 }

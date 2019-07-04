@@ -79,11 +79,17 @@ import java.util.Collection;
 import java.io.FileReader;
 import java.io.IOException;
 
+import adql.db.exception.UnsupportedFeatureException;
 import adql.db.exception.UnresolvedIdentifiersException;
+
+import adql.parser.ADQLParserFactory.ADQLVersion;
 
 import adql.parser.IdentifierItems.IdentifierItem;
 
 import adql.parser.ADQLQueryFactory.JoinType;
+
+import adql.parser.feature.FeatureSet;
+import adql.parser.feature.LanguageFeature;
 
 import adql.query.*;
 import adql.query.from.*;
@@ -97,6 +103,8 @@ import adql.query.operand.function.string.*;
 
 import adql.query.operand.function.geometry.*;
 import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
+
+import adql.search.SearchOptionalFeaturesHandler;
 
 import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
@@ -130,6 +138,10 @@ import adql.translator.TranslationException;
 *   <li>{@link #tryQuickFix(java.lang.String)} to try fixing the most common
 * 		issues with ADQL queries (e.g. Unicode confusable characters,
 * 		unescaped ADQL identifiers, SQL reserved keywords, ...)</li>
+*   <li>{@link #setSupportedFeatures(FeatureSet)} to set which optional ADQL
+* 		features are supported or not ; all optional features used in the query
+* 		while being declared as un-supported will throw an error at the end of
+* 		the parsing</li>
 * </ul>
 * 
 * <p><b><u>WARNING:</u>
@@ -149,6 +161,12 @@ public class ADQLParser201 implements ADQLParser {
 	
 	/** Tools to build the object representation of the ADQL query. */
 	private ADQLQueryFactory queryFactory = new ADQLQueryFactory();
+
+	/** Default set of supported language features.
+	 * <p><i><b>Note:</b>
+	 * 	By default, all optional features are supported.
+	 * </i></p> */
+	private FeatureSet supportedFeatures = new FeatureSet(true);
 	
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
@@ -373,6 +391,10 @@ public class ADQLParser201 implements ADQLParser {
 	}
 
 	/* ADDITIONAL GETTERS & SETTERS */
+
+	public final ADQLVersion getADQLVersion() {
+		return ADQLVersion.V2_1;
+	}
 	
 	public final void setDebug(boolean debug){
 		if (debug) enable_tracing();
@@ -393,6 +415,15 @@ public class ADQLParser201 implements ADQLParser {
 	
 	public final void setQueryFactory(ADQLQueryFactory factory){
 		queryFactory = (factory!=null)?factory:(new ADQLQueryFactory());
+	}
+
+	public final FeatureSet getSupportedFeatures() {
+		return supportedFeatures;
+	}
+
+	public void setSupportedFeatures(final FeatureSet features) {
+		if (features != null)
+			supportedFeatures = features;
 	}
 
 	/* EXCEPTION HELPER FUNCTION */
@@ -1189,6 +1220,19 @@ TOKEN : {
 ADQLQuery Query(): {ADQLQuery q = null;}{
 	q=QueryExpression() (<EOF> | <EOQ>)
 	{
+		/* check the optional features before any other check:
+		 * (note: this check is very close to grammar check...hence its higher
+		 *        priority) */
+		UnresolvedIdentifiersException exUnsupportedFeatures = new UnresolvedIdentifiersException("unsupported expression");
+		SearchOptionalFeaturesHandler sFeaturesHandler = new SearchOptionalFeaturesHandler(true, false);
+		sFeaturesHandler.search(q);
+		for(ADQLObject obj : sFeaturesHandler) {
+			if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
+				exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
+		}
+		if (exUnsupportedFeatures.getNbErrors() > 0)
+			throw exUnsupportedFeatures;
+	  
 		// check the query:
 		if (queryChecker != null)
 			queryChecker.check(q);

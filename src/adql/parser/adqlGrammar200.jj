@@ -80,9 +80,13 @@ import java.io.IOException;
 
 import adql.db.exception.UnresolvedIdentifiersException;
 
+import adql.parser.ADQLParserFactory.ADQLVersion;
+
 import adql.parser.IdentifierItems.IdentifierItem;
 
 import adql.parser.ADQLQueryFactory.JoinType;
+
+import adql.parser.feature.FeatureSet;
 
 import adql.query.*;
 import adql.query.from.*;
@@ -146,7 +150,7 @@ public class ADQLParser200 implements ADQLParser {
 	
 	/** Tools to build the object representation of the ADQL query. */
 	private ADQLQueryFactory queryFactory = new ADQLQueryFactory();
-	
+
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
 	
@@ -375,6 +379,10 @@ public class ADQLParser200 implements ADQLParser {
 
 	/* ADDITIONAL GETTERS & SETTERS */
 	
+	public final ADQLVersion getADQLVersion() {
+		return ADQLVersion.V2_0;
+	}
+	
 	public final void setDebug(boolean debug){
 		if (debug) enable_tracing();
 		else       disable_tracing();
@@ -394,6 +402,17 @@ public class ADQLParser200 implements ADQLParser {
 	
 	public final void setQueryFactory(ADQLQueryFactory factory){
 		queryFactory = (factory!=null)?factory:(new ADQLQueryFactory());
+	}
+
+	public final FeatureSet getSupportedFeatures() {
+		FeatureSet languageFeatures = new FeatureSet();
+		languageFeatures.unsupportAll();
+		return languageFeatures;
+	}
+
+	public final void setSupportedFeatures(final FeatureSet languageFeatures) {
+		/* Nothing to do here for ADQL-2.0 because no optional feature can be
+		 * supported)! */
 	}
 
 	/* EXCEPTION HELPER FUNCTION */

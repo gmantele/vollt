@@ -17,12 +17,13 @@ import java.util.regex.Matcher;
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.db.FunctionDef;
+import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ClauseADQL;
@@ -39,6 +40,10 @@ import adql.translator.TranslationException;
  */
 public final class DefaultUDF extends UserDefinedFunction {
 
+	/** Description of this ADQL Feature.
+	 * @since 2.0 */
+	public LanguageFeature languageFeature;
+
 	/** Define/Describe this user defined function.
 	 * This object gives the return type and the number and type of all
 	 * parameters. */
@@ -52,6 +57,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 
 	/**
 	 * Creates a user function.
+	 *
 	 * @param params	Parameters of the function.
 	 */
 	public DefaultUDF(final String name, final ADQLOperand[] params) throws NullPointerException {
@@ -61,12 +67,14 @@ public final class DefaultUDF extends UserDefinedFunction {
 			for(ADQLOperand p : params)
 				parameters.add(p);
 		}
+		languageFeature = new LanguageFeature(LanguageFeature.TYPE_UDF, functionName + "(...)", true, null);
 	}
 
 	/**
 	 * Builds a UserFunction by copying the given one.
-	 *
+	 * 
 	 * @param toCopy		The UserFunction to copy.
+	 *
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	@SuppressWarnings("unchecked")
@@ -74,6 +82,13 @@ public final class DefaultUDF extends UserDefinedFunction {
 		functionName = toCopy.functionName;
 		parameters = (ADQLList<ADQLOperand>)(toCopy.parameters.getCopy());
 		setPosition((toCopy.getPosition() == null) ? null : new TextPosition(toCopy.getPosition()));
+		definition = toCopy.definition;
+		languageFeature = toCopy.languageFeature;
+	}
+
+	@Override
+	public final LanguageFeature getFeatureDescription() {
+		return languageFeature;
 	}
 
 	/**
@@ -96,14 +111,14 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * 	MUST be the same (case insensitive) as the name of the given definition.
 	 * 	Advanced checks must have been done before calling this setter.
 	 * </i></p>
-	 *
-	 * @param def	The definition applying to this parsed UDF, or NULL if none
-	 *           	has been found.
-	 *
+	 * 
+	 * @param def	The definition applying to this parsed UDF,
+	 *           	or NULL if none has been found.
+	 * 
 	 * @throws IllegalArgumentException	If the name in the given definition does
 	 *                                 	not match the name of this parsed
 	 *                                 	function.
-	 *
+	 * 
 	 * @since 1.3
 	 */
 	public final void setDefinition(final FunctionDef def) throws IllegalArgumentException {
@@ -111,6 +126,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 			throw new IllegalArgumentException("The parsed function name (" + functionName + ") does not match to the name of the given UDF definition (" + def.name + ").");
 
 		this.definition = def;
+		languageFeature = new LanguageFeature(LanguageFeature.TYPE_UDF, this.definition.toString(), true, this.definition.description);
 	}
 
 	@Override
@@ -173,7 +189,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	}
 
 	@Override
-	public String translate(final ADQLTranslator caller) throws TranslationException {
+	public String translate(final ADQLTranslator caller) throws TranslationException{
 		// Use the translation pattern if any is specified:
 		if (definition != null && definition.getTranslationPattern() != null) {
 			StringBuffer sql = new StringBuffer();
@@ -211,12 +227,12 @@ public final class DefaultUDF extends UserDefinedFunction {
 		}
 		// Otherwise, no translation needed (use the ADQL as translation result):
 		else {
-			StringBuffer sql = new StringBuffer(functionName);
-			sql.append('(');
-			for(int i = 0; i < parameters.size(); i++) {
-				if (i > 0)
-					sql.append(',').append(' ');
-				sql.append(caller.translate(parameters.get(i)));
+		StringBuffer sql = new StringBuffer(functionName);
+		sql.append('(');
+		for(int i = 0; i < parameters.size(); i++){
+			if (i > 0)
+				sql.append(',').append(' ');
+			sql.append(caller.translate(parameters.get(i)));
 			}
 			sql.append(')');
 			return sql.toString();

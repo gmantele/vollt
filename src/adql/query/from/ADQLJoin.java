@@ -2,20 +2,20 @@ package adql.query.from;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -41,7 +41,7 @@ import adql.query.operand.ADQLColumn;
 
 /**
  * Defines a join between two "tables".
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 1.4 (09/2017)
  */
@@ -72,28 +72,28 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	/**
 	 * Builds an {@link ADQLJoin} with at least two {@link FromContent} objects:
 	 * the left and the right part of the join (usually two tables: T1 JOIN T2).
-	 * 
+	 *
 	 * @param left		Left "table" of the join.
 	 * @param right		Right "table" of the join.
 	 */
-	public ADQLJoin(FromContent left, FromContent right){
+	public ADQLJoin(FromContent left, FromContent right) {
 		leftTable = left;
 		rightTable = right;
 	}
 
 	/**
 	 * Builds an ADQL join by copying the given one.
-	 * 
+	 *
 	 * @param toCopy		The ADQLJoin to copy.
-	 * 
+	 *
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public ADQLJoin(ADQLJoin toCopy) throws Exception{
+	public ADQLJoin(ADQLJoin toCopy) throws Exception {
 		leftTable = (FromContent)(toCopy.leftTable.getCopy());
 		rightTable = (FromContent)(toCopy.rightTable.getCopy());
 		natural = toCopy.natural;
 		condition = (ClauseConstraints)(toCopy.condition.getCopy());
-		if (toCopy.lstColumns != null){
+		if (toCopy.lstColumns != null) {
 			lstColumns = new ArrayList<ADQLColumn>(toCopy.lstColumns.size());
 			for(ADQLColumn col : toCopy.lstColumns)
 				lstColumns.add((ADQLColumn)col.getCopy());
@@ -106,21 +106,23 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	/* ***************** */
 	/**
 	 * Indicates whether this join is natural or not.
-	 * 
-	 * @return <i>true</i> means this join is natural, <i>false</i> else.
+	 *
+	 * @return	<code>true</code> means this join is natural,
+	 *        	<code>false</code> else.
 	 */
-	public final boolean isNatural(){
+	public final boolean isNatural() {
 		return natural;
 	}
 
 	/**
 	 * Lets indicate that this join is natural (it must use the table keys).
-	 * 
-	 * @param natural <i>true</i> means this join must be natural, <i>false</i> else.
+	 *
+	 * @param natural	<code>true</code> means this join must be natural,
+	 *               	<code>false</code> else.
 	 */
-	public void setNatural(boolean natural){
+	public void setNatural(boolean natural) {
 		this.natural = natural;
-		if (natural){
+		if (natural) {
 			condition = null;
 			lstColumns = null;
 		}
@@ -129,59 +131,61 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 
 	/**
 	 * Gets the left "table" of this join.
-	 * 
+	 *
 	 * @return The left part of the join.
 	 */
-	public final FromContent getLeftTable(){
+	public final FromContent getLeftTable() {
 		return leftTable;
 	}
 
 	/**
 	 * Sets the left "table" of this join.
-	 * 
+	 *
 	 * @param table The left part of the join.
 	 */
-	public void setLeftTable(FromContent table){
+	public void setLeftTable(FromContent table) {
 		leftTable = table;
 		position = null;
 	}
 
 	/**
 	 * Gets the right "table" of this join.
-	 * 
+	 *
 	 * @return	The right part of the join.
 	 */
-	public final FromContent getRightTable(){
+	public final FromContent getRightTable() {
 		return rightTable;
 	}
 
 	/**
 	 * Sets the right "table" of this join.
-	 * 
+	 *
 	 * @param table The right part of the join.
 	 */
-	public void setRightTable(FromContent table){
+	public void setRightTable(FromContent table) {
 		rightTable = table;
 		position = null;
 	}
 
 	/**
-	 * Gets the condition of this join (that's to say: the condition which follows the keyword ON).
-	 * 
+	 * Gets the condition of this join (that's to say: the condition which
+	 * follows the keyword ON).
+	 *
 	 * @return The join condition.
 	 */
-	public final ClauseConstraints getJoinCondition(){
+	public final ClauseConstraints getJoinCondition() {
 		return condition;
 	}
 
 	/**
-	 * Sets the condition of this join (that's to say: the condition which follows the keyword ON).
-	 * 
+	 * Sets the condition of this join (that's to say: the condition which
+	 * follows the keyword ON).
+	 *
 	 * @param cond	The join condition (condition following ON).
 	 */
-	public void setJoinCondition(ClauseConstraints cond){
+	public void setJoinCondition(ClauseConstraints cond) {
 		condition = cond;
-		if (condition != null){
+		if (condition != null) {
 			natural = false;
 			lstColumns = null;
 		}
@@ -189,58 +193,61 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public final TextPosition getPosition(){
+	public final TextPosition getPosition() {
 		return position;
 	}
 
 	@Override
-	public final void setPosition(final TextPosition position){
+	public final void setPosition(final TextPosition position) {
 		this.position = position;
 	}
 
 	/**
-	 * Gets the list of all columns on which the join is done (that's to say: the list of columns given with the keyword USING).
-	 * 
+	 * Gets the list of all columns on which the join is done (that's to say:
+	 * the list of columns given with the keyword USING).
+	 *
 	 * @return	The joined columns (columns listed in USING(...)).
 	 */
-	public final Iterator<ADQLColumn> getJoinedColumns(){
-		if (lstColumns == null){
-			return new Iterator<ADQLColumn>(){
+	public final Iterator<ADQLColumn> getJoinedColumns() {
+		if (lstColumns == null) {
+			return new Iterator<ADQLColumn>() {
 				@Override
-				public boolean hasNext(){
+				public boolean hasNext() {
 					return false;
 				}
 
 				@Override
-				public ADQLColumn next(){
+				public ADQLColumn next() {
 					return null;
 				}
 
 				@Override
-				public void remove(){
+				public void remove() {
 					;
 				}
 			};
-		}else
+		} else
 			return lstColumns.iterator();
 	}
 
 	/**
 	 * Tells whether this join has a list of columns to join.
-	 * 
-	 * @return	<i>true</i> if some columns must be explicitly joined, <i>false</i> otherwise.
+	 *
+	 * @return	<code>true</code> if some columns must be explicitly joined,
+	 *        	<code>false</code> otherwise.
 	 */
-	public final boolean hasJoinedColumns(){
+	public final boolean hasJoinedColumns() {
 		return (lstColumns != null);
 	}
 
 	/**
-	 * Sets the list of all columns on which the join is done (that's to say: the list of columns given with the keyword USING).
-	 * 
+	 * Sets the list of all columns on which the join is done (that's to say:
+	 * the list of columns given with the keyword USING).
+	 *
 	 * @param columns	The joined columns.
 	 */
-	public void setJoinedColumns(Collection<ADQLColumn> columns){
-		if (columns != null && !columns.isEmpty()){
+	public void setJoinedColumns(Collection<ADQLColumn> columns) {
+		if (columns != null && !columns.isEmpty()) {
 			if (lstColumns == null)
 				lstColumns = new ArrayList<ADQLColumn>(columns.size());
 			else
@@ -257,13 +264,13 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	/* INHERITED METHODS */
 	/* ***************** */
 	@Override
-	public String getName(){
+	public String getName() {
 		return getJoinType();
 	}
 
 	@Override
-	public ADQLIterator adqlIterator(){
-		return new ADQLIterator(){
+	public ADQLIterator adqlIterator() {
+		return new ADQLIterator() {
 
 			private int index = -1;
 			private final int nbItems = 2 + ((condition == null) ? 0 : 1) + ((lstColumns == null) ? 0 : lstColumns.size());
@@ -271,7 +278,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			private Iterator<ADQLColumn> itCol = null;
 
 			@Override
-			public ADQLObject next(){
+			public ADQLObject next() {
 				index++;
 
 				if (index == 0)
@@ -280,62 +287,62 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 					return rightTable;
 				else if (index == 2 && condition != null)
 					return condition;
-				else if (lstColumns != null && !lstColumns.isEmpty()){
+				else if (lstColumns != null && !lstColumns.isEmpty()) {
 					if (itCol == null)
 						itCol = lstColumns.iterator();
 					return itCol.next();
-				}else
+				} else
 					throw new NoSuchElementException();
 			}
 
 			@Override
-			public boolean hasNext(){
+			public boolean hasNext() {
 				return (itCol != null && itCol.hasNext()) || index + 1 < nbItems;
 			}
 
 			@Override
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
 				if (index <= -1)
-					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
+					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called!");
 
 				if (replacer == null)
 					remove();
-				else if (index == 0){
+				else if (index == 0) {
 					if (replacer instanceof FromContent)
 						leftTable = (FromContent)replacer;
 					else
 						throw new UnsupportedOperationException("Impossible to replace the left \"table\" of the join (" + leftTable.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") ! The replacer must be a FromContent instance.");
-				}else if (index == 1){
+				} else if (index == 1) {
 					if (replacer instanceof FromContent)
 						rightTable = (FromContent)replacer;
 					else
 						throw new UnsupportedOperationException("Impossible to replace the right \"table\" of the join (" + rightTable.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") ! The replacer must be a FromContent instance.");
-				}else if (index == 2 && itCol == null){
+				} else if (index == 2 && itCol == null) {
 					if (replacer instanceof ClauseConstraints)
 						condition = (ClauseConstraints)replacer;
 					else
-						throw new UnsupportedOperationException("Impossible to replace an ADQLConstraint (" + condition + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
-				}else if (itCol != null){
+						throw new UnsupportedOperationException("Impossible to replace an ADQLConstraint (" + condition + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+				} else if (itCol != null) {
 					if (replacer instanceof ADQLColumn)
 						lstColumns.set(index - offset, (ADQLColumn)replacer);
 					else
-						throw new UnsupportedOperationException("Impossible to replace an ADQLColumn by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+						throw new UnsupportedOperationException("Impossible to replace an ADQLColumn by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 				}
 				position = null;
 
 			}
 
 			@Override
-			public void remove(){
+			public void remove() {
 				if (index <= -1)
-					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
+					throw new IllegalStateException("remove() impossible: next() has not yet been called!");
 				else if (index == 0)
-					throw new UnsupportedOperationException("Impossible to remove the left \"table\" of the join (" + leftTable.toADQL() + ") !");
+					throw new UnsupportedOperationException("Impossible to remove the left \"table\" of the join (" + leftTable.toADQL() + ")!");
 				else if (index == 1)
-					throw new UnsupportedOperationException("Impossible to remove the right \"table\" of the join (" + rightTable.toADQL() + ") !");
+					throw new UnsupportedOperationException("Impossible to remove the right \"table\" of the join (" + rightTable.toADQL() + ")!");
 				else if (index == 2 && itCol == null)
-					throw new UnsupportedOperationException("Impossible to remove a condition (" + condition.toADQL() + ") from a join (" + toADQL() + ") !");
-				else if (itCol != null){
+					throw new UnsupportedOperationException("Impossible to remove a condition (" + condition.toADQL() + ") from a join (" + toADQL() + ")!");
+				else if (itCol != null) {
 					itCol.remove();
 					index--;
 					position = null;
@@ -345,16 +352,16 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public String toADQL(){
+	public String toADQL() {
 		StringBuffer adql = new StringBuffer(leftTable.toADQL());
 
 		adql.append(natural ? " NATURAL " : " ").append(getJoinType()).append(' ').append(rightTable.toADQL());
 
 		if (condition != null)
 			adql.append(" ON ").append(condition.toADQL());
-		else if (lstColumns != null){
+		else if (lstColumns != null) {
 			String cols = null;
-			for(ADQLColumn item : lstColumns){
+			for(ADQLColumn item : lstColumns) {
 				cols = (cols == null) ? ("\"" + item.toADQL() + "\"") : (cols + ", \"" + item.toADQL() + "\"");
 			}
 			adql.append(" USING (").append(cols).append(')');
@@ -364,24 +371,24 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public SearchColumnList getDBColumns() throws UnresolvedJoinException{
-		try{
+	public SearchColumnList getDBColumns() throws UnresolvedJoinException {
+		try {
 			SearchColumnList list = new SearchColumnList();
 			SearchColumnList leftList = leftTable.getDBColumns();
 			SearchColumnList rightList = rightTable.getDBColumns();
 
 			/* 1. Figure out duplicated columns */
-			HashMap<String,DBCommonColumn> mapDuplicated = new HashMap<String,DBCommonColumn>();
+			HashMap<String, DBCommonColumn> mapDuplicated = new HashMap<String, DBCommonColumn>();
 			// CASE: NATURAL
-			if (natural){
+			if (natural) {
 				// Find duplicated items between the two lists and add one common column in mapDuplicated for each
 				DBColumn rightCol;
-				for(DBColumn leftCol : leftList){
+				for(DBColumn leftCol : leftList) {
 					// search for at most one column with the same name in the RIGHT list
 					// and throw an exception is there are several matches:
 					rightCol = findAtMostOneColumn(leftCol.getADQLName(), (byte)0, rightList, false);
 					// if there is one...
-					if (rightCol != null){
+					if (rightCol != null) {
 						// ...check there is only one column with this name in the LEFT list,
 						// and throw an exception if it is not the case:
 						findExactlyOneColumn(leftCol.getADQLName(), (byte)0, leftList, true);
@@ -392,10 +399,10 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 
 			}
 			// CASE: USING
-			else if (lstColumns != null && !lstColumns.isEmpty()){
+			else if (lstColumns != null && !lstColumns.isEmpty()) {
 				// For each columns of usingList, check there is in each list exactly one matching column, and then, add it in mapDuplicated
 				DBColumn leftCol, rightCol;
-				for(ADQLColumn usingCol : lstColumns){
+				for(ADQLColumn usingCol : lstColumns) {
 					// search for exactly one column with the same name in the LEFT list
 					// and throw an exception if there is none, or if there are several matches:
 					leftCol = findExactlyOneColumn(usingCol.getColumnName(), usingCol.getCaseSensitive(), leftList, true);
@@ -407,7 +414,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 
 			}
 			// CASE: NO DUPLICATION TO FIGURE OUT
-			else{
+			else {
 				// Return the union of both lists:
 				list.addAll(leftList);
 				list.addAll(rightList);
@@ -424,20 +431,20 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			list.addAll(0, mapDuplicated.values());
 
 			return list;
-		}catch(UnresolvedJoinException uje){
+		} catch(UnresolvedJoinException uje) {
 			uje.setPosition(position);
 			throw uje;
 		}
 	}
 
-	public final static void addAllExcept(final SearchColumnList itemsToAdd, final SearchColumnList target, final Map<String,DBCommonColumn> exception){
-		for(DBColumn col : itemsToAdd){
+	public final static void addAllExcept(final SearchColumnList itemsToAdd, final SearchColumnList target, final Map<String, DBCommonColumn> exception) {
+		for(DBColumn col : itemsToAdd) {
 			if (!exception.containsKey(col.getADQLName().toLowerCase()) && !exception.containsKey("\"" + col.getADQLName() + "\""))
 				target.add(col);
 		}
 	}
 
-	public final static DBColumn findExactlyOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoinException{
+	public final static DBColumn findExactlyOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoinException {
 		DBColumn result = findAtMostOneColumn(columnName, caseSensitive, list, leftList);
 		if (result == null)
 			throw new UnresolvedJoinException("Column \"" + columnName + "\" specified in USING clause does not exist in " + (leftList ? "left" : "right") + " table!");
@@ -445,7 +452,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 			return result;
 	}
 
-	public final static DBColumn findAtMostOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoinException{
+	public final static DBColumn findAtMostOneColumn(final String columnName, final byte caseSensitive, final SearchColumnList list, final boolean leftList) throws UnresolvedJoinException {
 		List<DBColumn> result = list.search(null, null, null, columnName, caseSensitive);
 		if (result.isEmpty())
 			return null;
@@ -456,24 +463,27 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	}
 
 	/**
-	 * Tells whether the given column is a common column (that's to say, a unification of several columns of the same name).
-	 * 
+	 * Tells whether the given column is a common column (that's to say, a
+	 * unification of several columns of the same name).
+	 *
 	 * @param col	A DBColumn.
-	 * @return		true if the given column is a common column, false otherwise (particularly if col = null).
+	 *
+	 * @return	<code>true</code> if the given column is a common column,
+	 *        	<code>false</code> otherwise (particularly if col = null).
 	 */
-	public static final boolean isCommonColumn(final DBColumn col){
+	public static final boolean isCommonColumn(final DBColumn col) {
 		return (col != null && col instanceof DBCommonColumn);
 	}
 
 	@Override
-	public List<ADQLTable> getTables(){
+	public List<ADQLTable> getTables() {
 		List<ADQLTable> tables = leftTable.getTables();
 		tables.addAll(rightTable.getTables());
 		return tables;
 	}
 
 	@Override
-	public List<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
+	public List<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive) {
 		List<ADQLTable> tables = leftTable.getTablesByAlias(alias, caseSensitive);
 		tables.addAll(rightTable.getTablesByAlias(alias, caseSensitive));
 		return tables;
@@ -484,7 +494,7 @@ public abstract class ADQLJoin implements ADQLObject, FromContent {
 	/* **************** */
 	/**
 	 * Gets the type of this join.
-	 * 
+	 *
 	 * @return Its join type (i.e. CROSS JOIN, LEFT JOIN, LEFT OUTER JOIN, ...).
 	 */
 	public abstract String getJoinType();

@@ -29,6 +29,7 @@ import adql.db.DBColumn;
 import adql.db.DBTable;
 import adql.db.DefaultDBTable;
 import adql.db.SearchColumnList;
+import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
@@ -36,13 +37,18 @@ import adql.query.IdentifierField;
 import adql.query.TextPosition;
 
 /**
- * It represents any item of the clause FROM: a table name or a sub-query.<br />
- * A table reference may have an alias (MUST if it is a sub-query).
+ * It represents any item of the clause FROM: a table name or a sub-query.
+ *
+ * <p>A table reference may have an alias (MUST if it is a sub-query).</p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.5 (09/2019)
+ * @version 2.0 (07/2019)
  */
 public class ADQLTable implements ADQLObject, FromContent {
+
+	/** Description of this ADQL Feature.
+	 * @since 2.0 */
+	public static final LanguageFeature FEATURE = new LanguageFeature(null, "TABLE", false, "Table to query.");
 
 	/** The name of the catalog which contains the table. */
 	private String catalog = null;
@@ -60,7 +66,8 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * If not a sub-query, this attribute is set by default to the table name. */
 	private String alias = null;
 
-	/** Lets specify the case sensitivity of the catalog, schema, table and alias parts. */
+	/** Lets specify the case sensitivity of the catalog, schema, table and
+	 * alias parts. */
 	private byte caseSensitivity = 0;
 
 	/** The corresponding table in the "database". */
@@ -70,11 +77,13 @@ public class ADQLTable implements ADQLObject, FromContent {
 	private TextPosition position = null;
 
 	/**
-	 * Builds a reference to a table with its name (simple or full ({catalog}.{schema}.{table})).
+	 * Builds a reference to a table with its name (simple or full
+	 * ({catalog}.{schema}.{table})).
 	 *
-	 * @param table	Name of the table (simple or full ({catalog}.{schema}.{table})).
+	 * @param table	Name of the table (simple or full
+	 *             	({catalog}.{schema}.{table})).
 	 */
-	public ADQLTable(String table){
+	public ADQLTable(String table) {
 		setTable(table);
 		subQuery = null;
 	}
@@ -85,19 +94,20 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * @param schema	Name of its schema.
 	 * @param table		Name of the table.
 	 */
-	public ADQLTable(String schema, String table){
+	public ADQLTable(String schema, String table) {
 		setTableName(table);
 		setSchemaName(schema);
 	}
 
 	/**
-	 * Builds a reference to a table with its name, the name of its schema and the name of its catalog.
+	 * Builds a reference to a table with its name, the name of its schema and
+	 * the name of its catalog.
 	 *
 	 * @param catalog	Name of its catalog.
 	 * @param schema	Name of its schema.
 	 * @param table		Name of the table.
 	 */
-	public ADQLTable(String catalog, String schema, String table){
+	public ADQLTable(String catalog, String schema, String table) {
 		this(schema, table);
 		setCatalogName(catalog);
 	}
@@ -109,18 +119,18 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @see #setSubQuery(ADQLQuery)
 	 */
-	public ADQLTable(ADQLQuery query){
+	public ADQLTable(ADQLQuery query) {
 		setSubQuery(query);
 	}
 
 	/**
 	 * Builds an ADQL table by copying the given one.
 	 *
-	 * @param toCopy		The ADQLTable to copy.
+	 * @param toCopy	The ADQLTable to copy.
 	 *
 	 * @throws Exception	If there is an error during the copy.
 	 */
-	public ADQLTable(ADQLTable toCopy) throws Exception{
+	public ADQLTable(ADQLTable toCopy) throws Exception {
 		catalog = toCopy.catalog;
 		schema = toCopy.schema;
 		table = toCopy.table;
@@ -130,17 +140,26 @@ public class ADQLTable implements ADQLObject, FromContent {
 		position = toCopy.position;
 	}
 
+	@Override
+	public final LanguageFeature getFeatureDescription() {
+		return FEATURE;
+	}
+
 	/**
-	 * <p>Lets normalizing any catalog/schema/table name or alias.</p>
-	 * <p>If the name is surrounded by double-quotes, they are removed
-	 * and the corresponding field will be declared as case sensitive.</p>
+	 * Lets normalizing any catalog/schema/table name or alias.
 	 *
-	 * @param name		Name to normalize.
-	 * @param field		The name part to normalize and to get (if normalized, the case sensitivity of the given field will be set).
+	 * <p>
+	 * 	If the name is surrounded by double-quotes, they are removed and the
+	 * 	corresponding field will be declared as case sensitive.
+	 * </p>
 	 *
-	 * @return		The normalized name.
+	 * @param name	Name to normalize.
+	 * @param field	The name part to normalize and to get (if normalized, the
+	 *             	case sensitivity of the given field will be set).
+	 *
+	 * @return	The normalized name.
 	 */
-	protected String normalizeName(final String name, IdentifierField field){
+	protected String normalizeName(final String name, IdentifierField field) {
 		if (name == null)
 			return null;
 
@@ -148,8 +167,8 @@ public class ADQLTable implements ADQLObject, FromContent {
 		n.trimToSize();
 		if (n.length() == 0)
 			return null;
-		else{
-			if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(n.length() - 1) == '\"'){
+		else {
+			if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(n.length() - 1) == '\"') {
 				n.deleteCharAt(0);
 				n.deleteCharAt(n.length() - 1);
 				n.trimToSize();
@@ -168,17 +187,18 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * @return	The position of this {@link ADQLTable}.
 	 */
 	@Override
-	public final TextPosition getPosition(){
+	public final TextPosition getPosition() {
 		return position;
 	}
 
 	/**
-	 * Sets the position at which this {@link ADQLTable} has been found in the original ADQL query string.
+	 * Sets the position at which this {@link ADQLTable} has been found in the
+	 * original ADQL query string.
 	 *
 	 * @param pos	Position of this {@link ADQLTable}.
 	 */
 	@Override
-	public final void setPosition(final TextPosition pos){
+	public final void setPosition(final TextPosition pos) {
 		position = pos;
 	}
 
@@ -187,7 +207,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @return Catalog name.
 	 */
-	public final String getCatalogName(){
+	public final String getCatalogName() {
 		return catalog;
 	}
 
@@ -196,7 +216,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @param catalog The new name of its catalog.
 	 */
-	public final void setCatalogName(String catalog){
+	public final void setCatalogName(String catalog) {
 		final String temp = normalizeName(catalog, IdentifierField.CATALOG);
 		if ((this.catalog == null && temp != null) || (this.catalog != null && !this.catalog.equalsIgnoreCase(temp)))
 			dbLink = null;
@@ -208,7 +228,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @return Schema name.
 	 */
-	public final String getSchemaName(){
+	public final String getSchemaName() {
 		return schema;
 	}
 
@@ -217,7 +237,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @param schema The new name of its schema.
 	 */
-	public final void setSchemaName(String schema){
+	public final void setSchemaName(String schema) {
 		final String temp = normalizeName(schema, IdentifierField.SCHEMA);
 		if ((this.schema == null && temp != null) || (this.schema != null && !this.schema.equalsIgnoreCase(temp)))
 			dbLink = null;
@@ -229,31 +249,32 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @return Table name.
 	 */
-	public final String getTableName(){
+	public final String getTableName() {
 		return table;
 	}
 
 	/**
 	 * Gets the full name of this table (catalogName . schemaName . tableName)
-	 * by respecting the case sensitivity of each field (if case sensitive double-quotes will surround the concerned fields name).
+	 * by respecting the case sensitivity of each field (if case sensitive
+	 * double-quotes will surround the concerned fields name).
 	 *
 	 * @return	Its full name.
 	 */
-	public final String getFullTableName(){
+	public final String getFullTableName() {
 		if (table == null)
 			return "";
 
 		StringBuffer name = new StringBuffer();
 
 		// CATALOG:
-		if (catalog != null){
+		if (catalog != null) {
 			if (isCaseSensitive(IdentifierField.CATALOG))
 				name.append('\"').append(catalog).append('\"').append('.');
 			else
 				name.append(catalog).append('.');
 		}
 		// SCHEMA:
-		if (schema != null){
+		if (schema != null) {
 			if (isCaseSensitive(IdentifierField.SCHEMA))
 				name.append('\"').append(schema).append('\"').append('.');
 			else
@@ -273,7 +294,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @param newTableName	The new name of the table.
 	 */
-	public void setTableName(String newTableName){
+	public void setTableName(String newTableName) {
 		// Normalise the table name:
 		final String temp = normalizeName(newTableName, IdentifierField.TABLE);
 
@@ -290,15 +311,17 @@ public class ADQLTable implements ADQLObject, FromContent {
 	}
 
 	/**
-	 * Updates the whole Table according to the given table reference ({catalog}.{schema}.{table}).
+	 * Updates the whole Table according to the given table reference
+	 * ({catalog}.{schema}.{table}).
 	 *
-	 * @param tableRef	The complete table reference ({catalog}.{schema}.{table}).
+	 * @param tableRef	The complete table reference
+	 *                	({catalog}.{schema}.{table}).
 	 */
-	public final void setTable(String tableRef){
+	public final void setTable(String tableRef) {
 		String[] parts = (tableRef == null) ? null : tableRef.split("\\.");
 		if (parts != null && parts.length > 3)
 			return;
-		else{
+		else {
 			int i = (parts == null) ? -1 : (parts.length - 1);
 			setTableName((i < 0) ? null : parts[i--]);
 			setSchemaName((i < 0) ? null : parts[i--]);
@@ -313,7 +336,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @return	Sub-query.
 	 */
-	public final ADQLQuery getSubQuery(){
+	public final ADQLQuery getSubQuery() {
 		return subQuery;
 	}
 
@@ -324,8 +347,8 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @see #refreshDBLink()
 	 */
-	public final void setSubQuery(final ADQLQuery query){
-		if (query != null){
+	public final void setSubQuery(final ADQLQuery query) {
+		if (query != null) {
 			// set all ADQLTable attributes:
 			subQuery = query;
 			catalog = null;
@@ -340,15 +363,16 @@ public class ADQLTable implements ADQLObject, FromContent {
 	}
 
 	/**
-	 * (Re-)Builds a default description of this ADQL table <u>ONLY IF it is a sub-query AND there is an alias</u>.
-	 * This method has no effect if this table is not a sub-query or has no alias.
+	 * (Re-)Builds a default description of this ADQL table <u>ONLY IF it is a
+	 * sub-query AND there is an alias</u>. This method has no effect if this
+	 * table is not a sub-query or has no alias.
 	 *
 	 * @see DefaultDBTable
 	 * @see ADQLQuery#getResultingColumns()
 	 * @see DBColumn#copy(String, String, DBTable)
 	 */
-	public final void refreshDBLink(){
-		if (isSubQuery() && hasAlias()){
+	public final void refreshDBLink() {
+		if (isSubQuery() && hasAlias()) {
 			DefaultDBTable dbTable = new DefaultDBTable(alias);
 			DBColumn[] columns = subQuery.getResultingColumns();
 			for(DBColumn dbCol : columns)
@@ -360,9 +384,10 @@ public class ADQLTable implements ADQLObject, FromContent {
 	/**
 	 * Tells whether this table reference is a sub-query or a table name/alias.
 	 *
-	 * @return	<i>true</i> if this table is a sub-query, <i>false</i> else.
+	 * @return	<code>true</code> if this table is a sub-query,
+	 *        	<code>false</code> else.
 	 */
-	public final boolean isSubQuery(){
+	public final boolean isSubQuery() {
 		return subQuery != null;
 	}
 
@@ -371,16 +396,17 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @return	Table label.
 	 */
-	public final String getAlias(){
+	public final String getAlias() {
 		return alias;
 	}
 
 	/**
 	 * Tells whether this table has an alias or not.
 	 *
-	 * @return	<i>true</i> if this table has an alias, <i>false</i> otherwise.
+	 * @return	<code>true</code> if this table has an alias,
+	 *        	<code>false</code> otherwise.
 	 */
-	public final boolean hasAlias(){
+	public final boolean hasAlias() {
 		return alias != null;
 	}
 
@@ -389,57 +415,65 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @param alias	Label to put on this table.
 	 */
-	public void setAlias(String alias){
+	public void setAlias(String alias) {
 		this.alias = normalizeName(alias, IdentifierField.ALIAS);
 	}
 
 	/**
-	 * Indicates whether the specified field (catalog, schema or table) is case sensitive or not.
+	 * Indicates whether the specified field (catalog, schema or table) is case
+	 * sensitive or not.
 	 *
 	 * @param field		A field (catalog, schema or table).
 	 *
-	 * @return			<i>true</i> if the specified field is case sensitive, <i>false</i> otherwise.
+	 * @return	<code>true</code> if the specified field is case sensitive,
+	 *        	<code>false</code> otherwise.
 	 *
 	 * @see IdentifierField
 	 * @see IdentifierField#isCaseSensitive(byte)
 	 */
-	public final boolean isCaseSensitive(IdentifierField field){
+	public final boolean isCaseSensitive(IdentifierField field) {
 		return field.isCaseSensitive(caseSensitivity);
 	}
 
 	/**
-	 * Sets the case sensitivity of the specified field (catalog, schema or table).
+	 * Sets the case sensitivity of the specified field (catalog, schema or
+	 * table).
 	 *
-	 * @param field			The field for which the case sensitivity must be updated.
+	 * @param field	The field for which the case sensitivity must be updated.
 	 *
-	 * @param sensitive		<i>true</i> if the specified field must be case sensitive, <i>false</i> otherwise.
+	 * @param sensitive	<code>true</code> if the specified field must be case
+	 *                 	sensitive,
+	 *                 	<code>false</code> otherwise.
 	 *
 	 * @see IdentifierField
 	 * @see IdentifierField#setCaseSensitive(byte, boolean)
 	 */
-	public final void setCaseSensitive(IdentifierField field, boolean sensitive){
+	public final void setCaseSensitive(IdentifierField field, boolean sensitive) {
 		caseSensitivity = field.setCaseSensitive(caseSensitivity, sensitive);
 	}
 
 	/**
-	 * Indicates whether all fields (catalog, schema and table) are case sensitive.
+	 * Indicates whether all fields (catalog, schema and table) are case
+	 * sensitive.
 	 *
-	 * @return			<i>true</i> if all fields are case sensitive, <i>false</i> otherwise.
+	 * @return	<code>true</code> if all fields are case sensitive,
+	 *        	<code>false</code> otherwise.
 	 *
 	 * @see IdentifierField#isFullCaseSensitive(byte)
 	 */
-	public final boolean isCaseSensitive(){
+	public final boolean isCaseSensitive() {
 		return IdentifierField.isFullCaseSensitive(caseSensitivity);
 	}
 
 	/**
 	 * Sets the case sensitivity of all fields (catalog, schema and table).
 	 *
-	 * @param sensitive		<i>true</i> if all fields must be case sensitive, <i>false</i> otherwise.
+	 * @param sensitive	<code>true</code> if all fields must be case sensitive,
+	 *                 	<code>false</code> otherwise.
 	 *
 	 * @see IdentifierField#getFullCaseSensitive(boolean)
 	 */
-	public final void setCaseSensitive(boolean sensitive){
+	public final void setCaseSensitive(boolean sensitive) {
 		caseSensitivity = IdentifierField.getFullCaseSensitive(sensitive);
 	}
 
@@ -450,7 +484,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @see IdentifierField
 	 */
-	public final byte getCaseSensitive(){
+	public final byte getCaseSensitive() {
 		return caseSensitivity;
 	}
 
@@ -461,17 +495,21 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @see IdentifierField
 	 */
-	public final void setCaseSensitive(final byte sensitivity){
+	public final void setCaseSensitive(final byte sensitivity) {
 		caseSensitivity = sensitivity;
 	}
 
 	/**
-	 * <p>Gets the corresponding {@link DBTable}.</p>
-	 * <p><i><u>Note:</u> This information is added automatically by {@link DBChecker} when {@link DBChecker#check(adql.query.ADQLQuery)} is called.</i></p>
+	 * Gets the corresponding {@link DBTable}.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	This information is added automatically by {@link DBChecker} when
+	 * 	{@link DBChecker#check(adql.query.ADQLQuery)} is called.
+	 * </i></p>
 	 *
 	 * @return The corresponding {@link DBTable}.
 	 */
-	public final DBTable getDBLink(){
+	public final DBTable getDBLink() {
 		return dbLink;
 	}
 
@@ -480,16 +518,16 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @param dbLink Its corresponding {@link DBTable}.
 	 */
-	public final void setDBLink(DBTable dbLink){
+	public final void setDBLink(DBTable dbLink) {
 		this.dbLink = dbLink;
 	}
 
 	@Override
-	public SearchColumnList getDBColumns(){
+	public SearchColumnList getDBColumns() {
 		SearchColumnList list = new SearchColumnList();
 		if (isSubQuery() && dbLink == null)
 			refreshDBLink();
-		if (dbLink != null){
+		if (dbLink != null) {
 			for(DBColumn dbCol : dbLink)
 				list.add(dbCol);
 		}
@@ -497,25 +535,25 @@ public class ADQLTable implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public List<ADQLTable> getTables(){
+	public List<ADQLTable> getTables() {
 		ArrayList<ADQLTable> tables = new ArrayList<ADQLTable>();
 		tables.add(this);
 		return tables;
 	}
 
 	@Override
-	public List<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive){
+	public List<ADQLTable> getTablesByAlias(final String alias, final boolean caseSensitive) {
 		ArrayList<ADQLTable> tables = new ArrayList<ADQLTable>();
 
-		if (hasAlias()){
-			if (!caseSensitive){
+		if (hasAlias()) {
+			if (!caseSensitive) {
 				if (getAlias().equalsIgnoreCase(alias))
 					tables.add(this);
-			}else{
-				if (IdentifierField.ALIAS.isCaseSensitive(caseSensitivity)){
+			} else {
+				if (IdentifierField.ALIAS.isCaseSensitive(caseSensitivity)) {
 					if (getAlias().equals(alias))
 						tables.add(this);
-				}else{
+				} else {
 					if (getAlias().toLowerCase().equals(alias))
 						tables.add(this);
 				}
@@ -526,39 +564,39 @@ public class ADQLTable implements ADQLObject, FromContent {
 	}
 
 	@Override
-	public ADQLObject getCopy() throws Exception{
+	public ADQLObject getCopy() throws Exception {
 		return new ADQLTable(this);
 	}
 
 	@Override
-	public String getName(){
+	public String getName() {
 		return hasAlias() ? alias : (isSubQuery() ? "{subquery}" : getTableName());
 	}
 
 	@Override
-	public ADQLIterator adqlIterator(){
+	public ADQLIterator adqlIterator() {
 		return new ADQLIterator() {
 
 			private boolean subQueryGot = !isSubQuery();
 
 			@Override
-			public ADQLObject next(){
-				if (!subQueryGot){
+			public ADQLObject next() {
+				if (!subQueryGot) {
 					subQueryGot = true;
 					return subQuery;
-				}else
+				} else
 					throw new NoSuchElementException();
 			}
 
 			@Override
-			public boolean hasNext(){
+			public boolean hasNext() {
 				return !subQueryGot;
 			}
 
 			@Override
-			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException{
+			public void replace(ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
 				if (!subQueryGot)
-					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called !");
+					throw new IllegalStateException("replace(ADQLObject) impossible: next() has not yet been called!");
 
 				if (replacer == null)
 					remove();
@@ -566,21 +604,21 @@ public class ADQLTable implements ADQLObject, FromContent {
 				if (replacer instanceof ADQLQuery)
 					subQuery = (ADQLQuery)replacer;
 				else
-					throw new UnsupportedOperationException("Impossible to replace a sub-query (" + subQuery.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ") !");
+					throw new UnsupportedOperationException("Impossible to replace a sub-query (" + subQuery.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 			}
 
 			@Override
-			public void remove(){
+			public void remove() {
 				if (!subQueryGot)
-					throw new IllegalStateException("remove() impossible: next() has not yet been called !");
+					throw new IllegalStateException("remove() impossible: next() has not yet been called!");
 				else
-					throw new UnsupportedOperationException("Impossible to remove the sub-query of an ADQLTable (" + toADQL() + ") !");
+					throw new UnsupportedOperationException("Impossible to remove the sub-query of an ADQLTable (" + toADQL() + ")!");
 			}
 		};
 	}
 
 	@Override
-	public String toADQL(){
+	public String toADQL() {
 		return (isSubQuery() ? ("(" + subQuery.toADQL() + ")") : getFullTableName()) + ((alias == null) ? "" : (" AS " + (isCaseSensitive(IdentifierField.ALIAS) ? ("\"" + alias + "\"") : alias)));
 	}
 

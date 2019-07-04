@@ -24,6 +24,7 @@ import adql.db.exception.UnresolvedIdentifiersException;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParserFactory;
 import adql.parser.ParseException;
+import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.operand.ADQLColumn;
@@ -877,6 +878,8 @@ public class TestDBChecker {
 	}
 
 	public static class UDFToto extends UserDefinedFunction {
+		private LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_UDF, getName() + "(VARCHAR) -> VARCHAR");
+
 		protected StringConstant fakeParam;
 
 		public UDFToto(final ADQLOperand[] params) throws Exception {
@@ -945,6 +948,11 @@ public class TestDBChecker {
 		public String translate(final ADQLTranslator caller) throws TranslationException {
 			/* Note: Since this function is totally fake, this function will be replaced in SQL by its parameter (the string). */
 			return caller.translate(fakeParam);
+		}
+
+		@Override
+		public LanguageFeature getFeatureDescription() {
+			return FEATURE;
 		}
 	}
 

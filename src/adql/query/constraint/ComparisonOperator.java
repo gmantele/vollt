@@ -2,35 +2,65 @@ package adql.query.constraint;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ *
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
+
+import adql.parser.feature.LanguageFeature;
+import adql.query.operand.function.SQLFunction;
 
 /**
  * Gathers all comparison operators (numeric or not).
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 11/2010
- * 
+ * @version 2.0 (07/2019)
+ *
  * @see Comparison
  */
-public enum ComparisonOperator{
+public enum ComparisonOperator {
 	EQUAL, NOT_EQUAL, LESS_THAN, LESS_OR_EQUAL, GREATER_THAN, GREATER_OR_EQUAL, LIKE, NOTLIKE;
 
-	public static ComparisonOperator getOperator(String str) throws UnsupportedOperationException{
+	/** Description of the ADQL Feature based on this type.
+	 * @since 2.0 */
+	private final LanguageFeature FEATURE;
+
+	/** @since 2.0 */
+	private ComparisonOperator() {
+		FEATURE = new LanguageFeature(null, this.name(), false);
+	}
+
+	/**
+	 * Get the description of the ADQL's Language Feature based on this type.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	Getting this description is generally only useful when discovery
+	 * 	optional features so that determining if they are allowed to be used in
+	 * 	ADQL queries.
+	 * </i></p>
+	 *
+	 * @return	Description of this ADQL object as an ADQL's feature.
+	 *
+	 * @since 2.0
+	 * @see SQLFunction#getFeatureDescription()
+	 */
+	public final LanguageFeature getFeatureDescription() {
+		return FEATURE;
+	}
+
+	public static ComparisonOperator getOperator(String str) throws UnsupportedOperationException {
 		if (str.equalsIgnoreCase("="))
 			return EQUAL;
 		else if (str.equalsIgnoreCase("!=") || str.equalsIgnoreCase("<>"))
@@ -51,8 +81,8 @@ public enum ComparisonOperator{
 			throw new UnsupportedOperationException("Comparison operator unknown: \"" + str + "\" !");
 	}
 
-	public String toADQL(){
-		switch(this){
+	public String toADQL() {
+		switch(this) {
 			case EQUAL:
 				return "=";
 			case NOT_EQUAL:
@@ -75,7 +105,7 @@ public enum ComparisonOperator{
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		return toADQL();
 	}
 }

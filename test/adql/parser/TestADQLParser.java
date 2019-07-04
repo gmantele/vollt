@@ -11,10 +11,15 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import adql.db.exception.UnresolvedIdentifiersException;
+import adql.db.exception.UnsupportedFeatureException;
+import adql.parser.ADQLParserFactory.ADQLVersion;
+import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLQuery;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
 import adql.query.operand.StringConstant;
+import adql.query.operand.function.string.LowerFunction;
 
 public class TestADQLParser {
 
@@ -324,6 +329,7 @@ public class TestADQLParser {
 	@Test
 	public void testUDFName(){
 		ADQLParser parser = parserFactory.createParser();
+		// TODO [ADQL-2.1] Add the support for this specific UDF in the the FeatureSet!
 
 		// CASE: Valid UDF name => OK
 		try {
@@ -381,6 +387,45 @@ public class TestADQLParser {
 		} catch(ParseException pe) {
 			pe.printStackTrace();
 			fail("Unexpected parsing error! This query should have passed. (see console for more details)");
+		}
+	}
+
+	@Test
+	public void testOptionalFeatures() {
+		ADQLParser parser = parserFactory.createParser(ADQLVersion.V2_0);
+
+		// CASE: No support for the ADQL-2.1 function - LOWER => ERROR
+		try {
+			parser.parseQuery("SELECT LOWER(foo) FROM aTable");
+			fail("The function \"LOWER\" is not yet supported in ADQL-2.0. This query should not pass.");
+		} catch(Throwable t) {
+			assertEquals(ParseException.class, t.getClass());
+			assertTrue(t.getMessage().contains("(HINT: \"LOWER\" is not supported in ADQL v2.0, but is however a reserved word."));
+		}
+
+		// CASE: LOWER supported by default in ADQL-2.1 => OK
+		parser = parserFactory.createParser(ADQLVersion.V2_1);
+		try {
+			ADQLQuery q = parser.parseQuery("SELECT LOWER(foo) FROM aTable");
+			assertNotNull(q);
+			assertEquals("SELECT LOWER(foo)\nFROM aTable", q.toADQL());
+		} catch(Throwable t) {
+			t.printStackTrace();
+			fail("The function \"LOWER\" is available in ADQL-2.1 and is declared as supported. This query should pass.");
+		}
+
+		// CASE: LOWER now declared as not supported => ERROR
+		assertTrue(parser.getSupportedFeatures().unsupport(LowerFunction.FEATURE));
+		try {
+			parser.parseQuery("SELECT LOWER(foo) FROM aTable");
+			fail("The function \"LOWER\" is not available in ADQL-2.1 and is here declared as not supported. This query should not pass.");
+		} catch(Throwable t) {
+			assertEquals(UnresolvedIdentifiersException.class, t.getClass());
+			UnresolvedIdentifiersException uie = (UnresolvedIdentifiersException)t;
+			assertEquals(1, uie.getNbErrors());
+			Exception err = uie.getErrors().next();
+			assertEquals(UnsupportedFeatureException.class, err.getClass());
+			assertEquals("Unsupported ADQL feature: \"LOWER\" (of type '" + LanguageFeature.TYPE_ADQL_STRING + "')!", err.getMessage());
 		}
 	}
 

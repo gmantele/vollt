@@ -26,8 +26,13 @@ import java.util.ArrayList;
 import java.util.Stack;
 import java.util.Vector;
 
+import adql.db.exception.UnresolvedIdentifiersException;
+import adql.db.exception.UnsupportedFeatureException;
+import adql.parser.ADQLParserFactory.ADQLVersion;
 import adql.parser.ADQLQueryFactory.JoinType;
 import adql.parser.IdentifierItems.IdentifierItem;
+import adql.parser.feature.FeatureSet;
+import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
@@ -66,6 +71,7 @@ import adql.query.operand.function.geometry.GeometryFunction;
 import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.string.LowerFunction;
+import adql.search.SearchOptionalFeaturesHandler;
 
 /**
 * Parses an ADQL-2.1 query thanks to the {@link ADQLParser201#Query() Query()} function.
@@ -96,6 +102,10 @@ import adql.query.operand.function.string.LowerFunction;
 *   <li>{@link #tryQuickFix(java.lang.String)} to try fixing the most common
 * 		issues with ADQL queries (e.g. Unicode confusable characters,
 * 		unescaped ADQL identifiers, SQL reserved keywords, ...)</li>
+*   <li>{@link #setSupportedFeatures(FeatureSet)} to set which optional ADQL
+* 		features are supported or not ; all optional features used in the query
+* 		while being declared as un-supported will throw an error at the end of
+* 		the parsing</li>
 * </ul>
 *
 * <p><b><u>WARNING:</u>
@@ -115,6 +125,12 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 
 	/** Tools to build the object representation of the ADQL query. */
 	private ADQLQueryFactory queryFactory = new ADQLQueryFactory();
+
+	/** Default set of supported language features.
+	* <p><i><b>Note:</b>
+	* 	By default, all optional features are supported.
+	* </i></p> */
+	private FeatureSet supportedFeatures = new FeatureSet(true);
 
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
@@ -341,6 +357,11 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	/* ADDITIONAL GETTERS & SETTERS */
 
 	@Override
+	public final ADQLVersion getADQLVersion() {
+		return ADQLVersion.V2_1;
+	}
+
+	@Override
 	public final void setDebug(boolean debug) {
 		if (debug)
 			enable_tracing();
@@ -366,6 +387,17 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	@Override
 	public final void setQueryFactory(ADQLQueryFactory factory) {
 		queryFactory = (factory != null) ? factory : (new ADQLQueryFactory());
+	}
+
+	@Override
+	public final FeatureSet getSupportedFeatures() {
+		return supportedFeatures;
+	}
+
+	@Override
+	public void setSupportedFeatures(final FeatureSet features) {
+		if (features != null)
+			supportedFeatures = features;
 	}
 
 	/* EXCEPTION HELPER FUNCTION */
@@ -949,6 +981,21 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
+			/* check the optional features before any other check:
+					 * (note: this check is very close to grammar check...hence its higher
+					 *        priority) */
+			UnresolvedIdentifiersException exUnsupportedFeatures = new UnresolvedIdentifiersException("unsupported expression");
+			SearchOptionalFeaturesHandler sFeaturesHandler = new SearchOptionalFeaturesHandler(true, false);
+			sFeaturesHandler.search(q);
+			for(ADQLObject obj : sFeaturesHandler) {
+				if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
+					exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
+			}
+			if (exUnsupportedFeatures.getNbErrors() > 0) {
+				if (true)
+					throw exUnsupportedFeatures;
+			}
+
 			// check the query:
 			if (queryChecker != null)
 				queryChecker.check(q);
@@ -4431,119 +4478,6 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 		}
 	}
 
-	private boolean jj_3R_43() {
-		if (jj_scan_token(STRING_LITERAL))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_23() {
-		Token xsp;
-		if (jj_3R_43())
-			return true;
-		while(true) {
-			xsp = jj_scanpos;
-			if (jj_3R_43()) {
-				jj_scanpos = xsp;
-				break;
-			}
-		}
-		return false;
-	}
-
-	private boolean jj_3R_117() {
-		if (jj_scan_token(LEFT))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_74() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_117()) {
-			jj_scanpos = xsp;
-			if (jj_3R_118()) {
-				jj_scanpos = xsp;
-				if (jj_3R_119())
-					return true;
-			}
-		}
-		xsp = jj_scanpos;
-		if (jj_scan_token(26))
-			jj_scanpos = xsp;
-		return false;
-	}
-
-	private boolean jj_3_18() {
-		if (jj_3R_16())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_54() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_scan_token(25)) {
-			jj_scanpos = xsp;
-			if (jj_3R_74())
-				return true;
-		}
-		return false;
-	}
-
-	private boolean jj_3R_35() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_54())
-			jj_scanpos = xsp;
-		if (jj_scan_token(JOIN))
-			return true;
-		if (jj_3R_55())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_34() {
-		if (jj_scan_token(NATURAL))
-			return true;
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_53())
-			jj_scanpos = xsp;
-		if (jj_scan_token(JOIN))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_28() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_scan_token(36))
-			jj_scanpos = xsp;
-		if (jj_scan_token(BETWEEN))
-			return true;
-		if (jj_3R_50())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3_15() {
-		if (jj_3R_28())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_17() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_34()) {
-			jj_scanpos = xsp;
-			if (jj_3R_35())
-				return true;
-		}
-		return false;
-	}
-
 	private boolean jj_3_17() {
 		if (jj_3R_29())
 			return true;
@@ -6162,6 +6096,119 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 		if (jj_scan_token(25)) {
 			jj_scanpos = xsp;
 			if (jj_3R_73())
+				return true;
+		}
+		return false;
+	}
+
+	private boolean jj_3R_43() {
+		if (jj_scan_token(STRING_LITERAL))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_23() {
+		Token xsp;
+		if (jj_3R_43())
+			return true;
+		while(true) {
+			xsp = jj_scanpos;
+			if (jj_3R_43()) {
+				jj_scanpos = xsp;
+				break;
+			}
+		}
+		return false;
+	}
+
+	private boolean jj_3R_117() {
+		if (jj_scan_token(LEFT))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_74() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_117()) {
+			jj_scanpos = xsp;
+			if (jj_3R_118()) {
+				jj_scanpos = xsp;
+				if (jj_3R_119())
+					return true;
+			}
+		}
+		xsp = jj_scanpos;
+		if (jj_scan_token(26))
+			jj_scanpos = xsp;
+		return false;
+	}
+
+	private boolean jj_3_18() {
+		if (jj_3R_16())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_54() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_scan_token(25)) {
+			jj_scanpos = xsp;
+			if (jj_3R_74())
+				return true;
+		}
+		return false;
+	}
+
+	private boolean jj_3R_35() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_54())
+			jj_scanpos = xsp;
+		if (jj_scan_token(JOIN))
+			return true;
+		if (jj_3R_55())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_34() {
+		if (jj_scan_token(NATURAL))
+			return true;
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_53())
+			jj_scanpos = xsp;
+		if (jj_scan_token(JOIN))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_28() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_scan_token(36))
+			jj_scanpos = xsp;
+		if (jj_scan_token(BETWEEN))
+			return true;
+		if (jj_3R_50())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3_15() {
+		if (jj_3R_28())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_17() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_34()) {
+			jj_scanpos = xsp;
+			if (jj_3R_35())
 				return true;
 		}
 		return false;

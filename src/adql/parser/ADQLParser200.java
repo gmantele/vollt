@@ -26,8 +26,10 @@ import java.util.ArrayList;
 import java.util.Stack;
 import java.util.Vector;
 
+import adql.parser.ADQLParserFactory.ADQLVersion;
 import adql.parser.ADQLQueryFactory.JoinType;
 import adql.parser.IdentifierItems.IdentifierItem;
+import adql.parser.feature.FeatureSet;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
@@ -107,7 +109,7 @@ import adql.query.operand.function.geometry.PointFunction;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS)
-* @version 2.0 (04/2019)
+* @version 2.0 (07/2019)
 * @since 2.0
 */
 public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
@@ -344,6 +346,11 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	/* ADDITIONAL GETTERS & SETTERS */
 
 	@Override
+	public final ADQLVersion getADQLVersion() {
+		return ADQLVersion.V2_0;
+	}
+
+	@Override
 	public final void setDebug(boolean debug) {
 		if (debug)
 			enable_tracing();
@@ -369,6 +376,19 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	@Override
 	public final void setQueryFactory(ADQLQueryFactory factory) {
 		queryFactory = (factory != null) ? factory : (new ADQLQueryFactory());
+	}
+
+	@Override
+	public final FeatureSet getSupportedFeatures() {
+		FeatureSet languageFeatures = new FeatureSet();
+		languageFeatures.unsupportAll();
+		return languageFeatures;
+	}
+
+	@Override
+	public final void setSupportedFeatures(final FeatureSet languageFeatures) {
+		/* Nothing to do here for ADQL-2.0 because no optional feature can be
+		* supported)! */
 	}
 
 	/* EXCEPTION HELPER FUNCTION */
@@ -4408,60 +4428,6 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 		}
 	}
 
-	private boolean jj_3R_54() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_scan_token(25)) {
-			jj_scanpos = xsp;
-			if (jj_3R_73())
-				return true;
-		}
-		return false;
-	}
-
-	private boolean jj_3R_44() {
-		if (jj_scan_token(STRING_LITERAL))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_23() {
-		Token xsp;
-		if (jj_3R_44())
-			return true;
-		while(true) {
-			xsp = jj_scanpos;
-			if (jj_3R_44()) {
-				jj_scanpos = xsp;
-				break;
-			}
-		}
-		return false;
-	}
-
-	private boolean jj_3R_116() {
-		if (jj_scan_token(LEFT))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_74() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_116()) {
-			jj_scanpos = xsp;
-			if (jj_3R_117()) {
-				jj_scanpos = xsp;
-				if (jj_3R_118())
-					return true;
-			}
-		}
-		xsp = jj_scanpos;
-		if (jj_scan_token(26))
-			jj_scanpos = xsp;
-		return false;
-	}
-
 	private boolean jj_3_18() {
 		if (jj_3R_16())
 			return true;
@@ -5091,6 +5057,14 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 		return false;
 	}
 
+	private boolean jj_3R_52() {
+		if (jj_scan_token(CONCAT))
+			return true;
+		if (jj_3R_36())
+			return true;
+		return false;
+	}
+
 	private boolean jj_3R_86() {
 		if (jj_scan_token(DEGREES))
 			return true;
@@ -5099,14 +5073,6 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 		if (jj_3R_112())
 			return true;
 		if (jj_scan_token(RIGHT_PAR))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_52() {
-		if (jj_scan_token(CONCAT))
-			return true;
-		if (jj_3R_36())
 			return true;
 		return false;
 	}
@@ -6132,6 +6098,60 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 					return true;
 			}
 		}
+		return false;
+	}
+
+	private boolean jj_3R_54() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_scan_token(25)) {
+			jj_scanpos = xsp;
+			if (jj_3R_73())
+				return true;
+		}
+		return false;
+	}
+
+	private boolean jj_3R_44() {
+		if (jj_scan_token(STRING_LITERAL))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_23() {
+		Token xsp;
+		if (jj_3R_44())
+			return true;
+		while(true) {
+			xsp = jj_scanpos;
+			if (jj_3R_44()) {
+				jj_scanpos = xsp;
+				break;
+			}
+		}
+		return false;
+	}
+
+	private boolean jj_3R_116() {
+		if (jj_scan_token(LEFT))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_74() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_116()) {
+			jj_scanpos = xsp;
+			if (jj_3R_117()) {
+				jj_scanpos = xsp;
+				if (jj_3R_118())
+					return true;
+			}
+		}
+		xsp = jj_scanpos;
+		if (jj_scan_token(26))
+			jj_scanpos = xsp;
 		return false;
 	}
 
