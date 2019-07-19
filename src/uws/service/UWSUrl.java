@@ -148,6 +148,11 @@ public class UWSUrl implements Serializable {
 		uri = uri.trim();
 		if (uri.length() > 0 && uri.charAt(0) != '/')
 			uri = "/" + uri;
+
+		// Trim out duplicate leading slashes
+		while(uri.length() >= 2 && uri.charAt(1) == '/')
+			uri = uri.substring(1);
+		
 		while(uri.length() >= 1 && uri.charAt(uri.length() - 1) == '/')
 			uri = uri.substring(0, uri.length() - 1).trim();
 		return uri.trim();
