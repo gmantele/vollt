@@ -40,6 +40,7 @@ public class TestFeatureSet {
 			assertTrue(set.supportedFeatures.containsKey(feat.type));
 			assertTrue(set.supportedFeatures.get(feat.type).contains(feat));
 		}
+		assertTrue(set.anyUdfAllowed);
 
 		// With this constructor, none of the available features are supported:
 		set = new FeatureSet(false);
@@ -47,6 +48,48 @@ public class TestFeatureSet {
 			assertNotNull(feat);
 			assertFalse(set.supportedFeatures.containsKey(feat.type));
 		}
+		assertFalse(set.anyUdfAllowed);
+	}
+
+	@Test
+	public void testFeatureSetBooleanBoolean() {
+		/* With this constructor, all available features and non-declared UDFs
+		 * must be already supported: */
+		FeatureSet set = new FeatureSet(true, true);
+		for(LanguageFeature feat : FeatureSet.availableFeatures) {
+			assertNotNull(feat);
+			assertTrue(set.supportedFeatures.containsKey(feat.type));
+			assertTrue(set.supportedFeatures.get(feat.type).contains(feat));
+		}
+		assertTrue(set.anyUdfAllowed);
+
+		/* With this constructor, all available features must be already
+		 * supported BUT NOT non-declared UDFs: */
+		set = new FeatureSet(true, false);
+		for(LanguageFeature feat : FeatureSet.availableFeatures) {
+			assertNotNull(feat);
+			assertTrue(set.supportedFeatures.containsKey(feat.type));
+			assertTrue(set.supportedFeatures.get(feat.type).contains(feat));
+		}
+		assertFalse(set.anyUdfAllowed);
+
+		/* With this constructor, none of the available features are supported,
+		 * as well as non-declared UDFs: */
+		set = new FeatureSet(false, false);
+		for(LanguageFeature feat : FeatureSet.availableFeatures) {
+			assertNotNull(feat);
+			assertFalse(set.supportedFeatures.containsKey(feat.type));
+		}
+		assertFalse(set.anyUdfAllowed);
+
+		/* With this constructor, none of the available features are supported,
+		 * BUT non-declared UDFs are allowed: */
+		set = new FeatureSet(false, true);
+		for(LanguageFeature feat : FeatureSet.availableFeatures) {
+			assertNotNull(feat);
+			assertFalse(set.supportedFeatures.containsKey(feat.type));
+		}
+		assertTrue(set.anyUdfAllowed);
 	}
 
 	@Test
@@ -93,6 +136,11 @@ public class TestFeatureSet {
 				assertTrue(geoSet.contains(feat));
 			}
 		}
+
+		// CASE: UDF => non-declared UDFs are allowed
+		assertFalse(set.isAnyUdfAllowed());
+		assertTrue(set.supportAll(LanguageFeature.TYPE_UDF));
+		assertTrue(set.isAnyUdfAllowed());
 	}
 
 	@Test
@@ -105,6 +153,7 @@ public class TestFeatureSet {
 			assertTrue(set.supportedFeatures.containsKey(feat.type));
 			assertTrue(set.supportedFeatures.get(feat.type).contains(feat));
 		}
+		assertTrue(set.isAnyUdfAllowed());
 	}
 
 	@Test
@@ -155,6 +204,11 @@ public class TestFeatureSet {
 		assertTrue(set.supportedFeatures.containsKey(LanguageFeature.TYPE_ADQL_GEO));
 		assertTrue(set.unsupportAll(LanguageFeature.TYPE_ADQL_GEO));
 		assertFalse(set.supportedFeatures.containsKey(LanguageFeature.TYPE_ADQL_GEO));
+
+		// CASE: UDF => non-declared UDFs are forbidden
+		assertTrue(set.isAnyUdfAllowed());
+		assertTrue(set.unsupportAll(LanguageFeature.TYPE_UDF));
+		assertFalse(set.isAnyUdfAllowed());
 	}
 
 	@Test
@@ -166,6 +220,7 @@ public class TestFeatureSet {
 			assertNotNull(feat);
 			assertFalse(set.supportedFeatures.containsKey(feat.type));
 		}
+		assertFalse(set.isAnyUdfAllowed());
 	}
 
 	@Test

@@ -110,7 +110,37 @@ import adql.query.operand.function.string.LowerFunction;
  * <p><i><b>Warning:</b>
  * 	Both functions will not work for User Defined Functions that has to be
  * 	added individually in the {@link FeatureSet}.
- * <i></p>
+ * </i></p>
+ *
+ * <h3>Special case of User Defined Functions (UDFs)</h3>
+ *
+ * <p>
+ * 	UDFs are also optional features. However, it is not possible to have a list
+ * 	of available UDFs....indeed, by definition they are <i>user defined</i>.
+ * 	Consequently, supported UDFs must be explicitly declared.
+ * </p>
+ *
+ * <p>
+ * 	However, it is often useful (e.g. when just checking the ADQL syntax
+ * 	of a query) to not raise errors when non-declared UDFs are encountered.
+ * 	For that reason, there is a special option inside this {@link FeatureSet} to
+ * 	allow/forbid non-declared UDFs. This option/flag has just an impact on the
+ * 	result of the function {@link #isSupporting(LanguageFeature)} ; it is not
+ * 	visible in any of the {@link #getSupportedFeatures()} functions.
+ * </p>
+ *
+ * <p>
+ * 	This flag can be checked with {@link #isAnyUdfAllowed()} and can be changed
+ * 	with any of the following functions:
+ * </p>
+ * <ul>
+ * 	<li>{@link #allowAnyUdf(boolean)},</li>
+ * 	<li>{@link #supportAll()},</li>
+ * 	<li>{@link #supportAll(String)} with {@link LanguageFeature#TYPE_UDF},</li>
+ * 	<li>{@link #unsupportAll()},</li>
+ * 	<li>{@link #unsupportAll(String)} with {@link LanguageFeature#TYPE_UDF},</li>
+ * 	<li>and any of the constructors.</li>
+ * </ul>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 2.0 (07/2019)
@@ -121,8 +151,16 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/** Set of all supported features. */
 	protected final Map<String, Set<LanguageFeature>> supportedFeatures;
 
+	/** Indicate whether any UDF (even if not declared) should be considered as
+	 * supported. */
+	protected boolean anyUdfAllowed = false;
+
 	/**
 	 * Create a feature set with all available features supported by default.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	With this constructor, non-declared UDFs will be considered as supported.
+	 * </i></p>
 	 */
 	public FeatureSet() {
 		this(true);
@@ -132,16 +170,70 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * Create a feature set will all available features supported or not,
 	 * depending of the given boolean parameter.
 	 *
+	 * <i>
+	 * <p><b>Note:</b>
+	 * 	With this constructor, non-declared UDFs will be considered as supported
+	 * 	or not depending on the given parameter:
+	 * </p>
+	 * <ul>
+	 * 	<li><code>true</code> will support all available features and will allow
+	 * 		non-declared UDFs,</li>
+	 * 	<li><code>false</code> will un-support all available features and will
+	 * 		forbid non-declared UDFs.</li>
+	 * </ul>
+	 * </i>
+	 *
 	 * @param allSupported	<code>true</code> to support all available features,
 	 *                    	<code>false</code> to not support any.
 	 */
 	public FeatureSet(final boolean allSupported) {
+		this(allSupported, allSupported);
+	}
+
+	/**
+	 * Create a feature set will all available features supported or not,
+	 * depending of the given boolean parameter.
+	 *
+	 * @param allSupported	<code>true</code> to support all available features,
+	 *                    	<code>false</code> to not support any.
+	 * @param allowAnyUdf	<code>true</code> to support any UDF (even if not
+	 *                   	declared),
+	 *                   	<code>false</code> to force declaration of supported
+	 *                   	UDFs.
+	 */
+	public FeatureSet(final boolean allSupported, final boolean allowAnyUdf) {
 		// Init. the list of supported features:
 		supportedFeatures = new HashMap<>();
 
 		// If asked, support all available features:
 		if (allSupported)
 			supportAll();
+
+		// If asked, allow any UDF:
+		this.anyUdfAllowed = allowAnyUdf;
+	}
+
+	/**
+	 * Let specify whether any UDF (even if not declared) should be considered
+	 * as supported or not. If not, UDFs must be explicitly declared to be
+	 * considered as supported (as any other optional language feature).
+	 *
+	 * @param allowed	<code>true</code> to support any UDF,
+	 *               	<code>false</code> to force the declaration of supported
+	 *               	UDFs.
+	 */
+	public void allowAnyUdf(final boolean allowed) {
+		this.anyUdfAllowed = allowed;
+	}
+
+	/**
+	 * Tell whether UDFs are considered as supported even if undeclared.
+	 *
+	 * @return	<code>true</code> if any UDF is considered as supported,
+	 *        	<code>false</code> if supported UDFs must be explicitly declared.
+	 */
+	public boolean isAnyUdfAllowed() {
+		return anyUdfAllowed;
 	}
 
 	/**
@@ -191,6 +283,11 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/**
 	 * Support all the features of the given type.
 	 *
+	 * <p><i><b>Note:</b>
+	 * 	If the given type is {@link LanguageFeature#TYPE_UDF}, then any
+	 * 	UDF (event if not declared) is considered as supported.
+	 * </i></p>
+	 *
 	 * @param type	The type of language features to support.
 	 *
 	 * @return	<code>true</code> if all the available features of the given
@@ -203,9 +300,17 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	public final boolean supportAll(final String type) {
 		boolean done = false;
 		if (type != null) {
-			for(LanguageFeature feature : availableFeatures) {
-				if (feature.type == type)
-					done = support(feature) || done;
+
+			// CASE: UDF
+			if (LanguageFeature.TYPE_UDF == type)
+				done = anyUdfAllowed = true;
+
+			// OTHERWISE
+			else {
+				for(LanguageFeature feature : availableFeatures) {
+					if (feature.type == type)
+						done = support(feature) || done;
+				}
 			}
 		}
 		return done;
@@ -214,11 +319,19 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/**
 	 * Support all available features.
 	 *
+	 * <p><i><b>Note:</b>
+	 * 	This function also allows non-declared UDFs.
+	 * </i></p>
+	 *
 	 * @see #getAvailableFeatures()
 	 */
 	public final void supportAll() {
+		// support all available features:
 		for(LanguageFeature feature : availableFeatures)
 			support(feature);
+
+		// also allow non-declared UDFs:
+		anyUdfAllowed = true;
 	}
 
 	/**
@@ -271,6 +384,11 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/**
 	 * Un-support all the features of the given type.
 	 *
+	 * <p><i><b>Note:</b>
+	 * 	If the given type is {@link LanguageFeature#TYPE_UDF}, then supported
+	 * 	UDFs must be explicitly declared.
+	 * </i></p>
+	 *
 	 * @param type	The type of language features to un-support.
 	 *
 	 * @return	<code>true</code> if all the available features of the given
@@ -283,9 +401,17 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	public final boolean unsupportAll(final String type) {
 		boolean done = false;
 		if (type != null) {
-			for(LanguageFeature feature : availableFeatures) {
-				if (feature.type == type)
-					done = unsupport(feature) || done;
+
+			// CASE: UDF
+			if (LanguageFeature.TYPE_UDF == type)
+				done = !(anyUdfAllowed = false);
+
+			// OTHERWISE
+			else {
+				for(LanguageFeature feature : availableFeatures) {
+					if (feature.type == type)
+						done = unsupport(feature) || done;
+				}
 			}
 		}
 		return done;
@@ -294,11 +420,19 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/**
 	 * Un-support all available features.
 	 *
+	 * <p><i><b>Note:</b>
+	 * 	This function also forbids non-declared UDFs.
+	 * </i></p>
+	 *
 	 * @see #getAvailableFeatures()
 	 */
 	public final void unsupportAll() {
+		// unsupport all available features:
 		for(LanguageFeature feature : availableFeatures)
 			unsupport(feature);
+
+		// also unsupport any UDF:
+		anyUdfAllowed = false;
 	}
 
 	/**
@@ -329,10 +463,17 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 		if (feature == null || feature.type == null || !feature.optional)
 			return false;
 
-		// Get the corresponding Set of features:
-		Set<LanguageFeature> features = supportedFeatures.get(feature.type);
+		// CASE: ANY UDF
+		if (anyUdfAllowed && LanguageFeature.TYPE_UDF == feature.type)
+			return true;
 
-		return (features != null && features.contains(feature));
+		// OTHERWISE
+		else {
+			// Get the corresponding Set of features:
+			Set<LanguageFeature> features = supportedFeatures.get(feature.type);
+
+			return (features != null && features.contains(feature));
+		}
 	}
 
 	/**

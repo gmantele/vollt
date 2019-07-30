@@ -130,7 +130,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	* <p><i><b>Note:</b>
 	* 	By default, all optional features are supported.
 	* </i></p> */
-	private FeatureSet supportedFeatures = new FeatureSet(true);
+	private FeatureSet supportedFeatures = new FeatureSet(true, true);
 
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
@@ -199,7 +199,6 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	*/
 	public ADQLParser201(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
-		setDebug(false);
 
 		setDebug(false);
 
@@ -241,6 +240,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	*/
 	public ADQLParser201(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream, encoding);
+
 		setDebug(false);
 
 		queryChecker = checker;
@@ -282,7 +282,6 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	*/
 	public ADQLParser201(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
-		setDebug(false);
 
 		setDebug(false);
 
@@ -323,7 +322,6 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	*/
 	public ADQLParser201(ADQLParser201TokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
-		setDebug(false);
 
 		setDebug(false);
 
@@ -4478,6 +4476,17 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 		}
 	}
 
+	private boolean jj_3R_17() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_34()) {
+			jj_scanpos = xsp;
+			if (jj_3R_35())
+				return true;
+		}
+		return false;
+	}
+
 	private boolean jj_3_17() {
 		if (jj_3R_29())
 			return true;
@@ -6200,17 +6209,6 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 	private boolean jj_3_15() {
 		if (jj_3R_28())
 			return true;
-		return false;
-	}
-
-	private boolean jj_3R_17() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_34()) {
-			jj_scanpos = xsp;
-			if (jj_3R_35())
-				return true;
-		}
 		return false;
 	}
 

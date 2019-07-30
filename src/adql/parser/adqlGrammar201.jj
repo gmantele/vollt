@@ -166,7 +166,7 @@ public class ADQLParser201 implements ADQLParser {
 	 * <p><i><b>Note:</b>
 	 * 	By default, all optional features are supported.
 	 * </i></p> */
-	private FeatureSet supportedFeatures = new FeatureSet(true);
+	private FeatureSet supportedFeatures = new FeatureSet(true, true);
 	
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
@@ -235,7 +235,6 @@ public class ADQLParser201 implements ADQLParser {
 	*/
 	public ADQLParser201(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
-		setDebug(false);
 		
 		setDebug(false);
 		
@@ -277,6 +276,7 @@ public class ADQLParser201 implements ADQLParser {
 	*/
 	public ADQLParser201(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream, encoding);
+		
 		setDebug(false);
 		
 		queryChecker = checker;
@@ -318,7 +318,6 @@ public class ADQLParser201 implements ADQLParser {
 	*/
 	public ADQLParser201(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
-		setDebug(false);
 		
 		setDebug(false);
 		
@@ -359,7 +358,6 @@ public class ADQLParser201 implements ADQLParser {
 	*/
 	public ADQLParser201(ADQLParser201TokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
-		setDebug(false);
 		
 		setDebug(false);
 		

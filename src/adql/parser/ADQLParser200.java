@@ -126,7 +126,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	* <p><i><b>Note:</b>
 	* 	By default, all optional features are supported.
 	* </i></p> */
-	private FeatureSet supportedFeatures = new FeatureSet(false);
+	private FeatureSet supportedFeatures = new FeatureSet(false, true);
 
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
