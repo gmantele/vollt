@@ -302,7 +302,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 		if (type != null) {
 
 			// CASE: UDF
-			if (LanguageFeature.TYPE_UDF == type)
+			if (LanguageFeature.TYPE_UDF.equals(type))
 				done = anyUdfAllowed = true;
 
 			// OTHERWISE
@@ -403,7 +403,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 		if (type != null) {
 
 			// CASE: UDF
-			if (LanguageFeature.TYPE_UDF == type)
+			if (LanguageFeature.TYPE_UDF.equals(type))
 				done = !(anyUdfAllowed = false);
 
 			// OTHERWISE
@@ -464,7 +464,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 			return false;
 
 		// CASE: ANY UDF
-		if (anyUdfAllowed && LanguageFeature.TYPE_UDF == feature.type)
+		if (anyUdfAllowed && LanguageFeature.TYPE_UDF.equals(feature.type))
 			return true;
 
 		// OTHERWISE
@@ -557,22 +557,22 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	   ********************************************************************** */
 
 	/*public static final LanguageFeature ILIKE = new LanguageFeature(FeatureType.ADQL_STRING, "ILIKE"); // TODO ILIKE
-
+	
 	public static final LanguageFeature UNION = new LanguageFeature(FeatureType.ADQL_SETS, "UNION"); // TODO UNION
 	public static final LanguageFeature EXCEPT = new LanguageFeature(FeatureType.ADQL_SETS, "EXCEPT"); // TODO EXCEPT
 	public static final LanguageFeature INTERSECT = new LanguageFeature(FeatureType.ADQL_SETS, "INTERSECT");  // TODO INTERSECT
-
+	
 	public static final LanguageFeature WITH = new LanguageFeature(FeatureType.ADQL_COMMON_TABLE, "WITH");  // TODO WITH
-
+	
 	public static final LanguageFeature CAST = new LanguageFeature(FeatureType.ADQL_TYPE, "CAST");  // TODO CAST
-
+	
 	public static final LanguageFeature IN_UNIT = new LanguageFeature(FeatureType.ADQL_UNIT, "IN_UNIT");  // TODO IN_UNIT
-
+	
 	public static final LanguageFeature BIT_AND = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_AND");  // TODO BIT_AND
 	public static final LanguageFeature BIT_OR = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_OR");  // TODO BIT_OR
 	public static final LanguageFeature BIT_XOR = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_XOR");  // TODO BIT_XOR
 	public static final LanguageFeature BIT_NOT = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_NOT");  // TODO BIT_NOT
-
+	
 	public static final LanguageFeature OFFSET = new LanguageFeature(FeatureType.ADQL_OFFSET, "OFFSET");  // TODO OFFSET*/
 
 	/** All standard features available.
