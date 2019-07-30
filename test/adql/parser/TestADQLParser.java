@@ -19,6 +19,7 @@ import adql.query.ADQLQuery;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
 import adql.query.operand.StringConstant;
+import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.string.LowerFunction;
 
 public class TestADQLParser {
@@ -426,6 +427,45 @@ public class TestADQLParser {
 			Exception err = uie.getErrors().next();
 			assertEquals(UnsupportedFeatureException.class, err.getClass());
 			assertEquals("Unsupported ADQL feature: \"LOWER\" (of type '" + LanguageFeature.TYPE_ADQL_STRING + "')!", err.getMessage());
+		}
+
+		/* ***************************************************************** */
+		/* NOTE: Geometrical functions are the only optional features in 2.0 */
+		/* ***************************************************************** */
+
+		parser = parserFactory.createParser(ADQLVersion.V2_0);
+
+		// CASE: By default all geometries are supported so if one is used => OK
+		try {
+			assertNotNull(parser.parseQuery("SELECT POINT('', ra, dec) FROM aTable"));
+		} catch(Throwable t) {
+			t.printStackTrace();
+			fail("Unexpected error! This query should have passed. (see console for more details)");
+		}
+
+		// unsupport all features:
+		parser.getSupportedFeatures().unsupportAll();
+
+		// CASE: No geometry supported so if one is used => ERROR
+		try {
+			parser.parseQuery("SELECT POINT('', ra, dec) FROM aTable");
+			fail("The geometrical function \"POINT\" is not declared. This query should not pass.");
+		} catch(Throwable t) {
+			assertEquals(UnresolvedIdentifiersException.class, t.getClass());
+			UnresolvedIdentifiersException allErrors = (UnresolvedIdentifiersException)t;
+			assertEquals(1, allErrors.getNbErrors());
+			assertEquals("Unsupported ADQL feature: \"POINT\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", allErrors.getErrors().next().getMessage());
+		}
+
+		// now support only POINT:
+		assertTrue(parser.getSupportedFeatures().support(PointFunction.FEATURE));
+
+		// CASE: Just supporting the only used geometry => OK
+		try {
+			assertNotNull(parser.parseQuery("SELECT POINT('', ra, dec) FROM aTable"));
+		} catch(Throwable t) {
+			t.printStackTrace();
+			fail("Unexpected error! This query should have passed. (see console for more details)");
 		}
 	}
 

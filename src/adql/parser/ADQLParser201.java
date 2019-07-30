@@ -542,7 +542,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_1);
 
 			// Parse the string as a SELECT clause:
 			Select();
@@ -564,7 +564,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_1);
 
 			// Parse the string as a FROM clause:
 			From();
@@ -586,7 +586,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_1);
 
 			// Parse the string as a WHERE clause:
 			Where();
@@ -608,7 +608,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_1);
 
 			// Parse the string as a ORDER BY clause:
 			OrderBy();
@@ -630,7 +630,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_1);
 
 			// Parse the string as a GROUP BY clause:
 			GroupBy();
@@ -1016,7 +1016,7 @@ public class ADQLParser201 implements ADQLParser, ADQLParser201Constants {
 			TextPosition endPos = null;
 			try {
 				// create the query:
-				query = queryFactory.createQuery();
+				query = queryFactory.createQuery(ADQLVersion.V2_1);
 				stackQuery.push(query);
 			} catch(Exception ex) {
 				{

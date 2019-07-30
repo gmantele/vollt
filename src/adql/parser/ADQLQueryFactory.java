@@ -23,6 +23,7 @@ package adql.parser;
 import java.util.Collection;
 
 import adql.db.FunctionDef;
+import adql.parser.ADQLParserFactory.ADQLVersion;
 import adql.parser.IdentifierItems.IdentifierItem;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
@@ -88,7 +89,7 @@ import adql.query.operand.function.string.LowerFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2019)
+ * @version 2.0 (07/2019)
  *
  * @see ADQLParser
  */
@@ -111,8 +112,28 @@ public class ADQLQueryFactory {
 		;
 	}
 
-	public ADQLQuery createQuery() throws Exception {
+	/**
+	 * @deprecated Since v2.0, {@link #createQuery(ADQLVersion)} must be
+	 *             used/extended instead. */
+	@Deprecated
+	public final ADQLQuery createQuery() throws Exception {
 		return new ADQLQuery();
+	}
+
+	/**
+	 * Create an instance of {@link ADQLQuery}.
+	 *
+	 * @param version	The version of the ADQL grammar followed by the query to
+	 *               	create.
+	 *
+	 * @return	A new {@link ADQLQuery}.
+	 *
+	 * @throws Exception	If any error occurs while creating a new query.
+	 *
+	 * @since 2.0
+	 */
+	public ADQLQuery createQuery(final ADQLVersion version) throws Exception {
+		return new ADQLQuery(version);
 	}
 
 	public ADQLTable createTable(final IdentifierItems idItems, final IdentifierItem alias) throws Exception {

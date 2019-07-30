@@ -29,6 +29,8 @@ import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.DefaultDBColumn;
 import adql.parser.ADQLParser;
+import adql.parser.ADQLParserFactory;
+import adql.parser.ADQLParserFactory.ADQLVersion;
 import adql.parser.ParseException;
 import adql.parser.feature.LanguageFeature;
 import adql.query.from.FromContent;
@@ -59,6 +61,10 @@ public class ADQLQuery implements ADQLObject {
 	 * @since 2.0 */
 	public static final LanguageFeature FEATURE = new LanguageFeature(null, "QUERY", false, "An entire ADQL (sub-)query.");
 
+	/** Version of the ADQL grammar in which this query is written.
+	 * @since 2.0 */
+	private final ADQLVersion adqlVersion;
+
 	/** The ADQL clause SELECT. */
 	private ClauseSelect select;
 
@@ -86,6 +92,21 @@ public class ADQLQuery implements ADQLObject {
 	 * Builds an empty ADQL query.
 	 */
 	public ADQLQuery() {
+		this(ADQLParserFactory.DEFAULT_VERSION);
+	}
+
+	/**
+	 * Builds an empty ADQL query following the specified ADQL grammar.
+	 *
+	 * @param version	Followed version of the ADQL grammar.
+	 *               	<i>If NULL, the
+	 *               	{@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *               	will be set.</i>
+	 *
+	 * @since 2.0
+	 */
+	public ADQLQuery(final ADQLVersion version) {
+		this.adqlVersion = (version == null ? ADQLParserFactory.DEFAULT_VERSION : version);
 		select = new ClauseSelect();
 		from = null;
 		where = new ClauseConstraints("WHERE");
@@ -103,6 +124,7 @@ public class ADQLQuery implements ADQLObject {
 	 */
 	@SuppressWarnings("unchecked")
 	public ADQLQuery(ADQLQuery toCopy) throws Exception {
+		adqlVersion = toCopy.adqlVersion;
 		select = (ClauseSelect)toCopy.select.getCopy();
 		from = (FromContent)toCopy.from.getCopy();
 		where = (ClauseConstraints)toCopy.where.getCopy();
@@ -115,6 +137,15 @@ public class ADQLQuery implements ADQLObject {
 	@Override
 	public final LanguageFeature getFeatureDescription() {
 		return FEATURE;
+	}
+
+	/**
+	 * Get the followed version of the ADQL grammar.
+	 *
+	 * @return	The followed ADQL grammar version.
+	 */
+	public final ADQLVersion getADQLVersion() {
+		return adqlVersion;
 	}
 
 	/**

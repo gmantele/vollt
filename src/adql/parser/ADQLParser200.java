@@ -26,10 +26,14 @@ import java.util.ArrayList;
 import java.util.Stack;
 import java.util.Vector;
 
+import adql.db.exception.UnresolvedIdentifiersException;
+import adql.db.exception.UnsupportedFeatureException;
 import adql.parser.ADQLParserFactory.ADQLVersion;
 import adql.parser.ADQLQueryFactory.JoinType;
 import adql.parser.IdentifierItems.IdentifierItem;
 import adql.parser.feature.FeatureSet;
+import adql.parser.feature.LanguageFeature;
+import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
@@ -67,6 +71,7 @@ import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.GeometryFunction;
 import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 import adql.query.operand.function.geometry.PointFunction;
+import adql.search.SearchOptionalFeaturesHandler;
 
 /**
 * Parses an ADQL-2.0 query thanks to the {@link ADQLParser200#Query() Query()} function.
@@ -117,6 +122,12 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	/** Tools to build the object representation of the ADQL query. */
 	private ADQLQueryFactory queryFactory = new ADQLQueryFactory();
 
+	/** Default set of supported language features.
+	* <p><i><b>Note:</b>
+	* 	By default, all optional features are supported.
+	* </i></p> */
+	private FeatureSet supportedFeatures = new FeatureSet(false);
+
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
 
@@ -137,6 +148,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	*/
 	public ADQLParser200() {
 		this(new java.io.ByteArrayInputStream("".getBytes()));
+		supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
 		setDebug(false);
 	}
 
@@ -188,7 +200,8 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	*/
 	public ADQLParser200(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
-		setDebug(false);
+
+		supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
 
 		setDebug(false);
 
@@ -230,6 +243,9 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	*/
 	public ADQLParser200(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream, encoding);
+
+		supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
+
 		setDebug(false);
 
 		queryChecker = checker;
@@ -271,7 +287,8 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	*/
 	public ADQLParser200(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
-		setDebug(false);
+
+		supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
 
 		setDebug(false);
 
@@ -312,7 +329,8 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 	*/
 	public ADQLParser200(ADQLParser200TokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
-		setDebug(false);
+
+		supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
 
 		setDebug(false);
 
@@ -380,15 +398,13 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 
 	@Override
 	public final FeatureSet getSupportedFeatures() {
-		FeatureSet languageFeatures = new FeatureSet();
-		languageFeatures.unsupportAll();
-		return languageFeatures;
+		return supportedFeatures;
 	}
 
 	@Override
-	public final void setSupportedFeatures(final FeatureSet languageFeatures) {
-		/* Nothing to do here for ADQL-2.0 because no optional feature can be
-		* supported)! */
+	public void setSupportedFeatures(final FeatureSet features) {
+		if (features != null)
+			supportedFeatures = features;
 	}
 
 	/* EXCEPTION HELPER FUNCTION */
@@ -533,7 +549,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_0);
 
 			// Parse the string as a SELECT clause:
 			Select();
@@ -555,7 +571,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_0);
 
 			// Parse the string as a FROM clause:
 			From();
@@ -577,7 +593,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_0);
 
 			// Parse the string as a WHERE clause:
 			Where();
@@ -599,7 +615,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_0);
 
 			// Parse the string as a ORDER BY clause:
 			OrderBy();
@@ -621,7 +637,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 
 		try {
 			// Create the query:
-			query = queryFactory.createQuery();
+			query = queryFactory.createQuery(ADQLVersion.V2_0);
 
 			// Parse the string as a GROUP BY clause:
 			GroupBy();
@@ -972,6 +988,21 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 					jj_consume_token(-1);
 					throw new ParseException();
 			}
+			/* check the optional features before any other check:
+					 * (note: this check is very close to grammar check...hence its higher
+					 *        priority) */
+			UnresolvedIdentifiersException exUnsupportedFeatures = new UnresolvedIdentifiersException("unsupported expression");
+			SearchOptionalFeaturesHandler sFeaturesHandler = new SearchOptionalFeaturesHandler(true, false);
+			sFeaturesHandler.search(q);
+			for(ADQLObject obj : sFeaturesHandler) {
+				if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
+					exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
+			}
+			if (exUnsupportedFeatures.getNbErrors() > 0) {
+				if (true)
+					throw exUnsupportedFeatures;
+			}
+
 			// check the query:
 			if (queryChecker != null)
 				queryChecker.check(q);
@@ -992,7 +1023,7 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 			TextPosition endPos = null;
 			try {
 				// create the query:
-				query = queryFactory.createQuery();
+				query = queryFactory.createQuery(ADQLVersion.V2_0);
 				stackQuery.push(query);
 			} catch(Exception ex) {
 				{
@@ -4428,65 +4459,6 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 		}
 	}
 
-	private boolean jj_3_18() {
-		if (jj_3R_16())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_55() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_scan_token(25)) {
-			jj_scanpos = xsp;
-			if (jj_3R_74())
-				return true;
-		}
-		return false;
-	}
-
-	private boolean jj_3R_35() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_55())
-			jj_scanpos = xsp;
-		if (jj_scan_token(JOIN))
-			return true;
-		if (jj_3R_56())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_34() {
-		if (jj_scan_token(NATURAL))
-			return true;
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_3R_54())
-			jj_scanpos = xsp;
-		if (jj_scan_token(JOIN))
-			return true;
-		return false;
-	}
-
-	private boolean jj_3R_28() {
-		Token xsp;
-		xsp = jj_scanpos;
-		if (jj_scan_token(36))
-			jj_scanpos = xsp;
-		if (jj_scan_token(BETWEEN))
-			return true;
-		if (jj_3R_51())
-			return true;
-		return false;
-	}
-
-	private boolean jj_3_15() {
-		if (jj_3R_28())
-			return true;
-		return false;
-	}
-
 	private boolean jj_3R_17() {
 		Token xsp;
 		xsp = jj_scanpos;
@@ -6152,6 +6124,65 @@ public class ADQLParser200 implements ADQLParser, ADQLParser200Constants {
 		xsp = jj_scanpos;
 		if (jj_scan_token(26))
 			jj_scanpos = xsp;
+		return false;
+	}
+
+	private boolean jj_3_18() {
+		if (jj_3R_16())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_55() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_scan_token(25)) {
+			jj_scanpos = xsp;
+			if (jj_3R_74())
+				return true;
+		}
+		return false;
+	}
+
+	private boolean jj_3R_35() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_55())
+			jj_scanpos = xsp;
+		if (jj_scan_token(JOIN))
+			return true;
+		if (jj_3R_56())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_34() {
+		if (jj_scan_token(NATURAL))
+			return true;
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_3R_54())
+			jj_scanpos = xsp;
+		if (jj_scan_token(JOIN))
+			return true;
+		return false;
+	}
+
+	private boolean jj_3R_28() {
+		Token xsp;
+		xsp = jj_scanpos;
+		if (jj_scan_token(36))
+			jj_scanpos = xsp;
+		if (jj_scan_token(BETWEEN))
+			return true;
+		if (jj_3R_51())
+			return true;
+		return false;
+	}
+
+	private boolean jj_3_15() {
+		if (jj_3R_28())
+			return true;
 		return false;
 	}
 

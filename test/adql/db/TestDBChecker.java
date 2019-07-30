@@ -32,6 +32,10 @@ import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.UserDefinedFunction;
+import adql.query.operand.function.geometry.CircleFunction;
+import adql.query.operand.function.geometry.ContainsFunction;
+import adql.query.operand.function.geometry.PointFunction;
+import adql.query.operand.function.geometry.RegionFunction;
 import adql.search.SimpleSearchHandler;
 import adql.translator.ADQLTranslator;
 import adql.translator.PostgreSQLTranslator;
@@ -399,7 +403,11 @@ public class TestDBChecker {
 		// Test with several geometries while only the allowed ones:
 		try {
 			parser = parserFactory.createParser();
-			parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0), Arrays.asList(new String[]{ "CONTAINS", "POINT", "CIRCLE" }), null));
+			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+			parser.getSupportedFeatures().support(ContainsFunction.FEATURE);
+			parser.getSupportedFeatures().support(PointFunction.FEATURE);
+			parser.getSupportedFeatures().support(CircleFunction.FEATURE);
+
 			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
@@ -412,18 +420,24 @@ public class TestDBChecker {
 			assertTrue(pe instanceof UnresolvedIdentifiersException);
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 			assertEquals(1, ex.getNbErrors());
-			assertEquals("The geometrical function \"INTERSECTS\" is not available in this implementation!", ex.getErrors().next().getMessage());
+			assertEquals("Unsupported ADQL feature: \"INTERSECTS\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", ex.getErrors().next().getMessage());
 		}
 
 		// Test by adding REGION:
 		try {
 			parser = parserFactory.createParser();
-			parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0), Arrays.asList(new String[]{ "CONTAINS", "POINT", "CIRCLE", "REGION" }), null));
+			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+			parser.getSupportedFeatures().support(ContainsFunction.FEATURE);
+			parser.getSupportedFeatures().support(PointFunction.FEATURE);
+			parser.getSupportedFeatures().support(CircleFunction.FEATURE);
+			parser.getSupportedFeatures().support(RegionFunction.FEATURE);
+
 			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('Position 12.3 45.6'), REGION('circle 1.2 2.3 5')) = 1;"));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
 			fail("This query contains several geometries, and all are theoretically allowed: this test should have succeeded!");
 		}
+		// TODO Deal with un/supported Regions inside STC-S!
 		try {
 			parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('Position 12.3 45.6'), REGION('BOX 1.2 2.3 5 9')) = 1;");
 			fail("This query contains a not-allowed geometry function (BOX): this test should have failed!");
@@ -437,7 +451,8 @@ public class TestDBChecker {
 		// Test with several geometries while none geometry is allowed:
 		try {
 			parser = parserFactory.createParser();
-			parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0), new ArrayList<String>(0), null));
+			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+
 			parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;");
 			fail("This query contains geometries while they are all forbidden: this test should have failed!");
 		} catch(ParseException pe) {
@@ -445,9 +460,9 @@ public class TestDBChecker {
 			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 			assertEquals(3, ex.getNbErrors());
 			Iterator<ParseException> itErrors = ex.getErrors();
-			assertEquals("The geometrical function \"CONTAINS\" is not available in this implementation!", itErrors.next().getMessage());
-			assertEquals("The geometrical function \"POINT\" is not available in this implementation!", itErrors.next().getMessage());
-			assertEquals("The geometrical function \"CIRCLE\" is not available in this implementation!", itErrors.next().getMessage());
+			assertEquals("Unsupported ADQL feature: \"CONTAINS\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
+			assertEquals("Unsupported ADQL feature: \"POINT\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
+			assertEquals("Unsupported ADQL feature: \"CIRCLE\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
 		}
 	}
 
