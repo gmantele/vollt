@@ -19,6 +19,7 @@ package adql.parser.feature;
  * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import adql.db.FunctionDef;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -550,6 +552,22 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 		return getSupportedFeatures();
 	}
 
+	/**
+	 * Get the list of the definition of all declared UDFs.
+	 *
+	 * @return	List of all supported UDFs.
+	 */
+	public final Collection<FunctionDef> getSupportedUDFList() {
+		Set<LanguageFeature> supportedUDFs = supportedFeatures.get(LanguageFeature.TYPE_UDF);
+		if (supportedUDFs != null) {
+			Set<FunctionDef> definitions = new HashSet<FunctionDef>(supportedUDFs.size());
+			for(LanguageFeature feature : supportedUDFs)
+				definitions.add(feature.udfDefinition);
+			return definitions;
+		} else
+			return new HashSet<FunctionDef>(0);
+	}
+
 	/* **********************************************************************
 	   *                                                                    *
 	   *    ALL AVAILABLE FEATURES (according to the ADQL Language)         *
@@ -557,22 +575,22 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	   ********************************************************************** */
 
 	/*public static final LanguageFeature ILIKE = new LanguageFeature(FeatureType.ADQL_STRING, "ILIKE"); // TODO ILIKE
-	
+
 	public static final LanguageFeature UNION = new LanguageFeature(FeatureType.ADQL_SETS, "UNION"); // TODO UNION
 	public static final LanguageFeature EXCEPT = new LanguageFeature(FeatureType.ADQL_SETS, "EXCEPT"); // TODO EXCEPT
 	public static final LanguageFeature INTERSECT = new LanguageFeature(FeatureType.ADQL_SETS, "INTERSECT");  // TODO INTERSECT
-	
+
 	public static final LanguageFeature WITH = new LanguageFeature(FeatureType.ADQL_COMMON_TABLE, "WITH");  // TODO WITH
-	
+
 	public static final LanguageFeature CAST = new LanguageFeature(FeatureType.ADQL_TYPE, "CAST");  // TODO CAST
-	
+
 	public static final LanguageFeature IN_UNIT = new LanguageFeature(FeatureType.ADQL_UNIT, "IN_UNIT");  // TODO IN_UNIT
-	
+
 	public static final LanguageFeature BIT_AND = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_AND");  // TODO BIT_AND
 	public static final LanguageFeature BIT_OR = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_OR");  // TODO BIT_OR
 	public static final LanguageFeature BIT_XOR = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_XOR");  // TODO BIT_XOR
 	public static final LanguageFeature BIT_NOT = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_NOT");  // TODO BIT_NOT
-	
+
 	public static final LanguageFeature OFFSET = new LanguageFeature(FeatureType.ADQL_OFFSET, "OFFSET");  // TODO OFFSET*/
 
 	/** All standard features available.

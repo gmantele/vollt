@@ -21,6 +21,8 @@ package adql.parser.feature;
 
 import java.util.Objects;
 
+import adql.db.FunctionDef;
+
 /**
  * Description of an ADQL's language feature.
  *
@@ -42,13 +44,20 @@ import java.util.Objects;
  * 	set to NULL.
  * </i></p>
  *
+ * <p><i><b>IMPORTANT note about UDF:</b>
+ * 	To create a UDF feature (i.e. a {@link LanguageFeature} with the type
+ * 	{@link #TYPE_UDF}), ONLY ONE constructor can be used:
+ * 	{@link #LanguageFeature(FunctionDef, String)}. Any attempt with another
+ * 	public constructor will fail.
+ * </i></p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 2.0 (07/2019)
  * @since 2.0
  *
  * @see FeatureSet
  */
-public class LanguageFeature {
+public final class LanguageFeature {
 
 	/** Unique identifier of this language feature.
 	 * <p><i><b>MANDATORY</b></i></p>
@@ -96,6 +105,10 @@ public class LanguageFeature {
 	 * </ul> */
 	public final String form;
 
+	/** Definition of the UDF represented by this {@link LanguageFeature}.
+	 * <p><i><b>OPTIONAL</b></i></p> */
+	public final FunctionDef udfDefinition;
+
 	/** Is this feature optional in the ADQL grammar?
 	 * <p><i><b>MANDATORY</b></i></p>
 	 * <p>
@@ -113,16 +126,17 @@ public class LanguageFeature {
 	public final boolean optional;
 
 	/** Description of this feature.
-	 * <p><i><b>OPTIONAL</b></i></p>
-	 * <p><i><b>Note:</b>
-	 * 	This field is generally set when declaring a User Defined Function
-	 * 	(UDF).
-	 * </i></p> */
-	public final String description;
+	 * <p><i><b>OPTIONAL</b></i></p> */
+	public String description;
 
 	/**
 	 * Create a <em>de-facto supported</em> (i.e. non-optional) language
 	 * feature.
+	 *
+	 * <p><i><b>IMPORTANT note:</b>
+	 * 	To create a UDF feature, DO NOT use this constructor.
+	 * 	You MUST use instead {@link #LanguageFeature(FunctionDef, String)}.
+	 * </i></p>
 	 *
 	 * @param type			[OPTIONAL] Category of the language feature.
 	 *            			<em>(see all static attributes starting with
@@ -138,6 +152,11 @@ public class LanguageFeature {
 
 	/**
 	 * Create a language feature.
+	 *
+	 * <p><i><b>IMPORTANT note:</b>
+	 * 	To create a UDF feature, DO NOT use this constructor.
+	 * 	You MUST use instead {@link #LanguageFeature(FunctionDef, String)}.
+	 * </i></p>
 	 *
 	 * @param type			[OPTIONAL] Category of the language feature.
 	 *            			<em>(see all static attributes starting with
@@ -158,6 +177,11 @@ public class LanguageFeature {
 	/**
 	 * Create a language feature.
 	 *
+	 * <p><i><b>IMPORTANT note:</b>
+	 * 	To create a UDF feature, DO NOT use this constructor.
+	 * 	You MUST use instead {@link #LanguageFeature(FunctionDef, String)}.
+	 * </i></p>
+	 *
 	 * @param type			[OPTIONAL] Category of the language feature.
 	 *            			<em>(see all static attributes starting with
 	 *            			<code>TYPE_</code>)</em>
@@ -172,11 +196,68 @@ public class LanguageFeature {
 	 * @throws NullPointerException	If given form is missing.
 	 */
 	public LanguageFeature(final String type, final String form, final boolean optional, final String description) throws NullPointerException {
+		this(type, form, null, optional, description);
+	}
+
+	/**
+	 * Create a UDF feature.
+	 *
+	 * @param udfDef		[REQUIRED] Detailed definition of the UDF feature.
+	 *
+	 * @throws NullPointerException	If given {@link FunctionDef} is missing.
+	 */
+	public LanguageFeature(final FunctionDef udfDef) throws NullPointerException {
+		this(udfDef, null);
+	}
+
+	/**
+	 * Create a UDF feature.
+	 *
+	 * @param udfDef		[REQUIRED] Detailed definition of the UDF feature.
+	 * @param description	[OPTIONAL] Description overwriting the description
+	 *                   	provided in the given {@link FunctionDef}.
+	 *                   	<em>If NULL, the description of the
+	 *                   	{@link FunctionDef} will be used. If empty string,
+	 *                   	no description will be set.</em>
+	 *
+	 * @throws NullPointerException	If given {@link FunctionDef} is missing.
+	 */
+	public LanguageFeature(final FunctionDef udfDef, final String description) throws NullPointerException {
+		this(LanguageFeature.TYPE_UDF, udfDef.toString(), udfDef, true, (description == null ? udfDef.description : (description.trim().isEmpty() ? null : description)));
+	}
+
+	/**
+	 * Create a language feature.
+	 *
+	 * <p><i><b>IMPORTANT note:</b>
+	 * 	To create a UDF feature, the parameter udfDef MUST be NON-NULL.
+	 * </i></p>
+	 *
+	 * @param type			[OPTIONAL] Category of the language feature.
+	 *            			<em>(see all static attributes starting with
+	 *            			<code>TYPE_</code>)</em>
+	 * @param form			[REQUIRED] Name (or function signature) of the
+	 *            			language feature.
+	 * @param udfDef		[REQUIRED if type=UDF] Detailed definition of the
+	 *              		UDF feature.
+	 * @param optional		[REQUIRED] <code>true</code> if the feature is by
+	 *                		default supported in the ADQL standard,
+	 *                		<code>false</code> if the ADQL client must declare
+	 *                		it as supported in order to use it.
+	 * @param description	[OPTIONAL] Description of this feature.
+	 *
+	 * @throws NullPointerException	If given form or udfDef is missing.
+	 */
+	private LanguageFeature(final String type, final String form, final FunctionDef udfDef, final boolean optional, final String description) throws NullPointerException {
 		this.type = (type == null || type.trim().isEmpty()) ? null : type.trim();
 
 		if (form == null || form.trim().isEmpty())
 			throw new NullPointerException("Missing form/name of the language feature to create!");
 		this.form = form.trim();
+
+		if (TYPE_UDF.equals(this.type) && udfDef == null)
+			throw new NullPointerException("Missing UDF definition! To declare a UDF feature, you MUST use the constructor LanguageFeature(FunctionDef, ...) with a non-NULL FunctionDef instance.");
+		this.udfDefinition = udfDef;
 
 		this.id = (this.type == null ? "" : this.type) + "!" + this.form;
 
@@ -187,15 +268,25 @@ public class LanguageFeature {
 
 	@Override
 	public boolean equals(final Object obj) {
-		if ((obj != null) && (obj instanceof LanguageFeature))
-			return id.equals(((LanguageFeature)obj).id);
-		else
-			return false;
+		if ((obj != null) && (obj instanceof LanguageFeature)) {
+			// Equals IF SAME ID:
+			if (id.equals(((LanguageFeature)obj).id))
+				return true;
+			// If UDF, equals IF SAME NAME and SAME NB PARAMETERS:
+			else if (TYPE_UDF.equals(type) && type.equals(((LanguageFeature)obj).type)) {
+				FunctionDef udfDefinition2 = ((LanguageFeature)obj).udfDefinition;
+				return udfDefinition.name.equalsIgnoreCase(udfDefinition2.name) && (udfDefinition.nbParams == udfDefinition2.nbParams);
+			}
+		}
+		return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, form);
+		if (udfDefinition != null)
+			return Objects.hash(type, udfDefinition.name.toLowerCase(), udfDefinition.nbParams);
+		else
+			return Objects.hash(type, form, -1);
 	}
 
 	@Override

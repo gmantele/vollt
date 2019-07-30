@@ -22,7 +22,10 @@ import java.util.regex.Matcher;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
+import adql.db.FunctionDef.FunctionParam;
 import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
@@ -67,7 +70,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 			for(ADQLOperand p : params)
 				parameters.add(p);
 		}
-		languageFeature = new LanguageFeature(LanguageFeature.TYPE_UDF, functionName + "(...)", true, null);
+		generateLanguageFeature();
 	}
 
 	/**
@@ -122,11 +125,49 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * @since 1.3
 	 */
 	public final void setDefinition(final FunctionDef def) throws IllegalArgumentException {
+		// Ensure the definition is compatible with this ADQL function:
 		if (def != null && (def.name == null || !functionName.equalsIgnoreCase(def.name)))
 			throw new IllegalArgumentException("The parsed function name (" + functionName + ") does not match to the name of the given UDF definition (" + def.name + ").");
 
+		// Set the new definition (may be NULL):
 		this.definition = def;
-		languageFeature = new LanguageFeature(LanguageFeature.TYPE_UDF, this.definition.toString(), true, this.definition.description);
+
+		// Update the Language Feature of this ADQL function:
+		// ...if no definition, generate a default LanguageFeature:
+		if (this.definition == null)
+			generateLanguageFeature();
+		// ...otherwise, use the definition to set the LanguageFeature:
+		else
+			languageFeature = new LanguageFeature(this.definition);
+	}
+
+	/**
+	 * Generate and set a default {@link LanguageFeature} for this ADQL
+	 * function.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	Knowing neither the parameters name nor their type, the generated
+	 * 	LanguageFeature will just set an unknown type and set a default
+	 * 	parameter name (index prefixed with `$`).
+	 * </i></p>
+	 *
+	 * @since 2.0
+	 */
+	private void generateLanguageFeature() {
+		// Create an unknown DBType:
+		DBType unknownType = new DBType(DBDatatype.UNKNOWN);
+		unknownType.type.setCustomType("type");
+
+		// Create the list of input parameters:
+		FunctionParam[] inputParams = new FunctionParam[parameters.size()];
+		for(int i = 1; i <= parameters.size(); i++)
+			inputParams[i - 1] = new FunctionParam("param" + i, unknownType);
+
+		// Create the Function Definition:
+		FunctionDef fctDef = new FunctionDef(functionName, unknownType, inputParams);
+
+		// Finally create the LanguageFeature:
+		languageFeature = new LanguageFeature(fctDef);
 	}
 
 	@Override

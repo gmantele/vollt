@@ -267,6 +267,7 @@ public class TestDBChecker {
 	public void testUDFManagement() {
 		// UNKNOWN FUNCTIONS ARE NOT ALLOWED:
 		ADQLParser parser = parserFactory.createParser();
+		parser.getSupportedFeatures().allowAnyUdf(true);
 		parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 
 		// Test with a simple ADQL query without unknown or user defined function:
@@ -291,6 +292,7 @@ public class TestDBChecker {
 		// DECLARE THE UDFs:
 		FunctionDef[] udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR)), new FunctionDef("tata", new DBType(DBDatatype.INTEGER)) };
 		parser = parserFactory.createParser();
+		parser.getSupportedFeatures().allowAnyUdf(true);
 		parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 
 		// Test again:
@@ -341,6 +343,7 @@ public class TestDBChecker {
 		udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) }) };
 		udfs[0].setUDFClass(UDFToto.class);
 		parser = parserFactory.createParser();
+		parser.getSupportedFeatures().allowAnyUdf(true);
 		parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 		try {
 			ADQLQuery query = parser.parseQuery("SELECT toto('blabla') FROM foo;");
@@ -374,6 +377,7 @@ public class TestDBChecker {
 		udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) }) };
 		udfs[0].setUDFClass(WrongUDFToto.class);
 		parser = parserFactory.createParser();
+		parser.getSupportedFeatures().allowAnyUdf(true);
 		parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 		try {
 			parser.parseQuery("SELECT toto('blabla') FROM foo;");
@@ -893,7 +897,7 @@ public class TestDBChecker {
 	}
 
 	public static class UDFToto extends UserDefinedFunction {
-		private LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_UDF, getName() + "(VARCHAR) -> VARCHAR");
+		private LanguageFeature FEATURE = (new FunctionDef(getName(), new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) })).toLanguageFeature();
 
 		protected StringConstant fakeParam;
 

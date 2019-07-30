@@ -11,6 +11,9 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
+import adql.db.FunctionDef;
 import adql.query.ColumnReference;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
@@ -217,7 +220,7 @@ public class TestFeatureSet {
 
 		/* here is a custom Language Feature (i.e. not part of the
 		 * availableFeatures list): */
-		set.support(new LanguageFeature(LanguageFeature.TYPE_UDF, "foo(VARCHAR) -> BOOLEAN", true));
+		set.support(new LanguageFeature(new FunctionDef("foo", new DBType(DBDatatype.SMALLINT), new FunctionDef.FunctionParam[]{ new FunctionDef.FunctionParam("", new DBType(DBDatatype.VARCHAR)) })));
 
 		// unsupport all currently supported features:
 		set.unsupportAll();

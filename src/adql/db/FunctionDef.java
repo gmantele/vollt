@@ -15,7 +15,7 @@ package adql.db;
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  * Copyright 2015-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import adql.db.DBType.DBDatatype;
 import adql.parser.ParseException;
+import adql.parser.feature.LanguageFeature;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.DefaultUDF;
@@ -51,10 +52,10 @@ import adql.query.operand.function.UserDefinedFunction;
  * 	A description of this function may be set thanks to the public class
  * 	attribute {@link #description}.
  * </p>
- *
+ * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.0 (08/2020)
- *
+ * 
  * @since 1.3
  */
 public class FunctionDef implements Comparable<FunctionDef> {
@@ -194,12 +195,12 @@ public class FunctionDef implements Comparable<FunctionDef> {
 
 	/**
 	 * Translation to apply for this User Defined Function.
-	 *
+	 * 
 	 * <p>
 	 * 	It can be any string. Any <code>$i</code> substring (i being an integer
 	 * 	&gt;0) will be replaced by the corresponding function argument.
 	 * </p>
-	 *
+	 * 
 	 * <p>For instance, for the UDF signature</p>
 	 * <pre>foo(p1 VARCHAR, p2 DOUBLE)</pre>
 	 * <p>, the translation pattern</p>
@@ -287,13 +288,13 @@ public class FunctionDef implements Comparable<FunctionDef> {
 
 	/**
 	 * Create a function definition.
-	 *
+	 * 
 	 * <p>
 	 * 	The created function will have <b>no return type</b> and some parameters
 	 * 	(except if the given array is NULL or empty).
 	 * </p>
-	 *
-	 * @param fctName	Name of the function.
+	 * 
+	 * @param fctName		Name of the function.
 	 * @param params	Parameters of this function.
 	 *              	<i>If NULL or empty, this function will have no
 	 *              	parameter.</i>
@@ -367,14 +368,14 @@ public class FunctionDef implements Comparable<FunctionDef> {
 
 	/**
 	 * Tell whether this function returns an unknown type.
-	 *
+	 * 
 	 * <p>
 	 * 	If this function returns <code>true</code>, {@link #isNumeric()},
 	 * 	{@link #isString()} and {@link #isGeometry()} <b>MUST ALL</b> return
 	 * 	<code>false</code>. Otherwise, one of these 3 last functions MUST
 	 * 	return <code>true</code>.
-	 * </p>
-	 *
+	 * </p> 
+	 * 
 	 * @return	<code>true</code> if this function returns an unknown/unresolved
 	 *        	/unsupported type,
 	 *        	<code>false</code> otherwise.
@@ -414,7 +415,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	/**
 	 * Get the class of the {@link UserDefinedFunction} able to represent the
 	 * function defined here in an ADQL tree.
-	 *
+	 * 
 	 * <p><i><b>Note:</b>
 	 * 	This getter should return always NULL if the function defined here is
 	 * 	not a user defined function.
@@ -426,7 +427,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 	instance) of the defined function has a different signature (e.g. a
 	 * 	different name) in the target language (e.g. SQL).
 	 * </i></p>
-	 *
+	 * 
 	 * @return	The corresponding {@link UserDefinedFunction}.
 	 *        	<i>MAY BE NULL</i>
 	 */
@@ -437,7 +438,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	/**
 	 * Set the class of the {@link UserDefinedFunction} able to represent the
 	 * function defined here in an ADQL tree.
-	 *
+	 * 
 	 * <p><i><b>Note:</b>
 	 * 	If this {@link FunctionDef} defines an ordinary ADQL function - and not
 	 * 	a user defined function - no class should be set here.
@@ -450,12 +451,12 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 	will be created on the fly by the library when needed if it turns out
 	 * 	that no UDF class is set.
 	 * </i></p>
-	 *
+	 * 
 	 * <p><i><b>WARNING:</b>
 	 * 	If successful, this operation will reset to NULL any translation pattern
 	 * 	already set with {@link #setTranslationPattern(String)}.
 	 * </i></p>
-	 *
+	 * 
 	 * @param udfClass	Class to use to represent in an ADQL tree the User
 	 *                	Defined Function defined in this {@link FunctionDef}.
 	 *
@@ -479,7 +480,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 			// Set to NULL the translation pattern (if any):
 			this.translationPattern = null;
 
-		} catch(SecurityException e) {
+		}catch(SecurityException e){
 			throw new IllegalArgumentException("A security problem occurred while trying to get constructor from the class " + udfClass.getName() + ": " + e.getMessage());
 		} catch(NoSuchMethodException e) {
 			throw new IllegalArgumentException("The given class (" + udfClass.getName() + ") does not provide any constructor with a single parameter of type ADQLOperand[]!");
@@ -489,7 +490,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	/**
 	 * Get the translation pattern to apply on any ADQL function implementing
 	 * this UDF definition.
-	 *
+	 * 
 	 * @return	The corresponding {@link UserDefinedFunction}.
 	 *        	<i>NULL if no translation pattern is defined.</i>
 	 *
@@ -722,6 +723,18 @@ public class FunctionDef implements Comparable<FunctionDef> {
 			else
 				return null;
 		}
+	}
+
+	/**
+	 * Create a {@link LanguageFeature} corresponding and linked to this
+	 * {@link FunctionDef}.
+	 *
+	 * @return	The corresponding LanguageFeature.
+	 *
+	 * @since 2.0
+	 */
+	public final LanguageFeature toLanguageFeature() {
+		return new LanguageFeature(this);
 	}
 
 	@Override
