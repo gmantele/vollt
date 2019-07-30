@@ -102,7 +102,7 @@ public class IntersectsFunction extends GeometryFunction {
 
 	/** Description of this ADQL Feature.
 	 * @since 2.0 */
-	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "CONTAINS", true, "Determines if two geometry values overlap.");
+	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "INTERSECTS", true, "Determines if two geometry values overlap.");
 
 	/** The first geometry. */
 	private GeometryValue<GeometryFunction> leftParam;
