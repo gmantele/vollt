@@ -215,11 +215,17 @@ public class TestFeatureSet {
 	public void testUnsupportAll() {
 		FeatureSet set = new FeatureSet(true);
 
+		/* here is a custom Language Feature (i.e. not part of the
+		 * availableFeatures list): */
+		set.support(new LanguageFeature(LanguageFeature.TYPE_UDF, "foo(VARCHAR) -> BOOLEAN", true));
+
+		// unsupport all currently supported features:
 		set.unsupportAll();
-		for(LanguageFeature feat : FeatureSet.availableFeatures) {
-			assertNotNull(feat);
-			assertFalse(set.supportedFeatures.containsKey(feat.type));
-		}
+
+		// ensure the list of supported features is really empty:
+		assertEquals(0, set.supportedFeatures.size());
+
+		// ...and that no non-declared UDF is allowed:
 		assertFalse(set.isAnyUdfAllowed());
 	}
 
