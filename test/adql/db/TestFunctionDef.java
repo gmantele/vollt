@@ -10,6 +10,8 @@ import org.junit.Test;
 
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef.FunctionParam;
+import adql.parser.ADQLParserFactory;
+import adql.parser.ADQLParserFactory.ADQLVersion;
 import adql.parser.ParseException;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
@@ -27,63 +29,83 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testIsString() {
-		for(DBDatatype type : DBDatatype.values()) {
-			switch(type) {
-				case CHAR:
-				case VARCHAR:
-				case TIMESTAMP:
-				case CLOB:
-					assertTrue(new FunctionDef("foo", new DBType(type)).isString);
-					break;
-				default:
-					assertFalse(new FunctionDef("foo", new DBType(type)).isString);
+	public void testIsString(){
+		try {
+			for(DBDatatype type : DBDatatype.values()){
+				switch(type){
+					case CHAR:
+					case VARCHAR:
+					case TIMESTAMP:
+					case CLOB:
+						assertTrue(new FunctionDef("foo", new DBType(type)).isString);
+						break;
+					default:
+						assertFalse(new FunctionDef("foo", new DBType(type)).isString);
+				}
 			}
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
 		}
 	}
 
 	@Test
-	public void testIsGeometry() {
-		for(DBDatatype type : DBDatatype.values()) {
-			switch(type) {
-				case POINT:
-				case REGION:
-					assertTrue(new FunctionDef("foo", new DBType(type)).isGeometry);
-					break;
-				default:
-					assertFalse(new FunctionDef("foo", new DBType(type)).isGeometry);
+	public void testIsGeometry(){
+		try {
+			for(DBDatatype type : DBDatatype.values()){
+				switch(type){
+					case POINT:
+					case REGION:
+						assertTrue(new FunctionDef("foo", new DBType(type)).isGeometry);
+						break;
+					default:
+						assertFalse(new FunctionDef("foo", new DBType(type)).isGeometry);
+				}
 			}
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
 		}
 	}
 
 	@Test
-	public void testIsNumeric() {
-		for(DBDatatype type : DBDatatype.values()) {
-			switch(type) {
-				case CHAR:
-				case VARCHAR:
-				case TIMESTAMP:
-				case POINT:
-				case REGION:
-				case CLOB:
-				case UNKNOWN:
-					assertFalse(new FunctionDef("foo", new DBType(type)).isNumeric);
-					break;
-				case UNKNOWN_NUMERIC:
-				default:
-					assertTrue(new FunctionDef("foo", new DBType(type)).isNumeric);
+	public void testIsNumeric(){
+		try {
+			for(DBDatatype type : DBDatatype.values()){
+				switch(type){
+					case CHAR:
+					case VARCHAR:
+					case TIMESTAMP:
+					case POINT:
+					case REGION:
+					case CLOB:
+					case UNKNOWN:
+						assertFalse(new FunctionDef("foo", new DBType(type)).isNumeric);
+						break;
+					case UNKNOWN_NUMERIC:
+					default:
+						assertTrue(new FunctionDef("foo", new DBType(type)).isNumeric);
+				}
 			}
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
 		}
 	}
 
 	@Test
-	public void testToString() {
-		assertEquals("fct1()", new FunctionDef("fct1").toString());
-		assertEquals("fct1() -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR)).toString());
-		assertEquals("fct1(foo DOUBLE) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)) }).toString());
-		assertEquals("fct1(foo DOUBLE)", new FunctionDef("fct1", new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)) }).toString());
-		assertEquals("fct1(foo DOUBLE, pt POINT) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)), new FunctionParam("pt", new DBType(DBDatatype.POINT)) }).toString());
-		assertEquals("fct1(foo DOUBLE, pt POINT)", new FunctionDef("fct1", null, new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)), new FunctionParam("pt", new DBType(DBDatatype.POINT)) }).toString());
+	public void testToString(){
+		try {
+			assertEquals("fct1()", new FunctionDef("fct1").toString());
+			assertEquals("fct1() -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR)).toString());
+			assertEquals("fct1(foo DOUBLE) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE))}).toString());
+			assertEquals("fct1(foo DOUBLE)", new FunctionDef("fct1", new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE))}).toString());
+			assertEquals("fct1(foo DOUBLE, pt POINT) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)),new FunctionParam("pt", new DBType(DBDatatype.POINT))}).toString());
+			assertEquals("fct1(foo DOUBLE, pt POINT)", new FunctionDef("fct1", null, new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)),new FunctionParam("pt", new DBType(DBDatatype.POINT))}).toString());
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
+		}
 	}
 
 	@Test
@@ -269,66 +291,72 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testCompareToFunctionDef() {
-		// DEFINITION 1 :: fct1() -> VARCHAR
-		FunctionDef def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
+	public void testCompareToFunctionDef(){
+		try {
+			// DEFINITION 1 :: fct1() -> VARCHAR
+			FunctionDef def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
 
-		// TEST :: Identity test (def1 with def1): [EQUAL]
-		assertEquals(0, def1.compareTo(def1));
+			// TEST :: Identity test (def1 with def1): [EQUAL]
+			assertEquals(0, def1.compareTo(def1));
 
-		// TEST :: With a function having a different name and also no parameter: [GREATER]
-		assertEquals(1, def1.compareTo(new FunctionDef("fct0", new DBType(DBDatatype.VARCHAR))));
+			// TEST :: With a function having a different name and also no parameter: [GREATER]
+			assertEquals(1, def1.compareTo(new FunctionDef("fct0", new DBType(DBDatatype.VARCHAR))));
 
-		// TEST :: With a function having the same name, but a different return type: [EQUAL}
-		assertEquals(0, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER))));
+			// TEST :: With a function having the same name, but a different return type: [EQUAL}
+			assertEquals(0, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER))));
 
-		// TEST :: With a function having the same name, but 2 parameters: [LESS (6 characters: ø against 100100)]
-		assertEquals(-6, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.INTEGER)), new FunctionParam("foo", new DBType(DBDatatype.INTEGER)) })));
+			// TEST :: With a function having the same name, but 2 parameters: [LESS (6 characters: ø against 100100)]
+			assertEquals(-6, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.INTEGER)),new FunctionParam("foo", new DBType(DBDatatype.INTEGER))})));
 
-		// DEFINITION 1 :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-		def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
+			// DEFINITION 1 :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
+			def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
 
-		// TEST :: Identity test (def1 with def1): [EQUAL]
-		assertEquals(0, def1.compareTo(def1));
+			// TEST :: Identity test (def1 with def1): [EQUAL]
+			assertEquals(0, def1.compareTo(def1));
 
-		// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 VARCHAR) -> VARCHAR
-		FunctionDef def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.VARCHAR)) });
+			// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 VARCHAR) -> VARCHAR
+			FunctionDef def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.VARCHAR))});
 
-		// TEST :: Identity test (def2 with def2): [EQUAL]
-		assertEquals(0, def2.compareTo(def2));
+			// TEST :: Identity test (def2 with def2): [EQUAL]
+			assertEquals(0, def2.compareTo(def2));
 
-		// TEST :: Same name, but different type for the last parameter only: [GREATER (because Numeric = 10 > String = 01)]
-		assertEquals(1, def1.compareTo(def2));
+			// TEST :: Same name, but different type for the last parameter only: [GREATER (because Numeric = 10 > String = 01)]
+			assertEquals(1, def1.compareTo(def2));
 
-		// DEFINITION 2 :: fct2(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-		def2 = new FunctionDef("fct2", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
+			// DEFINITION 2 :: fct2(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
+			def2 = new FunctionDef("fct2", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
 
-		// TEST :: Identity test (def2 with def2): [EQUAL]
-		assertEquals(0, def2.compareTo(def2));
+			// TEST :: Identity test (def2 with def2): [EQUAL]
+			assertEquals(0, def2.compareTo(def2));
 
-		// TEST :: Different name but same parameters: [LESS]
-		assertEquals(-1, def1.compareTo(def2));
+			// TEST :: Different name but same parameters: [LESS]
+			assertEquals(-1, def1.compareTo(def2));
 
-		// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 POINT) -> VARCHAR
-		def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.POINT)) });
+			// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 POINT) -> VARCHAR
+			def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.POINT))});
 
-		// TEST :: Identity test (def2 with def2): [EQUAL]
-		assertEquals(0, def2.compareTo(def2));
+			// TEST :: Identity test (def2 with def2): [EQUAL]
+			assertEquals(0, def2.compareTo(def2));
 
-		// TEST :: Same name, but different type for the last parameter only: [GREATER]
-		assertEquals(1, def1.compareTo(def2));
+			// TEST :: Same name, but different type for the last parameter only: [GREATER]
+			assertEquals(1, def1.compareTo(def2));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
+		}
 	}
 
 	@Test
-	public void testCompareToADQLFunction() {
+	public void testCompareToADQLFunction(){
+		try {
 		// DEFINITION :: fct1() -> VARCHAR
 		FunctionDef def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
 
 		// TEST :: NULL:
-		try {
+		try{
 			def.compareTo((ADQLFunction)null);
 			fail("Missing ADQL function for comparison with FunctionDef!");
-		} catch(Exception e) {
+		}catch(Exception e){
 			assertTrue(e instanceof NullPointerException);
 			assertEquals("Missing ADQL function with which comparing this function definition!", e.getMessage());
 		}
@@ -340,33 +368,149 @@ public class TestFunctionDef {
 		assertEquals(1, def.compareTo(new DefaultUDF("fct0", null)));
 
 		// TEST :: "fct1(12.3, 3.14)": [LESS (of 2 params)]
-		assertEquals(-2, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new NumericConstant(12.3), new NumericConstant(3.14) })));
+		assertEquals(-2, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new NumericConstant(12.3),new NumericConstant(3.14)})));
 
 		// DEFINITION :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-		def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
+		def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
 
 		// TEST :: "fct1('blabla', 'blabla2')": [GREATER (because the second param is numeric and Numeric = 10 > String = 01)]
-		assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new StringConstant("blabla2") })));
+		assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new StringConstant("blabla"),new StringConstant("blabla2")})));
 
 		// TEST :: "fct1('blabla', POINT('COORDSYS', 1.2, 3.4))": [GREATER (same reason ; POINT is considered as a String)]
-		try {
-			assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4)) })));
-		} catch(Exception e) {
+		try{
+			assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new StringConstant("blabla"),new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4))})));
+		}catch(Exception e){
 			e.printStackTrace();
 			fail();
 		}
 
 		// Test with an UNKNOWN numeric type:
 		// TEST :: "fct0(foo)", where foo is a simple UNKNOWN [EQUAL]
-		FunctionDef def0 = new FunctionDef("fct0", null, new FunctionParam[]{ new FunctionParam("whatever", new DBType(DBDatatype.VARCHAR)) });
+		FunctionDef def0 = new FunctionDef("fct0", null, new FunctionParam[]{new FunctionParam("whatever", new DBType(DBDatatype.VARCHAR))});
 		DefaultDBColumn dbcol = new DefaultDBColumn("foo", new DefaultDBTable("toto"));
 		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN));
 		ADQLColumn col = new ADQLColumn("foo");
 		col.setDBLink(dbcol);
-		assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
+		assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
 		// TEST :: "fct0(foo)", where foo is an UNKNOWN NUMERIC [LESS]
 		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN_NUMERIC));
-		assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
+		assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
+		}
+	}
+
+	@Test
+	public void testCheckUDFName() {
+
+		// TEST: no function name
+		String[] missingNames = new String[]{ null, "", " ", "	", " 	", "\n" };
+		for(String n : missingNames) {
+			try {
+				FunctionDef.checkUDFName(n, null);
+				fail("Impossible to create a UDF with no name!");
+			} catch(Exception ex) {
+				assertEquals(ParseException.class, ex.getClass());
+				assertEquals("Invalid UDF name: missing User Defined Function's name!", ex.getMessage());
+			}
+		}
+
+		// TEST: more than one word
+		try {
+			FunctionDef.checkUDFName("too many words", null);
+			fail("Impossible to create a UDF with more than a single word!");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals("Invalid UDF name: too many words (a function name must be a single Regular Identifier)!", ex.getMessage());
+		}
+
+		// TEST: not a regular identifier
+		String[] notRegularIDs = new String[]{ "_foo", "4foo" };
+		for(String n : notRegularIDs) {
+			try {
+				FunctionDef.checkUDFName(n, null);
+				fail("Impossible to create a UDF whose the name is not a regular identifier!");
+			} catch(Exception ex) {
+				assertEquals(ParseException.class, ex.getClass());
+				assertEquals("Invalid UDF name: \"" + n + "\" is not a Regular Identifier!", ex.getMessage());
+			}
+		}
+
+		// TEST: existing ADQL function
+		String[] existingFctNames = new String[]{ "point", "POINT", "MaX", "round" };
+		for(String n : existingFctNames) {
+			try {
+				FunctionDef.checkUDFName(n, null);
+				fail("Impossible to create a UDF with the name of an existing ADQL function!");
+			} catch(Exception ex) {
+				assertEquals(ParseException.class, ex.getClass());
+				assertEquals("Invalid UDF name: \"" + n + "\" already exists in ADQL!", ex.getMessage());
+			}
+		}
+
+		// TEST: reserved ADQL keyword
+		String[] reservedADQLKeywords = new String[]{ "select", "FroM", "as", "JOIN" };
+		for(String n : reservedADQLKeywords) {
+			try {
+				FunctionDef.checkUDFName(n, null);
+				fail("Impossible to create a UDF whose the name is an ADQL reserved keyword!");
+			} catch(Exception ex) {
+				assertEquals(ParseException.class, ex.getClass());
+				assertEquals("Invalid UDF name: \"" + n + "\" is an ADQL Reserved Keyword!", ex.getMessage());
+			}
+		}
+
+		// TEST: reserved SQL keyword
+		String[] reservedSQLKeywords = new String[]{ "Insert", "INTO", "upDate", "date" };
+		for(String n : reservedSQLKeywords) {
+			try {
+				FunctionDef.checkUDFName(n, null);
+				fail("Impossible to create a UDF whose the name is an SQL reserved keyword!");
+			} catch(Exception ex) {
+				assertEquals(ParseException.class, ex.getClass());
+				assertEquals("Invalid UDF name: \"" + n + "\" is an SQL Reserved Keyword!", ex.getMessage());
+			}
+		}
+
+		final String MSG_LOWER_2_0 = "Invalid UDF name: \"lower\" is an SQL Reserved Keyword!";
+		final String MSG_LOWER_2_1 = "Invalid UDF name: \"lower\" already exists in ADQL!";
+
+		/* TEST: the ADQL version is taken into account (the error message for
+		 *       the function LOWER existing only in ADQL-2.1 should be
+		 *       different): */
+		try {
+			FunctionDef.checkUDFName("lower", ADQLVersion.V2_0);
+			fail("LOWER is supposed to be a reserved keyword!");
+		} catch(Exception e) {
+			assertEquals(ParseException.class, e.getClass());
+			assertEquals(MSG_LOWER_2_0, e.getMessage());
+		}
+		try {
+			FunctionDef.checkUDFName("lower", ADQLVersion.V2_1);
+			fail("LOWER is supposed to be a reserved keyword!");
+		} catch(Exception e) {
+			assertEquals(ParseException.class, e.getClass());
+			assertEquals(MSG_LOWER_2_1, e.getMessage());
+		}
+
+		// TEST: no ADQL version = default version:
+		try {
+			FunctionDef.checkUDFName("lower", null);
+			fail("LOWER is supposed to be a reserved keyword!");
+		} catch(Exception e) {
+			assertEquals(ParseException.class, e.getClass());
+			switch(ADQLParserFactory.DEFAULT_VERSION) {
+				case V2_0:
+					assertEquals(MSG_LOWER_2_0, e.getMessage());
+					break;
+				case V2_1:
+					assertEquals(MSG_LOWER_2_1, e.getMessage());
+					break;
+				default:
+					fail("New ADQL Version not yet taken into account in this JUnit Test!");
+			}
+		}
 	}
 
 	@Test

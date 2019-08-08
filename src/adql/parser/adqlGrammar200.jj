@@ -670,6 +670,23 @@ public class ADQLParser200 implements ADQLParser {
 		}
 	}
 
+	/* TOKENIZATION FUNCTION */
+
+	public Token[] tokenize(final String expr) throws ParseException {
+		ADQLParser200TokenManager parser = new ADQLParser200TokenManager(new SimpleCharStream(new java.io.ByteArrayInputStream(expr.getBytes())));
+		try{
+			ArrayList<Token> tokens = new ArrayList<Token>();
+			Token token;
+			while(!isEnd((token=parser.getNextToken()))){
+				tokens.add(token);
+			}
+			return tokens.toArray(new Token[tokens.size()]);
+		}catch(TokenMgrError err){
+		    // wrap such errors and propagate them:
+			throw new ParseException(err);
+		}
+	}
+
 	/* CORRECTION SUGGESTION */
 
 	/**

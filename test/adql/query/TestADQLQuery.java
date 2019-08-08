@@ -14,6 +14,7 @@ import org.junit.Test;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
+import adql.parser.ParseException;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.constraint.ConstraintsGroup;
@@ -50,7 +51,7 @@ public class TestADQLQuery {
 	private List<ADQLColumn> typeObjColumns = new ArrayList<ADQLColumn>(3);
 
 	@Before
-	public void setUp(){
+	public void setUp() {
 		query = new ADQLQuery();
 		columns.clear();
 		typeObjColumns.clear();
@@ -102,12 +103,12 @@ public class TestADQLQuery {
 	}
 
 	@Test
-	public void testADQLQuery(){
+	public void testADQLQuery() {
 		assertEquals("SELECT (O.nameObj || ' (' || O.typeObj || ')') AS Nom objet , O.ra , O.dec\nFROM truc.ObsCore AS O\nWHERE ra/dec > 1 AND (typeObj = 'Star' OR typeObj LIKE 'Galaxy*')\nORDER BY 1 DESC", query.toADQL());
 	}
 
 	@Test
-	public void testSearch(){
+	public void testSearch() {
 		ISearchHandler sHandler = new SearchColumnHandler(false);
 		Iterator<ADQLObject> results = query.search(sHandler);
 		assertEquals(columns.size(), sHandler.getNbMatch());
@@ -116,15 +117,15 @@ public class TestADQLQuery {
 	}
 
 	@Test
-	public void testReplace(){
-		IReplaceHandler sHandler = new SimpleReplaceHandler(false, false){
+	public void testReplace() {
+		IReplaceHandler sHandler = new SimpleReplaceHandler(false, false) {
 			@Override
-			protected boolean match(ADQLObject obj){
+			protected boolean match(ADQLObject obj) {
 				return (obj instanceof ADQLColumn) && (((ADQLColumn)obj).getColumnName().equalsIgnoreCase("typeObj"));
 			}
 
 			@Override
-			public ADQLObject getReplacer(ADQLObject objToReplace) throws UnsupportedOperationException{
+			public ADQLObject getReplacer(ADQLObject objToReplace) throws UnsupportedOperationException {
 				return new ADQLColumn("NewTypeObj");
 			}
 		};
@@ -138,7 +139,7 @@ public class TestADQLQuery {
 	}
 
 	@Test
-	public void testTypeResultingColumns(){
+	public void testTypeResultingColumns() {
 		ADQLQuery query = new ADQLQuery();
 		query.setFrom(new ADQLTable("foo"));
 		ClauseSelect select = new ClauseSelect();
@@ -156,12 +157,12 @@ public class TestADQLQuery {
 		assertEquals(DBDatatype.UNKNOWN_NUMERIC, query.getResultingColumns()[0].getDatatype().type);
 
 		// Test with a math function:
-		try{
+		try {
 			select.clear();
 			select.add(new MathFunction(MathFunctionType.SQRT, new ADQLColumn("col1")));
 			assertEquals(1, query.getResultingColumns().length);
 			assertEquals(DBDatatype.UNKNOWN_NUMERIC, query.getResultingColumns()[0].getDatatype().type);
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("The mathematical function SQRT is well defined. This error should have occurred.");
 		}
@@ -188,20 +189,20 @@ public class TestADQLQuery {
 		assertEquals(DBDatatype.VARCHAR, query.getResultingColumns()[0].getDatatype().type);
 
 		// Test with a POINT:
-		try{
+		try {
 			select.clear();
 			select.add(new PointFunction(new StringConstant(""), new ADQLColumn("ra"), new ADQLColumn("dec")));
 			select.add(new CentroidFunction(new GeometryValue<GeometryFunction>(new ADQLColumn("aRegion"))));
 			assertEquals(2, query.getResultingColumns().length);
 			for(int i = 0; i < 2; i++)
 				assertEquals(DBDatatype.POINT, query.getResultingColumns()[i].getDatatype().type);
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("The POINT function is well defined. This error should have occurred.");
 		}
 
 		// Test with a REGION (CIRCLE, BOX, POLYGON and REGION functions):
-		try{
+		try {
 			select.clear();
 			select.add(new CircleFunction(new StringConstant(""), new ADQLColumn("ra"), new ADQLColumn("dec"), new NumericConstant(1)));
 			select.add(new BoxFunction(new StringConstant(""), new ADQLColumn("ra"), new ADQLColumn("dec"), new NumericConstant(10), new NumericConstant(20)));
@@ -217,7 +218,7 @@ public class TestADQLQuery {
 			assertEquals(4, query.getResultingColumns().length);
 			for(int i = 0; i < 4; i++)
 				assertEquals(DBDatatype.REGION, query.getResultingColumns()[i].getDatatype().type);
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("The geometrical functions are well defined. This error should have occurred.");
 		}
@@ -229,12 +230,16 @@ public class TestADQLQuery {
 		assertNull(query.getResultingColumns()[0].getDatatype());
 
 		// Test with a UDF having a definition:
-		select.clear();
-		DefaultUDF udf = new DefaultUDF("foo", new ADQLOperand[0]);
-		udf.setDefinition(new FunctionDef("foo", new DBType(DBDatatype.INTEGER)));
-		select.add(udf);
-		assertEquals(1, query.getResultingColumns().length);
-		assertEquals(DBDatatype.INTEGER, query.getResultingColumns()[0].getDatatype().type);
-
+		try {
+			select.clear();
+			DefaultUDF udf = new DefaultUDF("foo", new ADQLOperand[0]);
+			udf.setDefinition(new FunctionDef("foo", new DBType(DBDatatype.INTEGER)));
+			select.add(udf);
+			assertEquals(1, query.getResultingColumns().length);
+			assertEquals(DBDatatype.INTEGER, query.getResultingColumns()[0].getDatatype().type);
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
+		}
 	}
 }

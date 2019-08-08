@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import org.junit.Test;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
+import adql.parser.ParseException;
 import adql.query.ColumnReference;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
@@ -216,20 +218,25 @@ public class TestFeatureSet {
 
 	@Test
 	public void testUnsupportAll() {
-		FeatureSet set = new FeatureSet(true);
+		try {
+			FeatureSet set = new FeatureSet(true);
 
-		/* here is a custom Language Feature (i.e. not part of the
-		 * availableFeatures list): */
-		set.support(new LanguageFeature(new FunctionDef("foo", new DBType(DBDatatype.SMALLINT), new FunctionDef.FunctionParam[]{ new FunctionDef.FunctionParam("", new DBType(DBDatatype.VARCHAR)) })));
+			/* here is a custom Language Feature (i.e. not part of the
+			 * availableFeatures list): */
+			set.support(new LanguageFeature(new FunctionDef("foo", new DBType(DBDatatype.SMALLINT), new FunctionDef.FunctionParam[]{ new FunctionDef.FunctionParam("", new DBType(DBDatatype.VARCHAR)) })));
 
-		// unsupport all currently supported features:
-		set.unsupportAll();
+			// unsupport all currently supported features:
+			set.unsupportAll();
 
-		// ensure the list of supported features is really empty:
-		assertEquals(0, set.supportedFeatures.size());
+			// ensure the list of supported features is really empty:
+			assertEquals(0, set.supportedFeatures.size());
 
-		// ...and that no non-declared UDF is allowed:
-		assertFalse(set.isAnyUdfAllowed());
+			// ...and that no non-declared UDF is allowed:
+			assertFalse(set.isAnyUdfAllowed());
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
+		}
 	}
 
 	@Test

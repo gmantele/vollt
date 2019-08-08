@@ -25,7 +25,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import adql.db.DBType.DBDatatype;
+import adql.parser.ADQLParser;
+import adql.parser.ADQLParserFactory;
+import adql.parser.ADQLParserFactory.ADQLVersion;
 import adql.parser.ParseException;
+import adql.parser.Token;
 import adql.parser.feature.LanguageFeature;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.ADQLFunction;
@@ -52,10 +56,10 @@ import adql.query.operand.function.UserDefinedFunction;
  * 	A description of this function may be set thanks to the public class
  * 	attribute {@link #description}.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.0 (08/2020)
- * 
+ *
  * @since 1.3
  */
 public class FunctionDef implements Comparable<FunctionDef> {
@@ -264,9 +268,13 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * </p>
 	 *
 	 * @param fctName	Name of the function.
+	 *
+	 * @throws ParseException	If the given UDF name is invalid according to
+	 *                       	the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *                       	of the ADQL grammar.
 	 */
-	public FunctionDef(final String fctName) {
-		this(fctName, null, null);
+	public FunctionDef(final String fctName) throws ParseException {
+		this(fctName, null, null, null);
 	}
 
 	/**
@@ -277,13 +285,13 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 	null) and <b>no parameter</b>.
 	 * </p>
 	 *
-	 * @param fctName		Name of the function.
+	 * @param fctName	Name of the function.
 	 * @param returnType	Return type of the function.
 	 *                  	<i>If NULL, this function will have no return
 	 *                  	type.</i>
 	 */
-	public FunctionDef(final String fctName, final DBType returnType) {
-		this(fctName, returnType, null);
+	public FunctionDef(final String fctName, final DBType returnType) throws ParseException {
+		this(fctName, returnType, null, null);
 	}
 
 	/**
@@ -295,19 +303,65 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * </p>
 	 * 
 	 * @param fctName		Name of the function.
-	 * @param params	Parameters of this function.
-	 *              	<i>If NULL or empty, this function will have no
-	 *              	parameter.</i>
+	 * @param params		Parameters of this function.
+	 *              		<i>If NULL or empty, this function will have no
+	 *              		parameter.</i>
+	 *
+	 * @throws ParseException	If the given UDF name is invalid according to
+	 *                       	the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *                       	of the ADQL grammar.
 	 */
-	public FunctionDef(final String fctName, final FunctionParam[] params) {
-		this(fctName, null, params);
+	public FunctionDef(final String fctName, final FunctionParam[] params) throws ParseException {
+		this(fctName, null, params, null);
 	}
 
-	public FunctionDef(final String fctName, final DBType returnType, final FunctionParam[] params) {
+	/**
+	 * Create a function definition.
+	 *
+	 * @param fctName		Name of the function.
+	 * @param returnType	Return type of the function.
+	 *                  	<i>If NULL, this function will have no return type</i>
+	 * @param params		Parameters of this function.
+	 *              		<i>If NULL or empty, this function will have no
+	 *              		parameter.</i>
+	 *
+	 * @throws ParseException	If the given UDF name is invalid according to
+	 *                       	the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *                       	of the ADQL grammar.
+	 */
+	public FunctionDef(final String fctName, final DBType returnType, final FunctionParam[] params) throws ParseException {
+		this(fctName, returnType, params, ADQLParserFactory.DEFAULT_VERSION);
+	}
+
+	/**
+	 * Create a function definition.
+	 *
+	 * @param fctName		Name of the function.
+	 * @param returnType	Return type of the function.
+	 *                  	<i>If NULL, this function will have no return type</i>
+	 * @param params		Parameters of this function.
+	 *              		<i>If NULL or empty, this function will have no
+	 *              		parameter.</i>
+	 * @param targetADQL	Targeted ADQL grammar's version.
+	 *              		<i>If NULL, the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *              		will be used. This parameter is used only to check
+	 *              		the UDF name.</i>
+	 *
+	 *
+	 * @throws ParseException	If the given UDF name is invalid according to
+	 *                       	the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *                       	of the ADQL grammar.
+	 *
+	 * @since 2.0
+	 */
+	public FunctionDef(final String fctName, final DBType returnType, final FunctionParam[] params, final ADQLVersion targetADQL) throws ParseException {
 		// Set the name:
 		if (fctName == null)
 			throw new NullPointerException("Missing name! Can not create this function definition.");
-		this.name = fctName;
+		this.name = fctName.trim();
+
+		// Ensure the function name is valid:
+		checkUDFName(fctName, targetADQL);
 
 		// Set the parameters:
 		this.params = (params == null || params.length == 0) ? null : params;
@@ -334,6 +388,56 @@ public class FunctionDef implements Comparable<FunctionDef> {
 			bufSer.append(" -> ").append(returnType);
 		serializedForm = bufSer.toString();
 		compareForm = bufCmp.toString();
+	}
+
+	/**
+	 * Check that the given UDF name is valid according to the ADQL grammar.
+	 *
+	 * @param fctName		Name of the UDF to check.
+	 * @param adqlVersion	Version of the targeted ADQL grammar.
+	 *              		<i>If NULL, the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *              		will be used.</i>
+	 *
+	 * @throws ParseException	If the given name is invalid.
+	 *
+	 * @since 2.0
+	 */
+	protected static void checkUDFName(final String fctName, final ADQLVersion adqlVersion) throws ParseException {
+		if (fctName == null)
+			throw new ParseException("Invalid UDF name: missing User Defined Function's name!");
+
+		ADQLParser parser = null;
+		Token[] tokens = new Token[0];
+
+		// Tokenize the given function name:
+		try {
+			parser = (new ADQLParserFactory()).createParser(adqlVersion == null ? ADQLParserFactory.DEFAULT_VERSION : adqlVersion);
+			tokens = parser.tokenize(fctName);
+		} catch(ParseException ex) {
+			throw new ParseException("Invalid UDF name: " + ex.getMessage());
+		}
+
+		// Ensure there is only one word:
+		if (tokens.length == 0)
+			throw new ParseException("Invalid UDF name: missing User Defined Function's name!");
+		else if (tokens.length > 1)
+			throw new ParseException("Invalid UDF name: too many words (a function name must be a single Regular Identifier)!");
+
+		// ...that it is a regular identifier:
+		if (!parser.isRegularIdentifier(tokens[0].image))
+			throw new ParseException("Invalid UDF name: \"" + fctName + "\" is not a Regular Identifier!");
+
+		// ...that it is not already an existing ADQL function name:
+		if (tokens[0].isFunctionName)
+			throw new ParseException("Invalid UDF name: \"" + fctName + "\" already exists in ADQL!");
+
+		// ...that it is not an ADQL reserved keyword:
+		if (tokens[0].adqlReserved)
+			throw new ParseException("Invalid UDF name: \"" + fctName + "\" is an ADQL Reserved Keyword!");
+
+		// ...and that it is neither an SQL reserver keyword:
+		if (tokens[0].sqlReserved)
+			throw new ParseException("Invalid UDF name: \"" + fctName + "\" is an SQL Reserved Keyword!");
 	}
 
 	/**
@@ -586,9 +690,49 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * @return	The object representation of the given string definition.
 	 *
 	 * @throws ParseException	If the given string has a wrong syntax or uses
-	 *                       	unknown types.
+	 *                       	unknown types,
+	 *                       	or if the function name is invalid according to
+	 *                       	the ADQL grammar.
 	 */
 	public static FunctionDef parse(final String strDefinition) throws ParseException {
+		return parse(strDefinition, null);
+	}
+
+	/**
+	 * Let parsing the serialized form of a function definition.
+	 *
+	 * <p>The expected syntax is <i>(items between brackets are optional)</i>:</p>
+	 * <pre>{fctName}([{param1Name} {param1Type}, ...])[ -> {returnType}]</pre>
+	 *
+	 * <p>
+	 * 	<em>This function must be able to parse functions as defined by
+	 * 	TAPRegExt (section 2.3).</em>
+	 * 	Hence, allowed parameter types and return types should be one of the
+	 * 	types listed by the UPLOAD section of the TAP recommendation document.
+	 * 	These types are listed in the enumeration object {@link DBDatatype}.
+	 * 	However, other types should be accepted like the common database
+	 * 	types...but it should be better to not rely on that since the conversion
+	 * 	of those types to TAP types should not be exactly what is expected
+	 * 	(because depending from the used DBMS); a default interpretation of
+	 * 	database types is nevertheless processed by this parser.
+	 * </p>
+	 *
+	 * @param strDefinition	Serialized function definition to parse.
+	 * @param targetADQL	Targeted ADQL grammar's version.
+	 *              		<i>If NULL, the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *              		will be used. This parameter is used only to check
+	 *              		the UDF name.</i>
+	 *
+	 * @return	The object representation of the given string definition.
+	 *
+	 * @throws ParseException	If the given string has a wrong syntax or uses
+	 *                       	unknown types,
+	 *                       	or if the function name is invalid according to
+	 *                       	the ADQL grammar.
+	 *
+	 * @since 2.0
+	 */
+	public static FunctionDef parse(final String strDefinition, final ADQLVersion targetADQL) throws ParseException {
 		if (strDefinition == null)
 			throw new NullPointerException("Missing string definition to build a FunctionDef!");
 
@@ -598,6 +742,9 @@ public class FunctionDef implements Comparable<FunctionDef> {
 
 			// Get the function name:
 			String fctName = m.group(1);
+
+			// Ensure the function name is valid:
+			checkUDFName(fctName, targetADQL);
 
 			// Parse and get the return type:
 			DBType returnType = null;

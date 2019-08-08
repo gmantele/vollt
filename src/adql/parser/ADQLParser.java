@@ -134,4 +134,6 @@ public interface ADQLParser {
 
 	ADQLOperand StringExpression() throws ParseException;
 
+	public Token[] tokenize(final String expr) throws ParseException;
+
 }

@@ -26,6 +26,7 @@ import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
 import adql.db.FunctionDef.FunctionParam;
+import adql.parser.ParseException;
 import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
@@ -49,7 +50,10 @@ public final class DefaultUDF extends UserDefinedFunction {
 
 	/** Define/Describe this user defined function.
 	 * This object gives the return type and the number and type of all
-	 * parameters. */
+	 * parameters.
+	 * <p><i><b>Note:</b> NULL if the function name is invalid. See
+	 * 	{@link FunctionDef#FunctionDef(String, DBType, FunctionParam[], adql.parser.ADQLParserFactory.ADQLVersion) FunctionDef.FunctionDef(..., ADQLVersion)}
+	 * for more details.</i></p> */
 	protected FunctionDef definition = null;
 
 	/** Its parsed parameters. */
@@ -163,11 +167,16 @@ public final class DefaultUDF extends UserDefinedFunction {
 		for(int i = 1; i <= parameters.size(); i++)
 			inputParams[i - 1] = new FunctionParam("param" + i, unknownType);
 
-		// Create the Function Definition:
-		FunctionDef fctDef = new FunctionDef(functionName, unknownType, inputParams);
+		try {
+			// Create the Function Definition:
+			FunctionDef fctDef = new FunctionDef(functionName, unknownType, inputParams);
 
-		// Finally create the LanguageFeature:
-		languageFeature = new LanguageFeature(fctDef);
+			// Finally create the LanguageFeature:
+			languageFeature = new LanguageFeature(fctDef);
+		} catch(ParseException pe) {
+			// TODO Invalid function name. TO LOG in some way!
+			languageFeature = null;
+		}
 	}
 
 	@Override
