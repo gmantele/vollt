@@ -289,6 +289,10 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * @param returnType	Return type of the function.
 	 *                  	<i>If NULL, this function will have no return
 	 *                  	type.</i>
+	 *
+	 * @throws ParseException	If the given UDF name is invalid according to
+	 *                       	the {@link ADQLParserFactory#DEFAULT_VERSION default version}
+	 *                       	of the ADQL grammar.
 	 */
 	public FunctionDef(final String fctName, final DBType returnType) throws ParseException {
 		this(fctName, returnType, null, null);

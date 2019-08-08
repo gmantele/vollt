@@ -239,7 +239,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 	}
 
 	@Override
-	public String translate(final ADQLTranslator caller) throws TranslationException{
+	public String translate(final ADQLTranslator caller) throws TranslationException {
 		// Use the translation pattern if any is specified:
 		if (definition != null && definition.getTranslationPattern() != null) {
 			StringBuffer sql = new StringBuffer();
@@ -277,12 +277,12 @@ public final class DefaultUDF extends UserDefinedFunction {
 		}
 		// Otherwise, no translation needed (use the ADQL as translation result):
 		else {
-		StringBuffer sql = new StringBuffer(functionName);
-		sql.append('(');
-		for(int i = 0; i < parameters.size(); i++){
-			if (i > 0)
-				sql.append(',').append(' ');
-			sql.append(caller.translate(parameters.get(i)));
+			StringBuffer sql = new StringBuffer(functionName);
+			sql.append('(');
+			for(int i = 0; i < parameters.size(); i++) {
+				if (i > 0)
+					sql.append(',').append(' ');
+				sql.append(caller.translate(parameters.get(i)));
 			}
 			sql.append(')');
 			return sql.toString();

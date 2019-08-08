@@ -41,7 +41,8 @@ public class TestJDBCTranslator {
 		/* Ensure the translation from ADQL to SQL of strings is correct ;
 		 * particularly, ' should be escaped otherwise it would mean the end of a string in SQL
 		 *(the way to escape a such character is by doubling the character '): */
-		try {
+		try{
+==== BASE ====
 			assertEquals("'SQL''s translation'", tr.translate(new StringConstant("SQL's translation")));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
