@@ -226,11 +226,11 @@ public class DBChecker implements QueryChecker {
 
 		// Store all allowed UDFs in a sorted array:
 		if (allowedUdfs != null) {
-			// Remove all NULL and empty strings:
+			// Remove all NULL:
 			tmp = new FunctionDef[allowedUdfs.size()];
 			cnt = 0;
 			for(FunctionDef udf : allowedUdfs) {
-				if (udf != null && udf.name.trim().length() > 0)
+				if (udf != null)
 					tmp[cnt++] = udf;
 			}
 			// make a copy of the array:
