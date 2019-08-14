@@ -8,12 +8,16 @@
  *       and display the incorrect character as a character instead of an
  *       integer value
  * 
+ * Modified by Gr&eacute;gory Mantelet (CDS), on Aug. 2019
+ * Modifications:
+ *     - change the package name
+ *
  * /!\ DO NOT RE-GENERATE THIS FILE /!\
  * In case of re-generation, replace it by TokenMgrError.java.backup (but maybe
  * after a diff in case of significant modifications have been done by a new
  * version of JavaCC).
  */
-package adql.parser;
+package adql.parser.grammar;
 
 /** Token Manager Error. */
 public class TokenMgrError extends Error {
@@ -162,7 +166,8 @@ public class TokenMgrError extends Error {
 	 */
 
 	/** No arg constructor. */
-	public TokenMgrError(){}
+	public TokenMgrError() {
+	}
 
 	/** Constructor with message and reason. */
 	public TokenMgrError(String message, int reason){

@@ -13,8 +13,8 @@ import org.junit.Test;
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
+import adql.parser.grammar.ParseException;
 import adql.db.FunctionDef;
-import adql.parser.ParseException;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.constraint.ConstraintsGroup;

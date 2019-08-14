@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import adql.db.DBChecker;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 
 /**
  * This exception is thrown by {@link DBChecker} when several columns, tables,

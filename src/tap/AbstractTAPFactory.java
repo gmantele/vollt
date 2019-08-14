@@ -30,10 +30,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import adql.db.DBChecker;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
 import adql.parser.ADQLQueryFactory;
-import adql.parser.ParseException;
 import adql.parser.QueryChecker;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import tap.db.DBConnection;
 import tap.error.DefaultTAPErrorWriter;
@@ -56,17 +55,12 @@ import uws.service.error.ServiceErrorWriter;
  * Only the functions related with the database connection stay abstract.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 3.0 (04/2019)
+ * @version 3.0 (08/2019)
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
 	/** The error writer to use when any error occurs while executing a resource or to format an error occurring while executing an asynchronous job. */
 	protected final ServiceErrorWriter errorWriter;
-
-	/** Factory of ADQL parsers. This factory can be configured to work with a
-	 * different version of the ADQL grammar.
-	 * @since 3.0 */
-	protected ADQLParserFactory parserFactory;
 
 	/**
 	 * Build a basic TAPFactory.
@@ -98,7 +92,6 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	protected AbstractTAPFactory(final ServiceConnection service, final ServiceErrorWriter errorWriter) throws NullPointerException {
 		super(service);
 		this.errorWriter = errorWriter;
-		this.parserFactory = new ADQLParserFactory();
 	}
 
 	@Override
@@ -128,7 +121,7 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 */
 	@Override
 	public ADQLParser createADQLParser() throws TAPException {
-		return parserFactory.createParser();
+		return new ADQLParser();
 	}
 
 	/**

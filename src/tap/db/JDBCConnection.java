@@ -2486,7 +2486,7 @@ public class JDBCConnection implements DBConnection {
 							// parse the region as an STC-S expression:
 							try{
 								region = STCS.parseRegion(val.toString());
-							}catch(adql.parser.ParseException e){
+							}catch(adql.parser.grammar.ParseException e){
 								if (logger != null)
 									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Incorrect STC-S syntax for the geometrical value \"" + val + "\"! " + e.getMessage(), e);
 								throw new DataReadException("[l. " + nbRows + ", c. " + c + "] Incorrect STC-S syntax for the geometrical value \"" + val + "\"! " + e.getMessage(), e);
@@ -2494,7 +2494,7 @@ public class JDBCConnection implements DBConnection {
 							// translate this STC region into the corresponding column value:
 							try{
 								val = translator.translateGeometryToDB(region);
-							}catch(adql.parser.ParseException e){
+							}catch(adql.parser.grammar.ParseException e){
 								if (logger != null)
 									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Impossible to import the ADQL geometry \"" + val + "\" into the database! " + e.getMessage(), e);
 								throw new DataReadException("[l. " + nbRows + ", c. " + c + "] Impossible to import the ADQL geometry \"" + val + "\" into the database! " + e.getMessage(), e);

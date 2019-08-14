@@ -20,7 +20,7 @@ package adql.db.exception;
  */
 
 import adql.db.DBChecker;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.operand.ADQLColumn;
 
 /**

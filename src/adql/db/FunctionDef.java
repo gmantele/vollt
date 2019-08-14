@@ -26,11 +26,10 @@ import java.util.regex.Pattern;
 
 import adql.db.DBType.DBDatatype;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ADQLParserFactory.ADQLVersion;
-import adql.parser.ParseException;
-import adql.parser.Token;
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.feature.LanguageFeature;
+import adql.parser.grammar.ParseException;
+import adql.parser.grammar.Token;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.DefaultUDF;
@@ -334,7 +333,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 *                       	of the ADQL grammar.
 	 */
 	public FunctionDef(final String fctName, final DBType returnType, final FunctionParam[] params) throws ParseException {
-		this(fctName, returnType, params, ADQLParserFactory.DEFAULT_VERSION);
+		this(fctName, returnType, params, ADQLParser.DEFAULT_VERSION);
 	}
 
 	/**
@@ -415,8 +414,8 @@ public class FunctionDef implements Comparable<FunctionDef> {
 
 		// Tokenize the given function name:
 		try {
-			parser = (new ADQLParserFactory()).createParser(adqlVersion == null ? ADQLParserFactory.DEFAULT_VERSION : adqlVersion);
-			tokens = parser.tokenize(fctName);
+			parser = new ADQLParser(adqlVersion);
+			tokens = parser.tokenize(fctName, true);
 		} catch(ParseException ex) {
 			throw new ParseException("Invalid UDF name: " + ex.getMessage());
 		}
@@ -428,7 +427,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 			throw new ParseException("Invalid UDF name: too many words (a function name must be a single Regular Identifier)!");
 
 		// ...that it is a regular identifier:
-		if (!parser.isRegularIdentifier(tokens[0].image))
+		if (!parser.getGrammarParser().isRegularIdentifier(tokens[0].image))
 			throw new ParseException("Invalid UDF name: \"" + fctName + "\" is not a Regular Identifier!");
 
 		// ...that it is not already an existing ADQL function name:

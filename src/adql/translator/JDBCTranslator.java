@@ -28,7 +28,7 @@ import adql.db.DBTableAlias;
 import adql.db.DBType;
 import adql.db.STCS.Region;
 import adql.db.exception.UnresolvedJoinException;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;

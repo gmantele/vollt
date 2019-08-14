@@ -25,12 +25,16 @@
  *     - change the way ADQL and SQL reserved keywords are identified for the
  *       generation of the appropriate HINT in the error message
  *
+ * Modified by Gr&eacute;gory Mantelet (CDS), on Aug. 2019
+ * Modifications:
+ *     - change the package name
+ *
  * /!\ DO NOT RE-GENERATE THIS FILE /!\
  * In case of re-generation, replace it by ParseException.java.backup (but maybe
  * after a diff in case of significant modifications have been done by a new
  * version of JavaCC).
  */
-package adql.parser;
+package adql.parser.grammar;
 
 import adql.query.TextPosition;
 

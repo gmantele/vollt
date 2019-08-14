@@ -6,8 +6,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 
 public class TestMySQLTranslator {
@@ -15,7 +14,7 @@ public class TestMySQLTranslator {
 	@Test
 	public void testConcat() {
 		try {
-			ADQLParser parser = ADQLParserFactory.createDefaultParser();
+			ADQLParser parser = new ADQLParser();
 			MySQLTranslator translator = new MySQLTranslator();
 
 			// Test with an easy translation:

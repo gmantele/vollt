@@ -14,8 +14,8 @@ import org.junit.Test;
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
+import adql.parser.grammar.ParseException;
 import adql.db.FunctionDef;
-import adql.parser.ParseException;
 import adql.query.ColumnReference;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.PolygonFunction;

@@ -20,6 +20,9 @@ package adql.parser;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+
+import adql.parser.grammar.Token;
+
 import adql.query.IdentifierField;
 import adql.query.TextPosition;
 

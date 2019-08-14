@@ -6,8 +6,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.StringBufferInputStream;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -21,8 +19,7 @@ import adql.db.STCS.RefPos;
 import adql.db.STCS.Region;
 import adql.db.STCS.RegionType;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.NegativeOperand;
@@ -268,9 +265,8 @@ public class TestSTCS {
 			assertEquals("Unknown STC region type: \"MYREGION\"!", e.getMessage());
 		}
 		try {
-			ADQLParser parser = ADQLParserFactory.createDefaultParser();
-			parser.ReInit(new StringBufferInputStream("'POSITION ' || coordinateSys || ' ' || ra || ' ' || dec"));
-			new Region(new RegionFunction(parser.StringExpression()));
+			ADQLOperand concat = (new ADQLParser()).parseSelect("SELECT 'POSITION ' || coordinateSys || ' ' || ra || ' ' || dec").get(0).getOperand();
+			new Region(new RegionFunction(concat));
 			fail("String concatenation can not be managed!");
 		} catch(Exception e) {
 			assertTrue(e instanceof ParseException);

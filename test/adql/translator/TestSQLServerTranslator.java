@@ -14,14 +14,11 @@ import adql.db.DBTable;
 import adql.db.DefaultDBColumn;
 import adql.db.DefaultDBTable;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ParseException;
 import adql.parser.SQLServer_ADQLQueryFactory;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 
 public class TestSQLServerTranslator {
-
-	ADQLParserFactory parserFactory = new ADQLParserFactory();
 
 	private List<DBTable> tables = null;
 
@@ -45,7 +42,7 @@ public class TestSQLServerTranslator {
 		final String adqlquery = "SELECT id, name, aColumn, anotherColumn FROM aTable A NATURAL JOIN anotherTable B;";
 
 		try {
-			ADQLParser parser = parserFactory.createParser();
+			ADQLParser parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables));
 			parser.setQueryFactory(new SQLServer_ADQLQueryFactory());
 			ADQLQuery query = parser.parseQuery(adqlquery);
@@ -71,7 +68,7 @@ public class TestSQLServerTranslator {
 		final String adqlquery = "SELECT B.id, name, aColumn, anotherColumn FROM aTable A JOIN anotherTable B USING(name);";
 
 		try {
-			ADQLParser parser = parserFactory.createParser();
+			ADQLParser parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables));
 			parser.setQueryFactory(new SQLServer_ADQLQueryFactory());
 			ADQLQuery query = parser.parseQuery(adqlquery);
@@ -97,7 +94,7 @@ public class TestSQLServerTranslator {
 		try {
 			SQLServerTranslator translator = new SQLServerTranslator();
 
-			ADQLParser parser = parserFactory.createParser();
+			ADQLParser parser = new ADQLParser();
 			parser.setQueryFactory(new SQLServer_ADQLQueryFactory());
 
 			// Test with an easy translation:

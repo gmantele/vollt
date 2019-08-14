@@ -28,8 +28,6 @@ import adql.query.ADQLQuery;
 
 public class TestUnknownTypes {
 
-	ADQLParserFactory parserFactory = new ADQLParserFactory();
-
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 	}
@@ -81,7 +79,7 @@ public class TestUnknownTypes {
 
 		try {
 			// Create the parser:
-			ADQLParser parser = parserFactory.createParser();
+			ADQLParser parser = new ADQLParser();
 
 			// Create table/column metadata:
 			DefaultDBTable table1 = new DefaultDBTable("T1");

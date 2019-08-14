@@ -9,7 +9,7 @@ import org.junit.Test;
 import adql.db.DBType;
 import adql.db.FunctionDef;
 import adql.db.STCS.Region;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.IdentifierField;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;

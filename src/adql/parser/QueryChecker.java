@@ -21,6 +21,7 @@ package adql.parser;
  */
 
 import adql.db.DBChecker;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 
 /**

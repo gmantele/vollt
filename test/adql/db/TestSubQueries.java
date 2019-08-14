@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
 import adql.query.ADQLQuery;
 import adql.translator.PostgreSQLTranslator;
 import tap.metadata.TAPMetadata;
@@ -19,8 +18,6 @@ import tap.metadata.TAPTable;
 import tap.metadata.TableSetParser;
 
 public class TestSubQueries {
-
-	ADQLParserFactory adqlParserFactory = new ADQLParserFactory();
 
 	@Before
 	public void setUp() throws Exception {
@@ -36,7 +33,7 @@ public class TestSubQueries {
 			while(itTables.hasNext())
 				esaTables.add(itTables.next());
 
-			ADQLParser adqlParser = adqlParserFactory.createParser();
+			ADQLParser adqlParser = new ADQLParser();
 			adqlParser.setQueryChecker(new DBChecker(esaTables));
 			ADQLQuery query = adqlParser.parseQuery("SELECT sel2.*,t1.h_m, t1.j_m, t1.k_m\nFROM (\n  SELECT sel1.*, t3.*\n  FROM (\n  	SELECT *\n    FROM table2 AS t2\n	WHERE 1=CONTAINS(POINT('ICRS', t2.ra, t2.dec), CIRCLE('ICRS', 56.75, 24.1167, 15.))\n  ) AS sel1 JOIN table3 AS t3 ON t3.oid2=sel1.oid2\n) AS sel2 JOIN table1 AS t1 ON sel2.oid=t1.oid");
 			assertEquals("SELECT sel2.* , t1.h_m , t1.j_m , t1.k_m\nFROM (SELECT sel1.* , t3.*\nFROM (SELECT *\nFROM table2 AS t2\nWHERE 1 = CONTAINS(POINT('ICRS', t2.ra, t2.dec), CIRCLE('ICRS', 56.75, 24.1167, 15.))) AS sel1 INNER JOIN table3 AS t3 ON ON t3.oid2 = sel1.oid2) AS sel2 INNER JOIN table1 AS t1 ON ON sel2.oid = t1.oid", query.toADQL());
@@ -57,7 +54,7 @@ public class TestSubQueries {
 			while(itTables.hasNext())
 				esaTables.add(itTables.next());
 
-			ADQLParser adqlParser = adqlParserFactory.createParser();
+			ADQLParser adqlParser = new ADQLParser();
 			adqlParser.setQueryChecker(new DBChecker(esaTables));
 
 			ADQLQuery query = adqlParser.parseQuery("SELECT oid FROM table1 as MyAlias WHERE oid IN (SELECT oid2 FROM table2 WHERE oid2 = myAlias.oid)");
@@ -78,7 +75,7 @@ public class TestSubQueries {
 			while(itTables.hasNext())
 				esaTables.add(itTables.next());
 
-			ADQLParser adqlParser = adqlParserFactory.createParser();
+			ADQLParser adqlParser = new ADQLParser();
 			adqlParser.setQueryChecker(new DBChecker(esaTables));
 
 			ADQLQuery query = adqlParser.parseQuery("SELECT t.* FROM (SELECT (ra+ra_error) AS x, (dec+dec_error) AS Y, pmra AS \"ProperMotion\" FROM table2) AS t");

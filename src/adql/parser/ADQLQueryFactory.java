@@ -23,7 +23,7 @@ package adql.parser;
 import java.util.Collection;
 
 import adql.db.FunctionDef;
-import adql.parser.ADQLParserFactory.ADQLVersion;
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.IdentifierItems.IdentifierItem;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;

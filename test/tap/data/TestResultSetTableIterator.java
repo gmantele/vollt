@@ -13,7 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import adql.db.DBType;
-import adql.parser.ADQLParserFactory;
+import adql.parser.ADQLParser;
 import adql.query.ADQLQuery;
 import adql.translator.AstroH2Translator;
 import tap.db_testtools.DBTools;
@@ -22,8 +22,6 @@ import tap.metadata.TAPColumn;
 public class TestResultSetTableIterator {
 
 	private static Connection conn;
-
-	ADQLParserFactory parserFactory = new ADQLParserFactory();
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -182,7 +180,7 @@ public class TestResultSetTableIterator {
 	public void testGeometryColumns() {
 		ResultSet rs = null;
 		try {
-			ADQLQuery query = (parserFactory.createParser()).parseQuery("SELECT TOP 1 POINT('', ra, dec), CENTROID(CIRCLE('', ra, dec, 2)), BOX('', ra-1, dec-2, ra+1, dec+2), CIRCLE('', ra, dec, 2) FROM hipparcos;");
+			ADQLQuery query = (new ADQLParser()).parseQuery("SELECT TOP 1 POINT('', ra, dec), CENTROID(CIRCLE('', ra, dec, 2)), BOX('', ra-1, dec-2, ra+1, dec+2), CIRCLE('', ra, dec, 2) FROM hipparcos;");
 
 			// create a valid ResultSet:
 			rs = DBTools.select(conn, (new AstroH2Translator()).translate(query));
@@ -220,7 +218,7 @@ public class TestResultSetTableIterator {
 	public void testSQLFunctions() {
 		ResultSet rs = null;
 		try {
-			ADQLQuery query = (parserFactory.createParser()).parseQuery("SELECT COUNT(*), MIN(vmag), AVG(plx) FROM hipparcos;");
+			ADQLQuery query = (new ADQLParser()).parseQuery("SELECT COUNT(*), MIN(vmag), AVG(plx) FROM hipparcos;");
 
 			// create a valid ResultSet:
 			rs = DBTools.select(conn, (new AstroH2Translator()).translate(query));

@@ -23,7 +23,7 @@ package adql.translator;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.IdentifierField;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;

@@ -19,12 +19,24 @@ package adql.parser;
  * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
+import java.util.ArrayList;
 
-import adql.parser.ADQLParserFactory.ADQLVersion;
+import adql.db.DBChecker;
+import adql.db.exception.UnresolvedIdentifiersException;
+import adql.db.exception.UnsupportedFeatureException;
 import adql.parser.feature.FeatureSet;
+import adql.parser.feature.LanguageFeature;
+import adql.parser.grammar.ADQLGrammar;
+import adql.parser.grammar.ADQLGrammar.Tokenizer;
+import adql.parser.grammar.ADQLGrammar200;
+import adql.parser.grammar.ADQLGrammar201;
+import adql.parser.grammar.ParseException;
+import adql.parser.grammar.Token;
+import adql.parser.grammar.TokenMgrError;
+import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
@@ -32,108 +44,1317 @@ import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
-import adql.query.operand.ADQLOperand;
+import adql.query.operand.function.geometry.ContainsFunction;
+import adql.search.SearchOptionalFeaturesHandler;
+import adql.translator.PostgreSQLTranslator;
+import adql.translator.TranslationException;
 
 /**
- * TODO
+ * Parser of ADQL expressions.
+ *
+ * <h3>Usage</h3>
+ *
+ * <p>
+ * 	The simplest way to use this parser is just to create a default ADQL
+ * 	parser, and call the function {@link #parseQuery(String)} on the ADQL query
+ * 	to evaluate.
+ * </p>
+ *
+ * <i>
+ * <p><b>Example:</b></p>
+ * <pre>
+ * try {
+ *     // 1. CREATE A PARSER:
+ *     ADQLParser parser = new {@link #ADQLParser()};
+ *
+ *     // 2. PARSE AN ADQL QUERY:
+ *     ADQLQuery query = parser.{@link #parseQuery(String) parseQuery}("SELECT foo FROM bar WHERE stuff = 1");
+ *
+ *     System.out.println("((i)) Correct ADQL query ((i))");
+ *     System.out.println("((i)) As interpreted: ((i))\n    " + query.toADQL().replaceAll("\n", "\n    "));
+ * }
+ * // 3. EVENTUALLY DEAL WITH ERRORS:
+ * catch({@link ParseException} ex) {
+ *     System.err.println("((X)) INCORRECT QUERY! " + ex.getClass().getSimpleName() + " ((X))\n" + ex.getPosition() + " " + ex.getMessage());
+ * }</pre>
+ * </i>
+ *
+ * <p>
+ * 	In the above example, the parser runs with the minimal set of options. It
+ * 	means that only the default optional language features are available, any
+ * 	UDF (even if undeclared) is allowed and no consistency with a list of tables
+ * 	and columns is performed. These points can be customized at creation with
+ * 	{@link #ADQLParser(ADQLVersion, QueryChecker, ADQLQueryFactory, FeatureSet)}
+ * 	but also after creation with {@link #setSupportedFeatures(FeatureSet)} and
+ * 	{@link #setQueryChecker(QueryChecker)}.
+ * </p>
+ *
+ * <h3>Runnable class</h3>
+ *
+ * <p>
+ * 	This class includes a main function and thus, can be executed directly.
+ * 	Its execution allows to parse an ADQL query. Then, in function of the passed
+ * 	parameters, it is possible to just check its syntax, translate it into SQL
+ * 	or try to fix the query.
+ * </p>
+ *
+ * <i>
+ * <p>
+ * 	To get help about this program, just run it with the argument
+ * 	<code>-h</code> or <code>--help</code>:
+ * </p>
+ * <pre>java -jar adqllib.jar --help</pre>
+ * </i>
+ *
+ * <h3>ADQL version</h3>
+ *
+ * <p>
+ * 	It is able to deal with all versions of the ADQL grammar supported by this
+ * 	library. All these versions are listed in the enumeration
+ * 	{@link ADQLVersion}.
+ * </p>
+ *
+ * <p>
+ * 	If a specific version of the grammar must be used, it must be specified in
+ * 	the constructor of the parser.
+ * </p>
+ *
+ * <p><i><b>Example: </b></i>
+ * 	<code>new {@link #ADQLParser(ADQLVersion) ADQLParser}({@link ADQLVersion#V2_1})</code>
+ * </p>
+ *
+ * <h3>Main functions</h3>
+ *
+ * <p>Here are the key functions to use:</p>
+ * <ul>
+ * 	<li>{@link #parseQuery(String)} (or any its alternative with an InputStream)
+ * 		to parse an input ADQL query String and get its corresponding ADQL tree
+ *   </li>
+ *   <li>{@link #tryQuickFix(String)} to try fixing the most common
+ * 		issues with ADQL queries (e.g. Unicode confusable characters,
+ * 		unescaped ADQL identifiers, SQL reserved keywords, ...)</li>
+ * 	<li>{@link #setSupportedFeatures(FeatureSet)} to set which optional ADQL
+ * 		features are supported or not ; all optional features used in the query
+ * 		while being declared as un-supported will throw an error at the end of
+ * 		the parsing</li>
+ * </ul>
+ *
+ * <h3>Custom checks</h3>
+ *
+ * <p>
+ *   This parser is able, thanks to a {@link QueryChecker} object, to check each
+ *   {@link ADQLQuery} just after its generation. It could be used, for
+ *   instance, to check the consistency between the ADQL query to parse and the
+ *   "database" on which the query must be executed.
+ * </p>
+ *
+ * <p>
+ * 	By default, there is no {@link QueryChecker}. Thus you must either use an
+ * 	already existing {@link QueryChecker} or extend this latter to run your own
+ * 	tests on the parsed ADQL queries.
+ * </p>
+ *
+ * <p>
+ * 	{@link DBChecker} is an extension of {@link QueryChecker} able to check that
+ * 	table and column names used in a query exist in a given set of DB metadata.
+ * </p>
+ *
+ * <h3>Custom Query Factory</h3>
+ *
+ * <p>
+ *   To create an object representation of the given ADQL query, this parser
+ *   uses a {@link ADQLQueryFactory} object. All parts of the ADQL grammar can
+ *   already be created with this object.
+ * </p>
+ *
+ * <p>
+ * 	However, in some special cases, you may need to change the type of some
+ * 	specific nodes of the generated ADQL tree (e.g. <code>CONTAINS</code>). In
+ * 	such case, you just have to extend the corresponding default object
+ * 	(i.e. {@link ContainsFunction}) and to extend the corresponding function of
+ * 	{@link ADQLQueryFactory} (i.e. createContains(...)). Then, give an instance
+ * 	of this custom factory to the {@link ADQLParser}, at
+ * 	{@link #ADQLParser(ADQLVersion, QueryChecker, ADQLQueryFactory, FeatureSet) creation}
+ * 	or with the setter {@link #setQueryFactory(ADQLQueryFactory)}.
+ * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  * @since 2.0
  */
-public interface ADQLParser {
+public class ADQLParser {
+
+	/** Grammar parser to use.
+	 * <p><i><b>Implementation note:</b> Never NULL.</i></p> */
+	protected final ADQLGrammar grammarParser;
+
+	/** List of all supported features.
+	 * <p><i><b>Note:</b>
+	 * 	The default set of features can be set with the function
+	 * 	{@link #setDefaultFeatures()}.
+	 * </i></p>
+	 * <p><i><b>Implementation note:</b> Never NULL.</i></p> */
+	protected FeatureSet supportedFeatures;
+
+	/** API to check {@link ADQLQuery ADQL queries} (sub-queries or not) just
+	 * after their generation.
+	 * <p><i><b>Note:</b>
+	 * 	This check step is optional. To ignore it, set this attribute to NULL.
+	 * </i></p> */
+	protected QueryChecker queryChecker = null;
+
+	/** This object is used only when one of the {@link #tryQuickFix(String)}
+	 * functions is called. It allows to try fixing common errors in the given
+	 * ADQL query.
+	 * <p><i><b>Implementation note:</b> Never NULL.</i></p> */
+	protected QueryFixer quickFixer;
 
 	/* **********************************************************************
-	 *                           GETTERS & SETTERS
-	 * ********************************************************************** */
-
-	public ADQLVersion getADQLVersion();
-
-	public QueryChecker getQueryChecker();
-
-	public void setQueryChecker(final QueryChecker checker);
-
-	public ADQLQueryFactory getQueryFactory();
-
-	public void setQueryFactory(final ADQLQueryFactory factory);
-
-	public FeatureSet getSupportedFeatures();
-
-	public void setSupportedFeatures(final FeatureSet features);
-
-	/* **********************************************************************
-	 *                         PARSING DEBUG FUNCTIONS
-	 * ********************************************************************** */
-
-	public void setDebug(final boolean debug);
-
-	/* **********************************************************************
-	 *                           PARSING FUNCTIONS
-	 * ********************************************************************** */
-
-	public void ReInit(InputStream stream);
-
-	public void ReInit(Reader reader);
-
-	public ADQLQuery parseQuery() throws ParseException;
-
-	public ADQLQuery parseQuery(final String query) throws ParseException;
-
-	public ADQLQuery parseQuery(final InputStream stream) throws ParseException;
-
-	public ClauseSelect parseSelect(final String adql) throws ParseException;
-
-	public FromContent parseFrom(final String adql) throws ParseException;
-
-	public ClauseConstraints parseWhere(final String adql) throws ParseException;
-
-	public ClauseADQL<ADQLOrder> parseOrderBy(final String adql) throws ParseException;
-
-	public ClauseADQL<ADQLColumn> parseGroupBy(final String adql) throws ParseException;
-
-	/* **********************************************************************
-	 *                           AUTO-FIX FUNCTIONS
-	 * ********************************************************************** */
-
-	public String tryQuickFix(final InputStream input) throws IOException, ParseException;
-
-	public String tryQuickFix(final String adqlQuery) throws ParseException;
+	   *                       VERSION MANAGEMENT                           *
+	   ********************************************************************** */
 
 	/**
-	 * Tell whether the given string is a valid ADQL regular identifier.
+	 * Enumeration of all supported versions of the ADQL grammar.
 	 *
-	 * <p>
-	 * 	According to the ADQL grammar, a regular identifier (i.e. not
-	 * 	delimited ; not between double quotes) must be a letter followed by a
-	 * 	letter, digit or underscore. So, the following regular expression:
-	 * </p>
-	 *
-	 * <pre>
-	 * [a-zA-Z]+[a-zA-Z0-9_]*
-	 * </pre>
-	 *
-	 * <p>
-	 * 	This is what this function tests on the given string.
-	 * </p>
-	 *
-	 * @param idCandidate	The string to test.
-	 *
-	 * @return	<code>true</code> if the given string is a valid regular
-	 *        	identifier,
-	 *        	<code>false</code> otherwise.
-	 *
-	 * @see #testRegularIdentifier(adql.parser.Token)
+	 * @author Gr&eacute;gory Mantelet (CDS)
+	 * @version 2.0 (08/2019)
+	 * @since 2.0
 	 */
-	public boolean isRegularIdentifier(final String idCandidate);
+	public static enum ADQLVersion {
+		/** Version REC-2.0 - <a href="http://www.ivoa.net/documents/cover/ADQL-20081030.html">http://www.ivoa.net/documents/cover/ADQL-20081030.html</a>. */
+		V2_0,
+		/** Version PR-2.1 - <a href="http://www.ivoa.net/documents/ADQL/20180112/index.html">http://www.ivoa.net/documents/ADQL/20180112/index.html</a>. */
+		V2_1; // TODO Move 2.1 as default when it becomes REC
 
-	public void testRegularIdentifier(final Token token) throws ParseException;
+		@Override
+		public String toString() {
+			return name().toLowerCase().replace('_', '.');
+		}
+
+		/**
+		 * Parse the given string as an ADQL version number.
+		 *
+		 * <p>This function should work with the following syntaxes:</p>
+		 * <ul>
+		 * 	<li><code>2.0</code></li>
+		 * 	<li><code>2_0</code></li>
+		 * 	<li><code>v2.0</code> or <code>V2.0</code></li>
+		 * 	<li><code>v2_0</code> or <code>V2_0</code></li>
+		 * </ul>
+		 *
+		 * @param str	String to parse as an ADQL version specification.
+		 *
+		 * @return	The identified ADQL version.
+		 */
+		public static ADQLVersion parse(String str) {
+			if (str == null)
+				return null;
+
+			str = str.trim().toUpperCase();
+
+			if (str.isEmpty())
+				return null;
+
+			if (str.charAt(0) != 'V')
+				str = 'V' + str;
+
+			try {
+				return ADQLVersion.valueOf(str.replaceAll("\\.", "_"));
+			} catch(IllegalArgumentException iae) {
+				return null;
+			}
+		}
+	}
+
+	/** Version of the ADQL grammar to use when none is specified:
+	 * {@link ADQLVersion#V2_0 2.0}. */
+	public final static ADQLVersion DEFAULT_VERSION = ADQLVersion.V2_0; // TODO Move 2.1 as default when it becomes REC
+
+	/**
+	 * Get the list of all supported ADQL grammar versions.
+	 *
+	 * @return	List of all supported ADQL versions.
+	 *
+	 * @see ADQLVersion#values()
+	 */
+	public static ADQLVersion[] getSupportedVersions() {
+		return ADQLVersion.values();
+	}
+
+	/**
+	 * Build on the fly a human list of all supported ADQL grammar versions.
+	 *
+	 * <p>
+	 * 	The default version item will be suffixed by the string
+	 * 	<code>(default)</code>.
+	 * </p>
+	 *
+	 * <i>
+	 * <p><b>Example:</b></p>
+	 * <pre>v2.0, v2.1 (default)</pre>
+	 * </i>
+	 *
+	 * @return	List of all supported ADQL versions.
+	 */
+	public static String getSupportedVersionsAsString() {
+		StringBuilder buf = new StringBuilder();
+		for(ADQLVersion v : ADQLVersion.values()) {
+			if (buf.length() > 0)
+				buf.append(", ");
+			buf.append(v.toString());
+			if (v == DEFAULT_VERSION)
+				buf.append(" (default)");
+		}
+		return buf.toString();
+	}
 
 	/* **********************************************************************
-	 *                     FUNCTIONS JUST FOR JUNIT
+	   *                        PARSER CREATION                             *
+	   ********************************************************************** */
+
+	/**
+	 * Builds an ADQL query parser for the default (i.e. last stable) version
+	 * of the ADQL grammar.
+	 *
+	 * <p>This parser is set with:</p>
+	 * <ul>
+	 * 	<li>the {@link #DEFAULT_VERSION default version} of the ADQL
+	 * 		grammar,</li>
+	 * 	<li>the {@link #setDefaultFeatures() default set} of optional features,</li>
+	 * 	<li>the default {@link ADQLQueryFactory ADQL query factory},</li>
+	 * 	<li>and no custom check (i.e. no {@link QueryChecker} is set).</li>
+	 * </ul>
+	 *
+	 * @see #DEFAULT_VERSION
+	 */
+	public ADQLParser() {
+		this(DEFAULT_VERSION, null, null, null);
+	}
+
+	/**
+	 * Builds an ADQL query parser for the specified version of the ADQL
+	 * grammar.
+	 *
+	 * <p>This parser is set with:</p>
+	 * <ul>
+	 * 	<li>the specified version of the ADQL grammar,</li>
+	 * 	<li>the {@link #setDefaultFeatures() default set} of optional features,</li>
+	 * 	<li>the default {@link ADQLQueryFactory ADQL query factory},</li>
+	 * 	<li>and no custom check (i.e. no {@link QueryChecker} is set).</li>
+	 * </ul>
+	 *
+	 * @param version	Version of the ADQL grammar that the parser must
+	 *               	implement.
+	 *               	<i>If NULL, the {@link #DEFAULT_VERSION} will be used.</i>
+	 */
+	public ADQLParser(ADQLVersion version) {
+		this(version, null, null, null);
+	}
+
+	/**
+	 * Builds a parser whose the query to parse will have to be given as a
+	 * String in parameter of
+	 * {@link ADQLParser#parseQuery(java.lang.String) parseQuery(String)}.
+	 *
+	 * @param version		Version of the ADQL grammar that the parser must
+	 *               		implement.
+	 *               		<i>If NULL, the {@link #DEFAULT_VERSION} will be
+	 *               		used.</i>
+	 * @param queryChecker	The custom checks to perform.
+	 *                    	<i>If NULL, only the general checks (e.g. supported
+	 *                    	features, UDFs, types) will be run.</i>
+	 * @param factory		The factory of ADQL objects to use.
+	 *               		<i>If NULL, the default query factory will be
+	 *               		used.</i>
+	 * @param features		The set of supported features.
+	 *                		<i>If NULL, the default set of supported features
+	 *                		will be used (see {@link #setDefaultFeatures()}).</i>
+	 */
+	public ADQLParser(ADQLVersion version, final QueryChecker queryChecker, final ADQLQueryFactory factory, final FeatureSet features) {
+		// Prevent the NULL value by setting the default version if necessary:
+		if (version == null)
+			version = DEFAULT_VERSION;
+
+		// Create the appropriate parser in function of the specified version:
+		switch(version) {
+			case V2_0:
+				grammarParser = new ADQLGrammar200(new java.io.ByteArrayInputStream("".getBytes()));
+				break;
+			case V2_1:
+			default:
+				grammarParser = new ADQLGrammar201(new java.io.ByteArrayInputStream("".getBytes()));
+				break;
+		}
+
+		// Set the query fixer to use (a default one):
+		setQuickFixer(new QueryFixer(grammarParser));
+
+		// Set the appropriate feature set:
+		if (features == null)
+			setDefaultFeatures();
+		else
+			setSupportedFeatures(features);
+
+		// Set the query factory:
+		setQueryFactory((factory == null) ? new ADQLQueryFactory() : factory);
+
+		// Set the query checker, if any:
+		setQueryChecker(queryChecker);
+
+		// Disable debugging messages by default:
+		setDebug(false);
+	}
+
+	/* **********************************************************************
+	   *                        GETTERS & SETTERS                           *
+	   ********************************************************************** */
+
+	/**
+	 * Get the ADQL grammar version followed by this parser.
+	 *
+	 * @return	The target ADQL version.
+	 */
+	public final ADQLVersion getADQLVersion() {
+		return grammarParser.getVersion();
+	}
+
+	/**
+	 * Get the internal grammar parser specific to the target ADQL version.
+	 *
+	 * <p><i><b>Warning:</b>
+	 * 	Changing the configuration of this internal parser might break the
+	 * 	normal functioning of this {@link ADQLParser} instance. It is
+	 * 	recommended to not use directly this internal parser. The goal of
+	 * 	{@link ADQLParser} is to provide a nice and safe parser API. If
+	 * 	something is missing or incorrect, please, contact the library
+	 * 	developer so that this API can be completed/fixed.
+	 * </i></p>
+	 *
+	 * @return	The internal grammar parser.
+	 */
+	public final ADQLGrammar getGrammarParser() {
+		return grammarParser;
+	}
+
+	/**
+	 * Get the API used to attempt fixing given ADQL queries with the functions
+	 * {@link #tryQuickFix(InputStream)} and {@link #tryQuickFix(String)}.
+	 *
+	 * @return	The query fixer tool.
+	 */
+	public final QueryFixer getQuickFixer() {
+		return quickFixer;
+	}
+
+	/**
+	 * Set the tool to use in order to attempt fixing any given ADQL query with
+	 * the functions {@link #tryQuickFix(InputStream)} and
+	 * {@link #tryQuickFix(String)}.
+	 *
+	 * @param fixer	The tool to use.
+	 *
+	 * @throws NullPointerException	If the given fixer is NULL.
+	 */
+	public final void setQuickFixer(final QueryFixer fixer) throws NullPointerException {
+		if (fixer == null)
+			throw new NullPointerException("Missing new QuickFixer! An ADQLParser can not try to fix ADQL queries without a QuickFixer instance.");
+		quickFixer = fixer;
+	}
+
+	/**
+	 * Get the query factory used to create ADQL objects during the parsing
+	 * of an ADQL query.
+	 *
+	 * @return	The used ADQL query factory.
+	 */
+	public final ADQLQueryFactory getQueryFactory() {
+		return grammarParser.getQueryFactory();
+	}
+
+	/**
+	 * Set the query factory to use when creating ADQL objects during the
+	 * parsing of an ADQL query.
+	 *
+	 * @param factory	The ADQL query factory to use.
+	 *
+	 * @throws NullPointerException	If the given factory is NULL.
+	 */
+	public final void setQueryFactory(ADQLQueryFactory factory) throws NullPointerException {
+		if (factory == null)
+			throw new NullPointerException("Missing ADQLQueryFactory to use! It is required for ADQL query parsing.");
+		grammarParser.setQueryFactory(factory);
+	}
+
+	/**
+	 * Get the list of all supported features.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	To customize the list of supported features, either get the set with
+	 * 	this function and then update it directly, or set a new
+	 * 	{@link FeatureSet} instance with
+	 * 	{@link #setSupportedFeatures(FeatureSet)}.
+	 * </i></p>
+	 *
+	 * @return	Set of supported features.
+	 */
+	public final FeatureSet getSupportedFeatures() {
+		return supportedFeatures;
+	}
+
+	/**
+	 * Set a default set of supported language features in function of the
+	 * target ADQL version.
+	 *
+	 * <ul>
+	 * 	<li><b>ADQL-2.0:</b> the geometric functions are the only supported
+	 * 		features.</li>
+	 * 	<li><b>ADQL-2.1:</b> all optional features are supported.</li>
+	 * </ul>
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	To customize the list of supported features, either get the set with
+	 * 	{@link #getSupportedFeatures()} and then update it directly, or set a
+	 * 	new {@link FeatureSet} instance with
+	 * 	{@link #setSupportedFeatures(FeatureSet)}.
+	 * </i></p>
+	 */
+	public final void setDefaultFeatures() {
+		switch(getADQLVersion()) {
+			case V2_0:
+				// any UDF is allowed and no optional feature supported...:
+				this.supportedFeatures = new FeatureSet(false, true);
+				// ...except geometries which are all supported by default:
+				supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
+				break;
+			case V2_1:
+			default:
+				// all available features are considered as supported:
+				this.supportedFeatures = new FeatureSet(true, true);
+				break;
+		}
+	}
+
+	/**
+	 * Set a new set of supported features.
+	 *
+	 * @param features	The new list of supported features.
+	 *
+	 * @throws NullPointerException	If the given object is NULL.
+	 */
+	public final void setSupportedFeatures(final FeatureSet features) throws NullPointerException {
+		if (features == null)
+			throw new NullPointerException("Missing list of supported features! It is required for ADQL query parsing.");
+		supportedFeatures = features;
+	}
+
+	/**
+	 * Get the custom checker of parsed ADQL queries.
+	 *
+	 * @return	Custom query checker,
+	 *        	or NULL if no custom check is available.
+	 */
+	public final QueryChecker getQueryChecker() {
+		return queryChecker;
+	}
+
+	/**
+	 * Set a custom checker of parsed ADQL queries.
+	 *
+	 * @param checker	The custom query checks to run,
+	 *               	or NULL to have no custom check.
+	 */
+	public final void setQueryChecker(QueryChecker checker) {
+		queryChecker = checker;
+	}
+
+	/**
+	 * Enable/Disable the debugging messages while parsing an ADQL expression.
+	 *
+	 * @param debug	<code>true</code> to enable debugging,
+	 *             	<code>false</code> to disable it.
+	 */
+	public final void setDebug(final boolean debug) {
+		if (debug)
+			grammarParser.enable_tracing();
+		else
+			grammarParser.disable_tracing();
+	}
+
+	/* **********************************************************************
+	   *                        PARSING FUNCTIONS                           *
+	   ********************************************************************** */
+
+	/**
+	* Parses the query string given in parameter.
+	*
+	* @param q	The ADQL query to parse.
+	*
+	* @return	The object representation of the given ADQL query.
+	*
+	* @throws ParseException	If there is at least one error.
+	*
+	* @see #effectiveParseQuery()
+	*/
+	public final ADQLQuery parseQuery(final String q) throws ParseException {
+		// Reset the parser with the string to parse:
+		try {
+			grammarParser.reset(new ByteArrayInputStream(q.getBytes()));
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+
+		// Run the query parsing:
+		return effectiveParseQuery();
+	}
+
+	/**
+	* Parses the query contained in the stream given in parameter.
+	*
+	* @param stream		The stream which contains the ADQL query to parse.
+	*
+	* @return	The object representation of the given ADQL query.
+	*
+	* @throws ParseException	If there is at least one error.
+	*
+	* @see #effectiveParseQuery()
+	*/
+	public final ADQLQuery parseQuery(final InputStream stream) throws ParseException {
+		// Reset the parser with the stream to parse:
+		try {
+			grammarParser.reset(stream);
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+
+		// Run the query parsing:
+		return effectiveParseQuery();
+	}
+
+	/**
+	 * Run the query parsing, then, if successful, the general and the custom
+	 * checks (if any) on the parsing result (i.e. the query tree).
+	 *
+	 * <p>This function follows these steps:</p>
+	 * <ol>
+	 * 	<li>Parse the full ADQL query,</li>
+	 * 	<li>Run the general checks on the parsing result (i.e. the ADQL
+	 * 		tree),</li>
+	 * 	<li>Run the custom checks (if any).</li>
+	 * </ol>
+	 *
+	 * <p>
+	 * 	When a step is successful, this function run the next one. But, if it
+	 * 	fails, a {@link ParseException} is immediately thrown. This exception
+	 * 	may represent more than one error ; especially during the steps 2. and
+	 * 	3.
+	 * </p>
+	 *
+	 * @return	The object representation of the successfully parsed query
+	 *        	(i.e. the ADQL tree).
+	 *
+	 * @throws ParseException	If syntax is incorrect (i.e. no ADQL tree can be
+	 *                       	generated), or if any check on the parsing
+	 *                       	result fails.
+	 *
+	 * @see #generalChecks(ADQLQuery)
+	 * @see QueryChecker#check(ADQLQuery)
+	 */
+	protected ADQLQuery effectiveParseQuery() throws ParseException {
+		// 1. Parse the full ADQL query:
+		ADQLQuery parsedQuery;
+		try {
+			parsedQuery = grammarParser.Query();
+		} catch(TokenMgrError tme) {
+			throw new ParseException(tme);
+		}
+
+		/* 2. Run the general checks on the parsed query:
+		 * (note: this check is very close to grammar check...hence its higher
+		 *        priority) */
+		generalChecks(parsedQuery);
+
+		// 3. Run the custom checks (if any):
+		if (queryChecker != null)
+			queryChecker.check(parsedQuery);
+
+		// If no syntactic error and that all checks passed, return the result:
+		return parsedQuery;
+	}
+
+	/**
+	 * Run the general and common checks on the given ADQL tree.
+	 *
+	 * <p>
+	 * 	By default, this function only checks whether or not language features
+	 * 	found in the given ADQL tree are supported. If not, a
+	 * 	{@link ParseException} is thrown.
+	 * </p>
+	 *
+	 * <p><i><b>Implementation note:</b>
+	 * 	By default, when a part of the ADQL tree uses an unsupported language
+	 * 	feature, an {@link UnsupportedFeatureException} is created. This
+	 * 	function does not stop at the first encountered unsupported feature. It
+	 * 	keeps reading the ADQL tree and appends all created
+	 * 	{@link UnsupportedFeatureException}s into an
+	 * 	{@link UnresolvedIdentifiersException}. Finally, when the tree has been
+	 * 	entirely read and if unsupported features have been encountered, this
+	 * 	{@link UnresolvedIdentifiersException} is thrown.
+	 * </p>
+	 *
+	 * @param q	The ADQL query to check.
+	 *
+	 * @throws ParseException	If any unsupported language feature is used in
+	 *                       	the given ADQL tree.
+	 */
+	protected void generalChecks(final ADQLQuery q) throws ParseException {
+		// Create the exception in which errors have to be appended:
+		UnresolvedIdentifiersException exUnsupportedFeatures = new UnresolvedIdentifiersException("unsupported expression");
+
+		// Search recursively for all optional features inside the given tree:
+		SearchOptionalFeaturesHandler sFeaturesHandler = new SearchOptionalFeaturesHandler(true, false);
+		sFeaturesHandler.search(q);
+
+		// Append an error for each unsupported one:
+		for(ADQLObject obj : sFeaturesHandler) {
+			if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
+				exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
+		}
+
+		// If unsupported features have been found, throw a ParseException:
+		if (exUnsupportedFeatures.getNbErrors() > 0)
+			throw exUnsupportedFeatures;
+	}
+
+	/**
+	 * Parse the given <code>SELECT</code> clause.
+	 *
+	 * <i>
+	 * <p><b>Important note:</b>
+	 * 	The given string MUST start with <code>SELECT</code> (case insensitive).
+	 * 	It MUST also follow the syntax of the FULL clause as described in the
+	 * 	appropriate version of the ADQL Grammar.
+	 * </p>
+	 * <p><b>Examples of INcorrect parameter:</b></p>
+	 * <ul>
+	 * 	<li><code>SELECT</code></li>
+	 * 	<li><code>aColumn</code></li>
+	 * 	<li><code>DISTINCT TOP 10 aColumn, bColumn AS "B"</code></li>
+	 * </ul>
+	 * <p><b>Example of correct parameter:</b></p>
+	 * <pre>SELECT DISTINCT TOP 10 aColumn, bColumn AS "B"</pre>
+	 * </i>
+	 *
+	 * @param adql	The <code>SELECT</code> clause to parse.
+	 *
+	 * @return	The corresponding object representation of the given clause.
+	 *
+	 * @throws ParseException	If the syntax of the given clause is incorrect.
+	 */
+	public final ClauseSelect parseSelect(final String adql) throws ParseException {
+		// Reset the parser with the string to parse:
+		try {
+			grammarParser.reset(new java.io.ByteArrayInputStream(adql.getBytes()));
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+
+		// Parse the string:
+		try {
+
+			// Parse the string as a SELECT clause:
+			grammarParser.Select();
+
+			// Return what's just got parsed:
+			return grammarParser.getQuery().getSelect();
+
+		} catch(TokenMgrError tme) {
+			throw new ParseException(tme);
+		}
+	}
+
+	/**
+	 * Parse the given <code>FROM</code> clause.
+	 *
+	 * <i>
+	 * <p><b>Important note:</b>
+	 * 	The given string MUST start with <code>FROM</code> (case insensitive).
+	 * 	It MUST also follow the syntax of the FULL clause as described in the
+	 * 	appropriate version of the ADQL Grammar.
+	 * </p>
+	 * <p><b>Examples of INcorrect parameter:</b></p>
+	 * <ul>
+	 * 	<li><code>FROM</code></li>
+	 * 	<li><code>aTable</code></li>
+	 * 	<li><code>aTable JOIN bTable</code></li>
+	 * 	<li><code>aTable JOIN bTable AS "B" USING(id)</code></li>
+	 * </ul>
+	 * <p><b>Example of correct parameter:</b></p>
+	 * <pre>FROM aTable JOIN bTable AS "B" USING(id)</pre>
+	 * </i>
+	 *
+	 * @param adql	The <code>FROM</code> clause to parse.
+	 *
+	 * @return	The corresponding object representation of the given clause.
+	 *
+	 * @throws ParseException	If the syntax of the given clause is incorrect.
+	 */
+	public final FromContent parseFrom(java.lang.String adql) throws ParseException {
+		// Reset the parser with the string to parse:
+		try {
+			grammarParser.reset(new java.io.ByteArrayInputStream(adql.getBytes()));
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+
+		// Parse the string:
+		try {
+
+			// Parse the string as a FROM clause:
+			grammarParser.From();
+
+			// Return what's just got parsed:
+			return grammarParser.getQuery().getFrom();
+
+		} catch(TokenMgrError tme) {
+			throw new ParseException(tme);
+		}
+	}
+
+	/**
+	 * Parse the given <code>WHERE</code> clause.
+	 *
+	 * <i>
+	 * <p><b>Important note:</b>
+	 * 	The given string MUST start with <code>WHERE</code> (case insensitive).
+	 * 	It MUST also follow the syntax of the FULL clause as described in the
+	 * 	appropriate version of the ADQL Grammar.
+	 * </p>
+	 * <p><b>Examples of INcorrect parameter:</b></p>
+	 * <ul>
+	 * 	<li><code>WHERE</code></li>
+	 * 	<li><code>foo</code></li>
+	 * 	<li><code>foo = 'bar'</code></li>
+	 * </ul>
+	 * <p><b>Example of correct parameter:</b></p>
+	 * <pre>WHERE foo = 'bar'</pre>
+	 * </i>
+	 *
+	 * @param adql	The <code>WHERE</code> clause to parse.
+	 *
+	 * @return	The corresponding object representation of the given clause.
+	 *
+	 * @throws ParseException	If the syntax of the given clause is incorrect.
+	 */
+	public final ClauseConstraints parseWhere(java.lang.String adql) throws ParseException {
+		// Reset the parser with the string to parse:
+		try {
+			grammarParser.reset(new java.io.ByteArrayInputStream(adql.getBytes()));
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+
+		// Parse the string:
+		try {
+
+			// Parse the string as a WHERE clause:
+			grammarParser.Where();
+
+			// Return what's just got parsed:
+			return grammarParser.getQuery().getWhere();
+
+		} catch(TokenMgrError tme) {
+			throw new ParseException(tme);
+		}
+	}
+
+	/**
+	 * Parse the given <code>ORDER BY</code> clause.
+	 *
+	 * <i>
+	 * <p><b>Important note:</b>
+	 * 	The given string MUST start with <code>ORDER BY</code> (case insensitive).
+	 * 	It MUST also follow the syntax of the FULL clause as described in the
+	 * 	appropriate version of the ADQL Grammar.
+	 * </p>
+	 * <p><b>Examples of INcorrect parameter:</b></p>
+	 * <ul>
+	 * 	<li><code>ORDER BY</code></li>
+	 * 	<li><code>aColumn DESC</code></li>
+	 * </ul>
+	 * <p><b>Example of correct parameter:</b></p>
+	 * <pre>ORDER BY aColumn DESC</pre>
+	 * </i>
+	 *
+	 * @param adql	The <code>ORDER BY</code> clause to parse.
+	 *
+	 * @return	The corresponding object representation of the given clause.
+	 *
+	 * @throws ParseException	If the syntax of the given clause is incorrect.
+	 */
+	public final ClauseADQL<ADQLOrder> parseOrderBy(java.lang.String adql) throws ParseException {
+		// Reset the parser with the string to parse:
+		try {
+			grammarParser.reset(new java.io.ByteArrayInputStream(adql.getBytes()));
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+
+		// Parse the string:
+		try {
+
+			// Parse the string as a ORDER BY clause:
+			grammarParser.OrderBy();
+
+			// Return what's just got parsed:
+			return grammarParser.getQuery().getOrderBy();
+
+		} catch(TokenMgrError tme) {
+			throw new ParseException(tme);
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+	}
+
+	/**
+	 * Parse the given <code>GROUP BY</code> clause.
+	 *
+	 * <i>
+	 * <p><b>Important note:</b>
+	 * 	The given string MUST start with <code>GROUP BY</code> (case insensitive).
+	 * 	It MUST also follow the syntax of the FULL clause as described in the
+	 * 	appropriate version of the ADQL Grammar.
+	 * </p>
+	 * <p><b>Examples of INcorrect parameter:</b></p>
+	 * <ul>
+	 * 	<li><code>GROUP BY</code></li>
+	 * 	<li><code>aColumn</code></li>
+	 * </ul>
+	 * <p><b>Example of correct parameter:</b></p>
+	 * <pre>GROUP BY aColumn</pre>
+	 * </i>
+	 *
+	 * @param adql	The <code>GROUP BY</code> clause to parse.
+	 *
+	 * @return	The corresponding object representation of the given clause.
+	 *
+	 * @throws ParseException	If the syntax of the given clause is incorrect.
+	 */
+	public final ClauseADQL<ADQLColumn> parseGroupBy(java.lang.String adql) throws ParseException {
+		// Reset the parser with the string to parse:
+		try {
+			grammarParser.reset(new java.io.ByteArrayInputStream(adql.getBytes()));
+		} catch(Exception ex) {
+			throw grammarParser.generateParseException(ex);
+		}
+
+		// Parse the string:
+		try {
+
+			// Parse the string as a GROUP BY clause:
+			grammarParser.GroupBy();
+
+			// Return what's just got parsed:
+			return grammarParser.getQuery().getGroupBy();
+
+		} catch(TokenMgrError tme) {
+			throw new ParseException(tme);
+		}
+	}
+
+	/* **********************************************************************
+	   *                     TOKENIZATION FUNCTION                          *
+	   ********************************************************************** */
+
+	/**
+	 * Parse the given ADQL expression and split it into {@link Token}s.
+	 *
+	 * <i>
+	 * <p><b>Note:</b>
+	 * 	If <code>stopAtEnd=true</code>, the encountered EOQ (i.e. End Of Query
+	 * 	= <code>;</code>) or EOF (i.e. End Of File) are NOT included in the
+	 * 	returned array.
+	 * </p>
+	 *
+	 * <p><b>Example:</b>
+	 * <pre> tokenize("SELECT ; FROM", <b>false</b>); // = { SELECT, EOQ, FROM }
+	 * tokenize("SELECT ; FROM", <b>true</b>);  // = { SELECT }</pre>
+	 * </i>
+	 *
+	 * @param expr		The ADQL expression to tokenize.
+	 * @param stopAtEnd	<code>true</code> to stop the tokenization process when
+	 *                 	an EOQ or an EOF is encountered,
+	 *                 	<code>false</code> to stop when the end of the string is
+	 *                 	reached.
+	 *
+	 * @return	The corresponding ordered list of tokens.
+	 *
+	 * @throws ParseException	If an unknown token is encountered.
+	 */
+	public Token[] tokenize(final String expr, final boolean stopAtEnd) throws ParseException {
+		// Start tokenizing the given expression:
+		/* (note: if the given expression is NULL, behave exactly as an empty
+		 *        string) */
+		Tokenizer tokenizer = grammarParser.getTokenizer((expr == null) ? "" : expr);
+
+		// Iterate over all the tokens:
+		try {
+			ArrayList<Token> tokens = new ArrayList<Token>();
+			Token token = tokenizer.nextToken();
+			while(token != null && (!stopAtEnd || !grammarParser.isEnd(token))) {
+				tokens.add(token);
+				token = tokenizer.nextToken();
+			}
+			return tokens.toArray(new Token[tokens.size()]);
+		} catch(TokenMgrError err) {
+			// wrap such errors and propagate them:
+			throw new ParseException(err);
+		}
+	}
+
+	/* **********************************************************************
+	   *                      CORRECTION SUGGESTION                         *
+	   ********************************************************************** */
+
+	/**
+	* Try fixing tokens/terms of the input ADQL query.
+	*
+	* <p>
+	* 	<b>This function does not try to fix syntactical or semantical errors.</b>
+	* 	It just try to fix the most common issues in ADQL queries, such as:
+	* </p>
+	* <ul>
+	* 	<li>some Unicode characters confusable with ASCII characters (like a
+	* 		space, a dash, ...) ; this function replace them by their ASCII
+	* 		alternative,</li>
+	* 	<li>any of the following are double quoted:
+	* 		<ul>
+	* 			<li>non regular ADQL identifiers
+	* 				(e.g. <code>_RAJ2000</code>),</li>
+	* 			<li>ADQL function names used as identifiers
+	* 				(e.g. <code>distance</code>)</li>
+	* 			<li>and SQL reserved keywords
+	* 				(e.g. <code>public</code>).</li>
+	* 		</ul>
+	* 	</li>
+	* </ul>
+	*
+	* <p><i><b>Note 1:</b>
+	* 	The given stream is NOT closed by this function even if the EOF is
+	* 	reached. It is the responsibility of the caller to close it.
+	* </i></p>
+	*
+	* <p><i><b>Note 2:</b>
+	* 	This function does not use any instance variable of this parser
+	* 	(especially the InputStream or Reader provided at initialisation or
+	* 	ReInit).
+	* </i></p>
+	*
+	* @param input	Stream containing the input ADQL query to fix.
+	*
+	* @return	The suggested correction of the input ADQL query.
+	*
+	* @throws java.io.IOException	If there is any error while reading from the
+	*                            	given input stream.
+	* @throws ParseException	If any unrecognised character is encountered,
+	*                       	or if anything else prevented the tokenization
+	*                       	of some characters/words/terms.
+	*
+	* @see QueryFixer#fix(String)
+	*
+	* @since 1.5
+	*/
+	public final String tryQuickFix(final InputStream input) throws IOException, ParseException {
+		// Fetch everything into a single string:
+		StringBuffer buf = new StringBuffer();
+		byte[] cBuf = new byte[1024];
+		int nbChar;
+		while((nbChar = input.read(cBuf)) > -1) {
+			buf.append(new String(cBuf, 0, nbChar));
+		}
+
+		// Convert the buffer into a String and now try to fix it:
+		return quickFixer.fix(buf.toString());
+	}
+
+	/**
+	* Try fixing tokens/terms of the given ADQL query.
+	*
+	* <p>
+	* 	<b>This function does not try to fix syntactical or semantical errors.</b>
+	* 	It just try to fix the most common issues in ADQL queries, such as:
+	* </p>
+	* <ul>
+	* 	<li>some Unicode characters confusable with ASCII characters (like a
+	* 		space, a dash, ...) ; this function replace them by their ASCII
+	* 		alternative,</li>
+	* 	<li>any of the following are double quoted:
+	* 		<ul>
+	* 			<li>non regular ADQL identifiers
+	* 				(e.g. <code>_RAJ2000</code>),</li>
+	* 			<li>ADQL function names used as identifiers
+	* 				(e.g. <code>distance</code>)</li>
+	* 			<li>and SQL reserved keywords
+	* 				(e.g. <code>public</code>).</li>
+	* 		</ul>
+	* 	</li>
+	* </ul>
+	*
+	* <p><i><b>Note:</b>
+	* 	This function does not use any instance variable of this parser
+	* 	(especially the InputStream or Reader provided at initialisation or
+	* 	ReInit).
+	* </i></p>
+	*
+	* @param adqlQuery	The input ADQL query to fix.
+	*
+	* @return	The suggested correction of the given ADQL query.
+	*
+	* @throws ParseException	If any unrecognised character is encountered,
+	*                       	or if anything else prevented the tokenization
+	*                       	of some characters/words/terms.
+	*
+	* @see QueryFixer#fix(String)
+	*
+	* @since 1.5
+	*/
+	public final String tryQuickFix(String adqlQuery) throws ParseException {
+		return quickFixer.fix(adqlQuery);
+	}
+
+	/* **********************************************************************
+	 *                           MAIN FUNCTION
 	 * ********************************************************************** */
 
-	ADQLOperand StringExpression() throws ParseException;
+	/**
+	 * Parse the given ADQL query.
+	 *
+	 * <h3>Usage</h3>
+	 *
+	 * <pre>adqlParser.jar [--version=...] [-h] [-d] [-v] [-e] [-a|-s] [-f] [&lt;FILE&gt;|&lt;URL&gt;]</pre>
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	If no file or URL is given, the ADQL query is expected in the standard
+	 * 	input. This query must end with a ';' or <Ctrl+D>!
+	 * </i></p>
+	 *
+	 * <h3>Parameters</h3>
+	 *
+	 * <ul>
+	 * 	<li><b><code>--version=...</code>:</b>
+	 * 		Set the version of the ADQL grammar to follow.
+	 * 		It must be one among: <i>v2.0, v2.1 (default)</i>.</li>
+	 * 	<li><b><code>-h</code> or <code>--help</code>:</b>
+	 * 		Display this help.</li>
+	 * 	<li><b><code>-v</code> or <code>--verbose</code>:</b>
+	 * 		Print the main steps of the parsing.</li>
+	 * 	<li><b><code>-d</code> or <code>--debug</code>:</b>
+	 * 		Print stack traces when a grave error occurs.</li>
+	 * 	<li><b><code>-e</code> or <code>--explain</code>:</b>
+	 * 		Explain the ADQL parsing (or Expand the parsing tree).</li>
+	 * 	<li><b><code>-a</code> or <code>--adql</code>:</b>
+	 * 		Display the understood ADQL query.</li>
+	 * 	<li><b><code>-s</code> or <code>--sql</code>:</b>
+	 * 		Ask the SQL translation of the given ADQL query (SQL compatible with
+	 * 		PostgreSQL).</li>
+	 * 	<li><b><code>-f</code> or <code>--try-fix</code>:</b>
+	 * 		Try fixing the most common ADQL query issues before attempting to
+	 * 		parse the query.</li>
+	 * </ul>
+	 *
+	 * <h3>Return</h3>
+	 *
+	 * <p>
+	 * 	By default, nothing if the query is correct. Otherwise a message
+	 * 	explaining why the query is not correct is displayed.
+	 * </p>
+	 *
+	 * <p>
+	 * 	With the <code>-s</code> option, the SQL translation of the given ADQL query will be
+	 * 	returned.
+	 * </p>
+	 *
+	 * <p>
+	 * 	With the <code>-a</code> option, the ADQL query is returned as it has been
+	 * 	understood.
+	 * </p>
+	 *
+	 * <h3>Exit status</h3>
+	 *
+	 * <ul>
+	 * 	<li><b><code>0</code>:</b>
+	 * 		OK!</li>
+	 * 	<li><b><code>1</code>:</b>
+	 * 		Parameter error (missing or incorrect parameter)</li>
+	 * 	<li><b><code>2</code>:</b>
+	 * 		File error (incorrect file/url, reading error, ...)</li>
+	 * 	<li><b><code>3</code>:</b>
+	 * 		Parsing error (syntactic or semantic error)</li>
+	 * 	<li><b><code>4</code>:</b>
+	 * 		Translation error (a problem has occurred during the translation of
+	 * 		the given ADQL query in SQL).</li>
+	 * </ul>
+	 *
+	 * @param args	Program parameters.
+	 *
+	 * @throws Exception	If any unexpected error occurs.
+	 */
+	public static final void main(String[] args) throws Exception {
+		final String USAGE = "Usage:\n    adqlParser.jar [--version=...] [-h] [-d] [-v] [-e] [-a|-s] [-f] [<FILE>|<URL>]\n\nNOTE: If no file or URL is given, the ADQL query is expected in the standard\n      input. This query must end with a ';' or <Ctrl+D>!\n\nParameters:\n    --version=...   : Set the version of the ADQL grammar to follow.\n                      It must be one among: " + getSupportedVersionsAsString() + "\n    -h or --help    : Display this help.\n    -v or --verbose : Print the main steps of the parsing\n    -d or --debug   : Print stack traces when a grave error occurs\n    -e or --explain : Explain the ADQL parsing (or Expand the parsing tree)\n    -a or --adql    : Display the understood ADQL query\n    -s or --sql     : Ask the SQL translation of the given ADQL query\n                      (SQL compatible with PostgreSQL)\n    -f or --try-fix : Try fixing the most common ADQL query issues before\n                      attempting to parse the query.\n\nReturn:\n    By default: nothing if the query is correct. Otherwise a message explaining\n                why the query is not correct is displayed.\n    With the -s option, the SQL translation of the given ADQL query will be\n    returned.\n    With the -a option, the ADQL query is returned as it has been understood.\n\nExit status:\n    0  OK !\n    1  Parameter error (missing or incorrect parameter)\n    2  File error (incorrect file/url, reading error, ...)\n    3  Parsing error (syntactic or semantic error)\n    4  Translation error (a problem has occurred during the translation of the\n       given ADQL query in SQL).";
+		final String NEED_HELP_MSG = "Try -h or --help to get more help about the usage of this program.";
+		final String urlRegex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
-	public Token[] tokenize(final String expr) throws ParseException;
+		ADQLParser parser;
+
+		short mode = -1;
+		String file = null;
+		ADQLVersion version = DEFAULT_VERSION;
+		boolean verbose = false, debug = false, explain = false, tryFix = false;
+
+		// Parameters reading:
+		for(int i = 0; i < args.length; i++) {
+			if (args[i].startsWith("--version=")) {
+				String[] parts = args[i].split("=");
+				if (parts.length <= 1) {
+					System.err.println("((!)) Missing ADQL version! It must be one among: " + getSupportedVersionsAsString() + ". ((!))\n" + NEED_HELP_MSG);
+					System.exit(1);
+				}
+				version = ADQLVersion.parse(parts[1]);
+				if (version == null) {
+					System.err.println("((!)) Incorrect ADQL version: \"" + args[i].split("=")[1] + "\"! It must be one among: " + getSupportedVersionsAsString() + ". ((!))\n" + NEED_HELP_MSG);
+					System.exit(1);
+				}
+			} else if (args[i].equalsIgnoreCase("-d") || args[i].equalsIgnoreCase("--debug"))
+				debug = true;
+			else if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("--verbose"))
+				verbose = true;
+			else if (args[i].equalsIgnoreCase("-e") || args[i].equalsIgnoreCase("--explain"))
+				explain = true;
+			else if (args[i].equalsIgnoreCase("-a") || args[i].equalsIgnoreCase("--adql")) {
+				if (mode != -1) {
+					System.err.println("((!)) Too much parameter: you must choose between -s, -c, -a or nothing ((!))\n" + NEED_HELP_MSG);
+					System.exit(1);
+				} else
+					mode = 1;
+			} else if (args[i].equalsIgnoreCase("-s") || args[i].equalsIgnoreCase("--sql")) {
+				if (mode != -1) {
+					System.err.println("((!)) Too much parameter: you must choose between -s, -c, -a or nothing ((!))\n" + NEED_HELP_MSG);
+					System.exit(1);
+				} else
+					mode = 2;
+			} else if (args[i].equalsIgnoreCase("-f") || args[i].equalsIgnoreCase("--try-fix"))
+				tryFix = true;
+			else if (args[i].equalsIgnoreCase("-h") || args[i].equalsIgnoreCase("--help")) {
+				System.out.println(USAGE);
+				System.exit(0);
+			} else if (args[i].startsWith("-")) {
+				System.err.println("((!)) Unknown parameter: \"" + args[i] + "\" ((!))\u005cn" + NEED_HELP_MSG);
+				System.exit(1);
+			} else
+				file = args[i].trim();
+		}
+
+		try {
+
+			// Get the parser for the specified ADQL version:
+			parser = new ADQLParser(version);
+
+			// Try fixing the query, if asked:
+			InputStream in = null;
+			if (tryFix) {
+				if (verbose)
+					System.out.println("((i)) Trying to automatically fix the query...");
+
+				try {
+					// get the input stream...
+					if (file == null || file.length() == 0)
+						in = System.in;
+					else if (file.matches(urlRegex))
+						in = (new java.net.URL(file)).openStream();
+					else
+						in = new java.io.FileInputStream(file);
+
+					// ...and try fixing the query:
+					String query = parser.tryQuickFix(in);
+
+					if (verbose)
+						System.out.println("((i)) SUGGESTED QUERY:\n" + query);
+
+					// Initialize the parser with this fixed query:
+					in = new java.io.ByteArrayInputStream(query.getBytes());
+				} catch(ParseException pe) {
+					System.out.println("((!)) Quick fix failure! Cause: " + pe.getMessage() + ".");
+					if (debug)
+						pe.printStackTrace();
+					else
+						System.out.println("      (run again with -d for more details)");
+				} finally {
+					// close the stream (if opened):
+					if (in != null)
+						in.close();
+					in = null;
+				}
+			}
+
+			// If no tryQuickFix (or if failed), take the query as provided:
+			if (in == null) {
+				// Initialise the parser with the specified input:
+				if (file == null || file.length() == 0)
+					in = System.in;
+				else if (file.matches(urlRegex))
+					in = (new java.net.URL(file)).openStream();
+				else
+					in = new java.io.FileInputStream(file);
+			}
+
+			// Enable/Disable the debugging in function of the parameters:
+			parser.setDebug(explain);
+
+			// Query parsing:
+			try {
+				if (verbose)
+					System.out.print("((i)) Parsing ADQL query...");
+				ADQLQuery q = parser.parseQuery(in);
+				if (verbose)
+					System.out.println("((i)) CORRECT ADQL QUERY ((i))");
+				if (mode == 2) {
+					PostgreSQLTranslator translator = new PostgreSQLTranslator();
+					if (verbose)
+						System.out.print("((i)) Translating in SQL...");
+					String sql = translator.translate(q);
+					if (verbose)
+						System.out.println("ok");
+					System.out.println(sql);
+				} else if (mode == 1) {
+					System.out.println(q.toADQL());
+				}
+			} catch(UnresolvedIdentifiersException uie) {
+				System.err.println("((X)) " + uie.getNbErrors() + " unresolved identifiers:");
+				for(ParseException pe : uie)
+					System.err.println("\t - at " + pe.getPosition() + ": " + uie.getMessage());
+				if (debug)
+					uie.printStackTrace(System.err);
+				System.exit(3);
+			} catch(ParseException pe) {
+				System.err.println("((X)) Syntax error: " + pe.getMessage() + " ((X))");
+				if (debug)
+					pe.printStackTrace(System.err);
+				System.exit(3);
+			} catch(TranslationException te) {
+				if (verbose)
+					System.out.println("error");
+				System.err.println("((X)) Translation error: " + te.getMessage() + " ((X))");
+				if (debug)
+					te.printStackTrace(System.err);
+				System.exit(4);
+			}
+
+		} catch(IOException ioe) {
+			System.err.println("\n((X)) Error while reading the file \"" + file + "\": " + ioe.getMessage() + " ((X))");
+			if (debug)
+				ioe.printStackTrace(System.err);
+			System.exit(2);
+		}
+
+	}
 
 }

@@ -19,7 +19,7 @@ package adql.db.exception;
  * Copyright 2013-2015 - Astronomisches Rechen Institut (ARI)
  */
 
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.TextPosition;
 
 /**

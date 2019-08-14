@@ -20,7 +20,7 @@ package adql.query;
  *                       Astronomisches Rechen Institute (ARI)
  */
 
-import adql.parser.Token;
+import adql.parser.grammar.Token;
 
 /**
  * Indicates a simple position or a token/string position in a text.

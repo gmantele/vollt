@@ -22,9 +22,8 @@ import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef.FunctionParam;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ParseException;
 import adql.parser.feature.LanguageFeature;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.operand.ADQLColumn;
@@ -42,8 +41,6 @@ import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
 public class TestDBChecker {
-
-	ADQLParserFactory parserFactory = new ADQLParserFactory();
 
 	private static List<DBTable> tables;
 
@@ -115,7 +112,7 @@ public class TestDBChecker {
 		 *
 		 * This issue can be tested by creating a ConstraintsGroup (i.e. in a constraints location like WHERE or JOIN...ON,
 		 * a constraint (or more) between parenthesis). */
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 		try {
 			parser.parseQuery("SELECT * FROM foo WHERE (colI BETWEEN 1 AND 10)");
@@ -127,7 +124,7 @@ public class TestDBChecker {
 
 	@Test
 	public void testGroupByWithQualifiedColName() {
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 		try {
 			// Not qualified column name:
@@ -146,7 +143,7 @@ public class TestDBChecker {
 
 	@Test
 	public void testQualifiedName() {
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 		try {
 			// Tests with a table whose the schema is specified:
@@ -189,7 +186,7 @@ public class TestDBChecker {
 
 	@Test
 	public void testColRefWithDottedAlias() {
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables));
 		try {
 			// ORDER BY
@@ -212,7 +209,7 @@ public class TestDBChecker {
 
 	@Test
 	public void testNumericOrStringValueExpressionPrimary() {
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		try {
 			assertNotNull(parser.parseQuery("SELECT 'toto' FROM foo;"));
 			assertNotNull(parser.parseQuery("SELECT ('toto') FROM foo;"));
@@ -266,7 +263,7 @@ public class TestDBChecker {
 	@Test
 	public void testUDFManagement() {
 		// UNKNOWN FUNCTIONS ARE NOT ALLOWED:
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.getSupportedFeatures().allowAnyUdf(true);
 		parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 
@@ -293,7 +290,7 @@ public class TestDBChecker {
 		FunctionDef[] udfs;
 		try {
 			udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR)), new FunctionDef("tata", new DBType(DBDatatype.INTEGER)) };
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.getSupportedFeatures().allowAnyUdf(true);
 			parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 		} catch(ParseException pe) {
@@ -349,7 +346,7 @@ public class TestDBChecker {
 		try {
 			udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) }) };
 			udfs[0].setUDFClass(UDFToto.class);
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.getSupportedFeatures().allowAnyUdf(true);
 			parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 		} catch(ParseException pe) {
@@ -389,7 +386,7 @@ public class TestDBChecker {
 		try {
 			udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) }) };
 			udfs[0].setUDFClass(WrongUDFToto.class);
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.getSupportedFeatures().allowAnyUdf(true);
 			parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 		} catch(ParseException pe) {
@@ -411,7 +408,7 @@ public class TestDBChecker {
 	@Test
 	public void testGeometry() {
 		// DECLARE A SIMPLE PARSER where all geometries are allowed by default:
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables));
 
 		// Test with several geometries while all are allowed:
@@ -424,7 +421,7 @@ public class TestDBChecker {
 
 		// Test with several geometries while only the allowed ones:
 		try {
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
 			parser.getSupportedFeatures().support(ContainsFunction.FEATURE);
 			parser.getSupportedFeatures().support(PointFunction.FEATURE);
@@ -447,7 +444,7 @@ public class TestDBChecker {
 
 		// Test by adding REGION:
 		try {
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
 			parser.getSupportedFeatures().support(ContainsFunction.FEATURE);
 			parser.getSupportedFeatures().support(PointFunction.FEATURE);
@@ -472,7 +469,7 @@ public class TestDBChecker {
 
 		// Test with several geometries while none geometry is allowed:
 		try {
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
 
 			parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;");
@@ -491,7 +488,7 @@ public class TestDBChecker {
 	@Test
 	public void testCoordSys() {
 		// DECLARE A SIMPLE PARSER where all coordinate systems are allowed by default:
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables));
 
 		// Test with several coordinate systems while all are allowed:
@@ -517,7 +514,7 @@ public class TestDBChecker {
 
 		// Test with several coordinate systems while only some allowed:
 		try {
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0), null, Arrays.asList(new String[]{ "icrs * *", "fk4 geocenter *", "galactic * spherical2" })));
 			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
 			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('icrs', 12.3, 45.6), CIRCLE('cartesian3', 1.2, 2.3, 5)) = 1;"));
@@ -552,7 +549,7 @@ public class TestDBChecker {
 
 		// Test with a coordinate system while none is allowed:
 		try {
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0), null, new ArrayList<String>(0)));
 			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
 			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('position 12.3 45.6'), REGION('circle 1.2 2.3 5')) = 1;"));
@@ -586,7 +583,7 @@ public class TestDBChecker {
 	@Test
 	public void testTypesChecking() {
 		// DECLARE A SIMPLE PARSER:
-		ADQLParser parser = parserFactory.createParser();
+		ADQLParser parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables));
 
 		// Test the type of columns generated by the parser:
@@ -694,7 +691,7 @@ public class TestDBChecker {
 		FunctionDef[] udfs;
 		try {
 			udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR)), new FunctionDef("tata", new DBType(DBDatatype.INTEGER)), new FunctionDef("titi", new DBType(DBDatatype.REGION)) };
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
@@ -811,7 +808,7 @@ public class TestDBChecker {
 			complexFcts[0] = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("str", new DBType(DBDatatype.VARCHAR)), new FunctionParam("num", new DBType(DBDatatype.INTEGER)) });
 			complexFcts[1] = new FunctionDef("fct2", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("str", new DBType(DBDatatype.VARCHAR)) });
 			complexFcts[2] = new FunctionDef("fct3", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("str", new DBType(DBDatatype.VARCHAR)) });
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables, Arrays.asList(complexFcts)));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
@@ -837,7 +834,7 @@ public class TestDBChecker {
 		}
 
 		// CLEAR ALL UDFs AND ALLOW UNKNOWN FUNCTION:
-		parser = parserFactory.createParser();
+		parser = new ADQLParser();
 		parser.setQueryChecker(new DBChecker(tables, null));
 
 		// Test again:
@@ -863,7 +860,7 @@ public class TestDBChecker {
 
 		// DECLARE THE UDF (while unknown functions are allowed):
 		try {
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables, Arrays.asList(new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR)) })));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
@@ -886,7 +883,7 @@ public class TestDBChecker {
 		// DECLARE UDFs WITH SAME NAMES BUT DIFFERENT TYPE OF ARGUMENT:
 		try {
 			udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("attr", new DBType(DBDatatype.VARCHAR)) }), new FunctionDef("toto", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("attr", new DBType(DBDatatype.INTEGER)) }), new FunctionDef("toto", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("attr", new DBType(DBDatatype.POINT)) }) };
-			parser = parserFactory.createParser();
+			parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 		} catch(ParseException pe) {
 			pe.printStackTrace();

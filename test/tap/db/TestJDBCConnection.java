@@ -28,8 +28,7 @@ import adql.db.DBTable;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import adql.query.IdentifierField;
 import adql.translator.AstroH2Translator;
@@ -65,14 +64,19 @@ public class TestJDBCConnection {
 
 		uploadExamplePath = "./test/tap/db/upload_example.vot";
 
-		DBTools.createTestDB();
-		h2Connection = DBTools.createConnection("h2", null, null, DBTools.DB_TEST_PATH, DBTools.DB_TEST_USER, DBTools.DB_TEST_PWD);
-		h2JDBCConnection = new JDBCConnection(h2Connection, new AstroH2Translator(false), "H2", null);
-		sensH2JDBCConnection = new JDBCConnection(h2Connection, new AstroH2Translator(true, true, true, true), "SensitiveH2", null);
+		try {
+			DBTools.createTestDB();
+			h2Connection = DBTools.createConnection("h2", null, null, DBTools.DB_TEST_PATH, DBTools.DB_TEST_USER, DBTools.DB_TEST_PWD);
+			h2JDBCConnection = new JDBCConnection(h2Connection, new AstroH2Translator(false), "H2", null);
+			sensH2JDBCConnection = new JDBCConnection(h2Connection, new AstroH2Translator(true, true, true, true), "SensitiveH2", null);
 
-		sqliteConnection = DBTools.createConnection("sqlite", null, null, sqliteDbFile, null, null);
-		sqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(false), "SQLITE", null);
-		sensSqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(true), "SensitiveSQLite", null);
+			sqliteConnection = DBTools.createConnection("sqlite", null, null, sqliteDbFile, null, null);
+			sqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(false), "SQLITE", null);
+			sensSqliteJDBCConnection = new JDBCConnection(sqliteConnection, new PostgreSQLTranslator(true), "SensitiveSQLite", null);
+		} catch(Throwable t) {
+			t.printStackTrace();
+			fail(t.getMessage());
+		}
 	}
 
 	@AfterClass
@@ -524,7 +528,7 @@ public class TestJDBCConnection {
 			for(TAPTable t : schema)
 				tables.add(t);
 
-			ADQLParser parser = (new ADQLParserFactory()).createParser();
+			ADQLParser parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables));
 			parser.setDebug(false);
 

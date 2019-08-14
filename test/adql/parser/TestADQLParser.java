@@ -13,8 +13,11 @@ import org.junit.Test;
 
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnsupportedFeatureException;
-import adql.parser.ADQLParserFactory.ADQLVersion;
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.feature.LanguageFeature;
+import adql.parser.grammar.ADQLGrammar200Constants;
+import adql.parser.grammar.ParseException;
+import adql.parser.grammar.Token;
 import adql.query.ADQLQuery;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
@@ -23,8 +26,6 @@ import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.string.LowerFunction;
 
 public class TestADQLParser {
-
-	ADQLParserFactory parserFactory = new ADQLParserFactory();
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -43,9 +44,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testColumnReference(){
-		ADQLParser parser = parserFactory.createParser();
-		try{
+	public void testColumnReference() {
+		ADQLParser parser = new ADQLParser();
+		try {
 			// ORDER BY
 			parser.parseQuery("SELECT * FROM cat ORDER BY oid;");
 			parser.parseQuery("SELECT * FROM cat ORDER BY oid ASC;");
@@ -110,9 +111,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testDelimitedIdentifiersWithDot(){
-		ADQLParser parser = parserFactory.createParser();
-		try{
+	public void testDelimitedIdentifiersWithDot() {
+		ADQLParser parser = new ADQLParser();
+		try {
 			ADQLQuery query = parser.parseQuery("SELECT * FROM \"B/avo.rad/catalog\";");
 			assertEquals("B/avo.rad/catalog", query.getFrom().getTables().get(0).getTableName());
 		} catch(Exception e) {
@@ -122,9 +123,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testJoinTree(){
-		ADQLParser parser = parserFactory.createParser();
-		try{
+	public void testJoinTree() {
+		ADQLParser parser = new ADQLParser();
+		try {
 			String[] queries = new String[]{ "SELECT * FROM aTable A JOIN aSecondTable B ON A.id = B.id JOIN aThirdTable C ON B.id = C.id;", "SELECT * FROM aTable A NATURAL JOIN aSecondTable B NATURAL JOIN aThirdTable C;" };
 			for(String q : queries) {
 				ADQLQuery query = parser.parseQuery(q);
@@ -149,9 +150,9 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void test(){
-		ADQLParser parser = parserFactory.createParser();
-		try{
+	public void test() {
+		ADQLParser parser = new ADQLParser();
+		try {
 			ADQLQuery query = parser.parseQuery("SELECT 'truc''machin'  	'bidule' --- why not a comment now ^^\n'FIN' FROM foo;");
 			assertNotNull(query);
 			assertEquals("truc'machinbiduleFIN", ((StringConstant)(query.getSelect().get(0).getOperand())).getValue());
@@ -174,37 +175,37 @@ public class TestADQLParser {
 	public void testIncorrectCharacter() {
 		/* An identifier must be written only with digits, an underscore or
 		 * regular latin characters: */
-		try{
-			(parserFactory.createParser()).parseQuery("select gr\u00e9gory FROM aTable");
-		}catch(Throwable t){
+		try {
+			(new ADQLParser()).parseQuery("select gr\u00e9gory FROM aTable");
+		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
 			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.10: "));
 			assertTrue(t.getMessage().endsWith("Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it)."));
 		}
 
 		/* Un-finished double/single quoted string: */
-		try{
-			(parserFactory.createParser()).parseQuery("select \"stuff FROM aTable");
-		}catch(Throwable t){
+		try {
+			(new ADQLParser()).parseQuery("select \"stuff FROM aTable");
+		} catch(Throwable t) {
 			assertEquals(ParseException.class, t.getClass());
 			assertTrue(t.getMessage().startsWith("Incorrect character encountered at l.1, c.26: <EOF>"));
 			assertTrue(t.getMessage().endsWith("Possible cause: a string between single or double quotes which is never closed (solution: well...just close it!)."));
 		}
 
 		// But in a string, delimited identifier or a comment, it is fine:
-		try{
-			(parserFactory.createParser()).parseQuery("select 'gr\u00e9gory' FROM aTable");
-			(parserFactory.createParser()).parseQuery("select \"gr\u00e9gory\" FROM aTable");
-			(parserFactory.createParser()).parseQuery("select * FROM aTable -- a comment by Gr\u00e9gory");
-		}catch(Throwable t){
+		try {
+			(new ADQLParser()).parseQuery("select 'gr\u00e9gory' FROM aTable");
+			(new ADQLParser()).parseQuery("select \"gr\u00e9gory\" FROM aTable");
+			(new ADQLParser()).parseQuery("select * FROM aTable -- a comment by Gr\u00e9gory");
+		} catch(Throwable t) {
 			fail("This error should never occurs because all these queries have an accentuated character but at a correct place.");
 		}
 	}
 
 	@Test
-	public void testMultipleSpacesInOrderAndGroupBy(){
-		try{
-			ADQLParser parser = parserFactory.createParser();
+	public void testMultipleSpacesInOrderAndGroupBy() {
+		try {
+			ADQLParser parser = new ADQLParser();
 
 			// Single space:
 			parser.parseQuery("select * from aTable ORDER BY aCol");
@@ -229,8 +230,8 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testADQLReservedWord(){
-		ADQLParser parser = parserFactory.createParser();
+	public void testADQLReservedWord() {
+		ADQLParser parser = new ADQLParser();
 
 		final String hintAbs = ".*\n\\(HINT: \"abs\" is a reserved ADQL word in v[0-9]+\\.[0-9]+\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)";
 		final String hintPoint = ".*\n\\(HINT: \"point\" is a reserved ADQL word in v[0-9]+\\.[0-9]+\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)";
@@ -307,8 +308,8 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testSQLReservedWord(){
-		ADQLParser parser = parserFactory.createParser();
+	public void testSQLReservedWord() {
+		ADQLParser parser = new ADQLParser();
 
 		try {
 			parser.parseQuery("SELECT rows FROM aTable");
@@ -328,8 +329,8 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testUDFName(){
-		ADQLParser parser = parserFactory.createParser();
+	public void testUDFName() {
+		ADQLParser parser = new ADQLParser();
 		// TODO [ADQL-2.1] Add the support for this specific UDF in the the FeatureSet!
 
 		// CASE: Valid UDF name => OK
@@ -354,46 +355,8 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testTryQuickFix(){
-		ADQLParser parser = parserFactory.createParser();
-
-		try {
-			/* CASE: Nothing to fix => exactly the same as provided */
-			// raw ASCII query with perfectly regular ADQL identifiers:
-			assertEquals("SELECT foo, bar FROM aTable", parser.tryQuickFix("SELECT foo, bar FROM aTable"));
-			// same with \n, \r and \t (replaced by 4 spaces):
-			assertEquals("SELECT foo," + System.getProperty("line.separator") + "    bar" + System.getProperty("line.separator") + "FROM aTable", parser.tryQuickFix("SELECT foo,\r\n\tbar\nFROM aTable"));
-			// still ASCII query with delimited identifiers and ADQL functions:
-			assertEquals("SELECT \"foo\"," + System.getProperty("line.separator") + "    \"_bar\", AVG(col1)" + System.getProperty("line.separator") + "FROM \"public\".aTable", parser.tryQuickFix("SELECT \"foo\",\r\n\t\"_bar\", AVG(col1)\nFROM \"public\".aTable"));
-
-			/* CASE: Unicode confusable characters => replace by their ASCII alternative */
-			assertEquals("SELECT \"_bar\" FROM aTable", parser.tryQuickFix("SELECT \"\uFE4Dbar\" FROM aTable"));
-
-			/* CASE: incorrect regular identifier */
-			assertEquals("SELECT \"_bar\" FROM aTable", parser.tryQuickFix("SELECT _bar FROM aTable"));
-			assertEquals("SELECT \"_bar\" FROM aTable", parser.tryQuickFix("SELECT \uFE4Dbar FROM aTable"));
-			assertEquals("SELECT \"2mass_id\" FROM aTable", parser.tryQuickFix("SELECT 2mass_id FROM aTable"));
-			assertEquals("SELECT \"col?\" FROM aTable", parser.tryQuickFix("SELECT col? FROM aTable"));
-			assertEquals("SELECT \"col[2]\" FROM aTable", parser.tryQuickFix("SELECT col[2] FROM aTable"));
-
-			/* CASE: SQL reserved keyword */
-			assertEquals("SELECT \"date\", \"year\", \"user\" FROM \"public\".aTable", parser.tryQuickFix("SELECT date, year, user FROM public.aTable"));
-
-			/* CASE: ADQL function name without parameters list */
-			assertEquals("SELECT \"count\", \"distance\" FROM \"schema\".aTable", parser.tryQuickFix("SELECT count, distance FROM schema.aTable"));
-
-			/* CASE: a nice combination of everything (with comments at beginning, middle and end) */
-			assertEquals("-- begin comment" + System.getProperty("line.separator") + "SELECT id, \"_raj2000\", \"distance\", (\"date\")," + System.getProperty("line.separator") + "    \"min\",min(mag), \"_dej2000\" -- in-between commment" + System.getProperty("line.separator") + "FROM \"public\".mytable -- end comment", parser.tryQuickFix("-- begin comment\r\nSELECT id, \uFE4Draj2000, distance, (date),\r\tmin,min(mag), \"_dej2000\" -- in-between commment\nFROM public.mytable -- end comment"));
-
-		} catch(ParseException pe) {
-			pe.printStackTrace();
-			fail("Unexpected parsing error! This query should have passed. (see console for more details)");
-		}
-	}
-
-	@Test
 	public void testOptionalFeatures() {
-		ADQLParser parser = parserFactory.createParser(ADQLVersion.V2_0);
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
 
 		// CASE: No support for the ADQL-2.1 function - LOWER => ERROR
 		try {
@@ -405,7 +368,7 @@ public class TestADQLParser {
 		}
 
 		// CASE: LOWER supported by default in ADQL-2.1 => OK
-		parser = parserFactory.createParser(ADQLVersion.V2_1);
+		parser = new ADQLParser(ADQLVersion.V2_1);
 		try {
 			ADQLQuery q = parser.parseQuery("SELECT LOWER(foo) FROM aTable");
 			assertNotNull(q);
@@ -433,7 +396,7 @@ public class TestADQLParser {
 		/* NOTE: Geometrical functions are the only optional features in 2.0 */
 		/* ***************************************************************** */
 
-		parser = parserFactory.createParser(ADQLVersion.V2_0);
+		parser = new ADQLParser(ADQLVersion.V2_0);
 
 		// CASE: By default all geometries are supported so if one is used => OK
 		try {
@@ -466,6 +429,68 @@ public class TestADQLParser {
 		} catch(Throwable t) {
 			t.printStackTrace();
 			fail("Unexpected error! This query should have passed. (see console for more details)");
+		}
+	}
+
+	@Test
+	public void testTokenize() {
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
+
+		final String[] EMPTY_STRINGS = new String[]{ null, "", "  ", " 	 " };
+
+		// TEST: NULL or empty string with end at EOF => only one token=EOF
+		try {
+			for(String str : EMPTY_STRINGS) {
+				Token[] tokens = parser.tokenize(str, false);
+				assertEquals(1, tokens.length);
+				assertEquals(ADQLGrammar200Constants.EOF, tokens[0].kind);
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+			fail("Unexpected error when providing a NULL or empty string to tokenize! (see console for more details)");
+		}
+
+		// TEST: NULL or empty string with truncation at EOQ/EOF => empty array
+		try {
+			for(String str : EMPTY_STRINGS)
+				assertEquals(0, parser.tokenize(str, true).length);
+		} catch(Exception e) {
+			e.printStackTrace();
+			fail("Unexpected error when providing a NULL or empty string to tokenize! (see console for more details)");
+		}
+
+		// TEST: unknown token => ParseException
+		try {
+			parser.tokenize("grégory", false);
+			fail("No known token is provided. A ParseException was expected.");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals("Incorrect character encountered at l.1, c.3: \"\\u00e9\" ('é'), after : \"\"! Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it).", ex.getMessage());
+		}
+
+		// TEST: correct list of token => ok
+		final String TEST_STR = "SELECT FROM Where foo; join";
+		try {
+			Token[] tokens = parser.tokenize(TEST_STR, false);
+			assertEquals(7, tokens.length);
+			int[] expected = new int[]{ ADQLGrammar200Constants.SELECT, ADQLGrammar200Constants.FROM, ADQLGrammar200Constants.WHERE, ADQLGrammar200Constants.REGULAR_IDENTIFIER_CANDIDATE, ADQLGrammar200Constants.EOQ, ADQLGrammar200Constants.JOIN, ADQLGrammar200Constants.EOF };
+			for(int i = 0; i < tokens.length; i++)
+				assertEquals(expected[i], tokens[i].kind);
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error! All ADQL expressions were composed of correct tokens. (see console for more details)");
+		}
+
+		// TEST: same with truncation at EOQ/EOF => same but truncated from EOQ
+		try {
+			Token[] tokens = parser.tokenize(TEST_STR, true);
+			assertEquals(4, tokens.length);
+			int[] expected = new int[]{ ADQLGrammar200Constants.SELECT, ADQLGrammar200Constants.FROM, ADQLGrammar200Constants.WHERE, ADQLGrammar200Constants.REGULAR_IDENTIFIER_CANDIDATE };
+			for(int i = 0; i < tokens.length; i++)
+				assertEquals(expected[i], tokens[i].kind);
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error! All ADQL expressions were composed of correct tokens. (see console for more details)");
 		}
 	}
 

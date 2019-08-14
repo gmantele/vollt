@@ -35,7 +35,7 @@ import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.translator.JDBCTranslator;
 import tap.db.DBConnection;
 import tap.metadata.TAPColumn;

@@ -22,7 +22,7 @@ package tap.config;
 
 import adql.db.FunctionDef;
 import adql.db.STCS;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.operand.function.UserDefinedFunction;
 import tap.ServiceConnection;
 import tap.TAPException;

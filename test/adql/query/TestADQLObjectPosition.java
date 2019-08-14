@@ -9,8 +9,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import adql.parser.ADQLParserFactory;
-import adql.parser.ParseException;
+import adql.parser.ADQLParser;
+import adql.parser.grammar.ParseException;
 import adql.query.constraint.Comparison;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
@@ -21,8 +21,6 @@ import adql.search.SimpleSearchHandler;
 
 public class TestADQLObjectPosition {
 
-	private ADQLParserFactory parserFactory = new ADQLParserFactory();
-
 	@Before
 	public void setUp() {
 
@@ -31,7 +29,7 @@ public class TestADQLObjectPosition {
 	@Test
 	public void testPositionInAllClauses() {
 		try {
-			ADQLQuery query = parserFactory.createParser().parseQuery("SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors");
+			ADQLQuery query = new ADQLParser().parseQuery("SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors");
 
 			Iterator<ADQLObject> results = query.search(new SimpleSearchHandler(true) {
 				@Override
@@ -61,7 +59,7 @@ public class TestADQLObjectPosition {
 	@Test
 	public void testPositionAccuracy() {
 		try {
-			ADQLQuery query = parserFactory.createParser().parseQuery("SELECT TOP 1000 oid FROM foo JOIN bar USING(oid)\nWHERE foo || toto = 'truc'\n      AND 2 > 1+0 GROUP BY oid HAVING COUNT(oid) > 10\n\tORDER BY 1 DESC");
+			ADQLQuery query = new ADQLParser().parseQuery("SELECT TOP 1000 oid FROM foo JOIN bar USING(oid)\nWHERE foo || toto = 'truc'\n      AND 2 > 1+0 GROUP BY oid HAVING COUNT(oid) > 10\n\tORDER BY 1 DESC");
 			// Test SELECT
 			assertEquality(new TextPosition(1, 1, 1, 20), query.getSelect().getPosition());
 			// Test ADQLColumn (here: "oid")

@@ -28,7 +28,7 @@ import org.postgresql.util.PGobject;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.TextPosition;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;

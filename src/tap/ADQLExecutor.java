@@ -26,9 +26,8 @@ import java.io.OutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
 import adql.parser.ADQLQueryFactory;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
@@ -540,7 +539,7 @@ public class ADQLExecutor {
 		ADQLParser parser = service.getFactory().createADQLParser();
 		if (parser == null) {
 			logger.logTAP(LogLevel.WARNING, null, "PARSING", "No ADQL parser returned by the TAPFactory! The default implementation is used instead.", null);
-			parser = ADQLParserFactory.createDefaultParser();
+			parser = new ADQLParser();
 		}
 
 		// Set the ADQL factory:

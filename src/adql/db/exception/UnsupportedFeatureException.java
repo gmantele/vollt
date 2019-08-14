@@ -19,8 +19,8 @@ package adql.db.exception;
  * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
-import adql.parser.ParseException;
 import adql.parser.feature.LanguageFeature;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLObject;
 
 /**

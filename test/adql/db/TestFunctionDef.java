@@ -11,9 +11,9 @@ import org.junit.Test;
 
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef.FunctionParam;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ADQLParserFactory.ADQLVersion;
-import adql.parser.ParseException;
+import adql.parser.ADQLParser;
+import adql.parser.ADQLParser.ADQLVersion;
+import adql.parser.grammar.ParseException;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.NumericConstant;
@@ -501,7 +501,7 @@ public class TestFunctionDef {
 			fail("LOWER is supposed to be a reserved keyword!");
 		} catch(Exception e) {
 			assertEquals(ParseException.class, e.getClass());
-			switch(ADQLParserFactory.DEFAULT_VERSION) {
+			switch(ADQLParser.DEFAULT_VERSION) {
 				case V2_0:
 					assertEquals(MSG_LOWER_2_0, e.getMessage());
 					break;

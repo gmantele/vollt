@@ -29,10 +29,9 @@ import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.DefaultDBColumn;
 import adql.parser.ADQLParser;
-import adql.parser.ADQLParserFactory;
-import adql.parser.ADQLParserFactory.ADQLVersion;
-import adql.parser.ParseException;
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.feature.LanguageFeature;
+import adql.parser.grammar.ParseException;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
@@ -92,7 +91,7 @@ public class ADQLQuery implements ADQLObject {
 	 * Builds an empty ADQL query.
 	 */
 	public ADQLQuery() {
-		this(ADQLParserFactory.DEFAULT_VERSION);
+		this(ADQLParser.DEFAULT_VERSION);
 	}
 
 	/**
@@ -106,7 +105,7 @@ public class ADQLQuery implements ADQLObject {
 	 * @since 2.0
 	 */
 	public ADQLQuery(final ADQLVersion version) {
-		this.adqlVersion = (version == null ? ADQLParserFactory.DEFAULT_VERSION : version);
+		this.adqlVersion = (version == null ? ADQLParser.DEFAULT_VERSION : version);
 		select = new ClauseSelect();
 		from = null;
 		where = new ClauseConstraints("WHERE");

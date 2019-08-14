@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import adql.parser.ADQLQueryFactory;
-import adql.parser.ParseException;
+import adql.parser.grammar.ParseException;
 import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.NegativeOperand;

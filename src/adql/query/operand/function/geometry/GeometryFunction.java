@@ -20,8 +20,8 @@ package adql.query.operand.function.geometry;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import adql.parser.ParseException;
 import adql.parser.feature.LanguageFeature;
+import adql.parser.grammar.ParseException;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.TextPosition;
