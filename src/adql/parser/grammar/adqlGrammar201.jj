@@ -1236,35 +1236,45 @@ ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null;}{
 	{ return coordSys; }
 }
 
-GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand coordSys; ADQLOperand width, height; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; ADQLOperand op=null; GeometryValue<GeometryFunction> gvf = null; GeometryFunction gf = null;} {
+GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand width, height; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; ADQLOperand op=null; GeometryValue<GeometryFunction> gvf = null; GeometryFunction gf = null;} {
 	try{
+	  
+		// BOX (deprecated since ADQL-2.1)
+		(LOOKAHEAD(BoxWithCooSys()) gf=BoxWithCooSys()
+
 		// BOX:
-		((fct=<BOX> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
-				<COMMA> coords=Coordinates() // coordinates
+		| (fct=<BOX> <LEFT_PAR> // coord_sys
+				coords=Coordinates() // coordinates
 				<COMMA> width=NumericExpression() <COMMA> height=NumericExpression() end=<RIGHT_PAR>)
-		 {gf = queryFactory.createBox(coordSys, coords[0], coords[1], width, height);}
-		 
+		 {gf = queryFactory.createBox(null, coords[0], coords[1], width, height);}
+		
 		// CENTROID:
 		| (fct=<CENTROID> <LEFT_PAR> gvf=GeometryExpression() end=<RIGHT_PAR>) {gf = queryFactory.createCentroid(gvf);}
+
+		// CIRCLE (deprecated since ADQL-2.1)
+		| LOOKAHEAD(CircleWithCooSys()) gf=CircleWithCooSys()
 		
 		// CIRCLE:
-		| (fct=<CIRCLE> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
-				<COMMA> coords=Coordinates() // coordinates
+		| (fct=<CIRCLE> <LEFT_PAR>
+				coords=Coordinates() // coordinates
 				<COMMA> width=NumericExpression() end=<RIGHT_PAR>) // radius
-		 {gf = queryFactory.createCircle(coordSys, coords[0], coords[1], width);}
+		 {gf = queryFactory.createCircle(null, coords[0], coords[1], width);}
 		
 		// POINT: 
 		| gf=Point()
+
+		// POLYGON (deprecated since ADQL-2.1)
+		| LOOKAHEAD(PolygonWithCooSys()) gf=PolygonWithCooSys()
 		
 		// POLYGON:
-		| (fct=<POLYGON> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
+		| (fct=<POLYGON> <LEFT_PAR>
 				{ vCoords = new Vector<ADQLOperand>(); } // coordinates
-				<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+				tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
 				<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
 				<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
 				(<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);})*
 				end=<RIGHT_PAR>)
-		  { gf = queryFactory.createPolygon(coordSys, vCoords); }
+		  { gf = queryFactory.createPolygon(null, vCoords); }
 		  
 		/* // REGION (REMOVED SINCE 2.1):
 		| (fct=<REGION> <LEFT_PAR> op=StringExpression() end=<RIGHT_PAR>) {gf = queryFactory.createRegion(op);}*/
@@ -1280,14 +1290,84 @@ GeometryFunction GeometryValueFunction(): {Token fct=null, end=null; ADQLOperand
 	}
 }
 
-PointFunction Point(): {Token start, end; ADQLOperand coordSys; ADQLOperand[] coords;} {
-	start=<POINT> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
-			<COMMA> coords=Coordinates() end=<RIGHT_PAR> // coordinates
+GeometryFunction BoxWithCooSys(): { Token fct=null, end=null; ADQLOperand coordSys; ADQLOperand width, height; ADQLOperand[] coords; } {
+	fct=<BOX> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
+			<COMMA> coords=Coordinates() // coordinates
+			<COMMA> width=NumericExpression() <COMMA> height=NumericExpression() end=<RIGHT_PAR>
+	{
+		try {
+			GeometryFunction gf = queryFactory.createBox(coordSys, coords[0], coords[1], width, height);
+			gf.setPosition(new TextPosition(fct, end));
+			return gf;	
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+GeometryFunction CircleWithCooSys(): { Token fct=null, end=null; ADQLOperand coordSys; ADQLOperand width; ADQLOperand[] coords; } {
+	fct=<CIRCLE> <LEFT_PAR> coordSys=CoordinateSystem() <COMMA> // coord_sys
+			coords=Coordinates() // coordinates
+			<COMMA> width=NumericExpression() end=<RIGHT_PAR> // radius
+	{
+		try {
+			GeometryFunction gf = queryFactory.createCircle(coordSys, coords[0], coords[1], width);
+			gf.setPosition(new TextPosition(fct, end));
+			return gf;	
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+PointFunction Point(): {Token start, end; ADQLOperand[] coords; PointFunction pf;} {
+	// POINT (depecrated since ADQL-2.1)
+	(LOOKAHEAD(PointWithCooSys())
+		pf=PointWithCooSys()
+		{ return pf; }
+	
+	// POINT (last version - >= ADQL-2.1)
+	|
+		start=<POINT> <LEFT_PAR> coords=Coordinates() end=<RIGHT_PAR> // coordinates
+		{
+			try{
+				pf = queryFactory.createPoint(null, coords[0], coords[1]);
+				pf.setPosition(new TextPosition(start, end));
+				return pf;
+			}catch(Exception ex){
+				throw generateParseException(ex);
+			}
+		}
+	)
+}
+
+PointFunction PointWithCooSys(): {Token start, end; ADQLOperand coordSys; ADQLOperand[] coords;} {
+	start=<POINT> <LEFT_PAR> coordSys=CoordinateSystem() <COMMA> // coord_sys
+			coords=Coordinates() end=<RIGHT_PAR> // coordinates
 	{
 		try{
 			PointFunction pf = queryFactory.createPoint(coordSys, coords[0], coords[1]);
 			pf.setPosition(new TextPosition(start, end));
 			return pf;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+GeometryFunction PolygonWithCooSys(): { Token fct=null, end=null; ADQLOperand coordSys; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; } {
+	fct=<POLYGON> <LEFT_PAR> coordSys=CoordinateSystem() // coord_sys
+			{ vCoords = new Vector<ADQLOperand>(); } // coordinates
+			<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+			<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+			<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+			(<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);})*
+			end=<RIGHT_PAR>
+	{
+		try {
+			GeometryFunction gf = queryFactory.createPolygon(coordSys, vCoords);
+			gf.setPosition(new TextPosition(fct, end));
+			return gf;
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}

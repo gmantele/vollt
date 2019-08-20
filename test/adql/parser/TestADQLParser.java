@@ -551,6 +551,35 @@ public class TestADQLParser {
 	}
 
 	@Test
+	public void testGeometryWithNoCooSys() {
+		/*
+		 * NOTE:
+		 * 	Since ADQL-2.1, the coordinate system argument becomes optional.
+		 */
+
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		// CASE: with no coordinate system => equivalent to coosys = ''
+		try {
+			assertEquals("POINT('', 1, 2)", parser.parseSelect("SELECT POINT(1, 2)").get(0).toADQL());
+			assertEquals("CIRCLE('', 1, 2, 3)", parser.parseSelect("SELECT CIRCLE(1, 2, 3)").get(0).toADQL());
+			assertEquals("BOX('', 1, 2, 3, 4)", parser.parseSelect("SELECT BOX(1, 2, 3, 4)").get(0).toADQL());
+			assertEquals("POLYGON('', 1, 2, 3, 4, 5, 6)", parser.parseSelect("SELECT POLYGON(1, 2, 3, 4, 5, 6)").get(0).toADQL());
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error! All parsed geometries are correct.");
+		}
+
+		// CASE: ambiguity with POLYGON and a wrong nb of arguments
+		try {
+			assertEquals("POLYGON(ra, dec, 3, 4, 5, 6, 7)", parser.parseSelect("SELECT POLYGON(ra, dec, 3, 4, 5, 6, 7)").get(0).toADQL());
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error! All parsed geometries are \"correct\".");
+		}
+	}
+
+	@Test
 	public void testCoordSys() {
 		// DECLARE A SIMPLE PARSER where all coordinate systems are allowed by default:
 		ADQLParser parser = new ADQLParser();
