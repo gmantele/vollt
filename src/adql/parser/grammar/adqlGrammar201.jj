@@ -284,6 +284,7 @@ TOKEN : {
 |	< NULL: "NULL" >       { matchedToken.adqlReserved = true; }
 |	< BETWEEN: "BETWEEN" > { matchedToken.adqlReserved = true; }
 |	< LIKE: "LIKE" >       { matchedToken.adqlReserved = true; }
+|	< ILIKE: "ILIKE" >     { matchedToken.adqlReserved = true; }
 }
 TOKEN : { 
 	< IN: "IN" >         { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
@@ -1065,6 +1066,14 @@ ADQLConstraint Predicate(): {ADQLQuery q=null; ADQLColumn column=null; ADQLOpera
 		| LOOKAHEAD(StringExpression() [<NOT>] <LIKE>) (strExpr1=StringExpression() [notToken=<NOT>] <LIKE> strExpr2=StringExpression()
 		    {
 		      Comparison comp = queryFactory.createComparison(strExpr1, (notToken==null)?ComparisonOperator.LIKE:ComparisonOperator.NOTLIKE, strExpr2);
+		      comp.setPosition(new TextPosition(strExpr1.getPosition(), strExpr2.getPosition()));
+		      return comp;
+		    }
+		  )
+		// ilike_predicate
+		| LOOKAHEAD(StringExpression() [<NOT>] <ILIKE>) (strExpr1=StringExpression() [notToken=<NOT>] <ILIKE> strExpr2=StringExpression()
+		    {
+		      Comparison comp = queryFactory.createComparison(strExpr1, (notToken==null)?ComparisonOperator.ILIKE:ComparisonOperator.NOTILIKE, strExpr2);
 		      comp.setPosition(new TextPosition(strExpr1.getPosition(), strExpr2.getPosition()));
 		      return comp;
 		    }

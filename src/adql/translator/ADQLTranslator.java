@@ -2,21 +2,21 @@ package adql.translator;
 
 /*
  * This file is part of ADQLLibrary.
- * 
+ *
  * ADQLLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * ADQLLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -65,13 +65,14 @@ import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
+import adql.query.operand.function.string.LowerFunction;
 
 /**
  * Translates ADQL objects into any language (i.e. SQL).
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
- * 
+ * @version 2.0 (08/2019)
+ *
  * @see PostgreSQLTranslator
  */
 public interface ADQLTranslator {
@@ -142,6 +143,9 @@ public interface ADQLTranslator {
 	public String translate(MathFunction fct) throws TranslationException;
 
 	public String translate(UserDefinedFunction fct) throws TranslationException;
+
+	/** @since 2.0 */
+	public String translate(LowerFunction fct) throws TranslationException;
 
 	/* ***** GEOMETRICAL FUNCTIONS ***** */
 	public String translate(GeometryFunction fct) throws TranslationException;

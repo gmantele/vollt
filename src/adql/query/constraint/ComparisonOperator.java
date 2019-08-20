@@ -26,12 +26,23 @@ import adql.query.operand.function.SQLFunction;
  * Gathers all comparison operators (numeric or not).
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  *
  * @see Comparison
  */
 public enum ComparisonOperator {
-	EQUAL, NOT_EQUAL, LESS_THAN, LESS_OR_EQUAL, GREATER_THAN, GREATER_OR_EQUAL, LIKE, NOTLIKE;
+	EQUAL,
+	NOT_EQUAL,
+	LESS_THAN,
+	LESS_OR_EQUAL,
+	GREATER_THAN,
+	GREATER_OR_EQUAL,
+	LIKE,
+	/** @since 2.0 */
+	ILIKE,
+	NOTLIKE,
+	/** @since 2.0 */
+	NOTILIKE;
 
 	/** Description of the ADQL Feature based on this type.
 	 * @since 2.0 */
@@ -39,7 +50,10 @@ public enum ComparisonOperator {
 
 	/** @since 2.0 */
 	private ComparisonOperator() {
-		FEATURE = new LanguageFeature(null, this.name(), false);
+		if (name().endsWith("ILIKE"))
+			FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_STRING, "ILIKE", true, "Perform a case-insensitive comparison between its string operands.");
+		else
+			FEATURE = new LanguageFeature(null, this.name(), false);
 	}
 
 	/**
@@ -75,8 +89,12 @@ public enum ComparisonOperator {
 			return GREATER_OR_EQUAL;
 		else if (str.equalsIgnoreCase("LIKE"))
 			return LIKE;
+		else if (str.equalsIgnoreCase("ILIKE"))
+			return ILIKE;
 		else if (str.equalsIgnoreCase("NOT LIKE"))
 			return NOTLIKE;
+		else if (str.equalsIgnoreCase("NOT ILIKE"))
+			return NOTILIKE;
 		else
 			throw new UnsupportedOperationException("Comparison operator unknown: \"" + str + "\" !");
 	}
@@ -97,8 +115,12 @@ public enum ComparisonOperator {
 				return ">=";
 			case LIKE:
 				return "LIKE";
+			case ILIKE:
+				return "ILIKE";
 			case NOTLIKE:
 				return "NOT LIKE";
+			case NOTILIKE:
+				return "NOT ILIKE";
 			default:
 				return "???";
 		}

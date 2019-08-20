@@ -33,6 +33,7 @@ import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
 import adql.query.IdentifierField;
+import adql.query.constraint.Comparison;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
 import adql.query.from.FromContent;
@@ -77,7 +78,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 1.5 (03/2019)
+ * @version 2.0 (08/2019)
  * @since 1.4
  *
  * @see SQLServer_ADQLQueryFactory
@@ -97,7 +98,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 * Builds an SQLServerTranslator which always translates in SQL all identifiers (schema, table and column) in a case sensitive manner ;
 	 * in other words, schema, table and column names will be surrounded by double quotes in the SQL translation.
 	 */
-	public SQLServerTranslator(){
+	public SQLServerTranslator() {
 		caseSensitivity = 0x0F;
 	}
 
@@ -107,7 +108,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 *
 	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity.
 	 */
-	public SQLServerTranslator(final boolean allCaseSensitive){
+	public SQLServerTranslator(final boolean allCaseSensitive) {
 		caseSensitivity = allCaseSensitive ? (byte)0x0F : (byte)0x00;
 	}
 
@@ -119,7 +120,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 * @param table		<i>true</i> to translate table names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param column	<i>true</i> to translate column names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 */
-	public SQLServerTranslator(final boolean catalog, final boolean schema, final boolean table, final boolean column){
+	public SQLServerTranslator(final boolean catalog, final boolean schema, final boolean table, final boolean column) {
 		caseSensitivity = IdentifierField.CATALOG.setCaseSensitive(caseSensitivity, catalog);
 		caseSensitivity = IdentifierField.SCHEMA.setCaseSensitive(caseSensitivity, schema);
 		caseSensitivity = IdentifierField.TABLE.setCaseSensitive(caseSensitivity, table);
@@ -127,7 +128,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public boolean isCaseSensitive(final IdentifierField field){
+	public boolean isCaseSensitive(final IdentifierField field) {
 		return field == null ? false : field.isCaseSensitive(caseSensitivity);
 	}
 
@@ -139,7 +140,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 * @see #translate(ClauseSelect)
 	 */
 	@Override
-	public String translate(ADQLQuery query) throws TranslationException{
+	public String translate(ADQLQuery query) throws TranslationException {
 		StringBuffer sql = new StringBuffer(translate(query.getSelect()));
 
 		sql.append("\nFROM ").append(translate(query.getFrom()));
@@ -160,13 +161,13 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(ClauseSelect clause) throws TranslationException{
+	public String translate(ClauseSelect clause) throws TranslationException {
 		String sql = null;
 
-		for(int i = 0; i < clause.size(); i++){
-			if (i == 0){
+		for(int i = 0; i < clause.size(); i++) {
+			if (i == 0) {
 				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "") + (clause.hasLimit() ? " TOP " + clause.getLimit() + " " : "");
-			}else
+			} else
 				sql += " " + clause.getSeparator(i);
 
 			sql += " " + translate(clause.get(i));
@@ -176,10 +177,21 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(Concatenation concat) throws TranslationException{
+	public String translate(Comparison comp) throws TranslationException {
+		switch(comp.getOperator()) {
+			case ILIKE:
+			case NOTILIKE:
+				throw new TranslationException("Translation of ILIKE impossible! This is not supported in MS-SQL Server.");
+			default:
+				return translate(comp.getLeftOperand()) + " " + comp.getOperator().toADQL() + " " + translate(comp.getRightOperand());
+		}
+	}
+
+	@Override
+	public String translate(Concatenation concat) throws TranslationException {
 		StringBuffer translated = new StringBuffer();
 
-		for(ADQLOperand op : concat){
+		for(ADQLOperand op : concat) {
 			if (translated.length() > 0)
 				translated.append(" + ");
 			translated.append(translate(op));
@@ -189,26 +201,26 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(final ADQLJoin join) throws TranslationException{
+	public String translate(final ADQLJoin join) throws TranslationException {
 		StringBuffer sql = new StringBuffer(translate(join.getLeftTable()));
 
 		sql.append(' ').append(join.getJoinType()).append(' ').append(translate(join.getRightTable())).append(' ');
 
 		// CASE: NATURAL
-		if (join.isNatural()){
-			try{
+		if (join.isNatural()) {
+			try {
 				StringBuffer buf = new StringBuffer();
 
 				// Find duplicated items between the two lists and translate them as ON conditions:
 				DBColumn rightCol;
 				SearchColumnList leftList = join.getLeftTable().getDBColumns();
 				SearchColumnList rightList = join.getRightTable().getDBColumns();
-				for(DBColumn leftCol : leftList){
+				for(DBColumn leftCol : leftList) {
 					// search for at most one column with the same name in the RIGHT list
 					// and throw an exception is there are several matches:
 					rightCol = ADQLJoin.findAtMostOneColumn(leftCol.getADQLName(), (byte)0, rightList, false);
 					// if there is one...
-					if (rightCol != null){
+					if (rightCol != null) {
 						// ...check there is only one column with this name in the LEFT list,
 						// and throw an exception if it is not the case:
 						ADQLJoin.findExactlyOneColumn(leftCol.getADQLName(), (byte)0, leftList, true);
@@ -222,13 +234,13 @@ public class SQLServerTranslator extends JDBCTranslator {
 				}
 
 				sql.append("ON ").append(buf.toString());
-			}catch(UnresolvedJoinException uje){
+			} catch(UnresolvedJoinException uje) {
 				throw new TranslationException("Impossible to resolve the NATURAL JOIN between " + join.getLeftTable().toADQL() + " and " + join.getRightTable().toADQL() + "!", uje);
 			}
 		}
 		// CASE: USING
-		else if (join.hasJoinedColumns()){
-			try{
+		else if (join.hasJoinedColumns()) {
+			try {
 				StringBuffer buf = new StringBuffer();
 
 				// For each columns of usingList, check there is in each list exactly one matching column, and then, translate it as ON condition:
@@ -237,7 +249,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 				SearchColumnList leftList = join.getLeftTable().getDBColumns();
 				SearchColumnList rightList = join.getRightTable().getDBColumns();
 				Iterator<ADQLColumn> itCols = join.getJoinedColumns();
-				while(itCols.hasNext()){
+				while(itCols.hasNext()) {
 					usingCol = itCols.next();
 					// search for exactly one column with the same name in the LEFT list
 					// and throw an exception if there is none, or if there are several matches:
@@ -253,7 +265,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 				}
 
 				sql.append("ON ").append(buf.toString());
-			}catch(UnresolvedJoinException uje){
+			} catch(UnresolvedJoinException uje) {
 				throw new TranslationException("Impossible to resolve the JOIN USING between " + join.getLeftTable().toADQL() + " and " + join.getRightTable().toADQL() + "!", uje);
 			}
 		}
@@ -278,9 +290,9 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 *
 	 * @return	The generated column.
 	 */
-	protected ADQLColumn generateJoinColumn(final FromContent table, final DBColumn colMeta, final ADQLColumn joinedColumn){
+	protected ADQLColumn generateJoinColumn(final FromContent table, final DBColumn colMeta, final ADQLColumn joinedColumn) {
 		ADQLColumn newCol = (joinedColumn == null ? new ADQLColumn(colMeta.getADQLName()) : new ADQLColumn(joinedColumn));
-		if (table != null){
+		if (table != null) {
 			if (table instanceof ADQLTable)
 				newCol.setAdqlTable((ADQLTable)table);
 			else
@@ -291,68 +303,68 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(final ExtractCoord extractCoord) throws TranslationException{
+	public String translate(final ExtractCoord extractCoord) throws TranslationException {
 		return getDefaultADQLFunction(extractCoord);
 	}
 
 	@Override
-	public String translate(final ExtractCoordSys extractCoordSys) throws TranslationException{
+	public String translate(final ExtractCoordSys extractCoordSys) throws TranslationException {
 		return getDefaultADQLFunction(extractCoordSys);
 	}
 
 	@Override
-	public String translate(final AreaFunction areaFunction) throws TranslationException{
+	public String translate(final AreaFunction areaFunction) throws TranslationException {
 		return getDefaultADQLFunction(areaFunction);
 	}
 
 	@Override
-	public String translate(final CentroidFunction centroidFunction) throws TranslationException{
+	public String translate(final CentroidFunction centroidFunction) throws TranslationException {
 		return getDefaultADQLFunction(centroidFunction);
 	}
 
 	@Override
-	public String translate(final DistanceFunction fct) throws TranslationException{
+	public String translate(final DistanceFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 
 	@Override
-	public String translate(final ContainsFunction fct) throws TranslationException{
+	public String translate(final ContainsFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 
 	@Override
-	public String translate(final IntersectsFunction fct) throws TranslationException{
+	public String translate(final IntersectsFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 
 	@Override
-	public String translate(final PointFunction point) throws TranslationException{
+	public String translate(final PointFunction point) throws TranslationException {
 		return getDefaultADQLFunction(point);
 	}
 
 	@Override
-	public String translate(final CircleFunction circle) throws TranslationException{
+	public String translate(final CircleFunction circle) throws TranslationException {
 		return getDefaultADQLFunction(circle);
 	}
 
 	@Override
-	public String translate(final BoxFunction box) throws TranslationException{
+	public String translate(final BoxFunction box) throws TranslationException {
 		return getDefaultADQLFunction(box);
 	}
 
 	@Override
-	public String translate(final PolygonFunction polygon) throws TranslationException{
+	public String translate(final PolygonFunction polygon) throws TranslationException {
 		return getDefaultADQLFunction(polygon);
 	}
 
 	@Override
-	public String translate(final RegionFunction region) throws TranslationException{
+	public String translate(final RegionFunction region) throws TranslationException {
 		return getDefaultADQLFunction(region);
 	}
 
 	@Override
-	public String translate(MathFunction fct) throws TranslationException{
-		switch(fct.getType()){
+	public String translate(MathFunction fct) throws TranslationException {
+		switch(fct.getType()) {
 			case TRUNCATE:
 				// third argument to round nonzero means do a truncate
 				return "round(convert(float, " + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "") + "),1)";
@@ -385,7 +397,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
+	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params) {
 		// If no type is provided return VARCHAR:
 		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
 			return null;
@@ -395,10 +407,10 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 		// Extract the length parameter (always the first one):
 		int lengthParam = DBType.NO_LENGTH;
-		if (params != null && params.length > 0){
-			try{
+		if (params != null && params.length > 0) {
+			try {
 				lengthParam = Integer.parseInt(params[0]);
-			}catch(NumberFormatException nfe){
+			} catch(NumberFormatException nfe) {
 			}
 		}
 
@@ -444,11 +456,11 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String convertTypeToDB(final DBType type){
+	public String convertTypeToDB(final DBType type) {
 		if (type == null)
 			return "varchar";
 
-		switch(type.type){
+		switch(type.type) {
 
 			case SMALLINT:
 			case REAL:
@@ -483,12 +495,12 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException{
+	public Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException {
 		throw new ParseException("Unsupported geometrical value! The value \"" + jdbcColValue + "\" can not be parsed as a region.");
 	}
 
 	@Override
-	public Object translateGeometryToDB(final Region region) throws ParseException{
+	public Object translateGeometryToDB(final Region region) throws ParseException {
 		throw new ParseException("Geometries can not be uploaded in the database in this implementation!");
 	}
 

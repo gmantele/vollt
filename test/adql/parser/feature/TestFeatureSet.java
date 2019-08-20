@@ -14,9 +14,10 @@ import org.junit.Test;
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.parser.grammar.ParseException;
 import adql.db.FunctionDef;
+import adql.parser.grammar.ParseException;
 import adql.query.ColumnReference;
+import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.string.LowerFunction;
@@ -179,6 +180,8 @@ public class TestFeatureSet {
 
 		/* CASE: ok (with a set containing just 1 item)
 		 *       => un-supported + no more set for the feature type! */
+		assertTrue(set.unsupport(ComparisonOperator.ILIKE.getFeatureDescription()));
+		assertEquals(1, set.supportedFeatures.get(LowerFunction.FEATURE.type).size());
 		assertTrue(set.supportedFeatures.containsKey(LowerFunction.FEATURE.type));
 		assertTrue(set.supportedFeatures.get(LowerFunction.FEATURE.type).contains(LowerFunction.FEATURE));
 		assertTrue(set.unsupport(LowerFunction.FEATURE));
