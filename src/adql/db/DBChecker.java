@@ -77,14 +77,14 @@ import adql.search.SimpleSearchHandler;
  * 		query</li>
  * 	<li>Resolve all unknown functions as supported User Defined Functions
  * 		(UDFs)</li>
- * 	<li>Check whether all used coordinate systems are supported</li>
  * 	<li>Check that types of columns and UDFs match with their context</li>
  * </ol>
  *
  * <p><i><b>IMPORTANT note:</b>
- * 	Since v2.0, the check of supported geometrical functions is performed
- * 	directly in ADQLParser through the notion of Optional Features.
- * 	The declaration of supported geometrical functions must now be done
+ * 	Since v2.0, the check of supported geometric functions, STC-s expressions
+ * 	and coordinate systems are performed automatically in
+ * 	{@link adql.parser.ADQLParser ADQLParser} through the notion of Optional
+ * 	Features. The declaration of supported geometric functions must now be done
  * 	with {@link adql.parser.ADQLParser#getSupportedFeatures() ADQLParser.getSupportedFeatures()}
  * 	(see also {@link adql.parser.feature.FeatureSet FeatureSet}).
  * </i></p>
@@ -108,11 +108,11 @@ import adql.search.SimpleSearchHandler;
  * 	particularly useful for the translation of the ADQL query to SQL, because
  * 	the ADQL name of columns and tables can be replaced in SQL by their DB name,
  * 	if different. This mapping is done automatically by
- * 	{@link adql.translator.JDBCTranslator}.
+ * 	{@link adql.translator.JDBCTranslator JDBCTranslator}.
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  */
 public class DBChecker implements QueryChecker {
 
@@ -148,13 +148,19 @@ public class DBChecker implements QueryChecker {
 	 * 	However, if not, all items of this list must be the only allowed coordinate systems.
 	 * 	So, if the list is empty, none is allowed.
 	 * </p>
-	 * @since 1.3 */
+	 * @since 1.3
+	 * @deprecated Since v2.0, supported coordinate systems must be declared
+	 *             in ADQLParser. */
+	@Deprecated
 	protected String[] allowedCoordSys = null;
 
 	/** <p>A regular expression built using the list of allowed coordinate systems.
 	 * With this regex, it is possible to known whether a coordinate system expression is allowed or not.</p>
 	 * <p>If NULL, all coordinate systems are allowed.</p>
-	 * @since 1.3 */
+	 * @since 1.3
+	 * @deprecated Since v2.0, supported coordinate systems must be declared
+	 *             in ADQLParser. */
+	@Deprecated
 	protected String coordSysRegExp = null;
 
 	/** <p>List of all allowed User Defined Functions (UDFs).</p>
@@ -341,7 +347,13 @@ public class DBChecker implements QueryChecker {
 	 * @return	A sorted array containing all - except NULL and empty strings - items of the given collection.
 	 *
 	 * @since 1.3
+	 *
+	 * @deprecated	Since v2.0, this tool function is no longer used. It was
+	 *            	useful only to collect allowed geometries and coordinate
+	 *            	systems....but these are now checked by
+	 *            	{@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	protected final static String[] specialSort(final Collection<String> items) {
 		// Nothing to do if the array is NULL:
 		if (items == null)
@@ -392,16 +404,18 @@ public class DBChecker implements QueryChecker {
 	/* CHECK METHODS */
 	/* ************* */
 	/**
-	 * <p>Check all the columns, tables and UDFs references inside the given query.</p>
+	 * Check all the columns, tables and UDFs references inside the given query.
 	 *
-	 * <p><i>
-	 * 	<u>Note:</u> This query has already been parsed ; thus it is already syntactically correct.
-	 * 	Only the consistency with the published tables, columns and all the defined UDFs must be checked.
+	 * <p><i><b>Note:</b>
+	 * 	This query has already been parsed ; thus it is already syntactically
+	 * 	correct. Only the consistency with the published tables, columns and all
+	 * 	the defined UDFs must be checked.
 	 * </i></p>
 	 *
 	 * @param query		The query to check.
 	 *
-	 * @throws ParseException	An {@link UnresolvedIdentifiersException} if some tables or columns can not be resolved.
+	 * @throws ParseException	An {@link UnresolvedIdentifiersException} if
+	 *                       	some tables or columns can not be resolved.
 	 *
 	 * @see #check(ADQLQuery, Stack)
 	 */
@@ -411,31 +425,37 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * <p>Process several (semantic) verifications in the given ADQL query.</p>
+	 * Process several (semantic) verifications in the given ADQL query.
 	 *
 	 * <p>Main verifications done in this function:</p>
 	 * <ol>
 	 * 	<li>Existence of DB items (tables and columns)</li>
 	 * 	<li>Semantic verification of sub-queries</li>
-	 * 	<li>Support of every encountered User Defined Functions (UDFs - functions unknown by the syntactic parser)</li>
-	 * 	<li>Support of every encountered geometries (functions, coordinate systems and STC-S expressions)</li>
-	 * 	<li>Consistency of types still unknown (because the syntactic parser could not yet resolve them)</li>
+	 * 	<li>Support of every encountered User Defined Functions (UDFs -
+	 * 		functions unknown by the syntactic parser)</li>
+	 * 	<li>Consistency of types still unknown (because the syntactic parser
+	 * 		could not yet resolve them)</li>
 	 * </ol>
 	 *
 	 * @param query			The query to check.
-	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
-	 *                   	Each item of this stack is a list of columns available in each father-level query.
-	 *                   	<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
+	 * @param fathersList	List of all columns available in the father queries
+	 *                   	and that should be accessed in sub-queries. Each
+	 *                   	item of this stack is a list of columns available in
+	 *                   	each father-level query. <i><b>Note:</b> this
+	 *                   	parameter is NULL if this function is called with
+	 *                   	the root/father query as parameter.</i>
 	 *
-	 * @throws UnresolvedIdentifiersException	An {@link UnresolvedIdentifiersException} if one or several of the above listed tests have detected
-	 *                                       	some semantic errors (i.e. unresolved table, columns, function).
+	 * @throws UnresolvedIdentifiersException	An {@link UnresolvedIdentifiersException}
+	 *                                       	if one or several of the above
+	 *                                       	listed tests have detected some
+	 *                                       	semantic errors (i.e. unresolved
+	 *                                       	table, columns, function).
 	 *
 	 * @since 1.2
 	 *
 	 * @see #checkDBItems(ADQLQuery, Stack, UnresolvedIdentifiersException)
 	 * @see #checkSubQueries(ADQLQuery, Stack, SearchColumnList, UnresolvedIdentifiersException)
 	 * @see #checkUDFs(ADQLQuery, UnresolvedIdentifiersException)
-	 * @see #checkGeometries(ADQLQuery, UnresolvedIdentifiersException)
 	 * @see #checkTypes(ADQLQuery, UnresolvedIdentifiersException)
 	 */
 	protected void check(final ADQLQuery query, final Stack<SearchColumnList> fathersList) throws UnresolvedIdentifiersException {
@@ -448,13 +468,10 @@ public class DBChecker implements QueryChecker {
 		if (allowedUdfs != null)
 			checkUDFs(query, errors);
 
-		// C. Check geometries:
-		checkGeometries(query, errors);
-
-		// D. Check types:
+		// C. Check types:
 		checkTypes(query, errors);
 
-		// E. Check sub-queries:
+		// D. Check sub-queries:
 		checkSubQueries(query, fathersList, availableColumns, errors);
 
 		// Throw all errors, if any:
@@ -1014,7 +1031,16 @@ public class DBChecker implements QueryChecker {
 	 * @see #resolveSTCSExpressions(ADQLQuery, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
+	 *
+	 * @deprecated	Since 2.0, validation of the geometric functions is
+	 *            	performed automatically by
+	 *            	{@link adql.parser.ADQLParser ADQLParser}. Geometric
+	 *            	functions are optional features and should be declared as
+	 *            	such in the {@link adql.parser.ADQLParser ADQLParser} if
+	 *            	they are supported (see
+	 *            	{@link adql.parser.ADQLParser#getSupportedFeatures() ADQLParser.getSupportedFeatures()}).
 	 */
+	@Deprecated
 	protected void checkGeometries(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
 		BinarySearch<String, String> binSearch = new BinarySearch<String, String>() {
 			@Override
@@ -1041,10 +1067,13 @@ public class DBChecker implements QueryChecker {
 	 * @see #checkGeometryFunction(String, ADQLFunction, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
-	 * @deprecated	No more used since v2.0. Check of the geometric functions is
-	 *            	now performed directly in ADQLParser. Geometric functions
-	 *            	are optional features and should be declared as such in the
-	 *            	ADQLParser if they are supported (see
+	 *
+	 * @deprecated	Since 2.0, validation of the geometric functions is
+	 *            	performed automatically by
+	 *            	{@link adql.parser.ADQLParser ADQLParser}. Geometric
+	 *            	functions are optional features and should be declared as
+	 *            	such in the {@link adql.parser.ADQLParser ADQLParser} if
+	 *            	they are supported (see
 	 *            	{@link adql.parser.ADQLParser#getSupportedFeatures() ADQLParser.getSupportedFeatures()}).
 	 */
 	@Deprecated
@@ -1076,10 +1105,13 @@ public class DBChecker implements QueryChecker {
 	 * @param errors		List of errors to complete in this function each time a geometrical function is not supported.
 	 *
 	 * @since 1.3
-	 * @deprecated	No more used since v2.0. Check of the geometric functions is
-	 *            	now performed directly in ADQLParser. Geometric functions
-	 *            	are optional features and should be declared as such in the
-	 *            	ADQLParser if they are supported (see
+	 *
+	 * @deprecated	Since 2.0, validation of the geometric functions is
+	 *            	performed automatically by
+	 *            	{@link adql.parser.ADQLParser ADQLParser}. Geometric
+	 *            	functions are optional features and should be declared as
+	 *            	such in the {@link adql.parser.ADQLParser ADQLParser} if
+	 *            	they are supported (see
 	 *            	{@link adql.parser.ADQLParser#getSupportedFeatures() ADQLParser.getSupportedFeatures()}).
 	 */
 	@Deprecated
@@ -1106,7 +1138,11 @@ public class DBChecker implements QueryChecker {
 	 * @see #checkCoordinateSystem(StringConstant, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
+	 *
+	 * @deprecated	Since 2.0, the validation of coordinate systems is performed
+	 *            	automatically by {@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	protected void resolveCoordinateSystems(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
 		ISearchHandler sHandler = new SearchCoordSysHandler();
 		sHandler.search(query);
@@ -1124,7 +1160,11 @@ public class DBChecker implements QueryChecker {
 	 * @see #checkCoordinateSystem(adql.db.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
+	 *
+	 * @deprecated	Since 2.0, the validation of coordinate systems is performed
+	 *            	automatically by {@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	protected void checkCoordinateSystem(final StringConstant adqlCoordSys, final UnresolvedIdentifiersException errors) {
 		String coordSysStr = adqlCoordSys.getValue();
 		try {
@@ -1142,7 +1182,11 @@ public class DBChecker implements QueryChecker {
 	 * @param errors	List of errors to complete in this function each time a coordinate system is not supported.
 	 *
 	 * @since 1.3
+	 *
+	 * @deprecated	Since 2.0, the validation of coordinate systems is performed
+	 *            	automatically by {@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	protected void checkCoordinateSystem(final CoordSys coordSys, final ADQLOperand operand, final UnresolvedIdentifiersException errors) {
 		if (coordSysRegExp != null && coordSys != null && !coordSys.toFullSTCS().matches(coordSysRegExp)) {
 			StringBuffer buf = new StringBuffer();
@@ -1180,7 +1224,11 @@ public class DBChecker implements QueryChecker {
 	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
+	 *
+	 * @deprecated	Since 2.0, the validation of STCs expressions is performed
+	 *            	automatically by {@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	protected void resolveSTCSExpressions(final ADQLQuery query, final BinarySearch<String, String> binSearch, final UnresolvedIdentifiersException errors) {
 		// Search REGION functions:
 		ISearchHandler sHandler = new SearchRegionHandler();
@@ -1224,7 +1272,11 @@ public class DBChecker implements QueryChecker {
 	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
+	 *
+	 * @deprecated	Since 2.0, the validation of REGIONs is performed
+	 *            	automatically by {@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	protected void checkRegion(final Region r, final RegionFunction fct, final BinarySearch<String, String> binSearch, final UnresolvedIdentifiersException errors) {
 		if (r == null)
 			return;
@@ -1565,7 +1617,10 @@ public class DBChecker implements QueryChecker {
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
 	 * @since 1.3
+	 * @deprecated	Since 2.0, the validation of REGIONs is performed
+	 *            	automatically by {@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	private static class SearchCoordSysHandler extends SimpleSearchHandler {
 		@Override
 		protected boolean match(ADQLObject obj) {
@@ -1588,7 +1643,10 @@ public class DBChecker implements QueryChecker {
 	 * @author Gr&eacute;gory Mantelet (ARI)
 	 * @version 1.3 (10/2014)
 	 * @since 1.3
+	 * @deprecated	Since 2.0, the validation of REGIONs is performed
+	 *            	automatically by {@link adql.parser.ADQLParser ADQLParser}.
 	 */
+	@Deprecated
 	private static class SearchRegionHandler extends SimpleSearchHandler {
 		@Override
 		protected boolean match(ADQLObject obj) {

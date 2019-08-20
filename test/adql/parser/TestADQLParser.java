@@ -5,12 +5,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import adql.db.FunctionDef;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnsupportedFeatureException;
 import adql.parser.ADQLParser.ADQLVersion;
@@ -22,7 +27,10 @@ import adql.query.ADQLQuery;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
 import adql.query.operand.StringConstant;
+import adql.query.operand.function.geometry.CircleFunction;
+import adql.query.operand.function.geometry.ContainsFunction;
 import adql.query.operand.function.geometry.PointFunction;
+import adql.query.operand.function.geometry.RegionFunction;
 import adql.query.operand.function.string.LowerFunction;
 
 public class TestADQLParser {
@@ -331,7 +339,6 @@ public class TestADQLParser {
 	@Test
 	public void testUDFName() {
 		ADQLParser parser = new ADQLParser();
-		// TODO [ADQL-2.1] Add the support for this specific UDF in the the FeatureSet!
 
 		// CASE: Valid UDF name => OK
 		try {
@@ -351,6 +358,39 @@ public class TestADQLParser {
 				assertEquals(ParseException.class, t.getClass());
 				assertEquals("Invalid (User Defined) Function name: \"" + fct + "\"!", t.getMessage());
 			}
+		}
+	}
+
+	@Test
+	public void testUDFDeclaration() {
+		ADQLParser parser = new ADQLParser();
+
+		// CASE: Any UDF allowed => OK!
+		parser.getSupportedFeatures().allowAnyUdf(true);
+		try {
+			assertNotNull(parser.parseQuery("SELECT foo(1,2) FROM bar"));
+		} catch(Throwable t) {
+			t.printStackTrace();
+			fail("Unexpected parsing error! This query should have passed. (see console for more details)");
+		}
+
+		// CASE: No UDF allowed => ERROR
+		parser.getSupportedFeatures().allowAnyUdf(false);
+		try {
+			parser.parseQuery("SELECT foo(1,2) FROM bar");
+			fail("No UDF is allowed. This query should have failed!");
+		} catch(Throwable t) {
+			assertEquals(UnresolvedIdentifiersException.class, t.getClass());
+			assertEquals("1 unsupported expressions!\n  - Unsupported ADQL feature: \"foo(param1 ?type?, param2 ?type?) -> ?type?\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-udf')!", t.getMessage());
+		}
+
+		// CASE: a single UDF declared => OK!
+		try {
+			parser.getSupportedFeatures().support(FunctionDef.parse("foo(i1 INTEGER, i2 INTEGER) -> INTEGER").toLanguageFeature());
+			assertNotNull(parser.parseQuery("SELECT foo(1,2) FROM bar"));
+		} catch(Throwable t) {
+			t.printStackTrace();
+			fail("Unexpected parsing error! This query should have passed. (see console for more details)");
 		}
 	}
 
@@ -429,6 +469,178 @@ public class TestADQLParser {
 		} catch(Throwable t) {
 			t.printStackTrace();
 			fail("Unexpected error! This query should have passed. (see console for more details)");
+		}
+	}
+
+	@Test
+	public void testGeometry() {
+		// DECLARE A SIMPLE PARSER where all geometries are allowed by default:
+		ADQLParser parser = new ADQLParser();
+
+		// Test with several geometries while all are allowed:
+		try {
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("This query contains several geometries, and all are theoretically allowed: this test should have succeeded!");
+		}
+
+		// Test with several geometries while only the allowed ones:
+		try {
+			parser = new ADQLParser();
+			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+			parser.getSupportedFeatures().support(ContainsFunction.FEATURE);
+			parser.getSupportedFeatures().support(PointFunction.FEATURE);
+			parser.getSupportedFeatures().support(CircleFunction.FEATURE);
+
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("This query contains several geometries, and all are theoretically allowed: this test should have succeeded!");
+		}
+		try {
+			parser.parseQuery("SELECT * FROM foo WHERE INTERSECTS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;");
+			fail("This query contains a not-allowed geometry function (INTERSECTS): this test should have failed!");
+		} catch(ParseException pe) {
+			assertTrue(pe instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Unsupported ADQL feature: \"INTERSECTS\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", ex.getErrors().next().getMessage());
+		}
+
+		// Test by adding REGION:
+		try {
+			parser = new ADQLParser();
+			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+			parser.getSupportedFeatures().support(ContainsFunction.FEATURE);
+			parser.getSupportedFeatures().support(PointFunction.FEATURE);
+			parser.getSupportedFeatures().support(CircleFunction.FEATURE);
+			parser.getSupportedFeatures().support(RegionFunction.FEATURE);
+
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('Position 12.3 45.6'), REGION('circle 1.2 2.3 5')) = 1;"));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("This query contains several geometries, and all are theoretically allowed: this test should have succeeded!");
+		}
+		try {
+			parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('Position 12.3 45.6'), REGION('BOX 1.2 2.3 5 9')) = 1;");
+			fail("This query contains a not-allowed geometry function (BOX): this test should have failed!");
+		} catch(ParseException pe) {
+			assertTrue(pe instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Unsupported STC-s region type: \"BOX\" (equivalent to the ADQL feature \"BOX\" of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", ex.getErrors().next().getMessage());
+		}
+
+		// Test with several geometries while none geometry is allowed:
+		try {
+			parser = new ADQLParser();
+			parser.getSupportedFeatures().unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+
+			parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;");
+			fail("This query contains geometries while they are all forbidden: this test should have failed!");
+		} catch(ParseException pe) {
+			assertTrue(pe instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
+			assertEquals(3, ex.getNbErrors());
+			Iterator<ParseException> itErrors = ex.getErrors();
+			assertEquals("Unsupported ADQL feature: \"CONTAINS\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
+			assertEquals("Unsupported ADQL feature: \"POINT\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
+			assertEquals("Unsupported ADQL feature: \"CIRCLE\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
+		}
+	}
+
+	@Test
+	public void testCoordSys() {
+		// DECLARE A SIMPLE PARSER where all coordinate systems are allowed by default:
+		ADQLParser parser = new ADQLParser();
+
+		// Test with several coordinate systems while all are allowed:
+		try {
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('icrs', 12.3, 45.6), CIRCLE('cartesian2', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('lsr', 12.3, 45.6), CIRCLE('galactic heliocenter', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('unknownframe', 12.3, 45.6), CIRCLE('galactic unknownrefpos spherical2', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('position icrs lsr 12.3 45.6'), REGION('circle fk5 1.2 2.3 5')) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT Region('not(position 1 2)') FROM foo;"));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("This query contains several valid coordinate systems, and all are theoretically allowed: this test should have succeeded!");
+		}
+
+		// Concatenation as coordinate systems not checked:
+		try {
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('From ' || 'here', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("This query contains a concatenation as coordinate systems (but only string constants are checked): this test should have succeeded!");
+		}
+
+		// Test with several coordinate systems while only some allowed:
+		try {
+			parser = new ADQLParser();
+			parser.setAllowedCoordSys(Arrays.asList(new String[]{ "icrs * *", "fk4 geocenter *", "galactic * spherical2" }));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('icrs', 12.3, 45.6), CIRCLE('cartesian3', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT POINT('fk4', 12.3, 45.6) FROM foo;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('fk4 geocenter', 12.3, 45.6), CIRCLE('cartesian2', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('galactic', 12.3, 45.6), CIRCLE('galactic spherical2', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('galactic geocenter', 12.3, 45.6), CIRCLE('galactic lsr spherical2', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('position galactic lsr 12.3 45.6'), REGION('circle icrs 1.2 2.3 5')) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT Region('not(position 1 2)') FROM foo;"));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("This query contains several valid coordinate systems, and all are theoretically allowed: this test should have succeeded!");
+		}
+		try {
+			parser.parseQuery("SELECT POINT('fk5 geocenter', 12.3, 45.6) FROM foo;");
+			fail("This query contains a not-allowed coordinate system ('fk5' is not allowed): this test should have failed!");
+		} catch(ParseException pe) {
+			assertTrue(pe instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Coordinate system \"fk5 geocenter\" (= \"FK5 GEOCENTER SPHERICAL2\") not allowed in this implementation. Allowed coordinate systems are: fk4 geocenter *, galactic * spherical2, icrs * *", ex.getErrors().next().getMessage());
+		}
+		try {
+			parser.parseQuery("SELECT Region('not(position fk5 heliocenter 1 2)') FROM foo;");
+			fail("This query contains a not-allowed coordinate system ('fk5' is not allowed): this test should have failed!");
+		} catch(ParseException pe) {
+			assertTrue(pe instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Coordinate system \"FK5 HELIOCENTER\" (= \"FK5 HELIOCENTER SPHERICAL2\") not allowed in this implementation. Allowed coordinate systems are: fk4 geocenter *, galactic * spherical2, icrs * *", ex.getErrors().next().getMessage());
+		}
+
+		// Test with a coordinate system while none is allowed:
+		try {
+			parser = new ADQLParser();
+			parser.setAllowedCoordSys(new ArrayList<String>(0));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(REGION('position 12.3 45.6'), REGION('circle 1.2 2.3 5')) = 1;"));
+			assertNotNull(parser.parseQuery("SELECT Region('not(position 1 2)') FROM foo;"));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("This query specifies none coordinate system: this test should have succeeded!");
+		}
+		try {
+			parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('ICRS SPHERICAL2', 12.3, 45.6), CIRCLE('icrs', 1.2, 2.3, 5)) = 1;");
+			fail("This query specifies coordinate systems while they are all forbidden: this test should have failed!");
+		} catch(ParseException pe) {
+			assertTrue(pe instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
+			assertEquals(2, ex.getNbErrors());
+			Iterator<ParseException> itErrors = ex.getErrors();
+			assertEquals("Coordinate system \"ICRS SPHERICAL2\" (= \"ICRS UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation. No coordinate system is allowed!", itErrors.next().getMessage());
+			assertEquals("Coordinate system \"icrs\" (= \"ICRS UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation. No coordinate system is allowed!", itErrors.next().getMessage());
+		}
+		try {
+			parser.parseQuery("SELECT Region('not(position fk4 1 2)') FROM foo;");
+			fail("This query specifies coordinate systems while they are all forbidden: this test should have failed!");
+		} catch(ParseException pe) {
+			assertTrue(pe instanceof UnresolvedIdentifiersException);
+			UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
+			assertEquals(1, ex.getNbErrors());
+			assertEquals("Coordinate system \"FK4\" (= \"FK4 UNKNOWNREFPOS SPHERICAL2\") not allowed in this implementation. No coordinate system is allowed!", ex.getErrors().next().getMessage());
 		}
 	}
 

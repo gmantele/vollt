@@ -23,8 +23,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 import adql.db.DBChecker;
+import adql.db.STCS;
+import adql.db.STCS.CoordSys;
+import adql.db.STCS.Region;
+import adql.db.STCS.RegionType;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnsupportedFeatureException;
 import adql.parser.feature.FeatureSet;
@@ -36,6 +42,7 @@ import adql.parser.grammar.ADQLGrammar201;
 import adql.parser.grammar.ParseException;
 import adql.parser.grammar.Token;
 import adql.parser.grammar.TokenMgrError;
+import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
@@ -44,8 +51,18 @@ import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
+import adql.query.operand.StringConstant;
+import adql.query.operand.function.geometry.BoxFunction;
+import adql.query.operand.function.geometry.CircleFunction;
 import adql.query.operand.function.geometry.ContainsFunction;
+import adql.query.operand.function.geometry.GeometryFunction;
+import adql.query.operand.function.geometry.PointFunction;
+import adql.query.operand.function.geometry.PolygonFunction;
+import adql.query.operand.function.geometry.RegionFunction;
+import adql.search.ISearchHandler;
 import adql.search.SearchOptionalFeaturesHandler;
+import adql.search.SimpleSearchHandler;
 import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
@@ -82,11 +99,13 @@ import adql.translator.TranslationException;
  * <p>
  * 	In the above example, the parser runs with the minimal set of options. It
  * 	means that only the default optional language features are available, any
- * 	UDF (even if undeclared) is allowed and no consistency with a list of tables
- * 	and columns is performed. These points can be customized at creation with
+ * 	UDF (even if undeclared) and any coordinate system are allowed and no
+ * 	consistency with a list of tables and columns is performed. These points can
+ * 	be customized at creation with
  * 	{@link #ADQLParser(ADQLVersion, QueryChecker, ADQLQueryFactory, FeatureSet)}
- * 	but also after creation with {@link #setSupportedFeatures(FeatureSet)} and
- * 	{@link #setQueryChecker(QueryChecker)}.
+ * 	but also after creation with {@link #setSupportedFeatures(FeatureSet)},
+ * 	{@link #setQueryChecker(QueryChecker)} and
+ * 	{@link #setAllowedCoordSys(Collection)}.
  * </p>
  *
  * <h3>Runnable class</h3>
@@ -137,15 +156,37 @@ import adql.translator.TranslationException;
  * 		features are supported or not ; all optional features used in the query
  * 		while being declared as un-supported will throw an error at the end of
  * 		the parsing</li>
+ * 	<li>{@link #setAllowedCoordSys(Collection)} to set which coordinate systems
+ * 		are allowed when specifying a geometric region (e.g. POINT, CIRCLE,
+ * 		REGION) ; <i><b>note:</b> this function is mainly useful with ADQL-2.0
+ * 		because it is the only version in which the coordinate system parameter
+ * 		is mandatory</i></li>
  * </ul>
+ *
+ * <h3>Default general checks</h3>
+ *
+ * <p>
+ * 	This ADQL parser always performs some verification after the parsing of an
+ * 	ADQL query. In addition of the syntax, this parser also ensures that no
+ * 	unsupported optional language feature and no unsupported coordinate system
+ * 	are used in parsed ADQL queries. If unsupported content is detected, a
+ * 	{@link ParseException} is immediately raised.
+ * </p>
+ *
+ * <p><i><b>Note:</b>
+ * 	By default, all optional language features are supported, and any UDF and
+ * 	coordinate system are allowed.
+ * </i></p>
+ *
  *
  * <h3>Custom checks</h3>
  *
  * <p>
- *   This parser is able, thanks to a {@link QueryChecker} object, to check each
- *   {@link ADQLQuery} just after its generation. It could be used, for
- *   instance, to check the consistency between the ADQL query to parse and the
- *   "database" on which the query must be executed.
+ * 	Besides the general checks, this parser allows the addition of a custom
+ * 	validation. Thanks to a {@link QueryChecker} object, it is able to check
+ * 	each {@link ADQLQuery} just after its generation and the general checks.
+ * 	It could be used, for instance, to check the consistency between the ADQL
+ * 	query to parse and the "database" on which the query must be executed.
  * </p>
  *
  * <p>
@@ -162,9 +203,9 @@ import adql.translator.TranslationException;
  * <h3>Custom Query Factory</h3>
  *
  * <p>
- *   To create an object representation of the given ADQL query, this parser
- *   uses a {@link ADQLQueryFactory} object. All parts of the ADQL grammar can
- *   already be created with this object.
+ * 	To create an object representation of the given ADQL query, this parser
+ * 	uses a {@link ADQLQueryFactory} object. All parts of the ADQL grammar can
+ * 	already be created with this object.
  * </p>
  *
  * <p>
@@ -195,6 +236,35 @@ public class ADQLParser {
 	 * </i></p>
 	 * <p><i><b>Implementation note:</b> Never NULL.</i></p> */
 	protected FeatureSet supportedFeatures;
+
+	/** List of all allowed coordinate systems.
+	 * <p>
+	 * 	Each item of this list must be of the form: "{frame} {refpos} {flavor}".
+	 * 	Each of these 3 items can be either of value, a list of values expressed
+	 * 	with the syntax "({value1}|{value2}|...)" or a '*' to mean all possible
+	 * 	values.
+	 * </p>
+	 * <p><i><b>Note:</b>
+	 * 	since a default value (corresponding to the empty string - '') should
+	 * 	always be possible for each part of a coordinate system, the checker
+	 * 	will always add the default value (UNKNOWNFRAME, UNKNOWNREFPOS or
+	 * 	SPHERICAL2) into the given list of possible values for each coord. sys.
+	 * 	part.
+	 * </i></p>
+	 * <p>
+	 * 	If this list is NULL, all coordinates systems are allowed.
+	 * 	However, if not, all items of this list must be the only allowed
+	 * 	coordinate systems. So, if the list is empty, none is allowed.
+	 * </p> */
+	protected String[] allowedCoordSys = null;
+
+	/** A regular expression built using the list of allowed coordinate systems.
+	 * <p>
+	 * 	With this regex, it is possible to known whether a coordinate system
+	 * 	expression is allowed or not.
+	 * </p>
+	 * <p>If NULL, all coordinate systems are allowed.</p> */
+	protected String coordSysRegExp = null;
 
 	/** API to check {@link ADQLQuery ADQL queries} (sub-queries or not) just
 	 * after their generation.
@@ -548,6 +618,60 @@ public class ADQLParser {
 	}
 
 	/**
+	 * Get the list of allowed coordinate systems.
+	 *
+	 * <p>
+	 * 	If NULL, any coordinate system is allowed.
+	 * 	But if empty array, no coordinate system is allowed.
+	 * </p>
+	 *
+	 * @return	All allowed coordinate systems.
+	 */
+	public final String[] getAllowedCoordSys() {
+		return allowedCoordSys;
+	}
+
+	/**
+	 * Set the list of allowed coordinate systems.
+	 *
+	 * <p>
+	 * 	Each item of this list must be of the form: "{frame} {refpos} {flavor}".
+	 * 	Each of these 3 items can be either of value, a list of values expressed
+	 * 	with the syntax "({value1}|{value2}|...)" or a '*' to mean all possible
+	 * 	values.
+	 * </p>
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	since a default value (corresponding to the empty string - '') should
+	 * 	always be possible for each part of a coordinate system, this parser
+	 * 	will always add the default value (UNKNOWNFRAME, UNKNOWNREFPOS or
+	 * 	SPHERICAL2) into the given list of possible values for each coord. sys.
+	 * 	part.
+	 * </i></p>
+	 *
+	 * <p>
+	 * 	If this list is NULL, all coordinates systems are allowed.
+	 * 	However, if not, all items of this list must be the only allowed
+	 * 	coordinate systems. So, if the list is empty, none is allowed.
+	 * </p>
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	When an exception is thrown, the list of allowed coordinate systems of
+	 * 	this parser stays in the same state than before calling this function.
+	 * </i></p>
+	 *
+	 * @param allowedCoordSys	List of allowed coordinate systems.
+	 *
+	 * @throws ParseException	If the syntax of one of the given coordinate
+	 *                       	system is incorrect.
+	 */
+	public final void setAllowedCoordSys(final Collection<String> allowedCoordSys) throws ParseException {
+		String[] tempAllowedCoordSys = specialSort(allowedCoordSys);
+		coordSysRegExp = STCS.buildCoordSysRegExp(tempAllowedCoordSys);
+		this.allowedCoordSys = tempAllowedCoordSys;
+	}
+
+	/**
 	 * Get the custom checker of parsed ADQL queries.
 	 *
 	 * @return	Custom query checker,
@@ -679,50 +803,6 @@ public class ADQLParser {
 
 		// If no syntactic error and that all checks passed, return the result:
 		return parsedQuery;
-	}
-
-	/**
-	 * Run the general and common checks on the given ADQL tree.
-	 *
-	 * <p>
-	 * 	By default, this function only checks whether or not language features
-	 * 	found in the given ADQL tree are supported. If not, a
-	 * 	{@link ParseException} is thrown.
-	 * </p>
-	 *
-	 * <p><i><b>Implementation note:</b>
-	 * 	By default, when a part of the ADQL tree uses an unsupported language
-	 * 	feature, an {@link UnsupportedFeatureException} is created. This
-	 * 	function does not stop at the first encountered unsupported feature. It
-	 * 	keeps reading the ADQL tree and appends all created
-	 * 	{@link UnsupportedFeatureException}s into an
-	 * 	{@link UnresolvedIdentifiersException}. Finally, when the tree has been
-	 * 	entirely read and if unsupported features have been encountered, this
-	 * 	{@link UnresolvedIdentifiersException} is thrown.
-	 * </p>
-	 *
-	 * @param q	The ADQL query to check.
-	 *
-	 * @throws ParseException	If any unsupported language feature is used in
-	 *                       	the given ADQL tree.
-	 */
-	protected void generalChecks(final ADQLQuery q) throws ParseException {
-		// Create the exception in which errors have to be appended:
-		UnresolvedIdentifiersException exUnsupportedFeatures = new UnresolvedIdentifiersException("unsupported expression");
-
-		// Search recursively for all optional features inside the given tree:
-		SearchOptionalFeaturesHandler sFeaturesHandler = new SearchOptionalFeaturesHandler(true, false);
-		sFeaturesHandler.search(q);
-
-		// Append an error for each unsupported one:
-		for(ADQLObject obj : sFeaturesHandler) {
-			if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
-				exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
-		}
-
-		// If unsupported features have been found, throw a ParseException:
-		if (exUnsupportedFeatures.getNbErrors() > 0)
-			throw exUnsupportedFeatures;
 	}
 
 	/**
@@ -959,6 +1039,302 @@ public class ADQLParser {
 		} catch(TokenMgrError tme) {
 			throw new ParseException(tme);
 		}
+	}
+
+	/* **********************************************************************
+	   *                          QUERY CHECKS                              *
+	   ********************************************************************** */
+
+	/**
+	 * Run the general and common checks on the given ADQL tree.
+	 *
+	 * <p>
+	 * 	By default, this function checks whether or not language features
+	 * 	found in the given ADQL tree are supported. It also checks all explicit
+	 * 	coordinate systems and STC-s expressions (embedded in REGION function).
+	 * 	All unsupported expressions (i.e. feature, coord. sys., STC-s) are
+	 * 	appended into an {@link UnresolvedIdentifiersException} which is finally
+	 * 	thrown if not empty.
+	 * </p>
+	 *
+	 * @param q	The ADQL query to check.
+	 *
+	 * @throws ParseException	If any unsupported language feature is used in
+	 *                       	the given ADQL tree.
+	 */
+	protected void generalChecks(final ADQLQuery q) throws ParseException {
+		// Create the exception in which errors have to be appended:
+		UnresolvedIdentifiersException exUnsupportedFeatures = new UnresolvedIdentifiersException("unsupported expression");
+
+		// Search recursively for all optional features inside the given tree:
+		SearchOptionalFeaturesHandler sFeaturesHandler = new SearchOptionalFeaturesHandler(true, false);
+		sFeaturesHandler.search(q);
+
+		// Append an error for each unsupported one:
+		for(ADQLObject obj : sFeaturesHandler) {
+			if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
+				exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
+		}
+
+		// [only for ADQL-2.0] Resolve explicit coordinate system declarations:
+		resolveCoordinateSystems(q, exUnsupportedFeatures);
+
+		// [only for ADQL-2.0] Resolve explicit REGION declarations:
+		if (supportedFeatures.isSupporting(RegionFunction.FEATURE))
+			resolveSTCSExpressions(q, exUnsupportedFeatures);
+
+		// If unsupported features have been found, throw a ParseException:
+		if (exUnsupportedFeatures.getNbErrors() > 0)
+			throw exUnsupportedFeatures;
+	}
+
+	/**
+	 * Transform the given collection of string elements into a sorted array.
+	 * Only non-NULL and non-empty strings are kept.
+	 *
+	 * @param items	Items to copy and sort.
+	 *
+	 * @return	A sorted array containing all - except NULL and empty strings -
+	 *        	items of the given collection.
+	 */
+	protected final String[] specialSort(final Collection<String> items) {
+		// Nothing to do if the array is NULL:
+		if (items == null)
+			return null;
+
+		// Keep only valid items (not NULL and not empty string):
+		String[] tmp = new String[items.size()];
+		int cnt = 0;
+		for(String item : items) {
+			if (item != null && item.trim().length() > 0)
+				tmp[cnt++] = item;
+		}
+
+		// Make an adjusted array copy:
+		String[] copy = new String[cnt];
+		System.arraycopy(tmp, 0, copy, 0, cnt);
+
+		// Sort the values:
+		Arrays.sort(copy);
+
+		return copy;
+	}
+
+	/**
+	 * Search for all explicit coordinate system declarations, check their
+	 * syntax and whether they are allowed by this implementation.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	"explicit" means here that all {@link StringConstant} instances. Only
+	 * 	coordinate systems expressed as string can be parsed and so checked. So
+	 * 	if a coordinate system is specified by a column, no check can be done at
+	 * 	this stage...it will be possible to perform such test only at the
+	 * 	execution.
+	 * </i></p>
+	 *
+	 * @param query		Query in which coordinate systems must be checked.
+	 * @param errors	List of errors to complete in this function each time a
+	 *              	coordinate system has a wrong syntax or is not
+	 *              	supported.
+	 *
+	 * @see #checkCoordinateSystem(StringConstant, UnresolvedIdentifiersException)
+	 */
+	protected void resolveCoordinateSystems(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
+		ISearchHandler sHandler = new SearchCoordSysHandler();
+		sHandler.search(query);
+		for(ADQLObject result : sHandler)
+			checkCoordinateSystem((StringConstant)result, errors);
+	}
+
+	/**
+	 * Parse and then check the coordinate system contained in the given
+	 * {@link StringConstant} instance.
+	 *
+	 * @param adqlCoordSys	The {@link StringConstant} object containing the
+	 *                    	coordinate system to check.
+	 * @param errors		List of errors to complete in this function each
+	 *              		time a coordinate system has a wrong syntax or is
+	 *              		not supported.
+	 *
+	 * @see STCS#parseCoordSys(String)
+	 * @see #checkCoordinateSystem(CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 */
+	protected void checkCoordinateSystem(final StringConstant adqlCoordSys, final UnresolvedIdentifiersException errors) {
+		String coordSysStr = adqlCoordSys.getValue();
+		try {
+			checkCoordinateSystem(STCS.parseCoordSys(coordSysStr), adqlCoordSys, errors);
+		} catch(ParseException pe) {
+			errors.addException(new ParseException(pe.getMessage(), adqlCoordSys.getPosition()));
+		}
+	}
+
+	/**
+	 * Check whether the given coordinate system is allowed by this
+	 * implementation.
+	 *
+	 * @param coordSys	Coordinate system to test.
+	 * @param operand	The operand representing or containing the coordinate
+	 *               	system under test.
+	 * @param errors	List of errors to complete in this function each time a
+	 *              	coordinate system is not supported.
+	 */
+	protected void checkCoordinateSystem(final CoordSys coordSys, final ADQLOperand operand, final UnresolvedIdentifiersException errors) {
+		if (coordSysRegExp != null && coordSys != null && !coordSys.toFullSTCS().matches(coordSysRegExp)) {
+			StringBuffer buf = new StringBuffer();
+			if (allowedCoordSys != null) {
+				for(String cs : allowedCoordSys) {
+					if (buf.length() > 0)
+						buf.append(", ");
+					buf.append(cs);
+				}
+			}
+			if (buf.length() == 0)
+				buf.append("No coordinate system is allowed!");
+			else
+				buf.insert(0, "Allowed coordinate systems are: ");
+			errors.addException(new ParseException("Coordinate system \"" + ((operand instanceof StringConstant) ? ((StringConstant)operand).getValue() : coordSys.toString()) + "\" (= \"" + coordSys.toFullSTCS() + "\") not allowed in this implementation. " + buf.toString(), operand.getPosition()));
+		}
+	}
+
+	/**
+	 * Search for all STC-S expressions inside the given query, parse them (and
+	 * so check their syntax) and then determine whether the declared coordinate
+	 * system and the expressed region are allowed in this implementation.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	In the current ADQL language definition, STC-S expressions can be found
+	 * 	only as only parameter of the REGION function.
+	 * </i></p>
+	 *
+	 * @param query		Query in which STC-S expressions must be checked.
+	 * @param errors	List of errors to complete in this function each time
+	 *              	the STC-S syntax is wrong or each time the declared
+	 *              	coordinate system or region is not supported.
+	 *
+	 * @see STCS#parseRegion(String)
+	 * @see #checkRegion(Region, RegionFunction, UnresolvedIdentifiersException)
+	 */
+	protected void resolveSTCSExpressions(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
+		// Search REGION functions:
+		ISearchHandler sHandler = new SearchRegionHandler();
+		sHandler.search(query);
+
+		// Parse and check their STC-S expression:
+		String stcs;
+		Region region;
+		for(ADQLObject result : sHandler) {
+			try {
+				// get the STC-S expression:
+				stcs = ((StringConstant)((RegionFunction)result).getParameter(0)).getValue();
+
+				// parse the STC-S expression (and so check the syntax):
+				region = STCS.parseRegion(stcs);
+
+				// check whether the regions (this one + the possible inner ones) and the coordinate systems are allowed:
+				checkRegion(region, (RegionFunction)result, errors);
+			} catch(ParseException pe) {
+				errors.addException(new ParseException(pe.getMessage(), result.getPosition()));
+			}
+		}
+	}
+
+	/**
+	 * Check the given region.
+	 *
+	 * <p>The following points are checked in this function:</p>
+	 * <ul>
+	 * 	<li>whether the coordinate system is allowed,</li>
+	 * 	<li>whether the type of region is allowed,</li>
+	 * 	<li>and whether the inner regions are correct (here this function is
+	 * 		called recursively on each inner region).</li>
+	 * </ul>
+	 *
+	 * @param r			The region to check.
+	 * @param fct		The REGION function containing the region to check.
+	 * @param errors	List of errors to complete in this function if the given
+	 *              	region or its inner regions are not supported.
+	 *
+	 * @see #checkCoordinateSystem(CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 * @see #checkRegion(Region, RegionFunction, UnresolvedIdentifiersException)
+	 */
+	protected void checkRegion(final Region r, final RegionFunction fct, final UnresolvedIdentifiersException errors) {
+		if (r == null)
+			return;
+
+		// Check the coordinate system (if any):
+		if (r.coordSys != null)
+			checkCoordinateSystem(r.coordSys, fct, errors);
+
+		// Check that the region type is allowed:
+		LanguageFeature feature;
+		switch(r.type) {
+			case POSITION:
+				feature = PointFunction.FEATURE;
+				break;
+			case BOX:
+				feature = BoxFunction.FEATURE;
+				break;
+			case CIRCLE:
+				feature = CircleFunction.FEATURE;
+				break;
+			case POLYGON:
+				feature = PolygonFunction.FEATURE;
+				break;
+			default:
+				/* TODO Add a case for UNION and INTERSECT when supported! */
+				feature = null;
+				break;
+		}
+		if (r.type != RegionType.NOT && (feature == null || !supportedFeatures.isSupporting(feature)))
+			errors.addException(new UnsupportedFeatureException(fct, "Unsupported STC-s region type: \"" + r.type + "\"" + (feature == null ? "!" : " (equivalent to the ADQL feature \"" + feature.form + "\" of type '" + feature.type + "')!")));
+
+		// Check all the inner regions:
+		if (r.regions != null) {
+			for(Region innerR : r.regions)
+				checkRegion(innerR, fct, errors);
+		}
+	}
+
+	/**
+	 * Let searching all explicit declarations of coordinate system.
+	 * So, only {@link StringConstant} objects will be returned.
+	 *
+	 * @author Gr&eacute;gory Mantelet (CDS)
+	 * @version 2.0 (08/2019)
+	 * @since 2.0
+	 */
+	private static class SearchCoordSysHandler extends SimpleSearchHandler {
+		@Override
+		protected boolean match(ADQLObject obj) {
+			if (obj instanceof PointFunction || obj instanceof BoxFunction || obj instanceof CircleFunction || obj instanceof PolygonFunction)
+				return (((GeometryFunction)obj).getCoordinateSystem() instanceof StringConstant);
+			else
+				return false;
+		}
+
+		@Override
+		protected void addMatch(ADQLObject matchObj, ADQLIterator it) {
+			results.add(((GeometryFunction)matchObj).getCoordinateSystem());
+		}
+
+	}
+
+	/**
+	 * Let searching all {@link RegionFunction}s.
+	 *
+	 * @author Gr&eacute;gory Mantelet (CDS)
+	 * @version 2.0 (08/2019)
+	 * @since 2.0
+	 */
+	private static class SearchRegionHandler extends SimpleSearchHandler {
+		@Override
+		protected boolean match(ADQLObject obj) {
+			if (obj instanceof RegionFunction)
+				return (((RegionFunction)obj).getParameter(0) instanceof StringConstant);
+			else
+				return false;
+		}
+
 	}
 
 	/* **********************************************************************
