@@ -304,13 +304,13 @@ public class DefaultTAPErrorWriter implements ServiceErrorWriter {
 
 			// Add the list of all causes' message:
 			if (causes.length() > 0)
-				addInfos.put("CAUSES", "\n" + nbCauses + causes.toString());
+				addInfos.put("CAUSES", "\n" + nbCauses + "\n<![CDATA[\n" + causes.toString() + "\n]]>\n"); // added CDATA to wrap free text to make error document parsable
 
 			// Add the stack trace of the original exception ONLY IF NOT A TAP NOR A UWS EXCEPTION (only unexpected error should be detailed to the users):
 			if (!(lastCause instanceof TAPException && lastCause instanceof UWSException)){
 				ByteArrayOutputStream stackTrace = new ByteArrayOutputStream();
 				lastCause.printStackTrace(new PrintStream(stackTrace));
-				addInfos.put("ORIGIN_STACK_TRACE", "\n" + nbStackTraces + "\n" + stackTrace.toString());
+				addInfos.put("ORIGIN_STACK_TRACE", "\n" + nbStackTraces + "\n" + "\n<![CDATA[\n" + stackTrace.toString() + "\n]]>\n"); // added CDATA to wrap free text to make error document parsable
 			}
 		}
 	}
