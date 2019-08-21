@@ -1181,7 +1181,7 @@ ADQLOperand[] Coordinates(): {ADQLOperand[] ops = new ADQLOperand[2];} {
 	{return ops;}
 }
 
-GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<GeometryFunction> gvf1, gvf2; GeometryValue<PointFunction> gvp1, gvp2; GeometryFunction gf = null; PointFunction p1=null, p2=null; ADQLColumn col1 = null, col2 = null;} {
+GeometryFunction GeometryFunction(): {Token fct=null, end=null; GeometryValue<GeometryFunction> gvf1, gvf2; GeometryValue<PointFunction> gvp1, gvp2; GeometryFunction gf = null; PointFunction p1=null, p2=null; ADQLColumn col1 = null, col2 = null;} {
 	try{
 		// predicate_geometry_function
 		(
@@ -1196,38 +1196,74 @@ GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<Geometr
 		|	(fct=<AREA> <LEFT_PAR> gvf1=GeometryExpression() end=<RIGHT_PAR>) {gf = queryFactory.createArea(gvf1);}
 		|	(fct=<COORD1> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord1(p1);} | col1=Column() {col1.setExpectedType('G'); gf = queryFactory.createCoord1(col1);}) end=<RIGHT_PAR>)
 		|	(fct=<COORD2> <LEFT_PAR> (p1=Point() {gf = queryFactory.createCoord2(p1);} | col1=Column() {col1.setExpectedType('G'); gf = queryFactory.createCoord2(col1);}) end=<RIGHT_PAR>)
-		|	(fct=<DISTANCE>
-				<LEFT_PAR>
-				(p1=Point()|col1=Column()) 
-				{
-					if (p1 != null)
-						gvp1 = new GeometryValue<PointFunction>(p1);
-					else{
-						col1.setExpectedType('G');
-						gvp1 = new GeometryValue<PointFunction>(col1);
-					}
-				}
-				<COMMA>
-				(p2=Point()|col2=Column())
-				{
-					if (p2 != null)
-						gvp2 = new GeometryValue<PointFunction>(p2);
-					else{
-						col2.setExpectedType('G');
-						gvp2 = new GeometryValue<PointFunction>(col2);
-					}
-				} 
-				end=<RIGHT_PAR>
-				{gf = queryFactory.createDistance(gvp1, gvp2);}
-			)
+		|	(gf=DistanceFunction())
 		)
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
 	
 	{
-	  gf.setPosition(new TextPosition(fct, end));
+	  if (fct != null)
+	  	gf.setPosition(new TextPosition(fct, end));
 	  return gf;
+	}
+}
+
+DistanceFunction DistanceFunction(): { Token fct=null, end=null; DistanceFunction gf; ADQLOperand lon, lat; GeometryValue<PointFunction> gvp1, gvp2; } {
+	try {
+		// DISTANCE(POINT,POINT)
+		(LOOKAHEAD(DistanceFunction2())
+			gf=DistanceFunction2()
+		|
+		// DISTANCE(lon1, lat1, lon2, lat2)
+			fct=<DISTANCE> <LEFT_PAR>
+			lon=NumericExpression() <COMMA> lat=NumericExpression() 
+			{ gvp1 = new GeometryValue<PointFunction>(queryFactory.createPoint(null, lon, lat)); }
+			<COMMA>
+			lon=NumericExpression() <COMMA> lat=NumericExpression() 
+			{ gvp2 = new GeometryValue<PointFunction>(queryFactory.createPoint(null, lon, lat)); } 
+			end=<RIGHT_PAR>
+			{
+				gf = queryFactory.createDistance(gvp1, gvp2);
+				gf.setPosition(new TextPosition(fct, end));
+			}
+		)
+		{ return gf; }
+	}catch(Exception ex){
+		throw generateParseException(ex);
+	}
+}
+
+DistanceFunction DistanceFunction2(): { Token fct=null, end=null; DistanceFunction gf; GeometryValue<PointFunction> gvp1, gvp2; PointFunction p1=null, p2=null; ADQLColumn col1=null, col2=null; } {
+	try {
+		fct=<DISTANCE> <LEFT_PAR>
+		(p1=Point()|col1=Column()) 
+		{
+			if (p1 != null)
+				gvp1 = new GeometryValue<PointFunction>(p1);
+			else{
+				col1.setExpectedType('G');
+				gvp1 = new GeometryValue<PointFunction>(col1);
+			}
+		}
+		<COMMA>
+		(p2=Point()|col2=Column())
+		{
+			if (p2 != null)
+				gvp2 = new GeometryValue<PointFunction>(p2);
+			else{
+				col2.setExpectedType('G');
+				gvp2 = new GeometryValue<PointFunction>(col2);
+			}
+		} 
+		end=<RIGHT_PAR>
+		{
+			gf = queryFactory.createDistance(gvp1, gvp2);
+			gf.setPosition(new TextPosition(fct, end));
+		}
+		{ return gf; }
+	}catch(Exception ex){
+		throw generateParseException(ex);
 	}
 }
 

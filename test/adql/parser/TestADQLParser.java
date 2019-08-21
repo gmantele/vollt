@@ -735,4 +735,36 @@ public class TestADQLParser {
 		}
 	}
 
+	@Test
+	public void testDistance() {
+		// CASE: In ADQL-2.0, DISTANCE(POINT, POINT) is allowed:
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
+		try {
+			assertEquals("DISTANCE(POINT('', ra, dec), POINT('', ra2, dec2))", parser.parseSelect("SELECT DISTANCE(POINT('', ra, dec), POINT('', ra2, dec2))").get(0).toADQL());
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error! All ADQL expressions were composed of correct tokens. (see console for more details)");
+		}
+
+		// CASE: ...BUT not DISTANCE(lon1, lat1, lon2, lat2)
+		try {
+			parser.parseSelect("SELECT DISTANCE(ra, dec, ra2, dec2)");
+			fail("In ADQL-2.0, DISTANCE(lon1, lat1, lon2, lat2) should not be allowed!");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals(" Encountered \",\". Was expecting one of: \")\" \".\" \".\" \")\" ", ex.getMessage());
+		}
+
+		/* CASE: In ADQL-2.1 (and more), DISTANCE(POINT, POINT) and
+		 *       DISTANCE(lon1, lat1, lon2, lat2) are both allowed: */
+		parser = new ADQLParser(ADQLVersion.V2_1);
+		try {
+			assertEquals("DISTANCE(POINT('', ra, dec), POINT('', ra2, dec2))", parser.parseSelect("SELECT DISTANCE(POINT('', ra, dec), POINT('', ra2, dec2))").get(0).toADQL());
+			assertEquals("DISTANCE(POINT('', ra, dec), POINT('', ra2, dec2))", parser.parseSelect("SELECT DISTANCE(ra, dec, ra2, dec2)").get(0).toADQL());
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error! All ADQL expressions were composed of correct tokens. (see console for more details)");
+		}
+	}
+
 }
