@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -32,6 +32,8 @@ import adql.parser.grammar.ParseException;
 import adql.query.TextPosition;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
+import adql.query.operand.ADQLOperand;
+import adql.query.operand.StringConstant;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -51,8 +53,15 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * 	class. The other functions are managed by {@link PostgreSQLTranslator}.
  * </p>
  *
+ * <p><i><b>Implementation note:</b>
+ * 	The preferred xmatch syntax described in the section 4.2.7 of the ADQL
+ * 	standard (here ADQL-2.1) is implemented here so that such query is as
+ * 	efficient as a <code>CONTAINS(POINT(...), CIRCLE(...)) = 1</code>.
+ * 	See {@link #translate(adql.query.constraint.Comparison)} for more details.
+ * </i></p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (07/2017)
+ * @version 2.0 (08/2019)
  */
 public class PgSphereTranslator extends PostgreSQLTranslator {
 
@@ -68,7 +77,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 *
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator()
 	 */
-	public PgSphereTranslator(){
+	public PgSphereTranslator() {
 		super();
 	}
 
@@ -80,7 +89,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 *
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean)
 	 */
-	public PgSphereTranslator(boolean allCaseSensitive){
+	public PgSphereTranslator(boolean allCaseSensitive) {
 		super(allCaseSensitive);
 	}
 
@@ -94,12 +103,12 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 *
 	 * @see PostgreSQLTranslator#PostgreSQLTranslator(boolean, boolean, boolean, boolean)
 	 */
-	public PgSphereTranslator(boolean catalog, boolean schema, boolean table, boolean column){
+	public PgSphereTranslator(boolean catalog, boolean schema, boolean table, boolean column) {
 		super(catalog, schema, table, column);
 	}
 
 	@Override
-	public String translate(PointFunction point) throws TranslationException{
+	public String translate(PointFunction point) throws TranslationException {
 		StringBuffer str = new StringBuffer("spoint(");
 		str.append("radians(").append(translate(point.getCoord1())).append("),");
 		str.append("radians(").append(translate(point.getCoord2())).append("))");
@@ -107,7 +116,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(CircleFunction circle) throws TranslationException{
+	public String translate(CircleFunction circle) throws TranslationException {
 		StringBuffer str = new StringBuffer("scircle(");
 		str.append("spoint(radians(").append(translate(circle.getCoord1())).append("),");
 		str.append("radians(").append(translate(circle.getCoord2())).append(")),");
@@ -116,7 +125,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(BoxFunction box) throws TranslationException{
+	public String translate(BoxFunction box) throws TranslationException {
 		StringBuffer str = new StringBuffer("sbox(");
 
 		str.append("spoint(").append("radians(").append(translate(box.getCoord1())).append("-(").append(translate(box.getWidth())).append("/2.0)),");
@@ -129,15 +138,15 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(PolygonFunction polygon) throws TranslationException{
-		try{
+	public String translate(PolygonFunction polygon) throws TranslationException {
+		try {
 			StringBuffer str = new StringBuffer("spoly('{'");
 
-			if (polygon.getNbParameters() > 2){
+			if (polygon.getNbParameters() > 2) {
 				PointFunction point = new PointFunction(polygon.getCoordinateSystem(), polygon.getParameter(1), polygon.getParameter(2));
 				str.append(" || ").append(translate(point));
 
-				for(int i = 3; i < polygon.getNbParameters() && i + 1 < polygon.getNbParameters(); i += 2){
+				for(int i = 3; i < polygon.getNbParameters() && i + 1 < polygon.getNbParameters(); i += 2) {
 					point.setCoord1(polygon.getParameter(i));
 					point.setCoord2(polygon.getParameter(i + 1));
 					str.append(" || ',' || ").append(translate(point));
@@ -147,14 +156,14 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 			str.append(" || '}')");
 
 			return str.toString();
-		}catch(Exception e){
+		} catch(Exception e) {
 			e.printStackTrace();
 			throw new TranslationException(e);
 		}
 	}
 
 	@Override
-	public String translate(ExtractCoord extractCoord) throws TranslationException{
+	public String translate(ExtractCoord extractCoord) throws TranslationException {
 		StringBuffer str = new StringBuffer("degrees(");
 		if (extractCoord.getName().equalsIgnoreCase("COORD1"))
 			str.append("long(");
@@ -165,52 +174,118 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String translate(DistanceFunction fct) throws TranslationException{
+	public String translate(DistanceFunction fct) throws TranslationException {
 		StringBuffer str = new StringBuffer("degrees(");
 		str.append(translate(fct.getP1())).append(" <-> ").append(translate(fct.getP2())).append(")");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(AreaFunction areaFunction) throws TranslationException{
+	public String translate(AreaFunction areaFunction) throws TranslationException {
 		StringBuffer str = new StringBuffer("degrees(degrees(area(");
 		str.append(translate(areaFunction.getParameter())).append(")))");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(CentroidFunction centroidFunction) throws TranslationException{
+	public String translate(CentroidFunction centroidFunction) throws TranslationException {
 		StringBuffer str = new StringBuffer("center(");
 		str.append(translate(centroidFunction.getParameter(0))).append(")");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(ContainsFunction fct) throws TranslationException{
+	public String translate(ContainsFunction fct) throws TranslationException {
 		StringBuffer str = new StringBuffer("(");
 		str.append(translate(fct.getLeftParam())).append(" @ ").append(translate(fct.getRightParam())).append(")");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(IntersectsFunction fct) throws TranslationException{
+	public String translate(IntersectsFunction fct) throws TranslationException {
 		StringBuffer str = new StringBuffer("(");
 		str.append(translate(fct.getLeftParam())).append(" && ").append(translate(fct.getRightParam())).append(")");
 		return str.toString();
 	}
 
 	@Override
-	public String translate(Comparison comp) throws TranslationException{
+	public String translate(Comparison comp) throws TranslationException {
+
+		// CONTAINS or INTERSECTS(...) on left:
 		if ((comp.getLeftOperand() instanceof ContainsFunction || comp.getLeftOperand() instanceof IntersectsFunction) && (comp.getOperator() == ComparisonOperator.EQUAL || comp.getOperator() == ComparisonOperator.NOT_EQUAL) && comp.getRightOperand().isNumeric())
 			return translate(comp.getLeftOperand()) + " " + comp.getOperator().toADQL() + " '" + translate(comp.getRightOperand()) + "'";
+
+		// CONTAINS or INTERSECTS(...) on right:
 		else if ((comp.getRightOperand() instanceof ContainsFunction || comp.getRightOperand() instanceof IntersectsFunction) && (comp.getOperator() == ComparisonOperator.EQUAL || comp.getOperator() == ComparisonOperator.NOT_EQUAL) && comp.getLeftOperand().isNumeric())
 			return "'" + translate(comp.getLeftOperand()) + "' " + comp.getOperator().toADQL() + " " + translate(comp.getRightOperand());
+
+		// Preferred xmatch syntax described in the ADQL standard:
+		else if (isPreferredXmatchSyntax(comp)) {
+			// extract the DISTANCE and its compared value:
+			DistanceFunction distFct;
+			ADQLOperand numericOperand;
+			if (comp.getLeftOperand() instanceof DistanceFunction) {
+				distFct = (DistanceFunction)comp.getLeftOperand();
+				numericOperand = comp.getRightOperand();
+			} else {
+				distFct = (DistanceFunction)comp.getRightOperand();
+				numericOperand = comp.getLeftOperand();
+			}
+			try {
+				// build the CIRCLE to use in the artificial CONTAINS:
+				CircleFunction circleFct = new CircleFunction(new StringConstant(""), ((PointFunction)distFct.getParameter(1)).getCoord1(), ((PointFunction)distFct.getParameter(1)).getCoord2(), numericOperand);
+				// adapt the translation in function of the comp. operator:
+				switch(comp.getOperator()) {
+					case LESS_THAN:
+						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '1' AND " + super.translate(comp) + ")";
+					case LESS_OR_EQUAL:
+						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '1'" + ")";
+					case GREATER_THAN:
+						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '0' AND " + super.translate(comp) + ")";
+					case GREATER_OR_EQUAL:
+						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '0'" + ")";
+					default: // theoretically, this case never happens!
+						return super.translate(comp);
+				}
+			} catch(Exception ex) {
+				throw new TranslationException("Impossible to translate the following xmatch syntax: \"" + comp.toADQL() + "\"! Cause: " + ex.getMessage(), ex);
+			}
+		}
+		// Any other comparison:
 		else
 			return super.translate(comp);
 	}
 
+	/**
+	 * Test whether the given comparison corresponds to the preferred xmatch
+	 * syntax described in the ADQL standard.
+	 *
+	 * <p>
+	 * 	In other words, this function returns <code>true</code> if the following
+	 * 	conditions are met:
+	 * </p>
+	 * <ul>
+	 * 	<li>the left operand is DISTANCE and the right one is a numeric,
+	 * 		or vice-versa,</li>
+	 * 	<li>and the comparison operator is &lt;, &le;, &gt; or &ge;.</li>
+	 * </ul>
+	 *
+	 * @param comp	The comparison to test.
+	 *
+	 * @return	<code>true</code> if it corresponds to a valid xmatch syntax,
+	 *        	<code>false</code> otherwise.
+	 *
+	 * @since 2.0
+	 */
+	protected boolean isPreferredXmatchSyntax(final Comparison comp) {
+		if ((comp.getLeftOperand() instanceof DistanceFunction && comp.getRightOperand().isNumeric()) || (comp.getLeftOperand().isNumeric() && comp.getRightOperand() instanceof DistanceFunction))
+			return (comp.getOperator() == ComparisonOperator.LESS_THAN || comp.getOperator() == ComparisonOperator.LESS_OR_EQUAL || comp.getOperator() == ComparisonOperator.GREATER_THAN || comp.getOperator() == ComparisonOperator.GREATER_OR_EQUAL);
+		else
+			return false;
+	}
+
 	@Override
-	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
+	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params) {
 		// If no type is provided return VARCHAR:
 		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
 			return null;
@@ -227,8 +302,8 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public String convertTypeToDB(final DBType type){
-		if (type != null){
+	public String convertTypeToDB(final DBType type) {
+		if (type != null) {
 			if (type.type == DBDatatype.POINT)
 				return "spoint";
 			else if (type.type == DBDatatype.REGION)
@@ -238,7 +313,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException{
+	public Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException {
 		// A NULL value stays NULL:
 		if (jdbcColValue == null)
 			return null;
@@ -271,17 +346,17 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	}
 
 	@Override
-	public Object translateGeometryToDB(final Region region) throws ParseException{
+	public Object translateGeometryToDB(final Region region) throws ParseException {
 		// A NULL value stays NULL:
 		if (region == null)
 			return null;
 
-		try{
+		try {
 			PGobject dbRegion = new PGobject();
 			StringBuffer buf;
 
 			// Build the PgSphere expression from the given geometry in function of its type:
-			switch(region.type){
+			switch(region.type) {
 
 				case POSITION:
 					dbRegion.setType("spoint");
@@ -291,7 +366,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 				case POLYGON:
 					dbRegion.setType("spoly");
 					buf = new StringBuffer("{");
-					for(int i = 0; i < region.coordinates.length; i++){
+					for(int i = 0; i < region.coordinates.length; i++) {
 						if (i > 0)
 							buf.append(',');
 						buf.append('(').append(region.coordinates[i][0]).append("d,").append(region.coordinates[i][1]).append("d)");
@@ -324,7 +399,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 					throw new ParseException("Unsupported geometrical region: \"" + region.type + "\"!");
 			}
 			return dbRegion;
-		}catch(SQLException e){
+		} catch(SQLException e) {
 			/* This error could never happen! */
 			return null;
 		}
@@ -345,10 +420,10 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 *
 	 * @since 1.3
 	 */
-	protected String circleToPolygon(final double[] center, final double radius){
+	protected String circleToPolygon(final double[] center, final double radius) {
 		double angle = 0, x, y;
 		StringBuffer buf = new StringBuffer();
-		while(angle < 2 * Math.PI){
+		while(angle < 2 * Math.PI) {
 			x = center[0] + radius * Math.cos(angle);
 			y = center[1] + radius * Math.sin(angle);
 			if (buf.length() > 0)
@@ -419,7 +494,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 			private static final long serialVersionUID = 1L;
 
 			/** Build a simple EOEException. */
-			public EOEException(){
+			public EOEException() {
 				super("Unexpected End Of PgSphere Expression!");
 			}
 		}
@@ -427,14 +502,15 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		/**
 		 * Build the PgSphere parser.
 		 */
-		public PgSphereGeometryParser(){}
+		public PgSphereGeometryParser() {
+		}
 
 		/**
 		 * Prepare the parser in order to read the given PgSphere expression.
 		 *
 		 * @param newStcs	New PgSphere expression to parse from now.
 		 */
-		private void init(final String newExpr){
+		private void init(final String newExpr) {
 			expr = (newExpr == null) ? "" : newExpr;
 			token = null;
 			buffer = new StringBuffer();
@@ -447,7 +523,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @throws ParseException	If other non-space characters remains.
 		 */
-		private void end() throws ParseException{
+		private void end() throws ParseException {
 			// Skip all spaces:
 			skipSpaces();
 
@@ -464,7 +540,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		/**
 		 * Tool function which skips all next space characters until the next meaningful characters.
 		 */
-		private void skipSpaces(){
+		private void skipSpaces() {
 			while(pos < expr.length() && Character.isWhitespace(expr.charAt(pos)))
 				pos++;
 		}
@@ -480,7 +556,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @return	The full read word/token, or NULL if the end has been reached.
 		 */
-		private String nextToken() throws EOEException{
+		private String nextToken() throws EOEException {
 			// Skip all spaces:
 			skipSpaces();
 
@@ -489,8 +565,8 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 			// Fetch all characters until word separator (a space or a open/close parenthesis):
 			buffer.append(expr.charAt(pos++));
-			if (!isSyntaxSeparator(buffer.charAt(0))){
-				while(pos < expr.length() && !isSyntaxSeparator(expr.charAt(pos))){
+			if (!isSyntaxSeparator(buffer.charAt(0))) {
+				while(pos < expr.length() && !isSyntaxSeparator(expr.charAt(pos))) {
 					// skip eventual white-spaces:
 					if (!Character.isWhitespace(expr.charAt(pos)))
 						buffer.append(expr.charAt(pos));
@@ -515,7 +591,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @return	<i>true</i> if the given character must be considered as a separator, <i>false</i> otherwise.
 		 */
-		private static boolean isSyntaxSeparator(final char c){
+		private static boolean isSyntaxSeparator(final char c) {
 			return (c == COMMA || c == DEGREE || c == HOUR || c == MINUTE || c == SECOND || c == OPEN_PAR || c == CLOSE_PAR || c == LESS_THAN || c == GREATER_THAN || c == OPEN_BRACE || c == CLOSE_BRACE);
 		}
 
@@ -527,7 +603,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @throws ParseException	If the next character is not matching the given one.
 		 */
-		private void nextToken(final char expected) throws ParseException{
+		private void nextToken(final char expected) throws ParseException {
 			// Skip all spaces:
 			skipSpaces();
 
@@ -537,7 +613,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 
 			// Fetch the next character:
 			char t = expr.charAt(pos++);
-			token = new String(new char[]{t});
+			token = new String(new char[]{ t });
 
 			/* Test the the fetched character with the expected one
 			 * and throw an error if they don't match: */
@@ -554,7 +630,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a point.
 		 */
-		public Region parsePoint(final String pgsphereExpr) throws ParseException{
+		public Region parsePoint(final String pgsphereExpr) throws ParseException {
 			// Init the parser:
 			init(pgsphereExpr);
 			// Parse the expression:
@@ -575,13 +651,13 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 * @see #parseAngle()
 		 * @see #parsePoint(String)
 		 */
-		private double[] parsePoint() throws ParseException{
+		private double[] parsePoint() throws ParseException {
 			nextToken(OPEN_PAR);
 			double x = parseAngle();
 			nextToken(COMMA);
 			double y = parseAngle();
 			nextToken(CLOSE_PAR);
-			return new double[]{x,y};
+			return new double[]{ x, y };
 		}
 
 		/**
@@ -593,7 +669,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a circle.
 		 */
-		public Region parseCircle(final String pgsphereExpr) throws ParseException{
+		public Region parseCircle(final String pgsphereExpr) throws ParseException {
 			// Init the parser:
 			init(pgsphereExpr);
 
@@ -620,7 +696,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a box.
 		 */
-		public Region parseBox(final String pgsphereExpr) throws ParseException{
+		public Region parseBox(final String pgsphereExpr) throws ParseException {
 			// Init the parser:
 			init(pgsphereExpr);
 
@@ -637,7 +713,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 			// Build the STC Box region:
 			double width = Math.abs(northeast[0] - southwest[0]),
 					height = Math.abs(northeast[1] - southwest[1]);
-			double[] center = new double[]{northeast[0] - width / 2,northeast[1] - height / 2};
+			double[] center = new double[]{ northeast[0] - width / 2, northeast[1] - height / 2 };
 			return new Region(null, center, width, height);
 		}
 
@@ -650,7 +726,7 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @throws ParseException	If the PgSphere syntax of the given expression is wrong or does not correspond to a point.
 		 */
-		public Region parsePolygon(final String pgsphereExpr) throws ParseException{
+		public Region parsePolygon(final String pgsphereExpr) throws ParseException {
 			// Init the parser:
 			init(pgsphereExpr);
 
@@ -692,19 +768,19 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		 *
 		 * @throws ParseException	If the angle syntax is wrong or not supported.
 		 */
-		private double parseAngle() throws ParseException{
+		private double parseAngle() throws ParseException {
 			int oldPos = pos;
 			String number = nextToken();
-			try{
+			try {
 				double degrees = Double.parseDouble(number);
 				int sign = (degrees < 0) ? -1 : 1;
 				degrees = Math.abs(degrees);
 
 				oldPos = pos;
-				try{
+				try {
 					if (nextToken().length() == 1 && token.charAt(0) == HOUR)
 						sign *= 15;
-					else if (token.length() != 1 || token.charAt(0) != DEGREE){
+					else if (token.length() != 1 || token.charAt(0) != DEGREE) {
 						degrees = degrees * 180 / Math.PI;
 						pos -= token.length();
 						return degrees * sign;
@@ -714,10 +790,10 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 					number = nextToken();
 					if (nextToken().length() == 1 && token.charAt(0) == MINUTE)
 						degrees += Double.parseDouble(number) / 60;
-					else if (token.length() == 1 && token.charAt(0) == SECOND){
+					else if (token.length() == 1 && token.charAt(0) == SECOND) {
 						degrees += Double.parseDouble(number) / 3600;
 						return degrees * sign;
-					}else{
+					} else {
 						pos = oldPos;
 						return degrees * sign;
 					}
@@ -728,13 +804,13 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 						degrees += Double.parseDouble(number) / 3600;
 					else
 						pos = oldPos;
-				}catch(EOEException ex){
+				} catch(EOEException ex) {
 					pos = oldPos;
 				}
 
 				return degrees * sign;
 
-			}catch(NumberFormatException nfe){
+			} catch(NumberFormatException nfe) {
 				throw new ParseException("Incorrect numeric syntax: \"" + number + "\"!", new TextPosition(1, pos - token.length(), 1, pos));
 			}
 		}
