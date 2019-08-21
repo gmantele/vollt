@@ -52,6 +52,45 @@ public class TestADQLParser {
 	}
 
 	@Test
+	public void testOffset() {
+
+		// CASE: No OFFSET in ADQL-2.0
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
+		try {
+			parser.parseQuery("SELECT * FROM foo ORDER BY id OFFSET 10");
+			fail("OFFSET should not be allowed with ADQL-2.0!");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals(" Encountered \"OFFSET\". Was expecting one of: <EOF> \",\" \";\" \"ASC\" \"DESC\" ", ex.getMessage());
+		}
+
+		// CASE: OFFSET allowed in ADQL-2.1
+		parser = new ADQLParser(ADQLVersion.V2_1);
+		try {
+			assertEquals("SELECT *\nFROM foo\nOFFSET 10", parser.parseQuery("SELECT * FROM foo OFFSET 10").toADQL());
+			assertEquals("SELECT *\nFROM foo\nORDER BY id ASC\nOFFSET 10", parser.parseQuery("SELECT * FROM foo ORDER BY id OFFSET 10").toADQL());
+			assertEquals("SELECT *\nFROM foo\nORDER BY id ASC\nOFFSET 0", parser.parseQuery("SELECT * FROM foo ORDER BY id OFFSET 0").toADQL());
+			assertEquals("SELECT TOP 5 *\nFROM foo\nORDER BY id ASC\nOFFSET 10", parser.parseQuery("SELECT TOP 5 * FROM foo ORDER BY id OFFSET 10").toADQL());
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error with a valid OFFSET syntax! (see console for more details)");
+		}
+
+		// CASE: Only an unsigned integer constant is allowed
+		String[] offsets = new String[]{ "-1", "colOffset", "2*5" };
+		String[] expectedErrors = new String[]{ " Encountered \"-\". Was expecting: <UNSIGNED_INTEGER> ", " Encountered \"colOffset\". Was expecting: <UNSIGNED_INTEGER> ", " Encountered \"*\". Was expecting one of: <EOF> \";\" " };
+		for(int i = 0; i < offsets.length; i++) {
+			try {
+				parser.parseQuery("SELECT * FROM foo OFFSET " + offsets[i]);
+				fail("Incorrect offset expression (\"" + offsets[i] + "\"). This test should have failed.");
+			} catch(Exception ex) {
+				assertEquals(ParseException.class, ex.getClass());
+				assertEquals(expectedErrors[i], ex.getMessage());
+			}
+		}
+	}
+
+	@Test
 	public void testColumnReference() {
 		ADQLParser parser = new ADQLParser();
 		try {

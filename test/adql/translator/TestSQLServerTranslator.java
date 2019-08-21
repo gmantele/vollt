@@ -14,6 +14,7 @@ import adql.db.DBTable;
 import adql.db.DefaultDBColumn;
 import adql.db.DefaultDBTable;
 import adql.parser.ADQLParser;
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.SQLServer_ADQLQueryFactory;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
@@ -35,6 +36,34 @@ public class TestSQLServerTranslator {
 		t.addColumn(new DefaultDBColumn("name", t));
 		t.addColumn(new DefaultDBColumn("anotherColumn", t));
 		tables.add(t);
+	}
+
+	@Test
+	public void testTranslateOffset() {
+		SQLServerTranslator tr = new SQLServerTranslator();
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		try {
+
+			// CASE: Only OFFSET
+			assertEquals("SELECT *\nFROM foo\nOFFSET 10 ROWS", tr.translate(parser.parseQuery("Select * From foo OffSet 10")));
+
+			// CASE: Only OFFSET = 0
+			assertEquals("SELECT *\nFROM foo\nOFFSET 0 ROWS", tr.translate(parser.parseQuery("Select * From foo OffSet 0")));
+
+			// CASE: TOP + OFFSET
+			assertEquals("SELECT *\nFROM foo\nOFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY", tr.translate(parser.parseQuery("Select Top 5 * From foo OffSet 10")));
+
+			// CASE: TOP + ORDER BY + OFFSET
+			assertEquals("SELECT *\nFROM foo\nORDER BY id ASC\nOFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY", tr.translate(parser.parseQuery("Select Top 5 * From foo Order By id Asc OffSet 10")));
+
+		} catch(ParseException pe) {
+			pe.printStackTrace(System.err);
+			fail("Unexpected failed query parsing! (see console for more details)");
+		} catch(Exception e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem to translate a query with offset into SQL.");
+		}
 	}
 
 	@Test

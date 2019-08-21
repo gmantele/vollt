@@ -375,7 +375,10 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			sql.append('\n').append(translate(query.getOrderBy()));
 
 		if (query.getSelect().hasLimit())
-			sql.append("\nLimit ").append(query.getSelect().getLimit());
+			sql.append("\nLIMIT ").append(query.getSelect().getLimit());
+
+		if (query.hasOffset())
+			sql.append("\nOFFSET ").append(query.getOffset());
 
 		return sql.toString();
 	}

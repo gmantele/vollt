@@ -52,7 +52,7 @@ import adql.search.ISearchHandler;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -81,6 +81,10 @@ public class ADQLQuery implements ADQLObject {
 
 	/** The ADQL clause ORDER BY. */
 	private ClauseADQL<ADQLOrder> orderBy;
+
+	/** The ADQL clause OFFSET.
+	 * @since 2.0 */
+	private int offset;
 
 	/** Position of this Query (or sub-query) inside the whole given ADQL query
 	 * string.
@@ -112,6 +116,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy = new ClauseADQL<ADQLColumn>("GROUP BY");
 		having = new ClauseConstraints("HAVING");
 		orderBy = new ClauseADQL<ADQLOrder>("ORDER BY");
+		offset = -1;
 	}
 
 	/**
@@ -130,6 +135,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy = (ClauseADQL<ADQLColumn>)toCopy.groupBy.getCopy();
 		having = (ClauseConstraints)toCopy.having.getCopy();
 		orderBy = (ClauseADQL<ADQLOrder>)toCopy.orderBy.getCopy();
+		offset = toCopy.offset;
 		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
@@ -160,6 +166,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy.clear();
 		having.clear();
 		orderBy.clear();
+		offset = -1;
 		position = null;
 	}
 
@@ -328,6 +335,62 @@ public class ADQLQuery implements ADQLObject {
 			orderBy.clear();
 		else
 			orderBy = newOrderBy;
+		position = null;
+	}
+
+	/**
+	 * Gets the OFFSET value of this query.
+	 *
+	 * @return	Its OFFSET value,
+	 *        	or a negative value if no OFFSET is set.
+	 *
+	 * @since 2.0
+	 */
+	public final int getOffset() {
+		return offset;
+	}
+
+	/**
+	 * Tell whether an OFFSET is set in this query.
+	 *
+	 * @return	<code>true</code> if an OFFSET is set,
+	 *        	<code>false</code> otherwise.
+	 *
+	 * @since 2.0
+	 */
+	public final boolean hasOffset() {
+		return (offset > -1);
+	}
+
+	/**
+	 * Remove the OFFSET value of this query.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>.
+	 *
+	 * @since 2.0
+	 */
+	public void setNoOffset() {
+		offset = -1;
+		position = null;
+	}
+
+	/**
+	 * Replaces its OFFSET value by the given one.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>
+	 *
+	 * @param newOffset	The new OFFSET value.
+	 *                 	<i><b>Note:</b> a negative value removes the OFFSET from
+	 *                 	this query.</i>
+	 *
+	 * @since 2.0
+	 */
+	public void setOffset(final int newOffset) {
+		offset = newOffset;
 		position = null;
 	}
 
@@ -579,6 +642,9 @@ public class ADQLQuery implements ADQLObject {
 
 		if (!orderBy.isEmpty())
 			adql.append('\n').append(orderBy.toADQL());
+
+		if (hasOffset())
+			adql.append("\nOFFSET ").append(offset);
 
 		return adql.toString();
 	}

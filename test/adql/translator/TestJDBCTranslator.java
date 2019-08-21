@@ -9,6 +9,8 @@ import org.junit.Test;
 import adql.db.DBType;
 import adql.db.FunctionDef;
 import adql.db.STCS.Region;
+import adql.parser.ADQLParser;
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.grammar.ParseException;
 import adql.query.IdentifierField;
 import adql.query.operand.ADQLColumn;
@@ -32,6 +34,34 @@ public class TestJDBCTranslator {
 
 	@Before
 	public void setUp() throws Exception {
+	}
+
+	@Test
+	public void testTranslateOffset() {
+		JDBCTranslator tr = new AJDBCTranslator();
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		try {
+
+			// CASE: Only OFFSET
+			assertEquals("SELECT *\nFROM foo\nOFFSET 10", tr.translate(parser.parseQuery("Select * From foo OffSet 10")));
+
+			// CASE: Only OFFSET = 0
+			assertEquals("SELECT *\nFROM foo\nOFFSET 0", tr.translate(parser.parseQuery("Select * From foo OffSet 0")));
+
+			// CASE: TOP + OFFSET
+			assertEquals("SELECT *\nFROM foo\nLIMIT 5\nOFFSET 10", tr.translate(parser.parseQuery("Select Top 5 * From foo OffSet 10")));
+
+			// CASE: TOP + ORDER BY + OFFSET
+			assertEquals("SELECT *\nFROM foo\nORDER BY id ASC\nLIMIT 5\nOFFSET 10", tr.translate(parser.parseQuery("Select Top 5 * From foo Order By id Asc OffSet 10")));
+
+		} catch(ParseException pe) {
+			pe.printStackTrace(System.err);
+			fail("Unexpected failed query parsing! (see console for more details)");
+		} catch(Exception e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem to translate a query with offset into SQL.");
+		}
 	}
 
 	@Test

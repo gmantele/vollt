@@ -134,10 +134,13 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 	/**
 	 * For SQL Server, {@link #translate(ClauseSelect)} must be overridden for
-	 * TOP/LIMIT handling. We must not add the LIMIT at the end of the query, it
-	 * must go in the SELECT.
+	 * LIMIT and OFFSET handling.
 	 *
-	 * @see #translate(ClauseSelect)
+	 * <p><i><b>Implementation note:</b>
+	 * 	LIMIT is replaced by FETCH NEXT instead of TOP because of the addition
+	 * 	of OFFSET support in ADQL-2.1 grammar. With MS-SQLServer, TOP can not be
+	 * 	used with OFFSET...it must be OFFSET...LIMIT....
+	 * </i></p>
 	 */
 	@Override
 	public String translate(ADQLQuery query) throws TranslationException {
@@ -157,6 +160,16 @@ public class SQLServerTranslator extends JDBCTranslator {
 		if (!query.getOrderBy().isEmpty())
 			sql.append('\n').append(translate(query.getOrderBy()));
 
+		if (query.getSelect().hasLimit()) {
+			if (query.hasOffset())
+				sql.append('\n').append("OFFSET ").append(query.getOffset()).append(" ROWS");
+			else
+				sql.append('\n').append("OFFSET 0 ROWS");
+			sql.append(" FETCH NEXT ").append(query.getSelect().getLimit()).append(" ROWS ONLY");
+		} else if (query.hasOffset()) {
+			sql.append('\n').append("OFFSET ").append(query.getOffset()).append(" ROWS");
+		}
+
 		return sql.toString();
 	}
 
@@ -165,9 +178,9 @@ public class SQLServerTranslator extends JDBCTranslator {
 		String sql = null;
 
 		for(int i = 0; i < clause.size(); i++) {
-			if (i == 0) {
-				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "") + (clause.hasLimit() ? " TOP " + clause.getLimit() + " " : "");
-			} else
+			if (i == 0)
+				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "");
+			else
 				sql += " " + clause.getSeparator(i);
 
 			sql += " " + translate(clause.get(i));

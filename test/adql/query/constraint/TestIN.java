@@ -13,7 +13,6 @@ import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
-import adql.query.constraint.In;
 import adql.query.from.ADQLTable;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
@@ -28,20 +27,20 @@ public class TestIN {
 	private static ADQLTranslator translator = null;
 
 	@BeforeClass
-	public static void setUpBeforeClass(){
+	public static void setUpBeforeClass() {
 		translator = new PostgreSQLTranslator();
 	}
 
 	@Test
-	public void testIN(){
+	public void testIN() {
 		// Test with a simple list of values (here, string constants):
-		In myIn = new In(new ADQLColumn("typeObj"), new ADQLOperand[]{new StringConstant("galaxy"),new StringConstant("star"),new StringConstant("planet"),new StringConstant("nebula")}, true);
+		In myIn = new In(new ADQLColumn("typeObj"), new ADQLOperand[]{ new StringConstant("galaxy"), new StringConstant("star"), new StringConstant("planet"), new StringConstant("nebula") }, true);
 		// check the ADQL:
 		assertEquals("typeObj NOT IN ('galaxy' , 'star' , 'planet' , 'nebula')", myIn.toADQL());
 		// check the SQL translation:
-		try{
+		try {
 			assertEquals(myIn.toADQL(), translator.translate(myIn));
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("This test should have succeeded because the IN statement is correct and theoretically well supported by the POSTGRESQL translator!");
 		}
@@ -63,23 +62,23 @@ public class TestIN {
 		// check the ADQL:
 		assertEquals("typeObj NOT IN (SELECT DISTINCT TOP 10 typeObj\nFROM Objects\nORDER BY 1 ASC)", myIn.toADQL());
 		// check the SQL translation:
-		try{
-			assertEquals("typeObj NOT IN (SELECT DISTINCT typeObj AS \"typeObj\"\nFROM Objects\nORDER BY 1 ASC\nLimit 10)", translator.translate(myIn));
-		}catch(Exception ex){
+		try {
+			assertEquals("typeObj NOT IN (SELECT DISTINCT typeObj AS \"typeObj\"\nFROM Objects\nORDER BY 1 ASC\nLIMIT 10)", translator.translate(myIn));
+		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("This test should have succeeded because the IN statement is correct and theoretically well supported by the POSTGRESQL translator!");
 		}
 
 		// Test after replacement inside this IN statement:
-		IReplaceHandler sHandler = new SimpleReplaceHandler(true){
+		IReplaceHandler sHandler = new SimpleReplaceHandler(true) {
 
 			@Override
-			public boolean match(ADQLObject obj){
+			public boolean match(ADQLObject obj) {
 				return (obj instanceof ADQLColumn) && ((ADQLColumn)obj).getColumnName().equals("typeObj");
 			}
 
 			@Override
-			public ADQLObject getReplacer(ADQLObject objToReplace){
+			public ADQLObject getReplacer(ADQLObject objToReplace) {
 				return new ADQLColumn("type");
 			}
 		};

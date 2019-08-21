@@ -301,6 +301,7 @@ TOKEN : {
 |	< ORDER: "ORDER" >   { matchedToken.adqlReserved = true; }
 |	< ASC: "ASC" >       { matchedToken.adqlReserved = true; }
 |	< DESC: "DESC" >     { matchedToken.adqlReserved = true; }
+|   < OFFSET: "OFFSET" > { matchedToken.adqlReserved = true; }
 }
 
 /* ************* */
@@ -439,6 +440,7 @@ ADQLQuery QueryExpression(): {TextPosition endPos = null;} {
 	[GroupBy() {endPos = query.getGroupBy().getPosition();}]
 	[Having()  {endPos = query.getHaving().getPosition();}]
 	[OrderBy() {endPos = query.getOrderBy().getPosition();}]
+	[Offset()  {endPos = new TextPosition(token);}]
 	{
 		// set the position of the query:
 		query.setPosition(new TextPosition(query.getSelect().getPosition(), endPos));
@@ -575,6 +577,17 @@ void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder o
 	start=<ORDER> <BY> order=OrderItem() {orderBy.add(order);}
 	( <COMMA> order=OrderItem() {orderBy.add(order);} )*
 	{ orderBy.setPosition(new TextPosition(start, token)); }
+}
+
+void Offset(): { Token t; } {
+	<OFFSET> t=<UNSIGNED_INTEGER>
+	{
+		try{
+			query.setOffset(Integer.parseInt(t.image));
+		}catch(NumberFormatException nfe){
+			throw new ParseException("The OFFSET limit (\""+t.image+"\") isn't a regular unsigned integer!", new TextPosition(t));
+		}
+	}
 }
 
 /* *************************** */
