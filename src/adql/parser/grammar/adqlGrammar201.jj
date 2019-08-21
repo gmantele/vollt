@@ -396,6 +396,7 @@ TOKEN : {
 	< SCIENTIFIC_NUMBER: (<UNSIGNED_FLOAT>|<UNSIGNED_INTEGER>) "E" (<PLUS>|<MINUS>)? <UNSIGNED_INTEGER> >
 |	< UNSIGNED_FLOAT: (<UNSIGNED_INTEGER> <DOT> (<UNSIGNED_INTEGER>)?) | (<DOT> <UNSIGNED_INTEGER>) >
 |	< UNSIGNED_INTEGER: (<DIGIT>)+ >
+|	< UNSIGNED_HEXADECIMAL: ("0""x" (<DIGIT> | ["a"-"f","A"-"F"])+) >
 |	< #DIGIT: ["0"-"9"] >
 }
 
@@ -783,11 +784,13 @@ StringConstant String(): {Token t, start=null; String str=""; StringConstant cst
 NumericConstant UnsignedNumeric(): {Token t; NumericConstant cst;} {
 	(t=<SCIENTIFIC_NUMBER>
 	| t=<UNSIGNED_FLOAT>
-	| t=<UNSIGNED_INTEGER>)
-	{		try{
-		  cst = queryFactory.createNumericConstant(t.image);
-		  cst.setPosition(new TextPosition(t));
-		  return cst;
+	| t=<UNSIGNED_INTEGER>
+	| t=<UNSIGNED_HEXADECIMAL>)
+	{
+		try{
+		  	cst = queryFactory.createNumericConstant(t.image);
+			cst.setPosition(new TextPosition(t));
+			return cst;
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}
@@ -796,6 +799,7 @@ NumericConstant UnsignedNumeric(): {Token t; NumericConstant cst;} {
 
 NumericConstant UnsignedFloat(): {Token t; NumericConstant cst;} {
 	(t=<UNSIGNED_INTEGER>
+	| t=<UNSIGNED_HEXADECIMAL>
 	| t=<UNSIGNED_FLOAT>)
 	{
 		try{

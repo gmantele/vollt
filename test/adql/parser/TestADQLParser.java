@@ -52,6 +52,31 @@ public class TestADQLParser {
 	}
 
 	@Test
+	public void testHexadecimal() {
+
+		// CASE: No hexadecimal in ADQL-2.0
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
+		try {
+			parser.parseQuery("SELECT 0xF FROM foo");
+			fail("Hexadecimal values should not be allowed with ADQL-2.0!");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals("Invalid ADQL regular identifier: \"0xF\"! HINT: hexadecimal values are not supported in ADQL-2.0. You should change the grammar version of the ADQL parser to at least ADQL-2.1.", ex.getMessage());
+		}
+
+		// CASE: Hexadecimal allowed in ADQL-2.1
+		parser = new ADQLParser(ADQLVersion.V2_1);
+		try {
+			assertEquals("SELECT 0xF\nFROM foo", parser.parseQuery("SELECT 0xF FROM foo").toADQL());
+			assertEquals("SELECT 0xF*2\nFROM foo", parser.parseQuery("SELECT 0xF*2 FROM foo").toADQL());
+			assertEquals("SELECT -0xF\nFROM foo", parser.parseQuery("SELECT -0xF FROM foo").toADQL());
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error with valid hexadecimal values! (see console for more details)");
+		}
+	}
+
+	@Test
 	public void testOffset() {
 
 		// CASE: No OFFSET in ADQL-2.0

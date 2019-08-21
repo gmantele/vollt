@@ -30,7 +30,7 @@ import adql.query.TextPosition;
  * A numeric (integer, double, ...) constant.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  */
 public class NumericConstant implements ADQLOperand {
 
@@ -117,9 +117,38 @@ public class NumericConstant implements ADQLOperand {
 		return value;
 	}
 
+	/**
+	 * Tell whether this numeric constant is written in an hexadecimal form.
+	 *
+	 * @return	<code>true</code> if written in hexadecimal,
+	 *        	<code>false</code> otherwise.
+	 *
+	 * @since 2.0
+	 */
+	public final boolean isHexadecimal() {
+		return isHexadecimal(value);
+	}
+
+	/**
+	 * Tell whether the given string is an hexadecimal numeric.
+	 *
+	 * @param val	The string to test.
+	 *
+	 * @return	<code>true</code> if the given string is an hexadecimal value,
+	 *        	<code>false</code> otherwise.
+	 *
+	 * @since 2.0
+	 */
+	protected boolean isHexadecimal(final String val) {
+		return val.matches("0[Xx][0-9a-fA-F]+");
+	}
+
 	public double getNumericValue() {
 		try {
-			return Double.parseDouble(value);
+			if (isHexadecimal())
+				return Long.parseLong(value.substring(2), 16);
+			else
+				return Double.parseDouble(value);
 		} catch(NumberFormatException nfe) {
 			return Double.NaN;
 		}
@@ -175,8 +204,12 @@ public class NumericConstant implements ADQLOperand {
 	 *                              	in a Double.
 	 */
 	public void setValue(String value, boolean checkNumeric) throws NumberFormatException {
-		if (checkNumeric)
-			Double.parseDouble(value);
+		if (checkNumeric) {
+			if (isHexadecimal(value))
+				Long.parseLong(value.substring(2), 16);
+			else
+				Double.parseDouble(value);
+		}
 
 		this.value = value;
 	}

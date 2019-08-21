@@ -65,6 +65,26 @@ public class TestJDBCTranslator {
 	}
 
 	@Test
+	public void testTranslateHexadecimal() {
+		JDBCTranslator tr = new AJDBCTranslator();
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		try {
+
+			assertEquals("SELECT 15 AS \"0xF\"\nFROM foo", tr.translate(parser.parseQuery("Select 0xF From foo")));
+			assertEquals("SELECT 15*2 AS \"MULT\"\nFROM foo", tr.translate(parser.parseQuery("Select 0xF*2 From foo")));
+			assertEquals("SELECT -15 AS \"NEG_0xF\"\nFROM foo", tr.translate(parser.parseQuery("Select -0xF From foo")));
+
+		} catch(ParseException pe) {
+			pe.printStackTrace(System.err);
+			fail("Unexpected failed query parsing! (see console for more details)");
+		} catch(Exception e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem to translate a query with hexadecimal values into SQL.");
+		}
+	}
+
+	@Test
 	public void testTranslateStringConstant() {
 		JDBCTranslator tr = new AJDBCTranslator();
 

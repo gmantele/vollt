@@ -22,6 +22,7 @@ package adql.parser.grammar;
 import java.io.InputStream;
 import java.util.Stack;
 
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.ADQLQueryFactory;
 import adql.query.ADQLQuery;
 import adql.query.TextPosition;
@@ -106,8 +107,14 @@ public abstract class ADQLGrammarBase implements ADQLGrammar {
 	public final void testRegularIdentifier(final Token token) throws ParseException {
 		if (token == null)
 			throw new ParseException("Impossible to test whether NULL is a valid ADQL regular identifier!");
-		else if (!isRegularIdentifier(token.image))
-			throw new ParseException("Invalid ADQL regular identifier: \u005c"" + token.image + "\u005c"! If it aims to be a column/table name/alias, you should write it between double quotes.", new TextPosition(token));
+		else if (!isRegularIdentifier(token.image)) {
+			String message = "Invalid ADQL regular identifier: \u005c"" + token.image + "\u005c"!";
+			if (getVersion() == ADQLVersion.V2_0 && token.image.matches("0[Xx][0-9a-fA-F]+"))
+				message += " HINT: hexadecimal values are not supported in ADQL-2.0. You should change the grammar version of the ADQL parser to at least ADQL-2.1.";
+			else
+				message += " HINT: If it aims to be a column/table name/alias, you should write it between double quotes.";
+			throw new ParseException(message, new TextPosition(token));
+		}
 	}
 
 	/* **********************************************************************

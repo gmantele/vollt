@@ -729,7 +729,14 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(NumericConstant numConst) throws TranslationException {
-		return numConst.getValue();
+		if (numConst.isHexadecimal()) {
+			try {
+				return "" + Long.parseLong(numConst.getValue().substring(2), 16);
+			} catch(NumberFormatException nfe) {
+				throw new TranslationException("Impossible to evaluate the given hexadecimal expression: \"" + numConst.getValue() + "\"!", nfe);
+			}
+		} else
+			return numConst.getValue();
 	}
 
 	@Override
