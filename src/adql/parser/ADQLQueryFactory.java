@@ -28,6 +28,7 @@ import adql.parser.IdentifierItems.IdentifierItem;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseConstraints;
+import adql.query.ClauseOffset;
 import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectItem;
@@ -89,7 +90,7 @@ import adql.query.operand.function.string.LowerFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  *
  * @see ADQLParser
  */
@@ -486,5 +487,20 @@ public class ADQLQueryFactory {
 		if (colRef != null)
 			colRef.setPosition(position);
 		return colRef;
+	}
+
+	/**
+	 * Create a {@link ClauseOffset}.
+	 *
+	 * @param offsetValue	The OFFSET's value. <b>MUST be POSITIVE</b>
+	 *
+	 * @return	The created {@link ClauseOffset}.
+	 *
+	 * @throws Exception	If the given OFFSET value is incorrect.
+	 *
+	 * @since 2.0
+	 */
+	public ClauseOffset createOffset(final int offsetValue) throws Exception {
+		return new ClauseOffset(offsetValue);
 	}
 }

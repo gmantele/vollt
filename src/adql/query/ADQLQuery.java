@@ -84,7 +84,7 @@ public class ADQLQuery implements ADQLObject {
 
 	/** The ADQL clause OFFSET.
 	 * @since 2.0 */
-	private int offset;
+	private ClauseOffset offset;
 
 	/** Position of this Query (or sub-query) inside the whole given ADQL query
 	 * string.
@@ -116,7 +116,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy = new ClauseADQL<ADQLColumn>("GROUP BY");
 		having = new ClauseConstraints("HAVING");
 		orderBy = new ClauseADQL<ADQLOrder>("ORDER BY");
-		offset = -1;
+		offset = null;
 	}
 
 	/**
@@ -135,7 +135,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy = (ClauseADQL<ADQLColumn>)toCopy.groupBy.getCopy();
 		having = (ClauseConstraints)toCopy.having.getCopy();
 		orderBy = (ClauseADQL<ADQLOrder>)toCopy.orderBy.getCopy();
-		offset = toCopy.offset;
+		offset = (ClauseOffset)toCopy.offset.getCopy();
 		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
@@ -166,7 +166,7 @@ public class ADQLQuery implements ADQLObject {
 		groupBy.clear();
 		having.clear();
 		orderBy.clear();
-		offset = -1;
+		offset = null;
 		position = null;
 	}
 
@@ -342,38 +342,12 @@ public class ADQLQuery implements ADQLObject {
 	 * Gets the OFFSET value of this query.
 	 *
 	 * @return	Its OFFSET value,
-	 *        	or a negative value if no OFFSET is set.
+	 *        	or NULL if not OFFSET is set.
 	 *
 	 * @since 2.0
 	 */
-	public final int getOffset() {
+	public final ClauseOffset getOffset() {
 		return offset;
-	}
-
-	/**
-	 * Tell whether an OFFSET is set in this query.
-	 *
-	 * @return	<code>true</code> if an OFFSET is set,
-	 *        	<code>false</code> otherwise.
-	 *
-	 * @since 2.0
-	 */
-	public final boolean hasOffset() {
-		return (offset > -1);
-	}
-
-	/**
-	 * Remove the OFFSET value of this query.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	The position of the query is erased.
-	 * </i></p>.
-	 *
-	 * @since 2.0
-	 */
-	public void setNoOffset() {
-		offset = -1;
-		position = null;
 	}
 
 	/**
@@ -383,13 +357,12 @@ public class ADQLQuery implements ADQLObject {
 	 * 	The position of the query is erased.
 	 * </i></p>
 	 *
-	 * @param newOffset	The new OFFSET value.
-	 *                 	<i><b>Note:</b> a negative value removes the OFFSET from
-	 *                 	this query.</i>
+	 * @param newOffset	The new OFFSET value,
+	 *                 	or NULL to remove the current OFFSET.
 	 *
 	 * @since 2.0
 	 */
-	public void setOffset(final int newOffset) {
+	public void setOffset(final ClauseOffset newOffset) {
 		offset = newOffset;
 		position = null;
 	}
@@ -549,6 +522,9 @@ public class ADQLQuery implements ADQLObject {
 					case 5:
 						currentClause = orderBy;
 						break;
+					case 6:
+						currentClause = null;
+						return offset;
 					default:
 						throw new NoSuchElementException();
 				}
@@ -557,7 +533,7 @@ public class ADQLQuery implements ADQLObject {
 
 			@Override
 			public boolean hasNext() {
-				return index + 1 < 6;
+				return index + 1 < 7;
 			}
 
 			@Override
@@ -606,6 +582,12 @@ public class ADQLQuery implements ADQLObject {
 							else
 								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + orderBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
+						case 6:
+							if (replacer instanceof ClauseOffset)
+								offset = (ClauseOffset)replacer;
+							else
+								throw new UnsupportedOperationException("Impossible to replace a ClauseOffset (" + offset.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+							break;
 					}
 					position = null;
 				}
@@ -618,7 +600,10 @@ public class ADQLQuery implements ADQLObject {
 
 				if (index == 0 || index == 1)
 					throw new UnsupportedOperationException("Impossible to remove a " + ((index == 0) ? "SELECT" : "FROM") + " clause from a query!");
-				else {
+				else if (index == 6) {
+					offset = null;
+					position = null;
+				} else {
 					currentClause.clear();
 					position = null;
 				}
@@ -643,8 +628,8 @@ public class ADQLQuery implements ADQLObject {
 		if (!orderBy.isEmpty())
 			adql.append('\n').append(orderBy.toADQL());
 
-		if (hasOffset())
-			adql.append("\nOFFSET ").append(offset);
+		if (offset != null)
+			adql.append('\n').append(offset.toADQL());
 
 		return adql.toString();
 	}

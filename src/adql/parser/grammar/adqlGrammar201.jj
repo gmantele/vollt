@@ -579,13 +579,17 @@ void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder o
 	{ orderBy.setPosition(new TextPosition(start, token)); }
 }
 
-void Offset(): { Token t; } {
-	<OFFSET> t=<UNSIGNED_INTEGER>
+void Offset(): { Token start, t; } {
+	start=<OFFSET> t=<UNSIGNED_INTEGER>
 	{
 		try{
-			query.setOffset(Integer.parseInt(t.image));
+		  	ClauseOffset offset = queryFactory.createOffset(Integer.parseInt(t.image));
+		  	offset.setPosition(new TextPosition(start, t));
+			query.setOffset(offset);
 		}catch(NumberFormatException nfe){
 			throw new ParseException("The OFFSET limit (\""+t.image+"\") isn't a regular unsigned integer!", new TextPosition(t));
+		}catch(Exception ex) {
+			throw generateParseException(ex);
 		}
 	}
 }

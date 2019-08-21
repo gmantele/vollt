@@ -28,6 +28,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import adql.db.FunctionDef;
+import adql.query.ClauseOffset;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -578,18 +579,18 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/*public static final LanguageFeature UNION = new LanguageFeature(FeatureType.ADQL_SETS, "UNION"); // TODO UNION
 	public static final LanguageFeature EXCEPT = new LanguageFeature(FeatureType.ADQL_SETS, "EXCEPT"); // TODO EXCEPT
 	public static final LanguageFeature INTERSECT = new LanguageFeature(FeatureType.ADQL_SETS, "INTERSECT");  // TODO INTERSECT
-
+	
 	public static final LanguageFeature WITH = new LanguageFeature(FeatureType.ADQL_COMMON_TABLE, "WITH");  // TODO WITH
-
+	
 	public static final LanguageFeature CAST = new LanguageFeature(FeatureType.ADQL_TYPE, "CAST");  // TODO CAST
-
+	
 	public static final LanguageFeature IN_UNIT = new LanguageFeature(FeatureType.ADQL_UNIT, "IN_UNIT");  // TODO IN_UNIT
-
+	
 	public static final LanguageFeature BIT_AND = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_AND");  // TODO BIT_AND
 	public static final LanguageFeature BIT_OR = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_OR");  // TODO BIT_OR
 	public static final LanguageFeature BIT_XOR = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_XOR");  // TODO BIT_XOR
 	public static final LanguageFeature BIT_NOT = new LanguageFeature(FeatureType.ADQL_BITWISE, "BIT_NOT");  // TODO BIT_NOT
-
+	
 	public static final LanguageFeature OFFSET = new LanguageFeature(FeatureType.ADQL_OFFSET, "OFFSET");  // TODO OFFSET*/
 
 	/** All standard features available.
@@ -602,7 +603,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * <p><i><b>Important note:</b>
 	 * 	All of them must be optional and must have a type.
 	 * </i></p> */
-	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
+	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
 
 	/**
 	 * List all available language features.

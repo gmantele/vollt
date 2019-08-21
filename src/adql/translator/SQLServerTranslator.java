@@ -161,13 +161,13 @@ public class SQLServerTranslator extends JDBCTranslator {
 			sql.append('\n').append(translate(query.getOrderBy()));
 
 		if (query.getSelect().hasLimit()) {
-			if (query.hasOffset())
-				sql.append('\n').append("OFFSET ").append(query.getOffset()).append(" ROWS");
+			if (query.getOffset() != null)
+				sql.append('\n').append("OFFSET ").append(query.getOffset().getValue()).append(" ROWS");
 			else
 				sql.append('\n').append("OFFSET 0 ROWS");
 			sql.append(" FETCH NEXT ").append(query.getSelect().getLimit()).append(" ROWS ONLY");
-		} else if (query.hasOffset()) {
-			sql.append('\n').append("OFFSET ").append(query.getOffset()).append(" ROWS");
+		} else if (query.getOffset() != null) {
+			sql.append('\n').append("OFFSET ").append(query.getOffset().getValue()).append(" ROWS");
 		}
 
 		return sql.toString();
