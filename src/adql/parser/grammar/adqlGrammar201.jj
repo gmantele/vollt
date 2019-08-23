@@ -232,6 +232,16 @@ TOKEN : {
 |	< DIVIDE: "/" >
 }
 
+/* **************** */
+/* Binary operators */
+/* **************** */
+TOKEN : {
+	< BIT_AND: "&" >
+|	< BIT_OR: "|" >
+|	< BIT_XOR: "^" >
+|	< BIT_NOT: "~" >
+}
+
 /* ******************** */
 /* Comparison operators */
 /* ******************** */
@@ -409,7 +419,7 @@ TOKEN : {
 
 TOKEN : {
 	< REGULAR_IDENTIFIER_CANDIDATE: ((<Letter>)+ (<DIGIT> | <Letter>)* | (<DIGIT>)+ <Letter> (<DIGIT> | <Letter>)*) >
-|	< #Letter: ["a"-"z","A"-"Z","_","?","!","$","@","^","#","`","~","[","]","{","}"] >
+|	< #Letter: ["a"-"z","A"-"Z","_","?","!","$","@","#","`","[","]","{","}"] >
 }
 
 							/* ########## */
@@ -865,7 +875,7 @@ ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn col
 
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right; } {
 	try{
-		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
+		(LOOKAHEAD((<PLUS>|<MINUS>|<BIT_NOT>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>|<BIT_AND>|<BIT_OR>|<BIT_XOR>))) valueExpr=NumericExpression()
 		| LOOKAHEAD(<COORDSYS> | <LOWER> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER_CANDIDATE> <LEFT_PAR>) valueExpr=UserDefinedFunction()
@@ -890,62 +900,77 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 	}
 }
 
-ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
-	(leftOp=NumericTerm() ((sign=<PLUS> | sign=<MINUS>) rightOp=NumericExpression())?)
+ADQLOperand NumericExpression(): { Token operator = null; ADQLOperand leftOp, rightOp = null; } {
+	(leftOp=NumericTerm() ((operator=<BIT_AND> | operator=<BIT_OR> | operator=<BIT_XOR>) rightOp=NumericExpression())?)
 	{
-	if (sign == null)
-		return leftOp;
-	else{
-		try{
-			Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
-			operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
-			return operation;
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	}
-	}
-}
-
-ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
-	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=NumericTerm())?)
-	{
-	if (sign == null)
-		return leftOp;
-	else{
-		try{
-			Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
-			operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
-			return operation;
-		}catch(Exception ex){
-			throw generateParseException(ex);
-		}
-	}
-	}
-}
-
-ADQLOperand Factor(): {boolean negative = false; Token minusSign = null; ADQLOperand op;} {
-	(
-		(<PLUS> | (minusSign=<MINUS> {negative = true;}))?
-		(LOOKAHEAD(2) op=NumericFunction() | op=NumericValueExpressionPrimary())
-	)
-	
-	{
-		if (negative){
+		if (operator == null)
+			return leftOp;
+		else{
 			try{
-			  	TextPosition position = op.getPosition();
-				op = queryFactory.createNegativeOperand(op);
-				NegativeOperand negativeOp = (NegativeOperand)op;
-				if (minusSign != null)
-					negativeOp.setPosition(new TextPosition(minusSign.beginLine, minusSign.beginColumn, position.endLine, position.endColumn));
-				else
-					negativeOp.setPosition(position);
+				Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(operator.image), rightOp);
+				operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
+				return operation;
 			}catch(Exception ex){
 				throw generateParseException(ex);
 			}
 		}
-		
-		return op;
+	}
+}
+
+ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
+	(leftOp=Term() ((sign=<PLUS> | sign=<MINUS>) rightOp=NumericTerm())?)
+	{
+	if (sign == null)
+		return leftOp;
+	else{
+		try{
+			Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+			operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
+			return operation;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+	}
+}
+
+ADQLOperand Term(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
+	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=Term())?)
+	{
+	if (sign == null)
+		return leftOp;
+	else{
+		try{
+			Operation operation = queryFactory.createOperation(leftOp, OperationType.getOperator(sign.image), rightOp);
+			operation.setPosition(new TextPosition(leftOp.getPosition(), rightOp.getPosition()));
+			return operation;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+	}
+}
+
+ADQLOperand Factor(): {Token minusSign = null, bitNot = null; ADQLOperand op;} {
+	(
+		(<PLUS> | minusSign=<MINUS> | bitNot=<BIT_NOT>)?
+		(LOOKAHEAD(2) op=NumericFunction() | op=NumericValueExpressionPrimary())
+	)
+	{
+		try {
+			if (bitNot != null) {
+				BitNotOperand bitNotOperand = queryFactory.createBitNotOperand(op);
+				bitNotOperand.setPosition(new TextPosition(new TextPosition(bitNot), op.getPosition()));
+				return bitNotOperand;
+			} else if (minusSign != null) {
+				NegativeOperand negativeOp = queryFactory.createNegativeOperand(op);
+				negativeOp.setPosition(new TextPosition(new TextPosition(minusSign), op.getPosition()));
+				return negativeOp;
+			} else
+				return op;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
 	}
 }
 

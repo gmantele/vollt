@@ -79,7 +79,7 @@ public class TestSubQueries {
 			adqlParser.setQueryChecker(new DBChecker(esaTables));
 
 			ADQLQuery query = adqlParser.parseQuery("SELECT t.* FROM (SELECT (ra+ra_error) AS x, (dec+dec_error) AS Y, pmra AS \"ProperMotion\" FROM table2) AS t");
-			assertEquals("SELECT \"t\".\"x\" AS \"x\",\"t\".\"y\" AS \"y\",\"t\".\"ProperMotion\" AS \"ProperMotion\"\nFROM (SELECT (\"public\".\"table2\".\"ra\"+\"public\".\"table2\".\"ra_error\") AS \"x\" , (\"public\".\"table2\".\"dec\"+\"public\".\"table2\".\"dec_error\") AS \"y\" , \"public\".\"table2\".\"pmra\" AS \"ProperMotion\"\nFROM \"public\".\"table2\") AS \"t\"", (new PostgreSQLTranslator()).translate(query));
+			assertEquals("SELECT \"t\".\"x\" AS \"x\",\"t\".\"y\" AS \"y\",\"t\".\"ProperMotion\" AS \"ProperMotion\"\nFROM (SELECT ((\"public\".\"table2\".\"ra\"+\"public\".\"table2\".\"ra_error\")) AS \"x\" , ((\"public\".\"table2\".\"dec\"+\"public\".\"table2\".\"dec_error\")) AS \"y\" , \"public\".\"table2\".\"pmra\" AS \"ProperMotion\"\nFROM \"public\".\"table2\") AS \"t\"", (new PostgreSQLTranslator()).translate(query));
 		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("No error expected! (see console for more details)");

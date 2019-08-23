@@ -29,10 +29,10 @@ import adql.query.TextPosition;
 
 /**
  * It represents a simple numeric operation (sum, difference, multiplication and
- * division).
+ * division) or a bitwise operation (binary AND, OR or XOR).
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  *
  * @see OperationType
  */

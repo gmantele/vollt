@@ -110,9 +110,9 @@ public abstract class ADQLGrammarBase implements ADQLGrammar {
 		else if (!isRegularIdentifier(token.image)) {
 			String message = "Invalid ADQL regular identifier: \u005c"" + token.image + "\u005c"!";
 			if (getVersion() == ADQLVersion.V2_0 && token.image.matches("0[Xx][0-9a-fA-F]+"))
-				message += " HINT: hexadecimal values are not supported in ADQL-2.0. You should change the grammar version of the ADQL parser to at least ADQL-2.1.";
+				message += System.getProperty("line.separator", "\n") + "(HINT: hexadecimal values are not supported in ADQL-2.0. You should upgrade your ADQL parser to support at least ADQL-2.1.)";
 			else
-				message += " HINT: If it aims to be a column/table name/alias, you should write it between double quotes.";
+				message += System.getProperty("line.separator", "\n") + " (HINT: If it aims to be a column/table name/alias, you should write it between double quotes.)";
 			throw new ParseException(message, new TextPosition(token));
 		}
 	}

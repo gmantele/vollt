@@ -28,6 +28,8 @@
  * Modified by Gr&eacute;gory Mantelet (CDS), on Aug. 2019
  * Modifications:
  *     - change the package name
+ *     - customize error message in function of the token: append an hint
+ *       message or a possible cause in case of TokenMgrError
  *
  * /!\ DO NOT RE-GENERATE THIS FILE /!\
  * In case of re-generation, replace it by ParseException.java.backup (but maybe
@@ -36,6 +38,7 @@
  */
 package adql.parser.grammar;
 
+import adql.parser.ADQLParser.ADQLVersion;
 import adql.query.TextPosition;
 
 /**
@@ -46,6 +49,10 @@ import adql.query.TextPosition;
  *
  * You can modify this class to customize your error reporting
  * mechanisms so long as you retain the public fields.
+ *
+ * @version 2.0 (08/2019)
+ * @author JavaCC
+ * @author Gr&eacute;gory Mantelet (CDS)
  */
 public class ParseException extends Exception {
 
@@ -101,9 +108,9 @@ public class ParseException extends Exception {
 
 	private final static String buildExpandedMessage(final TokenMgrError err) {
 		if (err.getMessage().indexOf("<EOF>") > 0)
-			return err.getMessage() + "! Possible cause: a string between single or double quotes which is never closed (solution: well...just close it!).";
+			return err.getMessage() + "!" + eol + "Possible cause: a string between single or double quotes which is never closed (solution: well...just close it!).";
 		else
-			return err.getMessage() + "! Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it).";
+			return err.getMessage() + "!" + eol + "Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it).";
 	}
 
 	/**
@@ -190,9 +197,11 @@ public class ParseException extends Exception {
 		if (maxSize == 1) {
 			tok = currentToken.next;
 			if (tok.adqlReserved)
-				msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(tok.image).append("\" is a reserved ADQL word in " + currentToken.next.adqlVersion + ". To use it as a column/table/schema name/alias, write it between double quotes.)");
+				msg.append(eol).append("(HINT: \"").append(tok.image).append("\" is a reserved ADQL word in " + currentToken.next.adqlVersion + ". To use it as a column/table/schema name/alias, write it between double quotes.)");
 			else if (tok.sqlReserved)
-				msg.append(System.getProperty("line.separator", "\n")).append("(HINT: \"").append(tok.image).append("\" is not supported in ADQL " + currentToken.next.adqlVersion + ", but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)");
+				msg.append(eol).append("(HINT: \"").append(tok.image).append("\" is not supported in ADQL " + currentToken.next.adqlVersion + ", but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)");
+			else if (tok.adqlVersion == ADQLVersion.V2_0 && tok.image.matches("[~^|&]"))
+				msg.append(eol).append("(HINT: \"").append(tok.image).append("\" bitwise operations are not supported in ADQL-2.0. You should migrate your ADQL parser to support at least ADQL-2.1.)");
 		}
 
 		return msg.toString();
@@ -239,7 +248,7 @@ public class ParseException extends Exception {
 	/**
 	 * The end of line string for this machine.
 	 */
-	protected String eol = System.getProperty("line.separator", "\n");
+	protected static String eol = System.getProperty("line.separator", "\n");
 
 	/**
 	 * Used to convert raw characters to their escaped version

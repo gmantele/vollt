@@ -229,6 +229,16 @@ TOKEN : {
 |	< DIVIDE: "/" >
 }
 
+/* **************** */
+/* Binary operators */
+/* **************** */
+TOKEN : {
+	< BIT_AND: "&" >
+|	< BIT_OR: "|" >
+|	< BIT_XOR: "^" >
+|	< BIT_NOT: "~" >
+}
+
 /* ******************** */
 /* Comparison operators */
 /* ******************** */
@@ -396,7 +406,7 @@ TOKEN : {
 
 TOKEN : {
 	< REGULAR_IDENTIFIER_CANDIDATE: ((<Letter>)+ (<DIGIT> | <Letter>)* | (<DIGIT>)+ <Letter> (<DIGIT> | <Letter>)*) >
-|	< #Letter: ["a"-"z","A"-"Z","_","?","$","@","^","#","`","~","[","]","{","}"] >
+|	< #Letter: ["a"-"z","A"-"Z","_","?","$","@","#","`","[","]","{","}"] >
 }
 
 							/* ########## */

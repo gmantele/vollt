@@ -1,8 +1,5 @@
 package adql.query.operand;
 
-import adql.parser.feature.LanguageFeature;
-import adql.query.operand.function.SQLFunction;
-
 /*
  * This file is part of ADQLLibrary.
  *
@@ -22,16 +19,28 @@ import adql.query.operand.function.SQLFunction;
  * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
+import adql.parser.feature.LanguageFeature;
+import adql.query.operand.function.SQLFunction;
+
 /**
  * Type of possible simple numeric operations.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  *
  * @see Operation
  */
 public enum OperationType {
-	SUM, SUB, MULT, DIV;
+	SUM,
+	SUB,
+	MULT,
+	DIV,
+	/** @since 2.0 */
+	BIT_AND,
+	/** @since 2.0 */
+	BIT_OR,
+	/** @since 2.0 */
+	BIT_XOR;
 
 	/** Description of the ADQL Feature based on this type.
 	 * @since 2.0 */
@@ -39,7 +48,10 @@ public enum OperationType {
 
 	/** @since 2.0 */
 	private OperationType() {
-		FEATURE = new LanguageFeature(null, this.name(), false);
+		if (this.name().startsWith("BIT_"))
+			FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_BITWISE, this.name(), true);
+		else
+			FEATURE = new LanguageFeature(null, this.name(), false);
 	}
 
 	/**
@@ -61,7 +73,7 @@ public enum OperationType {
 	}
 
 	public static String[] getOperators() {
-		return new String[]{ SUM.toString(), SUB.toString(), MULT.toString(), DIV.toString() };
+		return new String[]{ SUM.toString(), SUB.toString(), MULT.toString(), DIV.toString(), BIT_AND.toString(), BIT_OR.toString(), BIT_XOR.toString() };
 	}
 
 	public static OperationType getOperator(String str) throws UnsupportedOperationException {
@@ -73,6 +85,12 @@ public enum OperationType {
 			return MULT;
 		else if (str.equalsIgnoreCase("/"))
 			return DIV;
+		else if (str.equalsIgnoreCase("&"))
+			return BIT_AND;
+		else if (str.equalsIgnoreCase("|"))
+			return BIT_OR;
+		else if (str.equalsIgnoreCase("^"))
+			return BIT_XOR;
 		else
 			throw new UnsupportedOperationException("Numeric operation unknown: \"" + str + "\" !");
 	}
@@ -92,6 +110,12 @@ public enum OperationType {
 				return "*";
 			case DIV:
 				return "/";
+			case BIT_AND:
+				return "&";
+			case BIT_OR:
+				return "|";
+			case BIT_XOR:
+				return "^";
 			default:
 				return "???";
 		}

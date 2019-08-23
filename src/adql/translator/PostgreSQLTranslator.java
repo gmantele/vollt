@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -25,6 +25,8 @@ import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
 import adql.parser.grammar.ParseException;
 import adql.query.IdentifierField;
+import adql.query.operand.Operation;
+import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.MathFunction;
@@ -64,7 +66,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2016)
+ * @version 2.0 (08/2019)
  *
  * @see PgSphereTranslator
  */
@@ -83,7 +85,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	 * Builds a PostgreSQLTranslator which always translates in SQL all identifiers (schema, table and column) in a case sensitive manner ;
 	 * in other words, schema, table and column names will be surrounded by double quotes in the SQL translation.
 	 */
-	public PostgreSQLTranslator(){
+	public PostgreSQLTranslator() {
 		caseSensitivity = 0x0F;
 	}
 
@@ -93,7 +95,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	 *
 	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity.
 	 */
-	public PostgreSQLTranslator(final boolean allCaseSensitive){
+	public PostgreSQLTranslator(final boolean allCaseSensitive) {
 		caseSensitivity = allCaseSensitive ? (byte)0x0F : (byte)0x00;
 	}
 
@@ -105,7 +107,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	 * @param table		<i>true</i> to translate table names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param column	<i>true</i> to translate column names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 */
-	public PostgreSQLTranslator(final boolean catalog, final boolean schema, final boolean table, final boolean column){
+	public PostgreSQLTranslator(final boolean catalog, final boolean schema, final boolean table, final boolean column) {
 		caseSensitivity = IdentifierField.CATALOG.setCaseSensitive(caseSensitivity, catalog);
 		caseSensitivity = IdentifierField.SCHEMA.setCaseSensitive(caseSensitivity, schema);
 		caseSensitivity = IdentifierField.TABLE.setCaseSensitive(caseSensitivity, table);
@@ -113,12 +115,12 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public boolean isCaseSensitive(final IdentifierField field){
+	public boolean isCaseSensitive(final IdentifierField field) {
 		return field == null ? false : field.isCaseSensitive(caseSensitivity);
 	}
 
 	@Override
-	public String translate(StringConstant strConst) throws TranslationException{
+	public String translate(StringConstant strConst) throws TranslationException {
 		// Deal with the special escaping syntax of Postgres:
 		/* A string containing characters to escape must be prefixed by an E.
 		 * Without this prefix, Potsgres does not escape the concerned characters and
@@ -131,8 +133,16 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(MathFunction fct) throws TranslationException{
-		switch(fct.getType()){
+	public String translate(Operation op) throws TranslationException {
+		if (op.getOperation() == OperationType.BIT_XOR)
+			return "(" + translate(op.getLeftOperand()) + " # " + translate(op.getRightOperand()) + ")";
+		else
+			return super.translate(op);
+	}
+
+	@Override
+	public String translate(MathFunction fct) throws TranslationException {
+		switch(fct.getType()) {
 			case LOG:
 				return "ln(" + ((fct.getNbParameters() >= 1) ? "CAST(" + translate(fct.getParameter(0)) + " AS numeric)" : "") + ")";
 			case LOG10:
@@ -166,67 +176,67 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(ExtractCoord extractCoord) throws TranslationException{
+	public String translate(ExtractCoord extractCoord) throws TranslationException {
 		return getDefaultADQLFunction(extractCoord);
 	}
 
 	@Override
-	public String translate(ExtractCoordSys extractCoordSys) throws TranslationException{
+	public String translate(ExtractCoordSys extractCoordSys) throws TranslationException {
 		return getDefaultADQLFunction(extractCoordSys);
 	}
 
 	@Override
-	public String translate(AreaFunction areaFunction) throws TranslationException{
+	public String translate(AreaFunction areaFunction) throws TranslationException {
 		return getDefaultADQLFunction(areaFunction);
 	}
 
 	@Override
-	public String translate(CentroidFunction centroidFunction) throws TranslationException{
+	public String translate(CentroidFunction centroidFunction) throws TranslationException {
 		return getDefaultADQLFunction(centroidFunction);
 	}
 
 	@Override
-	public String translate(DistanceFunction fct) throws TranslationException{
+	public String translate(DistanceFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 
 	@Override
-	public String translate(ContainsFunction fct) throws TranslationException{
+	public String translate(ContainsFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 
 	@Override
-	public String translate(IntersectsFunction fct) throws TranslationException{
+	public String translate(IntersectsFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 
 	@Override
-	public String translate(BoxFunction box) throws TranslationException{
+	public String translate(BoxFunction box) throws TranslationException {
 		return getDefaultADQLFunction(box);
 	}
 
 	@Override
-	public String translate(CircleFunction circle) throws TranslationException{
+	public String translate(CircleFunction circle) throws TranslationException {
 		return getDefaultADQLFunction(circle);
 	}
 
 	@Override
-	public String translate(PointFunction point) throws TranslationException{
+	public String translate(PointFunction point) throws TranslationException {
 		return getDefaultADQLFunction(point);
 	}
 
 	@Override
-	public String translate(PolygonFunction polygon) throws TranslationException{
+	public String translate(PolygonFunction polygon) throws TranslationException {
 		return getDefaultADQLFunction(polygon);
 	}
 
 	@Override
-	public String translate(RegionFunction region) throws TranslationException{
+	public String translate(RegionFunction region) throws TranslationException {
 		return getDefaultADQLFunction(region);
 	}
 
 	@Override
-	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params){
+	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params) {
 		// If no type is provided return VARCHAR:
 		if (dbmsTypeName == null || dbmsTypeName.trim().length() == 0)
 			return null;
@@ -236,10 +246,11 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 
 		// Extract the length parameter (always the first one):
 		int lengthParam = DBType.NO_LENGTH;
-		if (params != null && params.length > 0){
-			try{
+		if (params != null && params.length > 0) {
+			try {
 				lengthParam = Integer.parseInt(params[0]);
-			}catch(NumberFormatException nfe){}
+			} catch(NumberFormatException nfe) {
+			}
 		}
 
 		// SMALLINT
@@ -284,11 +295,11 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String convertTypeToDB(final DBType type){
+	public String convertTypeToDB(final DBType type) {
 		if (type == null)
 			return "VARCHAR";
 
-		switch(type.type){
+		switch(type.type) {
 
 			case SMALLINT:
 			case INTEGER:
@@ -320,12 +331,12 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException{
+	public Region translateGeometryFromDB(final Object jdbcColValue) throws ParseException {
 		throw new ParseException("Unsupported geometrical value! The value \"" + jdbcColValue + "\" can not be parsed as a region.");
 	}
 
 	@Override
-	public Object translateGeometryToDB(final Region region) throws ParseException{
+	public Object translateGeometryToDB(final Region region) throws ParseException {
 		throw new ParseException("Geometries can not be uploaded in the database in this implementation!");
 	}
 

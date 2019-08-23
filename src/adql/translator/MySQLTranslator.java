@@ -28,6 +28,7 @@ import adql.query.IdentifierField;
 import adql.query.constraint.Comparison;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
+import adql.query.operand.Operation;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -136,6 +137,18 @@ public class MySQLTranslator extends JDBCTranslator {
 	/* * GENERAL TRANSLATIONS                                               * */
 	/* *                                                                    * */
 	/* ********************************************************************** */
+
+	@Override
+	public String translate(Operation op) throws TranslationException {
+		switch(op.getOperation()) {
+			case BIT_AND:
+			case BIT_OR:
+			case BIT_XOR:
+				return "CAST(" + translate(op.getLeftOperand()) + op.getOperation().toADQL() + translate(op.getRightOperand()) + " AS SIGNED)";
+			default:
+				return super.translate(op);
+		}
+	}
 
 	@Override
 	public String translate(Comparison comp) throws TranslationException {

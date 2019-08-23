@@ -12,9 +12,12 @@ import adql.db.STCS.Region;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.grammar.ParseException;
+import adql.query.ADQLQuery;
 import adql.query.IdentifierField;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.NumericConstant;
+import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.geometry.AreaFunction;
@@ -34,6 +37,23 @@ public class TestJDBCTranslator {
 
 	@Before
 	public void setUp() throws Exception {
+	}
+
+	@Test
+	public void testTranslateComplexNumericOperation() {
+		JDBCTranslator tr = new AJDBCTranslator();
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		// CASE: Check the applied operators precedence while translating:
+		try {
+			ADQLQuery query = parser.parseQuery("SELECT ~3-1|2*5^6/1+2 FROM foo");
+			assertEquals("SELECT ~3-1|2*5^6/1+2\nFROM foo", query.toADQL());
+			assertEquals(Operation.class, query.getSelect().get(0).getOperand().getClass());
+			assertEquals("(((~3)-1)|((2*5)^((6/1)+2)))", tr.translate(query.getSelect().get(0).getOperand()));
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error with valid operations! (see console for more details)");
+		}
 	}
 
 	@Test
@@ -72,7 +92,7 @@ public class TestJDBCTranslator {
 		try {
 
 			assertEquals("SELECT 15 AS \"0xF\"\nFROM foo", tr.translate(parser.parseQuery("Select 0xF From foo")));
-			assertEquals("SELECT 15*2 AS \"MULT\"\nFROM foo", tr.translate(parser.parseQuery("Select 0xF*2 From foo")));
+			assertEquals("SELECT (15*2) AS \"MULT\"\nFROM foo", tr.translate(parser.parseQuery("Select 0xF*2 From foo")));
 			assertEquals("SELECT -15 AS \"NEG_0xF\"\nFROM foo", tr.translate(parser.parseQuery("Select -0xF From foo")));
 
 		} catch(ParseException pe) {
@@ -89,10 +109,10 @@ public class TestJDBCTranslator {
 		JDBCTranslator tr = new AJDBCTranslator();
 
 		/* Ensure the translation from ADQL to SQL of strings is correct ;
-		 * particularly, ' should be escaped otherwise it would mean the end of a string in SQL
-		 *(the way to escape a such character is by doubling the character '): */
+		 * particularly, ' should be escaped otherwise it would mean the end of
+		 * a string in SQL (the way to escape a such character is by doubling
+		 * the character '): */
 		try{
-==== BASE ====
 			assertEquals("'SQL''s translation'", tr.translate(new StringConstant("SQL's translation")));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
