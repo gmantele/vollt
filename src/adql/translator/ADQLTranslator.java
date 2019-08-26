@@ -51,6 +51,7 @@ import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
+import adql.query.operand.function.UnitConversionFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -150,6 +151,9 @@ public interface ADQLTranslator {
 
 	/** @since 2.0 */
 	public String translate(LowerFunction fct) throws TranslationException;
+
+	/** @since 2.0 */
+	public String translate(UnitConversionFunction fct) throws TranslationException;
 
 	/* ***** GEOMETRICAL FUNCTIONS ***** */
 	public String translate(GeometryFunction fct) throws TranslationException;

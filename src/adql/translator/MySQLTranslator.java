@@ -29,6 +29,7 @@ import adql.query.constraint.Comparison;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
 import adql.query.operand.Operation;
+import adql.query.operand.function.UnitConversionFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -155,7 +156,7 @@ public class MySQLTranslator extends JDBCTranslator {
 		switch(comp.getOperator()) {
 			case ILIKE:
 			case NOTILIKE:
-				throw new TranslationException("Translation of ILIKE impossible! This is not supported in MySQL.");
+				throw new TranslationException("Translation of ILIKE impossible! This is not supported natively in MySQL.");
 			default:
 				return translate(comp.getLeftOperand()) + " " + comp.getOperator().toADQL() + " " + translate(comp.getRightOperand());
 		}
@@ -175,6 +176,11 @@ public class MySQLTranslator extends JDBCTranslator {
 		translated.append(")");
 
 		return translated.toString();
+	}
+
+	@Override
+	public String translate(final UnitConversionFunction fct) throws TranslationException {
+		return getDefaultADQLFunction(fct);
 	}
 
 	/* ********************************************************************** */

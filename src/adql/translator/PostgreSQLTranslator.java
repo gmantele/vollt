@@ -30,6 +30,7 @@ import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.MathFunction;
+import adql.query.operand.function.UnitConversionFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -173,6 +174,11 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 
 				return sql + ")";
 		}
+	}
+
+	@Override
+	public String translate(final UnitConversionFunction fct) throws TranslationException {
+		return getDefaultADQLFunction(fct);
 	}
 
 	@Override

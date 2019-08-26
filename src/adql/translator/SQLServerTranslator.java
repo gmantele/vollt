@@ -41,6 +41,7 @@ import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
 import adql.query.operand.function.MathFunction;
+import adql.query.operand.function.UnitConversionFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -194,10 +195,15 @@ public class SQLServerTranslator extends JDBCTranslator {
 		switch(comp.getOperator()) {
 			case ILIKE:
 			case NOTILIKE:
-				throw new TranslationException("Translation of ILIKE impossible! This is not supported in MS-SQL Server.");
+				throw new TranslationException("Translation of ILIKE impossible! This is not supported natively in MS-SQL Server.");
 			default:
 				return translate(comp.getLeftOperand()) + " " + comp.getOperator().toADQL() + " " + translate(comp.getRightOperand());
 		}
+	}
+
+	@Override
+	public String translate(final UnitConversionFunction fct) throws TranslationException {
+		return getDefaultADQLFunction(fct);
 	}
 
 	@Override

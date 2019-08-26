@@ -20,6 +20,7 @@ import adql.query.operand.NumericConstant;
 import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.UnitConversionFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -172,6 +173,11 @@ public class TestJDBCTranslator {
 	}
 
 	public final static class AJDBCTranslator extends JDBCTranslator {
+
+		@Override
+		public String translate(UnitConversionFunction fct) throws TranslationException {
+			return null;
+		}
 
 		@Override
 		public String translate(ExtractCoord extractCoord) throws TranslationException {
