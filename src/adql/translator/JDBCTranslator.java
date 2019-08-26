@@ -63,7 +63,7 @@ import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
-import adql.query.operand.function.UnitConversionFunction;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -837,8 +837,8 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			return translate((UserDefinedFunction)fct);
 		else if (fct instanceof LowerFunction)
 			return translate((LowerFunction)fct);
-		else if (fct instanceof UnitConversionFunction)
-			return translate((UnitConversionFunction)fct);
+		else if (fct instanceof InUnitFunction)
+			return translate((InUnitFunction)fct);
 		else
 			return getDefaultADQLFunction(fct);
 	}

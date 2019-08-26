@@ -11,6 +11,8 @@ import adql.db.FunctionDef;
 import adql.db.STCS.Region;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParser.ADQLVersion;
+import adql.parser.feature.FeatureSet;
+import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import adql.query.IdentifierField;
@@ -20,7 +22,7 @@ import adql.query.operand.NumericConstant;
 import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.DefaultUDF;
-import adql.query.operand.function.UnitConversionFunction;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -38,6 +40,13 @@ public class TestJDBCTranslator {
 
 	@Before
 	public void setUp() throws Exception {
+	}
+
+	public final static int countFeatures(final FeatureSet features) {
+		int cnt = 0;
+		for(LanguageFeature feat : features)
+			cnt++;
+		return cnt;
 	}
 
 	@Test
@@ -175,7 +184,12 @@ public class TestJDBCTranslator {
 	public final static class AJDBCTranslator extends JDBCTranslator {
 
 		@Override
-		public String translate(UnitConversionFunction fct) throws TranslationException {
+		public FeatureSet getSupportedFeatures() {
+			return new FeatureSet(true, true);
+		}
+
+		@Override
+		public String translate(InUnitFunction fct) throws TranslationException {
 			return null;
 		}
 

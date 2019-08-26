@@ -1,5 +1,7 @@
 package adql.translator;
 
+import adql.parser.feature.FeatureSet;
+
 /*
  * This file is part of ADQLLibrary.
  *
@@ -51,7 +53,7 @@ import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
-import adql.query.operand.function.UnitConversionFunction;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -78,6 +80,22 @@ import adql.query.operand.function.string.LowerFunction;
  * @see PostgreSQLTranslator
  */
 public interface ADQLTranslator {
+
+	/**
+	 * Get all features that are fully supported by this translator.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	If NULL is returned, the default list of supported features should be
+	 * 	used instead. This default list depends on the ADQL version and
+	 * 	is set in an {@link adql.parser.ADQLParser ADQLParser} instance when no
+	 * 	feature set is specified.
+	 * </i></p>
+	 *
+	 * @return	All features supported by this translator.
+	 *
+	 * @since 2.0
+	 */
+	public FeatureSet getSupportedFeatures();
 
 	public String translate(ADQLObject obj) throws TranslationException;
 
@@ -153,7 +171,7 @@ public interface ADQLTranslator {
 	public String translate(LowerFunction fct) throws TranslationException;
 
 	/** @since 2.0 */
-	public String translate(UnitConversionFunction fct) throws TranslationException;
+	public String translate(InUnitFunction fct) throws TranslationException;
 
 	/* ***** GEOMETRICAL FUNCTIONS ***** */
 	public String translate(GeometryFunction fct) throws TranslationException;

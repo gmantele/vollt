@@ -37,7 +37,7 @@ import adql.query.operand.ADQLOperand;
  * @version 2.0 (08/2019)
  * @since 2.0
  */
-public class UnitConversionFunction extends ADQLFunction {
+public class InUnitFunction extends ADQLFunction {
 
 	/** Description of this ADQL Feature. */
 	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_UNIT, "IN_UNIT", true, "Convert the given value (1st argument) into the given VO-Unit (2nd argument).");
@@ -61,7 +61,7 @@ public class UnitConversionFunction extends ADQLFunction {
 	 * @throws IllegalArgumentException	If the 1st operand is not a numeric,
 	 *                                 	or if the 2nd is not a string.
 	 */
-	public UnitConversionFunction(final ADQLOperand value, final ADQLOperand targetUnit) throws NullPointerException, IllegalArgumentException {
+	public InUnitFunction(final ADQLOperand value, final ADQLOperand targetUnit) throws NullPointerException, IllegalArgumentException {
 		setValue(value);
 		setTargetUnit(targetUnit);
 	}
@@ -147,7 +147,7 @@ public class UnitConversionFunction extends ADQLFunction {
 
 	@Override
 	public ADQLObject getCopy() throws Exception {
-		return new UnitConversionFunction((ADQLOperand)value.getCopy(), (ADQLOperand)targetUnit.getCopy());
+		return new InUnitFunction((ADQLOperand)value.getCopy(), (ADQLOperand)targetUnit.getCopy());
 	}
 
 	@Override

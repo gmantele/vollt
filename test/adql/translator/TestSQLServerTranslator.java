@@ -1,6 +1,9 @@
 package adql.translator;
 
+import static adql.translator.TestJDBCTranslator.countFeatures;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -16,8 +19,12 @@ import adql.db.DefaultDBTable;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.SQLServer_ADQLQueryFactory;
+import adql.parser.feature.FeatureSet;
+import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
+import adql.query.constraint.ComparisonOperator;
+import adql.query.operand.function.InUnitFunction;
 
 public class TestSQLServerTranslator {
 
@@ -141,6 +148,30 @@ public class TestSQLServerTranslator {
 			te.printStackTrace();
 			fail("No error was expected from this translation. (see the console for more details)");
 		}
+	}
+
+	@Test
+	public void testSupportedFeatures() {
+		final FeatureSet supportedFeatures = (new SQLServerTranslator()).getSupportedFeatures();
+
+		// TEST: Not NULL:
+		assertNotNull(supportedFeatures);
+
+		// TEST: Any UDF should be allowed, by default:
+		assertTrue(supportedFeatures.isAnyUdfAllowed());
+
+		// Create the list of all expected supported features:
+		final FeatureSet expectedFeatures = new FeatureSet(true, true);
+		expectedFeatures.unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+		expectedFeatures.unsupport(ComparisonOperator.ILIKE.getFeatureDescription());
+		expectedFeatures.unsupport(InUnitFunction.FEATURE);
+
+		// TEST: same number of features:
+		assertEquals(countFeatures(expectedFeatures), countFeatures(supportedFeatures));
+
+		// TEST: same features:
+		for(LanguageFeature expected : expectedFeatures)
+			assertTrue(supportedFeatures.isSupporting(expected));
 	}
 
 }

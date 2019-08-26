@@ -23,14 +23,16 @@ package adql.translator;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
+import adql.parser.feature.FeatureSet;
+import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.IdentifierField;
 import adql.query.operand.Operation;
 import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
-import adql.query.operand.function.UnitConversionFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -59,11 +61,18 @@ import adql.query.operand.function.geometry.RegionFunction;
  * 	case there is no interest of these geometrical functions.
  * </p>
  *
- * <p><i><b>Important</b>:
- * 	The geometrical functions are translated exactly as in ADQL.
+ * <p><i><b>Important note 1:</b>
+ * 	The geometrical functions and IN_UNIT are translated exactly as in ADQL.
  * 	You will probably need to extend this translator to correctly manage the
  * 	geometrical functions. An extension is already available for PgSphere:
  * 	{@link PgSphereTranslator}.
+ * </i></p>
+ *
+ * <p><i><b>Important note 2:</b>
+ * 	If new optional features are supported in an extension of this translator,
+ * 	they should be visible in {@link #getSupportedFeatures()}. To customize this
+ * 	list, you must overwrite {@link #initSupportedFeatures()} and update in
+ * 	there the attribute {@link #supportedFeatures}.
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
@@ -82,12 +91,21 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	 */
 	protected byte caseSensitivity = 0x00;
 
+	/** List of all optional features supported by this translator.
+	 * <p><i><b>Note:</b>
+	 * 	This list can be customized by extending this translator and then
+	 * 	overwriting {@link #initSupportedFeatures()}.
+	 * </i></p>
+	 * @since 2.0 */
+	protected final FeatureSet supportedFeatures = new FeatureSet();
+
 	/**
 	 * Builds a PostgreSQLTranslator which always translates in SQL all identifiers (schema, table and column) in a case sensitive manner ;
 	 * in other words, schema, table and column names will be surrounded by double quotes in the SQL translation.
 	 */
 	public PostgreSQLTranslator() {
 		caseSensitivity = 0x0F;
+		initSupportedFeatures();
 	}
 
 	/**
@@ -98,6 +116,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	 */
 	public PostgreSQLTranslator(final boolean allCaseSensitive) {
 		caseSensitivity = allCaseSensitive ? (byte)0x0F : (byte)0x00;
+		initSupportedFeatures();
 	}
 
 	/**
@@ -113,6 +132,38 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 		caseSensitivity = IdentifierField.SCHEMA.setCaseSensitive(caseSensitivity, schema);
 		caseSensitivity = IdentifierField.TABLE.setCaseSensitive(caseSensitivity, table);
 		caseSensitivity = IdentifierField.COLUMN.setCaseSensitive(caseSensitivity, column);
+		initSupportedFeatures();
+	}
+
+	/**
+	 * Initialize the list of optional features supported by this translator.
+	 *
+	 * <p>
+	 * 	By default, all optional features are supported except the following:
+	 * </p>
+	 * <ul>
+	 * 	<li>All geometric functions,</li>
+	 * 	<li>ILIKE,</li>
+	 * 	<li>and IN_UNIT</li>
+	 * </ul>
+	 *
+	 * @since 2.0
+	 */
+	protected void initSupportedFeatures() {
+		// Any UDF allowed:
+		supportedFeatures.allowAnyUdf(true);
+
+		// Support all features...
+		supportedFeatures.supportAll();
+		// ...except all geometries:
+		supportedFeatures.unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
+		// ...except IN_UNIT:
+		supportedFeatures.unsupport(InUnitFunction.FEATURE);
+	}
+
+	@Override
+	public final FeatureSet getSupportedFeatures() {
+		return supportedFeatures;
 	}
 
 	@Override
@@ -177,7 +228,7 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(final UnitConversionFunction fct) throws TranslationException {
+	public String translate(final InUnitFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 

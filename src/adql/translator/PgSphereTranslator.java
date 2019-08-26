@@ -28,6 +28,7 @@ import org.postgresql.util.PGobject;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS.Region;
+import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.TextPosition;
 import adql.query.constraint.Comparison;
@@ -105,6 +106,15 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 	 */
 	public PgSphereTranslator(boolean catalog, boolean schema, boolean table, boolean column) {
 		super(catalog, schema, table, column);
+	}
+
+	@Override
+	protected void initSupportedFeatures() {
+		// All features natively supported in PostgreSQL:
+		super.initSupportedFeatures();
+
+		// And thanks to PgSphere, all geometries are now supported:
+		supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
 	}
 
 	@Override

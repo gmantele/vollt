@@ -1504,16 +1504,16 @@ ADQLFunction NumericFunction(): {ADQLFunction fct;} {
 	(fct=MathFunction()
 	| fct=TrigFunction()
 	| fct=GeometryFunction()
-	| fct=UnitConversionFunction()
+	| fct=InUnitFunction()
 	| fct=UserDefinedFunction() { ((UserDefinedFunction)fct).setExpectedType('N'); })
 	{return fct;}
 }
 
-UnitConversionFunction UnitConversionFunction() : { Token start, end; ADQLOperand value, destUnit; } {
+InUnitFunction InUnitFunction() : { Token start, end; ADQLOperand value, destUnit; } {
 	start=<IN_UNIT> <LEFT_PAR> value=NumericExpression() <COMMA> destUnit=StringExpression() end=<RIGHT_PAR>
 	{
 		try {
-			UnitConversionFunction fct = queryFactory.createUnitConversionFunction(value, destUnit);
+			InUnitFunction fct = queryFactory.createInUnitFunction(value, destUnit);
 			fct.setPosition(new TextPosition(start, end));
 			return fct;
 		}catch(Exception ex) {

@@ -64,7 +64,7 @@ import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
-import adql.query.operand.function.UnitConversionFunction;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -319,8 +319,8 @@ public class ADQLQueryFactory {
 	}
 
 	/** @since 2.0 */
-	public UnitConversionFunction createUnitConversionFunction(final ADQLOperand value, final ADQLOperand targetUnit) throws Exception {
-		return new UnitConversionFunction(value, targetUnit);
+	public InUnitFunction createInUnitFunction(final ADQLOperand value, final ADQLOperand targetUnit) throws Exception {
+		return new InUnitFunction(value, targetUnit);
 	}
 
 	/**
