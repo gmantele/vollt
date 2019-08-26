@@ -63,16 +63,17 @@ public class LowerFunction extends ADQLFunction {
 	/**
 	 * Builds a LOWER function with its parameter.
 	 *
-	 * @param param					Parameter of LOWER.
-	 * @throws NullPointerException	If the given operand is NULL
-	 *                             	or if it's not a string parameter.
+	 * @param param		Parameter of LOWER.
+	 *
+	 * @throws NullPointerException		If the given operand is NULL.
+	 * @throws IllegalArgumentException	If the operand is not a string parameter.
 	 */
-	public LowerFunction(final ADQLOperand strParam) {
+	public LowerFunction(final ADQLOperand strParam) throws NullPointerException, IllegalArgumentException {
 		if (strParam == null)
 			throw new NullPointerException("The function " + FCT_NAME + " must have one non-NULL parameter!");
 
 		if (!strParam.isString())
-			throw new NullPointerException("The ADQL function " + FCT_NAME + " must have one parameter of type VARCHAR (i.e. a String)!");
+			throw new IllegalArgumentException("The ADQL function " + FCT_NAME + " must have one parameter of type VARCHAR (i.e. a String)!");
 
 		this.strParam = strParam;
 	}

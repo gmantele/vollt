@@ -64,6 +64,7 @@ import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
+import adql.query.operand.function.UnitConversionFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -315,6 +316,11 @@ public class ADQLQueryFactory {
 
 	public MathFunction createMathFunction(MathFunctionType type, ADQLOperand param1, ADQLOperand param2) throws Exception {
 		return new MathFunction(type, param1, param2);
+	}
+
+	/** @since 2.0 */
+	public UnitConversionFunction createUnitConversionFunction(final ADQLOperand value, final ADQLOperand targetUnit) throws Exception {
+		return new UnitConversionFunction(value, targetUnit);
 	}
 
 	/**
