@@ -56,6 +56,32 @@ public class TestADQLParser {
 	}
 
 	@Test
+	public void testNumericFunctionParams() {
+
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		/* CASE: LOWER can only take a string in parameter, but according to the
+		 *       grammar (and BNF), an unsigned numeric is a string (??).
+		 *       In such case, an error should be raised: */
+		try {
+			parser.parseQuery("SELECT LOWER(123) FROM foo");
+			fail("LOWER can not take a numeric in parameter.");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals("Incorrect argument: The ADQL function LOWER must have one parameter of type VARCHAR (i.e. a String)!", ex.getMessage());
+		}
+
+		// CASE: Idem for a second parameter:
+		try {
+			parser.parseQuery("SELECT IN_UNIT(12.3, 123) FROM foo");
+			fail("IN_UNIT can not take a numeric in 2nd parameter.");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals("Incorrect argument: The 2nd argument of the ADQL function IN_UNIT (i.e. target unit) must be of type VARCHAR (i.e. a string)!", ex.getMessage());
+		}
+	}
+
+	@Test
 	public void testOperatorsPrecedence() {
 
 		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);

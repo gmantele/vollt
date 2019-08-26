@@ -133,7 +133,11 @@ public abstract class ADQLGrammarBase implements ADQLGrammar {
 	@Override
 	public final ParseException generateParseException(Exception ex) {
 		if (!(ex instanceof ParseException)) {
-			ParseException pex = new ParseException("[" + ex.getClass().getName() + "] " + ex.getMessage());
+			ParseException pex;
+			if (ex instanceof IllegalArgumentException)
+				pex = new ParseException("Incorrect argument: " + ex.getMessage());
+			else
+				pex = new ParseException("[" + ex.getClass().getName() + "] " + ex.getMessage());
 			pex.setStackTrace(ex.getStackTrace());
 			return pex;
 		} else

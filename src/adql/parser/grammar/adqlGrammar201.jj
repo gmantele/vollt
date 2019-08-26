@@ -892,14 +892,16 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 		| LOOKAHEAD(3) valueExpr=Factor()
 
 		/* At this position in this switch, all possibilities (including
-		 * Column()) have already been tested and failed.
+		 * Column() and NumericFunction) have already been tested and failed.
 		 * 
-		 * So, this final choice actually aims to throw an error set with the
+		 * So, these final choices actually aim to throw an error set with the
 		 * current token and with an error message implying that a column name
-		 * was expected (which is generally the case in an ADQL query).
-		 *
-		 * Note: This choice will generally be reached if an unexpected ADQL/SQL
-		 *       word is ending the query. */
+		 * was expected (which is generally the case in an ADQL query) or that
+		 * the parameters of the numeric function are incorrect. */
+		| LOOKAHEAD(2) valueExpr=NumericFunction()
+		/*
+		 * Note: Besides, this particular choice will generally be reached if an
+		 *       unexpected ADQL/SQL word is ending the query. */
 		| valueExpr=Column() )
 		{return valueExpr;}
 	}catch(Exception ex){
@@ -1003,6 +1005,8 @@ ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;
 		if (leftOp instanceof Concatenation){
 			Concatenation concat = (Concatenation)leftOp;
 			concat.setPosition(new TextPosition(concat.get(0).getPosition(), concat.get(concat.size()-1).getPosition()));
+		}else if (leftOp instanceof ADQLColumn){
+			((ADQLColumn)leftOp).setExpectedType('S');
 		}
 	  return leftOp;
 	}
