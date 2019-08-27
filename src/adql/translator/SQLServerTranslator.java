@@ -456,7 +456,10 @@ public class SQLServerTranslator extends JDBCTranslator {
 		switch(fct.getType()) {
 			case TRUNCATE:
 				// third argument to round nonzero means do a truncate
-				return "round(convert(float, " + ((fct.getNbParameters() >= 2) ? (translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1))) : "") + "),1)";
+				if (fct.getNbParameters() >= 2)
+					return "round(convert(float, " + translate(fct.getParameter(0)) + "), convert(float, " + translate(fct.getParameter(1)) + "), 1)";
+				else
+					return "round(convert(float, " + translate(fct.getParameter(0)) + "), 0, 1)";
 			case MOD:
 				return ((fct.getNbParameters() >= 2) ? ("convert(float, " + translate(fct.getParameter(0)) + ") % convert(float, " + translate(fct.getParameter(1)) + ")") : "");
 			case ATAN2:
@@ -478,7 +481,10 @@ public class SQLServerTranslator extends JDBCTranslator {
 			case RADIANS:
 				return "radians(convert(float, " + translate(fct.getParameter(0)) + "))";
 			case ROUND:
-				return "round(convert(float, " + translate(fct.getParameter(0)) + ")" + ", " + translate(fct.getParameter(1)) + ")";
+				if (fct.getNbParameters() >= 2)
+					return "round(convert(float, " + translate(fct.getParameter(0)) + ")" + ", " + translate(fct.getParameter(1)) + ")";
+				else
+					return "round(convert(float, " + translate(fct.getParameter(0)) + ")" + ", 0)";
 
 			default:
 				return getDefaultADQLFunction(fct);

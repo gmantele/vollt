@@ -204,17 +204,13 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 			case TRUNCATE:
 				if (fct.getNbParameters() >= 2)
 					return "trunc(CAST(" + translate(fct.getParameter(0)) + " AS numeric), " + translate(fct.getParameter(1)) + ")";
-				else if (fct.getNbParameters() >= 1)
-					return "trunc(CAST(" + translate(fct.getParameter(0)) + " AS numeric)" + ")";
 				else
-					return "trunc()";
+					return "trunc(CAST(" + translate(fct.getParameter(0)) + " AS numeric)" + ")";
 			case ROUND:
 				if (fct.getNbParameters() >= 2)
 					return "round(CAST(" + translate(fct.getParameter(0)) + " AS numeric), " + translate(fct.getParameter(1)) + ")";
-				else if (fct.getNbParameters() >= 1)
-					return "round(CAST(" + translate(fct.getParameter(0)) + " AS numeric))";
 				else
-					return "round()";
+					return "round(CAST(" + translate(fct.getParameter(0)) + " AS numeric))";
 			case PI:
 				return getDefaultADQLFunction(fct);
 			default:

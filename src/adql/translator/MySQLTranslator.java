@@ -33,6 +33,7 @@ import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
 import adql.query.operand.Operation;
 import adql.query.operand.function.InUnitFunction;
+import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -202,6 +203,20 @@ public class MySQLTranslator extends JDBCTranslator {
 				return "CAST(" + translate(op.getLeftOperand()) + op.getOperation().toADQL() + translate(op.getRightOperand()) + " AS SIGNED)";
 			default:
 				return super.translate(op);
+		}
+	}
+
+	@Override
+	public String translate(MathFunction fct) throws TranslationException {
+		switch(fct.getType()) {
+			case TRUNCATE:
+				if (fct.getNbParameters() >= 2)
+					return "truncate(" + translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1)) + ")";
+				else
+					return "truncate(" + translate(fct.getParameter(0)) + ", 0)";
+
+			default:
+				return getDefaultADQLFunction(fct);
 		}
 	}
 
