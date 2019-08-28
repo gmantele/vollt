@@ -42,6 +42,7 @@ import adql.parser.QueryChecker;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
+import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
 import adql.query.ClauseSelect;
@@ -668,28 +669,38 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * <p>Search all column references inside the given query, resolve them thanks to the given tables' metadata,
-	 * and if there is only one match, attach the matching metadata to them.</p>
+	 * Search all column references inside the given query, resolve them thanks
+	 * to the given tables' metadata, and if there is only one match, attach the
+	 * matching metadata to them.
 	 *
-	 * <b>Management of selected columns' references</b>
+	 * <h4>Management of selected columns' references</h4>
 	 * <p>
-	 * 	A column reference is not only a direct reference to a table column using a column name.
-	 * 	It can also be a reference to an item of the SELECT clause (which will then call a "selected column").
-	 * 	That kind of reference can be either an index (an unsigned integer starting from 1 to N, where N is the
-	 * 	number selected columns), or the name/alias of the column.
+	 * 	A column reference is not only a direct reference to a table column
+	 * 	using a column name. It can also be a reference to an item of the SELECT
+	 * 	clause (which will then call a "selected column"). That kind of
+	 * 	reference can be either an index (an unsigned integer starting from
+	 * 	1 to N, where N is the number selected columns), or the name/alias of
+	 * 	the column.
 	 * </p>
 	 * <p>
-	 * 	These references are also checked, in a second step, in this function. Thus, column metadata are
-	 * 	also attached to them, as common columns.
+	 * 	These references are also checked, in second steps, in this function.
+	 * 	Thus, column metadata are also attached to them, as common columns.
 	 * </p>
 	 *
-	 * @param query			Query in which the existence of tables must be checked.
-	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
-	 *                      Each item of this stack is a list of columns available in each father-level query.
-	 *                   	<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
+	 * @param query			Query in which the existence of tables must be
+	 *             			checked.
+	 * @param fathersList	List of all columns available in the father queries
+	 *                   	and that should be accessed in sub-queries.
+	 *                      Each item of this stack is a list of columns
+	 *                      available in each father-level query.
+	 *                   	<i><b>Note:</b> this parameter is NULL if this
+	 *                   	function is called with the root/father query as
+	 *                   	parameter.</i>
 	 * @param mapTables		List of all resolved tables.
-	 * @param list			List of column metadata to complete in this function each time a column reference is resolved.
-	 * @param errors		List of errors to complete in this function each time an unknown table or column is encountered.
+	 * @param list			List of column metadata to complete in this function
+	 *            			each time a column reference is resolved.
+	 * @param errors		List of errors to complete in this function each
+	 *              		time an unknown table or column is encountered.
 	 */
 	protected void resolveColumns(final ADQLQuery query, final Stack<SearchColumnList> fathersList, final Map<DBTable, ADQLTable> mapTables, final SearchColumnList list, final UnresolvedIdentifiersException errors) {
 		ISearchHandler sHandler;
@@ -699,12 +710,7 @@ public class DBChecker implements QueryChecker {
 		sHandler.search(query);
 		for(ADQLObject result : sHandler) {
 			try {
-				ADQLColumn adqlColumn = (ADQLColumn)result;
-				// resolve the column:
-				DBColumn dbColumn = resolveColumn(adqlColumn, list, fathersList);
-				// link with the matched DBColumn:
-				adqlColumn.setDBLink(dbColumn);
-				adqlColumn.setAdqlTable(mapTables.get(dbColumn.getTable()));
+				resolveColumn((ADQLColumn)result, list, mapTables, fathersList);
 			} catch(ParseException pe) {
 				errors.addException(pe);
 			}
@@ -712,26 +718,16 @@ public class DBChecker implements QueryChecker {
 
 		// Check the GROUP BY items:
 		ClauseSelect select = query.getSelect();
-		sHandler = new SearchColumnHandler();
-		sHandler.search(query.getGroupBy());
-		for(ADQLObject result : sHandler) {
-			try {
-				ADQLColumn adqlColumn = (ADQLColumn)result;
-				// resolve the column:
-				DBColumn dbColumn = checkGroupByItem(adqlColumn, select, list);
-				// link with the matched DBColumn:
-				if (dbColumn != null) {
-					adqlColumn.setDBLink(dbColumn);
-					adqlColumn.setAdqlTable(mapTables.get(dbColumn.getTable()));
-				}
-			} catch(ParseException pe) {
-				errors.addException(pe);
-			}
-		}
+		checkGroupBy(query.getGroupBy(), select, list, mapTables, fathersList, errors);
 
-		// Check the correctness of all column references (= references to selected columns):
-		/* Note: no need to provide the father tables when resolving column references,
-		 *       because no father column can be used in ORDER BY. */
+		// Check the ORDER BY items:
+		checkOrderBy(query.getOrderBy(), select, list, mapTables, fathersList, errors);
+
+		/* Check the correctness of all column references (= references to
+		 * selected columns):
+		 *
+		 * NOTE: no need to provide the father tables when resolving column
+		 *       references, because no father column can be used in ORDER BY. */
 		sHandler = new SearchColReferenceHandler();
 		sHandler.search(query);
 		for(ADQLObject result : sHandler) {
@@ -750,24 +746,78 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * <p>Resolve the given column, that's to say search for the corresponding {@link DBColumn}.</p>
+	 * Resolve the given column (i.e. search for the corresponding
+	 * {@link DBColumn}) and update the given {@link ADQLColumn} with these
+	 * found DB metadata.
 	 *
 	 * <p>
-	 * 	The third parameter is used only if this function is called inside a sub-query. In this case,
-	 * 	the column is tried to be resolved with the first list (dbColumns). If no match is found,
-	 * 	the resolution is tried with the father columns list (fathersList).
+	 * 	The fourth parameter is used only if this function is called inside a
+	 * 	sub-query. In this case, the column is tried to be resolved with the
+	 * 	first list (dbColumns). If no match is found, the resolution is tried
+	 * 	with the father columns list (fathersList).
 	 * </p>
 	 *
 	 * @param column		The column to resolve.
 	 * @param dbColumns		List of all available {@link DBColumn}s.
-	 * @param fathersList	List of all columns available in the father queries and that should be accessed in sub-queries.
-	 *                      Each item of this stack is a list of columns available in each father-level query.
-	 *                   	<i>Note: this parameter is NULL if this function is called with the root/father query as parameter.</i>
+	 * @param mapTables		List of all resolved tables.
+	 * @param fathersList	List of all columns available in the father queries
+	 *                   	and that should be accessed in sub-queries.
+	 *                      Each item of this stack is a list of columns
+	 *                      available in each father-level query.
+	 *                   	<i>Note: this parameter is NULL if this function is
+	 *                   	called with the root/father query as parameter.</i>
 	 *
-	 * @return 				The corresponding {@link DBColumn} if found. Otherwise an exception is thrown.
+	 * @return 	The corresponding {@link DBColumn} if found.
+	 *        	Otherwise an exception is thrown.
 	 *
-	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
-	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
+	 * @throws ParseException	An {@link UnresolvedColumnException} if the
+	 *                       	given column can't be resolved
+	 * 							or an {@link UnresolvedTableException} if its
+	 *                       	table reference can't be resolved.
+	 *
+	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
+	 *
+	 * @since 2.0
+	 */
+	protected final DBColumn resolveColumn(final ADQLColumn column, final SearchColumnList dbColumns, final Map<DBTable, ADQLTable> mapTables, Stack<SearchColumnList> fathersList) throws ParseException {
+		// Resolve the column:
+		DBColumn dbColumn = resolveColumn(column, dbColumns, fathersList);
+
+		// Link the given ADQLColumn with the matched DBColumn:
+		column.setDBLink(dbColumn);
+		if (mapTables != null)
+			column.setAdqlTable(mapTables.get(dbColumn.getTable()));
+
+		return dbColumn;
+	}
+
+	/**
+	 * Resolve the given column, that's to say search for the corresponding
+	 * {@link DBColumn}.
+	 *
+	 * <p>
+	 * 	The third parameter is used only if this function is called inside a
+	 * 	sub-query. In this case, the column is tried to be resolved with the
+	 * 	first list (dbColumns). If no match is found, the resolution is tried
+	 * 	with the father columns list (fathersList).
+	 * </p>
+	 *
+	 * @param column		The column to resolve.
+	 * @param dbColumns		List of all available {@link DBColumn}s.
+	 * @param fathersList	List of all columns available in the father queries
+	 *                   	and that should be accessed in sub-queries.
+	 *                      Each item of this stack is a list of columns
+	 *                      available in each father-level query.
+	 *                   	<i>Note: this parameter is NULL if this function is
+	 *                   	called with the root/father query as parameter.</i>
+	 *
+	 * @return 	The corresponding {@link DBColumn} if found.
+	 *        	Otherwise an exception is thrown.
+	 *
+	 * @throws ParseException	An {@link UnresolvedColumnException} if the
+	 *                       	given column can't be resolved
+	 * 							or an {@link UnresolvedTableException} if its
+	 *                       	table reference can't be resolved.
 	 */
 	protected DBColumn resolveColumn(final ADQLColumn column, final SearchColumnList dbColumns, Stack<SearchColumnList> fathersList) throws ParseException {
 		List<DBColumn> foundColumns = dbColumns.search(column);
@@ -794,24 +844,156 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * Check whether the given column corresponds to a selected item's alias or to an existing column.
+	 * Check and resolve all columns (or column references) inside the given
+	 * GROUP BY clause.
+	 *
+	 * @param groupBy		The GROUP BY to check.
+	 * @param select		The SELECT clause (and all its selected items).
+	 * @param list			List of all available {@link DBColumn}s.
+	 * @param mapTables		List of all resolved tables.
+	 * @param fathersList	List of all columns available in the father queries
+	 *                   	and that should be accessed in sub-queries.
+	 *                   	Each item of this stack is a list of columns
+	 *                   	available in each father-level query.
+	 *                   	<i>Note: this parameter is NULL if this function is
+	 *                   	called with the root/father query as parameter.</i>
+	 * @param errors		List of errors to complete in this function each
+	 *              		time an unknown table or column is encountered.
+	 *
+	 * @since 2.0
+	 */
+	protected void checkGroupBy(final ClauseADQL<ADQLOperand> groupBy, final ClauseSelect select, final SearchColumnList list, final Map<DBTable, ADQLTable> mapTables, Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors) {
+		for(ADQLOperand obj : groupBy) {
+			try {
+				if (obj instanceof ADQLColumn) {
+					ADQLColumn adqlColumn = (ADQLColumn)obj;
+					/* resolve the column either as a selected column reference
+					 * or as a normal column: */
+					if (adqlColumn.getTableName() == null)
+						resolveColumnNameReference(adqlColumn, select, list, mapTables);
+					else
+						resolveColumn(adqlColumn, list, fathersList);
+				} else {
+					ISearchHandler sHandler = new SearchColumnHandler();
+					sHandler.search(obj);
+					for(ADQLObject result : sHandler) {
+						try {
+							resolveColumn((ADQLColumn)result, list, mapTables, fathersList);
+						} catch(ParseException pe) {
+							errors.addException(pe);
+						}
+					}
+				}
+			} catch(ParseException pe) {
+				errors.addException(pe);
+			}
+		}
+	}
+
+	/**
+	 * Check and resolve all columns (or column references) inside the given
+	 * ORDER BY clause.
+	 *
+	 * @param orderBy		The ORDER BY to check.
+	 * @param select		The SELECT clause (and all its selected items).
+	 * @param list			List of all available {@link DBColumn}s.
+	 * @param mapTables		List of all resolved tables.
+	 * @param fathersList	List of all columns available in the father queries
+	 *                   	and that should be accessed in sub-queries.
+	 *                   	Each item of this stack is a list of columns
+	 *                   	available in each father-level query.
+	 *                   	<i>Note: this parameter is NULL if this function is
+	 *                   	called with the root/father query as parameter.</i>
+	 * @param errors		List of errors to complete in this function each
+	 *              		time an unknown table or column is encountered.
+	 *
+	 * @since 2.0
+	 */
+	protected void checkOrderBy(final ClauseADQL<ADQLOrder> orderBy, final ClauseSelect select, final SearchColumnList list, final Map<DBTable, ADQLTable> mapTables, Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors) {
+		for(ADQLObject obj : orderBy) {
+			try {
+				ADQLOrder order = (ADQLOrder)obj;
+				if (order.getExpression() != null) {
+					ADQLOperand expr = order.getExpression();
+					if (expr instanceof ADQLColumn) {
+						ADQLColumn adqlColumn = (ADQLColumn)expr;
+						/* resolve the column either as a selected column reference
+						 * or as a normal column: */
+						if (adqlColumn.getTableName() == null)
+							resolveColumnNameReference(adqlColumn, select, list, mapTables);
+						else
+							resolveColumn(adqlColumn, list, fathersList);
+					} else {
+						ISearchHandler sHandler = new SearchColumnHandler();
+						sHandler.search(expr);
+						for(ADQLObject result : sHandler) {
+							try {
+								resolveColumn((ADQLColumn)result, list, mapTables, fathersList);
+							} catch(ParseException pe) {
+								errors.addException(pe);
+							}
+						}
+					}
+				}
+			} catch(ParseException pe) {
+				errors.addException(pe);
+			}
+		}
+	}
+
+	/**
+	 * Check whether the given column corresponds to a selected item's alias or
+	 * to an existing column.
 	 *
 	 * @param col			The column to check.
 	 * @param select		The SELECT clause of the ADQL query.
 	 * @param dbColumns		The list of all available columns.
 	 *
-	 * @return 	The corresponding {@link DBColumn} if this column corresponds to an existing column,
+	 * @return 	The corresponding {@link DBColumn} if this column corresponds to
+	 *        	an existing column,
 	 *        	<i>NULL</i> otherwise.
 	 *
-	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
-	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
+	 * @throws ParseException	An {@link UnresolvedColumnException} if the
+	 *                       	given column can't be resolved
+	 * 							or an {@link UnresolvedTableException} if its
+	 *                       	table reference can't be resolved.
 	 *
 	 * @see ClauseSelect#searchByAlias(String)
 	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
 	 *
 	 * @since 1.4
+	 *
+	 * @deprecated	Since 2.0, this function has been renamed into
+	 *            	{@link #resolveColumnNameReference(ADQLColumn, ClauseSelect, SearchColumnList, Map)}.
 	 */
-	protected DBColumn checkGroupByItem(final ADQLColumn col, final ClauseSelect select, final SearchColumnList dbColumns) throws ParseException {
+	@Deprecated
+	protected final DBColumn checkGroupByItem(final ADQLColumn col, final ClauseSelect select, final SearchColumnList dbColumns) throws ParseException {
+		return resolveColumnNameReference(col, select, dbColumns, null);
+	}
+
+	/**
+	 * Check whether the given column corresponds to a selected item's alias or
+	 * to an existing column.
+	 *
+	 * @param col			The column to check.
+	 * @param select		The SELECT clause of the ADQL query.
+	 * @param dbColumns		The list of all available columns.
+	 *
+	 * @return 	The corresponding {@link DBColumn} if this column corresponds to
+	 *        	an existing column,
+	 *        	<i>NULL</i> otherwise.
+	 *
+	 * @throws ParseException	An {@link UnresolvedColumnException} if the
+	 *                       	given column can't be resolved
+	 * 							or an {@link UnresolvedTableException} if its
+	 *                       	table reference can't be resolved.
+	 *
+	 * @see ClauseSelect#searchByAlias(String)
+	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Map, Stack)
+	 *
+	 * @since 2.0
+	 */
+	protected DBColumn resolveColumnNameReference(final ADQLColumn col, final ClauseSelect select, final SearchColumnList dbColumns, final Map<DBTable, ADQLTable> mapTables) throws ParseException {
 		/* If the column name is not qualified, it may be a SELECT-item's alias.
 		 * So, try resolving the name as an alias.
 		 * If it fails, perform the normal column resolution.*/
@@ -822,51 +1004,36 @@ public class DBChecker implements QueryChecker {
 			else if (founds.size() > 1)
 				throw new UnresolvedColumnException(col, founds.get(0).getAlias(), founds.get(1).getAlias());
 		}
-		return resolveColumn(col, dbColumns, null);
+		return resolveColumn(col, dbColumns, mapTables, null);
 	}
 
 	/**
-	 * Check whether the given column reference corresponds to a selected item (column or an expression with an alias)
-	 * or to an existing column.
+	 * Check whether the given column reference corresponds to a selected item
+	 * (column or an expression with an alias).
 	 *
 	 * @param colRef		The column reference which must be checked.
 	 * @param select		The SELECT clause of the ADQL query.
 	 * @param dbColumns		The list of all available columns.
 	 *
-	 * @return 		The corresponding {@link DBColumn} if this reference is actually the name of a column, <i>null</i> otherwise.
+	 * @return 		The corresponding {@link DBColumn} if this reference is
+	 *        		actually referencing a selected column,
+	 *        		NULL otherwise.
 	 *
-	 * @throws ParseException	An {@link UnresolvedColumnException} if the given column can't be resolved
-	 * 							or an {@link UnresolvedTableException} if its table reference can't be resolved.
-	 *
-	 * @see ClauseSelect#searchByAlias(String)
-	 * @see #resolveColumn(ADQLColumn, SearchColumnList, Stack)
+	 * @throws ParseException	An {@link UnresolvedColumnException} if the
+	 *                       	given column can't be resolved
+	 * 							or an {@link UnresolvedTableException} if its
+	 *                       	table reference can't be resolved.
 	 */
 	protected DBColumn checkColumnReference(final ColumnReference colRef, final ClauseSelect select, final SearchColumnList dbColumns) throws ParseException {
-		if (colRef.isIndex()) {
-			int index = colRef.getColumnIndex();
-			if (index > 0 && index <= select.size()) {
-				SelectItem item = select.get(index - 1);
-				if (item.getOperand() instanceof ADQLColumn)
-					return ((ADQLColumn)item.getOperand()).getDBLink();
-				else
-					return null;
-			} else
-				throw new ParseException("Column index out of bounds: " + index + " (must be between 1 and " + select.size() + ") !", colRef.getPosition());
-		} else {
-			ADQLColumn col = new ADQLColumn(null, colRef.getColumnName());
-			col.setCaseSensitive(colRef.isCaseSensitive());
-			col.setPosition(colRef.getPosition());
-
-			// search among the select_item aliases:
-			List<SelectItem> founds = select.searchByAlias(colRef.getColumnName(), colRef.isCaseSensitive());
-			if (founds.size() == 1)
+		int index = colRef.getColumnIndex();
+		if (index > 0 && index <= select.size()) {
+			SelectItem item = select.get(index - 1);
+			if (item.getOperand() instanceof ADQLColumn)
+				return ((ADQLColumn)item.getOperand()).getDBLink();
+			else
 				return null;
-			else if (founds.size() > 1)
-				throw new UnresolvedColumnException(col, founds.get(0).getAlias(), founds.get(1).getAlias());
-
-			// check the corresponding column:
-			return resolveColumn(col, dbColumns, null);
-		}
+		} else
+			throw new ParseException("Column index out of bounds: " + index + " (must be between 1 and " + select.size() + ") !", colRef.getPosition());
 	}
 
 	/**
@@ -1426,21 +1593,31 @@ public class DBChecker implements QueryChecker {
 	/* *************** */
 
 	/**
-	 * Lets searching all {@link ADQLColumn} in the given object, EXCEPT in the GROUP BY clause.
+	 * Lets searching all {@link ADQLColumn} in the given object,
+	 * EXCEPT in the GROUP BY and ORDER BY clauses.
 	 *
 	 * <p>
-	 * 	{@link ADQLColumn}s of the GROUP BY may be aliases and so, they can not be checked
-	 *	exactly as a normal column.
+	 * 	{@link ADQLColumn}s of the GROUP BY and ORDER BY may be aliases and so,
+	 * 	they can not be checked exactly as a normal column.
 	 * </p>
 	 *
-	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.4 (05/2017)
+	 * <p>
+	 * 	{@link ADQLColumn} of a {@link ColumnReference} may be an alias, they
+	 * 	can not be checked exactly as a normal column.
+	 * </p>
+	 *
+	 * @author Gr&eacute;gory Mantelet (ARI;CDS)
+	 * @version 2.0 (08/2019)
 	 * @since 1.4
 	 */
 	private static class SearchColumnOutsideGroupByHandler extends SearchColumnHandler {
 		@Override
 		protected boolean goInto(final ADQLObject obj) {
-			return !(obj instanceof ClauseADQL<?> && ((ClauseADQL<?>)obj).getName() != null && ((ClauseADQL<?>)obj).getName().equalsIgnoreCase("GROUP BY")) && super.goInto(obj);
+			if (obj instanceof ClauseADQL<?> && ((ClauseADQL<?>)obj).getName() != null) {
+				ClauseADQL<?> clause = (ClauseADQL<?>)obj;
+				return !(clause.getName().equalsIgnoreCase("GROUP BY") || clause.getName().equalsIgnoreCase("ORDER BY"));
+			} else
+				return super.goInto(obj);
 		}
 	}
 

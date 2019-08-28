@@ -60,11 +60,11 @@ import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
-import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -459,16 +459,28 @@ public class ADQLQueryFactory {
 	@Deprecated
 	public ADQLOrder createOrder(final int ind, final boolean desc, final TextPosition position) throws Exception {
 		ADQLOrder order = new ADQLOrder(ind, desc);
-		if (order != null)
-			order.setPosition(position);
+		order.setPosition(position);
 		return order;
 	}
 
+	/**
+	 * @deprecated	Since 2.0, a column reference can be a qualified
+	 *            	column (i.e. an {@link ADQLColumn}). You should use
+	 *            	{@link #createOrder(ADQLOperand, boolean)} instead.
+	 */
+	@Deprecated
 	public ADQLOrder createOrder(final IdentifierItem colName, final boolean desc) throws Exception {
 		ADQLOrder order = new ADQLOrder(colName.identifier, desc);
-		if (order != null)
-			order.setCaseSensitive(colName.caseSensitivity);
+		((ADQLColumn)order.getExpression()).setCaseSensitive(colName.caseSensitivity);
+		((ADQLColumn)order.getExpression()).setPosition(colName.position);
 		return order;
+	}
+
+	/**
+	 * @since 2.0
+	 */
+	public ADQLOrder createOrder(final ADQLOperand expr, final boolean desc) throws Exception {
+		return new ADQLOrder(expr, desc);
 	}
 
 	/**
@@ -481,33 +493,14 @@ public class ADQLQueryFactory {
 	@Deprecated
 	public ADQLOrder createOrder(final IdentifierItems idItems, final boolean desc) throws Exception {
 		ADQLOrder order = new ADQLOrder(idItems.join("."), desc);
-		if (order != null)
-			order.setCaseSensitive(idItems.getColumnCaseSensitivity());
+		order.getColumnReference().setCaseSensitive(idItems.getColumnCaseSensitivity());
+		order.getColumnReference().setPosition(idItems.getPosition());
 		return order;
-	}
-
-	public ColumnReference createColRef(final IdentifierItem idItem) throws Exception {
-		ColumnReference colRef = new ColumnReference(idItem.identifier);
-		if (colRef != null) {
-			colRef.setPosition(idItem.position);
-			colRef.setCaseSensitive(idItem.caseSensitivity);
-		}
-		return colRef;
-	}
-
-	public ColumnReference createColRef(final IdentifierItems idItems) throws Exception {
-		ColumnReference colRef = new ColumnReference(idItems.join("."));
-		if (colRef != null) {
-			colRef.setPosition(idItems.getPosition());
-			colRef.setCaseSensitive(idItems.getColumnCaseSensitivity());
-		}
-		return colRef;
 	}
 
 	public ColumnReference createColRef(final int index, final TextPosition position) throws Exception {
 		ColumnReference colRef = new ColumnReference(index);
-		if (colRef != null)
-			colRef.setPosition(position);
+		colRef.setPosition(position);
 		return colRef;
 	}
 

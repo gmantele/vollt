@@ -556,10 +556,10 @@ void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condit
 	}
 }
 
-void GroupBy(): {ClauseADQL<ADQLColumn> groupBy = query.getGroupBy(); ADQLColumn colRef = null; Token start;} {
+void GroupBy(): {ClauseADQL<ADQLOperand> groupBy = query.getGroupBy(); ADQLColumn colRef = null; Token start;} {
 	start=<GROUP> <BY> colRef=Column() { groupBy.add(colRef); }
 	( <COMMA> colRef=Column() { groupBy.add(colRef); } )*
-	{ groupBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, colRef.getPosition().endLine, colRef.getPosition().endColumn)); }
+	{ groupBy.setPosition(new TextPosition(new TextPosition(start), colRef.getPosition())); }
 }
 
 void Having(): {ClauseConstraints having = query.getHaving(); Token start;} {
@@ -641,10 +641,17 @@ ADQLOrder OrderItem(): {IdentifierItem identifier = null; Token ind = null, desc
 			ADQLOrder order = null;
 			if (identifier != null){
 				order = queryFactory.createOrder(identifier, desc!=null);
-				order.setPosition(identifier.position);
+				if (desc == null)
+					order.setPosition(identifier.position);
+				else
+					order.setPosition(new TextPosition(identifier.position, new TextPosition(desc)));
 			}else{
 				order = queryFactory.createOrder(Integer.parseInt(ind.image), desc!=null);
-				order.setPosition(new TextPosition(ind));
+				order.getColumnReference().setPosition(new TextPosition(ind));
+				if (desc == null)
+					order.setPosition(new TextPosition(ind));
+				else
+					order.setPosition(new TextPosition(ind, desc));
 			}
 			return order;
 		}catch(Exception ex){
@@ -853,14 +860,16 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 		| LOOKAHEAD(3) valueExpr=Factor()
 
 		/* At this position in this switch, all possibilities (including
-		 * Column()) have already been tested and failed.
+		 * Column() and NumericFunction) have already been tested and failed.
 		 * 
-		 * So, this final choice actually aims to throw an error set with the
+		 * So, these final choices actually aim to throw an error set with the
 		 * current token and with an error message implying that a column name
-		 * was expected (which is generally the case in an ADQL query).
-		 *
-		 * Note: This choice will generally be reached if an unexpected ADQL/SQL
-		 *       word is ending the query. */
+		 * was expected (which is generally the case in an ADQL query) or that
+		 * the parameters of the numeric function are incorrect. */
+		| LOOKAHEAD(2) valueExpr=NumericFunction()
+		/*
+		 * Note: Besides, this particular choice will generally be reached if an
+		 *       unexpected ADQL/SQL word is ending the query. */
 		| valueExpr=Column() )
 		{return valueExpr;}
 	}catch(Exception ex){
@@ -1024,8 +1033,7 @@ ClauseConstraints ConditionsList(ClauseConstraints clause): {ADQLConstraint cons
 }
 
 ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, end;} {
-	(LOOKAHEAD(<EXISTS> | ValueExpression()) constraint=Predicate()
-	| (
+	(LOOKAHEAD(<LEFT_PAR> [<NOT>] Predicate())
 		start=<LEFT_PAR>
 		{
 			try{
@@ -1037,7 +1045,9 @@ ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, en
 		ConditionsList((ConstraintsGroup)constraint)
 		end=<RIGHT_PAR>
 		{ ((ConstraintsGroup)constraint).setPosition(new TextPosition(start, end)); }
-	))
+	|
+		 constraint=Predicate()
+	)
 	{return constraint;}
 }
 

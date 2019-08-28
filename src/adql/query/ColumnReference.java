@@ -25,10 +25,10 @@ import adql.query.from.ADQLTable;
 import adql.query.operand.ADQLColumn;
 
 /**
- * Represents a reference to a selected column either by an index or by a non-qualified column name/alias.
+ * Represents a reference to a selected column by an index.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  *
  * @see ADQLOrder
  */
@@ -42,15 +42,16 @@ public class ColumnReference implements ADQLObject {
 	private TextPosition position = null;
 
 	/** Index of a selected column. */
-	private int columnIndex = -1;
+	private int columnIndex;
 
-	/** Name or alias of a selected column. */
-	private String columnName = null;
-
-	/** The corresponding column in the "database". By default, this field is automatically filled by {@link adql.db.DBChecker}. */
+	/** The corresponding column in the "database".
+	 * <p><i>By default, this field is automatically filled by
+	 * {@link adql.db.DBChecker}.</i></p> */
 	private DBColumn dbLink = null;
 
-	/** The {@link ADQLTable} which is supposed to contain this column. By default, this field is automatically filled by {@link adql.db.DBChecker}. */
+	/** The {@link ADQLTable} which is supposed to contain this column.
+	 * <p><i>By default, this field is automatically filled by
+	 * {@link adql.db.DBChecker}.</i></p> */
 	private ADQLTable adqlTable = null;
 
 	/** Indicates whether the column name/alias is case sensitive. */
@@ -59,28 +60,16 @@ public class ColumnReference implements ADQLObject {
 	/**
 	 * Builds a column reference with an index of a selected column.
 	 *
-	 * @param index								Index of a selected column (from 1).
+	 * @param index		Index of a selected column (from 1).
 	 *
-	 * @throws ArrayIndexOutOfBoundsException	If the given index is less or equal 0.
+	 * @throws ArrayIndexOutOfBoundsException	If the given index is less or
+	 *                                       	equal 0.
 	 */
 	public ColumnReference(int index) throws ArrayIndexOutOfBoundsException {
 		if (index <= 0)
 			throw new IndexOutOfBoundsException("Impossible to make a reference to the " + index + "th column: a column index must be greater or equal 1 !");
 
 		columnIndex = index;
-		columnName = null;
-	}
-
-	/**
-	 * Builds a column reference with a name/alias of a selected column.
-	 *
-	 * @param colName					A column name/alias.
-	 *
-	 * @throws NullPointerException 	If the given name is <i>null</i> or is an empty string.
-	 */
-	public ColumnReference(String colName) throws NullPointerException {
-		if (!setColumnName(colName))
-			throw new NullPointerException("Impossible to make a reference: the given column name is null or is an empty string !");
 	}
 
 	/**
@@ -89,7 +78,6 @@ public class ColumnReference implements ADQLObject {
 	 * @param toCopy	The column reference to copy.
 	 */
 	public ColumnReference(ColumnReference toCopy) {
-		columnName = toCopy.columnName;
 		caseSensitive = toCopy.caseSensitive;
 		columnIndex = toCopy.columnIndex;
 	}
@@ -110,7 +98,8 @@ public class ColumnReference implements ADQLObject {
 	}
 
 	/**
-	 * Sets the position at which this {@link ColumnReference} has been found in the original ADQL query string.
+	 * Sets the position at which this {@link ColumnReference} has been found in
+	 * the original ADQL query string.
 	 *
 	 * @param pos	Position of this {@link ColumnReference}.
 	 */
@@ -121,7 +110,7 @@ public class ColumnReference implements ADQLObject {
 	/**
 	 * Gets the index of the referenced column.
 	 *
-	 * @return The index of the referenced column or <i>-1</i> if this column reference has been made with a column name/alias.
+	 * @return	The index of the referenced column.
 	 */
 	public final int getColumnIndex() {
 		return columnIndex;
@@ -131,11 +120,12 @@ public class ColumnReference implements ADQLObject {
 	 * Sets the index of the referenced column.
 	 *
 	 * @param index	The index of the referenced column (must be > 0).
-	 * @return		<i>true</i> if the column referenced has been updated, <i>false</i> otherwise (if index &lt;= 0).
+	 *
+	 * @return	<code>true</code> if the column referenced has been updated,
+	 *        	<code>false</code> otherwise (if index &lt;= 0).
 	 */
 	public final boolean setColumnIndex(int index) {
 		if (index > 0) {
-			columnName = null;
 			columnIndex = index;
 			return true;
 		}
@@ -143,55 +133,11 @@ public class ColumnReference implements ADQLObject {
 	}
 
 	/**
-	 * Tells whether the column is referenced by its index or by its name/alias.
+	 * Tells whether the column reference on a column name/alias is case
+	 * sensitive.
 	 *
-	 * @return	<i>true</i> if by index, <i>false</i> if by name/alias.
-	 */
-	public final boolean isIndex() {
-		return columnName == null;
-	}
-
-	/**
-	 * Gets the name/alias of the referenced column.
-	 *
-	 * @return The referenced column's name/alias or <i>null</i> if this column reference has been made with a column index.
-	 */
-	public final String getColumnName() {
-		return columnName;
-	}
-
-	/**
-	 * Sets the name/alias of the referenced column.
-	 *
-	 * @param name	The referenced column's name/alias (must be different from <i>null</i> and from an empty string).
-	 * @return		<i>true</i> if the column reference has been updated, <i>false</i> otherwise (if name is <i>null</i> or is an empty string).
-	 */
-	public final boolean setColumnName(String name) {
-		if (name == null)
-			return false;
-
-		StringBuffer n = new StringBuffer(name);
-		n.trimToSize();
-		if (n.length() > 1 && n.charAt(0) == '\"' && n.charAt(name.length() - 1) == '\"') {
-			n.deleteCharAt(0);
-			n.deleteCharAt(n.length() - 1);
-			n.trimToSize();
-			if (n.length() > 0)
-				caseSensitive = true;
-		}
-		if (n.length() == 0)
-			return false;
-		else {
-			columnIndex = -1;
-			columnName = n.toString();
-			return true;
-		}
-	}
-
-	/**
-	 * Tells whether the column reference on a column name/alias is case sensitive.
-	 *
-	 * @return	<i>true</i> if the column name/alias is case sensitive, <i>false</i> otherwise.
+	 * @return	<code>true</code> if the column name/alias is case sensitive,
+	 *        	<code>false</code> otherwise.
 	 */
 	public final boolean isCaseSensitive() {
 		return caseSensitive;
@@ -200,7 +146,9 @@ public class ColumnReference implements ADQLObject {
 	/**
 	 * Sets the case sensitivity on the column name/alias.
 	 *
-	 * @param sensitive		<i>true</i> to make case sensitive the column name/alias, <i>false</i> otherwise.
+	 * @param sensitive	<code>true</code> to make case sensitive the column
+	 *                 	name/alias,
+	 *                 	<code>false</code> otherwise.
 	 */
 	public final void setCaseSensitive(boolean sensitive) {
 		caseSensitive = sensitive;
@@ -209,18 +157,25 @@ public class ColumnReference implements ADQLObject {
 	/**
 	 * Gets the corresponding {@link DBColumn}.
 	 *
-	 * @return The corresponding {@link DBColumn} if {@link #getColumnName()} is a column name (not an alias), <i>null</i> otherwise.
+	 * @return	The corresponding {@link DBColumn} if {@link #getColumnName()}
+	 *        	is a column name (not an alias),
+	 *        	or NULL otherwise.
 	 */
 	public final DBColumn getDBLink() {
 		return dbLink;
 	}
 
 	/**
-	 * <p>Sets the {@link DBColumn} corresponding to this {@link ADQLColumn}.</p>
+	 * Sets the {@link DBColumn} corresponding to this {@link ADQLColumn}.
 	 *
-	 * <p>By default, this field is automatically filled by {@link adql.db.DBChecker}.</p>
+	 * <p><i>
+	 * 	By default, this field is automatically filled by
+	 * 	{@link adql.db.DBChecker}.
+	 * </i></p>
 	 *
-	 * @param dbLink Its corresponding {@link DBColumn} if {@link #getColumnName()} is a column name (not an alias), <i>null</i> otherwise.
+	 * @param dbLink	Its corresponding {@link DBColumn} if
+	 *              	{@link #getColumnName()} is a column name (not an alias),
+	 *              	or NULL otherwise.
 	 */
 	public final void setDBLink(DBColumn dbLink) {
 		this.dbLink = dbLink;
@@ -229,18 +184,26 @@ public class ColumnReference implements ADQLObject {
 	/**
 	 * Gets the {@link ADQLTable} from which this column is supposed to come.
 	 *
-	 * @return 	Its source table if {@link #getColumnName()} is a column name (not an alias), otherwise <i>null</i>.
+	 * @return 	Its source table if {@link #getColumnName()} is a column name
+	 *        	(not an alias),
+	 *        	or NULL otherwise.
 	 */
 	public final ADQLTable getAdqlTable() {
 		return adqlTable;
 	}
 
 	/**
-	 * <p>Sets the {@link ADQLTable} from which this column is supposed to come.</p>
+	 * Sets the {@link ADQLTable} from which this column is supposed to come.
 	 *
-	 * <p>By default, this field is automatically filled by {@link adql.db.DBChecker} when {@link adql.db.DBChecker#check(adql.query.ADQLQuery)} is called.</p>
+	 * <p><i>
+	 * 	By default, this field is automatically filled by
+	 * 	{@link adql.db.DBChecker} when
+	 * 	{@link adql.db.DBChecker#check(adql.query.ADQLQuery)} is called.
+	 * </i></p>
 	 *
-	 * @param adqlTable Its source table if {@link #getColumnName()} is a column name (not an alias), <i>null</i> otherwise.
+	 * @param adqlTable	Its source table if {@link #getColumnName()} is a column
+	 *                 	name (not an alias),
+	 *                 	or NULL otherwise.
 	 */
 	public final void setAdqlTable(ADQLTable adqlTable) {
 		this.adqlTable = adqlTable;
@@ -253,7 +216,7 @@ public class ColumnReference implements ADQLObject {
 
 	@Override
 	public String getName() {
-		return isIndex() ? (columnIndex + "") : columnName;
+		return columnIndex + "";
 	}
 
 	@Override
@@ -263,7 +226,7 @@ public class ColumnReference implements ADQLObject {
 
 	@Override
 	public String toADQL() {
-		return isIndex() ? ("" + columnIndex) : (isCaseSensitive() ? ("\"" + columnName + "\"") : columnName);
+		return "" + columnIndex;
 	}
 
 }

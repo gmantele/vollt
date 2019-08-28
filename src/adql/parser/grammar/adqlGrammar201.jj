@@ -577,10 +577,10 @@ void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condit
 	}
 }
 
-void GroupBy(): {ClauseADQL<ADQLColumn> groupBy = query.getGroupBy(); ADQLColumn colRef = null; Token start;} {
-	start=<GROUP> <BY> colRef=Column() { groupBy.add(colRef); }
-	( <COMMA> colRef=Column() { groupBy.add(colRef); } )*
-	{ groupBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, colRef.getPosition().endLine, colRef.getPosition().endColumn)); }
+void GroupBy(): {ClauseADQL<ADQLOperand> groupBy = query.getGroupBy(); ADQLOperand item = null; Token start;} {
+	start=<GROUP> <BY> item=ValueExpression() { groupBy.add(item); }
+	( <COMMA> item=ValueExpression() { groupBy.add(item); } )*
+	{ groupBy.setPosition(new TextPosition(new TextPosition(start), item.getPosition())); }
 }
 
 void Having(): {ClauseConstraints having = query.getHaving(); Token start;} {
@@ -670,18 +670,30 @@ ADQLColumn Column(): {IdentifierItems identifiers;} {
 	}
 }
 
-ADQLOrder OrderItem(): {IdentifierItem identifier = null; Token ind = null, desc = null;}{
-	(identifier=Identifier() | ind=<UNSIGNED_INTEGER>) (<ASC> | desc=<DESC>)?
+ADQLOrder OrderItem(): {ADQLOperand expr = null; Token ind = null, desc = null;}{
+	expr=ValueExpression()
+	{
+		if (expr instanceof NumericConstant && token.kind == UNSIGNED_INTEGER)
+			ind = token;
+	}
+	(<ASC> | desc=<DESC>)?
 	{
 		try{
 			ADQLOrder order = null;
-			if (identifier != null){
-				order = queryFactory.createOrder(identifier, desc!=null);
-				order.setPosition(identifier.position);
-			}else{
+			if (ind != null){
 				order = queryFactory.createOrder(Integer.parseInt(ind.image), desc!=null);
-				order.setPosition(new TextPosition(ind));
-			}
+				order.getColumnReference().setPosition(new TextPosition(ind));
+				if (desc == null)
+					order.setPosition(new TextPosition(ind));
+				else
+					order.setPosition(new TextPosition(ind, desc));
+			}else{
+				order = queryFactory.createOrder(expr, desc!=null);
+				if (desc == null)
+					order.setPosition(expr.getPosition());
+				else
+					order.setPosition(new TextPosition(expr.getPosition(), new TextPosition(desc)));
+			} 
 			return order;
 		}catch(Exception ex){
 			throw generateParseException(ex);
@@ -1083,8 +1095,7 @@ ClauseConstraints ConditionsList(ClauseConstraints clause): {ADQLConstraint cons
 }
 
 ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, end;} {
-	(LOOKAHEAD(<EXISTS> | ValueExpression()) constraint=Predicate()
-	| (
+	(LOOKAHEAD(<LEFT_PAR> [<NOT>] Predicate())
 		start=<LEFT_PAR>
 		{
 			try{
@@ -1096,7 +1107,9 @@ ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, en
 		ConditionsList((ConstraintsGroup)constraint)
 		end=<RIGHT_PAR>
 		{ ((ConstraintsGroup)constraint).setPosition(new TextPosition(start, end)); }
-	))
+	|
+		 constraint=Predicate()
+	)
 	{return constraint;}
 }
 

@@ -50,7 +50,6 @@ import adql.query.ClauseADQL;
 import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
 import adql.query.from.FromContent;
-import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -1019,7 +1018,7 @@ public class ADQLParser {
 	 *
 	 * @throws ParseException	If the syntax of the given clause is incorrect.
 	 */
-	public final ClauseADQL<ADQLColumn> parseGroupBy(java.lang.String adql) throws ParseException {
+	public final ClauseADQL<ADQLOperand> parseGroupBy(java.lang.String adql) throws ParseException {
 		// Reset the parser with the string to parse:
 		try {
 			grammarParser.reset(new java.io.ByteArrayInputStream(adql.getBytes()));

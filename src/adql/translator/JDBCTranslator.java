@@ -60,10 +60,10 @@ import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.ADQLFunction;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
-import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -526,10 +526,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(ColumnReference ref) throws TranslationException {
-		if (ref instanceof ADQLOrder)
-			return translate((ADQLOrder)ref);
-		else
-			return getDefaultColumnReference(ref);
+		return getDefaultColumnReference(ref);
 	}
 
 	/**
@@ -542,35 +539,15 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * @throws TranslationException If there is an error during the translation.
 	 */
 	protected String getDefaultColumnReference(ColumnReference ref) throws TranslationException {
-		if (ref.isIndex()) {
-			return "" + ref.getColumnIndex();
-		} else {
-			if (ref.getDBLink() == null) {
-				return (ref.isCaseSensitive() ? ("\"" + ref.getColumnName() + "\"") : ref.getColumnName());
-			} else {
-				DBColumn dbCol = ref.getDBLink();
-				StringBuffer colName = new StringBuffer();
-				// Use the table alias if any:
-				if (ref.getAdqlTable() != null && ref.getAdqlTable().hasAlias()) {
-					if (ref.getAdqlTable().isCaseSensitive(IdentifierField.ALIAS))
-						appendIdentifier(colName, ref.getAdqlTable().getAlias(), true).append('.');
-					else
-						appendIdentifier(colName, ref.getAdqlTable().getAlias().toLowerCase(), true).append('.');
-				}
-				// Use the DBTable if any:
-				else if (dbCol.getTable() != null)
-					colName.append(getQualifiedTableName(dbCol.getTable())).append('.');
-
-				appendIdentifier(colName, dbCol.getDBName(), IdentifierField.COLUMN);
-
-				return colName.toString();
-			}
-		}
+		return "" + ref.getColumnIndex();
 	}
 
 	@Override
 	public String translate(ADQLOrder order) throws TranslationException {
-		return getDefaultColumnReference(order) + (order.isDescSorting() ? " DESC" : " ASC");
+		if (order.getColumnReference() != null)
+			return translate(order.getColumnReference()) + (order.isDescSorting() ? " DESC" : " ASC");
+		else
+			return translate(order.getExpression()) + (order.isDescSorting() ? " DESC" : " ASC");
 	}
 
 	/* ************************** */

@@ -16,17 +16,47 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
+
+import java.util.NoSuchElementException;
+
+import adql.parser.feature.LanguageFeature;
+import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
 
 /**
  * Represents an item of the ORDER BY list: that's to say a column reference
- * plus a sorting indication (ASC, DESC).
+ * or a value expression, and an optional sorting indication (ASC, DESC).
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 06/2011
+ * @version 2.0 (08/2019)
  */
-public class ADQLOrder extends ColumnReference {
+public class ADQLOrder implements ADQLObject {
+
+	/** Description of this ADQL Feature.
+	 * @since 2.0 */
+	public static final LanguageFeature FEATURE = new LanguageFeature(null, "ORDER_BY_ITEM", false, "Column reference or expression on which the query result must be ordered.");
+
+	/** Position in the original ADQL query string.
+	 * @since 2.0 */
+	private TextPosition position = null;
+
+	/** Reference to the column on which the query result must be ordered.
+	 * <p><i><b>Important note:</b>
+	 * 	If NULL, this ORDER BY is done on a value expression.
+	 * 	In such case, see {@link #expression}.
+	 * </i></p>
+	 * @since 2.0 */
+	protected ColumnReference colRef = null;
+
+	/** Value on which the query result must be ordered.
+	 * <p><i><b>Important note:</b>
+	 * 	If NULL, this ORDER BY is done on a column reference.
+	 * 	In such case, see {@link #colRef}.
+	 * </i></p>
+	 * @since 2.0 */
+	protected ADQLOperand expression = null;
 
 	/** Gives an indication about how to order the results of a query.
 	 * (<code>true</code> for DESCending, <code>false</code> for ASCending) */
@@ -40,9 +70,9 @@ public class ADQLOrder extends ColumnReference {
 	 *
 	 * @throws ArrayIndexOutOfBoundsException	If the index is less or equal 0.
 	 *
-	 * @see ADQLOrder#ADQLOrder(int, boolean)
+	 * @see #ADQLOrder(int, boolean)
 	 */
-	public ADQLOrder(int colIndex) throws ArrayIndexOutOfBoundsException {
+	public ADQLOrder(final int colIndex) throws ArrayIndexOutOfBoundsException {
 		this(colIndex, false);
 	}
 
@@ -55,10 +85,11 @@ public class ADQLOrder extends ColumnReference {
 	 *            		<code>false</code> means ASCending order.
 	 *
 	 * @throws ArrayIndexOutOfBoundsException	If the index is less or equal 0.
+	 *
+	 * @see ColumnReference#ColumnReference(int) ColumnReference(int)
 	 */
-	public ADQLOrder(int colIndex, boolean desc) throws ArrayIndexOutOfBoundsException {
-		super(colIndex);
-		descSorting = desc;
+	public ADQLOrder(final int colIndex, final boolean desc) throws ArrayIndexOutOfBoundsException {
+		setOrder(colIndex, desc);
 	}
 
 	/**
@@ -70,9 +101,9 @@ public class ADQLOrder extends ColumnReference {
 	 * @throws NullPointerException	If the given name is NULL
 	 *                             	or is an empty string.
 	 *
-	 * @see ADQLOrder#ADQLOrder(String, boolean)
+	 * @see #ADQLOrder(String, boolean)
 	 */
-	public ADQLOrder(String colName) throws NullPointerException {
+	public ADQLOrder(final String colName) throws NullPointerException {
 		this(colName, false);
 	}
 
@@ -86,19 +117,62 @@ public class ADQLOrder extends ColumnReference {
 	 *
 	 * @throws NullPointerException	If the given name is NULL
 	 *                             	or is an empty string.
+	 *
+	 * @see ColumnReference#ColumnReference(String) ColumnReference(String)
+	 *
+	 * @deprecated	Since ADQL-2.1, a column reference can be a qualified
+	 *            	column (i.e. an {@link ADQLColumn}). You should use
+	 *            	{@link #ADQLOrder(ADQLOperand)} instead.
 	 */
-	public ADQLOrder(String colName, boolean desc) throws NullPointerException {
-		super(colName);
-		descSorting = desc;
+	@Deprecated
+	public ADQLOrder(final String colName, final boolean desc) throws NullPointerException {
+		this(new ADQLColumn(null, colName), desc);
+	}
+
+	/**
+	 * Builds an order indication with the expression on which an ASCending
+	 * ordering will be done.
+	 *
+	 * @param expr	The expression to order on.
+	 *
+	 * @throws NullPointerException	If the given expression is NULL.
+	 *
+	 * @see #ADQLOrder(ADQLOperand)
+	 *
+	 * @since 2.0
+	 */
+	public ADQLOrder(final ADQLOperand expr) throws NullPointerException {
+		this(expr, false);
+	}
+
+	/**
+	 * Builds an order indication with the expression on which the specified
+	 * ordering will be done.
+	 *
+	 * @param expr	The expression to order on.
+	 * @param desc	<code>true</code> means DESCending order,
+	 *            	<code>false</code> means ASCending order.
+	 *
+	 * @throws NullPointerException	If the given expression is NULL.
+	 *
+	 * @since 2.0
+	 */
+	public ADQLOrder(final ADQLOperand expr, final boolean desc) throws NullPointerException {
+		setOrder(expr, desc);
 	}
 
 	/**
 	 * Builds an ORDER BY item by copying the given one.
 	 *
 	 * @param toCopy	The ORDER BY item to copy.
+	 *
+	 * @throws Exception	If the copy failed.
 	 */
-	public ADQLOrder(ADQLOrder toCopy) {
-		super(toCopy);
+	public ADQLOrder(ADQLOrder toCopy) throws Exception {
+		if (toCopy.colRef != null)
+			colRef = (ColumnReference)toCopy.colRef.getCopy();
+		if (toCopy.expression != null)
+			expression = (ADQLOperand)toCopy.expression.getCopy();
 		descSorting = toCopy.descSorting;
 	}
 
@@ -113,6 +187,28 @@ public class ADQLOrder extends ColumnReference {
 	}
 
 	/**
+	 * Get the reference of column on which the query result will be ordered.
+	 *
+	 * @return	The set column reference. <i>Might be NULL.</i>
+	 *
+	 * @since 2.0
+	 */
+	public final ColumnReference getColumnReference() {
+		return colRef;
+	}
+
+	/**
+	 * Get the expression on which the query result will be ordered.
+	 *
+	 * @return	The set expression. <i>Might be NULL.</i>
+	 *
+	 * @since 2.0
+	 */
+	public final ADQLOperand getExpression() {
+		return expression;
+	}
+
+	/**
 	 * Updates the current order indication.
 	 *
 	 * @param colIndex	The index of a selected column (from 1).
@@ -122,11 +218,12 @@ public class ADQLOrder extends ColumnReference {
 	 * @throws IndexOutOfBoundsException	If the given index is less
 	 *                                  	or equal 0.
 	 */
-	public void setOrder(int colIndex, boolean desc) throws ArrayIndexOutOfBoundsException {
+	public void setOrder(final int colIndex, final boolean desc) throws ArrayIndexOutOfBoundsException {
 		if (colIndex <= 0)
 			throw new ArrayIndexOutOfBoundsException("Impossible to make a reference to the " + colIndex + "th column: a column index must be greater or equal 1!");
 
-		setColumnIndex(colIndex);
+		colRef = new ColumnReference(colIndex);
+		expression = null;
 		descSorting = desc;
 	}
 
@@ -139,13 +236,41 @@ public class ADQLOrder extends ColumnReference {
 	 *
 	 * @throws NullPointerException	If the given name is NULL
 	 *                             	or is an empty string.
+	 *
+	 * @deprecated	Since ADQL-2.1, a column reference can be a qualified
+	 *            	column (i.e. an {@link ADQLColumn}). You should use
+	 *            	{@link #setOrder(ADQLOperand, boolean)} instead.
 	 */
-	public void setOrder(String colName, boolean desc) throws NullPointerException {
+	@Deprecated
+	public void setOrder(final String colName, final boolean desc) throws NullPointerException {
 		if (colName == null)
 			throw new NullPointerException("Impossible to make a reference: the given name is null or is an empty string!");
 
-		setColumnName(colName);
+		colRef = null;
+		expression = new ADQLColumn(null, colName);
 		descSorting = desc;
+		position = null;
+	}
+
+	/**
+	 * Updates the current order indication.
+	 *
+	 * @param expr	The expression to order on.
+	 * @param desc	<code>true</code> means DESCending order,
+	 *            	<code>false</code> means ASCending order.
+	 *
+	 * @throws NullPointerException	If the given expression is NULL.
+	 *
+	 * @since 2.0
+	 */
+	public void setOrder(final ADQLOperand expr, boolean desc) throws NullPointerException {
+		if (expr == null)
+			throw new NullPointerException("Impossible to make a reference: the given expression is null!");
+
+		colRef = null;
+		expression = expr;
+		descSorting = desc;
+		position = null;
 	}
 
 	@Override
@@ -155,12 +280,77 @@ public class ADQLOrder extends ColumnReference {
 
 	@Override
 	public String getName() {
-		return super.getName() + (descSorting ? " DESC" : " ASC");
+		return (colRef != null ? colRef.getName() : expression.getName()) + (descSorting ? "_DESC" : "_ASC");
 	}
 
 	@Override
 	public String toADQL() {
-		return super.toADQL() + (descSorting ? " DESC" : " ASC");
+		return (colRef != null ? colRef.toADQL() : expression.toADQL()) + (descSorting ? " DESC" : " ASC");
+	}
+
+	/**
+	 * Gets the position in the original ADQL query string.
+	 *
+	 * @return	The position of this {@link ColumnReference}.
+	 */
+	@Override
+	public final TextPosition getPosition() {
+		return position;
+	}
+
+	/**
+	 * Sets the position at which this {@link ColumnReference} has been found in the original ADQL query string.
+	 *
+	 * @param pos	Position of this {@link ColumnReference}.
+	 */
+	public void setPosition(final TextPosition pos) {
+		position = pos;
+	}
+
+	@Override
+	public final LanguageFeature getFeatureDescription() {
+		return FEATURE;
+	}
+
+	@Override
+	public ADQLIterator adqlIterator() {
+		return new ADQLIterator() {
+
+			private boolean itemDone = false;
+
+			@Override
+			public ADQLObject next() {
+				if (itemDone)
+					throw new NoSuchElementException();
+				else
+					itemDone = true;
+				return (colRef != null ? colRef : expression);
+			}
+
+			@Override
+			public boolean hasNext() {
+				return !itemDone;
+			}
+
+			@Override
+			public void replace(final ADQLObject replacer) throws UnsupportedOperationException, IllegalStateException {
+				if (!itemDone)
+					throw new IllegalStateException("No iteration done yet!");
+				else if (replacer == null)
+					throw new UnsupportedOperationException("Impossible to delete a column reference or an expression from an ORDER BY item! You must delete the complete ORDER BY item.");
+
+				if (replacer instanceof ColumnReference) {
+					colRef = (ColumnReference)replacer;
+					expression = null;
+				} else if (replacer instanceof ADQLOperand) {
+					colRef = null;
+					expression = (ADQLOperand)replacer;
+				} else
+					throw new UnsupportedOperationException("Impossible to replace a column reference or a value expression by a " + replacer.getClass().getName() + "!");
+
+				position = null;
+			}
+		};
 	}
 
 }
