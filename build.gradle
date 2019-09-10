@@ -18,7 +18,7 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
     testCompile 'com.h2database:h2:1.4.193'
-    testCompile fileTree(dir: 'lib', include: 'astroh2-0.3.jar')
+    testCompile fileTree(dir: 'lib', include: 'astroh2-0.4.jar')
     testCompile 'org.slf4j:slf4j-simple:1.7.25'
     
     testRuntime 'simple-jndi:simple-jndi:0.11.4.1'

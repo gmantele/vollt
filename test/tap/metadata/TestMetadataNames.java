@@ -1,6 +1,8 @@
 package tap.metadata;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.PrintWriter;
@@ -17,81 +19,97 @@ public class TestMetadataNames {
 
 	/** TEST SCHEMA NAME */
 	@Test
-	public void testSchemaName(){
+	public void testSchemaName() {
 		TAPSchema schema;
 
 		// NULL
-		try{
+		try {
 			new TAPSchema(null);
 			fail("It should be impossible to create a TAPSchema with a NULL name.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing schema name!", npe.getMessage());
 		}
 
 		// Empty string (not a single character):
-		try{
+		try {
 			new TAPSchema("");
 			fail("It should be impossible to create a TAPSchema with an empty name.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing schema name!", npe.getMessage());
 		}
 
 		// String with only space characters:
-		try{
+		try {
 			new TAPSchema(" 	");
 			fail("It should be impossible to create a TAPSchema with a name just composed of space characters.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing schema name!", npe.getMessage());
 		}
 
-		// Empty quoted string:
-		try{
+		// Empty quoted string I:
+		try {
 			new TAPSchema("\"\"");
 			fail("It should be impossible to create a TAPSchema with a empty name even if quoted.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
+			assertEquals("Missing schema name!", npe.getMessage());
+		}
+
+		// Empty quoted string II:
+		try {
+			new TAPSchema("\" \"");
+			fail("It should be impossible to create a TAPSchema with a empty name even if quoted.");
+		} catch(NullPointerException npe) {
 			assertEquals("Missing schema name!", npe.getMessage());
 		}
 
 		// Non quoted names => ADQL_NAME = RAW_NAME = TRIMMED(GIVEN_NAME)
-		try{
+		try {
 			schema = new TAPSchema("foo");
 			assertEquals("foo", schema.getADQLName());
+			assertFalse(schema.isCaseSensitive());
 			assertEquals("foo", schema.getRawName());
+			assertEquals(schema.getRawName(), schema.toString());
 
 			schema = new TAPSchema("	foo ");
 			assertEquals("foo", schema.getADQLName());
+			assertFalse(schema.isCaseSensitive());
 			assertEquals("foo", schema.getRawName());
+			assertEquals(schema.getRawName(), schema.toString());
 
 			// Qualified name => Not supported as a catalog name!
 			schema = new TAPSchema("myCat.foo");
 			assertEquals("myCat.foo", schema.getADQLName());
+			assertFalse(schema.isCaseSensitive());
 			assertEquals("myCat.foo", schema.getRawName());
+			assertEquals(schema.getRawName(), schema.toString());
 
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			npe.printStackTrace(System.err);
 			fail("Unexpected error! The schema name is not empty or NULL. (see console for more details)");
 		}
 
 		// Quoted names => ADQL_NAME <> RAW_NAME = TRIMMED(GIVEN_NAME)
-		try{
-			schema = new TAPSchema("\" 	\"");
-			assertEquals(" 	", schema.getADQLName());
-			assertEquals("\" 	\"", schema.getRawName());
-
+		try {
 			schema = new TAPSchema("\"foo\"");
 			assertEquals("foo", schema.getADQLName());
+			assertTrue(schema.isCaseSensitive());
 			assertEquals("\"foo\"", schema.getRawName());
+			assertEquals(schema.getRawName(), schema.toString());
 
 			schema = new TAPSchema(" \"	foo \"	");
 			assertEquals("	foo ", schema.getADQLName());
+			assertTrue(schema.isCaseSensitive());
 			assertEquals("\"	foo \"", schema.getRawName());
+			assertEquals(schema.getRawName(), schema.toString());
 
 			// Qualified name => Not supported as a catalog name!
 			schema = new TAPSchema("myCat.\"foo\"");
 			assertEquals("myCat.\"foo\"", schema.getADQLName());
+			assertFalse(schema.isCaseSensitive());
 			assertEquals("myCat.\"foo\"", schema.getRawName());
+			assertEquals(schema.getRawName(), schema.toString());
 
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			npe.printStackTrace(System.err);
 			fail("Unexpected error! The schema name is not empty or NULL. (see console for more details)");
 		}
@@ -99,119 +117,137 @@ public class TestMetadataNames {
 
 	/** TEST TABLE NAME */
 	@Test
-	public void testTableName(){
+	public void testTableName() {
 		TAPTable table, table2, table3;
 
 		// NULL
-		try{
+		try {
 			new TAPTable(null);
 			fail("It should be impossible to create a TAPTable with a NULL name.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing table name!", npe.getMessage());
 		}
 
 		// Empty string (not a single character):
-		try{
+		try {
 			new TAPTable("");
 			fail("It should be impossible to create a TAPTable with an empty name.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing table name!", npe.getMessage());
 		}
 
 		// String with only space characters:
-		try{
+		try {
 			new TAPTable(" 	");
 			fail("It should be impossible to create a TAPTable with a name just composed of space characters.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing table name!", npe.getMessage());
 		}
 
-		// Empty quoted string:
-		try{
+		// Empty quoted string I:
+		try {
 			new TAPTable("\"\"");
 			fail("It should be impossible to create a TAPTable with a empty name even if quoted.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
+			assertEquals("Missing table name!", npe.getMessage());
+		}
+
+		// Empty quoted string II:
+		try {
+			new TAPTable("\" \"");
+			fail("It should be impossible to create a TAPTable with a empty name even if quoted.");
+		} catch(NullPointerException npe) {
 			assertEquals("Missing table name!", npe.getMessage());
 		}
 
 		// Non quoted names => ADQL_NAME = RAW_NAME = TRIMMED(GIVEN_NAME)
-		try{
+		try {
 			table = new TAPTable("foo");
 			assertEquals("foo", table.getADQLName());
+			assertFalse(table.isCaseSensitive());
 			assertEquals("foo", table.getRawName());
 
 			table = new TAPTable("	foo ");
 			assertEquals("foo", table.getADQLName());
+			assertFalse(table.isCaseSensitive());
 			assertEquals("foo", table.getRawName());
 
-			// Qualified name => Without a schema link, no prefix can be removed!
+			// Qualified name => Without a schema link, a default cut is done:
 			table = new TAPTable("mySchema.foo");
-			assertEquals("mySchema.foo", table.getADQLName());
 			assertEquals("mySchema.foo", table.getRawName());
+			assertEquals(table.getRawName(), table.getADQLName());
+			assertFalse(table.isCaseSensitive());
 
 			// Qualified name + Schema with the WRONG name:
 			table.setSchema(new TAPSchema("Blabla"));
 			assertEquals("mySchema.foo", table.getADQLName());
+			assertFalse(table.isCaseSensitive());
 			assertEquals("mySchema.foo", table.getRawName());
 
 			// Qualified name + Schema with the RIGHT name:
 			table.setSchema(new TAPSchema("mySchema"));
 			assertEquals("foo", table.getADQLName());
+			assertFalse(table.isCaseSensitive());
 			assertEquals("mySchema.foo", table.getRawName());
 
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			npe.printStackTrace(System.err);
 			fail("Unexpected error! The table name is not empty or NULL. (see console for more details)");
 		}
 
 		// Quoted names => ADQL_NAME <> RAW_NAME = TRIMMED(GIVEN_NAME)
-		try{
-			table = new TAPTable("\" 	\"");
-			assertEquals(" 	", table.getADQLName());
-			assertEquals("\" 	\"", table.getRawName());
-
+		try {
 			table = new TAPTable("\"foo\"");
 			assertEquals("foo", table.getADQLName());
+			assertTrue(table.isCaseSensitive());
 			assertEquals("\"foo\"", table.getRawName());
 
 			table = new TAPTable(" \"	foo \"	");
 			assertEquals("	foo ", table.getADQLName());
+			assertTrue(table.isCaseSensitive());
 			assertEquals("\"	foo \"", table.getRawName());
 
-			// Qualified name => Without a schema link, no prefix can be removed!
+			// Qualified name => a default cut is done:
 			table = new TAPTable("mySchema.\"foo\"");
-			assertEquals("mySchema.\"foo\"", table.getADQLName());
 			assertEquals("mySchema.\"foo\"", table.getRawName());
+			assertEquals(table.getRawName(), table.getADQLName());
+			assertFalse(table.isCaseSensitive());
 			table2 = new TAPTable(" \"mySchema\". \"foo\"");
-			assertEquals("\"mySchema\". \"foo\"", table2.getADQLName());
 			assertEquals("\"mySchema\". \"foo\"", table2.getRawName());
+			assertEquals(table2.getRawName(), table2.getADQLName());
+			assertFalse(table2.isCaseSensitive());
 			table3 = new TAPTable(" \"mySchema\". foo");
-			assertEquals("\"mySchema\". foo", table3.getADQLName());
 			assertEquals("\"mySchema\". foo", table3.getRawName());
+			assertEquals(table3.getRawName(), table3.getADQLName());
+			assertFalse(table3.isCaseSensitive());
 
 			// Qualified name + Schema with the WRONG name:
 			table.setSchema(new TAPSchema("Blabla"));
-			assertEquals("mySchema.\"foo\"", table.getADQLName());
 			assertEquals("mySchema.\"foo\"", table.getRawName());
-			table2.setSchema(new TAPSchema("mySchema"));
-			assertEquals("\"mySchema\". \"foo\"", table2.getADQLName());
-			assertEquals("\"mySchema\". \"foo\"", table2.getRawName());
-			table3.setSchema(new TAPSchema("mySchema"));
-			assertEquals("\"mySchema\". foo", table3.getADQLName());
-			assertEquals("\"mySchema\". foo", table3.getRawName());
+			assertEquals(table.getRawName(), table.getADQLName());
+			assertFalse(table.isCaseSensitive());
 
-			// Qualified name + Schema with the RIGHT name:
-			table.setSchema(new TAPSchema("mySchema"));
+			// Qualified name + Schema with the RIGHT name (not case sensitive):
+			table.setSchema(new TAPSchema("MYSchema"));
 			assertEquals("foo", table.getADQLName());
+			assertTrue(table.isCaseSensitive());
 			assertEquals("mySchema.\"foo\"", table.getRawName());
-			table2.setSchema(new TAPSchema("\"mySchema\""));
+			table2.setSchema(new TAPSchema("MYSchema"));
 			assertEquals("foo", table2.getADQLName());
+			assertTrue(table2.isCaseSensitive());
 			assertEquals("\"mySchema\". \"foo\"", table2.getRawName());
+
+			// Qualified name + Schema with the RIGHT name (case sensitive):
 			table3.setSchema(new TAPSchema("\"mySchema\""));
 			assertEquals("foo", table3.getADQLName());
+			assertFalse(table3.isCaseSensitive());
 			assertEquals("\"mySchema\". foo", table3.getRawName());
+			table3.setSchema(new TAPSchema("\"MYSchema\""));
+			assertEquals("\"mySchema\". foo", table3.getRawName());
+			assertEquals(table3.getRawName(), table3.getADQLName());
+			assertFalse(table3.isCaseSensitive());
 
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			npe.printStackTrace(System.err);
 			fail("Unexpected error! The table name is not empty or NULL. (see console for more details)");
 		}
@@ -219,145 +255,166 @@ public class TestMetadataNames {
 
 	/** TEST COLUMN NAME */
 	@Test
-	public void testColumnName(){
+	public void testColumnName() {
 		TAPColumn column, column2, column3, column4, column5;
 
 		// NULL
-		try{
+		try {
 			new TAPColumn(null);
 			fail("It should be impossible to create a TAPColumn with a NULL name.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing column name!", npe.getMessage());
 		}
 
 		// Empty string (not a single character):
-		try{
+		try {
 			new TAPColumn("");
 			fail("It should be impossible to create a TAPColumn with an empty name.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing column name!", npe.getMessage());
 		}
 
 		// String with only space characters:
-		try{
+		try {
 			new TAPColumn(" 	");
 			fail("It should be impossible to create a TAPColumn with a name just composed of space characters.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			assertEquals("Missing column name!", npe.getMessage());
 		}
 
-		// Empty quoted string:
-		try{
+		// Empty quoted string I:
+		try {
 			new TAPColumn("\"\"");
 			fail("It should be impossible to create a TAPColumn with a empty name even if quoted.");
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
+			assertEquals("Missing column name!", npe.getMessage());
+		}
+
+		// Empty quoted string II:
+		try {
+			new TAPColumn("\" \"");
+			fail("It should be impossible to create a TAPColumn with a empty name even if quoted.");
+		} catch(NullPointerException npe) {
 			assertEquals("Missing column name!", npe.getMessage());
 		}
 
 		// Non quoted names => ADQL_NAME = RAW_NAME = TRIMMED(GIVEN_NAME)
-		try{
+		try {
 			column = new TAPColumn("foo");
-			assertEquals("foo", column.getADQLName());
 			assertEquals("foo", column.getRawName());
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
 
 			column = new TAPColumn("	foo ");
-			assertEquals("foo", column.getADQLName());
 			assertEquals("foo", column.getRawName());
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
 
-			// Qualified name => Without a table link, no prefix can be removed!
+			// Qualified => Not supported
 			column = new TAPColumn("myTable.foo");
-			assertEquals("myTable.foo", column.getADQLName());
 			assertEquals("myTable.foo", column.getRawName());
-
-			// Qualified name + Table with the WRONG name:
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
+			// ...even with a DB link, still not supported:
 			column.setTable(new TAPTable("Blabla"));
-			assertEquals("myTable.foo", column.getADQLName());
 			assertEquals("myTable.foo", column.getRawName());
-
-			// Qualified name + Table with the RIGHT name:
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
 			column.setTable(new TAPTable("myTable"));
-			assertEquals("foo", column.getADQLName());
 			assertEquals("myTable.foo", column.getRawName());
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
 
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			npe.printStackTrace(System.err);
 			fail("Unexpected error! The column name is not empty or NULL. (see console for more details)");
 		}
 
 		// Quoted names => ADQL_NAME <> RAW_NAME = TRIMMED(GIVEN_NAME)
-		try{
-			column = new TAPColumn("\" 	\"");
-			assertEquals(" 	", column.getADQLName());
-			assertEquals("\" 	\"", column.getRawName());
-
+		try {
 			column = new TAPColumn("\"foo\"");
 			assertEquals("foo", column.getADQLName());
+			assertTrue(column.isCaseSensitive());
 			assertEquals("\"foo\"", column.getRawName());
 
 			column = new TAPColumn(" \"	foo \"	");
 			assertEquals("	foo ", column.getADQLName());
+			assertTrue(column.isCaseSensitive());
 			assertEquals("\"	foo \"", column.getRawName());
 
-			// Qualified name => Without a table link, no prefix can be removed!
+			// Qualified name => not supported
 			column = new TAPColumn("myTable.\"foo\"");
-			assertEquals("myTable.\"foo\"", column.getADQLName());
 			assertEquals("myTable.\"foo\"", column.getRawName());
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
 			column2 = new TAPColumn(" \"myTable\". \"foo\"");
-			assertEquals("\"myTable\". \"foo\"", column2.getADQLName());
 			assertEquals("\"myTable\". \"foo\"", column2.getRawName());
+			assertEquals(column2.getRawName(), column2.getADQLName());
+			assertFalse(column2.isCaseSensitive());
 			column3 = new TAPColumn(" \"myTable\". foo");
-			assertEquals("\"myTable\". foo", column3.getADQLName());
 			assertEquals("\"myTable\". foo", column3.getRawName());
+			assertEquals(column3.getRawName(), column3.getADQLName());
+			assertFalse(column3.isCaseSensitive());
 			column4 = new TAPColumn(" mySchema.\"myTable\". foo");
-			assertEquals("mySchema.\"myTable\". foo", column4.getADQLName());
 			assertEquals("mySchema.\"myTable\". foo", column4.getRawName());
+			assertEquals(column4.getRawName(), column4.getADQLName());
+			assertFalse(column4.isCaseSensitive());
 			column5 = new TAPColumn(" \"mySchema\".\"myTable\". foo");
-			assertEquals("\"mySchema\".\"myTable\". foo", column5.getADQLName());
 			assertEquals("\"mySchema\".\"myTable\". foo", column5.getRawName());
+			assertEquals(column5.getRawName(), column5.getADQLName());
+			assertFalse(column5.isCaseSensitive());
 
-			// Qualified name + Table with the WRONG name:
+			// ...even with a DB link, still not supported:
 			column.setTable(new TAPTable("Blabla"));
-			assertEquals("myTable.\"foo\"", column.getADQLName());
 			assertEquals("myTable.\"foo\"", column.getRawName());
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
 			column2.setTable(new TAPTable("myTable"));
-			assertEquals("\"myTable\". \"foo\"", column2.getADQLName());
 			assertEquals("\"myTable\". \"foo\"", column2.getRawName());
+			assertEquals(column2.getRawName(), column2.getADQLName());
+			assertFalse(column2.isCaseSensitive());
 			column3.setTable(new TAPTable("myTable"));
-			assertEquals("\"myTable\". foo", column3.getADQLName());
 			assertEquals("\"myTable\". foo", column3.getRawName());
+			assertEquals(column3.getRawName(), column3.getADQLName());
+			assertFalse(column3.isCaseSensitive());
 			TAPTable t = new TAPTable("mySchema.myTable");
 			t.setSchema(new TAPSchema("mySchema"));
 			column4.setTable(t);
-			assertEquals("mySchema.\"myTable\". foo", column4.getADQLName());
 			assertEquals("mySchema.\"myTable\". foo", column4.getRawName());
+			assertEquals(column4.getRawName(), column4.getADQLName());
+			assertFalse(column4.isCaseSensitive());
 			t = new TAPTable("\"mySchema\".myTable");
 			t.setSchema(new TAPSchema("\"mySchema\""));
 			column5.setTable(t);
-			assertEquals("\"mySchema\".\"myTable\". foo", column5.getADQLName());
 			assertEquals("\"mySchema\".\"myTable\". foo", column5.getRawName());
-
-			// Qualified name + Table with the RIGHT name:
+			assertEquals(column5.getRawName(), column5.getADQLName());
+			assertFalse(column5.isCaseSensitive());
 			column.setTable(new TAPTable("myTable"));
-			assertEquals("foo", column.getADQLName());
 			assertEquals("myTable.\"foo\"", column.getRawName());
+			assertEquals(column.getRawName(), column.getADQLName());
+			assertFalse(column.isCaseSensitive());
 			column2.setTable(new TAPTable("\"myTable\""));
-			assertEquals("foo", column2.getADQLName());
 			assertEquals("\"myTable\". \"foo\"", column2.getRawName());
+			assertEquals(column2.getRawName(), column2.getADQLName());
+			assertFalse(column2.isCaseSensitive());
 			column3.setTable(new TAPTable("\"myTable\""));
-			assertEquals("foo", column3.getADQLName());
 			assertEquals("\"myTable\". foo", column3.getRawName());
+			assertEquals(column3.getRawName(), column3.getADQLName());
+			assertFalse(column3.isCaseSensitive());
 			t = new TAPTable("mySchema.\"myTable\"");
 			t.setSchema(new TAPSchema("mySchema"));
 			column4.setTable(t);
-			assertEquals("foo", column4.getADQLName());
 			assertEquals("mySchema.\"myTable\". foo", column4.getRawName());
+			assertEquals(column4.getRawName(), column4.getADQLName());
+			assertFalse(column4.isCaseSensitive());
 			t = new TAPTable("\"mySchema\".\"myTable\"");
 			t.setSchema(new TAPSchema("\"mySchema\""));
 			column5.setTable(t);
-			assertEquals("foo", column5.getADQLName());
 			assertEquals("\"mySchema\".\"myTable\". foo", column5.getRawName());
+			assertEquals(column5.getRawName(), column5.getADQLName());
+			assertFalse(column5.isCaseSensitive());
 
-		}catch(NullPointerException npe){
+		} catch(NullPointerException npe) {
 			npe.printStackTrace(System.err);
 			fail("Unexpected error! The column name is not empty or NULL. (see console for more details)");
 		}
@@ -365,7 +422,7 @@ public class TestMetadataNames {
 
 	/** TEST XML METADATA */
 	@Test
-	public void testXMLMetadata(){
+	public void testXMLMetadata() {
 		TAPMetadata metadata = new TAPMetadata();
 
 		TAPSchema schema = new TAPSchema("blabla");
@@ -383,11 +440,8 @@ public class TestMetadataNames {
 		Iterator<TAPColumn> itCol = table.getColumns();
 		assertEquals("col1", itCol.next().getADQLName());
 		assertEquals("col2", itCol.next().getADQLName());
-		assertEquals("col3", itCol.next().getADQLName());
+		assertEquals("foo.col3", itCol.next().getADQLName());
 		assertEquals("blabla.foo.col4", itCol.next().getADQLName());
-		/* Note for below:
-		 * Only ADQL allows schema.table.column. Here, the table name MUST be exactly
-		 * the same as the one written in the TAP_SCHEMA.tables (so, the trimmed raw name). */
 		assertEquals("foo2.col5", itCol.next().getADQLName());
 
 		table = new TAPTable(" \"foo.bar\"");
@@ -400,7 +454,7 @@ public class TestMetadataNames {
 		assertEquals("foo.bar", table.getADQLName());
 		itCol = table.getColumns();
 		assertEquals("foo.bar.col1", itCol.next().getADQLName());
-		assertEquals("col2", itCol.next().getADQLName());
+		assertEquals("\"foo.bar\".col2", itCol.next().getADQLName());
 		assertEquals("blabla.foo.bar.col3", itCol.next().getADQLName());
 		assertEquals("blabla.\"foo.bar\".col4", itCol.next().getADQLName());
 		/* Note for below:
@@ -427,7 +481,7 @@ public class TestMetadataNames {
 		/* Note for below:
 		 * Same as for the 4th column of the table "foo". */
 		assertEquals("bloblo.bar.col4", itCol.next().getADQLName());
-		assertEquals("col5", itCol.next().getADQLName());
+		assertEquals("myCat.bloblo.bar.col5", itCol.next().getADQLName());
 
 		metadata.addSchema(schema);
 
@@ -435,12 +489,12 @@ public class TestMetadataNames {
 		assertEquals("Mon Super Schema", schema.getADQLName());
 		metadata.addSchema(schema);
 
-		try{
+		try {
 			StringWriter str = new StringWriter();
 			metadata.write(new PrintWriter(str));
 			//System.out.println(str.toString());
 			assertEquals(expectedXMLMetadata, str.toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unexpected error when writing TAP metadata into an XML format! (see console for more details)");
 		}

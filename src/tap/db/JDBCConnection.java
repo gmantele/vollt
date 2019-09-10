@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -65,123 +65,166 @@ import uws.ISO8601Format;
 import uws.service.log.UWSLog.LogLevel;
 
 /**
- * <p>This {@link DBConnection} implementation is theoretically able to deal with any DBMS JDBC connection.</p>
+ * This {@link DBConnection} implementation is theoretically able to deal with
+ * any DBMS JDBC connection.
  *
- * <p><i>Note:
- * 	"Theoretically", because its design has been done using information about Postgres, SQLite, Oracle, MySQL, Java DB (Derby) and H2.
- * 	Then it has been really tested successfully with Postgres, SQLite and H2.
+ * <p><i><b>Note:</b>
+ * 	"Theoretically", because its design has been done using information about
+ * 	Postgres, SQLite, Oracle, MySQL, Java DB (Derby) and H2. Then it has been
+ * 	really tested successfully with Postgres, SQLite and H2.
  * </i></p>
  *
  *
  * <h3>Only one query executed at a time!</h3>
  *
  * <p>
- * 	With a single instance of {@link JDBCConnection} it is possible to execute only one query (whatever the type: SELECT, UPDATE, DELETE, ...)
- * 	at a time. This is indeed the simple way chosen with this implementation in order to allow the cancellation of any query by managing only
- * 	one {@link Statement}. Indeed, only a {@link Statement} has a cancel function able to stop any query execution on the database.
- * 	So all queries are executed with the same {@link Statement}. Thus, allowing the execution of one query at a time lets
- * 	abort only one query rather than several in once (though just one should have been stopped).
+ * 	With a single instance of {@link JDBCConnection} it is possible to execute
+ * 	only one query (whatever the type: SELECT, UPDATE, DELETE, ...) at a time.
+ * 	This is indeed the simple way chosen with this implementation in order to
+ * 	allow the cancellation of any query by managing only one {@link Statement}.
+ * 	Indeed, only a {@link Statement} has a cancel function able to stop any
+ * 	query execution on the database. So all queries are executed with the same
+ * 	{@link Statement}. Thus, allowing the execution of one query at a time lets
+ * 	abort only one query rather than several in once (though just one should
+ * 	have been stopped).
  * </p>
  *
  * <p>
- * 	All the following functions are synchronized in order to prevent parallel execution of them by several threads:
- * 	{@link #addUploadedTable(TAPTable, TableIterator)}, {@link #dropUploadedTable(TAPTable)}, {@link #executeQuery(ADQLQuery)},
+ * 	All the following functions are synchronized in order to prevent parallel
+ * 	execution of them by several threads:
+ * 	{@link #addUploadedTable(TAPTable, TableIterator)},
+ * 	{@link #dropUploadedTable(TAPTable)}, {@link #executeQuery(ADQLQuery)},
  * 	{@link #getTAPSchema()} and {@link #setTAPSchema(TAPMetadata)}.
  * </p>
  *
  * <p>
- * 	To cancel a query execution the function {@link #cancel(boolean)} must be called. No error is returned by this function in case
- * 	no query is currently executing. When called, the flag {@link #isCancelled()} is set to <code>true</code>. Any potentially long
- * 	running function is checking this flag and may then stop immediately by throwing a {@link DBCancelledException} as soon as
- * 	the flag turns <code>true</code>. It should be the case for {@link #addUploadedTable(TAPTable, TableIterator)},
+ * 	To cancel a query execution the function {@link #cancel(boolean)} must be
+ * 	called. No error is returned by this function in case no query is currently
+ * 	executing. When called, the flag {@link #isCancelled()} is set to
+ * 	<code>true</code>. Any potentially long running function is checking this
+ * 	flag and may then stop immediately by throwing a
+ * 	{@link DBCancelledException} as soon as the flag turns <code>true</code>.
+ * 	It should be the case for {@link #addUploadedTable(TAPTable, TableIterator)},
  * 	{@link #executeQuery(ADQLQuery)} and {@link #setTAPSchema(TAPMetadata)}.
  * </p>
  *
  *
  * <h3>Deal with different DBMS features</h3>
  *
- * <p>Update queries are taking into account whether the following features are supported by the DBMS:</p>
+ * <p>
+ * 	Update queries are taking into account whether the following features are
+ * 	supported by the DBMS:
+ * </p>
  * <ul>
- * 	<li><b>data definition</b>: when not supported, no update operation will be possible.
- * 	                            All corresponding functions will then throw a {@link DBException} ;
- * 	                            only {@link #executeQuery(ADQLQuery)} will be possibly called.</li>
+ * 	<li><b>data definition</b>: when not supported, no update operation will be
+ * 		                        possible. All corresponding functions will then
+ * 		                        throw a {@link DBException} ; only
+ * 		                        {@link #executeQuery(ADQLQuery)} will be
+ * 		                        possibly called.</li>
  *
- * 	<li><b>transactions</b>: when not supported, no transaction is started or merely used.
- * 	                         It means that in case of update failure, no rollback will be possible
- * 	                         and that already done modification will remain in the database.</li>
+ * 	<li><b>transactions</b>: when not supported, no transaction is started or
+ * 		                     merely used. It means that in case of update
+ * 		                     failure, no rollback will be possible and that
+ * 		                     already done modification will remain in the
+ * 		                     database.</li>
  *
- * 	<li><b>schemas</b>: when the DBMS does not have the notion of schema (like SQLite), no schema creation or dropping will be obviously processed.
- * 	                    Besides, if not already done, database name of all tables will be prefixed by the schema name.</li>
+ * 	<li><b>schemas</b>: when the DBMS does not have the notion of schema (like
+ * 		                SQLite), no schema creation or dropping will be
+ * 		                obviously processed. Besides, if not already done,
+ * 		                database name of all tables will be prefixed by the
+ * 		                schema name.</li>
  *
- * 	<li><b>batch updates</b>: when not supported, updates will just be done, "normally, one by one.
- * 	                          In one word, there will be merely no optimization.
- * 	                          Anyway, this feature concerns only the insertions into tables.</li>
+ * 	<li><b>batch updates</b>: when not supported, updates will just be done,
+ * 		                      "normally, one by one. In one word, there will be
+ * 		                      merely no optimization. Anyway, this feature
+ * 		                      concerns only the insertions into tables.</li>
  *
- * 	<li><b>case sensitivity of identifiers</b>: the case sensitivity of quoted identifier varies from the used DBMS. This {@link DBConnection}
- * 	                                            implementation is able to adapt itself in function of the way identifiers are stored and
- * 	                                            researched in the database. How the case sensitivity is managed by the DBMS is the problem
- * 	                                            of only one function (which can be overwritten if needed): {@link #equals(String, String, boolean)}.</li>
+ * 	<li><b>case sensitivity of identifiers</b>: the case sensitivity of quoted
+ * 		                                        identifier varies from the used
+ * 		                                        DBMS. This {@link DBConnection}
+ * 	                                            implementation is able to adapt
+ * 		                                        itself in function of the way
+ * 		                                        identifiers are stored and
+ * 	                                            researched in the database. How
+ * 		                                        the case sensitivity is managed
+ * 		                                        by the DBMS is the problem of
+ * 		                                        only one function (which can be
+ * 		                                        overwritten if needed):
+ * 		                                        {@link #equals(String, String, boolean)}.</li>
  * </ul>
  *
  * <p><i><b>Warning</b>:
- * 	All these features have no impact at all on ADQL query executions ({@link #executeQuery(ADQLQuery)}).
+ * 	All these features have no impact at all on ADQL query executions
+ * 	({@link #executeQuery(ADQLQuery)}).
  * </i></p>
  *
  *
  * <h3>Datatypes</h3>
  *
  * <p>
- * 	All datatype conversions done while fetching a query result (via a {@link ResultSet})
- * 	are done exclusively by the returned {@link TableIterator} (so, here {@link ResultSetTableIterator}).
+ * 	All datatype conversions done while fetching a query result (via a
+ * 	{@link ResultSet}) are done exclusively by the returned
+ * 	{@link TableIterator} (so, here {@link ResultSetTableIterator}).
  * </p>
  *
  * <p>
- * 	However, datatype conversions done while uploading a table are done here by the function
- * 	{@link #convertTypeToDB(DBType)}. This function uses first the conversion function of the translator
- * 	({@link JDBCTranslator#convertTypeToDB(DBType)}), and then {@link #defaultTypeConversion(DBType)}
- * 	if it fails.
+ * 	However, datatype conversions done while uploading a table are done here by
+ * 	the function {@link #convertTypeToDB(DBType)}. This function uses first the
+ * 	conversion function of the translator
+ * 	({@link JDBCTranslator#convertTypeToDB(DBType)}), and then
+ * 	{@link #defaultTypeConversion(DBType)} if it fails.
  * </p>
  *
  * <p>
- * 	In this default conversion, all typical DBMS datatypes are taken into account, <b>EXCEPT the geometrical types</b>
- * 	(POINT and REGION). That's why it is recommended to use a translator in which the geometrical types are supported
- * 	and managed.
+ * 	In this default conversion, all typical DBMS datatypes are taken into
+ * 	account, <b>EXCEPT the geometrical types</b> (POINT and REGION). That's why
+ * 	it is recommended to use a translator in which the geometrical types are
+ * 	supported and managed.
  * </p>
  *
  *
  * <h3>Fetch size</h3>
  *
  * <p>
- * 	The possibility to specify a "fetch size" to the JDBC driver (and more exactly to a {@link Statement}) may reveal
- * 	very helpful when dealing with large datasets. Thus, it is possible to fetch rows by block of a size represented
- * 	by this "fetch size". This is also possible with this {@link DBConnection} thanks to the function {@link #setFetchSize(int)}.
+ * 	The possibility to specify a "fetch size" to the JDBC driver (and more
+ * 	exactly to a {@link Statement}) may reveal very helpful when dealing with
+ * 	large datasets. Thus, it is possible to fetch rows by block of a size
+ * 	represented by this "fetch size". This is also possible with this
+ * 	{@link DBConnection} thanks to the function {@link #setFetchSize(int)}.
  * </p>
  *
  * <p>
- * 	However, some JDBC driver or DBMS may not support this feature. In such case, it is then automatically disabled by
- * 	{@link JDBCConnection} so that any subsequent queries do not attempt to use it again. The {@link #supportsFetchSize}
- * 	is however reset to <code>true</code> when {@link #setFetchSize(int)} is called.
+ * 	However, some JDBC driver or DBMS may not support this feature. In such
+ * 	case, it is then automatically disabled by {@link JDBCConnection} so that
+ * 	any subsequent queries do not attempt to use it again. The
+ * 	{@link #supportsFetchSize} is however reset to <code>true</code> when
+ * 	{@link #setFetchSize(int)} is called.
  * </p>
  *
- * <p><i>Note 1:
- * 	The "fetch size" feature is used only for SELECT queries executed by {@link #executeQuery(ADQLQuery)}. In all other functions,
- * 	results of SELECT queries are fetched with the default parameter of the JDBC driver and its {@link Statement} implementation.
+ * <p><i><b>Note 1:</b>
+ * 	The "fetch size" feature is used only for SELECT queries executed by
+ * 	{@link #executeQuery(ADQLQuery)}. In all other functions, results of SELECT
+ * 	queries are fetched with the default parameter of the JDBC driver and its
+ * 	{@link Statement} implementation.
  * </i></p>
  *
- * <p><i>Note 2:
- * 	By default, this feature is disabled. So the default value of the JDBC driver is used.
- * 	To enable it, a simple call to {@link #setFetchSize(int)} is enough, whatever is the given value.
+ * <p><i><b>Note 2:</b>
+ * 	By default, this feature is disabled. So the default value of the JDBC
+ * 	driver is used. To enable it, a simple call to {@link #setFetchSize(int)} is
+ * 	enough, whatever is the given value.
  * </i></p>
  *
- * <p><i>Note 3:
- * 	Generally set a fetch size starts a transaction in the database. So, after the result of the fetched query
- * 	is not needed any more, do not forget to call {@link #endQuery()} in order to end the implicitly opened transaction.
- * 	However, generally closing the returned {@link TableIterator} is fully enough (see the sources of
- * 	{@link ResultSetTableIterator#close()} for more details).
+ * <p><i><b>Note 3:</b>
+ * 	Generally set a fetch size starts a transaction in the database. So, after
+ * 	the result of the fetched query is not needed any more, do not forget to
+ * 	call {@link #endQuery()} in order to end the implicitly opened transaction.
+ * 	However, generally closing the returned {@link TableIterator} is fully
+ * 	enough (see the sources of {@link ResultSetTableIterator#close()} for more
+ * 	details).
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (10/2018)
+ * @version 2.4 (09/2019)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -341,7 +384,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws DBException	If the driver can not be found or if the connection can not merely be created (usually because DB parameters are wrong).
 	 */
-	public JDBCConnection(final String driverPath, final String dbUrl, final String dbUser, final String dbPassword, final JDBCTranslator translator, final String connID, final TAPLog logger) throws DBException{
+	public JDBCConnection(final String driverPath, final String dbUrl, final String dbUser, final String dbPassword, final JDBCTranslator translator, final String connID, final TAPLog logger) throws DBException {
 		this(createConnection(driverPath, dbUrl, dbUser, dbPassword), translator, connID, logger);
 	}
 
@@ -353,7 +396,7 @@ public class JDBCConnection implements DBConnection {
 	 * @param connID		ID of this connection. <i>note: may be NULL ; but in this case, logs concerning this connection will be more difficult to localize.</i>
 	 * @param logger		Logger to use in case of need. <i>note: may be NULL ; in this case, error will never be logged, but sometimes DBException may be raised.</i>
 	 */
-	public JDBCConnection(final Connection conn, final JDBCTranslator translator, final String connID, final TAPLog logger) throws DBException{
+	public JDBCConnection(final Connection conn, final JDBCTranslator translator, final String connID, final TAPLog logger) throws DBException {
 		if (conn == null)
 			throw new NullPointerException("Missing SQL connection! => can not create a JDBCConnection object.");
 		if (translator == null)
@@ -365,7 +408,7 @@ public class JDBCConnection implements DBConnection {
 		this.logger = logger;
 
 		// Set the supporting features' flags + DBMS type:
-		try{
+		try {
 			DatabaseMetaData dbMeta = connection.getMetaData();
 			dbms = (dbMeta.getDatabaseProductName() != null ? dbMeta.getDatabaseProductName().toLowerCase() : null);
 			supportsTransaction = dbMeta.supportsTransactions();
@@ -380,7 +423,7 @@ public class JDBCConnection implements DBConnection {
 			upperCaseQuoted = dbMeta.storesUpperCaseQuotedIdentifiers();
 			supportsMixedCaseQuotedIdentifier = dbMeta.supportsMixedCaseQuotedIdentifiers();
 
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			throw new DBException("Unable to access to one or several DB metadata (url, supportsTransaction, supportsBatchUpdates, supportsDataDefinitionAndDataManipulationTransactions, supportsSchemasInTableDefinitions, storesLowerCaseIdentifiers, storesUpperCaseIdentifiers, supportsMixedCaseIdentifiers, storesLowerCaseQuotedIdentifiers, storesMixedCaseQuotedIdentifiers, storesUpperCaseQuotedIdentifiers and supportsMixedCaseQuotedIdentifiers) from the given Connection!");
 		}
 	}
@@ -397,7 +440,7 @@ public class JDBCConnection implements DBConnection {
 	 * @deprecated (since 2.1) Should be replaced by <code>{@link java.sql.DatabaseMetaData#getDatabaseProductName()}.toLowerCase()</code>.
 	 */
 	@Deprecated
-	protected static final String getDBMSName(String dbUrl) throws DBException{
+	protected static final String getDBMSName(String dbUrl) throws DBException {
 		if (dbUrl == null)
 			throw new DBException("Missing database URL!");
 
@@ -428,31 +471,31 @@ public class JDBCConnection implements DBConnection {
 	 * @see DriverManager#getDriver(String)
 	 * @see Driver#connect(String, Properties)
 	 */
-	private final static Connection createConnection(final String driverPath, final String dbUrl, final String dbUser, final String dbPassword) throws DBException{
+	private final static Connection createConnection(final String driverPath, final String dbUrl, final String dbUser, final String dbPassword) throws DBException {
 		// Normalize the DB URL:
 		String url = dbUrl.startsWith(JDBC_PREFIX) ? dbUrl : (JDBC_PREFIX + dbUrl);
 
 		// Select the JDBDC driver:
 		Driver d;
-		try{
+		try {
 			d = DriverManager.getDriver(url);
-		}catch(SQLException e){
-			try{
+		} catch(SQLException e) {
+			try {
 				// ...load it, if necessary:
 				if (driverPath == null)
 					throw new DBException("Missing JDBC driver path! Since the required JDBC driver is not yet loaded, this path is needed to load it.");
 				Class.forName(driverPath);
 				// ...and try again:
 				d = DriverManager.getDriver(url);
-			}catch(ClassNotFoundException cnfe){
+			} catch(ClassNotFoundException cnfe) {
 				throw new DBException("Impossible to find the JDBC driver \"" + driverPath + "\" !", cnfe);
-			}catch(SQLException se){
+			} catch(SQLException se) {
 				throw new DBException("No suitable JDBC driver found for the database URL \"" + url + "\" and the driver path \"" + driverPath + "\"!", se);
 			}
 		}
 
 		// Build a connection to the specified database:
-		try{
+		try {
 			Properties p = new Properties();
 			if (dbUser != null)
 				p.setProperty("user", dbUser);
@@ -460,13 +503,13 @@ public class JDBCConnection implements DBConnection {
 				p.setProperty("password", dbPassword);
 			Connection con = d.connect(url, p);
 			return con;
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			throw new DBException("Impossible to establish a connection to the database \"" + url + "\"!", se);
 		}
 	}
 
 	@Override
-	public final String getID(){
+	public final String getID() {
 		return ID;
 	}
 
@@ -479,7 +522,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @return	The wrapped JDBC connection.
 	 */
-	public final Connection getInnerConnection(){
+	public final Connection getInnerConnection() {
 		return connection;
 	}
 
@@ -493,7 +536,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected boolean hasStatement() throws SQLException{
+	protected boolean hasStatement() throws SQLException {
 		return (stmt != null && !stmt.isClosed());
 	}
 
@@ -511,7 +554,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected Statement getStatement() throws SQLException{
+	protected Statement getStatement() throws SQLException {
 		if (hasStatement())
 			return stmt;
 		else
@@ -523,7 +566,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected void closeStatement(){
+	protected void closeStatement() {
 		close(stmt);
 		stmt = null;
 	}
@@ -567,8 +610,8 @@ public class JDBCConnection implements DBConnection {
 	 * @since 2.1
 	 */
 	@Override
-	public final void cancel(final boolean rollback){
-		synchronized(cancelled){
+	public final void cancel(final boolean rollback) {
+		synchronized (cancelled) {
 			cancelled = true;
 			boolean effectivelyCancelled = cancel(stmt, rollback);
 			// Log the success of the cancellation:
@@ -603,16 +646,16 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected boolean cancel(final Statement stmt, final boolean rollback){
-		try{
+	protected boolean cancel(final Statement stmt, final boolean rollback) {
+		try {
 			// If the statement is not already closed, cancel its current query execution:
-			if (supportsCancel && stmt != null && !stmt.isClosed()){
+			if (supportsCancel && stmt != null && !stmt.isClosed()) {
 				stmt.cancel();
 				return true;
-			}else
+			} else
 				return false;
 
-		}catch(SQLFeatureNotSupportedException sfnse){
+		} catch(SQLFeatureNotSupportedException sfnse) {
 			// prevent further cancel attempts:
 			supportsCancel = false;
 			// log a warning:
@@ -620,13 +663,13 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.WARNING, this, "CANCEL", "This JDBC driver does not support Statement.cancel(). No further cancel attempt will be performed with this JDBCConnection instance.", sfnse);
 			return false;
 
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (logger != null)
 				logger.logDB(LogLevel.ERROR, this, "CANCEL", "Abortion of the current query apparently fails! The query may still run on the database server.", se);
 			return false;
 		}
 		// Whatever happens, rollback all executed operations (only if rollback=true and if in a transaction ; that's to say if AutoCommit = false):
-		finally{
+		finally {
 			if (rollback && supportsTransaction)
 				rollback((stmt != null && stmt == this.stmt));
 		}
@@ -645,8 +688,8 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected final boolean isCancelled(){
-		synchronized(cancelled){
+	protected final boolean isCancelled() {
+		synchronized (cancelled) {
 			return cancelled;
 		}
 	}
@@ -661,14 +704,14 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected final void resetCancel(){
-		synchronized(cancelled){
+	protected final void resetCancel() {
+		synchronized (cancelled) {
 			cancelled = false;
 		}
 	}
 
 	@Override
-	public void endQuery(){
+	public void endQuery() {
 		// Cancel the last query processing, if still running:
 		cancel(stmt, false);  // note: this function is called instead of cancel(false) in order to avoid a log message about the cancellation operation result.
 		// Close the statement, if still opened:
@@ -683,24 +726,24 @@ public class JDBCConnection implements DBConnection {
 	/* INTERROGATION METHODS */
 	/* ********************* */
 	@Override
-	public synchronized TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException{
+	public synchronized TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException {
 		// Starting of new query execution => disable the cancel flag:
 		resetCancel();
 
 		String sql = null;
 		ResultSet result = null;
-		try{
+		try {
 			// 1. Translate the ADQL query into SQL:
 			if (logger != null)
 				logger.logDB(LogLevel.INFO, this, "TRANSLATE", "Translating ADQL: " + adqlQuery.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 			sql = translator.translate(adqlQuery);
 
 			// 2. Create the statement and if needed, configure it for the given fetch size:
-			if (supportsTransaction && supportsFetchSize && fetchSize > 0){
-				try{
+			if (supportsTransaction && supportsFetchSize && fetchSize > 0) {
+				try {
 					connection.setAutoCommit(false);
-				}catch(SQLException se){
-					if (!isCancelled()){
+				} catch(SQLException se) {
+					if (!isCancelled()) {
 						supportsFetchSize = false;
 						if (logger != null)
 							logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
@@ -716,11 +759,11 @@ public class JDBCConnection implements DBConnection {
 			getStatement();
 
 			// Adjust the fetching size of this statement:
-			if (supportsFetchSize){
-				try{
+			if (supportsFetchSize) {
+				try {
 					stmt.setFetchSize(fetchSize);
-				}catch(SQLException se){
-					if (!isCancelled()){
+				} catch(SQLException se) {
+					if (!isCancelled()) {
 						supportsFetchSize = false;
 						if (logger != null)
 							logger.logDB(LogLevel.WARNING, this, "RESULT", "Fetch size unsupported!", null);
@@ -742,7 +785,7 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.INFO, this, "RESULT", "Returning result (" + (supportsFetchSize ? "fetch size = " + fetchSize : "all in once") + ").", null);
 			return createTableIterator(result, adqlQuery.getResultingColumns());
 
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			// Close the ResultSet, if one was open:
 			close(result);
 			// End properly the query:
@@ -751,14 +794,14 @@ public class JDBCConnection implements DBConnection {
 			if (ex instanceof DBCancelledException)
 				throw (DBCancelledException)ex;
 			// Otherwise propagate the exception with an appropriate error message:
-			else if (ex instanceof SQLException){
+			else if (ex instanceof SQLException) {
 				/* ...except if the query has been aborted:
 				 * then, it is normal to receive an SQLException: */
 				if (isCancelled())
 					throw new DBCancelledException();
 				else
 					throw new DBException("Unexpected error while executing a SQL query: " + ex.getMessage(), ex);
-			}else if (ex instanceof TranslationException)
+			} else if (ex instanceof TranslationException)
 				throw new DBException("Unexpected error while translating ADQL into SQL: " + ex.getMessage(), ex);
 			else if (ex instanceof DataReadException)
 				throw new DBException("Impossible to read the query result, because: " + ex.getMessage(), ex);
@@ -788,10 +831,10 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @see ResultSetTableIterator#ResultSetTableIterator(DBConnection, ResultSet, DBColumn[], JDBCTranslator, String)
 	 */
-	protected TableIterator createTableIterator(final ResultSet rs, final DBColumn[] resultingColumns) throws DataReadException{
-		try{
+	protected TableIterator createTableIterator(final ResultSet rs, final DBColumn[] resultingColumns) throws DataReadException {
+		try {
 			return new ResultSetTableIterator(this, rs, resultingColumns, translator, dbms);
-		}catch(Throwable t){
+		} catch(Throwable t) {
 			throw (t instanceof DataReadException) ? (DataReadException)t : new DataReadException(t);
 		}
 	}
@@ -808,11 +851,11 @@ public class JDBCConnection implements DBConnection {
 	 * @return	An index between 0 and 4 (included) - 0 meaning the first table to create whereas 4 is the last one.
 	 *          -1 is returned if NULL is given in parameter of if the standard table is not taken into account here.
 	 */
-	protected int getCreationOrder(final STDTable table){
+	protected int getCreationOrder(final STDTable table) {
 		if (table == null)
 			return -1;
 
-		switch(table){
+		switch(table) {
 			case SCHEMAS:
 				return 0;
 			case TABLES:
@@ -850,10 +893,10 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	public void setDBMapping(final Map<String, String> mapping){
+	public void setDBMapping(final Map<String, String> mapping) {
 		if (mapping == null)
 			dbMapping = null;
-		else{
+		else {
 			if (dbMapping == null)
 				dbMapping = new HashMap<String, String>(mapping.size());
 			else
@@ -871,23 +914,23 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected TAPSchema getStdSchema(){
+	protected TAPSchema getStdSchema() {
 		TAPSchema tap_schema = TAPMetadata.getStdSchema(supportsSchema);
 
-		if (dbMapping != null){
+		if (dbMapping != null) {
 			// Update the TAP_SCHEMA DB name, if needed:
 			if (dbMapping.containsKey(tap_schema.getADQLName()))
 				tap_schema.setDBName(dbMapping.get(tap_schema.getADQLName()));
 
 			// For each table...
-			for(TAPTable t : tap_schema){
+			for(TAPTable t : tap_schema) {
 				// ...update the table DB name, if needed:
 				if (dbMapping.containsKey(t.getFullName()))
 					t.setDBName(dbMapping.get(t.getFullName()));
 
 				// For each column...
 				String fullName;
-				for(DBColumn c : t){
+				for(DBColumn c : t) {
 					fullName = t.getFullName() + "." + c.getADQLName();
 					// ...update the column DB name, if needed:
 					if (dbMapping.containsKey(fullName))
@@ -922,7 +965,7 @@ public class JDBCConnection implements DBConnection {
 	 * @see tap.db.DBConnection#getTAPSchema()
 	 */
 	@Override
-	public synchronized TAPMetadata getTAPSchema() throws DBException{
+	public synchronized TAPMetadata getTAPSchema() throws DBException {
 		// Starting of new query execution => disable the cancel flag:
 		resetCancel();
 
@@ -933,7 +976,7 @@ public class JDBCConnection implements DBConnection {
 		TAPSchema tap_schema = getStdSchema();
 
 		// LOAD ALL METADATA FROM THE STANDARD TAP TABLES:
-		try{
+		try {
 			// create a common statement for all loading functions:
 			getStatement();
 
@@ -949,7 +992,7 @@ public class JDBCConnection implements DBConnection {
 
 			// load all coordinate systems from TAP_SCHEMA.coosys: [non standard]
 			Map<String, TAPCoosys> mapCoosys = null;
-			if (isTableExisting(tap_schema.getDBName(), "coosys", stmt.getConnection().getMetaData())){
+			if (isTableExisting(tap_schema.getDBName(), "coosys", stmt.getConnection().getMetaData())) {
 				if (logger != null)
 					logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.coosys.", null);
 				// create the TAP_SCHEMA.coosys table:
@@ -970,11 +1013,11 @@ public class JDBCConnection implements DBConnection {
 				logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.keys and TAP_SCHEMA.key_columns.", null);
 			loadKeys(tap_schema.getTable(STDTable.KEYS.label), tap_schema.getTable(STDTable.KEY_COLUMNS.label), lstTables, stmt);
 
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create a Statement!", se);
 			throw new DBException("Can not create a Statement!", se);
-		}finally{
+		} finally {
 			cancel(stmt, true); // note: this function is called instead of cancel(true) in order to avoid a log message about the cancellation operation result.
 			closeStatement();
 		}
@@ -999,9 +1042,9 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws DBException	If any error occurs while interacting with the database.
 	 */
-	protected void loadSchemas(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
+	protected void loadSchemas(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException {
 		ResultSet rs = null;
-		try{
+		try {
 			// Determine whether the dbName column exists:
 			/* note: if the schema notion is not supported by this DBMS, the column "dbname" is ignored. */
 			boolean hasDBName = supportsSchema && isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), DB_NAME_COLUMN, connection.getMetaData());
@@ -1016,7 +1059,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
 			if (hasSchemaIndex)
 				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("schema_index")));
-			if (hasDBName){
+			if (hasDBName) {
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
@@ -1030,7 +1073,7 @@ public class JDBCConnection implements DBConnection {
 			rs = stmt.executeQuery(sqlBuf.toString());
 
 			// Create all schemas:
-			while(rs.next()){
+			while(rs.next()) {
 				String schemaName = rs.getString(1),
 						description = rs.getString(2), utype = rs.getString(3),
 						dbName = (hasDBName ? (hasSchemaIndex ? rs.getString(5) : rs.getString(4)) : null);
@@ -1049,11 +1092,11 @@ public class JDBCConnection implements DBConnection {
 				// add the new schema inside the given metadata:
 				metadata.addSchema(newSchema);
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load schemas from TAP_SCHEMA.schemas!", se);
 			throw new DBException("Impossible to load schemas from TAP_SCHEMA.schemas!", se);
-		}finally{
+		} finally {
 			close(rs);
 		}
 	}
@@ -1084,9 +1127,9 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws DBException	If a schema can not be found, or if any other error occurs while interacting with the database.
 	 */
-	protected List<TAPTable> loadTables(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
+	protected List<TAPTable> loadTables(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException {
 		ResultSet rs = null;
-		try{
+		try {
 			// Determine whether the dbName column exists:
 			boolean hasDBName = isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), DB_NAME_COLUMN, connection.getMetaData());
 
@@ -1102,7 +1145,7 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("utype")));
 			if (hasTableIndex)
 				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("table_index")));
-			if (hasDBName){
+			if (hasDBName) {
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
@@ -1117,7 +1160,7 @@ public class JDBCConnection implements DBConnection {
 
 			// Create all tables:
 			ArrayList<TAPTable> lstTables = new ArrayList<TAPTable>();
-			while(rs.next()){
+			while(rs.next()) {
 				String schemaName = rs.getString(1),
 						tableName = rs.getString(2), typeStr = rs.getString(3),
 						description = rs.getString(4), utype = rs.getString(5),
@@ -1126,15 +1169,15 @@ public class JDBCConnection implements DBConnection {
 
 				// get the schema:
 				TAPSchema schema = metadata.getSchema(schemaName);
-				if (schema == null){
+				if (schema == null) {
 					if (logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the schema of the table \"" + tableName + "\": \"" + schemaName + "\"!", null);
 					throw new DBException("Impossible to find the schema of the table \"" + tableName + "\": \"" + schemaName + "\"!");
 				}
 
-				// If the table name is qualified, check its prefix (it must match to the schema name):
+				/*// If the table name is qualified, check its prefix (it must match to the schema name):
 				int endPrefix = tableName.indexOf('.');
-				if (endPrefix >= 0){
+				if (endPrefix >= 0) {
 					if (endPrefix == 0)
 						throw new DBException("Incorrect table name syntax: \"" + tableName + "\"! Missing schema name (before '.').");
 					else if (endPrefix == tableName.length() - 1)
@@ -1143,14 +1186,14 @@ public class JDBCConnection implements DBConnection {
 						throw new DBException("Incorrect schema prefix for the table \"" + tableName.substring(endPrefix + 1) + "\": this table is not in a schema, according to the column \"schema_name\" of TAP_SCHEMA.tables!");
 					else if (!tableName.substring(0, endPrefix).trim().equalsIgnoreCase(schemaName))
 						throw new DBException("Incorrect schema prefix for the table \"" + schemaName + "." + tableName.substring(tableName.indexOf('.') + 1) + "\": " + tableName + "! Mismatch between the schema specified in prefix of the column \"table_name\" and in the column \"schema_name\".");
-				}
+				}*/
 
 				// resolve the table type (if any) ; by default, it will be "table":
 				TableType type = TableType.table;
-				if (typeStr != null){
-					try{
+				if (typeStr != null) {
+					try {
 						type = TableType.valueOf(typeStr.toLowerCase());
-					}catch(IllegalArgumentException iae){
+					} catch(IllegalArgumentException iae) {
 					}
 				}
 
@@ -1160,10 +1203,9 @@ public class JDBCConnection implements DBConnection {
 				newTable.setIndex(tableIndex);
 
 				// force the dbName of TAP_SCHEMA table to be the same as the used one:
-				if (STDSchema.TAPSCHEMA.label.equalsIgnoreCase(schemaName)){
-					String simpleTableName = (endPrefix > 0) ? tableName.substring(endPrefix + 1) : tableName;
-					if (tableDef.getSchema() != null && tableDef.getSchema().getTable(simpleTableName) != null)
-						newTable.setDBName(tableDef.getSchema().getTable(simpleTableName).getDBName());
+				if (STDSchema.TAPSCHEMA.label.equalsIgnoreCase(schemaName)) {
+					if (tableDef.getSchema() != null && tableDef.getSchema().getTable(newTable.getADQLName()) != null)
+						newTable.setDBName(tableDef.getSchema().getTable(newTable.getADQLName()).getDBName());
 				}
 
 				// add the new table inside its corresponding schema:
@@ -1172,11 +1214,11 @@ public class JDBCConnection implements DBConnection {
 			}
 
 			return lstTables;
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load tables from TAP_SCHEMA.tables!", se);
 			throw new DBException("Impossible to load tables from TAP_SCHEMA.tables!", se);
-		}finally{
+		} finally {
 			close(rs);
 		}
 	}
@@ -1195,9 +1237,9 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected Map<String, TAPCoosys> loadCoosys(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
+	protected Map<String, TAPCoosys> loadCoosys(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException {
 		ResultSet rs = null;
-		try{
+		try {
 			// Build the SQL query:
 			StringBuffer sqlBuf = new StringBuffer("SELECT ");
 			sqlBuf.append(translator.getColumnName(tableDef.getColumn("id")));
@@ -1212,7 +1254,7 @@ public class JDBCConnection implements DBConnection {
 
 			// Create all coosys:
 			HashMap<String, TAPCoosys> mapCoosys = new HashMap<String, TAPCoosys>();
-			while(rs.next()){
+			while(rs.next()) {
 				String coosysId = rs.getString(1), system = rs.getString(2),
 						equinox = rs.getString(3), epoch = rs.getString(4);
 
@@ -1225,11 +1267,11 @@ public class JDBCConnection implements DBConnection {
 			}
 
 			return mapCoosys;
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load coordinate systems from TAP_SCHEMA.coosys!", se);
 			throw new DBException("Impossible to load coordinate systems from TAP_SCHEMA.coosys!", se);
-		}finally{
+		} finally {
 			close(rs);
 		}
 	}
@@ -1257,7 +1299,7 @@ public class JDBCConnection implements DBConnection {
 	 *            	the list of declared coordinate systems.
 	 */
 	@Deprecated
-	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException{
+	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException {
 		loadColumns(tableDef, lstTables, null, stmt);
 	}
 
@@ -1283,9 +1325,9 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Map<String, TAPCoosys> mapCoosys, final Statement stmt) throws DBException{
+	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Map<String, TAPCoosys> mapCoosys, final Statement stmt) throws DBException {
 		ResultSet rs = null;
-		try{
+		try {
 			// Determine whether the dbName column exists:
 			boolean hasArraysize = isColumnExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), "arraysize", connection.getMetaData());
 
@@ -1316,11 +1358,11 @@ public class JDBCConnection implements DBConnection {
 			sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("std")));
 			if (hasColumnIndex)
 				sqlBuf.append(", ").append(translator.getColumnName(tableDef.getColumn("column_index")));
-			if (hasDBName){
+			if (hasDBName) {
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, DB_NAME_COLUMN, IdentifierField.COLUMN);
 			}
-			if (hasCoosys){
+			if (hasCoosys) {
 				sqlBuf.append(", ");
 				translator.appendIdentifier(sqlBuf, COOSYS_ID_COLUMN, IdentifierField.COLUMN);
 			}
@@ -1334,7 +1376,7 @@ public class JDBCConnection implements DBConnection {
 			rs = stmt.executeQuery(sqlBuf.toString());
 
 			// Create all tables:
-			while(rs.next()){
+			while(rs.next()) {
 				String tableName = rs.getString(1),
 						columnName = rs.getString(2),
 						description = rs.getString(3), unit = rs.getString(4),
@@ -1349,7 +1391,7 @@ public class JDBCConnection implements DBConnection {
 
 				// get the table:
 				TAPTable table = searchTable(tableName, lstTables.iterator());
-				if (table == null){
+				if (table == null) {
 					if (logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the table of the column \"" + columnName + "\": \"" + tableName + "\"!", null);
 					throw new DBException("Impossible to find the table of the column \"" + columnName + "\": \"" + tableName + "\"!");
@@ -1358,10 +1400,10 @@ public class JDBCConnection implements DBConnection {
 				// resolve the column type (if any) ; by default, it will be "VARCHAR" if unknown or missing:
 				DBDatatype tapDatatype = null;
 				// ...try to resolve the datatype in function of all datatypes declared by the TAP standard.
-				if (datatype != null){
-					try{
+				if (datatype != null) {
+					try {
 						tapDatatype = DBDatatype.valueOf(datatype.toUpperCase());
-					}catch(IllegalArgumentException iae){
+					} catch(IllegalArgumentException iae) {
 					}
 				}
 				// ...build the column type:
@@ -1380,14 +1422,14 @@ public class JDBCConnection implements DBConnection {
 				newColumn.setIndex(colIndex);
 
 				// set the coordinate system if any is specified:
-				if (hasCoosys){
+				if (hasCoosys) {
 					int indCoosys = 12;
 					if (hasColumnIndex)
 						indCoosys++;
 					if (hasDBName)
 						indCoosys++;
 					String coosysId = rs.getString(indCoosys);
-					if (coosysId != null){
+					if (coosysId != null) {
 						newColumn.setCoosys(mapCoosys.get(coosysId));
 						if (logger != null && newColumn.getCoosys() == null)
 							logger.logDB(LogLevel.WARNING, this, "LOAD_TAP_SCHEMA", "No coordinate system for the column \"" + columnName + "\"! Cause: unknown coordinate system: \"" + coosysId + "\".", null);
@@ -1401,11 +1443,11 @@ public class JDBCConnection implements DBConnection {
 				// add the new column inside its corresponding table:
 				table.addColumn(newColumn);
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
 			throw new DBException("Impossible to load columns from TAP_SCHEMA.columns!", se);
-		}finally{
+		} finally {
 			close(rs);
 		}
 	}
@@ -1430,10 +1472,10 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws DBException	If a table or a column can not be found, or if any other error occurs while interacting with the database.
 	 */
-	protected void loadKeys(final TAPTable keysDef, final TAPTable keyColumnsDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException{
+	protected void loadKeys(final TAPTable keysDef, final TAPTable keyColumnsDef, final List<TAPTable> lstTables, final Statement stmt) throws DBException {
 		ResultSet rs = null;
 		PreparedStatement keyColumnsStmt = null;
-		try{
+		try {
 			// Prepare the query to get the columns of each key:
 			StringBuffer sqlBuf = new StringBuffer("SELECT ");
 			sqlBuf.append(translator.getColumnName(keyColumnsDef.getColumn("from_column")));
@@ -1457,20 +1499,20 @@ public class JDBCConnection implements DBConnection {
 			rs = stmt.executeQuery(sqlBuf.toString());
 
 			// Create all foreign keys:
-			while(rs.next()){
+			while(rs.next()) {
 				String key_id = rs.getString(1), from_table = rs.getString(2),
 						target_table = rs.getString(3),
 						description = rs.getString(4), utype = rs.getString(5);
 
 				// get the two tables (source and target):
 				TAPTable sourceTable = searchTable(from_table, lstTables.iterator());
-				if (sourceTable == null){
+				if (sourceTable == null) {
 					if (logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the source table of the foreign key \"" + key_id + "\": \"" + from_table + "\"!", null);
 					throw new DBException("Impossible to find the source table of the foreign key \"" + key_id + "\": \"" + from_table + "\"!");
 				}
 				TAPTable targetTable = searchTable(target_table, lstTables.iterator());
-				if (targetTable == null){
+				if (targetTable == null) {
 					if (logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to find the target table of the foreign key \"" + key_id + "\": \"" + target_table + "\"!", null);
 					throw new DBException("Impossible to find the target table of the foreign key \"" + key_id + "\": \"" + target_table + "\"!");
@@ -1479,33 +1521,33 @@ public class JDBCConnection implements DBConnection {
 				// get the list of columns joining the two tables of the foreign key:
 				HashMap<String, String> columns = new HashMap<String, String>();
 				ResultSet rsKeyCols = null;
-				try{
+				try {
 					keyColumnsStmt.setString(1, key_id);
 					rsKeyCols = keyColumnsStmt.executeQuery();
 					while(rsKeyCols.next())
 						columns.put(rsKeyCols.getString(1), rsKeyCols.getString(2));
-				}catch(SQLException se){
+				} catch(SQLException se) {
 					if (!isCancelled() && logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load key columns from TAP_SCHEMA.key_columns for the foreign key: \"" + key_id + "\"!", se);
 					throw new DBException("Impossible to load key columns from TAP_SCHEMA.key_columns for the foreign key: \"" + key_id + "\"!", se);
-				}finally{
+				} finally {
 					close(rsKeyCols);
 				}
 
 				// create and add the new foreign key inside the source table:
-				try{
+				try {
 					sourceTable.addForeignKey(key_id, targetTable, columns, nullifyIfNeeded(description), nullifyIfNeeded(utype));
-				}catch(Exception ex){
+				} catch(Exception ex) {
 					if ((ex instanceof SQLException && !isCancelled()) && logger != null)
 						logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to create the foreign key \"" + key_id + "\" because: " + ex.getMessage(), ex);
 					throw new DBException("Impossible to create the foreign key \"" + key_id + "\" because: " + ex.getMessage(), ex);
 				}
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "LOAD_TAP_SCHEMA", "Impossible to load columns from TAP_SCHEMA.columns!", se);
 			throw new DBException("Impossible to load columns from TAP_SCHEMA.columns!", se);
-		}finally{
+		} finally {
 			close(rs);
 			close(keyColumnsStmt);
 		}
@@ -1536,11 +1578,11 @@ public class JDBCConnection implements DBConnection {
 	 * @see tap.db.DBConnection#setTAPSchema(tap.metadata.TAPMetadata)
 	 */
 	@Override
-	public synchronized void setTAPSchema(final TAPMetadata metadata) throws DBCancelledException, DBException{
+	public synchronized void setTAPSchema(final TAPMetadata metadata) throws DBCancelledException, DBException {
 		// Starting of new query execution => disable the cancel flag:
 		resetCancel();
 
-		try{
+		try {
 			// A. GET THE DEFINITION OF ALL STANDARD TAP TABLES:
 			TAPTable[] stdTables = mergeTAPSchemaDefs(metadata);
 
@@ -1561,7 +1603,7 @@ public class JDBCConnection implements DBConnection {
 			// 2. Create all standard TAP tables:
 			if (logger != null)
 				logger.logDB(LogLevel.INFO, this, "CREATE_TAP_SCHEMA", "Creating TAP_SCHEMA tables.", null);
-			for(TAPTable table : stdTables){
+			for(TAPTable table : stdTables) {
 				createTAPSchemaTable(table, stmt);
 				if (isCancelled())
 					throw new DBCancelledException();
@@ -1579,10 +1621,10 @@ public class JDBCConnection implements DBConnection {
 				createTAPTableIndexes(table, stmt);
 
 			commit();
-		}catch(DBCancelledException dce){
+		} catch(DBCancelledException dce) {
 			rollback();
 			throw dce;
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "CREATE_TAP_SCHEMA", "Impossible to SET TAP_SCHEMA in DB!", se);
 			rollback();
@@ -1590,7 +1632,7 @@ public class JDBCConnection implements DBConnection {
 				throw new DBCancelledException();
 			else
 				throw new DBException("Impossible to SET TAP_SCHEMA in DB!", se);
-		}finally{
+		} finally {
 			closeStatement();
 			endTransaction();
 		}
@@ -1629,11 +1671,11 @@ public class JDBCConnection implements DBConnection {
 	 * @see TAPMetadata#getStdSchema(boolean)
 	 * @see TAPMetadata#getStdTable(STDTable)
 	 */
-	protected TAPTable[] mergeTAPSchemaDefs(final TAPMetadata metadata){
+	protected TAPTable[] mergeTAPSchemaDefs(final TAPMetadata metadata) {
 		// 1. Get the TAP_SCHEMA schema from the given metadata:
 		TAPSchema tapSchema = null;
 		Iterator<TAPSchema> itSchema = metadata.iterator();
-		while(tapSchema == null && itSchema.hasNext()){
+		while(tapSchema == null && itSchema.hasNext()) {
 			TAPSchema schema = itSchema.next();
 			if (schema.getADQLName().equalsIgnoreCase(STDSchema.TAPSCHEMA.label))
 				tapSchema = schema;
@@ -1641,7 +1683,7 @@ public class JDBCConnection implements DBConnection {
 
 		// 2. Get the provided definition of the standard TAP tables:
 		TAPTable[] customStdTables = new TAPTable[5];
-		if (tapSchema != null){
+		if (tapSchema != null) {
 
 			/* if the schemas are not supported with this DBMS,
 			 * remove its DB name: */
@@ -1650,7 +1692,7 @@ public class JDBCConnection implements DBConnection {
 
 			// retrieve only the standard TAP tables:
 			Iterator<TAPTable> itTable = tapSchema.iterator();
-			while(itTable.hasNext()){
+			while(itTable.hasNext()) {
 				TAPTable table = itTable.next();
 				int indStdTable = getCreationOrder(TAPMetadata.resolveStdTable(table.getADQLName()));
 				if (indStdTable > -1)
@@ -1659,7 +1701,7 @@ public class JDBCConnection implements DBConnection {
 		}
 
 		// 3. Build a common TAPSchema, if needed:
-		if (tapSchema == null){
+		if (tapSchema == null) {
 
 			// build a new TAP_SCHEMA definition based on the standard definition:
 			tapSchema = TAPMetadata.getStdSchema(supportsSchema);
@@ -1670,10 +1712,10 @@ public class JDBCConnection implements DBConnection {
 
 		// 4. Finally, build the join between the standard tables and the custom ones:
 		TAPTable[] stdTables = new TAPTable[]{ TAPMetadata.getStdTable(STDTable.SCHEMAS), TAPMetadata.getStdTable(STDTable.TABLES), TAPMetadata.getStdTable(STDTable.COLUMNS), TAPMetadata.getStdTable(STDTable.KEYS), TAPMetadata.getStdTable(STDTable.KEY_COLUMNS) };
-		for(int i = 0; i < stdTables.length; i++){
+		for(int i = 0; i < stdTables.length; i++) {
 
 			// CASE: no custom definition:
-			if (customStdTables[i] == null){
+			if (customStdTables[i] == null) {
 				// add the table to the fetched or built-in schema:
 				tapSchema.addTable(stdTables[i]);
 			}
@@ -1699,7 +1741,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws SQLException	If any error occurs while querying or updating the database.
 	 */
-	protected void resetTAPSchema(final Statement stmt, final TAPTable[] stdTables) throws SQLException{
+	protected void resetTAPSchema(final Statement stmt, final TAPTable[] stdTables) throws SQLException {
 		DatabaseMetaData dbMeta = connection.getMetaData();
 
 		// 1. Get the qualified DB schema name:
@@ -1707,7 +1749,7 @@ public class JDBCConnection implements DBConnection {
 
 		/* 2. Test whether the schema TAP_SCHEMA exists
 		 *    and if it does not, create it: */
-		if (dbSchemaName != null){
+		if (dbSchemaName != null) {
 			// test whether the schema TAP_SCHEMA exists:
 			boolean hasTAPSchema = isSchemaExisting(dbSchemaName, dbMeta);
 
@@ -1737,11 +1779,11 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @see JDBCTranslator#isCaseSensitive(IdentifierField)
 	 */
-	private void dropTAPSchemaTables(final TAPTable[] stdTables, final Statement stmt, final DatabaseMetaData dbMeta) throws SQLException{
+	private void dropTAPSchemaTables(final TAPTable[] stdTables, final Statement stmt, final DatabaseMetaData dbMeta) throws SQLException {
 		String[] stdTablesToDrop = new String[]{ null, null, null, null, null };
 
 		ResultSet rs = null;
-		try{
+		try {
 			// Retrieve only the schema name and determine whether the search should be case sensitive:
 			String tapSchemaName = stdTables[0].getDBSchemaName();
 			boolean schemaCaseSensitive = translator.isCaseSensitive(IdentifierField.SCHEMA);
@@ -1749,23 +1791,23 @@ public class JDBCConnection implements DBConnection {
 
 			// Identify which standard TAP tables must be dropped:
 			rs = dbMeta.getTables(null, null, null, null);
-			while(rs.next()){
+			while(rs.next()) {
 				String rsSchema = nullifyIfNeeded(rs.getString(2)),
 						rsTable = rs.getString(3);
-				if (!supportsSchema || (tapSchemaName == null && rsSchema == null) || equals(rsSchema, tapSchemaName, schemaCaseSensitive)){
+				if (!supportsSchema || (tapSchemaName == null && rsSchema == null) || equals(rsSchema, tapSchemaName, schemaCaseSensitive)) {
 					int indStdTable;
 					indStdTable = getCreationOrder(isStdTable(rsTable, stdTables, tableCaseSensitive));
-					if (indStdTable > -1){
+					if (indStdTable > -1) {
 						stdTablesToDrop[indStdTable] = (rsSchema != null ? "\"" + rsSchema + "\"." : "") + "\"" + rsTable + "\"";
 					}
 				}
 			}
-		}finally{
+		} finally {
 			close(rs);
 		}
 
 		// Drop the existing tables (in the reverse order of creation):
-		for(int i = stdTablesToDrop.length - 1; i >= 0; i--){
+		for(int i = stdTablesToDrop.length - 1; i >= 0; i--) {
 			if (stdTablesToDrop[i] != null)
 				stmt.executeUpdate("DROP TABLE " + stdTablesToDrop[i]);
 		}
@@ -1792,7 +1834,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException	If the given table is not a standard TAP_SCHEMA table.
 	 * @throws SQLException	If any error occurs while querying or updating the database.
 	 */
-	protected void createTAPSchemaTable(final TAPTable table, final Statement stmt) throws DBException, SQLException{
+	protected void createTAPSchemaTable(final TAPTable table, final Statement stmt) throws DBException, SQLException {
 		// 1. ENSURE THE GIVEN TABLE IS REALLY A TAP_SCHEMA TABLE (according to the ADQL names):
 		if (!table.getADQLSchemaName().equalsIgnoreCase(STDSchema.TAPSCHEMA.label) || TAPMetadata.resolveStdTable(table.getADQLName()) == null)
 			throw new DBException("Forbidden table creation: " + table + " is not a standard table of TAP_SCHEMA!");
@@ -1806,7 +1848,7 @@ public class JDBCConnection implements DBConnection {
 		// b. List all the columns:
 		sql.append('(');
 		Iterator<TAPColumn> it = table.getColumns();
-		while(it.hasNext()){
+		while(it.hasNext()) {
 			TAPColumn col = it.next();
 
 			// column name:
@@ -1846,13 +1888,13 @@ public class JDBCConnection implements DBConnection {
 	 * @return	The primary key definition (prefixed by a space) corresponding to the specified table (ex: " PRIMARY KEY(schema_name)"),
 	 *          or NULL if the specified table is not a standard TAP_SCHEMA table.
 	 */
-	private String getPrimaryKeyDef(final String tableName){
+	private String getPrimaryKeyDef(final String tableName) {
 		STDTable stdTable = TAPMetadata.resolveStdTable(tableName);
 		if (stdTable == null)
 			return null;
 
 		boolean caseSensitive = translator.isCaseSensitive(IdentifierField.COLUMN);
-		switch(stdTable){
+		switch(stdTable) {
 			case SCHEMAS:
 				return " PRIMARY KEY(" + (caseSensitive ? "\"schema_name\"" : "schema_name") + ")";
 			case TABLES:
@@ -1884,7 +1926,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException			If the given table is not a standard TAP_SCHEMA table.
 	 * @throws SQLException			If any error occurs while querying or updating the database.
 	 */
-	protected void createTAPTableIndexes(final TAPTable table, final Statement stmt) throws DBCancelledException, DBException, SQLException{
+	protected void createTAPTableIndexes(final TAPTable table, final Statement stmt) throws DBCancelledException, DBException, SQLException {
 		// 1. Ensure the given table is really a TAP_SCHEMA table (according to the ADQL names):
 		if (!table.getADQLSchemaName().equalsIgnoreCase(STDSchema.TAPSCHEMA.label) || TAPMetadata.resolveStdTable(table.getADQLName()) == null)
 			throw new DBException("Forbidden index creation: " + table + " is not a standard table of TAP_SCHEMA!");
@@ -1896,7 +1938,7 @@ public class JDBCConnection implements DBConnection {
 		final String indexNamePrefix = "INDEX_" + ((table.getADQLSchemaName() != null) ? (table.getADQLSchemaName() + "_") : "") + table.getADQLName() + "_";
 
 		Iterator<TAPColumn> it = table.getColumns();
-		while(it.hasNext()){
+		while(it.hasNext()) {
 			TAPColumn col = it.next();
 			// Create an index only for columns that have the 'indexed' flag:
 			if (col.isIndexed() && !isPartOfPrimaryKey(col.getADQLName()))
@@ -1915,7 +1957,7 @@ public class JDBCConnection implements DBConnection {
 	 * @return	<i>true</i> if the specified column is part of the primary key,
 	 *          <i>false</i> otherwise.
 	 */
-	private boolean isPartOfPrimaryKey(final String adqlName){
+	private boolean isPartOfPrimaryKey(final String adqlName) {
 		if (adqlName == null)
 			return false;
 		else
@@ -1939,7 +1981,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	protected void fillTAPSchema(final TAPMetadata meta) throws SQLException, DBCancelledException, DBException{
+	protected void fillTAPSchema(final TAPMetadata meta) throws SQLException, DBCancelledException, DBException {
 		TAPTable metaTable;
 
 		// 1. Fill SCHEMAS:
@@ -1979,7 +2021,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException	If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException	If any other SQL exception occurs.
 	 */
-	private Iterator<TAPTable> fillSchemas(final TAPTable metaTable, final Iterator<TAPSchema> itSchemas) throws SQLException, DBCancelledException, DBException{
+	private Iterator<TAPTable> fillSchemas(final TAPTable metaTable, final Iterator<TAPSchema> itSchemas) throws SQLException, DBCancelledException, DBException {
 		List<TAPTable> allTables = new ArrayList<TAPTable>();
 
 		// Build the SQL update query:
@@ -1988,20 +2030,20 @@ public class JDBCConnection implements DBConnection {
 		sql.append(translator.getColumnName(metaTable.getColumn("schema_name")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("description")));
 		sql.append(", ").append(translator.getColumnName(metaTable.getColumn("utype")));
-		if (supportsSchema){
+		if (supportsSchema) {
 			sql.append(", ").append(DB_NAME_COLUMN);
 			sql.append(") VALUES (?, ?, ?, ?)");
-		}else
+		} else
 			sql.append(") VALUES (?, ?, ?)");
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
-		try{
+		try {
 			stmt = connection.prepareStatement(sql.toString());
 
 			// Execute the query for each schema:
 			int nbRows = 0;
-			while(itSchemas.hasNext()){
+			while(itSchemas.hasNext()) {
 				TAPSchema schema = itSchemas.next();
 				nbRows++;
 
@@ -2026,7 +2068,7 @@ public class JDBCConnection implements DBConnection {
 				throw new DBCancelledException();
 			else
 				executeBatchUpdates(stmt, nbRows);
-		}finally{
+		} finally {
 			close(stmt);
 		}
 
@@ -2050,7 +2092,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	private Iterator<TAPColumn> fillTables(final TAPTable metaTable, final Iterator<TAPTable> itTables) throws SQLException, DBCancelledException, DBException{
+	private Iterator<TAPColumn> fillTables(final TAPTable metaTable, final Iterator<TAPTable> itTables) throws SQLException, DBCancelledException, DBException {
 		List<TAPColumn> allColumns = new ArrayList<TAPColumn>();
 
 		// Build the SQL update query:
@@ -2067,12 +2109,12 @@ public class JDBCConnection implements DBConnection {
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
-		try{
+		try {
 			stmt = connection.prepareStatement(sql.toString());
 
 			// Execute the query for each table:
 			int nbRows = 0;
-			while(itTables.hasNext()){
+			while(itTables.hasNext()) {
 				TAPTable table = itTables.next();
 				nbRows++;
 
@@ -2102,7 +2144,7 @@ public class JDBCConnection implements DBConnection {
 				throw new DBCancelledException();
 			else
 				executeBatchUpdates(stmt, nbRows);
-		}finally{
+		} finally {
 			close(stmt);
 		}
 
@@ -2126,7 +2168,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	private Iterator<TAPForeignKey> fillColumns(final TAPTable metaTable, final Iterator<TAPColumn> itColumns) throws SQLException, DBCancelledException, DBException{
+	private Iterator<TAPForeignKey> fillColumns(final TAPTable metaTable, final Iterator<TAPColumn> itColumns) throws SQLException, DBCancelledException, DBException {
 		List<TAPForeignKey> allKeys = new ArrayList<TAPForeignKey>();
 
 		// Build the SQL update query:
@@ -2150,12 +2192,12 @@ public class JDBCConnection implements DBConnection {
 
 		// Prepare the statement:
 		PreparedStatement stmt = null;
-		try{
+		try {
 			stmt = connection.prepareStatement(sql.toString());
 
 			// Execute the query for each column:
 			int nbRows = 0;
-			while(itColumns.hasNext()){
+			while(itColumns.hasNext()) {
 				TAPColumn col = itColumns.next();
 				nbRows++;
 
@@ -2192,7 +2234,7 @@ public class JDBCConnection implements DBConnection {
 				throw new DBCancelledException();
 			else
 				executeBatchUpdates(stmt, nbRows);
-		}finally{
+		} finally {
 			close(stmt);
 		}
 
@@ -2215,7 +2257,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException			If rows can not be inserted because the SQL update query has failed.
 	 * @throws SQLException			If any other SQL exception occurs.
 	 */
-	private void fillKeys(final TAPTable metaKeys, final TAPTable metaKeyColumns, final Iterator<TAPForeignKey> itKeys) throws SQLException, DBCancelledException, DBException{
+	private void fillKeys(final TAPTable metaKeys, final TAPTable metaKeyColumns, final Iterator<TAPForeignKey> itKeys) throws SQLException, DBCancelledException, DBException {
 		// Build the SQL update query for KEYS:
 		StringBuffer sqlKeys = new StringBuffer("INSERT INTO ");
 		sqlKeys.append(translator.getTableName(metaKeys, supportsSchema)).append(" (");
@@ -2227,7 +2269,7 @@ public class JDBCConnection implements DBConnection {
 		sqlKeys.append(") VALUES (?, ?, ?, ?, ?)");
 
 		PreparedStatement stmtKeys = null, stmtKeyCols = null;
-		try{
+		try {
 			// Prepare the statement for KEYS:
 			stmtKeys = connection.prepareStatement(sqlKeys.toString());
 
@@ -2244,7 +2286,7 @@ public class JDBCConnection implements DBConnection {
 
 			// Execute the query for each column:
 			int nbKeys = 0, nbKeyColumns = 0;
-			while(itKeys.hasNext()){
+			while(itKeys.hasNext()) {
 				TAPForeignKey key = itKeys.next();
 				nbKeys++;
 
@@ -2269,7 +2311,7 @@ public class JDBCConnection implements DBConnection {
 
 				// add the key columns into KEY_COLUMNS:
 				Iterator<Map.Entry<String, String>> itAssoc = key.iterator();
-				while(itAssoc.hasNext()){
+				while(itAssoc.hasNext()) {
 					nbKeyColumns++;
 					Map.Entry<String, String> assoc = itAssoc.next();
 					stmtKeyCols.setString(1, key.getKeyId());
@@ -2287,11 +2329,11 @@ public class JDBCConnection implements DBConnection {
 			// If the query has been aborted, return immediately:
 			if (isCancelled())
 				throw new DBCancelledException();
-			else{
+			else {
 				executeBatchUpdates(stmtKeys, nbKeys);
 				executeBatchUpdates(stmtKeyCols, nbKeyColumns);
 			}
-		}finally{
+		} finally {
 			close(stmtKeys);
 			close(stmtKeyCols);
 		}
@@ -2321,7 +2363,7 @@ public class JDBCConnection implements DBConnection {
 	 * @see #checkUploadedTableDef(TAPTable)
 	 */
 	@Override
-	public synchronized boolean addUploadedTable(TAPTable tableDef, TableIterator data) throws DBException, DataReadException{
+	public synchronized boolean addUploadedTable(TAPTable tableDef, TableIterator data) throws DBException, DataReadException {
 		// If no table to upload, consider it has been dropped and return TRUE:
 		if (tableDef == null)
 			return true;
@@ -2332,7 +2374,7 @@ public class JDBCConnection implements DBConnection {
 		// Check the table is well defined (and particularly the schema is well set with an ADQL name = TAP_UPLOAD):
 		checkUploadedTableDef(tableDef);
 
-		try{
+		try {
 
 			// Start a transaction:
 			startTransaction();
@@ -2342,13 +2384,13 @@ public class JDBCConnection implements DBConnection {
 			DatabaseMetaData dbMeta = connection.getMetaData();
 
 			// 1. Create the upload schema, if it does not already exist:
-			if (!isSchemaExisting(tableDef.getDBSchemaName(), dbMeta)){
+			if (!isSchemaExisting(tableDef.getDBSchemaName(), dbMeta)) {
 				stmt.executeUpdate("CREATE SCHEMA " + translator.getQualifiedSchemaName(tableDef));
 				if (logger != null)
 					logger.logDB(LogLevel.INFO, this, "SCHEMA_CREATED", "Schema \"" + tableDef.getADQLSchemaName() + "\" (in DB: " + translator.getQualifiedSchemaName(tableDef) + ") created.", null);
 			}
 			// 1bis. Ensure the table does not already exist and if it is the case, throw an understandable exception:
-			else if (isTableExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), dbMeta)){
+			else if (isTableExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), dbMeta)) {
 				DBException de = new DBException("Impossible to create the user uploaded table in the database: " + translator.getTableName(tableDef, supportsSchema) + "! This table already exists.");
 				if (logger != null)
 					logger.logDB(LogLevel.ERROR, this, "ADD_UPLOAD_TABLE", de.getMessage(), de);
@@ -2364,7 +2406,7 @@ public class JDBCConnection implements DBConnection {
 			StringBuffer sqlBuf = new StringBuffer("CREATE TABLE ");
 			sqlBuf.append(translator.getTableName(tableDef, supportsSchema)).append(" (");
 			Iterator<TAPColumn> it = tableDef.getColumns();
-			while(it.hasNext()){
+			while(it.hasNext()) {
 				TAPColumn col = it.next();
 				// column name:
 				sqlBuf.append(translator.getColumnName(col));
@@ -2397,20 +2439,20 @@ public class JDBCConnection implements DBConnection {
 
 			return true;
 
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			rollback();
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.WARNING, this, "ADD_UPLOAD_TABLE", "Impossible to create the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 			throw new DBException("Impossible to create the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
-		}catch(DBException de){
+		} catch(DBException de) {
 			rollback();
 			if (logger != null && (de instanceof DBCancelledException || isCancelled()))
 				logger.logDB(LogLevel.INFO, this, "ADD_UPLOAD_TABLE", "Upload of the table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") canceled!", null);
 			throw de;
-		}catch(DataReadException dre){
+		} catch(DataReadException dre) {
 			rollback();
 			throw dre;
-		}finally{
+		} finally {
 			closeStatement();
 			endTransaction();
 		}
@@ -2438,7 +2480,7 @@ public class JDBCConnection implements DBConnection {
 	 * @throws SQLException			If any other SQL exception occurs.
 	 * @throws DataReadException	If there is any error while reading the data from the given {@link TableIterator} (and particularly if a limit - in byte or row - has been reached).
 	 */
-	protected int fillUploadedTable(final TAPTable metaTable, final TableIterator data) throws SQLException, DBCancelledException, DBException, DataReadException{
+	protected int fillUploadedTable(final TAPTable metaTable, final TableIterator data) throws SQLException, DBCancelledException, DBException, DataReadException {
 		// 1. Build the SQL update query:
 		StringBuffer sql = new StringBuffer("INSERT INTO ");
 		StringBuffer varParam = new StringBuffer();
@@ -2446,8 +2488,8 @@ public class JDBCConnection implements DBConnection {
 		sql.append(translator.getTableName(metaTable, supportsSchema)).append(" (");
 		// ...list of columns:
 		TAPColumn[] cols = data.getMetadata();
-		for(int c = 0; c < cols.length; c++){
-			if (c > 0){
+		for(int c = 0; c < cols.length; c++) {
+			if (c > 0) {
 				sql.append(", ");
 				varParam.append(", ");
 			}
@@ -2460,41 +2502,41 @@ public class JDBCConnection implements DBConnection {
 		// 2. Prepare the statement:
 		PreparedStatement stmt = null;
 		int nbRows = 0;
-		try{
+		try {
 			stmt = connection.prepareStatement(sql.toString());
 
 			// 3. Execute the query for each given row:
-			while(data.nextRow()){
+			while(data.nextRow()) {
 				nbRows++;
 				int c = 1;
-				while(data.hasNextCol()){
+				while(data.hasNextCol()) {
 					Object val = data.nextCol();
-					if (val != null && cols[c - 1] != null){
+					if (val != null && cols[c - 1] != null) {
 						/* TIMESTAMP FORMATTING */
-						if (cols[c - 1].getDatatype().type == DBDatatype.TIMESTAMP){
-							try{
+						if (cols[c - 1].getDatatype().type == DBDatatype.TIMESTAMP) {
+							try {
 								val = new Timestamp(ISO8601Format.parse(val.toString()));
-							}catch(ParseException pe){
+							} catch(ParseException pe) {
 								if (logger != null)
 									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Unexpected date format for the value: \"" + val + "\"! A date formatted in ISO8601 was expected.", pe);
 								throw new DBException("[l. " + nbRows + ", c. " + c + "] Unexpected date format for the value: \"" + val + "\"! A date formatted in ISO8601 was expected.", pe);
 							}
 						}
 						/* GEOMETRY FORMATTING */
-						else if (cols[c - 1].getDatatype().type == DBDatatype.POINT || cols[c - 1].getDatatype().type == DBDatatype.REGION){
+						else if (cols[c - 1].getDatatype().type == DBDatatype.POINT || cols[c - 1].getDatatype().type == DBDatatype.REGION) {
 							Region region;
 							// parse the region as an STC-S expression:
-							try{
+							try {
 								region = STCS.parseRegion(val.toString());
-							}catch(adql.parser.grammar.ParseException e){
+							} catch(adql.parser.grammar.ParseException e) {
 								if (logger != null)
 									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Incorrect STC-S syntax for the geometrical value \"" + val + "\"! " + e.getMessage(), e);
 								throw new DataReadException("[l. " + nbRows + ", c. " + c + "] Incorrect STC-S syntax for the geometrical value \"" + val + "\"! " + e.getMessage(), e);
 							}
 							// translate this STC region into the corresponding column value:
-							try{
+							try {
 								val = translator.translateGeometryToDB(region);
-							}catch(adql.parser.grammar.ParseException e){
+							} catch(adql.parser.grammar.ParseException e) {
 								if (logger != null)
 									logger.logDB(LogLevel.ERROR, this, "UPLOAD", "[l. " + nbRows + ", c. " + c + "] Impossible to import the ADQL geometry \"" + val + "\" into the database! " + e.getMessage(), e);
 								throw new DataReadException("[l. " + nbRows + ", c. " + c + "] Impossible to import the ADQL geometry \"" + val + "\" into the database! " + e.getMessage(), e);
@@ -2530,7 +2572,7 @@ public class JDBCConnection implements DBConnection {
 
 			return nbRows;
 
-		}finally{
+		} finally {
 			close(stmt);
 		}
 	}
@@ -2556,7 +2598,7 @@ public class JDBCConnection implements DBConnection {
 	 * @see #checkUploadedTableDef(TAPTable)
 	 */
 	@Override
-	public synchronized boolean dropUploadedTable(final TAPTable tableDef) throws DBException{
+	public synchronized boolean dropUploadedTable(final TAPTable tableDef) throws DBException {
 		// If no table to upload, consider it has been dropped and return TRUE:
 		if (tableDef == null)
 			return true;
@@ -2567,7 +2609,7 @@ public class JDBCConnection implements DBConnection {
 		// Check the table is well defined (and particularly the schema is well set with an ADQL name = TAP_UPLOAD):
 		checkUploadedTableDef(tableDef);
 
-		try{
+		try {
 
 			// Check the existence of the table to drop:
 			if (!isTableExisting(tableDef.getDBSchemaName(), tableDef.getDBName(), connection.getMetaData()))
@@ -2577,7 +2619,7 @@ public class JDBCConnection implements DBConnection {
 			int cnt = getStatement().executeUpdate("DROP TABLE " + translator.getTableName(tableDef, supportsSchema));
 
 			// Log the end:
-			if (logger != null){
+			if (logger != null) {
 				if (cnt >= 0)
 					logger.logDB(LogLevel.INFO, this, "TABLE_DROPPED", "Table \"" + tableDef.getADQLName() + "\" (in DB: " + translator.getTableName(tableDef, supportsSchema) + ") dropped.", null);
 				else
@@ -2587,11 +2629,11 @@ public class JDBCConnection implements DBConnection {
 			// Ensure the update is successful:
 			return (cnt >= 0);
 
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (!isCancelled() && logger != null)
 				logger.logDB(LogLevel.WARNING, this, "DROP_UPLOAD_TABLE", "Impossible to drop the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
 			throw new DBException("Impossible to drop the uploaded table: " + translator.getTableName(tableDef, supportsSchema) + "!", se);
-		}finally{
+		} finally {
 			cancel(true);
 			closeStatement();
 		}
@@ -2617,12 +2659,12 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException	If the given table is not in a schema
 	 *                    	or if the ADQL name of this schema is not {@link STDSchema#UPLOADSCHEMA} ("TAP_UPLOAD").
 	 */
-	protected void checkUploadedTableDef(final TAPTable tableDef) throws DBException{
+	protected void checkUploadedTableDef(final TAPTable tableDef) throws DBException {
 		// If the table has no defined schema or if the ADQL name of the schema is not TAP_UPLOAD, throw an exception:
 		if (tableDef.getSchema() == null || !tableDef.getSchema().getADQLName().equals(STDSchema.UPLOADSCHEMA.label))
 			throw new DBException("Missing upload schema! An uploaded table must be inside a schema whose the ADQL name is strictly equals to \"" + STDSchema.UPLOADSCHEMA.label + "\" (but the DB name may be different).");
 
-		if (!supportsSchema){
+		if (!supportsSchema) {
 			if (tableDef.getADQLSchemaName() != null && tableDef.getADQLSchemaName().trim().length() > 0 && !tableDef.getDBName().startsWith(tableDef.getADQLSchemaName() + "_"))
 				tableDef.setDBName(tableDef.getADQLSchemaName() + "_" + tableDef.getDBName());
 			if (tableDef.getSchema() != null)
@@ -2650,7 +2692,7 @@ public class JDBCConnection implements DBConnection {
 	 * @see JDBCTranslator#convertTypeToDB(DBType)
 	 * @see #defaultTypeConversion(DBType)
 	 */
-	protected String convertTypeToDB(final DBType type){
+	protected String convertTypeToDB(final DBType type) {
 		String dbmsType = translator.convertTypeToDB(type);
 		return (dbmsType == null) ? defaultTypeConversion(type) : dbmsType;
 	}
@@ -2677,11 +2719,11 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @return	The corresponding DB type, or VARCHAR if the given type is not managed or is NULL.
 	 */
-	protected String defaultTypeConversion(DBType datatype){
+	protected String defaultTypeConversion(DBType datatype) {
 		if (datatype == null)
 			datatype = new DBType(DBDatatype.VARCHAR);
 
-		switch(datatype.type){
+		switch(datatype.type) {
 
 			case SMALLINT:
 				return dbms.equals("sqlite") ? "INTEGER" : "SMALLINT";
@@ -2783,14 +2825,14 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException	If it is impossible to start a transaction though transactions are supported by this connection.
 	 *                    	If these are not supported, this error can never be thrown.
 	 */
-	protected void startTransaction() throws DBException{
-		try{
-			if (supportsTransaction){
+	protected void startTransaction() throws DBException {
+		try {
+			if (supportsTransaction) {
 				connection.setAutoCommit(false);
 				if (logger != null)
 					logger.logDB(LogLevel.INFO, this, "START_TRANSACTION", "Transaction STARTED.", null);
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			supportsTransaction = false;
 			if (logger != null)
 				logger.logDB(LogLevel.ERROR, this, "START_TRANSACTION", "Transaction STARTing impossible!", se);
@@ -2816,14 +2858,14 @@ public class JDBCConnection implements DBConnection {
 	 * @throws DBException	If it is impossible to commit a transaction though transactions are supported by this connection..
 	 *                    	If these are not supported, this error can never be thrown.
 	 */
-	protected void commit() throws DBException{
-		try{
-			if (supportsTransaction){
+	protected void commit() throws DBException {
+		try {
+			if (supportsTransaction) {
 				connection.commit();
 				if (logger != null)
 					logger.logDB(LogLevel.INFO, this, "COMMIT", "Transaction COMMITED.", null);
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			supportsTransaction = false;
 			if (logger != null)
 				logger.logDB(LogLevel.ERROR, this, "COMMIT", "Transaction COMMIT impossible!", se);
@@ -2852,7 +2894,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @see #rollback(boolean)
 	 */
-	protected final void rollback(){
+	protected final void rollback() {
 		rollback(true);
 	}
 
@@ -2879,14 +2921,14 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected void rollback(final boolean log){
-		try{
-			if (supportsTransaction && !connection.getAutoCommit()){
+	protected void rollback(final boolean log) {
+		try {
+			if (supportsTransaction && !connection.getAutoCommit()) {
 				connection.rollback();
 				if (log && logger != null)
 					logger.logDB(LogLevel.INFO, this, "ROLLBACK", "Transaction ROLLBACKED.", null);
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			supportsTransaction = false;
 			if (log && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "ROLLBACK", "Transaction ROLLBACK impossible!", se);
@@ -2913,7 +2955,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @see #endTransaction(boolean)
 	 */
-	protected final void endTransaction(){
+	protected final void endTransaction() {
 		endTransaction(true);
 	}
 
@@ -2939,14 +2981,14 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected void endTransaction(final boolean log){
-		try{
-			if (supportsTransaction){
+	protected void endTransaction(final boolean log) {
+		try {
+			if (supportsTransaction) {
 				connection.setAutoCommit(true);
 				if (log && logger != null)
 					logger.logDB(LogLevel.INFO, this, "END_TRANSACTION", "Transaction ENDED.", null);
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			supportsTransaction = false;
 			if (log && logger != null)
 				logger.logDB(LogLevel.ERROR, this, "END_TRANSACTION", "Transaction ENDing impossible!", se);
@@ -2966,11 +3008,11 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @param rs	{@link ResultSet} to close.
 	 */
-	protected final void close(final ResultSet rs){
-		try{
+	protected final void close(final ResultSet rs) {
+		try {
 			if (rs != null)
 				rs.close();
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (logger != null)
 				logger.logDB(LogLevel.WARNING, this, "CLOSE", "Can not close a ResultSet!", null);
 		}
@@ -3002,13 +3044,13 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @see #cancel(Statement, boolean)
 	 */
-	protected final void close(final Statement stmt){
-		try{
-			if (stmt != null){
+	protected final void close(final Statement stmt) {
+		try {
+			if (stmt != null) {
 				cancel(stmt, false);
 				stmt.close();
 			}
-		}catch(SQLException se){
+		} catch(SQLException se) {
 			if (logger != null)
 				logger.logDB(LogLevel.WARNING, this, "CLOSE", "Can not close a Statement!", null);
 		}
@@ -3033,7 +3075,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @return	Its corresponding boolean value.
 	 */
-	protected final boolean toBoolean(final Object colValue){
+	protected final boolean toBoolean(final Object colValue) {
 		// NULL => false:
 		if (colValue == null)
 			return false;
@@ -3043,19 +3085,19 @@ public class JDBCConnection implements DBConnection {
 			return ((Boolean)colValue).booleanValue();
 
 		// Integer value => cast in integer and return true only if the value is positive and not null:
-		else if (colValue instanceof Integer){
+		else if (colValue instanceof Integer) {
 			int intFlag = ((Integer)colValue).intValue();
 			return (intFlag > 0);
 		}
 		// Otherwise => get the string representation and:
 		//     1/ try to cast it into an integer and apply the same test as before
 		//     2/ if the cast fails, return true only if the value is "t" or "true" (case insensitively):
-		else{
+		else {
 			String strFlag = colValue.toString().trim();
-			try{
+			try {
 				int intFlag = Integer.parseInt(strFlag);
 				return (intFlag > 0);
-			}catch(NumberFormatException nfe){
+			} catch(NumberFormatException nfe) {
 				return strFlag.equalsIgnoreCase("t") || strFlag.equalsIgnoreCase("true");
 			}
 		}
@@ -3069,38 +3111,26 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @return	NULL if the given string is NULL or empty, otherwise the given value.
 	 */
-	protected final String nullifyIfNeeded(final String dbValue){
+	protected final String nullifyIfNeeded(final String dbValue) {
 		return (dbValue != null && dbValue.trim().length() <= 0) ? null : dbValue;
 	}
 
 	/**
-	 * Search a {@link TAPTable} instance whose the ADQL name matches (case sensitively) to the given one.
+	 * Search a {@link TAPTable} instance whose the ADQL name matches exactly
+	 * (and case sensitively) to the given one.
 	 *
 	 * @param tableName	ADQL name of the table to search.
-	 * @param itTables	Iterator over the set of tables in which the research must be done.
+	 * @param itTables	Iterator over the set of tables in which the research
+	 *                	must be done.
 	 *
 	 * @return	The found table, or NULL if not found.
 	 */
-	private TAPTable searchTable(String tableName, final Iterator<TAPTable> itTables){
-		// Get the schema name, if any prefix the given table name:
-		String schemaName = null;
-		int indSep = tableName.indexOf('.');
-		if (indSep > 0){
-			schemaName = tableName.substring(0, indSep);
-			tableName = tableName.substring(indSep + 1);
-		}
-
+	private TAPTable searchTable(String tableName, final Iterator<TAPTable> itTables) {
 		// Search by schema name (if any) and then by table name:
-		while(itTables.hasNext()){
+		while(itTables.hasNext()) {
 			// get the table:
 			TAPTable table = itTables.next();
-			// test the schema name (if one was prefixing the table name) (case sensitively):
-			if (schemaName != null){
-				if (table.getADQLSchemaName() == null || !schemaName.equals(table.getADQLSchemaName()))
-					continue;
-			}
-			// test the table name (case sensitively):
-			if (tableName.equals(table.getADQLName()))
+			if (tableName.equals(table.getRawName()))
 				return table;
 		}
 
@@ -3123,7 +3153,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected int getTableSchemaIndexInMetadata(){
+	protected int getTableSchemaIndexInMetadata() {
 		return dbms.equalsIgnoreCase(DBMS_MYSQL) ? 1 : 2;
 	}
 
@@ -3139,7 +3169,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected ResultSet getDBMetaSchemas(final DatabaseMetaData dbMeta) throws SQLException{
+	protected ResultSet getDBMetaSchemas(final DatabaseMetaData dbMeta) throws SQLException {
 		return (dbms.equalsIgnoreCase(DBMS_MYSQL) ? dbMeta.getCatalogs() : dbMeta.getSchemas());
 	}
 
@@ -3161,7 +3191,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected ResultSet getDBMetaTables(final DatabaseMetaData dbMeta, final String schemaPattern, final String tablePattern) throws SQLException{
+	protected ResultSet getDBMetaTables(final DatabaseMetaData dbMeta, final String schemaPattern, final String tablePattern) throws SQLException {
 		if (dbms.equalsIgnoreCase(DBMS_MYSQL))
 			return dbMeta.getTables(schemaPattern, null, tablePattern, null);
 		else
@@ -3190,7 +3220,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected ResultSet getDBMetaColumns(final DatabaseMetaData dbMeta, final String schemaPattern, final String tablePattern, final String columnPattern) throws SQLException{
+	protected ResultSet getDBMetaColumns(final DatabaseMetaData dbMeta, final String schemaPattern, final String tablePattern, final String columnPattern) throws SQLException {
 		if (dbms.equalsIgnoreCase(DBMS_MYSQL))
 			return dbMeta.getColumns(schemaPattern, null, tablePattern, columnPattern);
 		else
@@ -3221,7 +3251,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws SQLException	If any error occurs while interrogating the database about existing schema.
 	 */
-	protected boolean isSchemaExisting(String schemaName, final DatabaseMetaData dbMeta) throws SQLException{
+	protected boolean isSchemaExisting(String schemaName, final DatabaseMetaData dbMeta) throws SQLException {
 		if (!supportsSchema || schemaName == null || schemaName.length() == 0)
 			return true;
 
@@ -3229,15 +3259,15 @@ public class JDBCConnection implements DBConnection {
 		boolean caseSensitive = translator.isCaseSensitive(IdentifierField.SCHEMA);
 
 		ResultSet rs = null;
-		try{
+		try {
 			// List all schemas available and stop when a schema name matches ignoring the case:
 			rs = getDBMetaSchemas(dbMeta);
 			boolean hasSchema = false;
-			while(!hasSchema && rs.next()){
+			while(!hasSchema && rs.next()) {
 				hasSchema = equals(rs.getString(1), schemaName, caseSensitive);
 			}
 			return hasSchema;
-		}finally{
+		} finally {
 			close(rs);
 		}
 	}
@@ -3269,7 +3299,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws SQLException	If any error occurs while interrogating the database about existing tables.
 	 */
-	protected boolean isTableExisting(String schemaName, String tableName, final DatabaseMetaData dbMeta) throws DBException, SQLException{
+	protected boolean isTableExisting(String schemaName, String tableName, final DatabaseMetaData dbMeta) throws DBException, SQLException {
 		if (tableName == null || tableName.length() == 0)
 			return true;
 
@@ -3278,30 +3308,30 @@ public class JDBCConnection implements DBConnection {
 		boolean tableCaseSensitive = translator.isCaseSensitive(IdentifierField.TABLE);
 
 		ResultSet rs = null;
-		try{
+		try {
 
 			// List all matching tables:
-			if (supportsSchema){
+			if (supportsSchema) {
 				String schemaPattern = schemaCaseSensitive ? schemaName : null;
 				String tablePattern = tableCaseSensitive ? tableName : null;
 				rs = getDBMetaTables(dbMeta, schemaPattern, tablePattern);
-			}else{
+			} else {
 				String tablePattern = tableCaseSensitive ? tableName : null;
 				rs = getDBMetaTables(dbMeta, null, tablePattern);
 			}
 
 			// Stop on the first table which match completely (schema name + table name in function of their respective case sensitivity):
 			int cnt = 0;
-			while(rs.next()){
+			while(rs.next()) {
 				String rsSchema = nullifyIfNeeded(rs.getString(getTableSchemaIndexInMetadata()));
 				String rsTable = rs.getString(3);
-				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)){
+				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)) {
 					if (equals(rsTable, tableName, tableCaseSensitive))
 						cnt++;
 				}
 			}
 
-			if (cnt > 1){
+			if (cnt > 1) {
 				if (logger != null)
 					logger.logDB(LogLevel.ERROR, this, "TABLE_EXIST", "More than one table match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + "))!", null);
 				throw new DBException("More than one table match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + "))!");
@@ -3309,7 +3339,7 @@ public class JDBCConnection implements DBConnection {
 
 			return cnt == 1;
 
-		}finally{
+		} finally {
 			close(rs);
 		}
 	}
@@ -3343,7 +3373,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws SQLException	If any error occurs while interrogating the database about existing columns.
 	 */
-	protected boolean isColumnExisting(String schemaName, String tableName, String columnName, final DatabaseMetaData dbMeta) throws DBException, SQLException{
+	protected boolean isColumnExisting(String schemaName, String tableName, String columnName, final DatabaseMetaData dbMeta) throws DBException, SQLException {
 		if (columnName == null || columnName.length() == 0)
 			return true;
 
@@ -3353,7 +3383,7 @@ public class JDBCConnection implements DBConnection {
 		boolean columnCaseSensitive = translator.isCaseSensitive(IdentifierField.COLUMN);
 
 		ResultSet rsT = null, rsC = null;
-		try{
+		try {
 			/* Note:
 			 *
 			 *     The DatabaseMetaData.getColumns(....) function does not work properly
@@ -3365,11 +3395,11 @@ public class JDBCConnection implements DBConnection {
 			 */
 
 			// List all matching tables:
-			if (supportsSchema){
+			if (supportsSchema) {
 				String schemaPattern = schemaCaseSensitive ? schemaName : null;
 				String tablePattern = tableCaseSensitive ? tableName : null;
 				rsT = getDBMetaTables(dbMeta, schemaPattern, tablePattern);
-			}else{
+			} else {
 				String tablePattern = tableCaseSensitive ? tableName : null;
 				rsT = getDBMetaTables(dbMeta, null, tablePattern);
 			}
@@ -3377,17 +3407,17 @@ public class JDBCConnection implements DBConnection {
 			// For each matching table:
 			int cnt = 0;
 			String columnPattern = columnCaseSensitive ? columnName : null;
-			while(rsT.next()){
+			while(rsT.next()) {
 				String rsSchema = nullifyIfNeeded(rsT.getString(getTableSchemaIndexInMetadata()));
 				String rsTable = rsT.getString(3);
 				// test the schema name:
-				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)){
+				if (!supportsSchema || schemaName == null || equals(rsSchema, schemaName, schemaCaseSensitive)) {
 					// test the table name:
-					if ((tableName == null || equals(rsTable, tableName, tableCaseSensitive))){
+					if ((tableName == null || equals(rsTable, tableName, tableCaseSensitive))) {
 						// list its columns:
 						rsC = getDBMetaColumns(dbMeta, rsSchema, rsTable, columnPattern);
 						// count all matching columns:
-						while(rsC.next()){
+						while(rsC.next()) {
 							String rsColumn = rsC.getString(4);
 							if (equals(rsColumn, columnName, columnCaseSensitive))
 								cnt++;
@@ -3397,7 +3427,7 @@ public class JDBCConnection implements DBConnection {
 				}
 			}
 
-			if (cnt > 1){
+			if (cnt > 1) {
 				if (logger != null)
 					logger.logDB(LogLevel.ERROR, this, "COLUMN_EXIST", "More than one column match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + ") && column=" + columnName + " (case sensitive?" + columnCaseSensitive + "))!", null);
 				throw new DBException("More than one column match to these criteria (schema=" + schemaName + " (case sensitive?" + schemaCaseSensitive + ") && table=" + tableName + " (case sensitive?" + tableCaseSensitive + ") && column=" + columnName + " (case sensitive?" + columnCaseSensitive + "))!");
@@ -3405,7 +3435,7 @@ public class JDBCConnection implements DBConnection {
 
 			return cnt == 1;
 
-		}finally{
+		} finally {
 			close(rsT);
 			close(rsC);
 		}
@@ -3450,9 +3480,9 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @see TAPMetadata#resolveStdTable(String)
 	 */
-	protected final STDTable isStdTable(final String dbTableName, final TAPTable[] stdTables, final boolean caseSensitive){
-		if (dbTableName != null){
-			for(TAPTable t : stdTables){
+	protected final STDTable isStdTable(final String dbTableName, final TAPTable[] stdTables, final boolean caseSensitive) {
+		if (dbTableName != null) {
+			for(TAPTable t : stdTables) {
 				if (equals(dbTableName, t.getDBName(), caseSensitive))
 					return TAPMetadata.resolveStdTable(t.getADQLName());
 			}
@@ -3496,13 +3526,13 @@ public class JDBCConnection implements DBConnection {
 	 * @throws SQLException	If {@link PreparedStatement#executeUpdate()} fails.</i>
 	 * @throws DBException	If {@link PreparedStatement#addBatch()} fails and this update does not concern the first row, or if the number of updated rows is different from 1.
 	 */
-	protected final void executeUpdate(final PreparedStatement stmt, int indRow) throws SQLException, DBException{
+	protected final void executeUpdate(final PreparedStatement stmt, int indRow) throws SQLException, DBException {
 		// BATCH INSERTION: (the query is queued and will be executed later)
-		if (supportsBatchUpdates){
+		if (supportsBatchUpdates) {
 			// Add the prepared query in the batch queue of the statement:
-			try{
+			try {
 				stmt.addBatch();
-			}catch(SQLException se){
+			} catch(SQLException se) {
 				if (!isCancelled())
 					supportsBatchUpdates = false;
 				/*
@@ -3512,10 +3542,10 @@ public class JDBCConnection implements DBConnection {
 				 * Otherwise, it is impossible to insert the previous batched rows ; an exception must be thrown
 				 * and must stop the whole TAP_SCHEMA initialization.
 				 */
-				if (indRow == 1){
+				if (indRow == 1) {
 					if (!isCancelled() && logger != null)
 						logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "BATCH query impossible => TRYING AGAIN IN A NORMAL EXECUTION (executeUpdate())!", se);
-				}else{
+				} else {
 					if (!isCancelled() && logger != null)
 						logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH query impossible!", se);
 					throw new DBException("BATCH query impossible!", se);
@@ -3524,13 +3554,13 @@ public class JDBCConnection implements DBConnection {
 		}
 
 		// NORMAL INSERTION: (immediate insertion)
-		if (!supportsBatchUpdates){
+		if (!supportsBatchUpdates) {
 
 			// Insert the row prepared in the given statement:
 			int nbRowsWritten = stmt.executeUpdate();
 
 			// Check the row has been inserted with success:
-			if (nbRowsWritten != 1){
+			if (nbRowsWritten != 1) {
 				if (logger != null)
 					logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "ROW " + indRow + " not inserted!", null);
 				throw new DBException("ROW " + indRow + " not inserted!");
@@ -3562,14 +3592,14 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @throws DBException	If {@link PreparedStatement#executeBatch()} fails, or if the number of updated rows is different from the given one.
 	 */
-	protected final void executeBatchUpdates(final PreparedStatement stmt, int nbRows) throws DBException{
-		if (supportsBatchUpdates){
+	protected final void executeBatchUpdates(final PreparedStatement stmt, int nbRows) throws DBException {
+		if (supportsBatchUpdates) {
 			// Execute all the batch queries:
 			int[] rows;
-			try{
+			try {
 				rows = stmt.executeBatch();
-			}catch(SQLException se){
-				if (!isCancelled()){
+			} catch(SQLException se) {
+				if (!isCancelled()) {
 					supportsBatchUpdates = false;
 					if (logger != null)
 						logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "BATCH execution impossible!", se);
@@ -3578,9 +3608,9 @@ public class JDBCConnection implements DBConnection {
 			}
 
 			// Remove executed queries from the statement:
-			try{
+			try {
 				stmt.clearBatch();
-			}catch(SQLException se){
+			} catch(SQLException se) {
 				if (!isCancelled() && logger != null)
 					logger.logDB(LogLevel.WARNING, this, "EXEC_UPDATE", "CLEAR BATCH impossible!", se);
 			}
@@ -3591,7 +3621,7 @@ public class JDBCConnection implements DBConnection {
 				nbRowsUpdated += rows[i];
 
 			// Check all given rows have been inserted with success:
-			if (nbRowsUpdated != nbRows){
+			if (nbRowsUpdated != nbRows) {
 				if (logger != null)
 					logger.logDB(LogLevel.ERROR, this, "EXEC_UPDATE", "ROWS not all update (" + nbRows + " to update ; " + nbRowsUpdated + " updated)!", null);
 				throw new DBException("ROWS not all updated (" + nbRows + " to update ; " + nbRowsUpdated + " updated)!");
@@ -3605,7 +3635,7 @@ public class JDBCConnection implements DBConnection {
 	 * @param lst	List to update.
 	 * @param it	All items to append inside the list.
 	 */
-	private <T> void appendAllInto(final List<T> lst, final Iterator<T> it){
+	private <T> void appendAllInto(final List<T> lst, final Iterator<T> it) {
 		while(it.hasNext())
 			lst.add(it.next());
 	}
@@ -3629,11 +3659,11 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @return	<i>true</i> if both names are equal, <i>false</i> otherwise.
 	 */
-	protected final boolean equals(final String dbName, final String metaName, final boolean caseSensitive){
+	protected final boolean equals(final String dbName, final String metaName, final boolean caseSensitive) {
 		if (dbName == null || metaName == null)
 			return false;
 
-		if (caseSensitive){
+		if (caseSensitive) {
 			if (supportsMixedCaseQuotedIdentifier || mixedCaseQuoted)
 				return dbName.equals(metaName);
 			else if (lowerCaseQuoted)
@@ -3642,7 +3672,7 @@ public class JDBCConnection implements DBConnection {
 				return dbName.equals(metaName.toUpperCase());
 			else
 				return dbName.equalsIgnoreCase(metaName);
-		}else{
+		} else {
 			if (supportsMixedCaseUnquotedIdentifier)
 				return dbName.equalsIgnoreCase(metaName);
 			else if (lowerCaseUnquoted)
@@ -3655,7 +3685,7 @@ public class JDBCConnection implements DBConnection {
 	}
 
 	@Override
-	public void setFetchSize(final int size){
+	public void setFetchSize(final int size) {
 		supportsFetchSize = true;
 		fetchSize = (size > 0) ? size : IGNORE_FETCH_SIZE;
 	}
