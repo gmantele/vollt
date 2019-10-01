@@ -29,6 +29,7 @@ import java.util.Set;
 
 import adql.db.FunctionDef;
 import adql.query.ClauseOffset;
+import adql.query.WithItem;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.BitNotOperand;
 import adql.query.operand.OperationType;
@@ -583,8 +584,6 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	public static final LanguageFeature EXCEPT = new LanguageFeature(FeatureType.ADQL_SETS, "EXCEPT"); // TODO EXCEPT
 	public static final LanguageFeature INTERSECT = new LanguageFeature(FeatureType.ADQL_SETS, "INTERSECT");  // TODO INTERSECT
 	
-	public static final LanguageFeature WITH = new LanguageFeature(FeatureType.ADQL_COMMON_TABLE, "WITH");  // TODO WITH
-	
 	public static final LanguageFeature CAST = new LanguageFeature(FeatureType.ADQL_TYPE, "CAST");  // TODO CAST*/
 
 	/** All standard features available.
@@ -597,7 +596,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * <p><i><b>Important note:</b>
 	 * 	All of them must be optional and must have a type.
 	 * </i></p> */
-	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ InUnitFunction.FEATURE, BitNotOperand.FEATURE, OperationType.BIT_AND.getFeatureDescription(), OperationType.BIT_OR.getFeatureDescription(), OperationType.BIT_XOR.getFeatureDescription(), ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
+	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ WithItem.FEATURE, InUnitFunction.FEATURE, BitNotOperand.FEATURE, OperationType.BIT_AND.getFeatureDescription(), OperationType.BIT_OR.getFeatureDescription(), OperationType.BIT_XOR.getFeatureDescription(), ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
 
 	/**
 	 * List all available language features.

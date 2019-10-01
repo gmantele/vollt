@@ -28,34 +28,41 @@ import java.util.Map;
 /**
  * Default implementation of {@link DBTable}.
  *
+ * <p><i><b>WARNING: constructors signature and behavior changed since v2.0!</b>
+ * 	Before v2.0, the constructors expected to have the DB names before the ADQL
+ * 	names and thus, they forced to give a DB table name ; the ADQL table name
+ * 	being optional (if not provided it was set to the DB name).
+ * 	But since v2.0, this logic is inverted: the ADQL name is mandatory (a
+ * 	{@link NullPointerException} will be thrown if NULL or empty) while the DB
+ * 	name is optional ({@link #getDBName()} will return the same as
+ * 	{@link #getADQLName()} if no DB name is specified at initialization).
+ * 	Consequently, the ADQL names are expected as first parameters.
+ * </i></p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.0 (09/2019)
  */
-public class DefaultDBTable implements DBTable {
+public class DefaultDBTable extends DBIdentifier implements DBTable {
 
 	protected String dbCatalogName = null;
 	protected String dbSchemaName = null;
-	protected String dbName;
 
 	protected String adqlCatalogName = null;
 	protected String adqlSchemaName = null;
-	protected String adqlName = null;
-
-	protected boolean tableCaseSensitive = false;
 
 	protected Map<String, DBColumn> columns = new LinkedHashMap<String, DBColumn>();
 
 	/**
-	 * Builds a default {@link DBTable} with the given DB name.
+	 * Builds a default {@link DBTable} with the given <b>ADQL name</b>.
 	 *
-	 * <p>With this constructor: ADQL name = DB name.</p>
+	 * <p>With this constructor: DB name = ADQL name.</p>
 	 *
 	 * <p><i><b>Note:</b>
 	 * 	The ADQL/DB schema and catalog names are set to NULL.
 	 * </i></p>
 	 *
 	 * <p><i><b>WARNING:</b>
-	 * 	The ADQL table name MUST NOT be qualified (i.e. prefixed by a schema
+	 * 	The ADQL table name MUST be NON-qualified (i.e. not prefixed by a schema
 	 * 	and/or a catalog)! For instance, <code>t1</code> is ok, but not
 	 * 	<code>schema1.t1</code> or <code>cat1.schema1.t2</code> which won't be
 	 * 	split but instead, considered as the whole ADQL name.
@@ -66,16 +73,18 @@ public class DefaultDBTable implements DBTable {
 	 * 	In such case, the surrounded name would be considered as case-sensitive.
 	 * </i></p>
 	 *
-	 * @param dbName	Database name (it will be also used as ADQL table name).
+	 * @param adqlName	The ADQL name of this table (i.e. name to use in ADQL).
 	 *
-	 * @see #DefaultDBTable(String, String)
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
+	 *
+	 * @since 2.0
 	 */
-	public DefaultDBTable(final String dbName) {
-		this(dbName, null);
+	public DefaultDBTable(final String adqlName) throws NullPointerException {
+		super(adqlName);
 	}
 
 	/**
-	 * Builds a default {@link DBTable} with the given DB and ADQL names.
+	 * Builds a default {@link DBTable} with the given ADQL and DB names.
 	 *
 	 * <p><i><b>Note:</b>
 	 * 	The ADQL/DB schema and catalog names are set to NULL.
@@ -93,19 +102,22 @@ public class DefaultDBTable implements DBTable {
 	 * 	In such case, the surrounded name would be considered as case-sensitive.
 	 * </i></p>
 	 *
-	 * @param dbName	Database name.
 	 * @param adqlName	Name used in ADQL queries.
-	 *                	<i>If NULL, dbName will be used instead.</i>
+	 * @param dbName	Database name.
+	 *                	<i>If NULL, {@link #getDBName()} will return the same as
+	 *                	{@link #getADQLName()}.</i>
+	 *
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
+	 *
+	 * @since 2.0
 	 */
-	public DefaultDBTable(final String dbName, final String adqlName) {
-		if (dbName == null || dbName.trim().length() == 0)
-			throw new NullPointerException("Missing DB name!");
-		this.dbName = dbName;
-		setADQLName(adqlName);
+	public DefaultDBTable(final String adqlName, final String dbName) throws NullPointerException {
+		super(adqlName, dbName);
 	}
 
 	/**
-	 * Builds default {@link DBTable} with a DB catalog, schema and table names.
+	 * Builds default {@link DBTable} with a ADQL catalog, schema and table
+	 * names.
 	 *
 	 * <p><i><b>WARNING:</b>
 	 * 	The ADQL table name MUST NOT be qualified (i.e. prefixed by a schema
@@ -119,22 +131,24 @@ public class DefaultDBTable implements DBTable {
 	 * 	In such case, the surrounded name would be considered as case-sensitive.
 	 * </i></p>
 	 *
-	 * @param dbCatName		Database catalog name (it will be also used as ADQL
-	 *                 		catalog name).
-	 * @param dbSchemaName	Database schema name (it will be also used as ADQL
-	 *                   	schema name).
-	 * @param dbName		Database table name (it will be also used as ADQL
-	 *              		table name).
-	 *                 		<em>MUST NOT be NULL!</em>
+	 * @param adqlCatName		ADQL catalog name (it will be also used as DB
+	 *                 			catalog name).
+	 * @param adqlSchemaName	ADQL schema name (it will be also used as DB
+	 *                   		schema name).
+	 * @param adqlName			ADQL table name (it will be also used as DB
+	 *              			table name).
+	 *                 			<i>MUST NOT be NULL!</i>
 	 *
-	 * @see #DefaultDBTable(String, String, String, String, String, String)
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
+	 *
+	 * @since 2.0
 	 */
-	public DefaultDBTable(final String dbCatName, final String dbSchemaName, final String dbName) {
-		this(dbCatName, null, dbSchemaName, null, dbName, null);
+	public DefaultDBTable(final String adqlCatName, final String adqlSchemaName, final String adqlName) throws NullPointerException {
+		this(adqlCatName, null, adqlSchemaName, null, adqlName, null);
 	}
 
 	/**
-	 * Builds default {@link DBTable} with the DB and ADQL names for the
+	 * Builds default {@link DBTable} with the ADQL and DB names for the
 	 * catalog, schema and table.
 	 *
 	 * <p><i><b>WARNING:</b>
@@ -149,128 +163,45 @@ public class DefaultDBTable implements DBTable {
 	 * 	In such case, the surrounded name would be considered as case-sensitive.
 	 * </i></p>
 	 *
-	 * @param dbCatName			Database catalog name.
 	 * @param adqlCatName		Catalog name used in ADQL queries.
-	 *                   		<em>If NULL, it will be set to dbCatName.</em>
-	 * @param dbSchemaName		Database schema name.
+	 * @param dbCatName			Database catalog name.
+	 *                   		<i>If NULL, it will be set to adqlCatName.</i>
 	 * @param adqlSchemaName	Schema name used in ADQL queries.
-	 *                   		<em>If NULL, it will be set to dbSchemName.</em>
-	 * @param dbName			Database table name.
-	 *                 			<em>MUST NOT be NULL!</em>
+	 * @param dbSchemaName		Database schema name.
+	 *                   		<i>If NULL, it will be set to adqlSchemaName.</i>
 	 * @param adqlName			Table name used in ADQL queries.
-	 *                   		<em>If NULL, it will be set to dbName.</em>
+	 *                 			<i>MUST NOT be NULL!</i>
+	 * @param dbName			Database table name.
+	 *                   		<i>If NULL, it will be set to adqlName.</i>
+	 *
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
 	 */
-	public DefaultDBTable(final String dbCatName, final String adqlCatName, final String dbSchemaName, final String adqlSchemaName, final String dbName, final String adqlName) {
-		if (dbName == null || dbName.trim().length() == 0)
-			throw new NullPointerException("Missing DB name!");
+	public DefaultDBTable(final String adqlCatName, final String dbCatName, final String adqlSchemaName, final String dbSchemaName, final String adqlName, final String dbName) throws NullPointerException {
+		super(adqlName, dbName);
 
-		this.dbName = dbName;
-		setADQLName(adqlName);
+		setADQLSchemaName(adqlSchemaName);
+		setDBSchemaName(dbSchemaName);
 
-		this.dbSchemaName = dbSchemaName;
-		this.adqlSchemaName = (adqlSchemaName == null) ? dbSchemaName : adqlSchemaName;
-
-		this.dbCatalogName = dbCatName;
-		this.adqlCatalogName = (adqlCatName == null) ? dbCatName : adqlCatName;
-	}
-
-	@Override
-	public final String getDBName() {
-		return dbName;
+		setADQLCatalogName(adqlCatName);
+		setDBCatalogName(dbCatName);
 	}
 
 	@Override
 	public final String getDBSchemaName() {
-		return dbSchemaName;
+		return (dbSchemaName == null) ? adqlSchemaName : dbSchemaName;
+	}
+
+	public final void setDBSchemaName(final String name) {
+		dbSchemaName = normalize(name);
 	}
 
 	@Override
 	public final String getDBCatalogName() {
-		return dbCatalogName;
+		return (dbCatalogName == null) ? adqlCatalogName : dbCatalogName;
 	}
 
-	@Override
-	public final String getADQLName() {
-		return adqlName;
-	}
-
-	/**
-	 * Change the ADQL name of this table.
-	 *
-	 * <p>
-	 * 	The case sensitivity is automatically set. The table name will be
-	 * 	considered as case sensitive if the given name is surrounded by double
-	 * 	quotes (<code>"</code>). In such case, the table name is stored and then
-	 * 	returned WITHOUT these double quotes.
-	 * </p>
-	 *
-	 * <p><i><b>WARNING:</b>
-	 * 	If the name without the double quotes (and then trimmed) is an empty
-	 * 	string, the ADQL name will be set to the {@link #getDBName()} as such.
-	 * 	Then the case sensitivity will be set to <code>false</code>.
-	 * </i></p>
-	 *
-	 * @param name	New ADQL name of this table.
-	 */
-	public void setADQLName(final String name) {
-		// Set the new table name (only if not NULL, otherwise use the DB name):
-		adqlName = (name != null) ? name : dbName;
-
-		// Detect automatically case sensitivity:
-		if ((tableCaseSensitive = isDelimited(adqlName)))
-			adqlName = adqlName.substring(1, adqlName.length() - 1).replaceAll("\"\"", "\"");
-
-		// If the final name is empty, no case sensitivity and use the DB name:
-		if (adqlName.trim().length() == 0) {
-			adqlName = dbName;
-			tableCaseSensitive = false;
-		}
-	}
-
-	/**
-	 * Tell whether the given identifier is delimited (i.e. within the same pair
-	 * of double quotes - <code>"</code>).
-	 *
-	 * <i>
-	 * <p>The following identifiers ARE delimited:</p>
-	 * <ul>
-	 * 	<li><code>"a"</code></li>
-	 * 	<li><code>" "</code> (string with spaces ; but won't be considered as a
-	 * 	                      valid ADQL name)</li>
-	 * 	<li><code>"foo.bar"</code></li>
-	 * 	<li><code>"foo"".""bar"</code> (with escaped double quotes)</li>
-	 * 	<li><code>""""</code> (idem)</li>
-	 * </ul>
-	 * </i>
-	 *
-	 * <i>
-	 * <p>The following identifiers are NOT considered as delimited:</p>
-	 * <ul>
-	 * 	<li><code>""</code> (empty string)</li>
-	 * 	<li><code>"foo</code> (missing ending double quote)</li>
-	 * 	<li><code>foo"</code> (missing leading double quote)</li>
-	 * 	<li><code>"foo"."bar"</code> (not the same pair of double quotes)</li>
-	 * </ul>
-	 * </i>
-	 *
-	 * @param name	Identifier that may be delimited.
-	 *
-	 * @return	<code>true</code> if the given identifier is delimited,
-	 *        	<code>false</code> otherwise.
-	 *
-	 * @since 2.0
-	 */
-	public static final boolean isDelimited(final String name) {
-		return name != null && name.matches("\"(\"\"|[^\"])*\"");
-	}
-
-	@Override
-	public boolean isCaseSensitive() {
-		return tableCaseSensitive;
-	}
-
-	public void setCaseSensitive(final boolean sensitive) {
-		tableCaseSensitive = sensitive;
+	public final void setDBCatalogName(final String name) {
+		dbCatalogName = normalize(name);
 	}
 
 	@Override
@@ -279,7 +210,7 @@ public class DefaultDBTable implements DBTable {
 	}
 
 	public void setADQLSchemaName(final String name) {
-		adqlSchemaName = (name != null) ? name : dbSchemaName;
+		adqlSchemaName = normalize(name);
 	}
 
 	@Override
@@ -288,7 +219,7 @@ public class DefaultDBTable implements DBTable {
 	}
 
 	public void setADQLCatalogName(final String name) {
-		adqlName = (name != null) ? null : dbName;
+		adqlCatalogName = normalize(dbName);
 	}
 
 	/**
@@ -423,8 +354,8 @@ public class DefaultDBTable implements DBTable {
 
 	@Override
 	public DBTable copy(String dbName, String adqlName) {
-		DefaultDBTable copy = new DefaultDBTable(dbCatalogName, adqlCatalogName, dbSchemaName, adqlSchemaName, dbName, adqlName);
-		copy.tableCaseSensitive = tableCaseSensitive;
+		DefaultDBTable copy = new DefaultDBTable(adqlCatalogName, dbCatalogName, adqlSchemaName, dbSchemaName, adqlName, dbName);
+		copy.setCaseSensitive(this.isCaseSensitive());
 		for(DBColumn col : this) {
 			if (col instanceof DBCommonColumn)
 				copy.addColumn(new DBCommonColumn((DBCommonColumn)col, col.getDBName(), col.getADQLName()));

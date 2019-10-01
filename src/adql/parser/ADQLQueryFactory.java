@@ -33,6 +33,7 @@ import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectItem;
 import adql.query.TextPosition;
+import adql.query.WithItem;
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
 import adql.query.constraint.Comparison;
@@ -205,6 +206,13 @@ public class ADQLQueryFactory {
 				join.setJoinedColumns(lstColumns);
 				return join;
 		}
+	}
+
+	/** @since 2.0 */
+	public WithItem createWithItem(final IdentifierItem queryLabel, final ADQLQuery query, final Collection<ADQLColumn> colLabels) throws Exception {
+		WithItem item = new WithItem(queryLabel.identifier, query, colLabels);
+		item.setLabelCaseSensitive(queryLabel.caseSensitivity);
+		return item;
 	}
 
 	public SelectItem createSelectItem(ADQLOperand operand, String alias) throws Exception {

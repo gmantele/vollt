@@ -1,7 +1,9 @@
 package adql.parser;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -24,6 +26,7 @@ import adql.parser.grammar.ADQLGrammar200Constants;
 import adql.parser.grammar.ParseException;
 import adql.parser.grammar.Token;
 import adql.query.ADQLQuery;
+import adql.query.WithItem;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
 import adql.query.operand.ADQLOperand;
@@ -53,6 +56,83 @@ public class TestADQLParser {
 
 	@After
 	public void tearDown() throws Exception {
+	}
+
+	@Test
+	public void testWithClause() {
+
+		// CASE: ADQL-2.0 => ERROR
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
+		try {
+			parser.parseQuery("WITH foo AS (SELECT * FROM bar) SELECT * FROM foo");
+			fail("In ADQL-2.0, the WITH should not be allowed....it does not exist!");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals(" Encountered \"WITH\". Was expecting: \"SELECT\" \n" + "(HINT: \"WITH\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
+		}
+
+		parser = new ADQLParser(ADQLVersion.V2_1);
+		try {
+
+			// CASE: Same with ADQL-2.1 => OK
+			ADQLQuery query = parser.parseQuery("WITH foo AS (SELECT * FROM bar) SELECT * FROM foo");
+			assertNotNull(query.getWith());
+			assertEquals(1, query.getWith().size());
+			WithItem item = query.getWith().get(0);
+			assertEquals("foo", item.getLabel());
+			assertFalse(item.isLabelCaseSensitive());
+			assertNull(item.getColumnLabels());
+			assertEquals("SELECT *\nFROM bar", item.getQuery().toADQL());
+
+			// CASE: WITH clause with column labels => OK
+			query = parser.parseQuery("WITH foo(id, ra, dec) AS (SELECT col1, col2, col3 FROM bar) SELECT * FROM foo");
+			assertNotNull(query.getWith());
+			assertEquals(1, query.getWith().size());
+			item = query.getWith().get(0);
+			assertEquals("foo", item.getLabel());
+			assertFalse(item.isLabelCaseSensitive());
+			assertNotNull(item.getColumnLabels());
+			assertEquals(3, item.getColumnLabels().size());
+			assertEquals("SELECT col1 , col2 , col3\nFROM bar", item.getQuery().toADQL());
+
+			// CASE: more than 1 WITH clause + CTE's label case sensitivity
+			query = parser.parseQuery("WITH foo(id, ra, dec) AS (SELECT col1, col2, col3 FROM bar), \"Foo2\" AS (SELECT * FROM bar2) SELECT * FROM foo NATURAL JOIN \"Foo2\"");
+			assertNotNull(query.getWith());
+			assertEquals(2, query.getWith().size());
+			item = query.getWith().get(0);
+			assertEquals("foo", item.getLabel());
+			assertFalse(item.isLabelCaseSensitive());
+			assertNotNull(item.getColumnLabels());
+			assertEquals(3, item.getColumnLabels().size());
+			assertEquals("SELECT col1 , col2 , col3\nFROM bar", item.getQuery().toADQL());
+			item = query.getWith().get(1);
+			assertEquals("Foo2", item.getLabel());
+			assertTrue(item.isLabelCaseSensitive());
+			assertNull(item.getColumnLabels());
+			assertEquals("SELECT *\nFROM bar2", item.getQuery().toADQL());
+
+			// CASE: WITH clause inside a WITH clause => OK
+			query = parser.parseQuery("WITH foo(id, ra, dec) AS (WITH innerFoo AS (SELECT col1, col2, col3 FROM bar) SELECT * FROM stars NATURAL JOIN innerFoo) SELECT * FROM foo");
+			assertNotNull(query.getWith());
+			assertEquals(1, query.getWith().size());
+			item = query.getWith().get(0);
+			assertEquals("foo", item.getLabel());
+			assertFalse(item.isLabelCaseSensitive());
+			assertNotNull(item.getColumnLabels());
+			assertEquals(3, item.getColumnLabels().size());
+			assertEquals("WITH innerFoo AS (\nSELECT col1 , col2 , col3\nFROM bar\n)\nSELECT *\nFROM stars NATURAL INNER JOIN innerFoo", item.getQuery().toADQL());
+			assertNotNull(query.getWith().get(0).getQuery().getWith());
+			assertEquals(1, query.getWith().get(0).getQuery().getWith().size());
+			item = query.getWith().get(0).getQuery().getWith().get(0);
+			assertEquals("innerFoo", item.getLabel());
+			assertFalse(item.isLabelCaseSensitive());
+			assertNull(item.getColumnLabels());
+			assertEquals("SELECT col1 , col2 , col3\nFROM bar", item.getQuery().toADQL());
+
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while parsing a valid query with a WITH clause! (see console for more details)");
+		}
 	}
 
 	@Test

@@ -16,154 +16,114 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012,2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 /**
  * Default implementation of {@link DBColumn}.
  *
+ * <p><i><b>WARNING: constructors signature and behavior changed since v2.0!</b>
+ * 	Before v2.0, the constructors expected to have the DB names before the ADQL
+ * 	names and thus, they forced to give a DB column name ; the ADQL column name
+ * 	being optional (if not provided it was set to the DB name).
+ * 	But since v2.0, this logic is inverted: the ADQL name is mandatory (a
+ * 	{@link NullPointerException} will be thrown if NULL or empty) while the DB
+ * 	name is optional ({@link #getDBName()} will return the same as
+ * 	{@link #getADQLName()} if no DB name is specified at initialization).
+ * 	Consequently, the ADQL names are expected as first parameters.
+ * </i></p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (08/2015)
+ * @version 2.0 (09/2019)
  */
-public class DefaultDBColumn implements DBColumn {
+public class DefaultDBColumn extends DBIdentifier implements DBColumn {
 
-	/** Name of the column in the "database". */
-	protected String dbName;
 	/** Type of the column in the "database".
 	 * <i>Note: This should be one of the types listed by the IVOA in the TAP description.</i>
 	 * @since 1.3 */
 	protected DBType type;
+
 	/** Table in which this column exists. */
 	protected DBTable table;
-	/** Name that this column must have in ADQL queries. */
-	protected String adqlName = null;
-
-	/** Indicate whether the ADQL column name should be considered as case
-	 * sensitive.
-	 * @since 2.0 */
-	protected boolean columnCaseSensitive = false;
 
 	/**
-	 * Builds a default {@link DBColumn} with the given DB name and DB table.
+	 * Builds a default {@link DBColumn} with the given ADQL name and table.
 	 *
-	 * @param dbName	Database column name (it will be also used for the ADQL name).
-	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
-	 * 					if a whole column reference is given, no split will be done.</b>
-	 * @param table		DB table which contains this column.
+	 * <p>With this constructor: DB name = ADQL name.</p>
 	 *
-	 * @see #DefaultDBColumn(String, String, DBType, DBTable)
+	 * @param adqlName	The ADQL name of this column (i.e. name to use in ADQL).
+	 * @param table		Table which contains this column.
+	 *
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
+	 *
+	 * @since 2.0
 	 */
-	public DefaultDBColumn(final String dbName, final DBTable table) {
-		this(dbName, dbName, null, table);
+	public DefaultDBColumn(final String adqlName, final DBTable table) throws NullPointerException {
+		this(adqlName, null, null, table);
 	}
 
 	/**
-	 * Builds a default {@link DBColumn} with the given DB name and DB table.
+	 * Builds a default {@link DBColumn} with the given ADQL name and table.
 	 *
-	 * @param dbName	Database column name (it will be also used for the ADQL name).
-	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
-	 * 					if a whole column reference is given, no split will be done.</b>
+	 * @param adqlName	The ADQL name of this column (i.e. name to use in ADQL).
 	 * @param type		Type of the column.
-	 *            		<i>Note: there is no default value. Consequently if this parameter is NULL,
-	 *            		the type should be considered as unknown. It means that any comparison with
-	 *            		any type will always return 'true'.</i>
-	 * @param table		DB table which contains this column.
+	 *            		<i><b>Note:</b> there is no default value. Consequently
+	 *            		if this parameter is NULL, the type should be considered
+	 *            		as unknown. It means that any comparison with any type
+	 *            		will always return <code>true</code>.</i>
+	 * @param table		Table which contains this column.
 	 *
-	 * @see #DefaultDBColumn(String, String, DBType, DBTable)
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
 	 *
-	 * @since 1.3
+	 * @since 2.0
 	 */
-	public DefaultDBColumn(final String dbName, final DBType type, final DBTable table) {
-		this(dbName, dbName, type, table);
+	public DefaultDBColumn(final String adqlName, final DBType type, final DBTable table) throws NullPointerException {
+		this(adqlName, null, type, table);
 	}
 
 	/**
-	 * Builds a default {@link DBColumn} with the given DB name, DB table and ADQL name.
+	 * Builds a default {@link DBColumn} with the given ADQL and DB names and
+	 * table.
 	 *
-	 * @param dbName	Database column name.
-	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
-	 * 					if a whole column reference is given, no split will be done.</b>
-	 * @param adqlName	Column name used in ADQL queries.
-	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
-	 * 					if a whole column reference is given, no split will be done.</b>
-	 * @param table		DB table which contains this column.
+	 * @param adqlName	The ADQL name of this column (i.e. name to use in ADQL).
+	 * @param dbName	Database name.
+	 *                	<i>If NULL, {@link #getDBName()} will return the same as
+	 *                	{@link #getADQLName()}.</i>
+	 * @param table		Table which contains this column.
 	 *
-	 * @see #DefaultDBColumn(String, String, DBType, DBTable)
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
+	 *
+	 * @since 2.0
 	 */
-	public DefaultDBColumn(final String dbName, final String adqlName, final DBTable table) {
-		this(dbName, adqlName, null, table);
+	public DefaultDBColumn(final String adqlName, final String dbName, final DBTable table) throws NullPointerException {
+		this(adqlName, dbName, null, table);
 	}
 
 	/**
-	 * Builds a default {@link DBColumn} with the given DB name, DB table and ADQL name.
+	 * Builds a default {@link DBColumn} with the given ADQL and DB names, type
+	 * and table
 	 *
-	 * @param dbName	Database column name.
-	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
-	 * 					if a whole column reference is given, no split will be done.</b>
-	 *              	<b>REQUIRED parameter: it must be not NULL.</b>
-	 * @param adqlName	Column name used in ADQL queries.
-	 * 					<b>Only the column name is expected. Contrary to {@link DefaultDBTable},
-	 * 					if a whole column reference is given, no split will be done.</b>
-	 *                	<em>If NULL, it will be set to dbName.</em>
+	 * @param adqlName	The ADQL name of this column (i.e. name to use in ADQL).
+	 * @param dbName	Database name.
+	 *                	<i>If NULL, {@link #getDBName()} will return the same as
+	 *                	{@link #getADQLName()}.</i>
 	 * @param type		Type of the column.
-	 *            		<i>Note: there is no default value. Consequently if this parameter is NULL,
-	 *            		the type should be considered as unknown. It means that any comparison with
-	 *            		any type will always return 'true'.</i>
-	 * @param table		DB table which contains this column.
+	 *            		<i><b>Note:</b> there is no default value. Consequently
+	 *            		if this parameter is NULL, the type should be considered
+	 *            		as unknown. It means that any comparison with any type
+	 *            		will always return <code>true</code>.</i>
+	 * @param table		Table which contains this column.
 	 *
-	 * @since 1.3
+	 * @throws NullPointerException	If the given ADQL name is NULL or empty.
+	 *
+	 * @since 2.0
 	 */
-	public DefaultDBColumn(final String dbName, final String adqlName, final DBType type, final DBTable table) {
-
-		if (dbName == null || dbName.length() == 0)
-			throw new NullPointerException("Missing DB name!");
-
-		this.dbName = dbName;
-		setADQLName(adqlName);
+	public DefaultDBColumn(final String adqlName, final String dbName, final DBType type, final DBTable table) throws NullPointerException {
+		super(adqlName, dbName);
 
 		this.type = type;
 		this.table = table;
-	}
-
-	@Override
-	public final String getADQLName() {
-		return adqlName;
-	}
-
-	public final void setADQLName(String name) {
-		if (name != null) {
-
-			// Remove leading and trailing space characters:
-			name = name.trim();
-
-			// Detect automatically case sensitivity:
-			boolean caseSensitive = DefaultDBTable.isDelimited(name);
-			if (caseSensitive)
-				name = name.substring(1, name.length() - 1).replaceAll("\"\"", "\"");
-
-			// ONLY if the final name is NOT empty:
-			if (name.trim().length() > 0) {
-				adqlName = name;
-				columnCaseSensitive = caseSensitive;
-			}
-		}
-	}
-
-	@Override
-	public boolean isCaseSensitive() {
-		return columnCaseSensitive;
-	}
-
-	/**
-	 * Change the case sensitivity of the ADQL column name.
-	 *
-	 * @param sensitive	<code>true</code> to consider the current ADQL name as
-	 *                 	case sensitive,
-	 *                 	<code>false</code> otherwise.
-	 */
-	public void setCaseSensitive(final boolean sensitive) {
-		columnCaseSensitive = sensitive;
 	}
 
 	@Override
@@ -193,11 +153,6 @@ public class DefaultDBColumn implements DBColumn {
 	}
 
 	@Override
-	public final String getDBName() {
-		return dbName;
-	}
-
-	@Override
 	public final DBTable getTable() {
 		return table;
 	}
@@ -208,7 +163,7 @@ public class DefaultDBColumn implements DBColumn {
 
 	@Override
 	public DBColumn copy(final String dbName, final String adqlName, final DBTable dbTable) {
-		return new DefaultDBColumn(dbName, adqlName, type, dbTable);
+		return new DefaultDBColumn(adqlName, dbName, type, dbTable);
 	}
 
 }

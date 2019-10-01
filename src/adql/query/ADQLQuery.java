@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import adql.db.DBColumn;
+import adql.db.DBIdentifier;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.DefaultDBColumn;
@@ -63,6 +64,10 @@ public class ADQLQuery implements ADQLObject {
 	/** Version of the ADQL grammar in which this query is written.
 	 * @since 2.0 */
 	private final ADQLVersion adqlVersion;
+
+	/** The ADQL clause WITH.
+	 * @since 2.0 */
+	private ClauseADQL<WithItem> with;
 
 	/** The ADQL clause SELECT. */
 	private ClauseSelect select;
@@ -110,6 +115,7 @@ public class ADQLQuery implements ADQLObject {
 	 */
 	public ADQLQuery(final ADQLVersion version) {
 		this.adqlVersion = (version == null ? ADQLParser.DEFAULT_VERSION : version);
+		with = new ClauseADQL<WithItem>("WITH");
 		select = new ClauseSelect();
 		from = null;
 		where = new ClauseConstraints("WHERE");
@@ -129,6 +135,7 @@ public class ADQLQuery implements ADQLObject {
 	@SuppressWarnings("unchecked")
 	public ADQLQuery(ADQLQuery toCopy) throws Exception {
 		adqlVersion = toCopy.adqlVersion;
+		with = (ClauseADQL<WithItem>)toCopy.with.getCopy();
 		select = (ClauseSelect)toCopy.select.getCopy();
 		from = (FromContent)toCopy.from.getCopy();
 		where = (ClauseConstraints)toCopy.where.getCopy();
@@ -157,6 +164,8 @@ public class ADQLQuery implements ADQLObject {
 	 * Clear all the clauses.
 	 */
 	public void reset() {
+		with.clear();
+
 		select.clear();
 		select.setDistinctColumns(false);
 		select.setNoLimit();
@@ -167,6 +176,38 @@ public class ADQLQuery implements ADQLObject {
 		having.clear();
 		orderBy.clear();
 		offset = null;
+		position = null;
+	}
+
+	/**
+	 * Gets the WITH clause of this query.
+	 *
+	 * @return	Its WITH clause.
+	 *
+	 * @since 2.0
+	 */
+	public final ClauseADQL<WithItem> getWith() {
+		return with;
+	}
+
+	/**
+	 * Replaces its WITH clause by the given one.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	The position of the query is erased.
+	 * </i></p>
+	 *
+	 * @param newWith	The new WITH clause.
+	 *
+	 * @throws NullPointerException	If the given WITH clause is NULL.
+	 *
+	 * @since 2.0
+	 */
+	public void setWith(ClauseADQL<WithItem> newWith) throws NullPointerException {
+		if (newWith == null)
+			throw new NullPointerException("Impossible to replace the WITH clause of a query by NULL!");
+		else
+			with = newWith;
 		position = null;
 	}
 
@@ -416,34 +457,38 @@ public class ADQLQuery implements ADQLObject {
 					else
 						columns.addAll(from.getDBColumns());
 				} catch(ParseException pe) {
-					// Here, this error should not occur any more, since it must have been caught by the DBChecker!
+					/* Here, this error should not occur any more, since it must
+					 * have been caught by the DBChecker! */
 				}
 			} else {
 				// Create the DBColumn:
 				DBColumn col = null;
 				// ...whose the name will be set with the SELECT item's alias:
 				if (item.hasAlias()) {
-					// put the alias in lower case if not written between "":
-					/* Note: This aims to avoid unexpected behavior at execution
-					 *       time in the DBMS (i.e. the case sensitivity is
-					 *       forced for every references to this column alias). */
-					String alias = item.getAlias();
-					if (!item.isCaseSensitive())
-						alias = alias.toLowerCase();
+					String alias;
+
+					// If delimited, put the alias between double quotes.
+					if (item.isCaseSensitive())
+						alias = DBIdentifier.denormalize(item.getAlias(), true);
+					// If not delimited, put the alias in lower-case.
+					else
+						alias = item.getAlias().toLowerCase();
 
 					// create the DBColumn:
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null) {
 						col = ((ADQLColumn)operand).getDBLink();
-						col = col.copy(col.getDBName(), alias, col.getTable());
+						col = col.copy(alias, alias, col.getTable());
 					} else
 						col = new DefaultDBColumn(alias, null);
 				}
 				// ...or whose the name will be the name of the SELECT item:
 				else {
-					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null)
-						col = ((ADQLColumn)operand).getDBLink();
-					else
-						col = new DefaultDBColumn(item.getName(), null);
+					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null) {
+						DBColumn formerCol = ((ADQLColumn)operand).getDBLink();
+						// keep the same ADQL and DB name ; just change the table:
+						col = formerCol.copy(formerCol.getDBName(), (formerCol.isCaseSensitive() ? DBIdentifier.denormalize(formerCol.getADQLName(), true) : formerCol.getADQLName().toLowerCase()), formerCol.getTable());
+					} else
+						col = new DefaultDBColumn((item.isCaseSensitive() ? DBIdentifier.denormalize(item.getName(), true) : item.getName().toLowerCase()), null);
 				}
 
 				/* For columns created by default (from functions and operations generally),
@@ -505,24 +550,27 @@ public class ADQLQuery implements ADQLObject {
 				index++;
 				switch(index) {
 					case 0:
-						currentClause = select;
+						currentClause = with;
 						break;
 					case 1:
+						currentClause = select;
+						break;
+					case 2:
 						currentClause = null;
 						return from;
-					case 2:
+					case 3:
 						currentClause = where;
 						break;
-					case 3:
+					case 4:
 						currentClause = groupBy;
 						break;
-					case 4:
+					case 5:
 						currentClause = having;
 						break;
-					case 5:
+					case 6:
 						currentClause = orderBy;
 						break;
-					case 6:
+					case 7:
 						currentClause = null;
 						return offset;
 					default:
@@ -533,7 +581,7 @@ public class ADQLQuery implements ADQLObject {
 
 			@Override
 			public boolean hasNext() {
-				return index + 1 < 7;
+				return index + 1 < 8;
 			}
 
 			@Override
@@ -547,42 +595,48 @@ public class ADQLQuery implements ADQLObject {
 				else {
 					switch(index) {
 						case 0:
+							if (replacer instanceof ClauseADQL)
+								with = (ClauseADQL<WithItem>)replacer;
+							else
+								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + with.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+							break;
+						case 1:
 							if (replacer instanceof ClauseSelect)
 								select = (ClauseSelect)replacer;
 							else
 								throw new UnsupportedOperationException("Impossible to replace a ClauseSelect (" + select.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
-						case 1:
+						case 2:
 							if (replacer instanceof FromContent)
 								from = (FromContent)replacer;
 							else
 								throw new UnsupportedOperationException("Impossible to replace a FromContent (" + from.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
-						case 2:
+						case 3:
 							if (replacer instanceof ClauseConstraints)
 								where = (ClauseConstraints)replacer;
 							else
 								throw new UnsupportedOperationException("Impossible to replace a ClauseConstraints (" + where.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
-						case 3:
+						case 4:
 							if (replacer instanceof ClauseADQL)
 								groupBy = (ClauseADQL<ADQLOperand>)replacer;
 							else
 								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + groupBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
-						case 4:
+						case 5:
 							if (replacer instanceof ClauseConstraints)
 								having = (ClauseConstraints)replacer;
 							else
 								throw new UnsupportedOperationException("Impossible to replace a ClauseConstraints (" + having.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
-						case 5:
+						case 6:
 							if (replacer instanceof ClauseADQL)
 								orderBy = (ClauseADQL<ADQLOrder>)replacer;
 							else
 								throw new UnsupportedOperationException("Impossible to replace a ClauseADQL (" + orderBy.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 							break;
-						case 6:
+						case 7:
 							if (replacer instanceof ClauseOffset)
 								offset = (ClauseOffset)replacer;
 							else
@@ -598,13 +652,14 @@ public class ADQLQuery implements ADQLObject {
 				if (index <= -1)
 					throw new IllegalStateException("remove() impossible: next() has not yet been called!");
 
-				if (index == 0 || index == 1)
-					throw new UnsupportedOperationException("Impossible to remove a " + ((index == 0) ? "SELECT" : "FROM") + " clause from a query!");
-				else if (index == 6) {
+				if (index == 1 || index == 2)
+					throw new UnsupportedOperationException("Impossible to remove a " + ((index == 1) ? "SELECT" : "FROM") + " clause from a query!");
+				else if (index == 7) {
 					offset = null;
 					position = null;
 				} else {
-					currentClause.clear();
+					if (currentClause != null)
+						currentClause.clear();
 					position = null;
 				}
 			}
@@ -613,7 +668,13 @@ public class ADQLQuery implements ADQLObject {
 
 	@Override
 	public String toADQL() {
-		StringBuffer adql = new StringBuffer(select.toADQL());
+		StringBuffer adql = new StringBuffer();
+
+		if (!with.isEmpty())
+			adql.append(with.toADQL()).append('\n');
+
+		adql.append(select.toADQL());
+
 		adql.append("\nFROM ").append(from.toADQL());
 
 		if (!where.isEmpty())

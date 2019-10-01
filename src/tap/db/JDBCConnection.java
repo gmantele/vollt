@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import adql.db.DBColumn;
+import adql.db.DBIdentifier;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.STCS;
@@ -1081,7 +1082,7 @@ public class JDBCConnection implements DBConnection {
 
 				// create the new schema:
 				TAPSchema newSchema = new TAPSchema(schemaName, nullifyIfNeeded(description), nullifyIfNeeded(utype));
-				if (dbName != null && dbName.trim().length() > 0)
+				if (DBIdentifier.normalize(dbName) != null)
 					newSchema.setDBName(dbName);
 				newSchema.setIndex(schemaIndex);
 

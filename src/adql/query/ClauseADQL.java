@@ -16,32 +16,51 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2013 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
+
+import adql.parser.feature.LanguageFeature;
 
 /**
  * Represents an ADQL clause (i.e. SELECT, FROM, WHERE, ...).
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.2 (12/2013)
+ * @version 2.0 (08/2019)
  */
 public class ClauseADQL<T extends ADQLObject> extends ADQLList<T> {
 
 	/**
-	 * Builds an anonymous ClauseADQL.
+	 * Builds an anonymous {@link ClauseADQL}.
 	 */
 	public ClauseADQL() {
 		super((String)null);
 	}
 
 	/**
-	 * Builds a ClauseADQL considering its name.
+	 * Builds a {@link ClauseADQL} considering its name.
 	 *
-	 * @param name	List label.
+	 * @param name	Clause label.
 	 */
 	public ClauseADQL(String name) {
 		super(name);
+	}
+
+	/**
+	 * Builds a {@link ClauseADQL} considering its name.
+	 *
+	 * <p>
+	 * 	The language feature is optional. If omitted, a default non-optional
+	 * 	one will be created using the list's name.
+	 * </p>
+	 *
+	 * @param name					Clause label.
+	 * @param implementedFeature	Language Feature implemented by this list.
+	 *
+	 * @since 2.0
+	 */
+	protected ClauseADQL(final String name, final LanguageFeature implementedFeature) {
+		super(name, implementedFeature);
 	}
 
 	/**

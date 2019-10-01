@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import adql.db.DefaultDBTable;
+import adql.db.DBIdentifier;
 import tap.metadata.TAPTable.TableType;
 
 /**
@@ -53,23 +53,7 @@ import tap.metadata.TAPTable.TableType;
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.4 (09/2019)
  */
-public class TAPSchema implements Iterable<TAPTable> {
-
-	/** Name that this schema MUST have in ADQL queries. */
-	private final String adqlName;
-
-	/** Indicate whether the ADQL schema name must be considered as case
-	 * sensitive. In such case, it should be provided between double quotes in
-	 * the constructor parameter.
-	 * @since 2.4 */
-	private boolean schemaCaseSensitive;
-
-	/** Name that this schema have in the database.
-	 * <p><i><b>Note:</b>
-	 * 	NULL by default. When NULL, {@link #getDBName()} returns exactly what
-	 * 	{@link #getADQLName()} returns.
-	 * </i></p> */
-	private String dbName = null;
+public class TAPSchema extends DBIdentifier implements Iterable<TAPTable> {
 
 	/** Descriptive, human-interpretable name of the schema.
 	 * <p><i><b>Note:</b>
@@ -135,18 +119,10 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 *
 	 * @param schemaName	ADQL name of this schema.
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPSchema(String schemaName) throws NullPointerException {
-		if (schemaName == null)
-			throw new NullPointerException("Missing schema name!");
-
-		schemaName = schemaName.trim();
-		schemaCaseSensitive = DefaultDBTable.isDelimited(schemaName);
-		adqlName = (schemaCaseSensitive ? schemaName.substring(1, schemaName.length() - 1).replaceAll("\"\"", "\"") : schemaName);
-
-		if (getADQLName().trim().length() == 0)
-			throw new NullPointerException("Missing schema name!");
+		super(schemaName);
 
 		dbName = getADQLName();
 
@@ -237,15 +213,6 @@ public class TAPSchema implements Iterable<TAPTable> {
 	}
 
 	/**
-	 * Get the (non delimited) ADQL name of this schema.
-	 *
-	 * @return	Its ADQL name.
-	 */
-	public final String getADQLName() {
-		return adqlName;
-	}
-
-	/**
 	 * Get the full ADQL name of this schema, as it has been provided at
 	 * initialization (i.e. delimited if {@link #isCaseSensitive() case sensitive}).
 	 *
@@ -258,32 +225,11 @@ public class TAPSchema implements Iterable<TAPTable> {
 	}
 
 	/**
-	 * Tell whether the ADQL name of this schema should be considered as case
-	 * sensitive or not.
-	 *
-	 * @return	<code>true</code> if the ADQL name is case sensitive,
-	 *        	<code>false</code> otherwise.
-	 */
-	public final boolean isCaseSensitive() {
-		return schemaCaseSensitive;
-	}
-
-	/**
-	 * Let specify whether the ADQL name of this schema should be considered as
-	 * case sensitive or not.
-	 *
-	 * @param sensitive	<code>true</code> to make the ADQL name case sensitive,
-	 *                 	<code>false</code> otherwise.
-	 */
-	public final void setCaseSensitive(final boolean sensitive) {
-		schemaCaseSensitive = sensitive;
-	}
-
-	/**
 	 * Get the name this schema MUST have in the database.
 	 *
 	 * @return	Its DB name. <i>MAY be NULL</i>
 	 */
+	@Override
 	public final String getDBName() {
 		return dbName;
 	}
@@ -308,6 +254,7 @@ public class TAPSchema implements Iterable<TAPTable> {
 	 *
 	 * @param name	Its new DB name. <i>MAY be NULL</i>
 	 */
+	@Override
 	public final void setDBName(String name) {
 		name = (name != null) ? name.trim() : name;
 		dbName = name;
@@ -613,7 +560,7 @@ public class TAPSchema implements Iterable<TAPTable> {
 
 	@Override
 	public String toString() {
-		return (schemaCaseSensitive ? "\"" + adqlName.replaceAll("\"", "\"\"") + "\"" : adqlName);
+		return denormalize(getADQLName(), isCaseSensitive());
 	}
 
 }

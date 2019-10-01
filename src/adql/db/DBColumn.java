@@ -35,7 +35,20 @@ package adql.db;
 public interface DBColumn {
 
 	/**
-	 * Gets the name of this column (without any prefix and double-quotes).
+	 * Gets the name of this column.
+	 *
+	 * <i>
+	 * <p><b>Notes:</b>
+	 * 	The returned ADQL name is:
+	 * </p>
+	 * <ul>
+	 * 	<li>non-empty/NULL</li>
+	 * 	<li>non-delimited (i.e. not between double quotes),</li>
+	 * 	<li>non-prefixed (i.e. no table/schema/catalog name)</li>
+	 * 	<li>and in the same case as provided at initialization (even if not case
+	 * 		sensitive).</li>
+	 * </ul>
+	 * </i>
 	 *
 	 * @return	Its ADQL name.
 	 */
@@ -54,17 +67,31 @@ public interface DBColumn {
 	public boolean isCaseSensitive();
 
 	/**
-	 * Gets the name of this column in the "database".
+	 * Gets the name of this column in the "database" (e.g. as it should be used
+	 * in SQL queries).
+	 *
+	 * <i>
+	 * <p><b>Notes</b>
+	 * 	The returned DB name is:
+	 * </p>
+	 * <ul>
+	 * 	<li>non-empty/NULL</li>
+	 * 	<li>non-delimited (i.e. not between double quotes),</li>
+	 * 	<li>non-prefixed (i.e. no table/schema/catalog name)</li>
+	 * 	<li>and in the EXACT case as it MUST be used.</li>
+	 * </ul>
 	 *
 	 * @return	Its DB name.
 	 */
 	public String getDBName();
 
 	/**
-	 * <p>Get the type of this column (as closed as possible from the "database" type).</p>
+	 * Get the type of this column (as closed as possible from the "database"
+	 * type).
 	 *
-	 * <p><i>Note:
-	 * 	The returned type should be as closed as possible from a type listed by the IVOA in the TAP protocol description into the section UPLOAD.
+	 * <p><i><b>Note:</b>
+	 * 	The returned type should be as closed as possible from a type listed by
+	 * 	the IVOA in the TAP protocol description into the section UPLOAD.
 	 * </i></p>
 	 *
 	 * @return	Its type.
@@ -76,7 +103,8 @@ public interface DBColumn {
 	/**
 	 * Gets the table which contains this {@link DBColumn}.
 	 *
-	 * @return	Its table or <i>null</i> if no table is specified.
+	 * @return	Its table
+	 *        	or NULL if no table is specified.
 	 */
 	public DBTable getTable();
 

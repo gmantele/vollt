@@ -26,11 +26,13 @@ import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
+import adql.query.ClauseADQL;
 import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
 import adql.query.ColumnReference;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
+import adql.query.WithItem;
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
 import adql.query.constraint.Comparison;
@@ -51,9 +53,9 @@ import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.ADQLFunction;
+import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
-import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -104,9 +106,15 @@ public interface ADQLTranslator {
 	/* ***** LIST & CLAUSE ***** */
 	public String translate(ADQLList<? extends ADQLObject> list) throws TranslationException;
 
+	/** @since 2.0 */
+	public String translate(ClauseADQL<WithItem> clause) throws TranslationException;
+
 	public String translate(ClauseSelect clause) throws TranslationException;
 
 	public String translate(ClauseConstraints clause) throws TranslationException;
+
+	/** @since 2.0 */
+	public String translate(WithItem item) throws TranslationException;
 
 	public String translate(SelectItem item) throws TranslationException;
 

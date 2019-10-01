@@ -187,7 +187,10 @@ public class ColumnReference implements ADQLObject {
 	 * @return 	Its source table if {@link #getColumnName()} is a column name
 	 *        	(not an alias),
 	 *        	or NULL otherwise.
+	 *
+	 * @deprecated	Since v2.0. This function is never used.
 	 */
+	@Deprecated
 	public final ADQLTable getAdqlTable() {
 		return adqlTable;
 	}
@@ -204,7 +207,10 @@ public class ColumnReference implements ADQLObject {
 	 * @param adqlTable	Its source table if {@link #getColumnName()} is a column
 	 *                 	name (not an alias),
 	 *                 	or NULL otherwise.
+	 *
+	 * @deprecated	Since v2.0. This piece of information is never used.
 	 */
+	@Deprecated
 	public final void setAdqlTable(ADQLTable adqlTable) {
 		this.adqlTable = adqlTable;
 	}

@@ -21,8 +21,10 @@ package adql.translator;
  */
 
 import java.util.Iterator;
+import java.util.List;
 
 import adql.db.DBColumn;
+import adql.db.DBIdentifier;
 import adql.db.DBTable;
 import adql.db.DBTableAlias;
 import adql.db.DBType;
@@ -33,12 +35,14 @@ import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
+import adql.query.ClauseADQL;
 import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
 import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
+import adql.query.WithItem;
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
 import adql.query.constraint.Comparison;
@@ -329,8 +333,8 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * @return					The string buffer + identifier.
 	 */
 	public StringBuffer appendIdentifier(final StringBuffer str, final String id, final boolean caseSensitive) {
-		if (caseSensitive && !id.matches("\"[^\"]*\""))
-			return str.append('"').append(id).append('"');
+		if (caseSensitive && !DBIdentifier.isDelimited(id))
+			return str.append(DBIdentifier.denormalize(id, true));
 		else
 			return str.append(id);
 	}
@@ -354,13 +358,20 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			return translate((ADQLOperand)obj);
 		else if (obj instanceof ADQLConstraint)
 			return translate((ADQLConstraint)obj);
+		else if (obj instanceof WithItem)
+			return translate((WithItem)obj);
 		else
 			return obj.toADQL();
 	}
 
 	@Override
 	public String translate(ADQLQuery query) throws TranslationException {
-		StringBuffer sql = new StringBuffer(translate(query.getSelect()));
+		StringBuffer sql = new StringBuffer();
+
+		if (!query.getWith().isEmpty())
+			sql.append(translate(query.getWith())).append('\n');
+
+		sql.append(translate(query.getSelect()));
 
 		sql.append("\nFROM ").append(translate(query.getFrom()));
 
@@ -445,6 +456,11 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	}
 
 	@Override
+	public String translate(final ClauseADQL<WithItem> clause) throws TranslationException {
+		return getDefaultADQLList(clause);
+	}
+
+	@Override
 	public String translate(ClauseSelect clause) throws TranslationException {
 		String sql = null;
 
@@ -469,6 +485,44 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	}
 
 	@Override
+	public String translate(final WithItem item) throws TranslationException {
+		StringBuffer translation = new StringBuffer();
+
+		// query name/label:
+		if (item.getDBLink() != null)
+			appendIdentifier(translation, (item.getDBLink().isCaseSensitive() ? item.getDBLink().getDBName() : item.getDBLink().getDBName().toLowerCase()), true);
+		else
+			appendIdentifier(translation, (item.isLabelCaseSensitive() ? item.getLabel() : item.getLabel().toLowerCase()), true);
+
+		// output column labels (if any):
+		if (item.getDBLink() != null) {
+			boolean firstDone = false;
+			for(DBColumn dbCol : item.getDBLink()) {
+				translation.append(firstDone ? ',' : '(');
+				appendIdentifier(translation, dbCol.getADQLName(), true);
+				firstDone = true;
+			}
+			translation.append(')');
+		} else {
+			List<ADQLColumn> colLabels = item.getColumnLabels();
+			if (colLabels != null && !colLabels.isEmpty()) {
+				boolean firstDone = false;
+				for(ADQLColumn col : colLabels) {
+					translation.append(firstDone ? ',' : '(');
+					appendIdentifier(translation, (col.isCaseSensitive(IdentifierField.COLUMN) ? col.getColumnName() : col.getColumnName().toLowerCase()), true);
+					firstDone = true;
+				}
+				translation.append(')');
+			}
+		}
+
+		// query itself:
+		translation.append(" AS (\n").append(translate(item.getQuery())).append("\n)");
+
+		return translation.toString();
+	}
+
+	@Override
 	public String translate(SelectItem item) throws TranslationException {
 		if (item instanceof SelectAllColumns)
 			return translate((SelectAllColumns)item);
@@ -476,10 +530,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 		StringBuffer translation = new StringBuffer(translate(item.getOperand()));
 		if (item.hasAlias()) {
 			translation.append(" AS ");
-			if (item.isCaseSensitive())
-				appendIdentifier(translation, item.getAlias(), true);
-			else
-				appendIdentifier(translation, item.getAlias().toLowerCase(), true);
+			appendIdentifier(translation, (item.isCaseSensitive() ? item.getAlias() : item.getAlias().toLowerCase()), true);
 		} else {
 			translation.append(" AS ");
 			appendIdentifier(translation, item.getName(), true);
@@ -508,7 +559,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			StringBuffer cols = new StringBuffer();
 			for(DBColumn col : dbCols) {
 				if (cols.length() > 0)
-					cols.append(',');
+					cols.append(" , ");
 				if (col.getTable() != null) {
 					if (col.getTable() instanceof DBTableAlias)
 						cols.append(getTableName(col.getTable(), false)).append('.');
@@ -516,7 +567,8 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 						cols.append(getQualifiedTableName(col.getTable())).append('.');
 				}
 				appendIdentifier(cols, col.getDBName(), IdentifierField.COLUMN);
-				cols.append(" AS \"").append(col.getADQLName()).append('\"');
+				cols.append(" AS ");
+				appendIdentifier(cols, (col.isCaseSensitive() ? col.getADQLName() : col.getADQLName().toLowerCase()), true);
 			}
 			return (cols.length() > 0) ? cols.toString() : item.toADQL();
 		} else {
@@ -595,16 +647,19 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			/* In case where metadata are known, the alias must always be
 			 * written case sensitively in order to ensure a translation
 			 * stability (i.e. all references clearly point toward this alias
-			 * whatever is their character case). */
+			 * whatever is their character case). *
 			if (table.getDBLink() != null) {
-				if (table.isCaseSensitive(IdentifierField.ALIAS))
-					appendIdentifier(sql, table.getAlias(), true);
+				if (table.getDBLink().isCaseSensitive())
+					appendIdentifier(sql, table.getAlias(), IdentifierField.TABLE);
 				else
-					appendIdentifier(sql, table.getAlias().toLowerCase(), true);
+					appendIdentifier(sql, table.getAlias().toLowerCase(), IdentifierField.TABLE);
 			}
-			/* Otherwise, just write what is written in ADQL: */
+			/* Otherwise, just write what is written in ADQL: *
+			else*/
+			if (table.getDBLink() != null)
+				appendIdentifier(sql, (table.getDBLink().isCaseSensitive() ? table.getDBLink().getDBName() : table.getDBLink().getDBName().toLowerCase()), true);
 			else
-				appendIdentifier(sql, table.getAlias(), table.isCaseSensitive(IdentifierField.ALIAS));
+				appendIdentifier(sql, (table.isCaseSensitive(IdentifierField.ALIAS) ? table.getAlias() : table.getAlias().toLowerCase()), true);
 		}
 
 		return sql.toString();
@@ -676,14 +731,8 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			StringBuffer colName = new StringBuffer();
 
 			// Use the DBTable if any:
-			if (dbCol.getTable() != null && dbCol.getTable().getDBName() != null) {
-				/* Note: if the table is aliased, ensure no schema is prefixing
-				 *       this alias thanks to getTableName(..., false). */
-				if (dbCol.getTable() instanceof DBTableAlias)
-					colName.append(getTableName(dbCol.getTable(), false)).append('.');
-				else
-					colName.append(getQualifiedTableName(dbCol.getTable())).append('.');
-			}
+			if (dbCol.getTable() != null && dbCol.getTable().getDBName() != null)
+				colName.append(getQualifiedTableName(dbCol.getTable())).append('.');
 
 			// Otherwise, use the prefix of the column given in the ADQL query:
 			else if (column.getTableName() != null)

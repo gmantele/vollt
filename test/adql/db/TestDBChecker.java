@@ -46,7 +46,7 @@ public class TestDBChecker {
 		tables = new ArrayList<DBTable>();
 
 		DefaultDBTable fooTable = new DefaultDBTable(null, "aschema", "foo");
-		DBColumn col = new DefaultDBColumn("colS", new DBType(DBDatatype.VARCHAR), fooTable);
+		DBColumn col = new DefaultDBColumn("\"colS\"", new DBType(DBDatatype.VARCHAR), fooTable);
 		fooTable.addColumn(col);
 		col = new DefaultDBColumn("colI", new DBType(DBDatatype.INTEGER), fooTable);
 		fooTable.addColumn(col);
@@ -72,6 +72,60 @@ public class TestDBChecker {
 
 	@After
 	public void tearDown() throws Exception {
+	}
+
+	@Test
+	public void testWithClause() {
+
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+		parser.setQueryChecker(new DBChecker(tables));
+
+		try {
+
+			// CASE: Only 1 CTE, no column label, no CTE case sensibility
+			assertNotNull(parser.parseQuery("WITH myfoo AS (SELECT * FROM foo) SELECT * FROM myfoo"));
+
+			// CASE: CTE case sensibility respected
+			assertNotNull(parser.parseQuery("WITH \"MyFoo\" AS (SELECT * FROM foo) SELECT * FROM \"MyFoo\""));
+			assertNotNull(parser.parseQuery("WITH \"MyFoo\" AS (SELECT * FROM foo) SELECT * FROM MyFoo"));
+
+			// CASE: correct number of column labels
+			assertNotNull(parser.parseQuery("WITH MyFoo(col1, col2, col3) AS (SELECT * FROM foo) SELECT * FROM MyFoo"));
+
+			// CASE: reference between WITH clause in the correct order
+			assertNotNull(parser.parseQuery("WITH MyFoo AS (SELECT * FROM foo), MyOtherFoo AS (SELECT * FROM MyFoo WHERE colS IS NULL) SELECT * FROM MyOtherFoo"));
+
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while parsing+checking a valid ADQL query! (see console for more details)");
+		}
+
+		// CASE: CTE case sensibility not respected
+		try {
+			parser.parseQuery("WITH \"MyFoo\" AS (SELECT * FROM foo) SELECT * FROM \"myfoo\"");
+			fail("WITH item's label is case sensitive....references to this CTE should also be case sensitive.");
+		} catch(Exception ex) {
+			assertEquals(UnresolvedIdentifiersException.class, ex.getClass());
+			assertEquals("1 unresolved identifiers: myfoo [l.1 c.51 - l.1 c.58]!\n  - Unknown table \"\"myfoo\"\" !", ex.getMessage());
+		}
+
+		// CASE: less column labels than available columns
+		try {
+			parser.parseQuery("WITH MyFoo(col1) AS (SELECT * FROM foo) SELECT * FROM MyFoo");
+			fail("WITH item's label is case sensitive....references to this CTE should also be case sensitive.");
+		} catch(Exception ex) {
+			assertEquals(UnresolvedIdentifiersException.class, ex.getClass());
+			assertEquals("1 unresolved identifiers!\n  - The WITH query \"MyFoo\" specifies LESS columns (1) than available (3)!", ex.getMessage());
+		}
+		// CASE: more column labels than available columns
+		try {
+			parser.parseQuery("WITH MyFoo(col1, col2, col3, col4) AS (SELECT * FROM foo) SELECT * FROM MyFoo");
+			fail("WITH item's label is case sensitive....references to this CTE should also be case sensitive.");
+		} catch(Exception ex) {
+			assertEquals(UnresolvedIdentifiersException.class, ex.getClass());
+			assertEquals("1 unresolved identifiers!\n  - The WITH query \"MyFoo\" specifies MORE columns (4) than available (3)!", ex.getMessage());
+		}
+
 	}
 
 	@Test

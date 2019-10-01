@@ -34,7 +34,7 @@ import adql.query.from.ADQLTable;
  * ({schema(s)}.{table}.{column}).
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (09/2019)
  */
 public class ADQLColumn implements ADQLOperand, UnknownType {
 
@@ -67,7 +67,9 @@ public class ADQLColumn implements ADQLOperand, UnknownType {
 
 	/** The {@link ADQLTable} which is supposed to contain this column.
 	 * By default, this field is automatically filled by
-	 * {@link adql.db.DBChecker}. */
+	 * {@link adql.db.DBChecker}.
+	 * @deprecated	Since v2.0. This piece of information is never used. */
+	@Deprecated
 	private ADQLTable adqlTable = null;
 
 	/** Type expected by the parser.
@@ -472,7 +474,10 @@ public class ADQLColumn implements ADQLOperand, UnknownType {
 	 * Gets the {@link ADQLTable} from which this column is supposed to come.
 	 *
 	 * @return 	Its source table.
+	 *
+	 * @deprecated	Since v2.0. This function is never used.
 	 */
+	@Deprecated
 	public final ADQLTable getAdqlTable() {
 		return adqlTable;
 	}
@@ -487,7 +492,10 @@ public class ADQLColumn implements ADQLOperand, UnknownType {
 	 * </p>
 	 *
 	 * @param adqlTable Its source table.
+	 *
+	 * @deprecated	Since v2.0. This piece of information is never used.
 	 */
+	@Deprecated
 	public final void setAdqlTable(ADQLTable adqlTable) {
 		this.adqlTable = adqlTable;
 	}
@@ -527,7 +535,10 @@ public class ADQLColumn implements ADQLOperand, UnknownType {
 
 	@Override
 	public String getName() {
-		return getColumnName();
+		if (dbLink != null)
+			return (dbLink.isCaseSensitive() ? dbLink.getADQLName() : dbLink.getADQLName().toLowerCase());
+		else
+			return getColumnName();
 	}
 
 	@Override

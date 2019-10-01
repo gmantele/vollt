@@ -31,12 +31,15 @@ public class TestADQLObjectPosition {
 	public void testPositionInAllClauses() {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			try {
-				ADQLQuery query = new ADQLParser(version).parseQuery("SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors, 2 DESC");
+				ADQLQuery query = new ADQLParser(version).parseQuery((version != ADQLVersion.V2_0 ? "WITH bar AS (SELECT * FROM superbar) " : "") + "SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors, 2 DESC");
 
 				Iterator<ADQLObject> results = query.search(new SimpleSearchHandler(true) {
 					@Override
 					protected boolean match(ADQLObject obj) {
-						return obj.getPosition() == null;
+						if (obj instanceof ADQLList<?> && ((ADQLList<?>)obj).isEmpty())
+							return false;
+						else
+							return obj.getPosition() == null;
 					}
 				});
 				if (results.hasNext()) {

@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (08/2019)
+* Version: 2.0 (09/2019)
 */
 
 							/* ########### */
@@ -107,7 +107,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (09/2019)
  * @since 2.0
  */
 public class ADQLGrammar201 extends ADQLGrammarBase {
@@ -206,7 +206,7 @@ SKIP : { < " " | "\t" | "\n" | "\r" | "\r\n" > }
 /* ************************************************************************** */
 
 TOKEN : {
-	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CAST"|"CATALOG"|"CHAR"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COALESCE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DOUBLE"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPT"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTEGER"|"INTERSECT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PRECISION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REAL"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SMALLINT"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMESTAMP"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNION"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"UPPER"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARCHAR"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WITH"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
+	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CAST"|"CATALOG"|"CHAR"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COALESCE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DOUBLE"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPT"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTEGER"|"INTERSECT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PRECISION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REAL"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SMALLINT"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMESTAMP"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNION"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"UPPER"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARCHAR"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
 	{ matchedToken.sqlReserved = true; }
 }
 
@@ -305,7 +305,8 @@ TOKEN : {
 /* Other clauses' tokens */
 /* ********************* */
 TOKEN : {
-	< BY: "BY" >         { matchedToken.adqlReserved = true; }
+	< WITH: "WITH" >     { matchedToken.adqlReserved = true; }
+|	< BY: "BY" >         { matchedToken.adqlReserved = true; }
 |	< GROUP: "GROUP" >   { matchedToken.adqlReserved = true; }
 |	< HAVING: "HAVING" > { matchedToken.adqlReserved = true; }
 |	< ORDER: "ORDER" >   { matchedToken.adqlReserved = true; }
@@ -452,6 +453,7 @@ ADQLQuery QueryExpression(): {TextPosition endPos = null;} {
 			throw generateParseException(ex);
 		}
 	}
+	[With()]
 	Select()
 	From()     {endPos = query.getFrom().getPosition();}
 	[Where()   {endPos = query.getWhere().getPosition();}]
@@ -461,7 +463,10 @@ ADQLQuery QueryExpression(): {TextPosition endPos = null;} {
 	[Offset()  {endPos = new TextPosition(token);}]
 	{
 		// set the position of the query:
-		query.setPosition(new TextPosition(query.getSelect().getPosition(), endPos));
+		if (query.getWith().isEmpty())
+			query.setPosition(new TextPosition(query.getSelect().getPosition(), endPos));
+		else
+			query.setPosition(new TextPosition(query.getWith().getPosition(), endPos));
 		
 		// get the previous query (!= null if the current query is a sub-query):
 		ADQLQuery previousQuery = stackQuery.pop();
@@ -479,6 +484,33 @@ ADQLQuery SubQueryExpression(): {ADQLQuery q = null; Token start, end;} {
 	{
 		q.setPosition(new TextPosition(start, end));
 		return q;
+	}
+}
+
+ClauseADQL<WithItem> With(): { ClauseADQL<WithItem> withClause = query.getWith(); WithItem withItem; Token start,end; IdentifierItem id, colId; ArrayList<ADQLColumn> colLabels = new ArrayList<ADQLColumn>(10); ADQLQuery query; } {
+	try {
+		start=<WITH> id=Identifier() [<LEFT_PAR> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); } (<COMMA> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); })* <RIGHT_PAR>] <AS> <LEFT_PAR> query=QueryExpression() end=<RIGHT_PAR>
+		{
+			withItem = queryFactory.createWithItem(id, query, colLabels);
+			withItem.setPosition(new TextPosition(id.position, new TextPosition(end)));
+			withClause.add(withItem);
+			colLabels.clear();
+		}
+		(
+			<COMMA> id=Identifier() [<LEFT_PAR> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); } (<COMMA> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); })* <RIGHT_PAR>] <AS> <LEFT_PAR> query=QueryExpression() end=<RIGHT_PAR>
+			{
+				withItem = queryFactory.createWithItem(id, query, colLabels);
+				withItem.setPosition(new TextPosition(id.position, new TextPosition(end)));
+				withClause.add(withItem);
+				colLabels.clear();
+			}
+		)*
+		{
+		  withClause.setPosition(new TextPosition(start, end));
+		  return withClause;
+		}
+	}catch(Exception ex) {
+		throw generateParseException(ex);
 	}
 }
 
@@ -503,7 +535,7 @@ void Select(): {ClauseSelect select = query.getSelect(); SelectItem item=null; T
 	}
 }
 
-SelectItem SelectItem(): {IdentifierItems identifiers = new IdentifierItems(true); IdentifierItem id = null, label = null; ADQLOperand op = null; SelectItem item; Token starToken;} {
+SelectItem SelectItem(): {IdentifierItems identifiers = new IdentifierItems(true); IdentifierItem firstID = null, id = null, label = null; ADQLOperand op = null; SelectItem item; Token starToken;} {
 	(
 		( starToken=<ASTERISK>
 		  {
@@ -514,7 +546,7 @@ SelectItem SelectItem(): {IdentifierItems identifiers = new IdentifierItems(true
 		)
 	|LOOKAHEAD(7)
 		(
-			id=Identifier() <DOT> { identifiers.append(id); }
+			id=Identifier() <DOT> { identifiers.append(id); firstID = id; }
 			(
 				id=Identifier() <DOT> { identifiers.append(id); }
 				(
@@ -524,9 +556,11 @@ SelectItem SelectItem(): {IdentifierItems identifiers = new IdentifierItems(true
 			starToken=<ASTERISK>
 			{
 				try{
-					item = new SelectAllColumns( queryFactory.createTable(identifiers, null) );
-					TextPosition firstPos = identifiers.get(0).position;
-					item.setPosition(new TextPosition(firstPos.beginLine, firstPos.beginColumn, starToken.endLine, (starToken.endColumn < 0) ? -1 : (starToken.endColumn + 1)));
+					ADQLTable table = queryFactory.createTable(identifiers, null);
+					table.setPosition(new TextPosition(firstID.position, id.position));
+					
+					item = new SelectAllColumns(table);
+					item.setPosition(new TextPosition(firstID.position, new TextPosition(starToken)));
 					return item;
 				}catch(Exception ex) {
 					throw generateParseException(ex);

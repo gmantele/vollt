@@ -26,10 +26,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import adql.db.DBColumn;
+import adql.db.DBIdentifier;
 import adql.db.DBTable;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.DefaultDBTable;
 
 /**
  * Represent a column as described by the IVOA standard in the TAP protocol
@@ -82,21 +82,7 @@ import adql.db.DefaultDBTable;
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.4 (09/2019)
  */
-public class TAPColumn implements DBColumn {
-
-	/** ADQL name of this column. */
-	private final String adqlName;
-
-	/** Indicate whether the ADQL column name is case sensitive. In such case,
-	 * this name will be put between double quotes in ADQL.
-	 * @since 2.4 */
-	private boolean columnCaseSensitive = false;
-
-	/** Name that this column have in the database.
-	 * <p><i><b>Note:</b>
-	 * 	It CAN NOT be NULL. By default, it is the ADQL name.
-	 * </i></p> */
-	private String dbName = null;
+public class TAPColumn extends DBIdentifier implements DBColumn {
 
 	/** Table which owns this column.
 	 * <p><i><b>Note:</b>
@@ -228,20 +214,10 @@ public class TAPColumn implements DBColumn {
 	 *
 	 * @param columnName	ADQL name of this column.
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
-	public TAPColumn(String columnName) throws NullPointerException {
-		if (columnName == null)
-			throw new NullPointerException("Missing column name!");
-
-		columnName = columnName.trim();
-		columnCaseSensitive = DefaultDBTable.isDelimited(columnName);
-		adqlName = (columnCaseSensitive ? columnName.substring(1, columnName.length() - 1).replaceAll("\"\"", "\"") : columnName);
-
-		if (adqlName.trim().length() == 0)
-			throw new NullPointerException("Missing column name!");
-
-		dbName = null;
+	public TAPColumn(final String columnName) throws NullPointerException {
+		super(columnName);
 
 		lstTargets = new ArrayList<TAPForeignKey>(1);
 		lstSources = new ArrayList<TAPForeignKey>(1);
@@ -277,7 +253,7 @@ public class TAPColumn implements DBColumn {
 	 * @param columnName	ADQL name of this column.
 	 * @param type			Datatype of this column.
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 *
 	 * @see #setDatatype(DBType)
 	 */
@@ -318,7 +294,7 @@ public class TAPColumn implements DBColumn {
 	 * @param description	Description of the column's content.
 	 *                   	<i>May be NULL</i>
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPColumn(String columnName, String description) throws NullPointerException {
 		this(columnName, (DBType)null, description);
@@ -357,7 +333,7 @@ public class TAPColumn implements DBColumn {
 	 * @param description	Description of the column's content.
 	 *                   	<i>May be NULL</i>
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPColumn(String columnName, DBType type, String description) throws NullPointerException {
 		this(columnName, type);
@@ -398,7 +374,7 @@ public class TAPColumn implements DBColumn {
 	 * @param unit			Unit of the column's values.
 	 *            			<i>May be NULL</i>
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPColumn(String columnName, String description, String unit) throws NullPointerException {
 		this(columnName, null, description, unit);
@@ -438,7 +414,7 @@ public class TAPColumn implements DBColumn {
 	 * @param unit			Unit of the column's values.
 	 *            			<i>May be NULL</i>
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPColumn(String columnName, DBType type, String description, String unit) throws NullPointerException {
 		this(columnName, type, description);
@@ -482,7 +458,7 @@ public class TAPColumn implements DBColumn {
 	 * @param utype			UType associating this column with a data-model.
 	 *            			<i>May be NULL</i>
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPColumn(String columnName, String description, String unit, String ucd, String utype) throws NullPointerException {
 		this(columnName, null, description, unit, ucd, utype);
@@ -526,7 +502,7 @@ public class TAPColumn implements DBColumn {
 	 * @param utype			UType associating this column with a data-model.
 	 *                   	<i>May be NULL</i>
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPColumn(String columnName, DBType type, String description, String unit, String ucd, String utype) throws NullPointerException {
 		this(columnName, type, description, unit);
@@ -546,11 +522,6 @@ public class TAPColumn implements DBColumn {
 		return getADQLName();
 	}
 
-	@Override
-	public final String getADQLName() {
-		return adqlName;
-	}
-
 	/**
 	 * Get the ADQL name of this column, as it has been provided at
 	 * initialization.
@@ -560,36 +531,7 @@ public class TAPColumn implements DBColumn {
 	 * @since 2.1
 	 */
 	public final String getRawName() {
-		return (columnCaseSensitive ? "\"" + adqlName.replaceAll("\"", "\"\"") + "\"" : adqlName);
-	}
-
-	@Override
-	public final boolean isCaseSensitive() {
-		return columnCaseSensitive;
-	}
-
-	@Override
-	public final String getDBName() {
-		return (dbName == null) ? getADQLName() : dbName;
-	}
-
-	/**
-	 * Change the name that this column MUST have in the database (i.e. in SQL
-	 * queries).
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	If the given value is NULL or an empty string, nothing is done ; the DB
-	 * 	name keeps is former value.
-	 * </i></p>
-	 *
-	 * @param name	The new database name of this column.
-	 */
-	public final void setDBName(String name) {
-		name = (name != null) ? name.trim() : name;
-		if (name != null && name.length() > 0)
-			dbName = name;
-		else
-			dbName = null;
+		return denormalize(getADQLName(), isCaseSensitive());
 	}
 
 	@Override
@@ -1033,8 +975,7 @@ public class TAPColumn implements DBColumn {
 	 */
 	@Override
 	public DBColumn copy(final String dbName, final String adqlName, final DBTable dbTable) {
-		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, datatype, description, unit, ucd, utype);
-		copy.columnCaseSensitive = this.columnCaseSensitive;
+		TAPColumn copy = new TAPColumn((adqlName == null) ? getRawName() : adqlName, datatype, description, unit, ucd, utype);
 		copy.setDBName((dbName == null) ? this.getDBName() : dbName);
 		copy.setTable(dbTable);
 
@@ -1060,7 +1001,7 @@ public class TAPColumn implements DBColumn {
 	 */
 	public DBColumn copy() {
 		TAPColumn copy = new TAPColumn(adqlName, datatype, description, unit, ucd, utype);
-		copy.columnCaseSensitive = this.columnCaseSensitive;
+		copy.setCaseSensitive(isCaseSensitive());
 		copy.setDBName(dbName);
 		copy.setTable(table);
 		copy.setIndexed(indexed);
@@ -1076,12 +1017,12 @@ public class TAPColumn implements DBColumn {
 			return false;
 
 		TAPColumn col = (TAPColumn)obj;
-		return col.getTable().equals(table) && col.getADQLName().equals(adqlName) && col.columnCaseSensitive == this.columnCaseSensitive;
+		return col.getTable().equals(table) && col.getADQLName().equals(adqlName) && col.isCaseSensitive() == this.isCaseSensitive();
 	}
 
 	@Override
 	public String toString() {
-		return (table != null ? table.toString() : "") + getRawName();
+		return (table != null ? table.toString() + "." : "") + getRawName();
 	}
 
 }

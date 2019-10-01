@@ -34,7 +34,7 @@ import adql.parser.feature.LanguageFeature;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (08/2019)
  *
  * @see ClauseADQL
  * @see ClauseConstraints
@@ -63,7 +63,27 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 *
 	 * @param name	Prefix/Name of this list.
 	 */
-	protected ADQLList(String name) {
+	protected ADQLList(final String name) {
+		this(name, null);
+	}
+
+	/**
+	 * Builds an ADQLList with only its name and its corresponding language
+	 * feature.
+	 *
+	 * <p>The given name will always prefix the list.</p>
+	 *
+	 * <p>
+	 * 	The language feature is optional. If omitted, a default non-optional
+	 * 	one will be created using the list's name.
+	 * </p>
+	 *
+	 * @param name					Prefix/Name of this list.
+	 * @param implementedFeature	Language Feature implemented by this list.
+	 *
+	 * @since 2.0
+	 */
+	protected ADQLList(String name, final LanguageFeature implementedFeature) {
 		if (name != null) {
 			name = name.trim();
 			if (name.length() == 0)
@@ -72,7 +92,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 
 		this.name = name;
 
-		this.FEATURE = new LanguageFeature(null, "CLAUSE" + (this.name == null ? "" : "_" + this.name), false, "An ADQL clause (e.g. SELECT, FROM, ...).");
+		this.FEATURE = (implementedFeature != null) ? implementedFeature : new LanguageFeature(null, "CLAUSE" + (this.name == null ? "" : "_" + this.name), false, "An ADQL clause (e.g. SELECT, FROM, ...).");
 	}
 
 	/**
@@ -85,7 +105,7 @@ public abstract class ADQLList<T extends ADQLObject> implements ADQLObject, Iter
 	 */
 	@SuppressWarnings("unchecked")
 	protected ADQLList(ADQLList<T> toCopy) throws Exception {
-		this(toCopy.getName());
+		this(toCopy.getName(), toCopy.getFeatureDescription());
 		for(T obj : toCopy)
 			add((T)obj.getCopy());
 		position = (toCopy.position != null) ? new TextPosition(toCopy.position) : null;

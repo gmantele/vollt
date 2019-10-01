@@ -27,7 +27,7 @@ public class TestMetadataNames {
 			new TAPSchema(null);
 			fail("It should be impossible to create a TAPSchema with a NULL name.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing schema name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty string (not a single character):
@@ -35,7 +35,7 @@ public class TestMetadataNames {
 			new TAPSchema("");
 			fail("It should be impossible to create a TAPSchema with an empty name.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing schema name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// String with only space characters:
@@ -43,7 +43,7 @@ public class TestMetadataNames {
 			new TAPSchema(" 	");
 			fail("It should be impossible to create a TAPSchema with a name just composed of space characters.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing schema name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty quoted string I:
@@ -51,7 +51,7 @@ public class TestMetadataNames {
 			new TAPSchema("\"\"");
 			fail("It should be impossible to create a TAPSchema with a empty name even if quoted.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing schema name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty quoted string II:
@@ -59,7 +59,7 @@ public class TestMetadataNames {
 			new TAPSchema("\" \"");
 			fail("It should be impossible to create a TAPSchema with a empty name even if quoted.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing schema name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Non quoted names => ADQL_NAME = RAW_NAME = TRIMMED(GIVEN_NAME)
@@ -125,7 +125,7 @@ public class TestMetadataNames {
 			new TAPTable(null);
 			fail("It should be impossible to create a TAPTable with a NULL name.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing table name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty string (not a single character):
@@ -133,7 +133,7 @@ public class TestMetadataNames {
 			new TAPTable("");
 			fail("It should be impossible to create a TAPTable with an empty name.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing table name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// String with only space characters:
@@ -141,7 +141,7 @@ public class TestMetadataNames {
 			new TAPTable(" 	");
 			fail("It should be impossible to create a TAPTable with a name just composed of space characters.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing table name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty quoted string I:
@@ -149,7 +149,7 @@ public class TestMetadataNames {
 			new TAPTable("\"\"");
 			fail("It should be impossible to create a TAPTable with a empty name even if quoted.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing table name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty quoted string II:
@@ -157,7 +157,7 @@ public class TestMetadataNames {
 			new TAPTable("\" \"");
 			fail("It should be impossible to create a TAPTable with a empty name even if quoted.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing table name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Non quoted names => ADQL_NAME = RAW_NAME = TRIMMED(GIVEN_NAME)
@@ -263,7 +263,7 @@ public class TestMetadataNames {
 			new TAPColumn(null);
 			fail("It should be impossible to create a TAPColumn with a NULL name.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing column name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty string (not a single character):
@@ -271,7 +271,7 @@ public class TestMetadataNames {
 			new TAPColumn("");
 			fail("It should be impossible to create a TAPColumn with an empty name.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing column name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// String with only space characters:
@@ -279,7 +279,7 @@ public class TestMetadataNames {
 			new TAPColumn(" 	");
 			fail("It should be impossible to create a TAPColumn with a name just composed of space characters.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing column name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty quoted string I:
@@ -287,7 +287,7 @@ public class TestMetadataNames {
 			new TAPColumn("\"\"");
 			fail("It should be impossible to create a TAPColumn with a empty name even if quoted.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing column name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Empty quoted string II:
@@ -295,7 +295,7 @@ public class TestMetadataNames {
 			new TAPColumn("\" \"");
 			fail("It should be impossible to create a TAPColumn with a empty name even if quoted.");
 		} catch(NullPointerException npe) {
-			assertEquals("Missing column name!", npe.getMessage());
+			assertEquals("Missing ADQL name!", npe.getMessage());
 		}
 
 		// Non quoted names => ADQL_NAME = RAW_NAME = TRIMMED(GIVEN_NAME)

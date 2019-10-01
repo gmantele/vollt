@@ -28,9 +28,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import adql.db.DBColumn;
+import adql.db.DBIdentifier;
 import adql.db.DBTable;
 import adql.db.DBType;
-import adql.db.DefaultDBTable;
 import tap.TAPException;
 
 /**
@@ -63,7 +63,7 @@ import tap.TAPException;
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.4 (09/2019)
  */
-public class TAPTable implements DBTable {
+public class TAPTable extends DBIdentifier implements DBTable {
 
 	/**
 	 * Different types of table according to the TAP protocol.
@@ -78,26 +78,10 @@ public class TAPTable implements DBTable {
 		output, table, view;
 	}
 
-	/** ADQL name of this table.
-	 * <p><i>This name is neither qualified nor delimited.</i></p> */
-	private String adqlName;
-
 	/** Name of this table as provided at creation.
 	 * <p><i>This name may be qualified and/or delimited.</i></p>
 	 * @since 2.4 */
-	private final String rawName;
-
-	/** Indicate whether the ADQL table name is case sensitive. In such case,
-	 * this name will be put between double quotes in ADQL.
-	 * @since 2.4 */
-	private boolean tableNameCaseSensitive = false;
-
-	/** Name that this table have in the database.
-	 * <p><i><b>Note:</b>
-	 * 	If NULL, {@link #getDBName()} returns what {@link #getADQLName()}
-	 * 	returns.
-	 * </i></p> */
-	private String dbName = null;
+	private String rawName;
 
 	/** The schema which owns this table.
 	 * <p><i><b>Note:</b>
@@ -181,7 +165,7 @@ public class TAPTable implements DBTable {
 	 * 		Double quotes may surround the table name. In such case, the ADQL
 	 * 		name of this table will be considered as case sensitive and these
 	 * 		double quotes will be automatically removed.
-	 * 		<em>Note that this case sensitivity may not be identified just after
+	 * 		<em>Note that this case sensitivity may be not identified just after
 	 * 		this constructor ; you may have to specify the schema
 	 * 		(see {@link #setSchema(TAPSchema)}) so that the schema prefix is
 	 * 		removed first.</em>
@@ -190,19 +174,12 @@ public class TAPTable implements DBTable {
 	 *
 	 * @param tableName		ADQL name of this table.
 	 *
-	 * @throws NullPointerException	If the given name is NULL or an empty string.
+	 * @throws NullPointerException	If the given name is NULL or empty.
 	 */
 	public TAPTable(final String tableName) throws NullPointerException {
-		if (tableName == null)
-			throw new NullPointerException("Missing table name!");
+		super(tableName);
 
 		rawName = tableName.trim();
-		updateADQLName();
-
-		if (adqlName.trim().length() == 0)
-			throw new NullPointerException("Missing table name!");
-
-		dbName = null;
 
 		columns = new LinkedHashMap<String, TAPColumn>();
 		foreignKeys = new ArrayList<TAPForeignKey>();
@@ -312,7 +289,7 @@ public class TAPTable implements DBTable {
 	 * @return	Qualified and delimited (if needed) ADQL name of this table.
 	 */
 	public final String getFullName() {
-		return (schema != null ? schema.getADQLName() + "." : "") + (tableNameCaseSensitive ? "\"" + getADQLName().replaceAll("\"", "\"\"") + "\"" : getADQLName());
+		return (schema != null ? schema.getADQLName() + "." : "") + denormalize(getADQLName(), isCaseSensitive());
 	}
 
 	/**
@@ -327,11 +304,6 @@ public class TAPTable implements DBTable {
 	@Deprecated
 	public final String getName() {
 		return getADQLName();
-	}
-
-	@Override
-	public final String getADQLName() {
-		return adqlName;
 	}
 
 	/**
@@ -358,62 +330,38 @@ public class TAPTable implements DBTable {
 	 *
 	 * @since 2.4
 	 */
-	private void updateADQLName() {
-		String tmp = rawName;
+	@Override
+	public void setADQLName(final String name) throws NullPointerException {
+		/* Start by setting the new ADQL name (ignoring prefix if any
+		 * + detection of NULL and empty string): */
+		super.setADQLName(name);
+
+		// Memorize the new raw name:
+		rawName = name.trim();
 
 		// If a schema is specified, remove the schema prefix (if any):
 		if (schema != null) {
+			String tmp = name;
+
 			// strict comparison if schema is case sensitive:
 			if (schema.isCaseSensitive()) {
 				if (tmp.startsWith(schema.getRawName() + "."))
 					tmp = tmp.substring(schema.getRawName().length() + 1).trim();
 			}
+
 			// if no case sensitivity...
 			else {
 				// ...search not-case-sensitively for a prefix:
 				if (tmp.toLowerCase().startsWith(schema.getADQLName().toLowerCase() + "."))
 					tmp = tmp.substring(schema.getADQLName().length() + 1).trim();
 				// ...otherwise, try with a strict comparison (as if schema was case sensitive):
-				else if (tmp.toLowerCase().startsWith("\"" + schema.getADQLName().toLowerCase().replaceAll("\"", "\"\"") + "\"."))
-					tmp = tmp.substring(schema.getADQLName().replaceAll("\"", "\"\"").length() + 3).trim();
+				else if (tmp.toLowerCase().startsWith(denormalize(schema.getADQLName().toLowerCase(), true) + "."))
+					tmp = tmp.substring(denormalize(schema.getADQLName(), true).length() + 1).trim();
 			}
+
+			// Finally, re-update the ADQL name (with prefix removed):
+			super.setADQLName(tmp);
 		}
-
-		// Detect if delimited (i.e. case sensitive):
-		if ((tableNameCaseSensitive = DefaultDBTable.isDelimited(tmp)))
-			tmp = tmp.substring(1, tmp.length() - 1).replaceAll("\"\"", "\"");
-
-		// Finally, set the ADQL name:
-		adqlName = tmp;
-	}
-
-	@Override
-	public final boolean isCaseSensitive() {
-		return tableNameCaseSensitive;
-	}
-
-	@Override
-	public final String getDBName() {
-		return (dbName == null) ? getADQLName() : dbName;
-	}
-
-	/**
-	 * Change the name that this table MUST have in the database (i.e. in SQL
-	 * queries).
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	If the given value is NULL or an empty string, {@link #getDBName()} will
-	 * 	return exactly what {@link #getADQLName()} returns.
-	 * </i></p>
-	 *
-	 * @param name	The new database name of this table.
-	 */
-	public final void setDBName(String name) {
-		name = (name != null) ? name.trim() : name;
-		if (name != null && name.length() > 0)
-			dbName = name;
-		else
-			dbName = null;
 	}
 
 	@Override
@@ -471,7 +419,7 @@ public class TAPTable implements DBTable {
 
 		/* Update the ADQL name of this table:
 		 * (i.e. whether or not schema prefix should be removed) */
-		updateADQLName();
+		setADQLName(rawName);
 	}
 
 	/**
@@ -1131,7 +1079,7 @@ public class TAPTable implements DBTable {
 
 	@Override
 	public String toString() {
-		return ((schema != null) ? (schema.toString() + ".") : "") + (tableNameCaseSensitive ? "\"" + adqlName.replaceAll("\"", "\"\"") + "\"" : getADQLName());
+		return ((schema != null) ? (schema.toString() + ".") : "") + denormalize(getADQLName(), isCaseSensitive());
 	}
 
 	@Override
