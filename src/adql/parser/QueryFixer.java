@@ -34,7 +34,7 @@ import adql.parser.grammar.TokenMgrError;
  * <p><i>See {@link #fix(String)} for more details.</i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (10/2019)
  *
  * @since 2.0
  *
@@ -74,7 +74,7 @@ public class QueryFixer {
 	/** Regular expression matching all Unicode alternatives for <code>+</code>. */
 	protected final String REGEX_PLUS = "[+\u16ed\u2795]";
 	/** Regular expression matching all Unicode alternatives for <code> </code>. */
-	protected final String REGEX_SPACE = "[ \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f]";
+	protected final String REGEX_SPACE = "[ \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\uF0A0]";
 	/** Regular expression matching all Unicode alternatives for <code>&lt;</code>. */
 	protected final String REGEX_LESS_THAN = "[<\u02c2\u1438\u16b2\u2039\u276e]";
 	/** Regular expression matching all Unicode alternatives for <code>&gt;</code>. */
