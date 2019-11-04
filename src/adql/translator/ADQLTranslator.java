@@ -1,7 +1,5 @@
 package adql.translator;
 
-import adql.parser.feature.FeatureSet;
-
 /*
  * This file is part of ADQLLibrary.
  *
@@ -22,6 +20,7 @@ import adql.parser.feature.FeatureSet;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import adql.parser.feature.FeatureSet;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
@@ -45,7 +44,6 @@ import adql.query.from.ADQLTable;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
-import adql.query.operand.BitNotOperand;
 import adql.query.operand.Concatenation;
 import adql.query.operand.NegativeOperand;
 import adql.query.operand.NumericConstant;
@@ -77,7 +75,7 @@ import adql.query.operand.function.string.LowerFunction;
  * Translates ADQL objects into any language (i.e. SQL).
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (11/2019)
  *
  * @see PostgreSQLTranslator
  */
@@ -139,9 +137,6 @@ public interface ADQLTranslator {
 	public String translate(Concatenation concat) throws TranslationException;
 
 	public String translate(NegativeOperand negOp) throws TranslationException;
-
-	/** @since 2.0 */
-	public String translate(BitNotOperand bitNotOp) throws TranslationException;
 
 	public String translate(NumericConstant numConst) throws TranslationException;
 

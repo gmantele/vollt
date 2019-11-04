@@ -52,7 +52,6 @@ import adql.query.from.OuterJoin;
 import adql.query.from.OuterJoin.OuterType;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
-import adql.query.operand.BitNotOperand;
 import adql.query.operand.Concatenation;
 import adql.query.operand.NegativeOperand;
 import adql.query.operand.NumericConstant;
@@ -93,7 +92,7 @@ import adql.query.operand.function.string.LowerFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2019)
+ * @version 2.0 (11/2019)
  *
  * @see ADQLParser
  */
@@ -256,21 +255,6 @@ public class ADQLQueryFactory {
 
 	public NegativeOperand createNegativeOperand(ADQLOperand opToNegativate) throws Exception {
 		return new NegativeOperand(opToNegativate);
-	}
-
-	/**
-	 * Create the object representation of the bitwise operation NOT (i.e.
-	 * binary complement) applied to the given operand.
-	 *
-	 * @param operandToBitNot	Operand whose binary complement must be
-	 *                       	computed.
-	 *
-	 * @return	The corresponding object representation of this bitwise
-	 *        	operation.
-	 *
-	 * @since 2.0 */
-	public BitNotOperand createBitNotOperand(ADQLOperand operandToBitNot) throws Exception {
-		return new BitNotOperand(operandToBitNot);
 	}
 
 	public Concatenation createConcatenation() throws Exception {

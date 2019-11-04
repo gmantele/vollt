@@ -27,8 +27,6 @@ import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.IdentifierField;
-import adql.query.operand.Operation;
-import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.InUnitFunction;
@@ -76,7 +74,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2019)
+ * @version 2.0 (11/2019)
  *
  * @see PgSphereTranslator
  */
@@ -182,14 +180,6 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 			return "E'" + strConst.getValue() + "'";
 		else
 			return super.translate(strConst);
-	}
-
-	@Override
-	public String translate(Operation op) throws TranslationException {
-		if (op.getOperation() == OperationType.BIT_XOR)
-			return "(" + translate(op.getLeftOperand()) + " # " + translate(op.getRightOperand()) + ")";
-		else
-			return super.translate(op);
 	}
 
 	@Override

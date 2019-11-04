@@ -31,7 +31,6 @@ import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
-import adql.query.operand.Operation;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
@@ -65,7 +64,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (11/2019)
  * @since 1.4
  */
 public class MySQLTranslator extends JDBCTranslator {
@@ -193,18 +192,6 @@ public class MySQLTranslator extends JDBCTranslator {
 	/* * GENERAL TRANSLATIONS                                               * */
 	/* *                                                                    * */
 	/* ********************************************************************** */
-
-	@Override
-	public String translate(Operation op) throws TranslationException {
-		switch(op.getOperation()) {
-			case BIT_AND:
-			case BIT_OR:
-			case BIT_XOR:
-				return "CAST(" + translate(op.getLeftOperand()) + op.getOperation().toADQL() + translate(op.getRightOperand()) + " AS SIGNED)";
-			default:
-				return super.translate(op);
-		}
-	}
 
 	@Override
 	public String translate(MathFunction fct) throws TranslationException {

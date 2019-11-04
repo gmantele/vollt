@@ -29,10 +29,6 @@ import adql.query.ADQLQuery;
 import adql.query.WithItem;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
-import adql.query.operand.ADQLOperand;
-import adql.query.operand.BitNotOperand;
-import adql.query.operand.Operation;
-import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.geometry.CircleFunction;
 import adql.query.operand.function.geometry.ContainsFunction;
@@ -188,113 +184,6 @@ public class TestADQLParser {
 		} catch(Exception ex) {
 			assertEquals(ParseException.class, ex.getClass());
 			assertEquals("Incorrect argument: The 2nd argument of the ADQL function IN_UNIT (i.e. target unit) must be of type VARCHAR (i.e. a string)!", ex.getMessage());
-		}
-	}
-
-	@Test
-	public void testOperatorsPrecedence() {
-
-		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
-
-		// CASE: Check the generated tree (i.e. precedence of operators):
-		try {
-			ADQLQuery query = parser.parseQuery("SELECT ~3-1|2*5^6/1+2 FROM foo");
-			assertEquals("SELECT ~3-1|2*5^6/1+2\nFROM foo", query.toADQL());
-			// top operand = OR( ~3-1 , 2*5^6/1+2 )
-			ADQLOperand topOp = query.getSelect().get(0).getOperand();
-			assertEquals(Operation.class, topOp.getClass());
-			assertEquals(OperationType.BIT_OR, ((Operation)topOp).getOperation());
-			assertEquals("~3-1", ((Operation)topOp).getLeftOperand().toADQL());
-			assertEquals("2*5^6/1+2", ((Operation)topOp).getRightOperand().toADQL());
-			// left operand = SUB( ~3 , 1 )
-			ADQLOperand op = ((Operation)topOp).getLeftOperand();
-			assertEquals(Operation.class, op.getClass());
-			assertEquals(OperationType.SUB, ((Operation)op).getOperation());
-			assertEquals("~3", ((Operation)op).getLeftOperand().toADQL());
-			assertEquals("1", ((Operation)op).getRightOperand().toADQL());
-			// left operand = BIT_NOT( 3 )
-			op = ((Operation)op).getLeftOperand();
-			assertEquals(BitNotOperand.class, op.getClass());
-			assertEquals("3", ((BitNotOperand)op).getOperand().toADQL());
-			// right operand = BIT_XOR( 2*5 , 6/1+2 )
-			topOp = ((Operation)topOp).getRightOperand();
-			assertEquals(Operation.class, topOp.getClass());
-			assertEquals(OperationType.BIT_XOR, ((Operation)topOp).getOperation());
-			assertEquals("2*5", ((Operation)topOp).getLeftOperand().toADQL());
-			assertEquals("6/1+2", ((Operation)topOp).getRightOperand().toADQL());
-			// left operand = MULT( 2 , 5 )
-			op = ((Operation)topOp).getLeftOperand();
-			assertEquals(Operation.class, op.getClass());
-			assertEquals(OperationType.MULT, ((Operation)op).getOperation());
-			assertEquals("2", ((Operation)op).getLeftOperand().toADQL());
-			assertEquals("5", ((Operation)op).getRightOperand().toADQL());
-			// right operand = SUM( 6/1 , 2 )
-			op = ((Operation)topOp).getRightOperand();
-			assertEquals(Operation.class, op.getClass());
-			assertEquals(OperationType.SUM, ((Operation)op).getOperation());
-			assertEquals("6/1", ((Operation)op).getLeftOperand().toADQL());
-			assertEquals("2", ((Operation)op).getRightOperand().toADQL());
-			// left operand = DIV( 6 , 1 )
-			op = ((Operation)op).getLeftOperand();
-			assertEquals(Operation.class, op.getClass());
-			assertEquals(OperationType.DIV, ((Operation)op).getOperation());
-			assertEquals("6", ((Operation)op).getLeftOperand().toADQL());
-			assertEquals("1", ((Operation)op).getRightOperand().toADQL());
-
-		} catch(Exception ex) {
-			ex.printStackTrace();
-			fail("Unexpected error with valid operations! (see console for more details)");
-		}
-	}
-
-	@Test
-	public void testBitwiseOperation() {
-
-		// CASE: No bitwise operation in ADQL-2.0
-		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
-		try {
-			parser.parseQuery("SELECT 3|2 FROM foo");
-			fail("Bitwise operations should not be allowed with ADQL-2.0!");
-		} catch(Exception ex) {
-			assertEquals(ParseException.class, ex.getClass());
-			assertEquals(" Encountered \"|\". Was expecting one of: \",\" \"FROM\" \"AS\" \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> " + System.getProperty("line.separator", "\n") + "(HINT: \"|\" bitwise operations are not supported in ADQL-2.0. You should migrate your ADQL parser to support at least ADQL-2.1.)", ex.getMessage());
-		}
-
-		// CASE: Bitwise operations allowed in ADQL-2.1
-		parser = new ADQLParser(ADQLVersion.V2_1);
-		try {
-			assertEquals("SELECT 3|2\nFROM foo", parser.parseQuery("SELECT 3|2 FROM foo").toADQL());
-			assertEquals("SELECT 0xF&5\nFROM foo", parser.parseQuery("SELECT 0xF &5 FROM foo").toADQL());
-			assertEquals("SELECT 67^45\nFROM foo", parser.parseQuery("SELECT 67 ^ 45 FROM foo").toADQL());
-			assertEquals("SELECT ~0x3 , ~0x4 , ~3\nFROM foo", parser.parseQuery("SELECT ~ 0x3, ~0x4, ~ 3 FROM foo").toADQL());
-		} catch(Exception ex) {
-			ex.printStackTrace();
-			fail("Unexpected error with valid bitwise operations! (see console for more details)");
-		}
-	}
-
-	@Test
-	public void testHexadecimal() {
-
-		// CASE: No hexadecimal in ADQL-2.0
-		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
-		try {
-			parser.parseQuery("SELECT 0xF FROM foo");
-			fail("Hexadecimal values should not be allowed with ADQL-2.0!");
-		} catch(Exception ex) {
-			assertEquals(ParseException.class, ex.getClass());
-			assertEquals("Invalid ADQL regular identifier: \"0xF\"!" + System.getProperty("line.separator", "\n") + "(HINT: hexadecimal values are not supported in ADQL-2.0. You should upgrade your ADQL parser to support at least ADQL-2.1.)", ex.getMessage());
-		}
-
-		// CASE: Hexadecimal allowed in ADQL-2.1
-		parser = new ADQLParser(ADQLVersion.V2_1);
-		try {
-			assertEquals("SELECT 0xF\nFROM foo", parser.parseQuery("SELECT 0xF FROM foo").toADQL());
-			assertEquals("SELECT 0xF*2\nFROM foo", parser.parseQuery("SELECT 0xF*2 FROM foo").toADQL());
-			assertEquals("SELECT -0xF\nFROM foo", parser.parseQuery("SELECT -0xF FROM foo").toADQL());
-		} catch(Exception ex) {
-			ex.printStackTrace();
-			fail("Unexpected error with valid hexadecimal values! (see console for more details)");
 		}
 	}
 

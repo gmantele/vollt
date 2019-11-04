@@ -56,7 +56,6 @@ import adql.query.from.ADQLTable;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
-import adql.query.operand.BitNotOperand;
 import adql.query.operand.Concatenation;
 import adql.query.operand.NegativeOperand;
 import adql.query.operand.NumericConstant;
@@ -169,7 +168,7 @@ import adql.query.operand.function.string.LowerFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (11/2019)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -707,8 +706,6 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			return translate((Concatenation)op);
 		else if (op instanceof NegativeOperand)
 			return translate((NegativeOperand)op);
-		else if (op instanceof BitNotOperand)
-			return translate((BitNotOperand)op);
 		else if (op instanceof NumericConstant)
 			return translate((NumericConstant)op);
 		else if (op instanceof StringConstant)
@@ -755,11 +752,6 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	@Override
 	public String translate(NegativeOperand negOp) throws TranslationException {
 		return "-" + translate(negOp.getOperand());
-	}
-
-	@Override
-	public String translate(BitNotOperand bitNotOp) throws TranslationException {
-		return "(~" + translate(bitNotOp.getOperand()) + ")";
 	}
 
 	@Override

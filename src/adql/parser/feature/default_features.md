@@ -21,7 +21,6 @@ ADQLTranslator.getSupportedFeatures() to discover these features.
 Here is a sum-up of supported features for each implemented translator:
 
 |       Feature        | MySQL | MS-SQL Server | PostgreSQL | PgSphere |
-| bitwise operations   |   X   |       X       |      X     |     X    |
 | LOWER                |   X   |       X       |      X     |     X    |
 | geometries           |       |               |            |     X    |
 | ILIKE                |       |               |      X     |     X    |
