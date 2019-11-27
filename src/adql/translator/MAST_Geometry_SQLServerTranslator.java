@@ -136,25 +136,22 @@ public class MAST_Geometry_SQLServerTranslator extends SQLServerTranslator {
 		return input;
 	}
 	
+	// Only qualify these once; avoid calling multiple times in nested subquery parsing
 	private String QualifyUserFunctionNames(String input) {
 		if( CatalogUserFunctionNames == null ) return input;
 		for (int iFunctionName = 0; iFunctionName < CatalogUserFunctionNames.length; ++iFunctionName){	
-			if(input.contains(CatalogUserFunctionNames[iFunctionName]))
-				input = input.replace(CatalogUserFunctionNames[iFunctionName], "dbo." + CatalogUserFunctionNames[iFunctionName]);
-		}
+			if(input.contains(" " + CatalogUserFunctionNames[iFunctionName]))
+				input = input.replace(" " + CatalogUserFunctionNames[iFunctionName], " dbo." + CatalogUserFunctionNames[iFunctionName]);
+		} 
 		return input;
 	}
 
 	// If the query has a CONTAINS geometric function in it, an extensive
-	// rewrite is needed
-	// for specific spatial functions.
-	// Due to the expense of searching for said geometric functions, this check
-	// is only done once,
-	// and then specific Geometry-related translation functions defined here are
-	// used.
+	// rewrite is needed for specific spatial functions.
+	// Due to the expense of searching for said geometric functions, this check is only done once,
+	// and then specific Geometry-related translation functions defined here are used.
 	//
-	// Do not call the WithGeometry functions on queries that *may* not have
-	// geometry;
+	// Do not call the WithGeometry functions on queries that *may* not have geometry;
 	// translation errors will be incorrectly generated.
 
 	private boolean queryHasGeometry(ADQLQuery query) throws TranslationException {
