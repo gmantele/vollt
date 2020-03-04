@@ -21,7 +21,6 @@ package adql.translator;
  */
 
 import java.util.Iterator;
-import java.util.List;
 
 import adql.db.DBColumn;
 import adql.db.DBIdentifier;
@@ -492,28 +491,6 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			appendIdentifier(translation, (item.getDBLink().isCaseSensitive() ? item.getDBLink().getDBName() : item.getDBLink().getDBName().toLowerCase()), true);
 		else
 			appendIdentifier(translation, (item.isLabelCaseSensitive() ? item.getLabel() : item.getLabel().toLowerCase()), true);
-
-		// output column labels (if any):
-		if (item.getDBLink() != null) {
-			boolean firstDone = false;
-			for(DBColumn dbCol : item.getDBLink()) {
-				translation.append(firstDone ? ',' : '(');
-				appendIdentifier(translation, dbCol.getADQLName(), true);
-				firstDone = true;
-			}
-			translation.append(')');
-		} else {
-			List<ADQLColumn> colLabels = item.getColumnLabels();
-			if (colLabels != null && !colLabels.isEmpty()) {
-				boolean firstDone = false;
-				for(ADQLColumn col : colLabels) {
-					translation.append(firstDone ? ',' : '(');
-					appendIdentifier(translation, (col.isCaseSensitive(IdentifierField.COLUMN) ? col.getColumnName() : col.getColumnName().toLowerCase()), true);
-					firstDone = true;
-				}
-				translation.append(')');
-			}
-		}
 
 		// query itself:
 		translation.append(" AS (\n").append(translate(item.getQuery())).append("\n)");

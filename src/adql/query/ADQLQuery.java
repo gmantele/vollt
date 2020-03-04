@@ -486,7 +486,10 @@ public class ADQLQuery implements ADQLObject {
 					if (operand instanceof ADQLColumn && ((ADQLColumn)operand).getDBLink() != null) {
 						DBColumn formerCol = ((ADQLColumn)operand).getDBLink();
 						// keep the same ADQL and DB name ; just change the table:
-						col = formerCol.copy(formerCol.getDBName(), (formerCol.isCaseSensitive() ? DBIdentifier.denormalize(formerCol.getADQLName(), true) : formerCol.getADQLName().toLowerCase()), formerCol.getTable());
+						if (formerCol.isCaseSensitive())
+							col = formerCol.copy(formerCol.getADQLName(), DBIdentifier.denormalize(formerCol.getADQLName(), true), formerCol.getTable());
+						else
+							col = formerCol.copy(formerCol.getADQLName().toLowerCase(), formerCol.getADQLName().toLowerCase(), formerCol.getTable());
 					} else
 						col = new DefaultDBColumn((item.isCaseSensitive() ? DBIdentifier.denormalize(item.getName(), true) : item.getName().toLowerCase()), null);
 				}

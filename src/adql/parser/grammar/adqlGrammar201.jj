@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 /*
@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (11/2019)
+* Version: 2.0 (03/2020)
 */
 
 							/* ########### */
@@ -68,7 +68,7 @@ package adql.parser.grammar;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Vector;
@@ -107,7 +107,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (11/2019)
+ * @version 2.0 (03/2020)
  * @since 2.0
  */
 public class ADQLGrammar201 extends ADQLGrammarBase {
@@ -476,22 +476,20 @@ ADQLQuery SubQueryExpression(): {ADQLQuery q = null; Token start, end;} {
 	}
 }
 
-ClauseADQL<WithItem> With(): { ClauseADQL<WithItem> withClause = query.getWith(); WithItem withItem; Token start,end; IdentifierItem id, colId; ArrayList<ADQLColumn> colLabels = new ArrayList<ADQLColumn>(10); ADQLQuery query; } {
+ClauseADQL<WithItem> With(): { ClauseADQL<WithItem> withClause = query.getWith(); WithItem withItem; Token start,end; IdentifierItem id, colId; ADQLQuery query; } {
 	try {
-		start=<WITH> id=Identifier() [<LEFT_PAR> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); } (<COMMA> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); })* <RIGHT_PAR>] <AS> <LEFT_PAR> query=QueryExpression() end=<RIGHT_PAR>
+		start=<WITH> id=Identifier() <AS> <LEFT_PAR> query=QueryExpression() end=<RIGHT_PAR>
 		{
-			withItem = queryFactory.createWithItem(id, query, colLabels);
+			withItem = queryFactory.createWithItem(id, query);
 			withItem.setPosition(new TextPosition(id.position, new TextPosition(end)));
 			withClause.add(withItem);
-			colLabels.clear();
 		}
 		(
-			<COMMA> id=Identifier() [<LEFT_PAR> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); } (<COMMA> colId=Identifier() { colLabels.add(queryFactory.createColumn(colId)); })* <RIGHT_PAR>] <AS> <LEFT_PAR> query=QueryExpression() end=<RIGHT_PAR>
+			<COMMA> id=Identifier() <AS> <LEFT_PAR> query=QueryExpression() end=<RIGHT_PAR>
 			{
-				withItem = queryFactory.createWithItem(id, query, colLabels);
+				withItem = queryFactory.createWithItem(id, query);
 				withItem.setPosition(new TextPosition(id.position, new TextPosition(end)));
 				withClause.add(withItem);
-				colLabels.clear();
 			}
 		)*
 		{

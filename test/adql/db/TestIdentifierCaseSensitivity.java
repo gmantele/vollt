@@ -378,8 +378,8 @@ public class TestIdentifierCaseSensitivity {
 		try {
 			ADQLQuery query = parser.parseQuery("WITH t1 AS (SELECT * FROM table1) SELECT * FROM t1");
 			assertEquals("WITH t1 AS (\nSELECT *\nFROM table1\n)\nSELECT *\nFROM t1", query.toADQL());
-			assertEquals("WITH \"t1\"(\"col1\") AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"t1\".\"col1\" AS \"col1\"\nFROM \"t1\"", trCS.translate(query));
-			assertEquals("WITH \"t1\"(\"col1\") AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT t1.col1 AS \"col1\"\nFROM t1", trCI.translate(query));
+			assertEquals("WITH \"t1\" AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"t1\".\"col1\" AS \"col1\"\nFROM \"t1\"", trCS.translate(query));
+			assertEquals("WITH \"t1\" AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT t1.col1 AS \"col1\"\nFROM t1", trCI.translate(query));
 		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected exception! (see console for more details)");
@@ -389,8 +389,8 @@ public class TestIdentifierCaseSensitivity {
 		try {
 			ADQLQuery query = parser.parseQuery("WITH T1 AS (SELECT * FROM table1) SELECT * FROM t1");
 			assertEquals("WITH T1 AS (\nSELECT *\nFROM table1\n)\nSELECT *\nFROM t1", query.toADQL());
-			assertEquals("WITH \"t1\"(\"col1\") AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"t1\".\"col1\" AS \"col1\"\nFROM \"t1\"", trCS.translate(query));
-			assertEquals("WITH \"t1\"(\"col1\") AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT t1.col1 AS \"col1\"\nFROM t1", trCI.translate(query));
+			assertEquals("WITH \"t1\" AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"t1\".\"col1\" AS \"col1\"\nFROM \"t1\"", trCS.translate(query));
+			assertEquals("WITH \"t1\" AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT t1.col1 AS \"col1\"\nFROM t1", trCI.translate(query));
 		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected exception! (see console for more details)");
@@ -400,8 +400,8 @@ public class TestIdentifierCaseSensitivity {
 		try {
 			ADQLQuery query = parser.parseQuery("WITH \"T1\" AS (SELECT * FROM table1) SELECT * FROM t1");
 			assertEquals("WITH \"T1\" AS (\nSELECT *\nFROM table1\n)\nSELECT *\nFROM t1", query.toADQL());
-			assertEquals("WITH \"T1\"(\"col1\") AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"T1\".\"col1\" AS \"col1\"\nFROM \"T1\"", trCS.translate(query));
-			assertEquals("WITH \"T1\"(\"col1\") AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT T1.col1 AS \"col1\"\nFROM T1", trCI.translate(query));
+			assertEquals("WITH \"T1\" AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"T1\".\"col1\" AS \"col1\"\nFROM \"T1\"", trCS.translate(query));
+			assertEquals("WITH \"T1\" AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT T1.col1 AS \"col1\"\nFROM T1", trCI.translate(query));
 		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected exception! (see console for more details)");
@@ -438,8 +438,8 @@ public class TestIdentifierCaseSensitivity {
 			try {
 				ADQLQuery query = parser.parseQuery("SELECT * FROM (SELECT col1, col2, col1 AS Col3, col2 AS \"COL4\" FROM table1) AS table2");
 				assertEquals("SELECT *\nFROM (SELECT col1 , col2 , col1 AS Col3 , col2 AS \"COL4\"\nFROM table1) AS table2", query.toADQL());
-				assertEquals("SELECT \"table2\".\"Col1\" AS \"col1\" , \"table2\".\"Col2\" AS \"Col2\" , \"table2\".\"col3\" AS \"col3\" , \"table2\".\"COL4\" AS \"COL4\"\nFROM (SELECT \"dbTable1\".\"Col1\" AS \"col1\" , \"dbTable1\".\"Col2\" AS \"Col2\" , \"dbTable1\".\"Col1\" AS \"col3\" , \"dbTable1\".\"Col2\" AS \"COL4\"\nFROM \"dbTable1\") AS \"table2\"", trCS.translate(query));
-				assertEquals("SELECT table2.Col1 AS \"col1\" , table2.Col2 AS \"Col2\" , table2.col3 AS \"col3\" , table2.COL4 AS \"COL4\"\nFROM (SELECT dbTable1.Col1 AS \"col1\" , dbTable1.Col2 AS \"Col2\" , dbTable1.Col1 AS \"col3\" , dbTable1.Col2 AS \"COL4\"\nFROM dbTable1) AS \"table2\"", trCI.translate(query));
+				assertEquals("SELECT \"table2\".\"col1\" AS \"col1\" , \"table2\".\"Col2\" AS \"Col2\" , \"table2\".\"col3\" AS \"col3\" , \"table2\".\"COL4\" AS \"COL4\"\nFROM (SELECT \"dbTable1\".\"Col1\" AS \"col1\" , \"dbTable1\".\"Col2\" AS \"Col2\" , \"dbTable1\".\"Col1\" AS \"col3\" , \"dbTable1\".\"Col2\" AS \"COL4\"\nFROM \"dbTable1\") AS \"table2\"", trCS.translate(query));
+				assertEquals("SELECT table2.col1 AS \"col1\" , table2.Col2 AS \"Col2\" , table2.col3 AS \"col3\" , table2.COL4 AS \"COL4\"\nFROM (SELECT dbTable1.Col1 AS \"col1\" , dbTable1.Col2 AS \"Col2\" , dbTable1.Col1 AS \"col3\" , dbTable1.Col2 AS \"COL4\"\nFROM dbTable1) AS \"table2\"", trCI.translate(query));
 			} catch(Exception ex) {
 				ex.printStackTrace();
 				fail("Unexpected exception! (see console for more details)");
@@ -450,8 +450,8 @@ public class TestIdentifierCaseSensitivity {
 				try {
 					ADQLQuery query = parser.parseQuery("WITH table3 AS (SELECT COL1, col2, col1 AS \"SuperCol\" FROM table1) SELECT * FROM table3");
 					assertEquals("WITH table3 AS (\nSELECT COL1 , col2 , col1 AS \"SuperCol\"\nFROM table1\n)\nSELECT *\nFROM table3", query.toADQL());
-					assertEquals("WITH \"table3\"(\"col1\",\"Col2\",\"SuperCol\") AS (\nSELECT \"dbTable1\".\"Col1\" AS \"col1\" , \"dbTable1\".\"Col2\" AS \"Col2\" , \"dbTable1\".\"Col1\" AS \"SuperCol\"\nFROM \"dbTable1\"\n)\nSELECT \"table3\".\"col1\" AS \"col1\" , \"table3\".\"Col2\" AS \"Col2\" , \"table3\".\"SuperCol\" AS \"SuperCol\"\nFROM \"table3\"", trCS.translate(query));
-					assertEquals("WITH \"table3\"(\"col1\",\"Col2\",\"SuperCol\") AS (\nSELECT dbTable1.Col1 AS \"col1\" , dbTable1.Col2 AS \"Col2\" , dbTable1.Col1 AS \"SuperCol\"\nFROM dbTable1\n)\nSELECT table3.col1 AS \"col1\" , table3.Col2 AS \"Col2\" , table3.SuperCol AS \"SuperCol\"\nFROM table3", trCI.translate(query));
+					assertEquals("WITH \"table3\" AS (\nSELECT \"dbTable1\".\"Col1\" AS \"col1\" , \"dbTable1\".\"Col2\" AS \"Col2\" , \"dbTable1\".\"Col1\" AS \"SuperCol\"\nFROM \"dbTable1\"\n)\nSELECT \"table3\".\"col1\" AS \"col1\" , \"table3\".\"Col2\" AS \"Col2\" , \"table3\".\"SuperCol\" AS \"SuperCol\"\nFROM \"table3\"", trCS.translate(query));
+					assertEquals("WITH \"table3\" AS (\nSELECT dbTable1.Col1 AS \"col1\" , dbTable1.Col2 AS \"Col2\" , dbTable1.Col1 AS \"SuperCol\"\nFROM dbTable1\n)\nSELECT table3.col1 AS \"col1\" , table3.Col2 AS \"Col2\" , table3.SuperCol AS \"SuperCol\"\nFROM table3", trCI.translate(query));
 				} catch(Exception ex) {
 					ex.printStackTrace();
 					fail("Unexpected exception! (see console for more details)");

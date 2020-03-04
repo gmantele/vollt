@@ -208,8 +208,8 @@ public class ADQLQueryFactory {
 	}
 
 	/** @since 2.0 */
-	public WithItem createWithItem(final IdentifierItem queryLabel, final ADQLQuery query, final Collection<ADQLColumn> colLabels) throws Exception {
-		WithItem item = new WithItem(queryLabel.identifier, query, colLabels);
+	public WithItem createWithItem(final IdentifierItem queryLabel, final ADQLQuery query) throws Exception {
+		WithItem item = new WithItem(queryLabel.identifier, query);
 		item.setLabelCaseSensitive(queryLabel.caseSensitivity);
 		return item;
 	}

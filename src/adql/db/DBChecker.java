@@ -108,7 +108,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (09/2019)
+ * @version 2.0 (11/2019)
  */
 public class DBChecker implements QueryChecker {
 
@@ -464,15 +464,6 @@ public class DBChecker implements QueryChecker {
 
 			// Update the context:
 			context.cteTables.add(adqlTable.getDBLink());
-
-			// Check the number of columns:
-			if (withItem.getColumnLabels() != null) {
-				DBColumn[] columns = withItem.getResultingColumns();
-				if (withItem.getColumnLabels().size() > columns.length)
-					errors.addException(new ParseException("The WITH query \"" + withItem.getLabel() + "\" specifies MORE columns (" + withItem.getColumnLabels().size() + ") than available (" + columns.length + ")!", withItem.getPosition()));
-				else if (withItem.getColumnLabels().size() < columns.length)
-					errors.addException(new ParseException("The WITH query \"" + withItem.getLabel() + "\" specifies LESS columns (" + withItem.getColumnLabels().size() + ") than available (" + columns.length + ")!", withItem.getPosition()));
-			}
 		}
 
 		// Check the existence of all tables in the FROM clause:

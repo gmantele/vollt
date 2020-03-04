@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +26,6 @@ import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
 import adql.query.IdentifierField;
 import adql.query.WithItem;
-import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.NumericConstant;
 import adql.query.operand.StringConstant;
@@ -73,11 +71,11 @@ public class TestJDBCTranslator {
 			assertEquals("WITH \"foo\" AS (\nSELECT *\nFROM bar\n)\nSELECT *\nFROM foo", tr.translate(query));
 
 			// CASE: Several WITH items
-			query = parser.parseQuery("WITH foo AS (SELECT * FROM bar), Foo2(myCol) AS (SELECT aCol FROM myTable) SELECT * FROM foo JOIN foo2 ON foo.id = foo2.myCol");
+			query = parser.parseQuery("WITH foo AS (SELECT * FROM bar), Foo2 AS (SELECT myCol FROM myTable) SELECT * FROM foo JOIN foo2 ON foo.id = foo2.myCol");
 			withClause = query.getWith();
 			assertEquals(2, withClause.size());
-			assertEquals("WITH \"foo\" AS (\nSELECT *\nFROM bar\n) , \"foo2\"(\"mycol\") AS (\nSELECT aCol AS \"aCol\"\nFROM myTable\n)", tr.translate(withClause));
-			assertEquals("WITH \"foo\" AS (\nSELECT *\nFROM bar\n) , \"foo2\"(\"mycol\") AS (\nSELECT aCol AS \"aCol\"\nFROM myTable\n)\nSELECT *\nFROM foo INNER JOIN foo2 ON foo.id = foo2.myCol", tr.translate(query));
+			assertEquals("WITH \"foo\" AS (\nSELECT *\nFROM bar\n) , \"foo2\" AS (\nSELECT myCol AS \"myCol\"\nFROM myTable\n)", tr.translate(withClause));
+			assertEquals("WITH \"foo\" AS (\nSELECT *\nFROM bar\n) , \"foo2\" AS (\nSELECT myCol AS \"myCol\"\nFROM myTable\n)\nSELECT *\nFROM foo INNER JOIN foo2 ON foo.id = foo2.myCol", tr.translate(query));
 
 		} catch(ParseException pe) {
 			pe.printStackTrace();
@@ -93,19 +91,19 @@ public class TestJDBCTranslator {
 		JDBCTranslator tr = new AJDBCTranslator();
 
 		try {
-			// CASE: Simple WITH item (no case sensitivity, no column labels)
+			// CASE: Simple WITH item (no case sensitivity)
 			WithItem item = new WithItem("Foo", (new ADQLParser(ADQLVersion.V2_1)).parseQuery("SELECT * FROM bar"));
 			item.setLabelCaseSensitive(false);
 			assertEquals("\"foo\" AS (\nSELECT *\nFROM bar\n)", tr.translate(item));
 
-			// CASE: WITH item with case sensitivity and column labels
-			item = new WithItem("Foo", (new ADQLParser(ADQLVersion.V2_1)).parseQuery("SELECT col1, col2 FROM bar"), Arrays.asList(new ADQLColumn[]{ new ADQLColumn("FirstColumn"), new ADQLColumn("\"SecondColumn\"") }));
+			// CASE: WITH item with case sensitivity
+			item = new WithItem("Foo", (new ADQLParser(ADQLVersion.V2_1)).parseQuery("SELECT col1, col2 FROM bar"));
 			item.setLabelCaseSensitive(true);
-			assertEquals("\"Foo\"(\"firstcolumn\",\"SecondColumn\") AS (\nSELECT col1 AS \"col1\" , col2 AS \"col2\"\nFROM bar\n)", tr.translate(item));
+			assertEquals("\"Foo\" AS (\nSELECT col1 AS \"col1\" , col2 AS \"col2\"\nFROM bar\n)", tr.translate(item));
 
 			// CASE: query with an inner WITH
-			item = new WithItem("Foo", (new ADQLParser(ADQLVersion.V2_1)).parseQuery("WITH bar(col1, col2) AS (SELECT aCol, anotherCol FROM stuff) SELECT * FROM bar"));
-			assertEquals("\"foo\" AS (\nWITH \"bar\"(\"col1\",\"col2\") AS (\nSELECT aCol AS \"aCol\" , anotherCol AS \"anotherCol\"\nFROM stuff\n)\nSELECT *\nFROM bar\n)", tr.translate(item));
+			item = new WithItem("Foo", (new ADQLParser(ADQLVersion.V2_1)).parseQuery("WITH bar AS (SELECT aCol, anotherCol FROM stuff) SELECT * FROM bar"));
+			assertEquals("\"foo\" AS (\nWITH \"bar\" AS (\nSELECT aCol AS \"aCol\" , anotherCol AS \"anotherCol\"\nFROM stuff\n)\nSELECT *\nFROM bar\n)", tr.translate(item));
 
 		} catch(ParseException pe) {
 			pe.printStackTrace();
