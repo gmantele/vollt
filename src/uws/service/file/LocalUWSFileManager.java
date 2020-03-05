@@ -40,6 +40,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.regex.Pattern;
 
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -214,7 +215,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 			if (ownerGroup != null)
 				ownerDir = new File(rootDirectory, ownerGroup);
 		}
-		ownerDir = new File(ownerDir, owner.getID().replaceAll(File.separator, "_"));
+		ownerDir = new File(ownerDir, owner.getID().replaceAll(Pattern.quote(File.separator), "_"));
 
 		return ownerDir;
 	}
@@ -713,7 +714,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	protected String getBackupFileName(final JobOwner owner) throws IllegalArgumentException{
 		if (owner == null || owner.getID() == null || owner.getID().trim().isEmpty())
 			throw new IllegalArgumentException("Missing owner! Can not get the backup file of an unknown owner.");
-		return owner.getID().replaceAll(File.separator, "_") + ".backup";
+		return owner.getID().replaceAll(Pattern.quote(File.separator), "_") + ".backup";
 	}
 
 	@Override

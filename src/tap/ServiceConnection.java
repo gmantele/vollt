@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -44,7 +44,7 @@ import uws.service.file.UWSFileManager;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (09/2018)
+ * @version 2.3 (04/2019)
  */
 public interface ServiceConnection {
 
@@ -52,7 +52,7 @@ public interface ServiceConnection {
 	 * List of possible limit units.
 	 *
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (01/2015)
+	 * @version 2.3 (04/2019)
 	 */
 	public static enum LimitUnit {
 		rows("row"), bytes("byte"), kilobytes("kilobyte"), megabytes("megabyte"), gigabytes("gigabyte");
@@ -120,12 +120,12 @@ public interface ServiceConnection {
 		 *
 		 * @throws TAPException If the two given units are not compatible.
 		 *
-		 * @see #compare(long, LimitUnit, long, LimitUnit)
+		 * @see #compare(long, tap.ServiceConnection.LimitUnit, long, tap.ServiceConnection.LimitUnit)
 		 *
 		 * @since 1.1
 		 */
 		public static int compare(final int leftLimit, final LimitUnit leftUnit, final int rightLimit, final LimitUnit rightUnit) throws TAPException{
-			return compare(leftLimit, leftUnit, rightLimit, rightUnit);
+			return compare((long)leftLimit, leftUnit, (long)rightLimit, rightUnit);
 		}
 
 		/**
@@ -743,5 +743,18 @@ public interface ServiceConnection {
 	 * @since 2.0
 	 */
 	public int[] getFetchSize();
+
+	/**
+	 * <i><b>[MANDATORY]</b></i>
+	 * <p>This function tells whether TAP-Lib should automatically try to fix a
+	 * query whose parsing failed because of a token error. After this fix
+	 * attempt the query is parsed again for a last time.</p>
+	 *
+	 * @return	<i>true</i> to allow automatic fix attempt in case of error,
+	 *        	<i>false</i> to disable this option.
+	 *
+	 * @since 2.3
+	 */
+	public boolean fixOnFailEnabled();
 
 }

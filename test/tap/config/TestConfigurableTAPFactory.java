@@ -520,6 +520,11 @@ public class TestConfigurableTAPFactory {
 		public int[] getFetchSize(){
 			return null;
 		}
+
+		@Override
+		public boolean fixOnFailEnabled(){
+			return false;
+		}
 	}
 
 }

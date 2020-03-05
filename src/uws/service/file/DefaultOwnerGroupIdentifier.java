@@ -44,7 +44,7 @@ public class DefaultOwnerGroupIdentifier implements OwnerGroupIdentifier {
 			return null;
 		else{
 			// The user directory name = userID in which each directory separator char are replaced by a _ (=> no confusion with a path):
-			String userDir = owner.getID().trim().replaceAll(File.separator, "_");
+			String userDir = owner.getID().trim().replaceAll(Pattern.quote(File.separator), "_");
 
 			// The parent directory = the first LETTER of the userID or _ if none can be found:
 			String parentDir = "_";

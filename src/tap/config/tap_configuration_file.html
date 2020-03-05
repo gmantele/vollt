@@ -212,6 +212,44 @@
 				</td>
 				<td><ul><li>10000 <em>(default)</em><li>0 <em>(wait for the the whole result)</em></li><li>1000000</li></ul></td>
 			</tr>
+			<tr class="optional">
+				<td class="done">fix_on_fail</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>If enabled, this option lets automatically try fixing a query whose parsing
+					failed because of a token error. This is particularly useful in the following
+					cases:</p>
+					<ul>
+						<li>when a column/table identifier/alias has an incorrect syntax
+							(e.g. <code>_RAJ2000</code>, <code>2mass</code>)</li>
+						<li>if the name of an ADQL function is used as a column/table identifier/alias
+							(e.g. <code>distance</code>, <code>point</code>, <code>min</code>)</li>
+						<li>if the name of a reserved SQL keyword is used as a column/table
+							identifier/alias
+							(e.g. <code>public</code>, <code>date</code>, <code>year</code>, <code>user</code>)</li>
+					</ul>
+					<p>In all these cases, the name/identifier/alias will be surrounded between
+					double quotes if the option <code>fix_on_fail</code> is enabled.</p>
+					<p>This feature is also able to fix some incorrect Unicode characters
+					(e.g. LaTeX alternatives for underscores, spaces and double/single quotes,
+					copy-pasted from a PDF into a TAP query field).</p>
+					<p><b>Warning:</b>
+						since this option alters the query provided by the query, it is
+						possible that, after fix attempt, the query parses and runs but might
+						generate an output different from what was expected. So, if this
+						option is enabled, it should made be clear to the user that the TAP
+						server might alter the query to make it work.
+					</p>
+					<p><i><b>Note:</b>
+						when an input query is fixed and run successfully, the fixed ADQL query
+						is reported in an INFO element named <code>QUERY_AFTER_AUTO_FIX</code> inside the
+						output VOTable.
+					</i></p>
+					<p><em>Default: <code>fix_on_fail=false</code></em></p>
+				</td>
+				<td><ul><li>false <em>(default)</em><li>true</li></ul></td>
+			</tr>
 			
 			<tr><td colspan="5">&#10551; JNDI datasource <i>(only if database_access=jndi)</i></td></tr>
 			<tr class="mandatory">

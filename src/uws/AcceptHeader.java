@@ -2,21 +2,21 @@ package uws;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -32,25 +32,25 @@ import java.util.Set;
 /**
  * Parser of HTTP Accept header.
  * It takes into account the order of the different MIME types and their respective quality.
- * 
+ *
  * @author Brice Gassmann (CDS) & modified by Gr&eacute;gory Mantelet (CDS)
- * @version 4.2 (09/2017)
+ * @version 4.4 (04/2019)
  */
 public class AcceptHeader {
 
 	/** Quality for each extracted MIME type. */
-	private Map<String,Float> mMimeTypes;
+	private Map<String, Float> mMimeTypes;
 
 	/** Association between a quality and a list of MIME types. */
-	private Map<Float,List<String>> mSortedMimeTypes;
+	private Map<Float, List<String>> mSortedMimeTypes;
 
 	/**
 	 * Parses the given value of the Accept field of HTTP request header.
-	 * 
+	 *
 	 * @param acceptS	The list of MIME types to parse.
 	 */
 	public AcceptHeader(String acceptS){
-		mMimeTypes = new HashMap<String,Float>();
+		mMimeTypes = new HashMap<String, Float>();
 		// List of MIME-types
 		String[] mimeTypes = acceptS.split(",");
 		for(String mimeType : Arrays.asList(mimeTypes)){
@@ -58,15 +58,21 @@ public class AcceptHeader {
 			Float quality = new Float(1);
 			String[] split = mimeType.split(";");
 			if (split.length > 1){
-				String[] qualitySplit = split[1].split("=");
-				quality = Float.parseFloat(qualitySplit[1]);
+				if (split[1].matches("q=[0-9.]+")){
+					try{
+						String[] qualitySplit = split[1].split("=");
+						quality = Float.parseFloat(qualitySplit[1]);
+					}catch(NumberFormatException nfe){
+						// just ignore this incorrect quality value!
+					}
+				}
 			}
 			mMimeTypes.put(split[0], quality);
 		}
 		// Sort mimeTypes by requested quality
-		mSortedMimeTypes = new HashMap<Float,List<String>>();
-		Set<Entry<String,Float>> mimeTypesES = mMimeTypes.entrySet();
-		for(Entry<String,Float> mimeType : mimeTypesES){
+		mSortedMimeTypes = new HashMap<Float, List<String>>();
+		Set<Entry<String, Float>> mimeTypesES = mMimeTypes.entrySet();
+		for(Entry<String, Float> mimeType : mimeTypesES){
 			if (!mSortedMimeTypes.containsKey(mimeType.getValue())){
 				List<String> mimeTypesL = new ArrayList<String>();
 				mimeTypesL.add(mimeType.getKey());
@@ -79,25 +85,25 @@ public class AcceptHeader {
 
 	/**
 	 * Gets the association between each extracted MIME type and its respective quality.
-	 * 
+	 *
 	 * @return	Extracted MIME types and their quality.
 	 */
-	public final Map<String,Float> getMimeTypes(){
+	public final Map<String, Float> getMimeTypes(){
 		return mMimeTypes;
 	}
 
 	/**
 	 * Sets the association between MIME types and their quality.
-	 * 
+	 *
 	 * @param mimeTypes	MIME types and their quality.
 	 */
-	public final void setMimeTypes(Map<String,Float> mimeTypes){
+	public final void setMimeTypes(Map<String, Float> mimeTypes){
 		mMimeTypes = mimeTypes;
 	}
 
 	/**
 	 * Gets the preferred MIME type (HTML, JSON or * /*) according to the order and the quality of all extracted MIME types.
-	 * 
+	 *
 	 * @return	<i>application/xhtml+xml</i> or <i>text/html</i>
 	 * 			or <i>text/xml</i> or <i>application/json</i>
 	 * 			or <i>* /*</i>.
@@ -133,7 +139,7 @@ public class AcceptHeader {
 
 	/**
 	 * Gets a list of the extracted MIME types, ordered by their respective quality.
-	 * 
+	 *
 	 * @return	The ordered list of the extracted MIME types.
 	 */
 	public List<String> getOrderedMimeTypes(){

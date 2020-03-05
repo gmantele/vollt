@@ -20,6 +20,9 @@
 	<property name="slf4jApiJarName" value="slf4j-api-1.7.25.jar" />
 	<property name="slf4jApiJar" value="${libDir}/${slf4jApiJarName}" />
 	
+	<property name="jsonJarName" value="json-20180813.jar" />
+	<property name="jsonJar" value="${libDir}/${jsonJarName}" />
+	
 	<property name="uwsPath" value="uws/**" />
 	<property name="jsonPath" value="org/json/**" />
 	<property name="licensePath" value="COPYING.LESSER" />
@@ -37,12 +40,17 @@
 	<fail message="The property SERVLET-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.servlet.">
 		<condition><not><isset property="SERVLET-API"/></not></condition>
 	</fail>
+	
+	<!-- JAVA VERSION COMPATIBILITY -->
+	<property name="ant.build.javac.source" value="1.7"/>
+	<property name="ant.build.javac.target" value="1.7"/>
 
 	<!-- CLASSPATHS -->
 	<path id="uws.classpath">
 		<pathelement location="${commonsIOJar}" />
 		<pathelement location="${commonsFileUploadJar}" />
 		<pathelement location="${slf4jApiJar}" />
+		<pathelement location="${jsonJar}" />
 		<pathelement location="${SERVLET-API}" />
 	</path>
 	
@@ -113,6 +121,7 @@
 	<target name="buildLib" depends="compileLib,junitValidation" description="After 'clean', build the library JAR (only classes).">
 		<echo>Generate the library:</echo>
 		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}">
+			<zipfileset src="${jsonJar}" excludes="META-INF/*" />
 			<zipfileset src="${commonsIOJar}" excludes="META-INF/**" />
 			<zipfileset src="${commonsFileUploadJar}" excludes="META-INF/**" />
 			<zipfileset dir="${srcDir}" includes="${licensePath}" />
@@ -123,6 +132,7 @@
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
 		<jar compress="false" destfile="${srcJarFile}">
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
+			<zipfileset dir="${libDir}" includes="${jsonJarName}" fullPath="${jsonJar}" />
 			<zipfileset dir="${libDir}" includes="${commonsIOJarName}" fullPath="${commonsIOJar}" />
 			<zipfileset dir="${libDir}" includes="${commonsFileUploadJarName}" fullPath="${commonsFileUploadJar}" />
 		</jar>

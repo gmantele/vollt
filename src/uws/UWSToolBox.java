@@ -1,25 +1,5 @@
 package uws;
 
-/*
- * This file is part of UWSLibrary.
- *
- * UWSLibrary is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * UWSLibrary is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
- *                       Astronomisches Rechen Institut (ARI)
- */
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +20,26 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/*
+ * This file is part of UWSLibrary.
+ *
+ * UWSLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * UWSLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
+ */
+
 import uws.job.ErrorSummary;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
@@ -55,7 +55,7 @@ import uws.service.request.UploadFile;
  * Some useful functions for the managing of a UWS service.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (01/2019)
+ * @version 4.4 (03/2019)
  */
 public class UWSToolBox {
 
@@ -531,8 +531,7 @@ public class UWSToolBox {
 			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 			// Set the HTTP content length:
-			if (contentSize > 0)
-				response.setContentLength((int)contentSize);
+			setContentLength(response, contentSize);
 
 			// Write the file into the HTTP response:
 			output = response.getOutputStream();
@@ -693,5 +692,32 @@ public class UWSToolBox {
 				return fileExts[i];
 
 		return null;
+	}
+
+	/**
+	 * Set the content length in the given {@link HttpServletResponse}.
+	 *
+	 * <p><i><b>Implementation note:</b>
+	 * 	This could perfectly be done using
+	 * 	{@link HttpServletResponse#setContentLength(int)}, <b>but only if the
+	 * 	content size is encoded or fit in an integer value</b>. Otherwise, that
+	 * 	function will set no content length.
+	 * 	On the contrary, this current function takes a long value and set
+	 * 	manually the content type header.
+	 * </i></p>
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	This function has no effect if the given {@link HttpServletResponse} is
+	 * 	NULL or if the given content size is &le; 0.
+	 * </i></p>
+	 *
+	 * @param response		HTTP response.
+	 * @param contentSize	The content size to set.
+	 *
+	 * @since 4.4
+	 */
+	public static final void setContentLength(final HttpServletResponse response, final long contentSize){
+		if (response != null && contentSize > 0)
+			response.setHeader("Content-Length", String.valueOf(contentSize));
 	}
 }

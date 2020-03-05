@@ -16,7 +16,7 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2015-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2015-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -41,7 +41,7 @@ import tap.backup.DefaultTAPBackupManager;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (11/2018)
+ * @version 2.3 (03/2019)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -172,6 +172,15 @@ public final class TAPConfiguration {
 	public final static String KEY_ASYNC_FETCH_SIZE = "async_fetch_size";
 	/** Default value of the property {@link #KEY_ASYNC_FETCH_SIZE}: {@value #DEFAULT_ASYNC_FETCH_SIZE}. */
 	public final static int DEFAULT_ASYNC_FETCH_SIZE = 10000;
+	/** Name/Key of the property specifying whether the fixOnFail option is
+	 * enabled or not. This option lets automatically fix the input ADQL query
+	 * if its tokenization fails.
+	 * @since 2.3  */
+	public final static String KEY_FIX_ON_FAIL = "fix_on_fail";
+	/** Default value of the property {@link #KEY_FIX_ON_FAIL}:
+	 * {@value #DEFAULT_FIX_ON_FAIL}.
+	 * @since 2.3  */
+	public final static boolean DEFAULT_FIX_ON_FAIL = false;
 	/** Name/Key of the property specifying the name of the DataSource into the JDNI. */
 	public final static String KEY_DATASOURCE_JNDI_NAME = "datasource_jndi_name";
 	/** Name/Key of the property specifying the full class name of the JDBC driver.
@@ -257,13 +266,13 @@ public final class TAPConfiguration {
 	/** Name/Key of the property specifying the maximum size of all VOTable(s)
 	 * uploaded in a query.
 	 * @deprecated	Since 2.3, use the property {@value #KEY_MAX_UPLOAD_LIMIT}
-	 *            	and {@value #KEY_MAX_REQUEST_LIMIT} instead. */
+	 *            	and {@value #KEY_UPLOAD_MAX_REQUEST_SIZE} instead. */
 	@Deprecated
 	public final static String KEY_UPLOAD_MAX_FILE_SIZE = "upload_max_file_size";
 	/** Default value of the property {@value #KEY_UPLOAD_MAX_FILE_SIZE} =
 	 * {@value #DEFAULT_UPLOAD_MAX_FILE_SIZE}.
 	 * @deprecated	Since 2.3, use the property {@value #KEY_MAX_UPLOAD_LIMIT}
-	 *            	and {@value #KEY_MAX_REQUEST_LIMIT} instead. */
+	 *            	and {@value #KEY_UPLOAD_MAX_REQUEST_SIZE} instead. */
 	@Deprecated
 	public final static int DEFAULT_UPLOAD_MAX_FILE_SIZE = Integer.MAX_VALUE;
 	/** Name/Key of the property specifying the maximum size of a whole HTTP

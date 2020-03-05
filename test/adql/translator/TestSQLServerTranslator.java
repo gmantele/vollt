@@ -83,4 +83,26 @@ public class TestSQLServerTranslator {
 		}
 	}
 
+	@Test
+	public void testConcat(){
+		try{
+			SQLServerTranslator translator = new SQLServerTranslator();
+
+			// Test with an easy translation:
+			ADQLQuery query = (new ADQLParser(new SQLServer_ADQLQueryFactory())).parseQuery("SELECT 'abc' || ' ' || 'def' FROM aTable");
+			assertEquals("SELECT 'abc' + ' ' + 'def' AS \"concat\"", translator.translate(query.getSelect()));
+
+			// Test with an easy translation:
+			query = (new ADQLParser(new SQLServer_ADQLQueryFactory())).parseQuery("SELECT 'a||b||c' || ' ' || 'd+e|f' FROM aTable");
+			assertEquals("SELECT 'a||b||c' + ' ' + 'd+e|f' AS \"concat\"", translator.translate(query.getSelect()));
+
+		}catch(ParseException pe){
+			pe.printStackTrace();
+			fail("The given ADQL query is completely correct. No error should have occurred while parsing it. (see the console for more details)");
+		}catch(TranslationException te){
+			te.printStackTrace();
+			fail("No error was expected from this translation. (see the console for more details)");
+		}
+	}
+
 }

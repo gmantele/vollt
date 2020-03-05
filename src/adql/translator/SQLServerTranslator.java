@@ -1,5 +1,25 @@
 package adql.translator;
 
+/*
+ * This file is part of ADQLLibrary.
+ *
+ * ADQLLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ADQLLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2017-2019 - Astronomisches Rechen Institut (ARI),
+ *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ */
+
 import java.util.Iterator;
 
 import adql.db.DBColumn;
@@ -17,6 +37,8 @@ import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
+import adql.query.operand.ADQLOperand;
+import adql.query.operand.Concatenation;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -32,36 +54,38 @@ import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
 
 /**
- * <p>MS SQL Server translator.</p>
- * 
+ * MS SQL Server translator.
+ *
  * <p><b>Important:</b>
- * 	This translator works correctly ONLY IF {@link SQLServer_ADQLQueryFactory} has been used
- * 	to create any ADQL query this translator is asked to translate.
+ * 	This translator works correctly ONLY IF {@link SQLServer_ADQLQueryFactory}
+ * 	has been used to create any ADQL query this translator is asked to
+ * 	translate.
  * </p>
- * 
+ *
  * TODO See how case sensitivity is supported by MS SQL Server and modify this translator accordingly.
- * 
+ *
  * TODO Extend this class for each MS SQL Server extension supporting geometry and particularly
  *      {@link #translateGeometryFromDB(Object)}, {@link #translateGeometryToDB(adql.db.STCS.Region)} and all this other
  *      translate(...) functions for the ADQL's geometrical functions.
- * 
+ *
  * TODO Check MS SQL Server datatypes (see {@link #convertTypeFromDB(int, String, String, String[])},
  *      {@link #convertTypeToDB(DBType)}).
- * 
+ *
  * <p><i><b>Important note:</b>
- * 	Geometrical functions are not translated ; the translation returned for them is their ADQL expression.
+ * 	Geometrical functions are not translated ; the translation returned for them
+ * 	is their ADQL expression.
  * </i></p>
- * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (09/2017)
+ *
+ * @author Gr&eacute;gory Mantelet (ARI;CDS)
+ * @version 1.5 (03/2019)
  * @since 1.4
- * 
+ *
  * @see SQLServer_ADQLQueryFactory
  */
 public class SQLServerTranslator extends JDBCTranslator {
 
 	/** <p>Indicate the case sensitivity to apply to each SQL identifier (only SCHEMA, TABLE and COLUMN).</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	In this implementation, this field is set by the constructor and never modified elsewhere.
 	 * 	It would be better to never modify it after the construction in order to keep a certain consistency.
@@ -80,7 +104,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	/**
 	 * Builds an SQLServerTranslator which always translates in SQL all identifiers (schema, table and column) in the specified case sensitivity ;
 	 * in other words, schema, table and column names will all be surrounded or not by double quotes in the SQL translation.
-	 * 
+	 *
 	 * @param allCaseSensitive	<i>true</i> to translate all identifiers in a case sensitive manner (surrounded by double quotes), <i>false</i> for case insensitivity.
 	 */
 	public SQLServerTranslator(final boolean allCaseSensitive){
@@ -89,7 +113,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 	/**
 	 * Builds an SQLServerTranslator which will always translate in SQL identifiers with the defined case sensitivity.
-	 * 
+	 *
 	 * @param catalog	<i>true</i> to translate catalog names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param schema	<i>true</i> to translate schema names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
 	 * @param table		<i>true</i> to translate table names with double quotes (case sensitive in the DBMS), <i>false</i> otherwise.
@@ -111,7 +135,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 * For SQL Server, {@link #translate(ClauseSelect)} must be overridden for
 	 * TOP/LIMIT handling. We must not add the LIMIT at the end of the query, it
 	 * must go in the SELECT.
-	 * 
+	 *
 	 * @see #translate(ClauseSelect)
 	 */
 	@Override
@@ -149,6 +173,19 @@ public class SQLServerTranslator extends JDBCTranslator {
 		}
 
 		return sql;
+	}
+
+	@Override
+	public String translate(Concatenation concat) throws TranslationException{
+		StringBuffer translated = new StringBuffer();
+
+		for(ADQLOperand op : concat){
+			if (translated.length() > 0)
+				translated.append(" + ");
+			translated.append(translate(op));
+		}
+
+		return translated.toString();
 	}
 
 	@Override
@@ -229,7 +266,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 	/**
 	 * Generate an ADQL column of the given table and with the given metadata.
-	 * 
+	 *
 	 * @param table			Parent table of the column to generate.
 	 * @param colMeta		DB metadata of the column to generate.
 	 * @param joinedColumn	The joined column (i.e. the ADQL column listed in a
@@ -238,7 +275,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 *                   	<i>If NULL, an {@link ADQLColumn} instance will be
 	 *                   	created from scratch using the ADQL name of the
 	 *                   	given DB metadata.</i>
-	 * 
+	 *
 	 * @return	The generated column.
 	 */
 	protected ADQLColumn generateJoinColumn(final FromContent table, final DBColumn colMeta, final ADQLColumn joinedColumn){
@@ -361,7 +398,8 @@ public class SQLServerTranslator extends JDBCTranslator {
 		if (params != null && params.length > 0){
 			try{
 				lengthParam = Integer.parseInt(params[0]);
-			}catch(NumberFormatException nfe){}
+			}catch(NumberFormatException nfe){
+			}
 		}
 
 		// SMALLINT
@@ -371,7 +409,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 		else if (dbmsTypeName.equals("int"))
 			return new DBType(DBDatatype.INTEGER);
 		// BIGINT
-		else if (dbmsTypeName.equals("bigint"))
+		else if (dbmsTypeName.equals("bigint") || dbmsTypeName.equals("unsigned bigint"))
 			return new DBType(DBDatatype.BIGINT);
 		// REAL (cf https://msdn.microsoft.com/fr-fr/library/ms173773(v=sql.120).aspx)
 		else if (dbmsTypeName.equals("real") || (dbmsTypeName.equals("float") && lengthParam >= 1 && lengthParam <= 24))
