@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -92,7 +92,7 @@ import adql.query.operand.function.string.LowerFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2019)
+ * @version 2.0 (04/2020)
  *
  * @see ADQLParser
  */
@@ -349,11 +349,18 @@ public class ADQLQueryFactory {
 		return new DefaultUDF(name, params);
 	}
 
+	/** @deprecated Since 2.0, prefer to use directly {@link #createDistance(GeometryFunction, GeometryFunction)} */
+	@Deprecated
 	public DistanceFunction createDistance(PointFunction point1, PointFunction point2) throws Exception {
-		return new DistanceFunction(new GeometryValue<PointFunction>(point1), new GeometryValue<PointFunction>(point2));
+		return createDistance((GeometryFunction)point1, (GeometryFunction)point2);
 	}
 
-	public DistanceFunction createDistance(GeometryValue<PointFunction> point1, GeometryValue<PointFunction> point2) throws Exception {
+	/** @since 2.0 */
+	public DistanceFunction createDistance(GeometryFunction point1, GeometryFunction point2) throws Exception {
+		return new DistanceFunction(new GeometryValue<GeometryFunction>(point1), new GeometryValue<GeometryFunction>(point2));
+	}
+
+	public DistanceFunction createDistance(GeometryValue<GeometryFunction> point1, GeometryValue<GeometryFunction> point2) throws Exception {
 		return new DistanceFunction(point1, point2);
 	}
 

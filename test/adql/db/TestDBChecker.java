@@ -653,12 +653,14 @@ public class TestDBChecker {
 			}
 
 			// Test the return type checking inside a whole query:
-			try {
-				parser.parseQuery("SELECT CONTAINS(colG, titi()) ' AS \"Super\" FROM foo;");
-				fail("Geometrical UDFs are not allowed for the moment in the ADQL language: this test should have failed!");
-			} catch(ParseException e1) {
-				assertTrue(e1 instanceof ParseException);
-				assertEquals(" Encountered \"(\". Was expecting one of: \")\" \".\" \".\" \")\" ", e1.getMessage());
+			if (parser.getADQLVersion() == ADQLVersion.V2_0) {
+				try {
+					parser.parseQuery("SELECT CONTAINS(colG, titi()) AS \"SuperError\" FROM foo;");
+					fail("Geometrical UDFs are not allowed for the moment in the ADQL language: this test should have failed!");
+				} catch(ParseException e1) {
+					assertTrue(e1 instanceof ParseException);
+					assertEquals(" Encountered \"(\". Was expecting one of: \")\" \".\" \".\" \")\" ", e1.getMessage());
+				}
 			}
 			try {
 				parser.parseQuery("SELECT titi()*3 AS \"SuperError\" FROM foo;");

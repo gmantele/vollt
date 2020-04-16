@@ -1183,7 +1183,7 @@ ADQLOperand[] Coordinates(): {ADQLOperand[] ops = new ADQLOperand[2];} {
 	{return ops;}
 }
 
-GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<GeometryFunction> gvf1, gvf2; GeometryValue<PointFunction> gvp1, gvp2; GeometryFunction gf = null; PointFunction p1=null, p2=null; ADQLColumn col1 = null, col2 = null;} {
+GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<GeometryFunction> gvf1, gvf2; GeometryValue<GeometryFunction> gvp1, gvp2; GeometryFunction gf = null; PointFunction p1=null, p2=null; ADQLColumn col1 = null, col2 = null;} {
 	try{
 		// predicate_geometry_function
 		(
@@ -1203,20 +1203,20 @@ GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<Geometr
 				(p1=Point()|col1=Column()) 
 				{
 					if (p1 != null)
-						gvp1 = new GeometryValue<PointFunction>(p1);
+						gvp1 = new GeometryValue<GeometryFunction>(p1);
 					else{
 						col1.setExpectedType('G');
-						gvp1 = new GeometryValue<PointFunction>(col1);
+						gvp1 = new GeometryValue<GeometryFunction>(col1);
 					}
 				}
 				<COMMA>
 				(p2=Point()|col2=Column())
 				{
 					if (p2 != null)
-						gvp2 = new GeometryValue<PointFunction>(p2);
+						gvp2 = new GeometryValue<GeometryFunction>(p2);
 					else{
 						col2.setExpectedType('G');
-						gvp2 = new GeometryValue<PointFunction>(col2);
+						gvp2 = new GeometryValue<GeometryFunction>(col2);
 					}
 				} 
 				end=<RIGHT_PAR>

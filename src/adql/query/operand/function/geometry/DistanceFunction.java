@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,6 +38,15 @@ import adql.query.operand.ADQLOperand;
  * 	that accepts two POINT values (the only supported in 2.0), and a second that
  * 	accepts four separate numeric values.
  * </p>
+ *
+ * <p><i><b>Implementation note:</b>
+ * 	In this current implementation, the 2-argument form allows 2 geometries
+ * 	instead of 2 points. The goal is to be more generic. POINT is supposed to
+ * 	be the main expected type of argument, but it could also be a CENTROID
+ * 	(which returns a POINT). Moreover, some extension of this library might
+ * 	want to support DISTANCE between any type of geometries instead of just
+ * 	points.
+ * </i></p>
  *
  * <p>
  * 	If an ADQL service implementation declares support for DISTANCE, then it
@@ -67,8 +76,8 @@ import adql.query.operand.ADQLOperand;
  * <i>
  * <p><b>Example:</b></p>
  * <p>
- * 	The distance between to points stored in the database could be calculated as
- * 	follows:
+ * 	The distance between two points stored in the database could be calculated
+ * 	as follows:
  * </p>
  * <pre>DISTANCE(t1.base, t2.target)</pre>
  * <p>
@@ -92,7 +101,7 @@ import adql.query.operand.ADQLOperand;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (04/2020)
  */
 public class DistanceFunction extends GeometryFunction {
 
@@ -101,10 +110,10 @@ public class DistanceFunction extends GeometryFunction {
 	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "DISTANCE", true, "Compute the arc length along a great circle between two points and returns a numeric value expression in degrees.");
 
 	/** The first point. */
-	private GeometryValue<PointFunction> p1;
+	private GeometryValue<GeometryFunction> p1;
 
 	/** The second point. */
-	private GeometryValue<PointFunction> p2;
+	private GeometryValue<GeometryFunction> p2;
 
 	/**
 	 * Builds a DISTANCE function.
@@ -113,7 +122,7 @@ public class DistanceFunction extends GeometryFunction {
 	 * @param point2				The second point.
 	 * @throws NullPointerException	If one of the parameters are incorrect.
 	 */
-	public DistanceFunction(GeometryValue<PointFunction> point1, GeometryValue<PointFunction> point2) throws NullPointerException {
+	public DistanceFunction(GeometryValue<GeometryFunction> point1, GeometryValue<GeometryFunction> point2) throws NullPointerException {
 		super();
 		if (point1 == null || point2 == null)
 			throw new NullPointerException("All parameters of the DISTANCE function must be different from null!");
@@ -131,8 +140,8 @@ public class DistanceFunction extends GeometryFunction {
 	@SuppressWarnings("unchecked")
 	public DistanceFunction(DistanceFunction toCopy) throws Exception {
 		super(toCopy);
-		p1 = (GeometryValue<PointFunction>)(toCopy.p1.getCopy());
-		p2 = (GeometryValue<PointFunction>)(toCopy.p2.getCopy());
+		p1 = (GeometryValue<GeometryFunction>)(toCopy.p1.getCopy());
+		p2 = (GeometryValue<GeometryFunction>)(toCopy.p2.getCopy());
 	}
 
 	@Override
@@ -175,7 +184,7 @@ public class DistanceFunction extends GeometryFunction {
 	 *
 	 * @return A point.
 	 */
-	public final GeometryValue<PointFunction> getP1() {
+	public final GeometryValue<GeometryFunction> getP1() {
 		return p1;
 	}
 
@@ -184,7 +193,7 @@ public class DistanceFunction extends GeometryFunction {
 	 *
 	 * @param p1 A point.
 	 */
-	public final void setP1(GeometryValue<PointFunction> p1) {
+	public final void setP1(GeometryValue<GeometryFunction> p1) {
 		this.p1 = p1;
 		setPosition(null);
 	}
@@ -194,7 +203,7 @@ public class DistanceFunction extends GeometryFunction {
 	 *
 	 * @return A point.
 	 */
-	public final GeometryValue<PointFunction> getP2() {
+	public final GeometryValue<GeometryFunction> getP2() {
 		return p2;
 	}
 
@@ -203,7 +212,7 @@ public class DistanceFunction extends GeometryFunction {
 	 *
 	 * @param p2 A point.
 	 */
-	public final void setP2(GeometryValue<PointFunction> p2) {
+	public final void setP2(GeometryValue<GeometryFunction> p2) {
 		this.p2 = p2;
 		setPosition(null);
 	}
@@ -235,23 +244,23 @@ public class DistanceFunction extends GeometryFunction {
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
 		if (replacer == null)
 			throw new NullPointerException("Impossible to remove a parameter from the function " + getName() + "!");
-		else if (!(replacer instanceof GeometryValue || replacer instanceof ADQLColumn || replacer instanceof PointFunction))
-			throw new Exception("Impossible to replace a GeometryValue/Column/PointFunction by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+		else if (!(replacer instanceof GeometryValue || replacer instanceof ADQLColumn || replacer instanceof GeometryFunction))
+			throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 
 		ADQLOperand replaced = null;
-		GeometryValue<PointFunction> toUpdate = null;
+		GeometryValue<GeometryFunction> toUpdate = null;
 		switch(index) {
 			case 0:
 				replaced = p1.getValue();
 				if (replacer instanceof GeometryValue)
-					p1 = (GeometryValue<PointFunction>)replacer;
+					p1 = (GeometryValue<GeometryFunction>)replacer;
 				else
 					toUpdate = p1;
 				break;
 			case 1:
 				replaced = p2.getValue();
 				if (replacer instanceof GeometryValue)
-					p2 = (GeometryValue<PointFunction>)replacer;
+					p2 = (GeometryValue<GeometryFunction>)replacer;
 				else
 					toUpdate = p2;
 				break;
@@ -262,8 +271,8 @@ public class DistanceFunction extends GeometryFunction {
 		if (toUpdate != null) {
 			if (replacer instanceof ADQLColumn)
 				toUpdate.setColumn((ADQLColumn)replacer);
-			else if (replacer instanceof PointFunction)
-				toUpdate.setGeometry((PointFunction)replacer);
+			else if (replacer instanceof GeometryFunction)
+				toUpdate.setGeometry((GeometryFunction)replacer);
 		}
 
 		setPosition(null);

@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,6 +29,7 @@ import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
+import adql.query.operand.function.UserDefinedFunction;
 
 /**
  * It represents any geometric function of ADQL.
@@ -109,14 +110,20 @@ public abstract class GeometryFunction extends ADQLFunction {
 
 	/**
 	 * This class represents a parameter of a geometry function
-	 * which, in general, is either a GeometryFunction or a Column.
+	 * which, in general, is either a GeometryFunction, a Column or a
+	 * UserDefinedFunction.
 	 *
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (07/2019)
+	 * @version 2.0 (04/2020)
 	 */
 	public static final class GeometryValue<F extends GeometryFunction> implements ADQLOperand {
+
 		private ADQLColumn column;
 		private F geomFunct;
+
+		/** @since 2.0 */
+		private UserDefinedFunction udf;
+
 		/** Position of this {@link GeometryValue} in the ADQL query string.
 		 * @since 1.4 */
 		private TextPosition position = null;
@@ -125,16 +132,19 @@ public abstract class GeometryFunction extends ADQLFunction {
 			if (col == null)
 				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function!");
 			setColumn(col);
-			if (col.getPosition() != null)
-				position = col.getPosition();
 		}
 
 		public GeometryValue(F geometry) throws NullPointerException {
 			if (geometry == null)
 				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function!");
 			setGeometry(geometry);
-			if (geometry.getPosition() != null)
-				position = geometry.getPosition();
+		}
+
+		/** @since 2.0 */
+		public GeometryValue(UserDefinedFunction udf) throws NullPointerException {
+			if (udf == null)
+				throw new NullPointerException("Impossible to build a GeometryValue without a column, a geometry function or User Defined Function!");
+			setUDF(udf);
 		}
 
 		@SuppressWarnings("unchecked")
@@ -151,6 +161,7 @@ public abstract class GeometryFunction extends ADQLFunction {
 
 		public void setColumn(ADQLColumn col) {
 			if (col != null) {
+				udf = null;
 				geomFunct = null;
 				column = col;
 				position = (column.getPosition() != null) ? column.getPosition() : null;
@@ -159,14 +170,30 @@ public abstract class GeometryFunction extends ADQLFunction {
 
 		public void setGeometry(F geometry) {
 			if (geometry != null) {
+				udf = null;
 				column = null;
 				geomFunct = geometry;
 				position = (geomFunct.getPosition() != null) ? geomFunct.getPosition() : null;
 			}
 		}
 
+		/** @since 2.0 */
+		public void setUDF(UserDefinedFunction udf) {
+			if (udf != null) {
+				column = null;
+				geomFunct = null;
+				this.udf = udf;
+				position = (udf.getPosition() != null) ? udf.getPosition() : null;
+			}
+		}
+
 		public ADQLOperand getValue() {
-			return (column != null) ? column : geomFunct;
+			if (column != null)
+				return column;
+			else if (geomFunct != null)
+				return geomFunct;
+			else
+				return udf;
 		}
 
 		public boolean isColumn() {
