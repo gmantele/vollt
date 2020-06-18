@@ -19,7 +19,7 @@ is still using ADQL-2.0 by default._
 For a complete documentation/tutorial and a demo of the 3 libraries you should visit the following websites: [ADQLTuto](http://cdsportal.u-strasbg.fr/adqltuto), [UWSTuto](http://cdsportal.u-strasbg.fr/uwstuto) and [TAPTuto](http://cdsportal.u-strasbg.fr/taptuto).
 
 ### Java version
-These libraries are developed in **Java 7**.
+These libraries are developed in **Java 8**.
 
 ### License
 The three of these libraries are under the terms of the [LGPL v3 license](https://www.gnu.org/licenses/lgpl.html). You can find the full description and all the conditions of use in the files src/COPYING and src/COPYING.LESSER.

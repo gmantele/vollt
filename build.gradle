@@ -25,6 +25,10 @@ dependencies {
     testRuntime 'com.vividsolutions:jts-core:1.14.0'
     testRuntime 'org.locationtech.spatial4j:spatial4j:0.6'
     testRuntime 'org.xerial:sqlite-jdbc:3.16.1'
+    
+    /* Needed to run Gradle with Java 9+: */
+    // https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
+	compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
 }
 
 compileJava {
@@ -40,5 +44,5 @@ sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
 
 /* Set the minimum Java version compatibility: */
-sourceCompatibility = '1.7'
-targetCompatibility = '1.7'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
