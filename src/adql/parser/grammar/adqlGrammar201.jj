@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (04/2020)
+* Version: 2.0 (06/2020)
 */
 
 							/* ########### */
@@ -107,7 +107,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (04/2020)
+ * @version 2.0 (06/2020)
  * @since 2.0
  */
 public class ADQLGrammar201 extends ADQLGrammarBase {
@@ -1345,7 +1345,7 @@ DistanceFunction DistanceFunction2(): { Token fct=null, end=null; DistanceFuncti
 }
 
 ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null;}{
-	coordSys=StringExpression()
+	coordSys=String()
 	{ return coordSys; }
 }
 

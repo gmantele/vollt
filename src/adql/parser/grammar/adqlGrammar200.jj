@@ -1234,7 +1234,7 @@ GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<Geometr
 }
 
 ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null;}{
-	coordSys=StringExpression()
+	coordSys=String()
 	{ return coordSys; }
 }
 
