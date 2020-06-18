@@ -372,8 +372,18 @@ public class ADQLQueryFactory {
 		return new BoxFunction(coordinateSystem, firstCoord, secondCoord, boxWidth, boxHeight);
 	}
 
+	/** @since 2.0 */
+	public BoxFunction createBox(ADQLOperand coordinateSystem, GeometryValue<GeometryFunction> center, ADQLOperand boxWidth, ADQLOperand boxHeight) throws Exception {
+		return new BoxFunction(coordinateSystem, center, boxWidth, boxHeight);
+	}
+
 	public CircleFunction createCircle(ADQLOperand coordSys, ADQLOperand coord1, ADQLOperand coord2, ADQLOperand radius) throws Exception {
 		return new CircleFunction(coordSys, coord1, coord2, radius);
+	}
+
+	/** @since 2.0 */
+	public CircleFunction createCircle(ADQLOperand coordSys, GeometryValue<GeometryFunction> center, ADQLOperand radius) throws Exception {
+		return new CircleFunction(coordSys, center, radius);
 	}
 
 	public CentroidFunction createCentroid(GeometryFunction param) throws Exception {

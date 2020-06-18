@@ -16,13 +16,15 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLObject;
+import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.function.UserDefinedFunction;
 
 /**
  * It represents the box function of the ADQL language.
@@ -66,8 +68,7 @@ import adql.query.operand.ADQLOperand;
  *
  * <p>
  * 	The function arguments may be literal values, as above, or they may be
- * 	column references, functions or expressions that returns the appropriate
- * 	datatypes.
+ * 	column references, functions or expressions that returns a POINT value.
  * </p>
  *
  * <i>
@@ -87,7 +88,7 @@ import adql.query.operand.ADQLOperand;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (06/2020)
  */
 public class BoxFunction extends GeometryFunction {
 
@@ -95,10 +96,23 @@ public class BoxFunction extends GeometryFunction {
 	 * @since 2.0 */
 	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "BOX", true, "Express a box on the sky.");
 
-	/** The first coordinate of the center of this box. */
+	/** Center position.
+	 * <p><i><b>Note:</b>
+	 * 	NULL, if both {@link #coord1} and {@link #coord2} are provided.
+	 * </i></p>
+	 * @since 2.0 */
+	private GeometryValue<GeometryFunction> centerPoint;
+
+	/** The first coordinate of the center of this box.
+	 * <p><i><b>Note:</b>
+	 * 	NULL, if {@link #centerPoint} is provided.
+	 * </i></p> */
 	private ADQLOperand coord1;
 
-	/** The second coordinate of the center of this box. */
+	/** The second coordinate of the center of this box.
+	 * <p><i><b>Note:</b>
+	 * 	NULL, if {@link #centerPoint} is provided.
+	 * </i></p> */
 	private ADQLOperand coord2;
 
 	/** The width of this box (in degrees). */
@@ -118,9 +132,11 @@ public class BoxFunction extends GeometryFunction {
 	 *                   			box.
 	 * @param boxWidth				The width of this box (in degrees).
 	 * @param boxHeight				The height of this box (in degrees).
+	 *
 	 * @throws NullPointerException	If one parameter is NULL.
 	 * @throws Exception 			If there is another error.
 	 */
+	@SuppressWarnings("deprecation")
 	public BoxFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord, ADQLOperand boxWidth, ADQLOperand boxHeight) throws NullPointerException, Exception {
 		super(coordinateSystem);
 
@@ -131,6 +147,35 @@ public class BoxFunction extends GeometryFunction {
 		coord2 = secondCoord;
 		width = boxWidth;
 		height = boxHeight;
+		centerPoint = null;
+	}
+
+	/**
+	 * Builds a BOX function.
+	 *
+	 * @param coordinateSystem		The coordinate system of the center
+	 *                        		position.
+	 * @param center				The center position.
+	 * @param boxWidth				The width of this box (in degrees).
+	 * @param boxHeight				The height of this box (in degrees).
+	 *
+	 * @throws NullPointerException	If one parameter is NULL.
+	 * @throws Exception 			If there is another error.
+	 *
+	 * @since 2.0
+	 */
+	@SuppressWarnings("deprecation")
+	public BoxFunction(ADQLOperand coordinateSystem, GeometryValue<GeometryFunction> center, ADQLOperand boxWidth, ADQLOperand boxHeight) throws NullPointerException, Exception {
+		super(coordinateSystem);
+
+		if (center == null || boxWidth == null || boxHeight == null)
+			throw new NullPointerException("All the parameters of the BOX function must be different from NULL!");
+
+		coord1 = null;
+		coord2 = null;
+		width = boxWidth;
+		height = boxHeight;
+		centerPoint = center;
 	}
 
 	/**
@@ -139,12 +184,14 @@ public class BoxFunction extends GeometryFunction {
 	 * @param toCopy		The BOX function to copy.
 	 * @throws Exception	If there is an error during the copy.
 	 */
+	@SuppressWarnings("unchecked")
 	public BoxFunction(BoxFunction toCopy) throws Exception {
 		super(toCopy);
 		coord1 = (ADQLOperand)(toCopy.coord1.getCopy());
 		coord2 = (ADQLOperand)(toCopy.coord2.getCopy());
 		width = (ADQLOperand)(toCopy.width.getCopy());
 		height = (ADQLOperand)(toCopy.height.getCopy());
+		centerPoint = (GeometryValue<GeometryFunction>)(toCopy.centerPoint.getCopy());
 	}
 
 	@Override
@@ -175,6 +222,42 @@ public class BoxFunction extends GeometryFunction {
 	@Override
 	public boolean isGeometry() {
 		return true;
+	}
+
+	/**
+	 * Gets the center point, exactly as provided.
+	 *
+	 * <p><b>IMPORTANT NOTE:</b>
+	 * 	If this {@link BoxFunction} has been initialized with a pair of
+	 * 	coordinates, this function will return NULL.
+	 * </p>
+	 *
+	 * @return	The center point of the represented box,
+	 *        	or NULL if created with a pair of coordinates.
+	 *
+	 * @since 2.0
+	 */
+	public final GeometryValue<GeometryFunction> getCenter() {
+		return centerPoint;
+	}
+
+	/**
+	 * Sets the center point.
+	 *
+	 * <p><b>WARNING:</b>
+	 * 	Calling this function will erase the single coordinates already set:
+	 * 	{@link #getCoord1()} and {@link #getCoord2()} will both return NULL.
+	 * </p>
+	 *
+	 * @param newCenter	The new center point of the represented box.
+	 *
+	 * @since 2.0
+	 */
+	public final void setCenter(final GeometryValue<GeometryFunction> newCenter) {
+		centerPoint = newCenter;
+		coord1 = null;
+		coord2 = null;
+		setPosition(null);
 	}
 
 	/**
@@ -254,34 +337,55 @@ public class BoxFunction extends GeometryFunction {
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public ADQLOperand[] getParameters() {
-		return new ADQLOperand[]{ coordSys, coord1, coord2, width, height };
+		if (centerPoint == null)
+			return new ADQLOperand[]{ coordSys, coord1, coord2, width, height };
+		else
+			return new ADQLOperand[]{ coordSys, centerPoint.getValue(), width, height };
 	}
 
 	@Override
 	public int getNbParameters() {
-		return 5;
+		return (centerPoint == null ? 5 : 4);
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
-		switch(index) {
-			case 0:
-				return coordSys;
-			case 1:
-				return coord1;
-			case 2:
-				return coord2;
-			case 3:
-				return width;
-			case 4:
-				return height;
-			default:
-				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\"!");
+		if (centerPoint == null) {
+			switch(index) {
+				case 0:
+					return coordSys;
+				case 1:
+					return coord1;
+				case 2:
+					return coord2;
+				case 3:
+					return width;
+				case 4:
+					return height;
+				default:
+					throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\"!");
+			}
+		} else {
+			switch(index) {
+				case 0:
+					return coordSys;
+				case 1:
+					return centerPoint.getValue();
+				case 2:
+					return width;
+				case 3:
+					return height;
+				default:
+					throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\"!");
+			}
 		}
 	}
 
 	@Override
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
 		if (replacer == null)
 			throw new NullPointerException("Impossible to remove one parameter from a " + getName() + " function!");
@@ -289,31 +393,62 @@ public class BoxFunction extends GeometryFunction {
 			throw new Exception("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 
 		ADQLOperand replaced = null;
-		switch(index) {
-			case 0:
-				replaced = coordSys;
-				setCoordinateSystem(replacer);
-				break;
-			case 1:
-				replaced = coord1;
-				coord1 = replacer;
-				break;
-			case 2:
-				replaced = coord2;
-				coord2 = replacer;
-				break;
-			case 3:
-				replaced = width;
-				width = replacer;
-				break;
-			case 4:
-				replaced = height;
-				height = replacer;
-				break;
-			default:
-				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\"!");
+		if (centerPoint == null) {
+			switch(index) {
+				case 0:
+					replaced = coordSys;
+					setCoordinateSystem(replacer);
+					break;
+				case 1:
+					replaced = coord1;
+					setCoord1(replacer);
+					break;
+				case 2:
+					replaced = coord2;
+					setCoord2(replacer);
+					break;
+				case 3:
+					replaced = width;
+					setWidth(replacer);
+					break;
+				case 4:
+					replaced = height;
+					setHeight(replacer);
+					break;
+				default:
+					throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\"!");
+			}
+		} else {
+			switch(index) {
+				case 0:
+					replaced = coordSys;
+					setCoordinateSystem(replacer);
+					break;
+				case 1:
+					replaced = centerPoint;
+					if (replacer instanceof GeometryValue)
+						setCenter((GeometryValue<GeometryFunction>)replacer);
+					else if (replaced instanceof ADQLColumn)
+						centerPoint.setColumn((ADQLColumn)replaced);
+					else if (replaced instanceof GeometryFunction)
+						centerPoint.setGeometry((GeometryFunction)replaced);
+					else if (replaced instanceof UserDefinedFunction)
+						centerPoint.setUDF((UserDefinedFunction)replaced);
+					else
+						throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction/UDF by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+					break;
+				case 2:
+					replaced = width;
+					setWidth(replacer);
+					break;
+				case 3:
+					replaced = height;
+					setHeight(replacer);
+					break;
+				default:
+					throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\"!");
+			}
 		}
-		setPosition(null);
 		return replaced;
 	}
 

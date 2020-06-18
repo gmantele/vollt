@@ -71,7 +71,7 @@ import adql.query.operand.ADQLOperand;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (06/2020)
  */
 public class PointFunction extends GeometryFunction {
 
@@ -98,6 +98,7 @@ public class PointFunction extends GeometryFunction {
 	 * @throws ParseException					If at least one of the given
 	 *                       					parameters is incorrect.
 	 */
+	@SuppressWarnings("deprecation")
 	public PointFunction(ADQLOperand coordinateSystem, ADQLOperand firstCoord, ADQLOperand secondCoord) throws UnsupportedOperationException, NullPointerException, Exception {
 		super(coordinateSystem);
 
@@ -204,6 +205,7 @@ public class PointFunction extends GeometryFunction {
 		return true;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public ADQLOperand[] getParameters() {
 		return new ADQLOperand[]{ coordSys, coord1, coord2 };
@@ -215,6 +217,7 @@ public class PointFunction extends GeometryFunction {
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
 		switch(index) {
 			case 0:
@@ -229,6 +232,7 @@ public class PointFunction extends GeometryFunction {
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
 		if (replacer == null)
 			throw new NullPointerException("Impossible to remove a parameter from the function " + getName() + "!");

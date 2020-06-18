@@ -870,10 +870,12 @@ public class TestADQLParser {
 	}
 
 	@Test
-	public void testGeometryWithNoCooSys() {
+	public void testGeometryWithOptionalArgs() {
 		/*
 		 * NOTE:
 		 * 	Since ADQL-2.1, the coordinate system argument becomes optional.
+		 *  Besides, BOX, CIRCLE and POLYGON can now accept POINTs instead of
+		 *  pairs of coordinates.
 		 */
 
 		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
@@ -881,21 +883,32 @@ public class TestADQLParser {
 		// CASE: with no coordinate system => equivalent to coosys = ''
 		try {
 			assertEquals("POINT('', 1, 2)", parser.parseSelect("SELECT POINT(1, 2)").get(0).toADQL());
+
 			assertEquals("CIRCLE('', 1, 2, 3)", parser.parseSelect("SELECT CIRCLE(1, 2, 3)").get(0).toADQL());
+			assertEquals("CIRCLE('', POINT('', 1, 2), 3)", parser.parseSelect("SELECT CIRCLE(POINT(1,2), 3)").get(0).toADQL());
+			assertEquals("CIRCLE('', colCenter, 3)", parser.parseSelect("SELECT CIRCLE(colCenter, 3)").get(0).toADQL());
+
 			assertEquals("BOX('', 1, 2, 3, 4)", parser.parseSelect("SELECT BOX(1, 2, 3, 4)").get(0).toADQL());
+			assertEquals("BOX('', POINT('', 1, 2), 3, 4)", parser.parseSelect("SELECT BOX(POINT(1, 2), 3, 4)").get(0).toADQL());
+			assertEquals("BOX('', colCenter, 3, 4)", parser.parseSelect("SELECT BOX(colCenter, 3, 4)").get(0).toADQL());
+
 			assertEquals("POLYGON('', 1, 2, 3, 4, 5, 6)", parser.parseSelect("SELECT POLYGON(1, 2, 3, 4, 5, 6)").get(0).toADQL());
+			assertEquals("POLYGON('', POINT('', 1, 2), POINT('', 3, 4), POINT('', 5, 6))", parser.parseSelect("SELECT POLYGON(POINT(1, 2), POINT(3, 4), POINT(5, 6))").get(0).toADQL());
+			assertEquals("POLYGON('', point1, point2, point3)", parser.parseSelect("SELECT POLYGON(point1, point2, point3)").get(0).toADQL());
 		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected error! All parsed geometries are correct.");
 		}
 
-		// CASE: ambiguity with POLYGON and a wrong nb of arguments
-		try {
-			assertEquals("POLYGON(ra, dec, 3, 4, 5, 6, 7)", parser.parseSelect("SELECT POLYGON(ra, dec, 3, 4, 5, 6, 7)").get(0).toADQL());
-		} catch(Exception ex) {
-			ex.printStackTrace();
-			fail("Unexpected error! All parsed geometries are \"correct\".");
-		}
+		// CASE: wrong nb of arguments for POLYGON
+		for(String wrongQuery : new String[]{ "SELECT POLYGON(ra, dec, 3, 4, 5)", "SELECT POLYGON(ra, dec, 3, 4, 5, 6, 7)", "SELECT POLYGON(p1, p2)" })
+			try {
+				parser.parseSelect(wrongQuery);
+				fail("Impossible to create a POLYGON with an incomplete list of vertices! The last point is missing or incomplete.");
+			} catch(Exception ex) {
+				assertEquals(ParseException.class, ex.getClass());
+				assertTrue(ex.getMessage().trim().startsWith("Encountered \")\"."));
+			}
 	}
 
 	@Test
@@ -903,6 +916,22 @@ public class TestADQLParser {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			// DECLARE A SIMPLE PARSER where all coordinate systems are allowed by default:
 			ADQLParser parser = new ADQLParser(version);
+
+			// A coordinate system MUST be a string literal:
+			try {
+				assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('From ' || 'here', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+				fail("A coordinate system can NOT be a string concatenation!");
+			} catch(ParseException pe) {
+				assertEquals(ParseException.class, pe.getClass());
+				assertEquals(48, pe.getPosition().beginColumn);
+			}
+			try {
+				assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT(aColumn, 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
+				fail("A coordinate system can NOT be a column reference!");
+			} catch(ParseException pe) {
+				assertEquals(ParseException.class, pe.getClass());
+				assertEquals((version == ADQLVersion.V2_0 ? 40 : 53), pe.getPosition().beginColumn);
+			}
 
 			// Test with several coordinate systems while all are allowed:
 			try {
@@ -917,14 +946,6 @@ public class TestADQLParser {
 			} catch(ParseException pe) {
 				pe.printStackTrace();
 				fail("This query contains several valid coordinate systems, and all are theoretically allowed: this test should have succeeded!");
-			}
-
-			// Concatenation as coordinate systems not checked:
-			try {
-				assertNotNull(parser.parseQuery("SELECT * FROM foo WHERE CONTAINS(POINT('From ' || 'here', 12.3, 45.6), CIRCLE('', 1.2, 2.3, 5)) = 1;"));
-			} catch(ParseException pe) {
-				pe.printStackTrace();
-				fail("This query contains a concatenation as coordinate systems (but only string constants are checked): this test should have succeeded!");
 			}
 
 			// Test with several coordinate systems while only some allowed:

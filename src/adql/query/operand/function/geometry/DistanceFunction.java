@@ -24,6 +24,7 @@ import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLObject;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.function.UserDefinedFunction;
 
 /**
  * It represents the DISTANCE function of the ADQL language.
@@ -231,9 +232,9 @@ public class DistanceFunction extends GeometryFunction {
 	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
 		switch(index) {
 			case 0:
-				return p1.getValue();
+				return p1;
 			case 1:
-				return p2.getValue();
+				return p2;
 			default:
 				throw new ArrayIndexOutOfBoundsException("No " + index + "-th parameter for the function \"" + getName() + "\"!");
 		}
@@ -244,8 +245,8 @@ public class DistanceFunction extends GeometryFunction {
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
 		if (replacer == null)
 			throw new NullPointerException("Impossible to remove a parameter from the function " + getName() + "!");
-		else if (!(replacer instanceof GeometryValue || replacer instanceof ADQLColumn || replacer instanceof GeometryFunction))
-			throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+		else if (!(replacer instanceof GeometryValue || replacer instanceof ADQLColumn || replacer instanceof GeometryFunction || replacer instanceof UserDefinedFunction))
+			throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction/UDF by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 
 		ADQLOperand replaced = null;
 		GeometryValue<GeometryFunction> toUpdate = null;
@@ -273,6 +274,8 @@ public class DistanceFunction extends GeometryFunction {
 				toUpdate.setColumn((ADQLColumn)replacer);
 			else if (replacer instanceof GeometryFunction)
 				toUpdate.setGeometry((GeometryFunction)replacer);
+			else if (replacer instanceof UserDefinedFunction)
+				toUpdate.setUDF((UserDefinedFunction)replacer);
 		}
 
 		setPosition(null);

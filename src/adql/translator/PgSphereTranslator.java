@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -62,7 +62,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2019)
+ * @version 2.0 (06/2020)
  */
 public class PgSphereTranslator extends PostgreSQLTranslator {
 
@@ -243,17 +243,17 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 			}
 			try {
 				// build the CIRCLE to use in the artificial CONTAINS:
-				CircleFunction circleFct = new CircleFunction(new StringConstant(""), ((PointFunction)distFct.getParameter(1)).getCoord1(), ((PointFunction)distFct.getParameter(1)).getCoord2(), numericOperand);
+				CircleFunction circleFct = new CircleFunction(new StringConstant(""), ((PointFunction)distFct.getP2().getValue()).getCoord1(), ((PointFunction)distFct.getP2().getValue()).getCoord2(), numericOperand);
 				// adapt the translation in function of the comp. operator:
 				switch(comp.getOperator()) {
 					case LESS_THAN:
-						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '1' AND " + super.translate(comp) + ")";
+						return "((" + translate(distFct.getP1()) + " @ " + translate(circleFct) + ") = '1' AND " + super.translate(comp) + ")";
 					case LESS_OR_EQUAL:
-						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '1'" + ")";
+						return "((" + translate(distFct.getP1()) + " @ " + translate(circleFct) + ") = '1'" + ")";
 					case GREATER_THAN:
-						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '0' AND " + super.translate(comp) + ")";
+						return "((" + translate(distFct.getP1()) + " @ " + translate(circleFct) + ") = '0' AND " + super.translate(comp) + ")";
 					case GREATER_OR_EQUAL:
-						return "((" + translate(distFct.getParameter(0)) + " @ " + translate(circleFct) + ") = '0'" + ")";
+						return "((" + translate(distFct.getP1()) + " @ " + translate(circleFct) + ") = '0'" + ")";
 					default: // theoretically, this case never happens!
 						return super.translate(comp);
 				}

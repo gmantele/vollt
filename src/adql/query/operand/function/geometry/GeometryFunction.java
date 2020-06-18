@@ -34,12 +34,21 @@ import adql.query.operand.function.UserDefinedFunction;
 /**
  * It represents any geometric function of ADQL.
  *
+ * <p>
+ * 	For historical reasons, the geometry regions accept an optional string value
+ * 	as the first argument. As of this version of the specification (2.1) this
+ * 	parameter has been marked as deprecated. Future versions of this
+ * 	specification (>2.1) may remove this parameter.
+ * </p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.4 (06/2015)
+ * @version 2.0 (06/2020)
  */
 public abstract class GeometryFunction extends ADQLFunction {
 
-	/** The coordinate system used to express the coordinates. */
+	/** The coordinate system used to express the coordinates.
+	 * @deprecated Since ADQL-2.1. */
+	@Deprecated
 	protected ADQLOperand coordSys = null;
 
 	/**
@@ -61,7 +70,10 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * @throws NullPointerException				If the given operand is NULL.
 	 * @throws Exception						If the given operand is not a
 	 *                  						string.
+	 *
+	 * @deprecated Since ADQL-2.1, the coordinate system argument is deprecated.
 	 */
+	@Deprecated
 	protected GeometryFunction(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, Exception {
 		setCoordinateSystem(coordSys);
 	}
@@ -81,7 +93,10 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * Gets the used coordinate system.
 	 *
 	 * @return	Its coordinate system.
+	 *
+	 * @deprecated Since ADQL-2.1.
 	 */
+	@Deprecated
 	public ADQLOperand getCoordinateSystem() {
 		return coordSys;
 	}
@@ -96,7 +111,10 @@ public abstract class GeometryFunction extends ADQLFunction {
 	 * @throws NullPointerException				If the given operand is NULL.
 	 * @throws ParseException					If the given operand is not a
 	 *                       					string.
+	 *
+	 * @deprecated Since ADQL-2.1.
 	 */
+	@Deprecated
 	public void setCoordinateSystem(ADQLOperand coordSys) throws UnsupportedOperationException, NullPointerException, ParseException {
 		if (coordSys == null)
 			this.coordSys = new StringConstant("");

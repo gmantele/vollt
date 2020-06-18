@@ -16,11 +16,12 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Vector;
 
 import adql.parser.feature.LanguageFeature;
@@ -32,7 +33,7 @@ import adql.query.operand.ADQLOperand;
  *
  * <p>
  * 	This function expresses a region on the sky with boundaries denoted by great
- * 	circles passing through specified coordinates. It corresponds semantically
+ * 	circles passing through specified vertices. It corresponds semantically
  * 	to the STC Polygon.
  * </p>
  *
@@ -58,6 +59,8 @@ import adql.query.operand.ADQLOperand;
  * </p>
  * <pre>POLYGON(10.0, -10.5, 20.0, 20.5, 30.0, 30.5)</pre>
  * <p>, where all numeric values are in degrees.</p>
+ * <p>or alternatively as follows:</p>
+ * <pre>POLYGON(POINT(10.0, -10.5), POINT(20.0, 20.5), POINT(30.0, 30.5))</pre>
  * </i>
  *
  * <p>
@@ -103,7 +106,7 @@ import adql.query.operand.ADQLOperand;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (06/2020)
  */
 public class PolygonFunction extends GeometryFunction {
 
@@ -111,7 +114,7 @@ public class PolygonFunction extends GeometryFunction {
 	 * @since 2.0 */
 	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "POLYGON", true, "Express a region on the sky with boundaries denoted by great circles passing through specified coordinates.");
 
-	/** The coordinates of vertices. */
+	/** The vertices. */
 	protected Vector<ADQLOperand> coordinates;
 
 	/**
@@ -131,6 +134,7 @@ public class PolygonFunction extends GeometryFunction {
 	 *                             				NULL.
 	 * @throws Exception						If there is another error.
 	 */
+	@SuppressWarnings("deprecation")
 	public PolygonFunction(ADQLOperand coordSystem, ADQLOperand[] coords) throws UnsupportedOperationException, NullPointerException, Exception {
 		super(coordSystem);
 		if (coords == null || coords.length < 6)
@@ -143,14 +147,18 @@ public class PolygonFunction extends GeometryFunction {
 	}
 
 	/**
-	 * Builds a polygon function with at least 3 2-D coordinates (that is to
-	 * say, the vector must contain at least 6 operands).
+	 * Builds a polygon function with at least:
+	 *
+	 * <ul>
+	 * 	<li>3 pairs of coordinates (that is to say, the vector must contain at
+	 * 		least 6 items),</li>
+	 * 	<li>OR 3 point values (so, a vector containing at least 3 items).</li>
+	 * </ul>
 	 *
 	 * @param coordSystem						A string operand which
 	 *                   						corresponds to a valid
 	 *                   						coordinate system.
-	 * @param coords							A vector of at least 3 2-D
-	 *              							coordinates (size()>=6).
+	 * @param coords							A vector of at least 3 vertices.
 	 *
 	 * @throws UnsupportedOperationException	If this function is not
 	 *                                      	associated with a coordinate
@@ -159,10 +167,16 @@ public class PolygonFunction extends GeometryFunction {
 	 *                             				NULL.
 	 * @throws Exception						If there is another error.
 	 */
+	@SuppressWarnings("deprecation")
 	public PolygonFunction(ADQLOperand coordSystem, Collection<? extends ADQLOperand> coords) throws UnsupportedOperationException, NullPointerException, Exception {
 		super(coordSystem);
-		if (coords == null || coords.size() < 6)
-			throw new NullPointerException("A POLYGON function must have at least 3 2-D coordinates!");
+		if (coords == null)
+			throw new NullPointerException("A POLYGON function must have vertices!");
+
+		Iterator<?> itCoords = coords.iterator();
+		Object firstItem = (itCoords.hasNext() ? itCoords.next() : null);
+		if (firstItem == null || (firstItem instanceof GeometryValue<?> && coords.size() < 3) || (!(firstItem instanceof GeometryValue<?>) && coords.size() < 6))
+			throw new NullPointerException("A POLYGON function must have at least 3 vertices (i.e. 3 points or 3 pairs of coordinates)!");
 		else {
 			coordinates = new Vector<ADQLOperand>(coords.size());
 			coordinates.addAll(coords);
@@ -213,6 +227,7 @@ public class PolygonFunction extends GeometryFunction {
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public ADQLOperand[] getParameters() {
 		ADQLOperand[] params = new ADQLOperand[coordinates.size() + 1];
 
@@ -229,6 +244,7 @@ public class PolygonFunction extends GeometryFunction {
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public ADQLOperand getParameter(int index) throws ArrayIndexOutOfBoundsException {
 		if (index == 0)
 			return coordSys;
@@ -239,6 +255,7 @@ public class PolygonFunction extends GeometryFunction {
 	}
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public ADQLOperand setParameter(int index, ADQLOperand replacer) throws ArrayIndexOutOfBoundsException, NullPointerException, Exception {
 		if (replacer == null)
 			throw new NullPointerException("Impossible to remove only one parameter from the function POLYGON!");
