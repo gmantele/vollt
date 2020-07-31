@@ -16,7 +16,7 @@ package uws.job.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -117,7 +117,7 @@ import uws.service.request.UploadFile;
  * <p><i><u>note 2:</u> If several values have been submitted for the same UWS standard parameter, just the last occurrence is taken into account.</i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.4 (07/2018)
+ * @version 4.5 (07/2020)
  */
 public class UWSParameters implements Iterable<Entry<String, Object>> {
 
@@ -170,7 +170,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @see #UWSParameters(Collection, Map)
 	 */
-	public UWSParameters(){
+	public UWSParameters() {
 		this(null, null);
 	}
 
@@ -187,7 +187,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @see #getDefaultControllers()
 	 */
-	public UWSParameters(final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers){
+	public UWSParameters(final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) {
 		// Set the input parameter controllers:
 		mapParamControllers = getDefaultControllers();
 		if (inputParamControllers != null)
@@ -208,7 +208,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @see #UWSParameters(HttpServletRequest, Collection, Map)
 	 */
-	public UWSParameters(final HttpServletRequest request) throws UWSException{
+	public UWSParameters(final HttpServletRequest request) throws UWSException {
 		this(request, null, null);
 	}
 
@@ -228,7 +228,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @see #UWSParameters(Map, Collection, Map)
 	 */
-	public UWSParameters(final HttpServletRequest request, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException{
+	public UWSParameters(final HttpServletRequest request, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException {
 		this(getParameters(request), expectedAdditionalParams, inputParamControllers);
 	}
 
@@ -249,17 +249,17 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * @since 4.1
 	 */
 	@SuppressWarnings("unchecked")
-	protected static Map<String, Object> getParameters(final HttpServletRequest request){
+	protected static Map<String, Object> getParameters(final HttpServletRequest request) {
 		// No request => no parameters:
 		if (request == null)
 			return null;
 
 		/* The UWS service has theoretically already extracted all parameters in function of the content-type.
 		 * If so, these parameters can be found as a Map<String,Object> in the request attribute "UWS_PARAMETERS": */
-		try{
+		try {
 			if (request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS) != null)
 				return (Map<String, Object>)request.getAttribute(UWS.REQ_ATTRIBUTE_PARAMETERS);
-		}catch(Exception e){
+		} catch(Exception e) {
 		} // 2 possible exceptions: ClassCastException and NullPointerException
 
 		/* If there is no such attribute or if it is not of the good type,
@@ -269,7 +269,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 		int i;
 		String n;
 		String[] values;
-		while(names.hasMoreElements()){
+		while(names.hasMoreElements()) {
 			n = names.nextElement();
 			values = request.getParameterValues(n);
 			// search for the last non-null occurrence:
@@ -294,7 +294,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @see #UWSParameters(Map, Collection, Map)
 	 */
-	public UWSParameters(final Map<String, Object> params) throws UWSException{
+	public UWSParameters(final Map<String, Object> params) throws UWSException {
 		this(params, null, null);
 	}
 
@@ -314,14 +314,14 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @see #UWSParameters(Collection, Map)
 	 */
-	public UWSParameters(final Map<String, Object> params, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException{
+	public UWSParameters(final Map<String, Object> params, final Collection<String> expectedAdditionalParams, final Map<String, InputParamController> inputParamControllers) throws UWSException {
 		this(expectedAdditionalParams, inputParamControllers);
 
 		// Load all parameters:
-		if (params != null && !params.isEmpty()){
+		if (params != null && !params.isEmpty()) {
 			Iterator<Entry<String, Object>> it = params.entrySet().iterator();
 			Entry<String, Object> entry;
-			while(it.hasNext()){
+			while(it.hasNext()) {
 				entry = it.next();
 				set(entry.getKey(), entry.getValue());
 			}
@@ -333,7 +333,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @return Default list of controllers. <i><u>note:</u> This map can be modified !</i>
 	 */
-	protected Map<String, InputParamController> getDefaultControllers(){
+	protected Map<String, InputParamController> getDefaultControllers() {
 		HashMap<String, InputParamController> controllers = new HashMap<String, InputParamController>(2);
 		controllers.put(UWSJob.PARAM_EXECUTION_DURATION, new ExecutionDurationController());
 		controllers.put(UWSJob.PARAM_DESTRUCTION_TIME, new DestructionTimeController());
@@ -349,7 +349,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @return					The corresponding controller or <i>null</i> if there is no controller for the specified parameter.
 	 */
-	protected InputParamController getController(final String inputParamName){
+	protected InputParamController getController(final String inputParamName) {
 		return mapParamControllers.get(inputParamName);
 	}
 
@@ -358,12 +358,12 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @return		An iterator over all available controllers.
 	 */
-	protected Iterator<Entry<String, InputParamController>> getControllers(){
+	protected Iterator<Entry<String, InputParamController>> getControllers() {
 		return mapParamControllers.entrySet().iterator();
 	}
 
 	@Override
-	public final Iterator<Entry<String, Object>> iterator(){
+	public final Iterator<Entry<String, Object>> iterator() {
 		return params.entrySet().iterator();
 	}
 
@@ -371,7 +371,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * Gets the name of all parameters.
 	 * @return	List of all parameter names.
 	 */
-	public final Set<String> getNames(){
+	public final Set<String> getNames() {
 		return params.keySet();
 	}
 
@@ -379,7 +379,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * Tells whether there is no parameter or not.
 	 * @return	<i>true</i> if there is no parameter, <i>false</i> otherwise.
 	 */
-	public final boolean isEmpty(){
+	public final boolean isEmpty() {
 		return params.isEmpty();
 	}
 
@@ -387,7 +387,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * Gets the number of all stored parameters.
 	 * @return	Number of all parameters.
 	 */
-	public final int size(){
+	public final int size() {
 		return params.size();
 	}
 
@@ -396,11 +396,11 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * <p><i><u>note:</u> This method is thread safe!</i></p>
 	 */
-	public final void init(){
+	public final void init() {
 		Iterator<Entry<String, InputParamController>> itControllers = getControllers();
-		if (itControllers != null){
+		if (itControllers != null) {
 			Entry<String, InputParamController> entry;
-			while(itControllers.hasNext()){
+			while(itControllers.hasNext()) {
 				entry = itControllers.next();
 				if (!params.containsKey(entry.getKey()) && entry.getValue().getDefault() != null)
 					params.put(entry.getKey(), entry.getValue().getDefault());
@@ -420,44 +420,44 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @exception UWSException	If one of the given parameters is not allowed to be modified.
 	 */
-	public String[] update(final UWSParameters newParams) throws UWSException{
-		if (newParams != null && !newParams.params.isEmpty()){
+	public String[] update(final UWSParameters newParams) throws UWSException {
+		if (newParams != null && !newParams.params.isEmpty()) {
 			additionalParams = null;
 			files = null;
 			String[] updated = new String[newParams.params.size()];
 			Object oldValue;
 			int i = 0;
-			for(Entry<String, Object> entry : newParams){
+			for(Entry<String, Object> entry : newParams) {
 				// Test whether this parameter is allowed to be modified after its initialization:
 				InputParamController controller = getController(entry.getKey());
 				if (controller != null && !controller.allowModification())
-					throw new UWSException(UWSException.FORBIDDEN, "The parameter \"" + entry.getKey() + "\" can not be modified after initialization!");
+					throw new UWSException(UWSException.BAD_REQUEST, "The parameter \"" + entry.getKey() + "\" can not be modified after initialization!");
 				// Determine whether the value already exists:
-				if (params.containsKey(entry.getKey()) || entry.getKey().toLowerCase().matches(UWS_RW_PARAMETERS_REGEXP)){
+				if (params.containsKey(entry.getKey()) || entry.getKey().toLowerCase().matches(UWS_RW_PARAMETERS_REGEXP)) {
 					// If the value is NULL, throw an error (no parameter can be removed after job creation):
 					if (entry.getValue() == null)
-						throw new UWSException(UWSException.FORBIDDEN, "Removing a parameter (here: \"" + entry.getKey() + "\") from a job is forbidden!");
+						throw new UWSException(UWSException.BAD_REQUEST, "Removing a parameter (here: \"" + entry.getKey() + "\") from a job is forbidden!");
 					// Else update the parameter value:
-					else{
+					else {
 						// If the parameter to replace is an uploaded file, it must be physically removed before replacement:
 						oldValue = params.get(entry.getKey());
-						if (oldValue != null && oldValue instanceof UploadFile){
-							try{
+						if (oldValue != null && oldValue instanceof UploadFile) {
+							try {
 								((UploadFile)oldValue).deleteFile();
-							}catch(IOException ioe){
+							} catch(IOException ioe) {
 							}
 						}
 						// Perform the replacement:
 						params.put(entry.getKey(), entry.getValue());
 					}
-				}else
+				} else
 					// No parameter can be added after job creation:
-					throw new UWSException(UWSException.FORBIDDEN, "Adding a parameter (here: \"" + entry.getKey() + "\") to an existing job is forbidden by the UWS protocol!");
+					throw new UWSException(UWSException.BAD_REQUEST, "Adding a parameter (here: \"" + entry.getKey() + "\") to an existing job is forbidden by the UWS protocol!");
 				// Update the list of updated parameters:
 				updated[i++] = entry.getKey();
 			}
 			return updated;
-		}else
+		} else
 			return new String[0];
 	}
 
@@ -476,7 +476,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * @see #normalizeParamName(String)
 	 * @see #getAdditionalParameters()
 	 */
-	public final Object get(final String name){
+	public final Object get(final String name) {
 		String normalizedName = normalizeParamName(name);
 		if (normalizedName == null)
 			return null;
@@ -493,16 +493,16 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @since 4.1
 	 */
-	public final Iterator<UploadFile> getFiles(){
-		if (files == null){
+	public final Iterator<UploadFile> getFiles() {
+		if (files == null) {
 			files = new ArrayList<UploadFile>(3);
-			for(Object v : params.values()){
+			for(Object v : params.values()) {
 				if (v == null)
 					continue;
 				else if (v instanceof UploadFile)
 					files.add((UploadFile)v);
-				else if (v.getClass().isArray()){
-					for(Object o : (Object[])v){
+				else if (v.getClass().isArray()) {
+					for(Object o : (Object[])v) {
 						if (o instanceof UploadFile)
 							files.add((UploadFile)o);
 					}
@@ -532,7 +532,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * @see #normalizeParamName(String)
 	 */
 	@SuppressWarnings("unchecked")
-	public final Object set(final String name, Object value) throws UWSException{
+	public final Object set(final String name, Object value) throws UWSException {
 		// If the given value is NULL, the parameter must be removed:
 		if (value == null)
 			return remove(name);
@@ -548,24 +548,24 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 		files = null;
 
 		// Case of the PARAMETERS parameter: read all parameters and set them individually into this UWSParameters instance:
-		if (normalizedName.equals(UWSJob.PARAM_PARAMETERS)){
+		if (normalizedName.equals(UWSJob.PARAM_PARAMETERS)) {
 			// the value MUST BE a Map<String, Object>:
-			if (value instanceof Map){
-				try{
+			if (value instanceof Map) {
+				try {
 					Map<String, Object> otherParams = (Map<String, Object>)value;
 					HashMap<String, Object> mapOldValues = new HashMap<String, Object>(otherParams.size());
 					Object oldValue = null;
-					for(Entry<String, Object> entry : otherParams.entrySet()){
+					for(Entry<String, Object> entry : otherParams.entrySet()) {
 						oldValue = set(entry.getKey(), entry.getValue());
 						mapOldValues.put(entry.getKey(), oldValue);
 					}
 					return mapOldValues;
-				}catch(ClassCastException cce){
+				} catch(ClassCastException cce) {
 					return null;
 				}
-			}else
+			} else
 				return null;
-		}else{
+		} else {
 			// Check the value before setting it:
 			InputParamController controller = getController(normalizedName);
 			if (controller != null)
@@ -573,10 +573,10 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 
 			// If the parameter already exists and it is an uploaded file, delete it before its replacement:
 			Object oldValue = params.get(normalizedName);
-			if (oldValue != null && oldValue instanceof UploadFile){
-				try{
+			if (oldValue != null && oldValue instanceof UploadFile) {
+				try {
 					((UploadFile)oldValue).deleteFile();
-				}catch(IOException ioe){
+				} catch(IOException ioe) {
 				}
 			}
 
@@ -594,7 +594,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @see #normalizeParamName(String)
 	 */
-	public Object remove(final String inputParamName){
+	public Object remove(final String inputParamName) {
 		// Normalize (take into account the case ONLY FOR the non-standard UWS parameters) the given parameter name:
 		String normalizedName = normalizeParamName(inputParamName);
 
@@ -607,10 +607,10 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 		// Remove the file:
 		Object removed = params.remove(normalizedName);
 		// If the removed parameter was a file, remove it from the server:
-		if (removed != null && removed instanceof UploadFile){
-			try{
+		if (removed != null && removed instanceof UploadFile) {
+			try {
 				((UploadFile)removed).deleteFile();
-			}catch(IOException ioe){
+			} catch(IOException ioe) {
 			}
 		}
 		// Return the value of the removed parameter:
@@ -624,22 +624,22 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @return		Normalized name or <i>null</i> if the parameters should be ignored (i.e. empty name and UWS read-only parameters).
 	 */
-	protected String normalizeParamName(final String name){
+	protected String normalizeParamName(final String name) {
 		if (name == null || name.trim().length() == 0)
 			return null;
 
-		for(String uwsParam : UWS_RW_PARAMETERS){
+		for(String uwsParam : UWS_RW_PARAMETERS) {
 			if (name.equalsIgnoreCase(uwsParam))
 				return uwsParam;
 		}
 
-		for(String uwsParam : UWS_RO_PARAMETERS){
+		for(String uwsParam : UWS_RO_PARAMETERS) {
 			if (name.equalsIgnoreCase(uwsParam))
 				return null;
 		}
 
-		if (expectedAdditionalParams != null){
-			for(String param : expectedAdditionalParams){
+		if (expectedAdditionalParams != null) {
+			for(String param : expectedAdditionalParams) {
 				if (name.equalsIgnoreCase(param))
 					return param;
 			}
@@ -652,7 +652,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * Tells whether there is a value for the {@link UWSJob#PARAM_PHASE PHASE} parameter.
 	 * @return	<i>true</i> if the {@link UWSJob#PARAM_PHASE PHASE} has a value, <i>false</i> otherwise.
 	 */
-	public final boolean hasInputPhase(){
+	public final boolean hasInputPhase() {
 		return params.get(UWSJob.PARAM_PHASE) != null;
 	}
 
@@ -663,7 +663,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @return	The given phase.
 	 */
-	public final String getInputPhase(){
+	public final String getInputPhase() {
 		if (hasInputPhase())
 			return params.remove(UWSJob.PARAM_PHASE).toString();
 		else
@@ -674,7 +674,7 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * Gets the value of the parameter {@link UWSJob#PARAM_RUN_ID runId}.
 	 * @return	The given {@link UWSJob#PARAM_RUN_ID runId} or <i>null</i> if this parameter has no value.
 	 */
-	public final String getRunId(){
+	public final String getRunId() {
 		return (params.get(UWSJob.PARAM_RUN_ID) != null) ? params.get(UWSJob.PARAM_RUN_ID).toString() : null;
 	}
 
@@ -682,17 +682,17 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * Gets the value of the parameter {@link UWSJob#PARAM_EXECUTION_DURATION executionDuration}.
 	 * @return	The given {@link UWSJob#PARAM_EXECUTION_DURATION executionDuration} or {@link UWSJob#UNLIMITED_DURATION} if this parameter has no value.
 	 */
-	public final long getExecutionDuration(){
+	public final long getExecutionDuration() {
 		Object value = params.get(UWSJob.PARAM_EXECUTION_DURATION);
-		if (value != null){
+		if (value != null) {
 			if (value instanceof Long)
 				return (Long)value;
-			else if (value instanceof String){
-				try{
+			else if (value instanceof String) {
+				try {
 					Long duration = Long.parseLong((String)value);
 					params.put(UWSJob.PARAM_EXECUTION_DURATION, duration);
 					return duration;
-				}catch(NumberFormatException nfe){
+				} catch(NumberFormatException nfe) {
 					;
 				}
 			}
@@ -704,17 +704,17 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 * Gets the value of the parameter {@link UWSJob#PARAM_DESTRUCTION_TIME destruction}.
 	 * @return	The given {@link UWSJob#PARAM_DESTRUCTION_TIME destruction} or <i>null</i> if this parameter has no value.
 	 */
-	public final Date getDestructionTime(){
+	public final Date getDestructionTime() {
 		Object value = params.get(UWSJob.PARAM_DESTRUCTION_TIME);
-		if (value != null){
+		if (value != null) {
 			if (value instanceof Date)
 				return (Date)value;
-			else if (value instanceof String){
-				try{
+			else if (value instanceof String) {
+				try {
 					Date destruction = ISO8601Format.parseToDate((String)value);
 					params.put(UWSJob.PARAM_DESTRUCTION_TIME, destruction);
 					return destruction;
-				}catch(ParseException pe){
+				} catch(ParseException pe) {
 					;
 				}
 			}
@@ -730,10 +730,10 @@ public class UWSParameters implements Iterable<Entry<String, Object>> {
 	 *
 	 * @return	All the UWS additional parameters.
 	 */
-	public final Map<String, Object> getAdditionalParameters(){
-		if (additionalParams == null){
+	public final Map<String, Object> getAdditionalParameters() {
+		if (additionalParams == null) {
 			additionalParams = new ConcurrentHashMap<String, Object>(params.size());
-			for(Entry<String, Object> entry : params.entrySet()){
+			for(Entry<String, Object> entry : params.entrySet()) {
 				boolean uwsParam = false;
 				for(int i = 0; !uwsParam && i < UWS_RW_PARAMETERS.length; i++)
 					uwsParam = entry.getKey().equals(UWS_RW_PARAMETERS[i]);
