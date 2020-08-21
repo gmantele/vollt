@@ -857,19 +857,41 @@
 				<td>text</td>
 				<td>
 					<p>Comma-separated list of all allowed UDFs (User Defined Functions).</p>
-					<p>
-						
-						Each item of the list must have the following syntax: <code>[fct_signature]</code>,
-						<code>[fct_signature, className]</code> or <code>[fct_signature, className, description]</code>.
-						<i>fct_function</i> is the function signature. Its syntax is the same as in
+					<p>Each item of the list must follow one of these syntaxes:</p>
+  					<ul>
+  						<li><code>[fct_signature]</code></li>
+  						<li><code>[fct_signature, transPattern]</code></li>
+  						<li><code>[fct_signature, transPattern, description]</code></li>
+  						<li><code>[fct_signature, className]</code></li>
+  						<li><code>[fct_signature, className, description]</code></li>
+  					</ul>
+  					<p>
+						<code>fct_function</code> is the function signature. Its syntax is the same as in
 						<a href="http://www.ivoa.net/documents/TAPRegExt/20120827/REC-TAPRegExt-1.0.html#langs">TAPRegExt</a>.
+					</p>
+					<p>
+						<i>transPattern</i> is a simple way to translate the ADQL function into the target
+						language (e.g. SQL). The string will represent the exact translation of the
+						function. It is possible to insert arguments with <code>$i</code> (where i is an
+						integer &gt; 0 corresponding to the argument index). This translation pattern is
+						very useful when just the name of the function or the order of arguments is
+						different from the ADQL function, or if a simple operation in the target
+						language (e.g. math operation) is required (note that it will not be executed
+						in the TAP library but in the database). If a more complex translation is
+						required, you should give <i>className</i> instead (see next paragraph).
+					</p>
+					<p>
 						<i>className</i> is the name of a class extending UserDefinedFunction.
 						An instance of this class will replace any reference of a UDF written in an
 						ADQL function with the associated signature. A class name must be specified if
 						the function to represent has a signature (and more particularly a name)
-						different in ADQL and in SQL. <i>description</i> is the human description of the
-						function to be displayed in the <i>/capabilities</i> of the TAP service. It must be
+						different in ADQL and in SQL. description is the human description of the
+						function to be displayed in the /capabilities of the TAP service. It must be
 						written between double quotes.
+					</p>
+					<p>
+						<i>description</i> is the human description of this function. It will be visible in
+						the TAP's capabilities.
 					</p>
 					<p>
 						If the list is empty (no item), all unknown functions are forbidden. And if the special value <code>ANY</code> is given, any unknown function is allowed ;
@@ -880,6 +902,8 @@
 				<td><ul><li>ø <em>(default)</em></li>
 						<li>ANY</li>
 						<li>[trim(txt String) -&gt; String], [random() -&gt; DOUBLE]</li>
+						<li>[ivo_lower(str varchar)->varchar, "lower($1)"]</li>
+						<li>[ivo_nocasematch(value varchar, pattern varchar)->integer, "CAST($1 ILIKE $2 AS INTEGER)", "Compare a string with a given LIKE's SQL pattern in a case-insensitive way."]</li>
 						<li>[newFct(x double)-&gt;double, {apackage.MyNewFunction}]</li>
 						<li>[ivo_healpix_index(hpxOrder integer, ra double, dec double) -&gt; bigint, {adql.query.operand.function.healpix.HealpixIndex}, "Compute the index of the \"Healpix cell\" containing the specified position at the given Healpix order."]</li>
 						<li>[random() -&gt; DOUBLE,,"Generate a random number."]</li>
