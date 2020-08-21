@@ -56,6 +56,7 @@ import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
 import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
 import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
 import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
+import static tap.config.TAPConfiguration.KEY_SYNC_EXECUTION_DURATION;
 import static tap.config.TAPConfiguration.KEY_SYNC_FETCH_SIZE;
 import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.KEY_UDFS;
@@ -170,9 +171,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	/** Maximum number of asynchronous jobs that can run simultaneously. */
 	private int maxAsyncJobs = DEFAULT_MAX_ASYNC_JOBS;
 
-	/** Array of 2 integers: resp. default and maximum execution duration.
-	 * <em>Both duration are expressed in milliseconds.</em> */
-	private int[] executionDuration = new int[2];
+	/** Array of 3 integers: resp. default, maximum and sync. execution
+	 * durations. <em>All durations are expressed in milliseconds.</em> */
+	private int[] executionDuration = new int[3];
 	/** Array of 2 integers: resp. default and maximum retention period.
 	 * <em>Both period are expressed in seconds.</em> */
 	private int[] retentionPeriod = new int[2];
@@ -682,7 +683,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * @throws TAPException	If the corresponding TAP configuration properties are wrong.
 	 */
 	private void initExecutionDuration(final Properties tapConfig) throws TAPException {
-		executionDuration = new int[2];
+		executionDuration = new int[3];
 
 		// Set the default duration:
 		String propValue = getProperty(tapConfig, KEY_DEFAULT_EXECUTION_DURATION);
@@ -700,10 +701,28 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 			throw new TAPException("Integer expected for the property \"" + KEY_MAX_EXECUTION_DURATION + "\", instead of: \"" + propValue + "\"!");
 		}
 
-		// The maximum duration MUST be greater or equals than the default duration.
-		// If not, the default duration is set (so decreased) to the maximum duration.
+		// Set the synchronous duration:
+		propValue = getProperty(tapConfig, KEY_SYNC_EXECUTION_DURATION);
+		try {
+			executionDuration[2] = (propValue == null) ? DEFAULT_EXECUTION_DURATION : Integer.parseInt(propValue);
+		} catch(NumberFormatException nfe) {
+			throw new TAPException("Integer expected for the property \"" + KEY_SYNC_EXECUTION_DURATION + "\", instead of: \"" + propValue + "\"!");
+		}
+
+		/* The maximum duration MUST be greater or equals than the default
+		 * duration. If not, the default duration is set (so decreased) to the
+		 * maximum duration: */
 		if (executionDuration[1] > 0 && executionDuration[1] < executionDuration[0])
 			executionDuration[0] = executionDuration[1];
+
+		/* The synchronous duration MUST be less or equals than the default
+		 * duration (or the max if no default is set). If not, the sync.
+		 * duration is set (so decreased) to the default duration (or max if no
+		 * default): */
+		if (executionDuration[0] > 0 && executionDuration[0] < executionDuration[2])
+			executionDuration[2] = executionDuration[0];
+		else if (executionDuration[0] <= 0 && executionDuration[1] > 0 && executionDuration[1] < executionDuration[2])
+			executionDuration[2] = executionDuration[1];
 	}
 
 	/**

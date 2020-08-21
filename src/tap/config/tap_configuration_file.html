@@ -637,6 +637,40 @@
 				</td>
 				<td>3600000 <em>(1 hour)</em></td>
 			</tr>
+			<tr class="optional">
+				<td class="done">sync_execution_duration</td>
+				<td></td>
+				<td>integer</td>
+				<td>
+					<p>Execution duration (in milliseconds) for SYNCHRONOUS queries.</p>
+					<p>
+						If this property is set, it will be used as default and maximum execution
+						duration for synchronous queries. For asynchronous queries,
+						<code>default_execution_duration</code> and <code>max_execution_duration</code>
+						will still be used as expected.
+					</p>
+					<p>
+						<code>sync_execution_duration</code> MUST be less or equals to default_execution_duration.
+						Why? Because synchronous queries are supposed to be quicker than asynchronous
+						ones. If this rule is not respected, this execution duration is immediately
+						set to <code>default_execution_duration</code>.
+					</p>
+					<p>
+						A negative or null value means that the default execution duration will be
+						used instead. Float values are not allowed.
+					</p>
+					<p><em>Default: same as <code>default_execution_duration</code>.
+						But if <code>default_execution_duration</code> is not set, <code>max_execution_duration</code>
+						will be used.
+						If <code>max_execution_duration</code> is not set, the duration specified in the
+						HTTP request will be used.
+						And if no such duration is given either, an hard coded duration of
+						10 seconds will be applied in order to avoid unlimited synchronous
+						query.
+					</em></p>
+				</td>
+				<td>5000 <em>(5 seconds)</em></td>
+			</tr>
 			
 			<tr><td colspan="5">Output</td></tr>
 			<tr class="optional">
