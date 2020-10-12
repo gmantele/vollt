@@ -130,7 +130,7 @@ public class ADQLExecutor {
 
 	/** Connection to the "database".
 	 * <i>Note: This attribute is NULL before and after the query processing (= call of a start(...) function).</i> */
-	private DBConnection dbConn = null;
+	protected DBConnection dbConn = null; //modif Gilles 02/oct/2020
 	/** ID of the current query processing step (uploading, parsing, execution, writing result, ...).
 	 * <i>Note: This attribute is NULL before and after the query processing (= call of a start(...) function).</i> */
 	private ExecutionProgression progression = null;

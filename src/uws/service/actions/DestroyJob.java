@@ -99,6 +99,7 @@ public class DestroyJob extends UWSAction {
 	public boolean apply(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request, HttpServletResponse response) throws UWSException, IOException{
 		// Get the jobs list:
 		JobList jobsList = getJobsList(urlInterpreter);
+		if (jobsList == null) return true;
 
 		// Destroy the job:
 		boolean destroyed;

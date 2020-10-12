@@ -433,7 +433,7 @@ public class XMLSerializer extends UWSSerializer {
 
 					// set if it is an uploaded file:
 					if (paramValue instanceof UploadFile)
-						buf.append(" byReference=\"true");
+						buf.append(" byReference=\"true\"");
 
 					/*
 					 * Note:
