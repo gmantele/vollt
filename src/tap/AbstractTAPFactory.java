@@ -18,6 +18,9 @@ package tap;
  *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
+ *
+ * TODO:  needs merge (Updated by G.Landais for VizieR)
+ *     - createQueryChecker is not final!
  */
 
 import java.util.ArrayList;
@@ -56,9 +59,6 @@ import uws.service.error.ServiceErrorWriter;
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.2 (09/2017)
- * 
- * TODO:  needs merge (Updated by G.Landais for VizieR)
- *     - createQueryChecker is not final!
  */
 public abstract class AbstractTAPFactory extends TAPFactory {
 
@@ -149,7 +149,8 @@ public abstract class AbstractTAPFactory extends TAPFactory {
 	 * 	This function can not be overridded, but {@link #createQueryChecker(Collection)} can be.
 	 * </i></p>
 	 */
-	//TOGO G.L.
+	
+	//TODO: G.Landais - remove final because it is used by TAPVizieR
 	@Override
 	public QueryChecker createQueryChecker(final TAPSchema uploadSchema) throws TAPException{
 		// Get all tables published in this TAP service:

@@ -191,31 +191,21 @@ public interface ADQLParserConstants {
   /** RegularExpression Id. */
   int TAN = 91;
   /** RegularExpression Id. */
-  int TRIM = 92;
+  int STRING_LITERAL = 95;
   /** RegularExpression Id. */
-  int STRING_LITERAL = 96;
+  int SCIENTIFIC_NUMBER = 96;
   /** RegularExpression Id. */
-  int DELIMITED_IDENTIFIER = 99;
+  int UNSIGNED_FLOAT = 97;
   /** RegularExpression Id. */
-  int REGULAR_IDENTIFIER = 100;
+  int UNSIGNED_INTEGER = 98;
   /** RegularExpression Id. */
-  int Letter = 101;
+  int DIGIT = 99;
   /** RegularExpression Id. */
-  int UNDERSCORE_IDENTIFIER = 102;
+  int DELIMITED_IDENTIFIER = 102;
   /** RegularExpression Id. */
-  int SpecialLetter = 103;
+  int REGULAR_IDENTIFIER_CANDIDATE = 103;
   /** RegularExpression Id. */
-  int NUMERIC_IDENTIFIER = 104;
-  /** RegularExpression Id. */
-  int SpecialLetter2 = 105;
-  /** RegularExpression Id. */
-  int SCIENTIFIC_NUMBER = 106;
-  /** RegularExpression Id. */
-  int UNSIGNED_FLOAT = 107;
-  /** RegularExpression Id. */
-  int UNSIGNED_INTEGER = 108;
-  /** RegularExpression Id. */
-  int DIGIT = 109;
+  int Letter = 104;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -318,24 +308,19 @@ public interface ADQLParserConstants {
     "\"COT\"",
     "\"SIN\"",
     "\"TAN\"",
-    "\"TRIM\"",
-    "<token of kind 93>",
+    "<token of kind 92>",
     "\"\\\'\"",
-    "<token of kind 95>",
+    "<token of kind 94>",
     "\"\\\'\"",
-    "\"\\\"\"",
-    "<token of kind 98>",
-    "\"\\\"\"",
-    "<REGULAR_IDENTIFIER>",
-    "<Letter>",
-    "<UNDERSCORE_IDENTIFIER>",
-    "<SpecialLetter>",
-    "<NUMERIC_IDENTIFIER>",
-    "<SpecialLetter2>",
     "<SCIENTIFIC_NUMBER>",
     "<UNSIGNED_FLOAT>",
     "<UNSIGNED_INTEGER>",
     "<DIGIT>",
+    "\"\\\"\"",
+    "<token of kind 101>",
+    "\"\\\"\"",
+    "<REGULAR_IDENTIFIER_CANDIDATE>",
+    "<Letter>",
   };
 
 }

@@ -17,7 +17,6 @@ package adql.query.operand;
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
- * 
  */
 
 /**
@@ -27,12 +26,9 @@ package adql.query.operand;
  * @version 11/2010
  * 
  * @see Operation
- * 
- * TODO:  needs merge (Updated by G.Landais for VizieR)
- *              - and binary operators
  */
 public enum OperationType{
-	SUM, SUB, MULT, DIV,LOGIC_AND, LOGIC_OR;
+	SUM, SUB, MULT, DIV, LOGIC_AND, LOGIC_OR;
 
 	public static String[] getOperators(){
 		//return new String[]{SUM.toString(),SUB.toString(),MULT.toString(),DIV.toString()};
@@ -72,9 +68,9 @@ public enum OperationType{
 			case DIV:
 				return "/";
 			case LOGIC_AND:
-	            return "&";
-	        case LOGIC_OR:
-	            return "|";
+				return "&";
+			case LOGIC_OR:
+				return "|";
 			default:
 				return "???";
 		}
