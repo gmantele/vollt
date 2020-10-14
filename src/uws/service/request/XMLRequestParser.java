@@ -160,7 +160,7 @@ public class XMLRequestParser implements RequestParser {
 	}
 
 	@Override
-	public Map<String,Object> parse(final HttpServletRequest request) throws UWSException{
+	public Map<String, Object> parse(final HttpServletRequest request) throws UWSException{
 		// Result of the request parsing => a JobInfo containing or pointing toward the sent request content:
 		XMLJobInfo jobDesc = null;
 
@@ -169,7 +169,7 @@ public class XMLRequestParser implements RequestParser {
 		Object reqID = request.getAttribute(UWS.REQ_ATTRIBUTE_ID);
 		if (reqID == null || !(reqID instanceof String))
 			reqID = (new Date()).getTime();
-		File xmlFile = new File(UWSFileManager.TMP_UPLOAD_DIR, "JOB_DESCRIPTION_" + reqID);
+		File xmlFile = new File(fileManager.getTmpDirectory(), "JOB_DESCRIPTION_" + reqID);
 
 		OutputStream output = null;
 		InputStream input = null;
@@ -254,12 +254,14 @@ public class XMLRequestParser implements RequestParser {
 			if (output != null){
 				try{
 					output.close();
-				}catch(IOException ioe2){}
+				}catch(IOException ioe2){
+				}
 			}
 			if (input != null){
 				try{
 					input.close();
-				}catch(IOException ioe2){}
+				}catch(IOException ioe2){
+				}
 			}
 		}
 
@@ -268,7 +270,7 @@ public class XMLRequestParser implements RequestParser {
 			request.setAttribute(UWS.REQ_ATTRIBUTE_JOB_DESCRIPTION, jobDesc);
 
 		// Return an empty map => no parameter has been directly provided:
-		return new HashMap<String,Object>(0);
+		return new HashMap<String, Object>(0);
 	}
 
 	/**
@@ -312,7 +314,8 @@ public class XMLRequestParser implements RequestParser {
 			if (input != null){
 				try{
 					input.close();
-				}catch(IOException ioe){}
+				}catch(IOException ioe){
+				}
 			}
 		}
 	}

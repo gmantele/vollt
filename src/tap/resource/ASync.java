@@ -2,21 +2,21 @@ package tap.resource;
 
 /*
  * This file is part of TAPLibrary.
- * 
+ *
  * TAPLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * TAPLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -42,20 +42,20 @@ import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>Asynchronous resource of a TAP service.</p>
- * 
+ *
  * <p>
  * 	Requests sent to this resource are ADQL queries (plus some execution parameters) to execute asynchronously.
  * 	Results and/or errors of the execution are stored on the server side and can be fetched by the user whenever he wants.
  * </p>
- * 
+ *
  * <p>
  * 	This resource is actually another VO service: a UWS (Universal Worker Service pattern).
  * 	That's why all requests sent to this resource are actually forwarded to an instance of {@link UWSService}.
  * 	All the behavior of UWS described by the IVOA is already fully implemented by this implementation.
  * </p>
- * 
+ *
  * <p>This resource is also representing the only jobs' list of this UWS service.</p>
- * 
+ *
  * <p>The UWS service is created and configured at the creation of this resource. Here are the list of the most important configured elements:</p>
  * <ul>
  * 	<li><b>User identification:</b> the user identifier is the same as the one used by the TAP service. It is provided by the given {@link ServiceConnection}.</li>
@@ -69,10 +69,10 @@ import uws.service.log.UWSLog.LogLevel;
  * 	                                   (except those at the origin of the grave error maybe).</li>
  * 	<li><b>Error logging:</b> the created {@link UWSService} instance is using the same logger as the TAP service. It is also provided by the given {@link ServiceConnection} object at creation.</li>
  * </ul>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2015)
- * 
+ * @version 2.4 (01/2020)
+ *
  * @see UWSService
  */
 public class ASync implements TAPResource {
@@ -89,14 +89,14 @@ public class ASync implements TAPResource {
 
 	/**
 	 * Build an Asynchronous Resource of a TAP service.
-	 * 
+	 *
 	 * @param service	Description of the TAP service which will own this resource.
-	 * 
+	 *
 	 * @throws TAPException	If any error occurs while creating a UWS service or its backup manager.
 	 * @throws UWSException	If any error occurs while setting a new execution manager to the recent inner UWS service,
 	 *                     	or while restoring a UWS backup.
 	 */
-	public ASync(final ServiceConnection service) throws UWSException, TAPException{
+	public ASync(final ServiceConnection service) throws UWSException, TAPException {
 		this.service = service;
 
 		uws = service.getFactory().createUWS();
@@ -104,18 +104,18 @@ public class ASync implements TAPResource {
 		if (uws.getUserIdentifier() == null)
 			uws.setUserIdentifier(service.getUserIdentifier());
 
-		if (uws.getJobList(getName()) == null){
+		if (uws.getJobList(getName()) == null) {
 			jobList = new JobList(getName());
 			uws.addJobList(jobList);
 			jobList.setExecutionManager(new AsyncExecutionManager(service.getLogger(), service.getNbMaxAsyncJobs()));
-		}else
+		} else
 			jobList = uws.getJobList(getName());
 
 		if (uws.getBackupManager() == null)
 			uws.setBackupManager(service.getFactory().createUWSBackupManager(uws));
 
 		UWSBackupManager backupManager = uws.getBackupManager();
-		if (backupManager != null){
+		if (backupManager != null) {
 			backupManager.setEnabled(false);
 			int[] report = uws.getBackupManager().restoreAll();
 			String errorMsg = null;
@@ -128,10 +128,9 @@ public class ASync implements TAPResource {
 			else
 				backupManager.setEnabled(true);
 
-			if (errorMsg != null){
+			if (errorMsg != null) {
 				errorMsg += " => Backup disabled.";
 				service.getLogger().logTAP(LogLevel.FATAL, null, "ASYNC_INIT", errorMsg, null);
-				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, errorMsg);
 			}
 		}
 	}
@@ -139,49 +138,49 @@ public class ASync implements TAPResource {
 	/**
 	 * <p>Notify this TAP resource that free DB connection(s) is(are) now available.
 	 * It means that the execution manager should be refreshed in order to execute one or more queued jobs.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	This function has no effect if there is no execution manager.
 	 * </i></p>
 	 */
-	public void freeConnectionAvailable(){
+	public void freeConnectionAvailable() {
 		if (jobList.getExecutionManager() != null)
 			jobList.getExecutionManager().refresh();
 	}
 
 	@Override
-	public String getName(){
+	public String getName() {
 		return RESOURCE_NAME;
 	}
 
 	@Override
-	public void setTAPBaseURL(final String baseURL){
+	public void setTAPBaseURL(final String baseURL) {
 		;
 	}
 
 	/**
 	 * Get the UWS behind this TAP resource.
-	 * 
+	 *
 	 * @return	The inner UWS used by this TAP resource.
 	 */
-	public final UWSService getUWS(){
+	public final UWSService getUWS() {
 		return uws;
 	}
 
 	@Override
-	public void init(final ServletConfig config) throws ServletException{
+	public void init(final ServletConfig config) throws ServletException {
 		;
 	}
 
 	@Override
-	public void destroy(){
+	public void destroy() {
 		if (uws != null)
 			uws.destroy();
 	}
 
 	@Override
-	public boolean executeResource(final HttpServletRequest request, final HttpServletResponse response) throws IOException, TAPException{
-		try{
+	public boolean executeResource(final HttpServletRequest request, final HttpServletResponse response) throws IOException, TAPException {
+		try {
 
 			// Ensure the service is currently available:
 			if (!service.isAvailable())
@@ -190,7 +189,7 @@ public class ASync implements TAPResource {
 			// Forward the request to the UWS service:
 			return uws.executeRequest(request, response);
 
-		}catch(UWSException ue){
+		} catch(UWSException ue) {
 			service.getLogger().logTAP(LogLevel.FATAL, null, null, "Error while executing the /async resource.", ue);
 			throw new TAPException(ue);
 		}
@@ -199,7 +198,7 @@ public class ASync implements TAPResource {
 	/**
 	 * An execution manager which queues jobs when too many asynchronous jobs are running or
 	 * when no more DB connection is available for the moment.
-	 * 
+	 *
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
 	 * @version 2.0 (02/2015)
 	 * @since 2.0
@@ -211,17 +210,17 @@ public class ASync implements TAPResource {
 
 		/**
 		 * Build a queuing execution manager.
-		 * 
+		 *
 		 * @param logger			Logger to use.
 		 * @param maxRunningJobs	Maximum number of asynchronous jobs that can run in the same time.
 		 */
-		public AsyncExecutionManager(UWSLog logger, int maxRunningJobs){
+		public AsyncExecutionManager(UWSLog logger, int maxRunningJobs) {
 			super(logger);
 			nbMaxRunningJobs = (maxRunningJobs <= 0) ? QueuedExecutionManager.NO_QUEUE : maxRunningJobs;
 		}
 
 		@Override
-		public boolean isReadyForExecution(final UWSJob jobToExecute){
+		public boolean isReadyForExecution(final UWSJob jobToExecute) {
 			if (!hasQueue())
 				return ((TAPJob)jobToExecute).isReadyForExecution();
 			else

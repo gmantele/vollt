@@ -16,7 +16,7 @@ package uws.service.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -40,6 +40,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.regex.Pattern;
 
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -53,26 +54,31 @@ import uws.service.log.UWSLog.LogLevel;
 import uws.service.request.UploadFile;
 
 /**
- * <p>All UWS files are stored in the local machine into the specified directory.</p>
+ * All UWS files are stored in the local machine into the specified directory.
  *
  * <p>
- * 	The name of the log file, the result files and the backup files may be customized by overriding the following functions:
- * 	{@link #getLogFileName(uws.service.log.UWSLog.LogLevel, String)}, {@link #getResultFileName(Result, UWSJob)}, {@link #getBackupFileName(JobOwner)} and {@link #getBackupFileName()}.
+ * 	The name of the log file, the result files and the backup files may be
+ * 	customised by overriding the following functions:
+ * 	{@link #getLogFileName(uws.service.log.UWSLog.LogLevel, String)},
+ * 	{@link #getResultFileName(Result, UWSJob)},
+ * 	{@link #getBackupFileName(JobOwner)} and {@link #getBackupFileName()}.
  * </p>
  *
  * <p>
- * 	By default, results and backups are grouped by owner/user and owners/users are grouped thanks to {@link DefaultOwnerGroupIdentifier}.
- * 	By using the appropriate constructor, you can change these default behaviors.
+ * 	By default, results and backups are grouped by owner/user and owners/users
+ * 	are grouped thanks to {@link DefaultOwnerGroupIdentifier}. By using the
+ * 	appropriate constructor, you can change these default behaviours.
  * </p>
  *
  * <p>
- * 	A log file rotation is set by default so that avoiding a too big log file after several months/years of use.
- * 	By default the rotation is done every month on the 1st at 6am. This frequency can be changed easily thanks to the function
- * 	{@link #setLogRotationFreq(String)}.
+ * 	A log file rotation is set by default so that avoiding a too big log file
+ * 	after several months/years of use. By default the rotation is done every
+ * 	month on the 1st at 6am. This frequency can be changed easily thanks to the
+ * 	function {@link #setLogRotationFreq(String)}.
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.4 (07/2018)
+ * @version 4.4 (08/2018)
  */
 public class LocalUWSFileManager implements UWSFileManager {
 
@@ -86,6 +92,10 @@ public class LocalUWSFileManager implements UWSFileManager {
 
 	/** Directory in which all files managed by this class will be written and read. */
 	protected final File rootDirectory;
+
+	/** Directory in which temporary files (e.g. uploads) should be stored.
+	 * @since 4.4 */
+	protected File tmpDirectory = new File(System.getProperty("java.io.tmpdir"));
 
 	/** Output toward the service log file. */
 	protected PrintWriter logOutput = null;
@@ -205,7 +215,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 			if (ownerGroup != null)
 				ownerDir = new File(rootDirectory, ownerGroup);
 		}
-		ownerDir = new File(ownerDir, owner.getID().replaceAll(File.separator, "_"));
+		ownerDir = new File(ownerDir, owner.getID().replaceAll(Pattern.quote(File.separator), "_"));
 
 		return ownerDir;
 	}
@@ -437,6 +447,21 @@ public class LocalUWSFileManager implements UWSFileManager {
 			}
 		}else
 			return new File(upload.getLocation());
+	}
+
+	@Override
+	public File getTmpDirectory(){
+		return tmpDirectory;
+	}
+
+	@Override
+	public boolean setTmpDirectory(final File newTmpDir){
+		if (newTmpDir == null || !newTmpDir.exists() || !newTmpDir.isDirectory() || !newTmpDir.canRead() || !newTmpDir.canWrite())
+			return false;
+		else{
+			tmpDirectory = newTmpDir;
+			return true;
+		}
 	}
 
 	@Override
@@ -689,7 +714,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 	protected String getBackupFileName(final JobOwner owner) throws IllegalArgumentException{
 		if (owner == null || owner.getID() == null || owner.getID().trim().isEmpty())
 			throw new IllegalArgumentException("Missing owner! Can not get the backup file of an unknown owner.");
-		return owner.getID().replaceAll(File.separator, "_") + ".backup";
+		return owner.getID().replaceAll(Pattern.quote(File.separator), "_") + ".backup";
 	}
 
 	@Override

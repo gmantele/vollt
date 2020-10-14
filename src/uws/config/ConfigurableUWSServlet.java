@@ -2,21 +2,22 @@ package uws.config;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2016-2017 - Astronomisches Rechen Institut (ARI)
+ *
+ * Copyright 2016-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import static uws.config.UWSConfiguration.DEFAULT_BACKUP_BY_USER;
@@ -49,6 +50,7 @@ import static uws.config.UWSConfiguration.KEY_USER_IDENTIFIER;
 import static uws.config.UWSConfiguration.KEY_UWS_FACTORY;
 import static uws.config.UWSConfiguration.KEY_XSLT_STYLESHEET;
 import static uws.config.UWSConfiguration.REGEXP_JOB_LIST_NAME;
+import static uws.config.UWSConfiguration.SLF4J_LOGGER;
 import static uws.config.UWSConfiguration.UWS_CONF_PARAMETER;
 import static uws.config.UWSConfiguration.VALUE_LOCAL;
 import static uws.config.UWSConfiguration.VALUE_NEVER;
@@ -92,20 +94,23 @@ import uws.service.error.ServiceErrorWriter;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
 import uws.service.log.DefaultUWSLog;
+import uws.service.log.Slf4jUWSLog;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
 
 /**
  * <p>HTTP servlet fully configured with a UWS configuration file.</p>
- * 
+ *
  * <p>
- * 	This configuration file may be specified in the initial parameter named {@link UWSConfiguration#UWS_CONF_PARAMETER}
- * 	of this servlet inside the WEB-INF/web.xml file. If none is specified, the file {@link UWSConfiguration#DEFAULT_UWS_CONF_FILE}
- * 	will be searched inside the directories of the classpath, and inside WEB-INF and META-INF.
+ * 	This configuration file may be specified in the initial parameter named
+ * 	{@link UWSConfiguration#UWS_CONF_PARAMETER} of this servlet inside the
+ * 	WEB-INF/web.xml file. If none is specified, the file
+ * 	{@link UWSConfiguration#DEFAULT_UWS_CONF_FILE} will be searched inside the
+ * 	directories of the classpath, and inside WEB-INF and META-INF.
  * </p>
- * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (09/2017)
+ *
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 4.3 (07/2018)
  * @since 4.2
  */
 public class ConfigurableUWSServlet extends HttpServlet {
@@ -158,7 +163,8 @@ public class ConfigurableUWSServlet extends HttpServlet {
 		}finally{
 			try{
 				input.close();
-			}catch(IOException ioe2){}
+			}catch(IOException ioe2){
+			}
 		}
 
 		/* 4. CREATE THE FILE MANAGER */
@@ -200,7 +206,7 @@ public class ConfigurableUWSServlet extends HttpServlet {
 			// If it is a class path, replace the current home page by an instance of this class:
 			if (isClassName(propValue)){
 				try{
-					uws.replaceUWSAction(newInstance(propValue, KEY_HOME_PAGE, ShowHomePage.class, new Class<?>[]{UWSService.class}, new Object[]{uws}));
+					uws.replaceUWSAction(newInstance(propValue, KEY_HOME_PAGE, ShowHomePage.class, new Class<?>[]{ UWSService.class }, new Object[]{ uws }));
 				}catch(UWSException te){
 					throw new ServletException(te.getMessage(), te.getCause());
 				}
@@ -243,14 +249,14 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Initialize the management of UWS service files using the given UWS configuration file.
-	 * 
+	 *
 	 * @param uwsConfig		The content of the UWS configuration file.
 	 * @param webAppRootDir	The directory of the Web Application running this UWS service.
 	 *                     	<em>This directory may be used only to search the root UWS directory
 	 *                     	if specified with a relative path in the UWS configuration file.</em>
-	 * 
+	 *
 	 * @return	The created file manager.
-	 * 
+	 *
 	 * @throws UWSException	If a property is wrong or missing, or if an error occurs while creating the file manager.
 	 */
 	private UWSFileManager createFileManager(final Properties uwsConfig, final String webAppRootDir) throws UWSException{
@@ -286,15 +292,16 @@ public class ConfigurableUWSServlet extends HttpServlet {
 		}
 		// CUSTOM file manager:
 		else
-			return newInstance(fileManagerType, KEY_FILE_MANAGER, UWSFileManager.class, new Class<?>[]{Properties.class}, new Object[]{uwsConfig});
+			return newInstance(fileManagerType, KEY_FILE_MANAGER, UWSFileManager.class, new Class<?>[]{ Properties.class }, new Object[]{ uwsConfig });
 	}
 
 	/**
-	 * Initialize the UWS logger with the given UWS configuration file.
-	 * 
+	 * Initialise the UWS logger with the given UWS configuration file.
+	 *
 	 * @param uwsConfig		The content of the UWS configuration file.
-	 * @param fileManager	The file manager to access the log file(s).
-	 * 
+	 * @param fileManager	The file manager to access the log file(s)
+	 *                   	(if needed).
+	 *
 	 * @throws UWSException	If no instance of the specified custom logger can
 	 *                     	be created.
 	 */
@@ -304,64 +311,66 @@ public class ConfigurableUWSServlet extends HttpServlet {
 		String propValue = getProperty(uwsConfig, KEY_LOGGER);
 		if (propValue == null || propValue.trim().equalsIgnoreCase(DEFAULT_LOGGER))
 			logger = new DefaultUWSLog(fileManager);
+		else if (propValue == null || propValue.trim().equalsIgnoreCase(SLF4J_LOGGER))
+			logger = new Slf4jUWSLog();
 		else
-			logger = newInstance(propValue, KEY_LOGGER, UWSLog.class, new Class<?>[]{UWSFileManager.class}, new Object[]{fileManager});
+			logger = newInstance(propValue, KEY_LOGGER, UWSLog.class, new Class<?>[]{ UWSFileManager.class }, new Object[]{ fileManager });
 
-		StringBuffer buf = new StringBuffer("Logger initialized");
+		// Set some options for the default logger:
+		if (propValue == null || propValue.trim().equalsIgnoreCase(DEFAULT_LOGGER)){
 
-		// Set the minimum log level:
-		propValue = getProperty(uwsConfig, KEY_MIN_LOG_LEVEL);
-		if (propValue != null){
-			try{
-				((DefaultUWSLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));
-			}catch(IllegalArgumentException iae){}
+			// Set the minimum log level:
+			propValue = getProperty(uwsConfig, KEY_MIN_LOG_LEVEL);
+			if (propValue != null){
+				try{
+					((DefaultUWSLog)logger).setMinLogLevel(LogLevel.valueOf(propValue.toUpperCase()));
+				}catch(IllegalArgumentException iae){
+				}
+			}
+
+			// Set the log rotation period, if any:
+			if (fileManager instanceof LocalUWSFileManager){
+				propValue = getProperty(uwsConfig, KEY_LOG_ROTATION);
+				if (propValue != null)
+					((LocalUWSFileManager)fileManager).setLogRotationFreq(propValue);
+			}
 		}
-		buf.append(" (minimum log level: ").append(((DefaultUWSLog)logger).getMinLogLevel());
 
-		// Set the log rotation period, if any:
-		if (fileManager instanceof LocalUWSFileManager){
-			propValue = getProperty(uwsConfig, KEY_LOG_ROTATION);
-			if (propValue != null)
-				((LocalUWSFileManager)fileManager).setLogRotationFreq(propValue);
-			buf.append(", log rotation: ").append(((LocalUWSFileManager)fileManager).getLogRotationFreq());
-		}
-
-		// Log the successful initialization with set parameters:
-		buf.append(").");
-		logger.info(buf.toString());
+		// Log the successful initialisation of the logger:
+		logger.info("Logger initialized - {" + logger.getConfigString() + "}");
 
 		return logger;
 	}
 
 	/**
 	 * <p>Initialize the {@link UWSFactory} to use.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	The built factory is either a {@link ConfigurableUWSFactory} instance (by default) or
 	 * 	an instance of the class specified in the UWS configuration file.
 	 * </p>
-	 * 
+	 *
 	 * @param uwsConfig		The content of the UWS configuration file.
-	 * 
+	 *
 	 * @throws UWSException	If an error occurs while building the specified {@link UWSFactory}.
-	 * 
+	 *
 	 * @see ConfigurableUWSFactory
 	 */
 	private UWSFactory createFactory(final Properties uwsConfig) throws UWSException{
 		String propValue = getProperty(uwsConfig, KEY_UWS_FACTORY);
 		if (propValue == null)
 			return new ConfigurableUWSFactory(uwsConfig);
-		else if (hasConstructor(propValue, KEY_UWS_FACTORY, UWSFactory.class, new Class<?>[]{Properties.class}))
-			return newInstance(propValue, KEY_UWS_FACTORY, UWSFactory.class, new Class<?>[]{Properties.class}, new Object[]{uwsConfig});
+		else if (hasConstructor(propValue, KEY_UWS_FACTORY, UWSFactory.class, new Class<?>[]{ Properties.class }))
+			return newInstance(propValue, KEY_UWS_FACTORY, UWSFactory.class, new Class<?>[]{ Properties.class }, new Object[]{ uwsConfig });
 		else
 			return newInstance(propValue, KEY_UWS_FACTORY, UWSFactory.class, new Class<?>[]{}, new Object[]{});
 	}
 
 	/**
 	 * Create a {@link UWSBackupManager} if needed, thanks to the configuration provided in the UWS configuration file.
-	 * 
+	 *
 	 * @param uwsConf	List of properties set in the UWS configuration file.
-	 * 
+	 *
 	 * @throws ServletException	If any error occurs when initializing the {@link UWSBackupManager}.
 	 */
 	private void initBackup(final Properties uwsConf) throws ServletException{
@@ -403,9 +412,9 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Initialize the UWS user identification method.
-	 * 
+	 *
 	 * @param uwsConfig	The content of the UWS configuration file.
-	 * 
+	 *
 	 * @throws ServletException	If the corresponding UWS configuration property is wrong.
 	 */
 	private void initUserIdentifier(final Properties uwsConfig) throws ServletException{
@@ -422,9 +431,9 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Initialize all the specified job lists.
-	 * 
+	 *
 	 * @param uwsConfig	The content of the UWS configuration file.
-	 * 
+	 *
 	 * @throws ServletException	If the corresponding UWS configuration property is wrong.
 	 */
 	private void initJobLists(final Properties uwsConf) throws ServletException{
@@ -452,7 +461,7 @@ public class ConfigurableUWSServlet extends HttpServlet {
 					// if an execution manager is provided, set it:
 					propValue = getProperty(uwsConf, jlName + "." + KEY_EXECUTION_MANAGER);
 					if (propValue != null)
-						execManager = newInstance(propValue, jlName + "." + KEY_EXECUTION_MANAGER, ExecutionManager.class, new Class<?>[]{UWSLog.class}, new Object[]{uws.getLogger()});
+						execManager = newInstance(propValue, jlName + "." + KEY_EXECUTION_MANAGER, ExecutionManager.class, new Class<?>[]{ UWSLog.class }, new Object[]{ uws.getLogger() });
 
 					/* if none is provided, the default execution manager will be used
 					 * EXCEPT if a maximum number of running jobs is specified ; in such case a QueuedExecutionManager will be used. */
@@ -495,9 +504,9 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Add all additional custom actions listed in the configuration file.
-	 * 
+	 *
 	 * @param uwsConfig	The content of the UWS configuration file.
-	 * 
+	 *
 	 * @throws ServletException	If the corresponding UWS configuration property is wrong.
 	 */
 	private void addCustomActions(final Properties uwsConfig) throws ServletException{
@@ -519,7 +528,7 @@ public class ConfigurableUWSServlet extends HttpServlet {
 						actionClass = actionClass.substring(actionIndex + 1);
 					}
 					// create an instance of the specified action:
-					UWSAction action = newInstance(actionClass, KEY_ADD_UWS_ACTIONS, UWSAction.class, new Class<?>[]{UWSService.class}, new Object[]{uws});
+					UWSAction action = newInstance(actionClass, KEY_ADD_UWS_ACTIONS, UWSAction.class, new Class<?>[]{ UWSService.class }, new Object[]{ uws });
 					// add or replacing depending if an action with the same name already exists or not:
 					boolean added = false;
 					if (uws.getUWSAction(action.getName()) != null)
@@ -542,9 +551,9 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Add all additional UWS serialized listed in the configuration file.
-	 * 
+	 *
 	 * @param uwsConfig	The content of the UWS configuration file.
-	 * 
+	 *
 	 * @throws ServletException	If the corresponding UWS configuration property is wrong.
 	 */
 	private void addCustomSerializers(final Properties uwsConfig) throws ServletException{
@@ -570,9 +579,9 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Initialize the error writer of the UWS service.
-	 * 
+	 *
 	 * @param uwsConfig	The content of the UWS configuration file.
-	 * 
+	 *
 	 * @throws ServletException	If the corresponding UWS configuration property is wrong.
 	 */
 	private void initXSLTStylesheet(final Properties uwsConfig) throws ServletException{
@@ -590,9 +599,9 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Initialize the error writer of the UWS service.
-	 * 
+	 *
 	 * @param uwsConfig	The content of the UWS configuration file.
-	 * 
+	 *
 	 * @throws ServletException	If the corresponding UWS configuration property is wrong.
 	 */
 	private void initErrorWriter(final Properties uwsConfig) throws ServletException{
@@ -609,12 +618,12 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * Search the given file name/path in the directories of the classpath, then inside WEB-INF and finally inside META-INF.
-	 * 
+	 *
 	 * @param filePath	A file name/path.
 	 * @param config	Servlet configuration (containing also the context class loader - link with the servlet classpath).
-	 * 
+	 *
 	 * @return	The input stream toward the specified file, or NULL if no file can be found.
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	protected final InputStream searchFile(String filePath, final ServletConfig config){
@@ -639,20 +648,20 @@ public class ConfigurableUWSServlet extends HttpServlet {
 
 	/**
 	 * <p>Resolve the given file name/path.</p>
-	 * 
+	 *
 	 * <p>Only the URI protocol "file:" is allowed. If the protocol is different a {@link UWSException} is thrown.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	If not an absolute URI, the given path may be either relative or absolute. A relative path is always considered
 	 * 	as relative from the Web Application directory (supposed to be given in 2nd parameter).
 	 * </p>
-	 * 
+	 *
 	 * @param filePath			URI/Path/Name of the file to get.
 	 * @param webAppRootPath	Web Application directory local path.
 	 * @param propertyName		Name of the property which gives the given file path.
-	 * 
+	 *
 	 * @return	The specified File instance.
-	 * 
+	 *
 	 * @throws UWSException	If the given URI is malformed or if the used URI scheme is different from "file:".
 	 */
 	protected final File getFile(final String filePath, final String webAppRootPath, final String propertyName) throws UWSException{

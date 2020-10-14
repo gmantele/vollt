@@ -15,15 +15,9 @@ package adql.parser;
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
-<<<<<<< HEAD
- * 
- * Copyright 2012 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
- * 
-=======
  *
  * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
->>>>>>> 6fb87a7da318964d5ca9a504bd6638e93a41ce5c
  */
 
 import adql.query.IdentifierField;
@@ -47,20 +41,11 @@ import adql.query.TextPosition;
  * 	It is possible to get one by one each identifier item (by using the
  * 	getters), or the concatenation of all (thanks to {@link #join(String)}).
  * </p>
-<<<<<<< HEAD
- * 
- * @author Gr&eacute;gory Mantelet (CDS)
- * @version 01/2012
- * 
- * TODO:  needs merge (Updated by G.Landais for VizieR)
- *              - add "token" attribute use in the grammar 
-=======
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 1.4 (11/2017)
  *
  * @see IdentifierItem
->>>>>>> 6fb87a7da318964d5ca9a504bd6638e93a41ce5c
  */
 public class IdentifierItems {
 
@@ -75,13 +60,11 @@ public class IdentifierItems {
 		public String identifier = null;
 		public boolean caseSensitivity = false;
 		public TextPosition position = null;
-		public Token token;
 
 		public IdentifierItem(final Token token, final boolean caseSensitive){
 			identifier = token.image.replaceAll("\"\"", "\"");
 			caseSensitivity = caseSensitive;
 			position = new TextPosition(token);
-			this.token = token;
 		}
 
 		@Override

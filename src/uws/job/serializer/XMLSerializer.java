@@ -41,7 +41,7 @@ import uws.service.request.UploadFile;
  * Lets serializing any UWS resource in XML.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (03/2018)
+ * @version 4.3 (04/2018)
  */
 public class XMLSerializer extends UWSSerializer {
 	private static final long serialVersionUID = 1L;

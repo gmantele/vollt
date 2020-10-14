@@ -526,7 +526,7 @@ public class DBChecker implements QueryChecker {
 	 *
 	 * @return	An associative map of all the resolved tables.
 	 */
-	 public Map<DBTable,ADQLTable> resolveTables(final ADQLQuery query, final Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors){
+	protected Map<DBTable,ADQLTable> resolveTables(final ADQLQuery query, final Stack<SearchColumnList> fathersList, final UnresolvedIdentifiersException errors){
 		HashMap<DBTable,ADQLTable> mapTables = new HashMap<DBTable,ADQLTable>();
 		ISearchHandler sHandler;
 

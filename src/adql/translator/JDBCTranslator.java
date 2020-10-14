@@ -16,7 +16,8 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2018 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2017-2019 - Astronomisches Rechen Institut (ARI),
+ *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Iterator;
@@ -160,8 +161,8 @@ import adql.query.operand.function.geometry.RegionFunction;
  * 	and their case sensitivity are kept like in ADQL.
  * </p>
  *
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (01/2018)
+ * @author Gr&eacute;gory Mantelet (ARI;CDS)
+ * @version 1.5 (03/2019)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -332,7 +333,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	}
 
 	@Override
-	@SuppressWarnings({"unchecked","rawtypes"})
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public String translate(ADQLObject obj) throws TranslationException{
 		if (obj instanceof ADQLQuery)
 			return translate((ADQLQuery)obj);
@@ -544,9 +545,12 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 				DBColumn dbCol = ref.getDBLink();
 				StringBuffer colName = new StringBuffer();
 				// Use the table alias if any:
-				if (ref.getAdqlTable() != null && ref.getAdqlTable().hasAlias())
-					appendIdentifier(colName, ref.getAdqlTable().getAlias(), ref.getAdqlTable().isCaseSensitive(IdentifierField.ALIAS)).append('.');
-
+				if (ref.getAdqlTable() != null && ref.getAdqlTable().hasAlias()){
+					if (ref.getAdqlTable().isCaseSensitive(IdentifierField.ALIAS))
+						appendIdentifier(colName, ref.getAdqlTable().getAlias(), true).append('.');
+					else
+						appendIdentifier(colName, ref.getAdqlTable().getAlias().toLowerCase(), true).append('.');
+				}
 				// Use the DBTable if any:
 				else if (dbCol.getTable() != null)
 					colName.append(getQualifiedTableName(dbCol.getTable())).append('.');

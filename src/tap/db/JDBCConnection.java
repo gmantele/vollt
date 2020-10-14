@@ -181,7 +181,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (02/2018)
+ * @version 2.3 (10/2018)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -317,7 +317,7 @@ public class JDBCConnection implements DBConnection {
 	 * 	Keys and values are case sensitive.
 	 * </p>
 	 * @since 2.1 */
-	protected Map<String,String> dbMapping = null;
+	protected Map<String, String> dbMapping = null;
 
 	/**
 	 * <p>Creates a JDBC connection to the specified database and with the specified JDBC driver.
@@ -850,12 +850,12 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	public void setDBMapping(final Map<String,String> mapping){
+	public void setDBMapping(final Map<String, String> mapping){
 		if (mapping == null)
 			dbMapping = null;
 		else{
 			if (dbMapping == null)
-				dbMapping = new HashMap<String,String>(mapping.size());
+				dbMapping = new HashMap<String, String>(mapping.size());
 			else
 				dbMapping.clear();
 			dbMapping.putAll(mapping);
@@ -948,7 +948,7 @@ public class JDBCConnection implements DBConnection {
 			List<TAPTable> lstTables = loadTables(tap_schema.getTable(STDTable.TABLES.label), metadata, stmt);
 
 			// load all coordinate systems from TAP_SCHEMA.coosys: [non standard]
-			Map<String,TAPCoosys> mapCoosys = null;
+			Map<String, TAPCoosys> mapCoosys = null;
 			if (isTableExisting(tap_schema.getDBName(), "coosys", stmt.getConnection().getMetaData())){
 				if (logger != null)
 					logger.logDB(LogLevel.INFO, this, "LOAD_TAP_SCHEMA", "Loading TAP_SCHEMA.coosys.", null);
@@ -1041,6 +1041,10 @@ public class JDBCConnection implements DBConnection {
 				if (dbName != null && dbName.trim().length() > 0)
 					newSchema.setDBName(dbName);
 				newSchema.setIndex(schemaIndex);
+
+				// force the dbName of TAP_SCHEMA to be the same as the used one:
+				if (STDSchema.TAPSCHEMA.label.equalsIgnoreCase(schemaName))
+					newSchema.setDBName(tableDef.getDBSchemaName());
 
 				// add the new schema inside the given metadata:
 				metadata.addSchema(newSchema);
@@ -1146,13 +1150,21 @@ public class JDBCConnection implements DBConnection {
 				if (typeStr != null){
 					try{
 						type = TableType.valueOf(typeStr.toLowerCase());
-					}catch(IllegalArgumentException iae){}
+					}catch(IllegalArgumentException iae){
+					}
 				}
 
 				// create the new table:
 				TAPTable newTable = new TAPTable(tableName, type, nullifyIfNeeded(description), nullifyIfNeeded(utype));
 				newTable.setDBName(dbName);
 				newTable.setIndex(tableIndex);
+
+				// force the dbName of TAP_SCHEMA table to be the same as the used one:
+				if (STDSchema.TAPSCHEMA.label.equalsIgnoreCase(schemaName)){
+					String simpleTableName = (endPrefix > 0) ? tableName.substring(endPrefix + 1) : tableName;
+					if (tableDef.getSchema() != null && tableDef.getSchema().getTable(simpleTableName) != null)
+						newTable.setDBName(tableDef.getSchema().getTable(simpleTableName).getDBName());
+				}
 
 				// add the new table inside its corresponding schema:
 				schema.addTable(newTable);
@@ -1183,7 +1195,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected Map<String,TAPCoosys> loadCoosys(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
+	protected Map<String, TAPCoosys> loadCoosys(final TAPTable tableDef, final TAPMetadata metadata, final Statement stmt) throws DBException{
 		ResultSet rs = null;
 		try{
 			// Build the SQL query:
@@ -1199,7 +1211,7 @@ public class JDBCConnection implements DBConnection {
 			rs = stmt.executeQuery(sqlBuf.toString());
 
 			// Create all coosys:
-			HashMap<String,TAPCoosys> mapCoosys = new HashMap<String,TAPCoosys>();
+			HashMap<String, TAPCoosys> mapCoosys = new HashMap<String, TAPCoosys>();
 			while(rs.next()){
 				String coosysId = rs.getString(1), system = rs.getString(2),
 						equinox = rs.getString(3), epoch = rs.getString(4);
@@ -1271,7 +1283,7 @@ public class JDBCConnection implements DBConnection {
 	 *
 	 * @since 2.1
 	 */
-	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Map<String,TAPCoosys> mapCoosys, final Statement stmt) throws DBException{
+	protected void loadColumns(final TAPTable tableDef, final List<TAPTable> lstTables, final Map<String, TAPCoosys> mapCoosys, final Statement stmt) throws DBException{
 		ResultSet rs = null;
 		try{
 			// Determine whether the dbName column exists:
@@ -1349,7 +1361,8 @@ public class JDBCConnection implements DBConnection {
 				if (datatype != null){
 					try{
 						tapDatatype = DBDatatype.valueOf(datatype.toUpperCase());
-					}catch(IllegalArgumentException iae){}
+					}catch(IllegalArgumentException iae){
+					}
 				}
 				// ...build the column type:
 				DBType type;
@@ -1380,6 +1393,10 @@ public class JDBCConnection implements DBConnection {
 							logger.logDB(LogLevel.WARNING, this, "LOAD_TAP_SCHEMA", "No coordinate system for the column \"" + columnName + "\"! Cause: unknown coordinate system: \"" + coosysId + "\".", null);
 					}
 				}
+
+				// force the dbName of TAP_SCHEMA column to be the same as the used one:
+				if (STDSchema.TAPSCHEMA.label.equalsIgnoreCase(table.getADQLSchemaName()) && tableDef.getSchema() != null && tableDef.getSchema().getTable(table.getADQLName()) != null && tableDef.getSchema().getTable(table.getADQLName()).getColumn(columnName) != null)
+					newColumn.setDBName(tableDef.getSchema().getTable(table.getADQLName()).getColumn(columnName).getDBName());
 
 				// add the new column inside its corresponding table:
 				table.addColumn(newColumn);
@@ -1460,7 +1477,7 @@ public class JDBCConnection implements DBConnection {
 				}
 
 				// get the list of columns joining the two tables of the foreign key:
-				HashMap<String,String> columns = new HashMap<String,String>();
+				HashMap<String, String> columns = new HashMap<String, String>();
 				ResultSet rsKeyCols = null;
 				try{
 					keyColumnsStmt.setString(1, key_id);
@@ -1652,7 +1669,7 @@ public class JDBCConnection implements DBConnection {
 		}
 
 		// 4. Finally, build the join between the standard tables and the custom ones:
-		TAPTable[] stdTables = new TAPTable[]{TAPMetadata.getStdTable(STDTable.SCHEMAS),TAPMetadata.getStdTable(STDTable.TABLES),TAPMetadata.getStdTable(STDTable.COLUMNS),TAPMetadata.getStdTable(STDTable.KEYS),TAPMetadata.getStdTable(STDTable.KEY_COLUMNS)};
+		TAPTable[] stdTables = new TAPTable[]{ TAPMetadata.getStdTable(STDTable.SCHEMAS), TAPMetadata.getStdTable(STDTable.TABLES), TAPMetadata.getStdTable(STDTable.COLUMNS), TAPMetadata.getStdTable(STDTable.KEYS), TAPMetadata.getStdTable(STDTable.KEY_COLUMNS) };
 		for(int i = 0; i < stdTables.length; i++){
 
 			// CASE: no custom definition:
@@ -1721,7 +1738,7 @@ public class JDBCConnection implements DBConnection {
 	 * @see JDBCTranslator#isCaseSensitive(IdentifierField)
 	 */
 	private void dropTAPSchemaTables(final TAPTable[] stdTables, final Statement stmt, final DatabaseMetaData dbMeta) throws SQLException{
-		String[] stdTablesToDrop = new String[]{null,null,null,null,null};
+		String[] stdTablesToDrop = new String[]{ null, null, null, null, null };
 
 		ResultSet rs = null;
 		try{
@@ -2251,10 +2268,10 @@ public class JDBCConnection implements DBConnection {
 					executeUpdate(stmtKeys, nbKeys);
 
 				// add the key columns into KEY_COLUMNS:
-				Iterator<Map.Entry<String,String>> itAssoc = key.iterator();
+				Iterator<Map.Entry<String, String>> itAssoc = key.iterator();
 				while(itAssoc.hasNext()){
 					nbKeyColumns++;
-					Map.Entry<String,String> assoc = itAssoc.next();
+					Map.Entry<String, String> assoc = itAssoc.next();
 					stmtKeyCols.setString(1, key.getKeyId());
 					stmtKeyCols.setString(2, assoc.getKey());
 					stmtKeyCols.setString(3, assoc.getValue());
@@ -3588,7 +3605,7 @@ public class JDBCConnection implements DBConnection {
 	 * @param lst	List to update.
 	 * @param it	All items to append inside the list.
 	 */
-	private < T > void appendAllInto(final List<T> lst, final Iterator<T> it){
+	private <T> void appendAllInto(final List<T> lst, final Iterator<T> it){
 		while(it.hasNext())
 			lst.add(it.next());
 	}

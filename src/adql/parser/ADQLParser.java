@@ -404,7 +404,7 @@ public class ADQLParser implements ADQLParserConstants {
                 try {
                         return Query();
                 }catch(TokenMgrError tme) {
-                        throw new ParseException(tme.getMessage());
+                        throw new ParseException(tme);
                 }
         }
 
@@ -428,7 +428,7 @@ public class ADQLParser implements ADQLParserConstants {
                 try {
                         return Query();
                 }catch(TokenMgrError tme) {
-                        throw new ParseException(tme.getMessage());
+                        throw new ParseException(tme);
                 }
         }
 
@@ -452,7 +452,7 @@ public class ADQLParser implements ADQLParserConstants {
                 try {
                         return Query();
                 }catch(TokenMgrError tme) {
-                        throw new ParseException(tme.getMessage());
+                        throw new ParseException(tme);
                 }
         }
 
@@ -625,7 +625,7 @@ public class ADQLParser implements ADQLParserConstants {
 
                 }catch(TokenMgrError err){
                     // wrap such errors and propagate them:
-                        throw new ParseException(err.getMessage());
+                        throw new ParseException(err);
                 }
 
                 return suggestedQuery.toString();

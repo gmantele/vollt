@@ -2,20 +2,20 @@ package uws.service.log;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2012-2016 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -37,11 +37,12 @@ import uws.UWSToolBox;
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;
 import uws.service.UWS;
+import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
 
 /**
  * <p>Default implementation of {@link UWSLog} interface which lets logging any message about a UWS.</p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 4.2 (07/2016)
  */
@@ -69,11 +70,11 @@ public class DefaultUWSLog implements UWSLog {
 	/**
 	 * <p>Builds a {@link UWSLog} which will use the file manager
 	 * of the given UWS to get the log output (see {@link UWSFileManager#getLogOutput(uws.service.log.UWSLog.LogLevel, String)}).</p>
-	 * 
+	 *
 	 * <p><i><u>note 1</u>: This constructor is particularly useful if the file manager of the given UWS may change.</i></p>
 	 * <p><i><u>note 2</u>: If no output can be found in the file manager (or if there is no file manager),
 	 * the standard error output ({@link System#err}) will be chosen automatically for all log messages.</i></p>
-	 * 
+	 *
 	 * @param uws	A UWS.
 	 */
 	public DefaultUWSLog(final UWS uws){
@@ -85,13 +86,13 @@ public class DefaultUWSLog implements UWSLog {
 	/**
 	 * <p>Builds a {@link UWSLog} which will use the given file
 	 * manager to get the log output (see {@link UWSFileManager#getLogOutput(uws.service.log.UWSLog.LogLevel, String)}).</p>
-	 * 
+	 *
 	 * <p><i><u>note 1</u>: This constructor is particularly useful if the way of managing log output may change in the given file manager.
 	 * Indeed, the output may change in function of the type of message to log ({@link uws.service.log.UWSLog.LogLevel}).</i></p>
-	 * 
+	 *
 	 * <p><i><u>note 2</u> If no output can be found in the file manager the standard error output ({@link System#err})
 	 * will be chosen automatically for all log messages.</i></p>
-	 * 
+	 *
 	 * @param fm	A UWS file manager.
 	 */
 	public DefaultUWSLog(final UWSFileManager fm){
@@ -103,9 +104,9 @@ public class DefaultUWSLog implements UWSLog {
 	/**
 	 * <p>Builds a {@link UWSLog} which will print all its
 	 * messages into the given stream.</p>
-	 * 
+	 *
 	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link uws.service.log.UWSLog.LogLevel}).</i></p>
-	 * 
+	 *
 	 * @param output	An output stream.
 	 */
 	public DefaultUWSLog(final OutputStream output){
@@ -117,9 +118,9 @@ public class DefaultUWSLog implements UWSLog {
 	/**
 	 * <p>Builds a {@link UWSLog} which will print all its
 	 * messages into the given stream.</p>
-	 * 
+	 *
 	 * <p><i><u>note</u>: the given output will be used whatever is the type of message to log ({@link uws.service.log.UWSLog.LogLevel}).</i></p>
-	 * 
+	 *
 	 * @param writer	A print writer.
 	 */
 	public DefaultUWSLog(final PrintWriter writer){
@@ -128,9 +129,14 @@ public class DefaultUWSLog implements UWSLog {
 		defaultOutput = writer;
 	}
 
+	@Override
+	public String getConfigString(){
+		return "minimum log level: \"" + minLogLevel + (fileManager instanceof LocalUWSFileManager ? "\", log rotation: \"" + ((LocalUWSFileManager)fileManager).getLogRotationFreq() : "") + "\"";
+	}
+
 	/**
 	 * <p>Get the minimum level that a message must have in order to be logged.</p>
-	 * 
+	 *
 	 * <p>The default behavior is the following:</p>
 	 * <ul>
 	 * 	<li><b>DEBUG</b>: every messages are logged.</li>
@@ -139,9 +145,9 @@ public class DefaultUWSLog implements UWSLog {
 	 * 	<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
 	 * 	<li><b>FATAL</b>: only FATAL messages are logged.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @return	The minimum log level.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	public final LogLevel getMinLogLevel(){
@@ -150,7 +156,7 @@ public class DefaultUWSLog implements UWSLog {
 
 	/**
 	 * <p>Set the minimum level that a message must have in order to be logged.</p>
-	 * 
+	 *
 	 * <p>The default behavior is the following:</p>
 	 * <ul>
 	 * 	<li><b>DEBUG</b>: every messages are logged.</li>
@@ -159,13 +165,13 @@ public class DefaultUWSLog implements UWSLog {
 	 * 	<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
 	 * 	<li><b>FATAL</b>: only FATAL messages are logged.</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If the given level is NULL, this function has no effect.
 	 * </i></p>
-	 * 
+	 *
 	 * @param newMinLevel	The new minimum log level.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	public final void setMinLogLevel(final LogLevel newMinLevel){
@@ -192,13 +198,13 @@ public class DefaultUWSLog implements UWSLog {
 
 	/**
 	 * <p>Gets an output for the given type of message to print.</p>
-	 * 
+	 *
 	 * <p>The {@link System#err} output is used if none can be found in the {@link UWS} or the {@link UWSFileManager}
 	 * given at the creation, or if the given output stream or writer is NULL.</p>
-	 * 
+	 *
 	 * @param level		Level of the message to print (DEBUG, INFO, WARNING, ERROR or FATAL).
 	 * @param context	Context of the message to print (UWS, HTTP, JOB, THREAD).
-	 * 
+	 *
 	 * @return			A writer.
 	 */
 	protected PrintWriter getOutput(final LogLevel level, final String context){
@@ -222,16 +228,16 @@ public class DefaultUWSLog implements UWSLog {
 
 	/**
 	 * <p>Normalize a log message.</p>
-	 * 
+	 *
 	 * <p>
 	 * 	Since a log entry will a tab-separated concatenation of information, additional tabulations or new-lines
 	 * 	would corrupt a log entry. This function replaces such characters by one space. Only \r are definitely deleted.
 	 * </p>
-	 * 
+	 *
 	 * @param message	Log message to normalize.
-	 * 
+	 *
 	 * @return	The normalized log message.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected String normalizeMessage(final String message){
@@ -243,7 +249,7 @@ public class DefaultUWSLog implements UWSLog {
 
 	/**
 	 * <p>Tells whether a message with the given error level can be logged or not.</p>
-	 * 
+	 *
 	 * <p>In function of the minimum log level of this class, the default behavior is the following:</p>
 	 * <ul>
 	 * 	<li><b>DEBUG</b>: every messages are logged.</li>
@@ -252,11 +258,11 @@ public class DefaultUWSLog implements UWSLog {
 	 * 	<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
 	 * 	<li><b>FATAL</b>: only FATAL messages are logged.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param msgLevel	Level of the message which has been asked to log. <i>Note: if NULL, it will be considered as DEBUG.</i>
-	 * 
+	 *
 	 * @return	<i>true</i> if the message associated with the given log level can be logged, <i>false</i> otherwise.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected boolean canLog(LogLevel msgLevel){
@@ -287,11 +293,11 @@ public class DefaultUWSLog implements UWSLog {
 
 	/**
 	 * <p>Logs a full message and/or error.</p>
-	 * 
+	 *
 	 * <p><i>Note:
 	 * 	If no message and error is provided, nothing will be written.
 	 * </i></p>
-	 * 
+	 *
 	 * @param level		Level of the error (DEBUG, INFO, WARNING, ERROR, FATAL).	<i>SHOULD NOT be NULL</i>
 	 * @param context	Context of the error (UWS, HTTP, THREAD, JOB). <i>MAY be NULL</i>
 	 * @param event		Context event during which this log is emitted. <i>MAY be NULL</i>
@@ -299,7 +305,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * @param message	Message of the error. <i>MAY be NULL</i>
 	 * @param addColumn	Additional column to append after the message and before the stack trace.
 	 * @param error		Error at the origin of the log error/warning/fatal. <i>MAY be NULL</i>
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected final void log(LogLevel level, final String context, final String event, final String ID, final String message, final String addColumn, final Throwable error){
@@ -347,27 +353,27 @@ public class DefaultUWSLog implements UWSLog {
 
 	/**
 	 * <p>Format and print the given exception inside the given writer.</p>
-	 * 
+	 *
 	 * <p>This function does nothing if the given error is NULL.</p>
-	 * 
+	 *
 	 * <p>The full stack trace is printed ONLY for unknown exceptions.</p>
-	 * 
+	 *
 	 * <p>The printed text has the following format for known exceptions:</p>
 	 * <pre>
 	 * Caused by a {ExceptionClassName} {ExceptionOrigin}
 	 *     {ExceptionMessage}
 	 * </pre>
-	 * 
+	 *
 	 * <p>The printed text has the following format for unknown exceptions:</p>
 	 * <pre>
 	 * Caused by a {ExceptionFullStackTrace}
 	 * </pre>
-	 * 
+	 *
 	 * @param error	The exception to print.
 	 * @param out	The output in which the exception must be written.
-	 * 
+	 *
 	 * @see #getExceptionOrigin(Throwable)
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected void printException(final Throwable error, final PrintWriter out){
@@ -390,20 +396,20 @@ public class DefaultUWSLog implements UWSLog {
 	/**
 	 * <p>Format and return the origin of the given error.
 	 * "Origin" means here: "where the error has been thrown from?" (from which class? method? file? line?).</p>
-	 * 
+	 *
 	 * <p>This function does nothing if the given error is NULL or if the origin information is missing.</p>
-	 * 
+	 *
 	 * <p>The returned text has the following format:</p>
 	 * <pre>
 	 * at {OriginClass}.{OriginMethod}({OriginFile}:{OriginLine})
 	 * </pre>
-	 * 
+	 *
 	 * <p>{OriginFile} and {OriginLine} are written only if provided.</p>
-	 * 
+	 *
 	 * @param error	Error whose the origin should be returned.
-	 * 
+	 *
 	 * @return	A string which contains formatted information about the origin of the given error.
-	 * 
+	 *
 	 * @since 4.1
 	 */
 	protected String getExceptionOrigin(final Throwable error){
@@ -461,7 +467,7 @@ public class DefaultUWSLog implements UWSLog {
 	/**
 	 * <p>A message/error logged with this function will have the following format:</p>
 	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	REQUEST_RECEIVED	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	&lt;HTTP_METHOD&gt; in &lt;CONTENT_TYPE&gt; at &lt;URL&gt; from &lt;IP_ADDR&gt; using &lt;USER_AGENT&gt; with parameters (&lt;PARAM1&gt;=&lt;VAL1&gt;&...)</pre>
-	 * 
+	 *
 	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletRequest, java.lang.String, java.lang.String, java.lang.Throwable)
 	 */
 	@Override
@@ -497,9 +503,9 @@ public class DefaultUWSLog implements UWSLog {
 
 			// Write the posted parameters:
 			str.append(" with parameters (");
-			Map<String,String> params = UWSToolBox.getParamsMap(request);
+			Map<String, String> params = UWSToolBox.getParamsMap(request);
 			int i = -1;
-			for(Entry<String,String> p : params.entrySet()){
+			for(Entry<String, String> p : params.entrySet()){
 				if (++i > 0)
 					str.append('&');
 				str.append(p.getKey()).append('=').append((p.getValue() != null) ? p.getValue() : "");
@@ -518,7 +524,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * <p>A message/error logged with this function will have the following format:</p>
 	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	RESPONSE_SENT	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	HTTP-&lt;STATUS_CODE&gt; to the user &lt;USER&gt; as &lt;CONTENT_TYPE&gt;</pre>
 	 * <p>,where &lt;USER&gt; may be either "(id:&lt;USER_ID&gt;;pseudo:&lt;USER_PSEUDO&gt;)" or "ANONYMOUS".</p>
-	 * 
+	 *
 	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletResponse, java.lang.String, uws.job.user.JobOwner, java.lang.String, java.lang.Throwable)
 	 */
 	@Override

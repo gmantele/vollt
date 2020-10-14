@@ -431,24 +431,51 @@
 							file 'service.log' inside the root directory of this
 							service (cf property <code>file_root_path</code>).
 						</li>
-						<li><b><em>{...}</em></b>: a custom logger. A class name
-							MUST be provided (between {...}). The specified
-							class must reference an implementation of
-							uws.service.log.UWSLog. This implementation must
-							have at least one constructor with a single
-							parameter of type uws.service.file.UWSFileManager.
-						</li>
+						<li><b>slf4j</b>: wrapper for
+							<a href="https://www.slf4j.org">SLF4J</a>. All log
+							messages will be forwarded to SLF4J. It is up to the
+							implementor to add the suitable JAR files in the
+							Java class-path.
+							<p>
+								Exactly two JAR files are expected by SLF4J to
+								work as expected:
+							</p>
+							<ul>
+								<li>slf4j-api-{version}.jar (the main API)</li>
+								<li>and the slf4j-{binding}-{version}.jar</li>
+							</ul>
+							<p>
+								Depending on the chosen SLF4J binding, you may
+								also add another JAR file (e.g. Log4J, LogBack,
+								...) in the Java class-path.
+							</p>
+							<p>
+								A configuration file might also be needed.
+								There, it will be possible to configure the
+								following loggers:
+							</p>
+							<ul>
+								<li>"uws.service" (general/root purpose log),</li>
+								<li>"uws.service.UWS" (UWS actions),</li>
+								<li>"uws.service.HTTP" (HTTP requests and
+									responses),</li>
+								<li>"uws.service.JOB" (UWS's jobs actions),</li>
+								<li>"uws.service.THREAD" (job's thread actions)</li>
+							</ul>
 					</ul>
 	 				<p><em>Default: <code>default</code> (i.e. uws.service.log.DefaultUWSLog)</em></p>
 				</td>
-				<td><ul><li>default</li><li>{aPackage.MyLogger}</li></ul></td>
+				<td><ul><li>default</li><li>slf4j</li><li>{aPackage.MyLogger}</li></ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="todo">min_log_level</td>
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>Minimum level that a message must have in order to be logged.</p>
+					<p>
+						Minimum level that a message must have in order to be
+						logged by the default logger.
+					</p>
 					<p>5 possible values:</p>
 	 				<ul>
 	 					<li><b>DEBUG</b>: every messages are logged.</li>
@@ -457,6 +484,10 @@
 	 					<li><b>ERROR</b>: only ERROR and FATAL messages are logged.</li>
 	 					<li><b>FATAL</b>: only FATAL messages are logged.</li>
 	 				</ul>
+					<p><em><b>Note:</b>
+						This property is ignored if
+						<code>logger != default</code>.
+					</em></p>
 	 				<p><em>Default: <code>DEBUG</code> (every messages are logged)</em></p>
 				</td>
 				<td><ul><li>DEBUG</li><li>INFO</li><li>WANRING</li><li>ERROR</li><li>FATAL</li></ul></td>
@@ -466,8 +497,13 @@
 				<td></td>
 				<td>text</td>
 				<td>
-					<p>Frequency of the log file rotation. That's to say, logs will be written in a new file after this period. This avoid having too big log files.
-					Old log files are renamed so that highlighting its logging period.</p>
+					<p>
+						Frequency of the log file rotation performed by the
+						default logger. That's to say, logs will be written in a
+						new file after this period. This avoid having too big
+						log files. Old log files are renamed so that
+						highlighting its logging period.
+					</p>
 					<p>The frequency string must respect the following syntax:</p>
 	 				<ul>
 	 					<li><b>'D' hh mm</b>: daily schedule at hh:mm</li>
@@ -482,6 +518,10 @@
 	 					The frequency type is case sensitive! Then you should particularly pay attention at the case
 	 					when using the frequency types 'M' (monthly) and 'm' (every minute).
 	 				</em></p>
+					<p><em><b>Note:</b>
+						This property is ignored if
+						<code>logger != default</code>.
+					</em></p>
 	 				<p><em>Default: <code>D 0 0</code> (daily at midnight)</em></p>
 				</td>
 				<td><ul><li>D 6 30</li><li>W 2 6 30</li><li>M 2 6 30</li><li>h 10</li><li>m</li></ul></td>

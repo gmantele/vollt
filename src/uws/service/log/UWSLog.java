@@ -16,7 +16,7 @@ package uws.service.log;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,7 +38,7 @@ import uws.service.UWSUrl;
  * Let log any kind of message about a UWS service.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.3 (07/2018)
  */
 public interface UWSLog {
 
@@ -49,9 +49,23 @@ public interface UWSLog {
 	 * @version 4.1 (09/2014)
 	 * @since 4.1
 	 */
-	public static enum LogLevel{
+	public static enum LogLevel {
 		DEBUG, INFO, WARNING, ERROR, FATAL;
 	}
+
+	/**
+	 * Get a string representing the configuration of this logger.
+	 *
+	 * <p>
+	 * 	The result of this function aims to be logged when the logging
+	 * 	mechanism is successfully configured and ready to be used.
+	 * </p>
+	 *
+	 * @return	String representing the configuration of this logger.
+	 *
+	 * @since 4.3.
+	 */
+	public String getConfigString();
 
 	/* *********************** */
 	/* GENERAL LOGGING METHODS */

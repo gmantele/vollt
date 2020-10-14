@@ -16,7 +16,7 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -130,7 +130,7 @@ import uws.service.request.UploadFile;
  * </ul>
  *
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.3 (03/2018)
+ * @version	4.5 (07/2020)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -302,7 +302,7 @@ public class UWSJob extends SerializableUWSObject {
 	protected ErrorSummary errorSummary = null;
 
 	/** This is a list of all results of this job. */
-	protected Map<String,Result> results;
+	protected Map<String, Result> results;
 
 	/** List of all input parameters (UWS standard and non-standard parameters). */
 	protected final UWSParameters inputParams;
@@ -343,7 +343,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSJob#UWSJob(JobOwner, UWSParameters)
 	 */
-	public UWSJob(final UWSParameters params){
+	public UWSJob(final UWSParameters params) {
 		this(null, params);
 	}
 
@@ -363,14 +363,14 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#init()
 	 */
-	public UWSJob(JobOwner owner, final UWSParameters params){
+	public UWSJob(JobOwner owner, final UWSParameters params) {
 		this.creationTime = new Date();
 
 		this.owner = owner;
 
 		phase = new JobPhase(this);
 
-		results = new HashMap<String,Result>();
+		results = new HashMap<String, Result>();
 
 		inputParams = (params == null ? new UWSParameters() : params);
 		inputParams.init();
@@ -380,10 +380,11 @@ public class UWSJob extends SerializableUWSObject {
 
 		// Move all uploaded files in a location related with this job:
 		Iterator<UploadFile> files = inputParams.getFiles();
-		while(files.hasNext()){
-			try{
+		while(files.hasNext()) {
+			try {
 				files.next().move(this);
-			}catch(IOException ioe){}
+			} catch(IOException ioe) {
+			}
 		}
 	}
 
@@ -410,23 +411,23 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @since 4.2
 	 */
-	public UWSJob(JobOwner owner, final UWSParameters params, final String requestID){
+	public UWSJob(JobOwner owner, final UWSParameters params, final String requestID) {
 		this.creationTime = new Date();
 
 		this.owner = owner;
 
 		phase = new JobPhase(this);
 
-		results = new HashMap<String,Result>();
+		results = new HashMap<String, Result>();
 
 		inputParams = (params == null ? new UWSParameters() : params);
 		inputParams.init();
 
 		// Set the Job ID with the value of the HTTP request ID (if not already used by a job):
-		synchronized(lastId){
+		synchronized (lastId) {
 			if (requestID == null || requestID.trim().length() == 0 || lastId.equals(requestID))
 				jobId = generateJobId();
-			else{
+			else {
 				jobId = requestID;
 				lastId = requestID;
 			}
@@ -435,10 +436,11 @@ public class UWSJob extends SerializableUWSObject {
 
 		// Move all uploaded files in a location related with this job:
 		Iterator<UploadFile> files = inputParams.getFiles();
-		while(files.hasNext()){
-			try{
+		while(files.hasNext()) {
+			try {
 				files.next().move(this);
-			}catch(IOException ioe){}
+			} catch(IOException ioe) {
+			}
 		}
 	}
 
@@ -468,7 +470,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @since 4.3
 	 */
-	public UWSJob(final String jobID, final long creationTime, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws NullPointerException{
+	public UWSJob(final String jobID, final long creationTime, final JobOwner owner, final UWSParameters params, final long quote, final long startTime, final long endTime, final List<Result> results, final ErrorSummary error) throws NullPointerException {
 		if (jobID == null)
 			throw new NullPointerException("Missing job ID => impossible to build a Job without a valid ID!");
 
@@ -491,9 +493,9 @@ public class UWSJob extends SerializableUWSObject {
 		if (endTime > 0)
 			this.endTime = new Date(endTime);
 
-		this.results = new HashMap<String,Result>();
-		if (results != null){
-			for(Result r : results){
+		this.results = new HashMap<String, Result>();
+		if (results != null) {
+			for(Result r : results) {
 				if (r != null)
 					this.results.put(r.getId(), r);
 			}
@@ -507,7 +509,7 @@ public class UWSJob extends SerializableUWSObject {
 		params.init();
 
 		ExecutionPhase p = ExecutionPhase.PENDING;
-		if (startTime > 0 && endTime > 0){
+		if (startTime > 0 && endTime > 0) {
 			if (this.results.isEmpty() && this.errorSummary == null)
 				p = ExecutionPhase.ABORTED;
 			else if (!this.results.isEmpty())
@@ -515,10 +517,10 @@ public class UWSJob extends SerializableUWSObject {
 			else if (this.errorSummary != null)
 				p = ExecutionPhase.ERROR;
 		}
-		if (phase != null){
-			try{
+		if (phase != null) {
+			try {
 				setPhase(p, true);
-			}catch(UWSException ue){
+			} catch(UWSException ue) {
 				// Can never append because the "force" parameter is true!
 			}
 		}
@@ -545,10 +547,10 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	A unique job identifier.
 	 */
-	protected String generateJobId(){
-		synchronized(lastId){
+	protected String generateJobId() {
+		synchronized (lastId) {
 			String generatedId = System.currentTimeMillis() + "A";
-			if (lastId != null){
+			if (lastId != null) {
 				while(lastId.equals(generatedId))
 					generatedId = generatedId.substring(0, generatedId.length() - 1) + (char)(generatedId.charAt(generatedId.length() - 1) + 1);
 			}
@@ -572,7 +574,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#get(String)
 	 */
-	public Object getParameter(String name){
+	public Object getParameter(String name) {
 		if (name == null || name.trim().isEmpty())
 			return null;
 
@@ -623,19 +625,19 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see #start()
 	 * @see #abort()
 	 */
-	public void applyPhaseParam(final JobOwner user) throws UWSException{
-		synchronized(inputParams){
-			if (inputParams.hasInputPhase()){
+	public void applyPhaseParam(final JobOwner user) throws UWSException {
+		synchronized (inputParams) {
+			if (inputParams.hasInputPhase()) {
 				String inputPhase = inputParams.getInputPhase();
-				if (inputPhase.equalsIgnoreCase(PHASE_RUN)){
+				if (inputPhase.equalsIgnoreCase(PHASE_RUN)) {
 					// Forbids the execution if the user has not the required permission:
 					if (user != null && !user.equals(owner) && !user.hasExecutePermission(this))
-						throw new UWSException(UWSException.PERMISSION_DENIED, UWSExceptionFactory.executePermissionDenied(user, jobId));
+						throw new UWSException(UWSException.FORBIDDEN, UWSExceptionFactory.executePermissionDenied(user, jobId));
 					start();
-				}else if (inputPhase.equalsIgnoreCase(PHASE_ABORT)){
+				} else if (inputPhase.equalsIgnoreCase(PHASE_ABORT)) {
 					// Forbids the execution if the user has not the required permission:
 					if (user != null && !user.equals(owner) && !user.hasExecutePermission(this))
-						throw new UWSException(UWSException.PERMISSION_DENIED, UWSExceptionFactory.executePermissionDenied(user, jobId));
+						throw new UWSException(UWSException.FORBIDDEN, UWSExceptionFactory.executePermissionDenied(user, jobId));
 					abort();
 				}
 			}
@@ -654,7 +656,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobList#getUWS()
 	 * @see uws.service.UWS#getFileManager()
 	 */
-	public final UWSFileManager getFileManager(){
+	public final UWSFileManager getFileManager() {
 		if (myJobList != null && myJobList.getUWS() != null)
 			return myJobList.getUWS().getFileManager();
 		else
@@ -671,7 +673,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see uws.service.UWS#getLogger()
 	 * @see UWSToolBox#getDefaultLogger()
 	 */
-	public UWSLog getLogger(){
+	public UWSLog getLogger() {
 		if (myJobList != null && myJobList.getUWS() != null)
 			return myJobList.getUWS().getLogger();
 		else
@@ -684,7 +686,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	The factory to use to create a {@link JobThread}.
 	 */
-	public final UWSFactory getFactory(){
+	public final UWSFactory getFactory() {
 		if (myJobList != null && myJobList.getUWS() != null)
 			return myJobList.getUWS().getFactory();
 		else
@@ -696,7 +698,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	Date of its restoration.
 	 */
-	public final Date getRestorationDate(){
+	public final Date getRestorationDate() {
 		return restorationDate;
 	}
 
@@ -707,7 +709,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see JobPhase#getPhase()
 	 */
-	public final ExecutionPhase getPhase(){
+	public final ExecutionPhase getPhase() {
 		return phase.getPhase();
 	}
 
@@ -747,7 +749,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see #setPhase(ExecutionPhase, boolean)
 	 */
-	public final void setPhase(ExecutionPhase p) throws UWSException{
+	public final void setPhase(ExecutionPhase p) throws UWSException {
 		setPhase(p, false);
 	}
 
@@ -793,8 +795,8 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see ExecutionManager#remove(UWSJob)
 	 * @see #notifyObservers(ExecutionPhase)
 	 */
-	public final void setPhase(ExecutionPhase p, boolean force) throws UWSException{
-		synchronized(phase){
+	public final void setPhase(ExecutionPhase p, boolean force) throws UWSException {
+		synchronized (phase) {
 			ExecutionPhase oldPhase = phase.getPhase();
 			phase.setPhase(p, force);
 
@@ -820,7 +822,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	Its phase manager.
 	 */
-	public final JobPhase getPhaseManager(){
+	public final JobPhase getPhaseManager() {
 		return phase;
 	}
 
@@ -835,9 +837,9 @@ public class UWSJob extends SerializableUWSObject {
 	 * @param jobPhase	Its new phase manager (if <i>null</i> this function does
 	 *                	nothing).
 	 */
-	public final void setPhaseManager(JobPhase jobPhase){
-		if (jobPhase != null){
-			synchronized(phase){
+	public final void setPhaseManager(JobPhase jobPhase) {
+		if (jobPhase != null) {
+			synchronized (phase) {
 				phase = jobPhase;
 			}
 		}
@@ -848,7 +850,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return The start time of the execution of this job.
 	 */
-	public final Date getStartTime(){
+	public final Date getStartTime() {
 		return startTime;
 	}
 
@@ -857,7 +859,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @param newDateTime	The start time of the execution of this job.
 	 */
-	protected final void setStartTime(Date newDateTime){
+	protected final void setStartTime(Date newDateTime) {
 		startTime = newDateTime;
 	}
 
@@ -866,7 +868,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return The end time of the execution of this job.
 	 */
-	public final Date getEndTime(){
+	public final Date getEndTime() {
 		return endTime;
 	}
 
@@ -875,7 +877,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @param newDateTime	The end time of the execution of this job.
 	 */
-	protected final void setEndTime(Date newDateTime){
+	protected final void setEndTime(Date newDateTime) {
 		endTime = newDateTime;
 
 		// Save the owner jobs list:
@@ -893,7 +895,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#getExecutionDuration()
 	 */
-	public final long getExecutionDuration(){
+	public final long getExecutionDuration() {
 		return inputParams.getExecutionDuration();
 	}
 
@@ -910,11 +912,11 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#set(String, Object)
 	 */
-	public final void setExecutionDuration(long executionDuration){
-		if (phase.isJobUpdatable()){
-			try{
+	public final void setExecutionDuration(long executionDuration) {
+		if (phase.isJobUpdatable()) {
+			try {
 				inputParams.set(PARAM_EXECUTION_DURATION, executionDuration);
-			}catch(UWSException ue){
+			} catch(UWSException ue) {
 				;
 			}
 		}
@@ -927,7 +929,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#getDestructionTime()
 	 */
-	public final Date getDestructionTime(){
+	public final Date getDestructionTime() {
 		return inputParams.getDestructionTime();
 	}
 
@@ -943,13 +945,13 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobList#updateDestruction(UWSJob)
 	 * @see UWSParameters#set(String, Object)
 	 */
-	public final void setDestructionTime(Date destructionTime){
-		if (destructionTime != null && phase.isJobUpdatable()){
-			try{
+	public final void setDestructionTime(Date destructionTime) {
+		if (destructionTime != null && phase.isJobUpdatable()) {
+			try {
 				inputParams.set(PARAM_DESTRUCTION_TIME, destructionTime);
 				if (myJobList != null)
 					myJobList.updateDestruction(this);
-			}catch(UWSException ue){
+			} catch(UWSException ue) {
 				getLogger().logJob(LogLevel.WARNING, this, "SET_DESTRUCTION", "Can not set the destruction time of the job \"" + getJobId() + "\" to \"" + destructionTime + "\"!", ue);
 			}
 		}
@@ -960,7 +962,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return A summary of the error.
 	 */
-	public final ErrorSummary getErrorSummary(){
+	public final ErrorSummary getErrorSummary() {
 		return errorSummary;
 	}
 
@@ -982,12 +984,12 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see #isFinished()
 	 */
-	public final void setErrorSummary(ErrorSummary errorSummary) throws UWSException{
+	public final void setErrorSummary(ErrorSummary errorSummary) throws UWSException {
 		if (errorSummary == null)
 			return;
 		else if (!isFinished())
 			this.errorSummary = errorSummary;
-		else{
+		else {
 			getLogger().logJob(LogLevel.ERROR, this, "SET_ERROR", "Can not set an error summary when the job is finished (or not yet started)! The current phase is: " + getPhase() + " ; the summary of the error to set is: \"" + errorSummary.message + "\".", null);
 			throw new UWSException(UWSException.NOT_ALLOWED, UWSExceptionFactory.jobModificationForbidden(jobId, getPhase(), "ERROR SUMMARY"));
 		}
@@ -998,7 +1000,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return The job ID (unique).
 	 */
-	public final String getJobId(){
+	public final String getJobId() {
 		return jobId;
 	}
 
@@ -1017,7 +1019,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#getRunId()
 	 */
-	public final String getRunId(){
+	public final String getRunId() {
 		return inputParams.getRunId();
 	}
 
@@ -1031,11 +1033,11 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#set(String, Object)
 	 */
-	public final void setRunId(String name){
-		if (!phase.isFinished()){
-			try{
+	public final void setRunId(String name) {
+		if (!phase.isFinished()) {
+			try {
 				inputParams.set(PARAM_RUN_ID, name);
-			}catch(UWSException ue){
+			} catch(UWSException ue) {
 				;
 			}
 		}
@@ -1046,7 +1048,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return The owner.
 	 */
-	public final JobOwner getOwner(){
+	public final JobOwner getOwner() {
 		return owner;
 	}
 
@@ -1055,7 +1057,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return The estimated duration of the job execution (in seconds).
 	 */
-	public final long getQuote(){
+	public final long getQuote() {
 		return quote;
 	}
 
@@ -1073,7 +1075,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @param nbSeconds	The estimated duration of the job execution
 	 *                 	(in seconds).
 	 */
-	public final void setQuote(long nbSeconds){
+	public final void setQuote(long nbSeconds) {
 		if (!phase.isFinished())
 			quote = nbSeconds;
 	}
@@ -1085,7 +1087,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSParameters#getNames()
 	 */
-	public final Set<String> getAdditionalParameters(){
+	public final Set<String> getAdditionalParameters() {
 		return inputParams.getAdditionalParameters().keySet();
 	}
 
@@ -1094,7 +1096,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	Number of additional parameters.
 	 */
-	public final int getNbAdditionalParameters(){
+	public final int getNbAdditionalParameters() {
 		return inputParams.getAdditionalParameters().size();
 	}
 
@@ -1106,7 +1108,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @return	The value of the specified parameter
 	 *        	or <i>null</i> if it doesn't exist.
 	 */
-	public final Object getAdditionalParameterValue(String paramName){
+	public final Object getAdditionalParameterValue(String paramName) {
 		return inputParams.getAdditionalParameters().get(paramName);
 	}
 
@@ -1132,7 +1134,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see JobPhase#isJobUpdatable()
 	 */
-	public final boolean addOrUpdateParameter(String paramName, Object paramValue) throws UWSException{
+	public final boolean addOrUpdateParameter(String paramName, Object paramValue) throws UWSException {
 		return addOrUpdateParameter(paramName, paramValue, null);
 	}
 
@@ -1161,23 +1163,23 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see JobPhase#isJobUpdatable()
 	 */
-	public final boolean addOrUpdateParameter(String paramName, Object paramValue, final JobOwner user) throws UWSException{
-		if (paramValue != null && !phase.isFinished()){
+	public final boolean addOrUpdateParameter(String paramName, Object paramValue, final JobOwner user) throws UWSException {
+		if (paramValue != null && !phase.isFinished()) {
 
 			// Set the parameter:
 			inputParams.set(paramName, paramValue);
 
 			// CASE DESTRUCTION_TIME: update the thread dedicated to the destruction:
-			if (paramValue.equals(PARAM_DESTRUCTION_TIME)){
+			if (paramValue.equals(PARAM_DESTRUCTION_TIME)) {
 				if (myJobList != null)
 					myJobList.updateDestruction(this);
 			}
 			// DEFAULT: test whether the parameter is a file, and if yes, move it in a location related to this job:
-			else{
-				if (paramValue != null && paramValue instanceof UploadFile){
-					try{
+			else {
+				if (paramValue != null && paramValue instanceof UploadFile) {
+					try {
 						((UploadFile)paramValue).move(this);
-					}catch(IOException ioe){
+					} catch(IOException ioe) {
 						getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
 						inputParams.remove(paramName);
 					}
@@ -1188,7 +1190,7 @@ public class UWSJob extends SerializableUWSObject {
 			applyPhaseParam(user);
 
 			return true;
-		}else
+		} else
 			return false;
 	}
 
@@ -1229,7 +1231,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see #addOrUpdateParameters(UWSParameters, JobOwner)
 	 */
-	public boolean addOrUpdateParameters(UWSParameters params) throws UWSException{
+	public boolean addOrUpdateParameters(UWSParameters params) throws UWSException {
 		return addOrUpdateParameters(params, null);
 	}
 
@@ -1240,7 +1242,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @since 4.3
 	 */
-	public final Date getCreationTime(){
+	public final Date getCreationTime() {
 		return creationTime;
 	}
 
@@ -1285,33 +1287,33 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobPhase#isJobUpdatable()
 	 * @see #applyPhaseParam(JobOwner)
 	 */
-	public boolean addOrUpdateParameters(UWSParameters params, final JobOwner user) throws UWSException{
+	public boolean addOrUpdateParameters(UWSParameters params, final JobOwner user) throws UWSException {
 		// The job can be modified ONLY IF in PENDING phase:
 		if (!phase.isJobUpdatable())
-			throw new UWSException(UWSException.FORBIDDEN, "Forbidden parameters modification: the job is not any more in the PENDING phase!");
+			throw new UWSException(UWSException.BAD_REQUEST, "Forbidden parameters modification: the job is not any more in the PENDING phase!");
 
 		// Forbids the update if the user has not the required permission:
 		if (user != null && !user.equals(owner) && !user.hasWritePermission(this))
-			throw new UWSException(UWSException.PERMISSION_DENIED, UWSExceptionFactory.writePermissionDenied(user, false, getJobId()));
+			throw new UWSException(UWSException.FORBIDDEN, UWSExceptionFactory.writePermissionDenied(user, false, getJobId()));
 
 		// Load all parameters:
 		String[] updated = inputParams.update(params);
 
 		// If the destruction time has been updated, the modification must be propagated to the jobs list:
 		Object newValue;
-		for(String updatedParam : updated){
+		for(String updatedParam : updated) {
 			// CASE DESTRUCTION_TIME: update the thread dedicated to the destruction:
-			if (updatedParam.equals(PARAM_DESTRUCTION_TIME)){
+			if (updatedParam.equals(PARAM_DESTRUCTION_TIME)) {
 				if (myJobList != null)
 					myJobList.updateDestruction(this);
 			}
 			// DEFAULT: test whether the parameter is a file, and if yes, move it in a location related to this job:
-			else{
+			else {
 				newValue = inputParams.get(updatedParam);
-				if (newValue != null && newValue instanceof UploadFile){
-					try{
+				if (newValue != null && newValue instanceof UploadFile) {
+					try {
 						((UploadFile)newValue).move(this);
-					}catch(IOException ioe){
+					} catch(IOException ioe) {
 						getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
 						inputParams.remove(updatedParam);
 					}
@@ -1338,17 +1340,17 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobPhase#isJobUpdatable()
 	 * @see UWSParameters#remove(String)
 	 */
-	public final boolean removeAdditionalParameter(String paramName){
+	public final boolean removeAdditionalParameter(String paramName) {
 		if (phase.isFinished() || paramName == null)
 			return false;
-		else{
+		else {
 			// Remove the parameter from the map:
 			Object removed = inputParams.remove(paramName);
 			// If the parameter value was an uploaded file, delete it physically:
-			if (removed != null && removed instanceof UploadFile){
-				try{
+			if (removed != null && removed instanceof UploadFile) {
+				try {
 					((UploadFile)removed).deleteFile();
-				}catch(IOException ioe){
+				} catch(IOException ioe) {
 					getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not delete the uploaded file \"" + paramName + "\" of the job \"" + jobId + "\"!", ioe);
 				}
 			}
@@ -1361,7 +1363,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return An iterator on the results list.
 	 */
-	public final Iterator<Result> getResults(){
+	public final Iterator<Result> getResults() {
 		return results.values().iterator();
 	}
 
@@ -1372,7 +1374,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return			The corresponding result.
 	 */
-	public final Result getResult(String resultId){
+	public final Result getResult(String resultId) {
 		return results.get(resultId);
 	}
 
@@ -1381,7 +1383,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	The number of results.
 	 */
-	public final int getNbResults(){
+	public final int getNbResults() {
 		return results.size();
 	}
 
@@ -1403,18 +1405,18 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see #isFinished()
 	 */
-	public boolean addResult(Result res) throws UWSException{
+	public boolean addResult(Result res) throws UWSException {
 		if (res == null)
 			return false;
-		else if (isFinished()){
+		else if (isFinished()) {
 			UWSException ue = new UWSException(UWSException.NOT_ALLOWED, UWSExceptionFactory.jobModificationForbidden(getJobId(), getPhase(), "RESULT"));
 			getLogger().logJob(LogLevel.ERROR, this, "ADD_RESULT", "Can not add the result \"" + res.getId() + "\" to the job \"" + getJobId() + "\": this job is already finished (or not yet started). Current phase: " + getPhase(), ue);
 			throw ue;
-		}else{
-			synchronized(results){
+		} else {
+			synchronized (results) {
 				if (results.containsKey(res.getId()))
 					return false;
-				else{
+				else {
 					results.put(res.getId(), res);
 					return true;
 				}
@@ -1430,7 +1432,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @since 4.2
 	 */
-	public final JobInfo getJobInfo(){
+	public final JobInfo getJobInfo() {
 		return jobInfo;
 	}
 
@@ -1457,7 +1459,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @since 4.2
 	 */
-	public void setJobInfo(final JobInfo newJobInfo){
+	public void setJobInfo(final JobInfo newJobInfo) {
 		// Cut the link between the former jobInfo and this job:
 		if (this.jobInfo != null)
 			this.jobInfo.setJob(null);
@@ -1475,7 +1477,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	Its execution manager (may be <i>null</i>).
 	 */
-	public final ExecutionManager getExecutionManager(){
+	public final ExecutionManager getExecutionManager() {
 		return getJobList().getExecutionManager();
 	}
 
@@ -1484,7 +1486,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	Its jobs list (may be <i>null</i>).
 	 */
-	public final JobList getJobList(){
+	public final JobList getJobList() {
 		return myJobList;
 	}
 
@@ -1510,16 +1512,16 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobList#removeJob(String)
 	 * @see JobList#getJob(String)
 	 */
-	protected final void setJobList(final JobList jobList) throws IllegalStateException{
+	protected final void setJobList(final JobList jobList) throws IllegalStateException {
 		if (jobList == null)
 			return;
 		else if (myJobList != null && jobList.equals(myJobList))
 			return;
-		else if (myJobList == null || phase.getPhase() == ExecutionPhase.PENDING){
+		else if (myJobList == null || phase.getPhase() == ExecutionPhase.PENDING) {
 			if (myJobList != null && myJobList.getJob(jobId) != null)
 				myJobList.removeJob(jobId);
 			myJobList = jobList;
-		}else
+		} else
 			throw new IllegalStateException("Impossible to move a job (here: " + jobId + ") from a jobs list (here: " + ((myJobList == null) ? "null" : myJobList.getName()) + ") to another (here: " + ((jobList == null) ? "null" : jobList.getName()) + ") if the job is not PENDING !");
 	}
 
@@ -1531,8 +1533,8 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobList#getUrl()
 	 * @see UWSUrl#jobSummary(String, String)
 	 */
-	public final UWSUrl getUrl(){
-		if (myJobList != null){
+	public final UWSUrl getUrl() {
+		if (myJobList != null) {
 			UWSUrl url = myJobList.getUrl();
 			if (url != null)
 				return url.jobSummary(myJobList.getName(), jobId);
@@ -1549,7 +1551,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @return	The time to wait for the end of the thread (a negative or null
 	 *          value means no wait for the end of the thread).
 	 */
-	public final long getTimeToWaitForEnd(){
+	public final long getTimeToWaitForEnd() {
 		return waitForStop;
 	}
 
@@ -1560,7 +1562,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *                  	negative or null value means no wait for the end of
 	 *                  	the thread).
 	 */
-	public final void setTimeToWaitForEnd(long timeToWait){
+	public final void setTimeToWaitForEnd(long timeToWait) {
 		waitForStop = timeToWait;
 	}
 
@@ -1569,7 +1571,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @throws UWSException
 	 */
-	public final void start() throws UWSException{
+	public final void start() throws UWSException {
 		start(getJobList() != null);
 	}
 
@@ -1600,7 +1602,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see #isFinished()
 	 * @see #startTime
 	 */
-	public void start(boolean useManager) throws UWSException{
+	public void start(boolean useManager) throws UWSException {
 		// This job must know its jobs list and this jobs list must know its UWS:
 		if (myJobList == null || myJobList.getUWS() == null)
 			throw new IllegalStateException("A UWSJob can not start if it is not linked to a job list or if its job list is not linked to a UWS.");
@@ -1610,11 +1612,11 @@ public class UWSJob extends SerializableUWSObject {
 			return;
 
 		// If asked propagate this request to the execution manager:
-		else if (useManager){
+		else if (useManager) {
 			getJobList().getExecutionManager().execute(this);
 
 		}// Otherwise start directly the execution:
-		else{
+		else {
 			// Create its corresponding thread:
 			thread = getFactory().createJobThread(this);
 			if (thread == null)
@@ -1643,21 +1645,21 @@ public class UWSJob extends SerializableUWSObject {
 	 * @version 4.1 (09/2014)
 	 */
 	protected final class JobTimeOut extends Thread {
-		public JobTimeOut(){
+		public JobTimeOut() {
 			super(JobThread.tg, "TimeOut_" + jobId);
 		}
 
 		@Override
-		public void run(){
+		public void run() {
 			long maxDuration = getExecutionDuration();
-			if (thread != null && thread.isAlive() && maxDuration != UNLIMITED_DURATION && maxDuration > 0){
-				try{
+			if (thread != null && thread.isAlive() && maxDuration != UNLIMITED_DURATION && maxDuration > 0) {
+				try {
 					thread.join(maxDuration * 1000);
 					if (!isFinished())
 						UWSJob.this.abort();
-				}catch(InterruptedException ie){
+				} catch(InterruptedException ie) {
 					/* Not needed to report any interruption while waiting. */
-				}catch(UWSException ue){
+				} catch(UWSException ue) {
 					getLogger().logJob(LogLevel.WARNING, UWSJob.this, "EXECUTING", "Unexpected error while waiting the end of the execution of the job \"" + jobId + "\" (thread ID: " + thread.getId() + ")!", ue);
 				}
 			}
@@ -1679,7 +1681,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobPhase#isExecuting()
 	 * @see #isStopped()
 	 */
-	public final boolean isRunning(){
+	public final boolean isRunning() {
 		return phase.isExecuting() && !isStopped();
 	}
 
@@ -1699,7 +1701,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see JobPhase#isFinished()
 	 * @see #isStopped()
 	 */
-	public final boolean isFinished(){
+	public final boolean isFinished() {
 		return phase.isFinished() && isStopped();
 	}
 
@@ -1722,20 +1724,20 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see #setPhase(ExecutionPhase)
 	 * @see #setEndTime(Date)
 	 */
-	public void abort() throws UWSException{
+	public void abort() throws UWSException {
 		// Interrupt the corresponding thread:
 		stop();
 
-		if (isStopped()){
-			if (!phase.isFinished()){
+		if (isStopped()) {
+			if (!phase.isFinished()) {
 				// Try to change the phase:
 				setPhase(ExecutionPhase.ABORTED);
 
 				// Set the end time:
 				setEndTime(new Date());
-			}else if ((thread == null || (thread != null && !thread.isAlive())) && phase.getPhase() != ExecutionPhase.ABORTED)
+			} else if ((thread == null || (thread != null && !thread.isAlive())) && phase.getPhase() != ExecutionPhase.ABORTED)
 				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(getJobId(), phase.getPhase(), ExecutionPhase.ABORTED));
-		}else
+		} else
 			getLogger().logJob(LogLevel.WARNING, this, "ABORT", "Abortion of the job \"" + getJobId() + "\" asked but not yet effective (after having waited " + waitForStop + "ms)!", null);
 	}
 
@@ -1763,12 +1765,12 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see #setPhase(ExecutionPhase)
 	 * @see #setEndTime(Date)
 	 */
-	public void error(ErrorSummary error) throws UWSException{
+	public void error(ErrorSummary error) throws UWSException {
 		// Interrupt the corresponding thread:
 		stop();
 
-		if (isStopped()){
-			if (!phase.isFinished()){
+		if (isStopped()) {
+			if (!phase.isFinished()) {
 				// Set the error summary:
 				setErrorSummary(error);
 
@@ -1777,9 +1779,9 @@ public class UWSJob extends SerializableUWSObject {
 
 				// Set the end time:
 				setEndTime(new Date());
-			}else if (thread != null && !thread.isAlive())
+			} else if (thread != null && !thread.isAlive())
 				throw new UWSException(UWSException.BAD_REQUEST, UWSExceptionFactory.incorrectPhaseTransition(jobId, phase.getPhase(), ExecutionPhase.ERROR));
-		}else
+		} else
 			getLogger().logJob(LogLevel.WARNING, this, "ERROR", "Stopping of the job \"" + getJobId() + "\" with error asked but not yet effective (after having waited " + waitForStop + "ms)!", null);
 	}
 
@@ -1790,19 +1792,19 @@ public class UWSJob extends SerializableUWSObject {
 	/**
 	 * Stops the thread that executes the work of this job.
 	 */
-	protected void stop(){
-		if (!isStopped()){
-			synchronized(thread){
+	protected void stop() {
+		if (!isStopped()) {
+			synchronized (thread) {
 				stopping = true;
 
 				// Interrupts the thread:
 				thread.interrupt();
 
 				// Wait a little for its end:
-				if (waitForStop > 0){
-					try{
+				if (waitForStop > 0) {
+					try {
 						thread.join(waitForStop);
-					}catch(InterruptedException ie){
+					} catch(InterruptedException ie) {
 						getLogger().logJob(LogLevel.WARNING, this, "END", "Unexpected InterruptedException while waiting for the end of the execution of the job \"" + jobId + "\" (thread ID: " + thread.getId() + ")!", ie);
 					}
 				}
@@ -1828,7 +1830,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @return	<i>true</i> if the thread is not still running,
 	 *        	<i>false</i> otherwise.
 	 */
-	protected final boolean isStopped(){
+	protected final boolean isStopped() {
 		return thread == null || !thread.isAlive() || thread.isFinished();
 	}
 
@@ -1856,7 +1858,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @since 4.3
 	 */
-	public boolean archive(){
+	public boolean archive() {
 		/* Interrupt the corresponding thread
 		 * and remove results and input files attached to this job: */
 		clearResources(false);
@@ -1866,7 +1868,7 @@ public class UWSJob extends SerializableUWSObject {
 			getJobList().getDestructionManager().remove(this);
 
 		// Change the phase:
-		try{
+		try {
 			// store the current phase as additional JobInfo for user curiosity
 			//  (only if no JobInfo is already set):
 			if (getJobInfo() == null)
@@ -1876,7 +1878,7 @@ public class UWSJob extends SerializableUWSObject {
 			// log the success of the archiving operation:
 			getLogger().logJob(LogLevel.INFO, this, "ARCHIVE", "Job successfully archived!", null);
 			return true;
-		}catch(UWSException ue){
+		} catch(UWSException ue) {
 			getLogger().logJob(LogLevel.ERROR, this, "ARCHIVE", "Impossible to change the phase of this job into ARCHIVED!", ue);
 			return false;
 		}
@@ -1893,7 +1895,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see #clearResources(boolean)
 	 */
-	public void clearResources(){
+	public void clearResources() {
 		clearResources(true);
 	}
 
@@ -1917,12 +1919,12 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @since 4.3
 	 */
-	public void clearResources(final boolean fullClean){
+	public void clearResources(final boolean fullClean) {
 		// If still running, abort/stop the job:
-		if (!phase.isFinished()){
-			try{
+		if (!phase.isFinished()) {
+			try {
 				abort();
-			}catch(UWSException e){
+			} catch(UWSException e) {
 				getLogger().logJob(LogLevel.WARNING, this, "CLEAR_RESOURCES", "Impossible to abort the job \"" + jobId + "\" => trying to stop it...", e);
 				stop();
 			}
@@ -1937,14 +1939,14 @@ public class UWSJob extends SerializableUWSObject {
 		// Clear all uploaded files:
 		Iterator<UploadFile> files = inputParams.getFiles();
 		UploadFile upl;
-		while(files.hasNext()){
+		while(files.hasNext()) {
 			upl = files.next();
-			try{
+			try {
 				// delete the file:
 				upl.deleteFile();
 				// delete the internal reference to this input parameter:
 				files.remove();
-			}catch(IOException ioe){
+			} catch(IOException ioe) {
 				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file uploaded as parameter \"" + upl.paramName + "\" (" + upl.getLocation() + ") of the job \"" + jobId + "\"!", null);
 			}
 		}
@@ -1952,36 +1954,36 @@ public class UWSJob extends SerializableUWSObject {
 		// Clear all results file:
 		Iterator<Result> itResults = getResults();
 		Result r;
-		while(itResults.hasNext()){
+		while(itResults.hasNext()) {
 			r = itResults.next();
-			try{
+			try {
 				// delete the file:
 				getFileManager().deleteResult(r, this);
 				// delete the internal reference to this result:
 				itResults.remove();
-			}catch(IOException ioe){
+			} catch(IOException ioe) {
 				getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file associated with the result '" + r.getId() + "' of the job \"" + jobId + "\"!", ioe);
 			}
 		}
 
-		if (!fullClean){
+		if (fullClean) {
 			// Clear the error file:
-			if (errorSummary != null && errorSummary.hasDetail()){
-				try{
+			if (errorSummary != null && errorSummary.hasDetail()) {
+				try {
 					// delete the file associated with the error details:
 					getFileManager().deleteError(errorSummary, this);
 					// delete the error summary:
 					errorSummary = null;
-				}catch(IOException ioe){
+				} catch(IOException ioe) {
 					getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to delete the file associated with the error '" + errorSummary.message + "' of the job \"" + jobId + "\"!", ioe);
 				}
 			}
 
 			// Destroy the additional job info.:
-			if (jobInfo != null){
-				try{
+			if (jobInfo != null) {
+				try {
 					jobInfo.destroy();
-				}catch(UWSException ue){
+				} catch(UWSException ue) {
 					getLogger().logJob(LogLevel.ERROR, this, "CLEAR_RESOURCES", "Impossible to destroy the additional information about the job \"" + jobId + "\"", ue);
 				}
 			}
@@ -2003,11 +2005,11 @@ public class UWSJob extends SerializableUWSObject {
 	 *        	observer of this job,
 	 *        	<i>false</i> otherwise.
 	 */
-	public final boolean addObserver(JobObserver observer){
-		if (observer != null && !observers.contains(observer)){
+	public final boolean addObserver(JobObserver observer) {
+		if (observer != null && !observers.contains(observer)) {
 			observers.add(observer);
 			return true;
-		}else
+		} else
 			return false;
 	}
 
@@ -2016,7 +2018,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	Number of its observers.
 	 */
-	public final int getNbObservers(){
+	public final int getNbObservers() {
 		return observers.size();
 	}
 
@@ -2025,7 +2027,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @return	An iterator on the list of its observers.
 	 */
-	public final Iterator<JobObserver> getObservers(){
+	public final Iterator<JobObserver> getObservers() {
 		return observers.iterator();
 	}
 
@@ -2039,14 +2041,14 @@ public class UWSJob extends SerializableUWSObject {
 	 *        	this job,
 	 *        	<i>false</i> otherwise.
 	 */
-	public final boolean removeObserver(JobObserver observer){
+	public final boolean removeObserver(JobObserver observer) {
 		return observers.remove(observer);
 	}
 
 	/**
 	 * Lets removing all observers of this job.
 	 */
-	public final void removeAllObservers(){
+	public final void removeAllObservers() {
 		observers.clear();
 	}
 
@@ -2056,14 +2058,14 @@ public class UWSJob extends SerializableUWSObject {
 	 * @param oldPhase		The former phase of this job.
 	 * @throws UWSException	If at least one observer can not have been updated.
 	 */
-	public final void notifyObservers(ExecutionPhase oldPhase){
+	public final void notifyObservers(ExecutionPhase oldPhase) {
 		String errors = null;
 
-		for(JobObserver observer : observers){
+		for(JobObserver observer : observers) {
 			// Update this observer:
-			try{
+			try {
 				observer.update(this, oldPhase, getPhase());
-			}catch(UWSException ex){
+			} catch(UWSException ex) {
 				if (errors == null)
 					errors = "\t* " + ex.getMessage();
 				else
@@ -2094,7 +2096,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *        	or <i>null</i> if there was no error or if the job is still
 	 *        	running.
 	 */
-	public final UWSException getWorkError(){
+	public final UWSException getWorkError() {
 		return (thread == null || !thread.isAlive()) ? null : thread.getError();
 	}
 
@@ -2102,9 +2104,9 @@ public class UWSJob extends SerializableUWSObject {
 	/* SERIALIZATION */
 	/* ************* */
 	@Override
-	public String serialize(UWSSerializer serializer, JobOwner user) throws UWSException, Exception{
+	public String serialize(UWSSerializer serializer, JobOwner user) throws UWSException, Exception {
 		if (user != null && !user.equals(getOwner()) && !user.hasReadPermission(this))
-			throw new UWSException(UWSException.PERMISSION_DENIED, UWSExceptionFactory.readPermissionDenied(user, false, getJobId()));
+			throw new UWSException(UWSException.FORBIDDEN, UWSExceptionFactory.readPermissionDenied(user, false, getJobId()));
 
 		return serializer.getJob(this, true);
 	}
@@ -2125,7 +2127,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see UWSSerializer#getJob(UWSJob, String[], boolean)
 	 */
-	public String serialize(String[] attributes, UWSSerializer serializer) throws Exception{
+	public String serialize(String[] attributes, UWSSerializer serializer) throws Exception {
 		return serializer.getJob(this, attributes, true);
 	}
 
@@ -2144,7 +2146,7 @@ public class UWSJob extends SerializableUWSObject {
 	 *
 	 * @see #serialize(String[], UWSSerializer)
 	 */
-	public void serialize(ServletOutputStream output, String[] attributes, UWSSerializer serializer) throws UWSException, IOException, Exception{
+	public void serialize(ServletOutputStream output, String[] attributes, UWSSerializer serializer) throws UWSException, IOException, Exception {
 		String errorMsgPart = null;
 		if (attributes == null || attributes.length <= 0)
 			errorMsgPart = "the job \"" + getJobId() + "\"";
@@ -2155,22 +2157,22 @@ public class UWSJob extends SerializableUWSObject {
 			throw new NullPointerException("Missing serialization output stream when serializing " + errorMsgPart + "!");
 
 		String serialization = serialize(attributes, serializer);
-		if (serialization == null){
+		if (serialization == null) {
 			getLogger().logJob(LogLevel.ERROR, this, "SERIALIZE", "Error while serializing " + errorMsgPart + ": NULL was returned.", null);
 			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, "Incorrect serialization value (=NULL) ! => impossible to serialize " + errorMsgPart + ".");
-		}else{
+		} else {
 			output.print(serialization);
 			output.flush();
 		}
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		return "JOB {jobId: " + jobId + "; phase: " + phase + "; runId: " + getRunId() + "; ownerId: " + owner + "; executionDuration: " + getExecutionDuration() + "; destructionTime: " + getDestructionTime() + "; quote: " + quote + "; NbResults: " + results.size() + "; " + ((errorSummary != null) ? errorSummary.toString() : "No error") + " ; HasJobInfo: \"" + ((jobInfo != null) ? "yes" : "no") + "\"  }";
 	}
 
 	@Override
-	public int hashCode(){
+	public int hashCode() {
 		return jobId.hashCode();
 	}
 
@@ -2184,7 +2186,7 @@ public class UWSJob extends SerializableUWSObject {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object anotherJob){
+	public boolean equals(Object anotherJob) {
 		if (anotherJob instanceof UWSJob)
 			return jobId.equals(((UWSJob)anotherJob).jobId);
 		else
