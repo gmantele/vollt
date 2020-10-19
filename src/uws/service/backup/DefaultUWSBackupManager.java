@@ -473,7 +473,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			out.endObject();
 
 			// Log the "save" report:
-			getLogger().logUWS(LogLevel.INFO, saveReport, "BACKUPED", "UWS backuped!", null);
+			getLogger().logUWS(LogLevel.DEBUG, saveReport, "BACKUPED", "UWS backuped!", null);
 
 			lastBackup = new Date();
 
