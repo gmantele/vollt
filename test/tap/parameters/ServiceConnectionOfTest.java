@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import adql.db.FunctionDef;
 import tap.ServiceConnection;
 import tap.TAPFactory;
 import tap.TAPJob;
@@ -16,16 +17,15 @@ import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
 import uws.service.file.UWSFileManager;
-import adql.db.FunctionDef;
 
 public class ServiceConnectionOfTest implements ServiceConnection {
 
 	private boolean available = true;
 	private String availability = "TAP Service available!";
-	private int[] retentionPeriod = new int[]{-1,-1};
-	private int[] executionDuration = new int[]{(int)TAPJob.UNLIMITED_DURATION,(int)TAPJob.UNLIMITED_DURATION};
-	private int[] outputLimit = new int[]{TAPJob.UNLIMITED_MAX_REC,TAPJob.UNLIMITED_MAX_REC};
-	private List<OutputFormat> outputFormats = Arrays.asList(new OutputFormat[]{new VOTableFormat(this),new SVFormat(this, SVFormat.COMMA_SEPARATOR),new FITSFormat(this)});
+	private int[] retentionPeriod = new int[]{ -1, -1 };
+	private int[] executionDuration = new int[]{ (int)TAPJob.UNLIMITED_DURATION, (int)TAPJob.UNLIMITED_DURATION };
+	private int[] outputLimit = new int[]{ TAPJob.UNLIMITED_MAX_REC, TAPJob.UNLIMITED_MAX_REC };
+	private List<OutputFormat> outputFormats = Arrays.asList(new OutputFormat[]{ new VOTableFormat(this), new SVFormat(this, SVFormat.COMMA_SEPARATOR), new FITSFormat(this) });
 
 	@Override
 	public String getProviderName(){
@@ -88,7 +88,7 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 
 	@Override
 	public LimitUnit[] getOutputLimitType(){
-		return new LimitUnit[]{LimitUnit.rows,LimitUnit.rows};
+		return new LimitUnit[]{ LimitUnit.rows, LimitUnit.rows };
 	}
 
 	@Override
@@ -102,7 +102,7 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	}
 
 	@Override
-	public int[] getUploadLimit(){
+	public long[] getUploadLimit(){
 		return null;
 	}
 
@@ -112,8 +112,8 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	}
 
 	@Override
-	public int getMaxUploadSize(){
-		return 0;
+	public long getMaxUploadSize(){
+		return 0L;
 	}
 
 	@Override
@@ -172,6 +172,11 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	@Override
 	public int[] getFetchSize(){
 		return null;
+	}
+
+	@Override
+	public boolean fixOnFailEnabled(){
+		return false;
 	}
 
 }

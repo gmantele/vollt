@@ -70,7 +70,7 @@ import adql.translator.TranslationException;
 * @see ADQLQueryFactory
 *
 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-* @version 1.5-1 (07/2019)
+* @version 1.5-2 (10/2020)
 */
 public class ADQLParser implements ADQLParserConstants {
 

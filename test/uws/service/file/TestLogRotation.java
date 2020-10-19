@@ -8,6 +8,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 import org.junit.Test;
 
@@ -231,7 +234,7 @@ public class TestLogRotation {
 			for(int i = 0; i < 5; i++){
 				final int logFreq = i + 1;
 				nbExpectedMessages += 30 / logFreq;
-				(new Thread(new Runnable(){
+				(new Thread(new Runnable() {
 					@Override
 					public void run(){
 						try{
@@ -272,6 +275,45 @@ public class TestLogRotation {
 			e.printStackTrace(System.err);
 			fail("CAN NOT CREATE THE FILE MANAGER!");
 		}
+	}
+
+	@Test
+	public void testNextEvent(){
+		// Event = weekly on Sunday at midnight
+		EventFrequency event = new EventFrequency("W 1 0 0");
+		assertEquals("weekly on Sunday at 00:00", event.toString());
+
+		/* CASE: Today = Friday */
+
+		// Reference date for the test: Friday 27th July 2018 at noon
+		GregorianCalendar date = new GregorianCalendar(2018, Calendar.JULY, 27, 12, 0);
+		assertEquals(Calendar.FRIDAY, date.get(Calendar.DAY_OF_WEEK));
+
+		// Get the next event from the given date:
+		Date nextEvent = event.nextEvent(date.getTime());
+		GregorianCalendar expectedNextEvent = new GregorianCalendar(2018, Calendar.JULY, 29, 0, 0);
+		assertEquals(expectedNextEvent.getTime().getTime(), nextEvent.getTime());
+
+		/* CASE: Today = Saturday */
+
+		// Reference date for the test: Saturday 28th July 2018 at noon
+		date = new GregorianCalendar(2018, Calendar.JULY, 28, 12, 0);
+		assertEquals(Calendar.SATURDAY, date.get(Calendar.DAY_OF_WEEK));
+
+		// Get the next event from the given date:
+		nextEvent = event.nextEvent(date.getTime());
+		assertEquals(expectedNextEvent.getTime().getTime(), nextEvent.getTime());
+
+		/* CASE: Today = Sunday */
+
+		// Reference date for the test: Sunday 28th July 2018 at noon
+		date = new GregorianCalendar(2018, Calendar.JULY, 29, 12, 0);
+		assertEquals(Calendar.SUNDAY, date.get(Calendar.DAY_OF_WEEK));
+
+		// Get the next event from the given date:
+		nextEvent = event.nextEvent(date.getTime());
+		expectedNextEvent = new GregorianCalendar(2018, Calendar.AUGUST, 5, 0, 0);
+		assertEquals(expectedNextEvent.getTime().getTime(), nextEvent.getTime());
 	}
 
 }

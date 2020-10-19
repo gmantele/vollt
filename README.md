@@ -29,7 +29,7 @@ Repository content
 ------------------
 
 ### Libraries
-Each library has its own package (`adql` for ADQL, `uws` for UWS and `tap` for TAP). These packages are independent except `tap` which needs the two other packages. In addition to these packages, you will also find `cds` and `org.json` which are dependencies for the libraries.
+Each library has its own package (`adql` for ADQL, `uws` for UWS and `tap` for TAP). These packages are independent except `tap` which needs the two other packages. In addition to these packages, you will also find `cds` which is a dependency for the libraries.
 
 ### Dependencies
 Below are summed up the dependencies of each library:
@@ -40,15 +40,16 @@ Below are summed up the dependencies of each library:
 | Package `cds.utils`    |  X   |     |  X  |
 | Postgres JDBC Driver   |  X   |     |  X  |
 | Package `uws`          |      |  X  |  X  |
-| Package `org.json`     |      |  X  |  X  |
+| JSON library            |      |  X  |  X  |
 | HTTP Servlet API       |      |  X  |  X  |
 | HTTP Multipart Library |      |  X  |  X  |
 | Packages `cds.*`       |      |     |  X  |
 | STIL Library           |      |     |  X  |
 
-In the `lib` directory, you will find 2 JAR files:
-* The *HTTP Multipart Library*: `cos-1.5beta.jar` (i.e. package `com.oreilly.servlet`). This library helps dealing with uploads.
-* The *[STIL Library](http://www.star.bris.ac.uk/~mbt/stil/)*: `stil3.1.jar` (i.e. packages `nom.tap`, `org.apache.tools.bzip2`, `uk.ac.starlink`). This library helps supporting VOTable (read and write) and some other output formats. 
+In the `lib` directory, you will find 3 JAR files:
+* The *HTTP Multipart Library*: `commons-fileupload-1.3.3.jar` (and `commons-io-2.6.jar`). This library helps dealing with uploads.
+* The *[STIL Library](http://www.star.bris.ac.uk/~mbt/stil/)*: `stil_3.3-2.jar` (i.e. packages `nom.tap`, `org.apache.tools.bzip2`, `uk.ac.starlink`). This library helps supporting VOTable (read and write) and some other output formats.
+* The *JSON Library*: `json-20180813.jar` (i.e. the former included package `org.json`). This library helps manipulating JSON content. _This library was already used (before v4.4 of UWS-Lib and v2.3 of TAP-Lib) but it was included in the sources instead of being considered as an external library._
 
 The *Postgres JDBC Driver* is needed ONLY IF you want to use (and keep) `adql.translator.PgSphereTranslator`. You can get this driver on the [PostgreSQL website](https://jdbc.postgresql.org/download.html). The required package for the ADQL and TAP libraries is `org.postgresql` (and particularly the class `org.postgresql.Driver`).
 
