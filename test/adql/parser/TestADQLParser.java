@@ -645,25 +645,16 @@ public class TestADQLParser {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			ADQLParser parser = new ADQLParser(version);
 
-<<<<<<< HEAD
-		// CASE: Invalid UDF name => ParseException
-		final String[] functionsToTest = new String[]{ "_foo", "2do", "do!" };
-		for(String fct : functionsToTest){
-			try{
-				parser.parseQuery("SELECT " + fct + "(p1,p2) FROM aTable");
-				fail("A UDF name like \"" + fct + "\" is not allowed by the ADQL grammar. This query should not pass.");
-=======
 			// CASE: Valid UDF name => OK
 			try {
 				parser.parseQuery("SELECT foo(p1,p2) FROM aTable");
->>>>>>> [ADQL] 4 commits in one: 1/ new syntax of ORDER and GROUP BY, 2/ fix positions
 			} catch(Throwable t) {
 				t.printStackTrace();
 				fail("Unexpected parsing error! This query should have passed. (see console for more details)");
 			}
 
 			// CASE: Invalid UDF name => ParseException
-			final String[] functionsToTest = new String[]{ "_foo", "2do", "do!" };
+			final String[] functionsToTest = new String[]{ "_foo", "2do", "do?" };
 			for(String fct : functionsToTest) {
 				try {
 					parser.parseQuery("SELECT " + fct + "(p1,p2) FROM aTable");

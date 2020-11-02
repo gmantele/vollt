@@ -1,7 +1,6 @@
 package adql.translator;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -26,8 +25,8 @@ import adql.query.ADQLQuery;
 import adql.query.ClauseADQL;
 import adql.query.IdentifierField;
 import adql.query.WithItem;
+import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
-import adql.query.operand.NumericConstant;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.InUnitFunction;
@@ -157,7 +156,7 @@ public class TestJDBCTranslator {
 		 * particularly, ' should be escaped otherwise it would mean the end of
 		 * a string in SQL (the way to escape a such character is by doubling
 		 * the character '): */
-		try{
+		try {
 			assertEquals("'SQL''s translation'", tr.translate(new StringConstant("SQL's translation")));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
