@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2019 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2020 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -67,6 +67,8 @@ import adql.query.operand.function.geometry.RegionFunction;
  * 	translate.
  * </p>
  *
+ * TODO Translation of Set operations, TOP/LIMIT, OFFSET, ORDER BY
+ *
  * TODO See how case sensitivity is supported by MS SQL Server and modify this translator accordingly.
  *
  * TODO Extend this class for each MS SQL Server extension supporting geometry and particularly
@@ -89,7 +91,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (11/2020)
  * @since 1.4
  *
  * @see SQLServer_ADQLQueryFactory
@@ -208,14 +210,23 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 * LIMIT and OFFSET handling.
 	 *
 	 * <p><i><b>Implementation note:</b>
-	 * 	LIMIT is replaced by FETCH NEXT instead of TOP because of the addition
-	 * 	of OFFSET support in ADQL-2.1 grammar. With MS-SQLServer, TOP can not be
-	 * 	used with OFFSET...it must be OFFSET...LIMIT....
+	 * 	If an OFFSET is specified, TOP can no longer be used to specify a limit
+	 * 	in SQL. In such case, TOP is replaced by FETCH NEXT right after the
+	 * 	OFFSET instruction. Besides, SQLServer requires an ORDER BY clause in
+	 * 	order to use OFFSET. If none is given in the ADQL query, the default
+	 * 	<code>ORDER BY 1 ASC</code> (i.e. sort on the first column) is applied.
 	 * </i></p>
 	 */
 	@Override
 	public String translate(ADQLQuery query) throws TranslationException {
-		StringBuffer sql = new StringBuffer(translate(query.getSelect()));
+		StringBuffer sql = new StringBuffer();
+
+		// Start with the SELECT clause:
+		/* NOTE: If a limit is specified, TOP should be used if no OFFSET is
+		 *       used, otherwise the limit must be specified right after
+		 *       OFFSET. */
+		final boolean withOffset = (query.getOffset() != null && query.getOffset().getValue() > 0);
+		sql.append(translate(query.getSelect(), !withOffset));
 
 		sql.append("\nFROM ").append(translate(query.getFrom()));
 
@@ -231,26 +242,45 @@ public class SQLServerTranslator extends JDBCTranslator {
 		if (!query.getOrderBy().isEmpty())
 			sql.append('\n').append(translate(query.getOrderBy()));
 
-		if (query.getSelect().hasLimit()) {
-			if (query.getOffset() != null)
-				sql.append('\n').append("OFFSET ").append(query.getOffset().getValue()).append(" ROWS");
-			else
-				sql.append('\n').append("OFFSET 0 ROWS");
-			sql.append(" FETCH NEXT ").append(query.getSelect().getLimit()).append(" ROWS ONLY");
-		} else if (query.getOffset() != null) {
-			sql.append('\n').append("OFFSET ").append(query.getOffset().getValue()).append(" ROWS");
+		// Deal with OFFSET:
+		if (withOffset) {
+
+			// An ORDER BY is required by OFFSET ; so, ensure there is one:
+			if (query.getOrderBy().isEmpty())
+				sql.append("\nORDER BY 1 ASC"); // default: order on the 1st col
+
+			// Append the OFFSET:
+			sql.append("\nOFFSET ").append(query.getOffset().getValue()).append(" ROWS");
+
+			// With OFFSET, the TOP/LIMIT must be expressed differently:
+			if (query.hasLimit())
+				sql.append(" FETCH NEXT ").append(query.getLimit()).append(" ROWS ONLY");
 		}
 
 		return sql.toString();
 	}
 
-	@Override
-	public String translate(ClauseSelect clause) throws TranslationException {
+	/**
+	 * This version of {@link #translate(ClauseSelect)} lets translate the given
+	 * SELECT clause with or without the TOP instruction in case a limit is
+	 * specified in ADQL.
+	 *
+	 * @param clause		The SELECT clause to translate.
+	 * @param topAllowed	If <code>true</code> and a TOP limit is specified,
+	 *                  	it will be translated as a TOP in SQL (exactly as
+	 *                  	in ADQL).
+	 *                  	If <code>false</code> and a TOP limit is specified,
+	 *                  	it will never appear in the SQL translation. <i>(in
+	 *                  	such case, {@link #translate(ADQLQuery)} will take
+	 *                  	care of this limit)</i>
+	 *
+	 * @since 2.0 */
+	protected String translate(final ClauseSelect clause, final boolean topAllowed) throws TranslationException {
 		String sql = null;
 
 		for(int i = 0; i < clause.size(); i++) {
 			if (i == 0)
-				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "");
+				sql = clause.getName() + (clause.distinctColumns() ? " DISTINCT" : "") + (topAllowed && clause.hasLimit() ? " TOP " + clause.getLimit() : "");
 			else
 				sql += " " + clause.getSeparator(i);
 
@@ -258,6 +288,21 @@ public class SQLServerTranslator extends JDBCTranslator {
 		}
 
 		return sql;
+	}
+
+	/**
+	 * Translate the given SELECT clause into an SQL compatible with
+	 * MS-SQLServer.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	The TOP limit, if any, will always be present in the SQL translation.
+	 * </i></p>
+	 *
+	 * @see #translate(ClauseSelect, boolean)
+	 */
+	@Override
+	public String translate(ClauseSelect clause) throws TranslationException {
+		return translate(clause, true);
 	}
 
 	@Override

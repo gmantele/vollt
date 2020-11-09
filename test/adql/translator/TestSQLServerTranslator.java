@@ -52,17 +52,21 @@ public class TestSQLServerTranslator {
 
 		try {
 
+			// CASE: Only OFFSET = 0 => No OFFSET in SQL
+			assertEquals("SELECT *\nFROM foo", tr.translate(parser.parseQuery("Select * From foo OffSet 0")));
+
+			// CASE: Only TOP (or with OFFSET=0)
+			assertEquals("SELECT TOP 5 *\nFROM foo", tr.translate(parser.parseQuery("Select Top 5 * From foo")));
+			assertEquals("SELECT TOP 5 *\nFROM foo", tr.translate(parser.parseQuery("Select Top 5 * From foo Offset 0")));
+
 			// CASE: Only OFFSET
-			assertEquals("SELECT *\nFROM foo\nOFFSET 10 ROWS", tr.translate(parser.parseQuery("Select * From foo OffSet 10")));
+			assertEquals("SELECT *\nFROM foo\nORDER BY 1 ASC\nOFFSET 10 ROWS", tr.translate(parser.parseQuery("Select * From foo OffSet 10")));
 
-			// CASE: Only OFFSET = 0
-			assertEquals("SELECT *\nFROM foo\nOFFSET 0 ROWS", tr.translate(parser.parseQuery("Select * From foo OffSet 0")));
+			// CASE: TOP + OFFSET but no ORDER BY
+			assertEquals("SELECT *\nFROM foo\nORDER BY 1 ASC\nOFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY", tr.translate(parser.parseQuery("Select Top 5 * From foo OffSet 10")));
 
-			// CASE: TOP + OFFSET
-			assertEquals("SELECT *\nFROM foo\nOFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY", tr.translate(parser.parseQuery("Select Top 5 * From foo OffSet 10")));
-
-			// CASE: TOP + ORDER BY + OFFSET
-			assertEquals("SELECT *\nFROM foo\nORDER BY id ASC\nOFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY", tr.translate(parser.parseQuery("Select Top 5 * From foo Order By id Asc OffSet 10")));
+			// CASE: TOP + OFFSET + ORDER BY
+			assertEquals("SELECT *\nFROM foo\nORDER BY id DESC\nOFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY", tr.translate(parser.parseQuery("Select Top 5 * From foo Order By id Desc OffSet 10")));
 
 		} catch(ParseException pe) {
 			pe.printStackTrace(System.err);
