@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2019 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2021 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -82,6 +82,7 @@ import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
 import adql.query.operand.function.string.LowerFunction;
+import adql.query.operand.function.string.UpperFunction;
 
 /**
  * Implementation of {@link ADQLTranslator} which translates ADQL queries in
@@ -167,7 +168,7 @@ import adql.query.operand.function.string.LowerFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (11/2019)
+ * @version 2.0 (01/2021)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -832,6 +833,8 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			return translate((UserDefinedFunction)fct);
 		else if (fct instanceof LowerFunction)
 			return translate((LowerFunction)fct);
+		else if (fct instanceof UpperFunction)
+			return translate((UpperFunction)fct);
 		else if (fct instanceof InUnitFunction)
 			return translate((InUnitFunction)fct);
 		else
@@ -876,6 +879,11 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(LowerFunction fct) throws TranslationException {
+		return getDefaultADQLFunction(fct);
+	}
+
+	@Override
+	public String translate(UpperFunction fct) throws TranslationException {
 		return getDefaultADQLFunction(fct);
 	}
 

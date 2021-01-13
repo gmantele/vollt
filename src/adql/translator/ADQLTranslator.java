@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -70,12 +70,13 @@ import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
 import adql.query.operand.function.string.LowerFunction;
+import adql.query.operand.function.string.UpperFunction;
 
 /**
  * Translates ADQL objects into any language (i.e. SQL).
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (11/2019)
+ * @version 2.0 (01/2021)
  *
  * @see PostgreSQLTranslator
  */
@@ -172,6 +173,9 @@ public interface ADQLTranslator {
 
 	/** @since 2.0 */
 	public String translate(LowerFunction fct) throws TranslationException;
+
+	/** @since 2.0 */
+	public String translate(UpperFunction fct) throws TranslationException;
 
 	/** @since 2.0 */
 	public String translate(InUnitFunction fct) throws TranslationException;

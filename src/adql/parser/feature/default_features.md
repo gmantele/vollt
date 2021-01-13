@@ -22,6 +22,7 @@ Here is a sum-up of supported features for each implemented translator:
 
 |       Feature        | MySQL | MS-SQL Server | PostgreSQL | PgSphere |
 | LOWER                |   X   |       X       |      X     |     X    |
+| UPPER                |   X   |       X       |      X     |     X    |
 | geometries           |       |               |            |     X    |
 | ILIKE                |       |               |      X     |     X    |
 | IN_UNIT              |       |               |            |          |

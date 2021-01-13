@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -81,6 +81,7 @@ import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
 import adql.query.operand.function.string.LowerFunction;
+import adql.query.operand.function.string.UpperFunction;
 
 /**
  * This class lets the {@link ADQLParser} to build an object representation of
@@ -92,7 +93,7 @@ import adql.query.operand.function.string.LowerFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2020)
+ * @version 2.0 (01/2021)
  *
  * @see ADQLParser
  */
@@ -304,6 +305,11 @@ public class ADQLQueryFactory {
 	/** @since 2.0 */
 	public LowerFunction createLowerFunction(ADQLOperand op) throws Exception {
 		return new LowerFunction(op);
+	}
+
+	/** @since 2.0 */
+	public UpperFunction createUpperFunction(ADQLOperand op) throws Exception {
+		return new UpperFunction(op);
 	}
 
 	public MathFunction createMathFunction(MathFunctionType type, ADQLOperand param1, ADQLOperand param2) throws Exception {
