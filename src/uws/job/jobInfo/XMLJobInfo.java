@@ -16,7 +16,7 @@ package uws.job.jobInfo;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2019 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2020 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -142,7 +142,7 @@ import uws.service.request.UploadFile;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 4.4 (03/2019)
+ * @version 4.5 (05/2020)
  * @since 4.2
  */
 public class XMLJobInfo implements JobInfo {
@@ -211,7 +211,7 @@ public class XMLJobInfo implements JobInfo {
 	 *
 	 * @throws NullPointerException	If the given string is NULL or empty.
 	 */
-	public XMLJobInfo(final String smallXML) throws NullPointerException{
+	public XMLJobInfo(final String smallXML) throws NullPointerException {
 		if (smallXML == null || smallXML.trim().length() == 0)
 			throw new NullPointerException("Missing XML content!");
 
@@ -229,7 +229,7 @@ public class XMLJobInfo implements JobInfo {
 	 *
 	 * @throws NullPointerException	If the given file is NULL or empty.
 	 */
-	public XMLJobInfo(final UploadFile xmlFile) throws NullPointerException{
+	public XMLJobInfo(final UploadFile xmlFile) throws NullPointerException {
 		if (xmlFile == null || xmlFile.length <= 0)
 			throw new NullPointerException("Missing XML file!");
 
@@ -240,28 +240,28 @@ public class XMLJobInfo implements JobInfo {
 	}
 
 	@Override
-	public String getXML(final String newLinePrefix) throws UWSException{
+	public String getXML(final String newLinePrefix) throws UWSException {
 		// CASE: SMALL XML DOCUMENT:
-		if (content != null){
+		if (content != null) {
 			if (content.trim().startsWith("<?"))
 				return content.substring(content.indexOf("?>") + 2);
 			else
 				return content;
 
 		}// CASE: XML FILE
-		else{
+		else {
 			restoreFile();
 
 			StringBuffer xml = new StringBuffer();
 			BufferedReader input = null;
-			try{
+			try {
 				// Open the XML file:
 				input = new BufferedReader(new InputStreamReader(file.open()));
 				String line;
 				// Read it line by line:
-				while((line = input.readLine()) != null){
+				while((line = input.readLine()) != null) {
 					// Ignore the XML declarative lines:
-					if (line.trim().startsWith("<?")){
+					if (line.trim().startsWith("<?")) {
 						line = line.substring(line.indexOf("?>") + 2);
 						if (line.trim().length() == 0)
 							continue;
@@ -272,13 +272,13 @@ public class XMLJobInfo implements JobInfo {
 					// Append the fetched line:
 					xml.append(line);
 				}
-			}catch(IOException ioe){
+			} catch(IOException ioe) {
 				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Impossible to get the XML representation of the JobInfo!");
-			}finally{
-				if (input != null){
-					try{
+			} finally {
+				if (input != null) {
+					try {
 						input.close();
-					}catch(IOException ioe){
+					} catch(IOException ioe) {
 					}
 				}
 			}
@@ -287,9 +287,9 @@ public class XMLJobInfo implements JobInfo {
 	}
 
 	@Override
-	public void write(final HttpServletResponse response) throws IOException, UWSException{
+	public void write(final HttpServletResponse response) throws IOException, UWSException {
 		// CASE: SMALL XML DOCUMENT:
-		if (content != null){
+		if (content != null) {
 			response.setCharacterEncoding("UTF-8");
 			response.setContentType("text/xml");
 			UWSToolBox.setContentLength(response, content.getBytes("UTF-8").length);
@@ -300,21 +300,21 @@ public class XMLJobInfo implements JobInfo {
 		}
 
 		// CASE: XML FILE:
-		else{
+		else {
 			restoreFile();
 			UWSToolBox.write(file.open(), "text/xml", file.length, response);
 		}
 	}
 
 	@Override
-	public void setJob(final UWSJob myJob){
+	public void setJob(final UWSJob myJob) {
 		job = myJob;
 
-		if (job != null && file != null){
-			try{
+		if (job != null && file != null) {
+			try {
 				file.move(job);
 				location = file.getLocation();
-			}catch(IOException ioe){
+			} catch(IOException ioe) {
 				if (job.getLogger() != null)
 					job.getLogger().logUWS(LogLevel.ERROR, job, "SET_JOB_INFO", "Error when moving the XML JobInfo file closer to the job " + job.getJobId() + "! Current file location: " + file.getLocation(), ioe);
 			}
@@ -322,11 +322,13 @@ public class XMLJobInfo implements JobInfo {
 	}
 
 	@Override
-	public void destroy() throws UWSException{
-		try{
-			file.deleteFile();
-		}catch(IOException ioe){
-			throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Error when deleting a JobInfo file!");
+	public void destroy() throws UWSException {
+		if (file != null) {
+			try {
+				file.deleteFile();
+			} catch(IOException ioe) {
+				throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Error when deleting a JobInfo file!");
+			}
 		}
 	}
 
@@ -349,7 +351,7 @@ public class XMLJobInfo implements JobInfo {
 	 * @throws IOException	If any error occurs while serializing this
 	 *                    	{@link XMLJobInfo}
 	 */
-	private void writeObject(java.io.ObjectOutputStream out) throws IOException{
+	private void writeObject(java.io.ObjectOutputStream out) throws IOException {
 		// Ensure the location is up-to-date before performing the backup of this jobInfo:
 		if (file != null)
 			location = file.getLocation();
@@ -376,12 +378,12 @@ public class XMLJobInfo implements JobInfo {
 	 *
 	 * @throws UWSException	If this {@link JobInfo} is not attached to a job.
 	 */
-	protected void restoreFile() throws UWSException{
+	protected void restoreFile() throws UWSException {
 		/* If the file is NULL, it means a UWS restore has just occurred.
 		 * Because UploadFile is not Serializable, it was impossible to restore the file.
 		 * To solve this problem, the location has been saved.
 		 * So, the file can be and has to be restored. */
-		if (file == null && location != null){
+		if (file == null && location != null) {
 			if (job != null)
 				file = new UploadFile(UWS.REQ_ATTRIBUTE_JOB_DESCRIPTION, location, job.getFileManager());
 			else

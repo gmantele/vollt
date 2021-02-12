@@ -22,14 +22,14 @@ import adql.query.operand.function.geometry.PointFunction;
 public class TestFunctionDef {
 
 	@AfterClass
-	public static void tearDownAfterClass() throws Exception{
+	public static void tearDownAfterClass() throws Exception {
 		DBType.DBDatatype.UNKNOWN.setCustomType(null);
 	}
 
 	@Test
-	public void testIsString(){
-		for(DBDatatype type : DBDatatype.values()){
-			switch(type){
+	public void testIsString() {
+		for(DBDatatype type : DBDatatype.values()) {
+			switch(type) {
 				case CHAR:
 				case VARCHAR:
 				case TIMESTAMP:
@@ -43,9 +43,9 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testIsGeometry(){
-		for(DBDatatype type : DBDatatype.values()){
-			switch(type){
+	public void testIsGeometry() {
+		for(DBDatatype type : DBDatatype.values()) {
+			switch(type) {
 				case POINT:
 				case REGION:
 					assertTrue(new FunctionDef("foo", new DBType(type)).isGeometry);
@@ -57,9 +57,9 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testIsNumeric(){
-		for(DBDatatype type : DBDatatype.values()){
-			switch(type){
+	public void testIsNumeric() {
+		for(DBDatatype type : DBDatatype.values()) {
+			switch(type) {
 				case CHAR:
 				case VARCHAR:
 				case TIMESTAMP:
@@ -77,40 +77,40 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testToString(){
+	public void testToString() {
 		assertEquals("fct1()", new FunctionDef("fct1").toString());
 		assertEquals("fct1() -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR)).toString());
-		assertEquals("fct1(foo DOUBLE) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE))}).toString());
-		assertEquals("fct1(foo DOUBLE)", new FunctionDef("fct1", new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE))}).toString());
-		assertEquals("fct1(foo DOUBLE, pt POINT) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)),new FunctionParam("pt", new DBType(DBDatatype.POINT))}).toString());
-		assertEquals("fct1(foo DOUBLE, pt POINT)", new FunctionDef("fct1", null, new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)),new FunctionParam("pt", new DBType(DBDatatype.POINT))}).toString());
+		assertEquals("fct1(foo DOUBLE) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)) }).toString());
+		assertEquals("fct1(foo DOUBLE)", new FunctionDef("fct1", new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)) }).toString());
+		assertEquals("fct1(foo DOUBLE, pt POINT) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)), new FunctionParam("pt", new DBType(DBDatatype.POINT)) }).toString());
+		assertEquals("fct1(foo DOUBLE, pt POINT)", new FunctionDef("fct1", null, new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)), new FunctionParam("pt", new DBType(DBDatatype.POINT)) }).toString());
 	}
 
 	@Test
-	public void testParse(){
+	public void testParse() {
 		final String WRONG_FULL_SYNTAX = "Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\"";
 		final String WRONG_PARAM_SYNTAX = "Wrong parameters syntax! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"";
 
 		// NULL test:
-		try{
+		try {
 			FunctionDef.parse(null);
 			fail("A NULL string is not valide!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof NullPointerException);
 			assertEquals("Missing string definition to build a FunctionDef!", ex.getMessage());
 		}
 
 		// EMPTY STRING test:
-		try{
+		try {
 			FunctionDef.parse("");
 			fail("An empty string is not valide!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_FULL_SYNTAX, ex.getMessage());
 		}
 
 		// CORRECT string definitions:
-		try{
+		try {
 			assertEquals("foo()", FunctionDef.parse("foo()").toString());
 			assertEquals("foo() -> VARCHAR", FunctionDef.parse("foo() -> string").toString());
 			assertEquals("foo() -> VARCHAR", FunctionDef.parse("foo()->string").toString());
@@ -118,15 +118,15 @@ public class TestFunctionDef {
 			assertEquals("foo(param1 DOUBLE, param2 INTEGER) -> DOUBLE", FunctionDef.parse(" foo ( param1	numeric,	param2    int )	->	DOUBLE ").toString());
 			assertEquals("foo_ALTernative2first(p POINT, d TIMESTAMP) -> TIMESTAMP", FunctionDef.parse("foo_ALTernative2first	(p POINT,d date) -> time").toString());
 			assertEquals("blabla_123(toto INTEGER, bla SMALLINT, truc CLOB, bidule CHAR, smurph POINT, date TIMESTAMP) -> SMALLINT", FunctionDef.parse("blabla_123(toto int4, bla bool, truc text, bidule character, smurph point, date timestamp) -> BOOLEAN").toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("All this string definitions are correct.");
 		}
 
 		// TYPE PARAMETER test:
-		try{
-			for(DBDatatype t : DBDatatype.values()){
-				switch(t){
+		try {
+			for(DBDatatype t : DBDatatype.values()) {
+				switch(t) {
 					case CHAR:
 					case VARCHAR:
 					case BINARY:
@@ -137,13 +137,13 @@ public class TestFunctionDef {
 						assertEquals("foo() -> " + t.toString(), FunctionDef.parse("foo() -> " + t.toString() + "(10)").toString());
 				}
 			}
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Wrong type parsing!");
 		}
 
 		// TYPE WITH SPACES AND/OR PARAMETER test:
-		try{
+		try {
 			assertEquals("foo() -> DOUBLE", FunctionDef.parse("foo() -> double precision").toString());
 			assertEquals("foo(bar DOUBLE)", FunctionDef.parse("foo(bar   DOUBLE  Precision  )").toString());
 			assertEquals("foo() -> VARCHAR", FunctionDef.parse("foo() -> character varying").toString());
@@ -151,125 +151,125 @@ public class TestFunctionDef {
 			assertEquals("foo(bar VARCHAR(12))", FunctionDef.parse("foo(bar varchar  (12))").toString());
 			assertEquals("foo(bar VARCHAR(12))", FunctionDef.parse("foo(bar character varying (12))").toString());
 			assertEquals("foo() -> DOUBLE", FunctionDef.parse("foo() -> double precision (2)").toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Wrong type parsing!");
 		}
 
 		// WRONG string definitions:
-		try{
+		try {
 			FunctionDef.parse("123()");
 			fail("No number is allowed as first character of a function name!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_FULL_SYNTAX, ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef.parse("1foo()");
 			fail("No number is allowed as first character of a function name!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_FULL_SYNTAX, ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef.parse("foo,truc()");
 			fail("No other character than [a-zA-Z0-9_] is allowed after a first character [a-zA-Z] in a function name!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_FULL_SYNTAX, ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef.parse("foo");
 			fail("A function definition must contain at list parenthesis even if there is no parameter.");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_FULL_SYNTAX, ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef.parse("foo(param)");
 			fail("A parameter must always have a type!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals("Wrong syntax for the 1-th parameter: \"param\"! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"", ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef fct = FunctionDef.parse("foo()->aType");
 			assertTrue(fct.isUnknown);
 			assertFalse(fct.isString);
 			assertFalse(fct.isNumeric);
 			assertFalse(fct.isGeometry);
 			assertEquals("?aType?", fct.returnType.type.toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
 		}
-		try{
+		try {
 			FunctionDef fct = FunctionDef.parse("foo()->aType(10)");
 			assertTrue(fct.isUnknown);
 			assertFalse(fct.isString);
 			assertFalse(fct.isNumeric);
 			assertFalse(fct.isGeometry);
 			assertEquals("?aType(10)?", fct.returnType.type.toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
 		}
-		try{
+		try {
 			FunctionDef.parse("foo() -> ");
 			fail("The return type is missing!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_FULL_SYNTAX, ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef.parse("foo(,)");
 			fail("Missing parameter definition!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_PARAM_SYNTAX, ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef.parse("foo(param1 int,)");
 			fail("Missing parameter definition!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
 			assertEquals(WRONG_PARAM_SYNTAX, ex.getMessage());
 		}
-		try{
+		try {
 			FunctionDef fct = FunctionDef.parse("foo(param1 aType)");
 			assertTrue(fct.getParam(0).type.isUnknown());
 			assertFalse(fct.getParam(0).type.isString());
 			assertFalse(fct.getParam(0).type.isNumeric());
 			assertFalse(fct.getParam(0).type.isGeometry());
 			assertEquals("?aType?", fct.getParam(0).type.toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
 		}
-		try{
+		try {
 			FunctionDef fct = FunctionDef.parse("foo(param1 aType(10))");
 			assertTrue(fct.getParam(0).type.isUnknown());
 			assertFalse(fct.getParam(0).type.isString());
 			assertFalse(fct.getParam(0).type.isNumeric());
 			assertFalse(fct.getParam(0).type.isGeometry());
 			assertEquals("?aType(10)?", fct.getParam(0).type.toString());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
 		}
-		try{
+		try {
 			FunctionDef fct = FunctionDef.parse("INTERSECTION(region1 region, region2 region) -> region");
 			assertEquals(DBType.DBDatatype.REGION, fct.getParam(0).type.type);
 			assertEquals(DBType.DBDatatype.REGION, fct.getParam(1).type.type);
 			assertEquals(DBType.DBDatatype.REGION, fct.returnType.type);
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Impossible to parse this REGION based FunctionDef! (see console for more details)");
 		}
 	}
 
 	@Test
-	public void testCompareToFunctionDef(){
+	public void testCompareToFunctionDef() {
 		// DEFINITION 1 :: fct1() -> VARCHAR
 		FunctionDef def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
 
@@ -283,16 +283,16 @@ public class TestFunctionDef {
 		assertEquals(0, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER))));
 
 		// TEST :: With a function having the same name, but 2 parameters: [LESS (6 characters: ø against 100100)]
-		assertEquals(-6, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.INTEGER)),new FunctionParam("foo", new DBType(DBDatatype.INTEGER))})));
+		assertEquals(-6, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.INTEGER)), new FunctionParam("foo", new DBType(DBDatatype.INTEGER)) })));
 
 		// DEFINITION 1 :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-		def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
+		def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
 
 		// TEST :: Identity test (def1 with def1): [EQUAL]
 		assertEquals(0, def1.compareTo(def1));
 
 		// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 VARCHAR) -> VARCHAR
-		FunctionDef def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.VARCHAR))});
+		FunctionDef def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.VARCHAR)) });
 
 		// TEST :: Identity test (def2 with def2): [EQUAL]
 		assertEquals(0, def2.compareTo(def2));
@@ -301,7 +301,7 @@ public class TestFunctionDef {
 		assertEquals(1, def1.compareTo(def2));
 
 		// DEFINITION 2 :: fct2(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-		def2 = new FunctionDef("fct2", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
+		def2 = new FunctionDef("fct2", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
 
 		// TEST :: Identity test (def2 with def2): [EQUAL]
 		assertEquals(0, def2.compareTo(def2));
@@ -310,7 +310,7 @@ public class TestFunctionDef {
 		assertEquals(-1, def1.compareTo(def2));
 
 		// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 POINT) -> VARCHAR
-		def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.POINT))});
+		def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.POINT)) });
 
 		// TEST :: Identity test (def2 with def2): [EQUAL]
 		assertEquals(0, def2.compareTo(def2));
@@ -320,15 +320,15 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testCompareToADQLFunction(){
+	public void testCompareToADQLFunction() {
 		// DEFINITION :: fct1() -> VARCHAR
 		FunctionDef def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
 
 		// TEST :: NULL:
-		try{
+		try {
 			def.compareTo((ADQLFunction)null);
 			fail("Missing ADQL function for comparison with FunctionDef!");
-		}catch(Exception e){
+		} catch(Exception e) {
 			assertTrue(e instanceof NullPointerException);
 			assertEquals("Missing ADQL function with which comparing this function definition!", e.getMessage());
 		}
@@ -340,33 +340,95 @@ public class TestFunctionDef {
 		assertEquals(1, def.compareTo(new DefaultUDF("fct0", null)));
 
 		// TEST :: "fct1(12.3, 3.14)": [LESS (of 2 params)]
-		assertEquals(-2, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new NumericConstant(12.3),new NumericConstant(3.14)})));
+		assertEquals(-2, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new NumericConstant(12.3), new NumericConstant(3.14) })));
 
 		// DEFINITION :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-		def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
+		def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
 
 		// TEST :: "fct1('blabla', 'blabla2')": [GREATER (because the second param is numeric and Numeric = 10 > String = 01)]
-		assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new StringConstant("blabla"),new StringConstant("blabla2")})));
+		assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new StringConstant("blabla2") })));
 
 		// TEST :: "fct1('blabla', POINT('COORDSYS', 1.2, 3.4))": [GREATER (same reason ; POINT is considered as a String)]
-		try{
-			assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new StringConstant("blabla"),new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4))})));
-		}catch(Exception e){
+		try {
+			assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4)) })));
+		} catch(Exception e) {
 			e.printStackTrace();
 			fail();
 		}
 
 		// Test with an UNKNOWN numeric type:
 		// TEST :: "fct0(foo)", where foo is a simple UNKNOWN [EQUAL]
-		FunctionDef def0 = new FunctionDef("fct0", null, new FunctionParam[]{new FunctionParam("whatever", new DBType(DBDatatype.VARCHAR))});
+		FunctionDef def0 = new FunctionDef("fct0", null, new FunctionParam[]{ new FunctionParam("whatever", new DBType(DBDatatype.VARCHAR)) });
 		DefaultDBColumn dbcol = new DefaultDBColumn("foo", new DefaultDBTable("toto"));
 		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN));
 		ADQLColumn col = new ADQLColumn("foo");
 		col.setDBLink(dbcol);
-		assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
+		assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
 		// TEST :: "fct0(foo)", where foo is an UNKNOWN NUMERIC [LESS]
 		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN_NUMERIC));
-		assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
+		assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
+	}
+
+	@Test
+	public void testSetTranslationPattern() {
+		FunctionDef fct = null;
+		try {
+			fct = FunctionDef.parse("foo(a VARCHAR, b INTEGER) -> VARCHAR");
+		} catch(ParseException e) {
+			e.printStackTrace();
+			fail("Impossible anymore to parse this correct UDF definition! (see console for more details)");
+		}
+
+		try {
+			// TEST: NULL => OK
+			fct.setTranslationPattern(null);
+
+			// TEST: empty string => OK
+			fct.setTranslationPattern("");
+			fct.setTranslationPattern(" 	 ");
+
+			// TEST: no argument reference => OK
+			fct.setTranslationPattern("foobar()");
+
+			// TEST: no REAL argument reference => OK
+			fct.setTranslationPattern("foobar('$$1', $$2, $$, $-1, $a, $)");
+
+			// TEST: with valid argument reference => OK
+			fct.setTranslationPattern("$1");
+			fct.setTranslationPattern("foobar($1)");
+			fct.setTranslationPattern("foobar($2)");
+			fct.setTranslationPattern("foobar($1, $2)");
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("All of these pattern should be valid! (see console for more details)");
+		}
+
+		// TEST: argument reference to 0 => ERROR
+		try {
+			fct.setTranslationPattern("foobar($0)");
+			fail("Should have failed => the argument $0 is forbidden (indices start from 1)");
+		} catch(Exception ex) {
+			assertEquals(IllegalArgumentException.class, ex.getClass());
+			assertEquals("'$0' is not a valid ; an argument reference should be an integer starting from 1.", ex.getMessage());
+		}
+
+		// TEST: argument reference > nbArguments => ERROR
+		try {
+			fct.setTranslationPattern("foobar($3)");
+			fail("Should have failed => the argument $3 is forbidden (must be <= nbParams (here, 2))");
+		} catch(Exception ex) {
+			assertEquals(IllegalArgumentException.class, ex.getClass());
+			assertEquals("'$3' is not valid ; the argument index is bigger than the actual number of arguments (" + fct.getNbParams() + ") according to this UDF definition.", ex.getMessage());
+		}
+
+		// TEST: invalid index prefixed with 0 => ERROR
+		try {
+			fct.setTranslationPattern("foobar($01)");
+			fail("Should have failed => the argument $01 is parsed as $0 and so, is forbidden");
+		} catch(Exception ex) {
+			assertEquals(IllegalArgumentException.class, ex.getClass());
+			assertEquals("'$0' is not a valid ; an argument reference should be an integer starting from 1.", ex.getMessage());
+		}
 	}
 
 }
