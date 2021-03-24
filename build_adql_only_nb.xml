@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="adql" default="default" basedir=".">
+    <description>Builds, tests, and runs the project adql.</description>
+	<property name="version" value="1.5" />
+	<property name="jarDest" value="." />
+	<property name="libJarFile" value="${jarDest}/adql_${version}.jar" />
+	
+    <import file="nbproject/build-impl.xml"/>
+	
+	<!--default:-->
+	<echo>Generate the library:</echo>
+	<jar destfile="${libJarFile}" />
+</project>
