@@ -335,16 +335,19 @@ public class MAST_Geometry_SQLServerTranslator extends SQLServerTranslator {
 				sql.append('\n').append(geomReplace);
 			}
 
-			//If no order by is given, create a default to have deterministic results in geometry responses.
-			if(query.getOrderBy().isEmpty()) {
-				ClauseADQL<ADQLOrder> newOrderBy = new ClauseADQL<ADQLOrder>("ORDER BY");													
-				ADQLOrder defaultGeometryOrder = new ADQLOrder(functionTableName + ".distance");
-				newOrderBy.add(defaultGeometryOrder);				
-				query.setOrderBy(newOrderBy);				
+			//If no order by is given AND this is not a count query,
+			//create a default to have deterministic results in geometry responses.
+			if(!(query.getSelect().toADQL().contains(" COUNT"))) {
+				if(query.getOrderBy().isEmpty()) {
+					ClauseADQL<ADQLOrder> newOrderBy = new ClauseADQL<ADQLOrder>("ORDER BY");													
+					ADQLOrder defaultGeometryOrder = new ADQLOrder(functionTableName + ".distance");
+					newOrderBy.add(defaultGeometryOrder);				
+					query.setOrderBy(newOrderBy);				
+				}
+				geomReplace = translate(query.getOrderBy());
+				geomReplace = ReplaceTableNames(geomReplace, functionTableName);
+				sql.append('\n').append(geomReplace);
 			}
-			geomReplace = translate(query.getOrderBy());
-			geomReplace = ReplaceTableNames(geomReplace, functionTableName);
-			sql.append('\n').append(geomReplace);
 			
 			String sqlString = sql.toString();
 			return QualifyUserFunctionNames(sqlString);
@@ -378,8 +381,8 @@ public class MAST_Geometry_SQLServerTranslator extends SQLServerTranslator {
 
 	@Override
 	public String translate(final PointFunction point) throws TranslationException {
-		return ("'point " + ((NumericConstant) (point.getCoord1())).getValue() + " "
-				+ ((NumericConstant) (point.getCoord2())).getValue() + "'");
+		return ("'point " + point.getCoord1().toADQL() + " "
+				+ point.getCoord2().toADQL() + "'");
 	}
 
 	@Override
