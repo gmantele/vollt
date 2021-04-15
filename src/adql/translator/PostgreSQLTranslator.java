@@ -16,13 +16,13 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.STCS.Region;
+import adql.db.region.Region;
 import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
@@ -42,7 +42,6 @@ import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
-import adql.query.operand.function.geometry.RegionFunction;
 
 /**
  * Translates all ADQL objects into an SQL interrogation query designed for
@@ -74,7 +73,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2019)
+ * @version 2.0 (04/2021)
  *
  * @see PgSphereTranslator
  */
@@ -148,9 +147,6 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	 * @since 2.0
 	 */
 	protected void initSupportedFeatures() {
-		// Any UDF allowed:
-		supportedFeatures.allowAnyUdf(true);
-
 		// Support all features...
 		supportedFeatures.supportAll();
 		// ...except all geometries:
@@ -271,11 +267,6 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 	@Override
 	public String translate(PolygonFunction polygon) throws TranslationException {
 		return getDefaultADQLFunction(polygon);
-	}
-
-	@Override
-	public String translate(RegionFunction region) throws TranslationException {
-		return getDefaultADQLFunction(region);
 	}
 
 	@Override

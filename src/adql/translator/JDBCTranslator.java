@@ -27,8 +27,8 @@ import adql.db.DBIdentifier;
 import adql.db.DBTable;
 import adql.db.DBTableAlias;
 import adql.db.DBType;
-import adql.db.STCS.Region;
 import adql.db.exception.UnresolvedJoinException;
+import adql.db.region.Region;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
@@ -62,6 +62,8 @@ import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.ADQLFunction;
+import adql.query.operand.function.CastFunction;
+import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
@@ -168,7 +170,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (01/2021)
+ * @version 2.0 (04/2021)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -837,6 +839,8 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			return translate((UpperFunction)fct);
 		else if (fct instanceof InUnitFunction)
 			return translate((InUnitFunction)fct);
+		else if (fct instanceof CastFunction)
+			return translate((CastFunction)fct);
 		else
 			return getDefaultADQLFunction(fct);
 	}
@@ -887,6 +891,18 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 		return getDefaultADQLFunction(fct);
 	}
 
+	@Override
+	public String translate(CastFunction fct) throws TranslationException {
+		String sql = fct.getName() + "(";
+		sql += translate(fct.getValue()) + " AS " + translate(fct.getTargetType());
+		return sql + ")";
+	}
+
+	@Override
+	public String translate(DatatypeParam type) throws TranslationException {
+		return (type == null) ? null : type.toADQL();
+	}
+
 	/* *********************************** */
 	/* ****** GEOMETRICAL FUNCTIONS ****** */
 	/* *********************************** */
@@ -918,6 +934,37 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			return translate((RegionFunction)fct);
 		else
 			return getDefaultADQLFunction(fct);
+	}
+
+	@Override
+	public String translate(final RegionFunction fct) throws TranslationException {
+		// If any region...
+		if (fct != null && fct.getParameter(0) != null) {
+			// ...no extended expression and with a string literal:
+			if (!fct.isExtendedRegionExpression() && fct.getParameter(0) instanceof StringConstant) {
+
+				// Get this string:
+				String regionStr = ((StringConstant)fct.getParameter(0)).getValue();
+
+				try {
+					// Parse it as any supported serialization (e.g. DALI, STC/s):
+					Region region = Region.parse(regionStr);
+
+					/* And finally translate it as it was built with the
+					 * appropriate geometry constructor (e.g. POINT(...)): */
+					return translate(region.toGeometry());
+
+				} catch(ParseException pe) {
+					throw new TranslationException("Unsupported region serialization!", pe);
+				}
+			}
+			// Otherwise, translate it as in ADQL:
+			else
+				return getDefaultADQLFunction(fct);
+		}
+		// But if no REGION or parameter, error!
+		else
+			throw new TranslationException("Missing REGION function (or its parameter) to translate!");
 	}
 
 	@Override

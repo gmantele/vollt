@@ -644,6 +644,7 @@ public class TestADQLParser {
 	public void testUDFName() {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			ADQLParser parser = new ADQLParser(version);
+			parser.allowAnyUdf(true); // for test purpose
 
 			// CASE: Valid UDF name => OK
 			try {
@@ -673,7 +674,7 @@ public class TestADQLParser {
 			ADQLParser parser = new ADQLParser(version);
 
 			// CASE: Any UDF allowed => OK!
-			parser.getSupportedFeatures().allowAnyUdf(true);
+			parser.allowAnyUdf(true);
 			try {
 				assertNotNull(parser.parseQuery("SELECT foo(1,2) FROM bar"));
 			} catch(Throwable t) {
@@ -682,7 +683,7 @@ public class TestADQLParser {
 			}
 
 			// CASE: No UDF allowed => ERROR
-			parser.getSupportedFeatures().allowAnyUdf(false);
+			parser.allowAnyUdf(false);
 			try {
 				parser.parseQuery("SELECT foo(1,2) FROM bar");
 				fail("No UDF is allowed. This query should have failed!");
@@ -838,7 +839,7 @@ public class TestADQLParser {
 				assertTrue(pe instanceof UnresolvedIdentifiersException);
 				UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 				assertEquals(1, ex.getNbErrors());
-				assertEquals("Unsupported STC-s region type: \"BOX\" (equivalent to the ADQL feature \"BOX\" of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", ex.getErrors().next().getMessage());
+				assertEquals("Unsupported region type: \"BOX\" (equivalent to the ADQL feature \"BOX\" of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", ex.getErrors().next().getMessage());
 			}
 
 			// Test with several geometries while none geometry is allowed:
@@ -900,6 +901,101 @@ public class TestADQLParser {
 				assertEquals(ParseException.class, ex.getClass());
 				assertTrue(ex.getMessage().trim().startsWith("Encountered \")\"."));
 			}
+	}
+
+	@Test
+	public void testRegion() {
+		for(ADQLVersion version : ADQLVersion.values()) {
+			// DECLARE A SIMPLE PARSER where all coordinate systems are allowed by default:
+			ADQLParser parser = new ADQLParser(version);
+
+			// CASE: REGION can ONLY accept a string literal => check the syntax, region and coordsys:
+			parser.allowExtendedRegionParam(false);
+			assertFalse(parser.isExtendedRegionParamAllowed());
+
+			// ...CASE: all possible geometries using DALI syntax:
+			try {
+				parser.parseSelect("SELECT REGION('1 2') AS p");
+				parser.parseSelect("SELECT REGION('1 2 3') AS c");
+				parser.parseSelect("SELECT REGION('1 2  3 4  5 6') AS poly");
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! All parsed regions with DALI syntax are correct.");
+			}
+
+			// ...CASE: all possible geometries using STC/s syntax:
+			try {
+				parser.parseSelect("SELECT REGION('Position 1 2') AS p");
+				parser.parseSelect("SELECT REGION('Circle 1 2 3') AS c");
+				parser.parseSelect("SELECT REGION('Box 1 2 3 4') AS b");
+				parser.parseSelect("SELECT REGION('Polygon 1 2  3 4  5 6') AS poly");
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! All parsed regions with STC/s syntax are correct.");
+			}
+
+			// ...CASE: a different syntax => Error!
+			try {
+				parser.parseSelect("SELECT REGION('[1, 2]') AS p");
+				fail("The syntax used to expressed this point is neither DALI nor STC/s!");
+			} catch(Exception ex) {
+				assertEquals(UnresolvedIdentifiersException.class, ex.getClass());
+				assertEquals(1, ((UnresolvedIdentifiersException)ex).getNbErrors());
+				assertEquals("Unsupported region serialization!", ((UnresolvedIdentifiersException)ex).getErrors().next().getMessage());
+			}
+
+			// ...CASE: not a string literal => Error!
+			try {
+				parser.parseSelect("SELECT REGION(mySerializedCircle) AS c");
+				fail("Something else than a string literal should NOT be accepted here!");
+			} catch(Exception ex) {
+				assertEquals(UnresolvedIdentifiersException.class, ex.getClass());
+				assertEquals(1, ((UnresolvedIdentifiersException)ex).getNbErrors());
+				assertEquals("Unsupported REGION(...) parameter! Only a string literal is accepted.", ((UnresolvedIdentifiersException)ex).getErrors().next().getMessage());
+			}
+
+			// Ensure any REGION is resolved before translation:
+			try {
+				final String[] supportedSerializations = new String[]{ "1 2", "Circle 1 2 3" };
+				for(String str : supportedSerializations) {
+					RegionFunction fct = (RegionFunction)(parser.parseSelect("SELECT REGION('" + str + "') AS r").get(0).getOperand());
+					assertFalse(fct.isExtendedRegionExpression());
+				}
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! All parsed regions are correct.");
+			}
+
+			// CASE: REGION can accept any kind of string expression => no check done ; everything passes!
+			parser.allowExtendedRegionParam(true);
+			assertTrue(parser.isExtendedRegionParamAllowed());
+
+			try {
+				// any string literal (not only DALI or STC/s) is allowed (because not anymore checked):
+				parser.parseSelect("SELECT REGION('1 2 3') AS c");        // DALI
+				parser.parseSelect("SELECT REGION('Circle 1 2 3') AS c"); // STC/s
+				parser.parseSelect("SELECT REGION('[[1, 2], 3]') AS c");  // something else
+				// a concatenation:
+				parser.parseSelect("SELECT REGION('1' || ' ' || '2') AS p");
+				// a column:
+				parser.parseSelect("SELECT REGION(mySerializedPolygon) AS poly");
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! All regions are valid: they are all string expressions.");
+			}
+
+			// Ensure NO REGION is resolved before translation:
+			try {
+				final String[] supportedSerializations = new String[]{ "1 2", "Circle 1 2 3", "[[1, 2], 3]" };
+				for(String str : supportedSerializations) {
+					RegionFunction fct = (RegionFunction)(parser.parseSelect("SELECT REGION('" + str + "') AS r").get(0).getOperand());
+					assertTrue(fct.isExtendedRegionExpression());
+				}
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! All parsed regions are correct.");
+			}
+		}
 	}
 
 	@Test

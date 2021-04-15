@@ -27,7 +27,7 @@ import org.postgresql.util.PGobject;
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.STCS.Region;
+import adql.db.region.Region;
 import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.TextPosition;
@@ -62,7 +62,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (06/2020)
+ * @version 2.0 (04/2021)
  */
 public class PgSphereTranslator extends PostgreSQLTranslator {
 
@@ -293,6 +293,12 @@ public class PgSphereTranslator extends PostgreSQLTranslator {
 		else
 			return false;
 	}
+
+	/* ********************************************************************** */
+	/* *                                                                    * */
+	/* * TYPE MANAGEMENT                                                    * */
+	/* *                                                                    * */
+	/* ********************************************************************** */
 
 	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params) {

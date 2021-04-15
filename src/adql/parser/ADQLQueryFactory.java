@@ -59,6 +59,8 @@ import adql.query.operand.Operation;
 import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
+import adql.query.operand.function.CastFunction;
+import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
@@ -93,7 +95,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (01/2021)
+ * @version 2.0 (04/2021)
  *
  * @see ADQLParser
  */
@@ -532,5 +534,38 @@ public class ADQLQueryFactory {
 	 */
 	public ClauseOffset createOffset(final int offsetValue) throws Exception {
 		return new ClauseOffset(offsetValue);
+	}
+
+	/**
+	 * Create a {@link DatatypeParam}.
+	 *
+	 * @param typeName	Name of the datatype to represent.
+	 * @param typeLength	Its length, if this datatype is a fixed- or
+	 *                  	variable-length type (e.g. CHAR, VARCHAR).
+	 *
+	 * @return	The created {@link DatatypeParam}.
+	 *
+	 * @throws Exception	If one or both parameters are incorrect.
+	 *
+	 * @since 2.0
+	 */
+	public DatatypeParam createDatatypeParam(final DatatypeParam.DatatypeName typeName, final Integer typeLength) throws Exception {
+		return new DatatypeParam(typeName, typeLength);
+	}
+
+	/**
+	 * Create a {@link CastFunction}.
+	 *
+	 * @param value	The value to convert.
+	 * @param type	Type into which the value must be converted.
+	 *
+	 * @return	The created {@link CastFunction}.
+	 *
+	 * @throws Exception	If one or both parameters are incorrect.
+	 *
+	 * @since 2.0
+	 */
+	public CastFunction createCastFunction(final ADQLOperand value, final DatatypeParam type) throws Exception {
+		return new CastFunction(value, type);
 	}
 }

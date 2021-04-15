@@ -16,7 +16,7 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2014-2019 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2014-2021 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -34,7 +34,7 @@ import java.util.NoSuchElementException;
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.STCS.Region;
+import adql.db.region.Region;
 import adql.parser.grammar.ParseException;
 import adql.translator.JDBCTranslator;
 import tap.db.DBConnection;
@@ -49,7 +49,7 @@ import uws.ISO8601Format;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.3 (03/2019)
+ * @version 2.4 (04/2021)
  * @since 2.0
  */
 public class ResultSetTableIterator implements TableIterator {

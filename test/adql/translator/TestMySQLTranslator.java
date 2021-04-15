@@ -14,9 +14,58 @@ import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import adql.query.constraint.ComparisonOperator;
+import adql.query.operand.ADQLColumn;
+import adql.query.operand.function.CastFunction;
+import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 
 public class TestMySQLTranslator {
+
+	@Test
+	public void testTranslateCast() {
+		JDBCTranslator tr = new MySQLTranslator();
+		try {
+			for(DatatypeParam.DatatypeName datatype : DatatypeParam.DatatypeName.values()) {
+				CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new DatatypeParam(datatype));
+				switch(datatype) {
+
+					// All integers into `SIGNED INTEGER`:
+					case SMALLINT:
+					case INTEGER:
+					case BIGINT:
+						assertEquals("SIGNED INTEGER", tr.translate(castFn.getTargetType()));
+						assertEquals("CAST(aColumn AS SIGNED INTEGER)", tr.translate(castFn));
+						break;
+
+					// No VARCHAR[(n)] => CHAR[(n)]
+					case VARCHAR:
+						assertEquals("CHAR", tr.translate(castFn.getTargetType()));
+						assertEquals("CAST(aColumn AS CHAR)", tr.translate(castFn));
+						castFn = new CastFunction(new ADQLColumn("aColumn"), new DatatypeParam(datatype, 1));
+						assertEquals("CHAR(1)", tr.translate(castFn.getTargetType()));
+						assertEquals("CAST(aColumn AS CHAR(1))", tr.translate(castFn));
+						break;
+
+					// TIMESTAMP into `DATETIME`:
+					case TIMESTAMP:
+						assertEquals("DATETIME", tr.translate(castFn.getTargetType()));
+						assertEquals("CAST(aColumn AS DATETIME)", tr.translate(castFn));
+						break;
+
+					// All others are the same as in ADQL:
+					default:
+						assertEquals(datatype.toString(), tr.translate(castFn.getTargetType()));
+						assertEquals(castFn.toADQL(), tr.translate(castFn));
+				}
+			}
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Unexpected parsing failure! (see console for more details)");
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while translating a correct CAST function! (see console for more details)");
+		}
+	}
 
 	@Test
 	public void testConcat() {
@@ -48,11 +97,8 @@ public class TestMySQLTranslator {
 		// TEST: Not NULL:
 		assertNotNull(supportedFeatures);
 
-		// TEST: Any UDF should be allowed, by default:
-		assertTrue(supportedFeatures.isAnyUdfAllowed());
-
 		// Create the list of all expected supported features:
-		final FeatureSet expectedFeatures = new FeatureSet(true, true);
+		final FeatureSet expectedFeatures = new FeatureSet(true);
 		expectedFeatures.unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
 		expectedFeatures.unsupport(ComparisonOperator.ILIKE.getFeatureDescription());
 		expectedFeatures.unsupport(InUnitFunction.FEATURE);

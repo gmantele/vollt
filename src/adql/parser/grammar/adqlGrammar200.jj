@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 /*
@@ -22,7 +22,7 @@
 * (IVOA Recommendation 30 Oct 2008 - http://www.ivoa.net/Documents/cover/ADQL-20081030.html).
 * 
 * To generate the parser with this file use JavaCC. This .jj file has been
-* successfully tested with JavaCC 6.0.
+* successfully tested with JavaCC 7.0.10.
 * 
 * The generated parser checks the syntax of the given ADQL query and generates
 * an object representation but no consistency with any database is checked.
@@ -30,7 +30,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-*  Version: 2.0 (10/2020)
+*  Version: 2.0 (04/2021)
 */
 
 							/* ########### */
@@ -67,7 +67,7 @@ package adql.parser.grammar;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Vector;
@@ -93,18 +93,18 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
 
 /**
  * Parser of ADQL expressions following the ADQL-2.0 grammar.
-* 
+ * 
  * <p><i><b>Note:</b>
  * 	It is strongly recommended to not use this class directly in order to parse
  * 	an ADQL expression. Instead, you should use
  * 	{@link adql.parser.ADQLParser ADQLParser}. It provides a more user-friendly
  * 	interface and provides additional features.
  * </i></p>
-* 
+ * 
  * @see ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
-* @version 2.0 (10/2020)
+ * @version 2.0 (10/2020)
  * @since 2.0
  */
 public class ADQLGrammar200 extends ADQLGrammarBase {

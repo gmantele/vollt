@@ -56,10 +56,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import adql.db.FunctionDef;
-import adql.db.STCS.Flavor;
-import adql.db.STCS.Frame;
-import adql.db.STCS.RefPos;
 import adql.db.TestDBChecker.UDFToto;
+import adql.db.region.CoordSys.Flavor;
+import adql.db.region.CoordSys.Frame;
+import adql.db.region.CoordSys.RefPos;
 import adql.translator.AstroH2Translator;
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
@@ -322,7 +322,7 @@ public class TestConfigurableServiceConnection {
 		udfsProp.setProperty(KEY_UDFS, "[toto(a string)] ,	[  titi(b REAL) -> double 	]");
 
 		udfsWithTranslationProp = (Properties)validProp.clone();
-		udfsWithTranslationProp.setProperty(KEY_UDFS, "[lower(a string)->VARCHAR, \"toLowerCase($1)\"],[substring(str string, sub string, startIndex integer)->VARCHAR, \"substr($1, $2, $3)\", \"Extract a substring.\"]");
+		udfsWithTranslationProp.setProperty(KEY_UDFS, "[my_lower(a string)->VARCHAR, \"toLowerCase($1)\"],[my_substring(str string, sub string, startIndex integer)->VARCHAR, \"substr($1, $2, $3)\", \"Extract a substring.\"]");
 
 		udfsWithClassNameProp = (Properties)validProp.clone();
 		udfsWithClassNameProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
@@ -1126,14 +1126,15 @@ public class TestConfigurableServiceConnection {
 			assertEquals(2, connection.getUDFs().size());
 			Iterator<FunctionDef> it = connection.getUDFs().iterator();
 			FunctionDef def = it.next();
-			assertEquals("lower(a VARCHAR) -> VARCHAR", def.toString());
+			assertEquals("my_lower(a VARCHAR) -> VARCHAR", def.toString());
 			assertEquals("toLowerCase($1)", def.getTranslationPattern());
 			assertNull(def.description);
 			def = it.next();
-			assertEquals("substring(str VARCHAR, sub VARCHAR, startIndex INTEGER) -> VARCHAR", def.toString());
+			assertEquals("my_substring(str VARCHAR, sub VARCHAR, startIndex INTEGER) -> VARCHAR", def.toString());
 			assertEquals("substr($1, $2, $3)", def.getTranslationPattern());
 			assertEquals("Extract a substring.", def.description);
 		} catch(Exception e) {
+			e.printStackTrace();
 			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
 		}
 

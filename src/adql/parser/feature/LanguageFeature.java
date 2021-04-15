@@ -16,7 +16,7 @@ package adql.parser.feature;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Objects;
@@ -52,7 +52,7 @@ import adql.db.FunctionDef;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2019)
+ * @version 2.0 (04/2021)
  * @since 2.0
  *
  * @see FeatureSet
@@ -269,14 +269,14 @@ public final class LanguageFeature {
 	@Override
 	public boolean equals(final Object obj) {
 		if ((obj != null) && (obj instanceof LanguageFeature)) {
-			// Equals IF SAME ID:
-			if (id.equals(((LanguageFeature)obj).id))
-				return true;
 			// If UDF, equals IF SAME NAME and SAME NB PARAMETERS:
-			else if (TYPE_UDF.equals(type) && type.equals(((LanguageFeature)obj).type)) {
+			if (TYPE_UDF.equals(type) && type.equals(((LanguageFeature)obj).type)) {
 				FunctionDef udfDefinition2 = ((LanguageFeature)obj).udfDefinition;
 				return udfDefinition.name.equalsIgnoreCase(udfDefinition2.name) && (udfDefinition.nbParams == udfDefinition2.nbParams);
 			}
+			// Otherwise, equals IF SAME ID:
+			else if (id.equals(((LanguageFeature)obj).id))
+				return true;
 		}
 		return false;
 	}

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,7 +16,7 @@ import adql.db.DBType;
 import adql.db.DefaultDBColumn;
 import adql.db.DefaultDBTable;
 import adql.db.FunctionDef;
-import adql.db.STCS.Region;
+import adql.db.region.Region;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.feature.FeatureSet;
@@ -27,7 +28,10 @@ import adql.query.IdentifierField;
 import adql.query.WithItem;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.Concatenation;
 import adql.query.operand.StringConstant;
+import adql.query.operand.function.CastFunction;
+import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.geometry.AreaFunction;
@@ -47,6 +51,99 @@ public class TestJDBCTranslator {
 
 	@Before
 	public void setUp() throws Exception {
+	}
+
+	@Test
+	public void testTranslateCast() {
+		JDBCTranslator tr = new AJDBCTranslator();
+
+		try {
+
+			// CASE: CAST(...) into any possible datatype always translated as in ADQL:
+			for(DatatypeParam.DatatypeName datatype : DatatypeParam.DatatypeName.values()) {
+				CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new DatatypeParam(datatype));
+				assertEquals(datatype.toString(), tr.translate(castFn.getTargetType()));
+				assertEquals(castFn.toADQL(), tr.translate(castFn));
+			}
+
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Unexpected parsing failure! (see console for more details)");
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while translating a correct CAST function! (see console for more details)");
+		}
+	}
+
+	@Test
+	public void testTranslateRegionFunction() {
+		JDBCTranslator tr = new AJDBCTranslator();
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		// CASE: ANY STRING EXPRESSION AND SYNTAX ALLOWED => SQL = ADQL:
+		parser.allowExtendedRegionParam(true);
+		try {
+			ADQLQuery query = parser.parseQuery("SELECT REGION('my custom region serialization') AS \"r\" FROM foo");
+			assertEquals(query.toADQL(), tr.translate(query));
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Unexpected parsing failure! (see console for more details)");
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while translating a correct REGION function! (see console for more details)");
+		}
+
+		// CASE: ONLY STRING LITERAL ALLOWED
+		parser.allowExtendedRegionParam(false);
+
+		// ...CASE: REGION with empty string => error!
+		final String[] emptyRegions = new String[]{ "", "  " };
+		for(String str : emptyRegions) {
+			try {
+				tr.translate(new RegionFunction(new StringConstant(str)));
+				fail("Unexpected success! Impossible to translate a REGION with something else than a string literal.");
+			} catch(Exception ex) {
+				assertEquals(TranslationException.class, ex.getClass());
+				assertEquals("Unsupported region serialization!", ex.getMessage());
+			}
+		}
+
+		// ...CASE: REGION with a non string literal => SQL = ADQL
+		try {
+			Concatenation param = new Concatenation();
+			param.add(new StringConstant("1 "));
+			param.add(new StringConstant("2"));
+			RegionFunction fct = new RegionFunction(param);
+			assertEquals(fct.toADQL(), tr.translate(fct));
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while translating a correct REGION function! (see console for more details)");
+		}
+
+		try {
+			// ...CASE: correct DALI REGIONs for each type of region (point, circle and polygon ; no box):
+			String[] regionStrings = new String[]{ "1 2", "1 2 3", "1 2  3 4  5 6" };
+			String[] expectedSQL = new String[]{ "sql_point(1.0,2.0)", "sql_circle(1.0,2.0,3.0)", "sql_polygon(1.0,2.0,3.0,4.0,5.0,6.0)" };
+			for(int i = 0; i < regionStrings.length; i++) {
+				ADQLQuery query = parser.parseQuery("SELECT REGION('" + regionStrings[i] + "') AS \"r\" FROM foo");
+				assertEquals("SELECT " + expectedSQL[i] + " AS \"r\"\nFROM foo", tr.translate(query));
+			}
+
+			// ...CASE: correct STC/s REGIONs for each type of region (point, circle, box and polygon):
+			regionStrings = new String[]{ "Position 1 2", "Circle 1 2 3", "Box 1 2 3 4", "Polygon 1 2  3 4  5 6" };
+			expectedSQL = new String[]{ "sql_point(1.0,2.0)", "sql_circle(1.0,2.0,3.0)", "sql_box(1.0,2.0,3.0,4.0)", "sql_polygon(1.0,2.0,3.0,4.0,5.0,6.0)" };
+			for(int i = 0; i < regionStrings.length; i++) {
+				ADQLQuery query = parser.parseQuery("SELECT REGION('" + regionStrings[i] + "') AS \"r\" FROM foo");
+				assertEquals("SELECT " + expectedSQL[i] + " AS \"r\"\nFROM foo", tr.translate(query));
+			}
+
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Unexpected parsing failure! (see console for more details)");
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while translating a correct REGION function! (see console for more details)");
+		}
 	}
 
 	@Test
@@ -293,7 +390,7 @@ public class TestJDBCTranslator {
 
 		@Override
 		public FeatureSet getSupportedFeatures() {
-			return new FeatureSet(true, true);
+			return new FeatureSet(true);
 		}
 
 		@Override
@@ -338,27 +435,35 @@ public class TestJDBCTranslator {
 
 		@Override
 		public String translate(PointFunction point) throws TranslationException {
-			return null;
+			return "sql_point(" + translate(point.getCoord1()) + "," + translate(point.getCoord2()) + ")";
 		}
 
 		@Override
 		public String translate(CircleFunction circle) throws TranslationException {
-			return null;
+			return "sql_circle(" + translate(circle.getCoord1()) + "," + translate(circle.getCoord2()) + "," + translate(circle.getRadius()) + ")";
 		}
 
 		@Override
 		public String translate(BoxFunction box) throws TranslationException {
-			return null;
+			return "sql_box(" + translate(box.getCoord1()) + "," + translate(box.getCoord2()) + "," + translate(box.getWidth()) + "," + translate(box.getHeight()) + ")";
 		}
 
 		@Override
 		public String translate(PolygonFunction polygon) throws TranslationException {
-			return null;
-		}
+			StringBuffer buf = new StringBuffer("sql_polygon(");
 
-		@Override
-		public String translate(RegionFunction region) throws TranslationException {
-			return null;
+			Iterator<ADQLOperand> it = polygon.paramIterator();
+			// skip the coordinate system argument:
+			if (it.hasNext())
+				it.next();
+			// translate and append all coordinate pairs:
+			while(it.hasNext()) {
+				buf.append(translate(it.next()));
+				if (it.hasNext())
+					buf.append(',');
+			}
+
+			return buf.toString() + ")";
 		}
 
 		@Override

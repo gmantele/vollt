@@ -1,5 +1,7 @@
 package adql.parser.feature;
 
+import java.util.ArrayList;
+
 /*
  * This file is part of ADQLLibrary.
  *
@@ -31,6 +33,7 @@ import adql.db.FunctionDef;
 import adql.query.ClauseOffset;
 import adql.query.WithItem;
 import adql.query.constraint.ComparisonOperator;
+import adql.query.operand.function.CastFunction;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
@@ -82,9 +85,9 @@ import adql.query.operand.function.string.UpperFunction;
  * <i>
  * <p><b>Example:</b></p>
  * <p>To support the optional function <code>LOWER</code>:</p>
- * <pre>myFeatureSet.{@link #support(LanguageFeature) support}({@link LowerFunction#FEATURE FEATURE});</pre>
+ * <pre>myFeatureSet.{@link #support(LanguageFeature) support}({@link LowerFunction#FEATURE});</pre>
  * <p>And for the geometric function <code>POLYGON</code>:</p>
- * <pre>myFeatureSet.{@link #support(LanguageFeature) support}({@link PolygonFunction#FEATURE FEATURE});</pre>
+ * <pre>myFeatureSet.{@link #support(LanguageFeature) support}({@link PolygonFunction#FEATURE});</pre>
  * </i>
  *
  * <h3>(Un-)Support all available features</h3>
@@ -119,38 +122,8 @@ import adql.query.operand.function.string.UpperFunction;
  * 	added individually in the {@link FeatureSet}.
  * </i></p>
  *
- * <h3>Special case of User Defined Functions (UDFs)</h3>
- *
- * <p>
- * 	UDFs are also optional features. However, it is not possible to have a list
- * 	of available UDFs....indeed, by definition they are <i>user defined</i>.
- * 	Consequently, supported UDFs must be explicitly declared.
- * </p>
- *
- * <p>
- * 	However, it is often useful (e.g. when just checking the ADQL syntax
- * 	of a query) to not raise errors when non-declared UDFs are encountered.
- * 	For that reason, there is a special option inside this {@link FeatureSet} to
- * 	allow/forbid non-declared UDFs. This option/flag has just an impact on the
- * 	result of the function {@link #isSupporting(LanguageFeature)} ; it is not
- * 	visible in any of the {@link #getSupportedFeatures()} functions.
- * </p>
- *
- * <p>
- * 	This flag can be checked with {@link #isAnyUdfAllowed()} and can be changed
- * 	with any of the following functions:
- * </p>
- * <ul>
- * 	<li>{@link #allowAnyUdf(boolean)},</li>
- * 	<li>{@link #supportAll()},</li>
- * 	<li>{@link #supportAll(String)} with {@link LanguageFeature#TYPE_UDF},</li>
- * 	<li>{@link #unsupportAll()},</li>
- * 	<li>{@link #unsupportAll(String)} with {@link LanguageFeature#TYPE_UDF},</li>
- * 	<li>and any of the constructors.</li>
- * </ul>
- *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (01/2021)
+ * @version 2.0 (04/2021)
  * @since 2.0
  */
 public class FeatureSet implements Iterable<LanguageFeature> {
@@ -158,16 +131,8 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/** Set of all supported features. */
 	protected final Map<String, Set<LanguageFeature>> supportedFeatures;
 
-	/** Indicate whether any UDF (even if not declared) should be considered as
-	 * supported. */
-	protected boolean anyUdfAllowed = false;
-
 	/**
 	 * Create a feature set with all available features supported by default.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	With this constructor, non-declared UDFs will be considered as supported.
-	 * </i></p>
 	 */
 	public FeatureSet() {
 		this(true);
@@ -177,74 +142,20 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * Create a feature set will all available features supported or not,
 	 * depending of the given boolean parameter.
 	 *
-	 * <i>
-	 * <p><b>Note:</b>
-	 * 	With this constructor, non-declared UDFs will be considered as supported
-	 * 	or not depending on the given parameter:
-	 * </p>
-	 * <ul>
-	 * 	<li><code>true</code> will support all available features and will allow
-	 * 		non-declared UDFs,</li>
-	 * 	<li><code>false</code> will un-support all available features and will
-	 * 		forbid non-declared UDFs.</li>
-	 * </ul>
-	 * </i>
-	 *
 	 * @param allSupported	<code>true</code> to support all available features,
 	 *                    	<code>false</code> to not support any.
 	 */
 	public FeatureSet(final boolean allSupported) {
-		this(allSupported, allSupported);
-	}
-
-	/**
-	 * Create a feature set will all available features supported or not,
-	 * depending of the given boolean parameter.
-	 *
-	 * @param allSupported	<code>true</code> to support all available features,
-	 *                    	<code>false</code> to not support any.
-	 * @param allowAnyUdf	<code>true</code> to support any UDF (even if not
-	 *                   	declared),
-	 *                   	<code>false</code> to force declaration of supported
-	 *                   	UDFs.
-	 */
-	public FeatureSet(final boolean allSupported, final boolean allowAnyUdf) {
 		// Init. the list of supported features:
 		supportedFeatures = new HashMap<>();
 
 		// If asked, support all available features:
 		if (allSupported)
 			supportAll();
-
-		// If asked, allow any UDF:
-		this.anyUdfAllowed = allowAnyUdf;
 	}
 
 	/**
-	 * Let specify whether any UDF (even if not declared) should be considered
-	 * as supported or not. If not, UDFs must be explicitly declared to be
-	 * considered as supported (as any other optional language feature).
-	 *
-	 * @param allowed	<code>true</code> to support any UDF,
-	 *               	<code>false</code> to force the declaration of supported
-	 *               	UDFs.
-	 */
-	public void allowAnyUdf(final boolean allowed) {
-		this.anyUdfAllowed = allowed;
-	}
-
-	/**
-	 * Tell whether UDFs are considered as supported even if undeclared.
-	 *
-	 * @return	<code>true</code> if any UDF is considered as supported,
-	 *        	<code>false</code> if supported UDFs must be explicitly declared.
-	 */
-	public boolean isAnyUdfAllowed() {
-		return anyUdfAllowed;
-	}
-
-	/**
-	 * Support the given feature.
+	 * Support the given optional feature.
 	 *
 	 * <i>
 	 * <p><b>Warning:</b>
@@ -261,7 +172,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * </p>
 	 * </i>
 	 *
-	 * @param feature	The language feature to support.
+	 * @param feature	The optional language feature to support.
 	 *
 	 * @return	<code>true</code> if this set already/from now supporting the
 	 *        	given feature,
@@ -288,12 +199,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	}
 
 	/**
-	 * Support all the features of the given type.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	If the given type is {@link LanguageFeature#TYPE_UDF}, then any
-	 * 	UDF (event if not declared) is considered as supported.
-	 * </i></p>
+	 * Support all the optional features of the given type.
 	 *
 	 * @param type	The type of language features to support.
 	 *
@@ -307,42 +213,26 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	public final boolean supportAll(final String type) {
 		boolean done = false;
 		if (type != null) {
-
-			// CASE: UDF
-			if (LanguageFeature.TYPE_UDF.equals(type))
-				done = anyUdfAllowed = true;
-
-			// OTHERWISE
-			else {
-				for(LanguageFeature feature : availableFeatures) {
-					if (feature.type == type)
-						done = support(feature) || done;
-				}
+			for(LanguageFeature feature : availableFeatures) {
+				if (feature.type == type)
+					done = support(feature) || done;
 			}
 		}
 		return done;
 	}
 
 	/**
-	 * Support all available features.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	This function also allows non-declared UDFs.
-	 * </i></p>
+	 * Support all available optional features.
 	 *
 	 * @see #getAvailableFeatures()
 	 */
 	public final void supportAll() {
-		// support all available features:
 		for(LanguageFeature feature : availableFeatures)
 			support(feature);
-
-		// also allow non-declared UDFs:
-		anyUdfAllowed = true;
 	}
 
 	/**
-	 * Un-support the given feature.
+	 * Un-support the given optional feature.
 	 *
 	 * <i>
 	 * <p><b>Warning:</b>
@@ -359,7 +249,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * </p>
 	 * </i>
 	 *
-	 * @param feature	The language feature to un-support.
+	 * @param feature	The optional language feature to un-support.
 	 *
 	 * @return	<code>true</code> if this set already/from now un-supporting the
 	 *        	given feature,
@@ -389,12 +279,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	}
 
 	/**
-	 * Un-support all the features of the given type.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	If the given type is {@link LanguageFeature#TYPE_UDF}, then supported
-	 * 	UDFs must be explicitly declared.
-	 * </i></p>
+	 * Un-support all the optional features of the given type.
 	 *
 	 * @param type	The type of language features to un-support.
 	 *
@@ -408,17 +293,9 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	public final boolean unsupportAll(final String type) {
 		boolean done = false;
 		if (type != null) {
-
-			// CASE: UDF
-			if (LanguageFeature.TYPE_UDF.equals(type))
-				done = !(anyUdfAllowed = false);
-
-			// OTHERWISE
-			else {
-				for(LanguageFeature feature : availableFeatures) {
-					if (feature.type == type)
-						done = unsupport(feature) || done;
-				}
+			for(LanguageFeature feature : availableFeatures) {
+				if (feature.type == type)
+					done = unsupport(feature) || done;
 			}
 		}
 		return done;
@@ -427,23 +304,16 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	/**
 	 * Un-support all available features.
 	 *
-	 * <p><i><b>Note:</b>
-	 * 	This function also forbids non-declared UDFs.
-	 * </i></p>
-	 *
 	 * @see #getAvailableFeatures()
 	 */
 	public final void unsupportAll() {
-		// unsupport all features currently supported:
 		for(LanguageFeature feature : this)
 			unsupport(feature);
-
-		// also unsupport any UDF:
-		anyUdfAllowed = false;
 	}
 
 	/**
-	 * Tell whether the given feature is marked as supported by this set.
+	 * Tell whether the given optional feature is marked as supported by this
+	 * set.
 	 *
 	 * <i>
 	 * <p><b>Warning:</b>
@@ -460,7 +330,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * </p>
 	 * </i>
 	 *
-	 * @param feature	The feature to test.
+	 * @param feature	The optional feature to test.
 	 *
 	 * @return	<code>true</code> if supported according to this set,
 	 *        	<code>false</code> otherwise.
@@ -470,17 +340,10 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 		if (feature == null || feature.type == null || !feature.optional)
 			return false;
 
-		// CASE: ANY UDF
-		if (anyUdfAllowed && LanguageFeature.TYPE_UDF.equals(feature.type))
-			return true;
+		// Get the corresponding Set of features:
+		Set<LanguageFeature> features = supportedFeatures.get(feature.type);
 
-		// OTHERWISE
-		else {
-			// Get the corresponding Set of features:
-			Set<LanguageFeature> features = supportedFeatures.get(feature.type);
-
-			return (features != null && features.contains(feature));
-		}
+		return (features != null && features.contains(feature));
 	}
 
 	/**
@@ -565,7 +428,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	public final Collection<FunctionDef> getSupportedUDFList() {
 		Set<LanguageFeature> supportedUDFs = supportedFeatures.get(LanguageFeature.TYPE_UDF);
 		if (supportedUDFs != null) {
-			Set<FunctionDef> definitions = new HashSet<FunctionDef>(supportedUDFs.size());
+			ArrayList<FunctionDef> definitions = new ArrayList<FunctionDef>(supportedUDFs.size());
 			for(LanguageFeature feature : supportedUDFs)
 				definitions.add(feature.udfDefinition);
 			return definitions;
@@ -581,9 +444,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 
 	/*public static final LanguageFeature UNION = new LanguageFeature(FeatureType.ADQL_SETS, "UNION"); // TODO UNION
 	public static final LanguageFeature EXCEPT = new LanguageFeature(FeatureType.ADQL_SETS, "EXCEPT"); // TODO EXCEPT
-	public static final LanguageFeature INTERSECT = new LanguageFeature(FeatureType.ADQL_SETS, "INTERSECT");  // TODO INTERSECT
-	
-	public static final LanguageFeature CAST = new LanguageFeature(FeatureType.ADQL_TYPE, "CAST");  // TODO CAST*/
+	public static final LanguageFeature INTERSECT = new LanguageFeature(FeatureType.ADQL_SETS, "INTERSECT");  // TODO INTERSECT*/
 
 	/** All standard features available.
 	 * <p>
@@ -595,7 +456,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * <p><i><b>Important note:</b>
 	 * 	All of them must be optional and must have a type.
 	 * </i></p> */
-	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ WithItem.FEATURE, InUnitFunction.FEATURE, ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, UpperFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
+	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ CastFunction.FEATURE, WithItem.FEATURE, InUnitFunction.FEATURE, ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, UpperFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
 
 	/**
 	 * List all available language features.

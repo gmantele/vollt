@@ -1,10 +1,29 @@
-apply plugin: 'java'
-apply plugin: 'war'
+plugins {
+	id 'java'
+	id 'war'
+	id 'com.intershop.gradle.javacc' version '4.0.0'
+}
 
 repositories {
     jcenter()
     mavenCentral()
     mavenLocal()
+}
+
+javacc {
+    configs {
+
+        javaCCVersion = '7.0.10'
+
+        adqlGrammar200 {
+            inputFile = file('src/adql/parser/grammar/adqlGrammar200.jj')
+            outputDir = file('src/adql/parser/grammar/')
+        }
+        adqlGrammar201 {
+            inputFile = file('src/adql/parser/grammar/adqlGrammar201.jj')
+            outputDir = file('src/adql/parser/grammar/')
+        }
+    }
 }
 
 dependencies {

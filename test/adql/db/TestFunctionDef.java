@@ -2,7 +2,6 @@ package adql.db;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -30,10 +29,10 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testIsString(){
+	public void testIsString() {
 		try {
-			for(DBDatatype type : DBDatatype.values()){
-				switch(type){
+			for(DBDatatype type : DBDatatype.values()) {
+				switch(type) {
 					case CHAR:
 					case VARCHAR:
 					case TIMESTAMP:
@@ -51,10 +50,10 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testIsGeometry(){
+	public void testIsGeometry() {
 		try {
-			for(DBDatatype type : DBDatatype.values()){
-				switch(type){
+			for(DBDatatype type : DBDatatype.values()) {
+				switch(type) {
 					case POINT:
 					case REGION:
 						assertTrue(new FunctionDef("foo", new DBType(type)).isGeometry);
@@ -70,10 +69,10 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testIsNumeric(){
+	public void testIsNumeric() {
 		try {
-			for(DBDatatype type : DBDatatype.values()){
-				switch(type){
+			for(DBDatatype type : DBDatatype.values()) {
+				switch(type) {
 					case CHAR:
 					case VARCHAR:
 					case TIMESTAMP:
@@ -95,14 +94,14 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testToString(){
+	public void testToString() {
 		try {
 			assertEquals("fct1()", new FunctionDef("fct1").toString());
 			assertEquals("fct1() -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR)).toString());
-			assertEquals("fct1(foo DOUBLE) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE))}).toString());
-			assertEquals("fct1(foo DOUBLE)", new FunctionDef("fct1", new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE))}).toString());
-			assertEquals("fct1(foo DOUBLE, pt POINT) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)),new FunctionParam("pt", new DBType(DBDatatype.POINT))}).toString());
-			assertEquals("fct1(foo DOUBLE, pt POINT)", new FunctionDef("fct1", null, new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)),new FunctionParam("pt", new DBType(DBDatatype.POINT))}).toString());
+			assertEquals("fct1(foo DOUBLE) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)) }).toString());
+			assertEquals("fct1(foo DOUBLE)", new FunctionDef("fct1", new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)) }).toString());
+			assertEquals("fct1(foo DOUBLE, pt POINT) -> VARCHAR", new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)), new FunctionParam("pt", new DBType(DBDatatype.POINT)) }).toString());
+			assertEquals("fct1(foo DOUBLE, pt POINT)", new FunctionDef("fct1", null, new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.DOUBLE)), new FunctionParam("pt", new DBType(DBDatatype.POINT)) }).toString());
 		} catch(ParseException pe) {
 			pe.printStackTrace();
 			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
@@ -155,6 +154,10 @@ public class TestFunctionDef {
 					case BINARY:
 					case VARBINARY:
 						assertEquals("foo() -> " + t.toString() + "(10)", FunctionDef.parse("foo() -> " + t.toString() + "(10)").toString());
+						break;
+					case UNKNOWN:
+					case UNKNOWN_NUMERIC:
+						assertEquals("foo() -> ?custom?(10)", FunctionDef.parse("foo() -> custom(10)").toString());
 						break;
 					default:
 						assertEquals("foo() -> " + t.toString(), FunctionDef.parse("foo() -> " + t.toString() + "(10)").toString());
@@ -232,7 +235,8 @@ public class TestFunctionDef {
 			assertFalse(fct.isString);
 			assertFalse(fct.isNumeric);
 			assertFalse(fct.isGeometry);
-			assertEquals("?aType(10)?", fct.returnType.type.toString());
+			assertEquals("?aType?", fct.returnType.type.toString());
+			assertEquals(10, fct.returnType.length);
 		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unknown types MUST be allowed!");
@@ -292,7 +296,7 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testCompareToFunctionDef(){
+	public void testCompareToFunctionDef() {
 		try {
 			// DEFINITION 1 :: fct1() -> VARCHAR
 			FunctionDef def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
@@ -307,16 +311,16 @@ public class TestFunctionDef {
 			assertEquals(0, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER))));
 
 			// TEST :: With a function having the same name, but 2 parameters: [LESS (6 characters: ø against 100100)]
-			assertEquals(-6, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER), new FunctionParam[]{new FunctionParam("foo", new DBType(DBDatatype.INTEGER)),new FunctionParam("foo", new DBType(DBDatatype.INTEGER))})));
+			assertEquals(-6, def1.compareTo(new FunctionDef("fct1", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("foo", new DBType(DBDatatype.INTEGER)), new FunctionParam("foo", new DBType(DBDatatype.INTEGER)) })));
 
 			// DEFINITION 1 :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-			def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
+			def1 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
 
 			// TEST :: Identity test (def1 with def1): [EQUAL]
 			assertEquals(0, def1.compareTo(def1));
 
 			// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 VARCHAR) -> VARCHAR
-			FunctionDef def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.VARCHAR))});
+			FunctionDef def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.VARCHAR)) });
 
 			// TEST :: Identity test (def2 with def2): [EQUAL]
 			assertEquals(0, def2.compareTo(def2));
@@ -325,7 +329,7 @@ public class TestFunctionDef {
 			assertEquals(1, def1.compareTo(def2));
 
 			// DEFINITION 2 :: fct2(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-			def2 = new FunctionDef("fct2", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
+			def2 = new FunctionDef("fct2", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
 
 			// TEST :: Identity test (def2 with def2): [EQUAL]
 			assertEquals(0, def2.compareTo(def2));
@@ -334,7 +338,7 @@ public class TestFunctionDef {
 			assertEquals(-1, def1.compareTo(def2));
 
 			// DEFINITION 2 :: fct1(foo1 CHAR(12), foo2 POINT) -> VARCHAR
-			def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.POINT))});
+			def2 = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.POINT)) });
 
 			// TEST :: Identity test (def2 with def2): [EQUAL]
 			assertEquals(0, def2.compareTo(def2));
@@ -348,54 +352,54 @@ public class TestFunctionDef {
 	}
 
 	@Test
-	public void testCompareToADQLFunction(){
+	public void testCompareToADQLFunction() {
 		try {
-		// DEFINITION :: fct1() -> VARCHAR
-		FunctionDef def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
+			// DEFINITION :: fct1() -> VARCHAR
+			FunctionDef def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR));
 
-		// TEST :: NULL:
-		try{
-			def.compareTo((ADQLFunction)null);
-			fail("Missing ADQL function for comparison with FunctionDef!");
-		}catch(Exception e){
-			assertTrue(e instanceof NullPointerException);
-			assertEquals("Missing ADQL function with which comparing this function definition!", e.getMessage());
-		}
+			// TEST :: NULL:
+			try {
+				def.compareTo((ADQLFunction)null);
+				fail("Missing ADQL function for comparison with FunctionDef!");
+			} catch(Exception e) {
+				assertTrue(e instanceof NullPointerException);
+				assertEquals("Missing ADQL function with which comparing this function definition!", e.getMessage());
+			}
 
-		// TEST :: "fct1()": [EQUAL]
-		assertEquals(0, def.compareTo(new DefaultUDF("fct1", null)));
+			// TEST :: "fct1()": [EQUAL]
+			assertEquals(0, def.compareTo(new DefaultUDF("fct1", null)));
 
-		// TEST :: "fct0()": [GREATER]
-		assertEquals(1, def.compareTo(new DefaultUDF("fct0", null)));
+			// TEST :: "fct0()": [GREATER]
+			assertEquals(1, def.compareTo(new DefaultUDF("fct0", null)));
 
-		// TEST :: "fct1(12.3, 3.14)": [LESS (of 2 params)]
-		assertEquals(-2, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new NumericConstant(12.3),new NumericConstant(3.14)})));
+			// TEST :: "fct1(12.3, 3.14)": [LESS (of 2 params)]
+			assertEquals(-2, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new NumericConstant(12.3), new NumericConstant(3.14) })));
 
-		// DEFINITION :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
-		def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)),new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE))});
+			// DEFINITION :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
+			def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
 
-		// TEST :: "fct1('blabla', 'blabla2')": [GREATER (because the second param is numeric and Numeric = 10 > String = 01)]
-		assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new StringConstant("blabla"),new StringConstant("blabla2")})));
+			// TEST :: "fct1('blabla', 'blabla2')": [GREATER (because the second param is numeric and Numeric = 10 > String = 01)]
+			assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new StringConstant("blabla2") })));
 
-		// TEST :: "fct1('blabla', POINT('COORDSYS', 1.2, 3.4))": [GREATER (same reason ; POINT is considered as a String)]
-		try{
-			assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{new StringConstant("blabla"),new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4))})));
-		}catch(Exception e){
-			e.printStackTrace();
-			fail();
-		}
+			// TEST :: "fct1('blabla', POINT('COORDSYS', 1.2, 3.4))": [GREATER (same reason ; POINT is considered as a String)]
+			try {
+				assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4)) })));
+			} catch(Exception e) {
+				e.printStackTrace();
+				fail();
+			}
 
-		// Test with an UNKNOWN numeric type:
-		// TEST :: "fct0(foo)", where foo is a simple UNKNOWN [EQUAL]
-		FunctionDef def0 = new FunctionDef("fct0", null, new FunctionParam[]{new FunctionParam("whatever", new DBType(DBDatatype.VARCHAR))});
-		DefaultDBColumn dbcol = new DefaultDBColumn("foo", new DefaultDBTable("toto"));
-		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN));
-		ADQLColumn col = new ADQLColumn("foo");
-		col.setDBLink(dbcol);
-		assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
-		// TEST :: "fct0(foo)", where foo is an UNKNOWN NUMERIC [LESS]
-		dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN_NUMERIC));
-		assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{col})));
+			// Test with an UNKNOWN numeric type:
+			// TEST :: "fct0(foo)", where foo is a simple UNKNOWN [EQUAL]
+			FunctionDef def0 = new FunctionDef("fct0", null, new FunctionParam[]{ new FunctionParam("whatever", new DBType(DBDatatype.VARCHAR)) });
+			DefaultDBColumn dbcol = new DefaultDBColumn("foo", new DefaultDBTable("toto"));
+			dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN));
+			ADQLColumn col = new ADQLColumn("foo");
+			col.setDBLink(dbcol);
+			assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
+			// TEST :: "fct0(foo)", where foo is an UNKNOWN NUMERIC [LESS]
+			dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN_NUMERIC));
+			assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
 			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");

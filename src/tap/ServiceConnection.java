@@ -682,6 +682,23 @@ public interface ServiceConnection {
 
 	/**
 	 * <i>[OPTIONAL]</i>
+	 * <p>
+	 * 	Tell whether the REGION(...) only accepts a string literal as
+	 * 	parameter (standard and default behavior) or not (i.e. any special
+	 * 	syntax and any kind of string expression is allowed).
+	 * </p>
+	 *
+	 * @return	<code>true</code> if any syntax or any kind of string expression
+	 *        	is allowed,
+	 *        	<code>false</code> if only string literal (using DALI or STC/s
+	 *        	syntax) is allowed.
+	 *
+	 * @since 2.4
+	 */
+	public boolean isExtendedRegionExpressionAllowed();
+
+	/**
+	 * <i>[OPTIONAL]</i>
 	 * <p>Get the list of all allowed User Defined Functions (UDFs).</p>
 	 *
 	 * <u><b>Special values</b></u>

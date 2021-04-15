@@ -28,22 +28,22 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	private List<OutputFormat> outputFormats = Arrays.asList(new OutputFormat[]{ new VOTableFormat(this), new SVFormat(this, SVFormat.COMMA_SEPARATOR), new FITSFormat(this) });
 
 	@Override
-	public String getProviderName(){
+	public String getProviderName() {
 		return null;
 	}
 
 	@Override
-	public String getProviderDescription(){
+	public String getProviderDescription() {
 		return null;
 	}
 
 	@Override
-	public boolean isAvailable(){
+	public boolean isAvailable() {
 		return available;
 	}
 
 	@Override
-	public void setAvailable(boolean isAvailable, String message){
+	public void setAvailable(boolean isAvailable, String message) {
 		available = isAvailable;
 		if (message != null)
 			availability = message;
@@ -52,117 +52,122 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	}
 
 	@Override
-	public String getAvailability(){
+	public String getAvailability() {
 		return availability;
 	}
 
 	@Override
-	public int[] getRetentionPeriod(){
+	public int[] getRetentionPeriod() {
 		return retentionPeriod;
 	}
 
-	public void setRetentionPeriod(final int defaultVal, final int maxVal){
+	public void setRetentionPeriod(final int defaultVal, final int maxVal) {
 		retentionPeriod[0] = defaultVal;
 		retentionPeriod[1] = maxVal;
 	}
 
 	@Override
-	public int[] getExecutionDuration(){
+	public int[] getExecutionDuration() {
 		return executionDuration;
 	}
 
-	public void setExecutionDuration(final int defaultVal, final int maxVal){
+	public void setExecutionDuration(final int defaultVal, final int maxVal) {
 		executionDuration[0] = defaultVal;
 		executionDuration[1] = maxVal;
 	}
 
 	@Override
-	public int[] getOutputLimit(){
+	public int[] getOutputLimit() {
 		return outputLimit;
 	}
 
-	public void setOutputLimit(final int defaultVal, final int maxVal){
+	public void setOutputLimit(final int defaultVal, final int maxVal) {
 		outputLimit[0] = defaultVal;
 		outputLimit[1] = maxVal;
 	}
 
 	@Override
-	public LimitUnit[] getOutputLimitType(){
+	public LimitUnit[] getOutputLimitType() {
 		return new LimitUnit[]{ LimitUnit.rows, LimitUnit.rows };
 	}
 
 	@Override
-	public UserIdentifier getUserIdentifier(){
+	public UserIdentifier getUserIdentifier() {
 		return null;
 	}
 
 	@Override
-	public boolean uploadEnabled(){
+	public boolean uploadEnabled() {
 		return false;
 	}
 
 	@Override
-	public long[] getUploadLimit(){
+	public long[] getUploadLimit() {
 		return null;
 	}
 
 	@Override
-	public LimitUnit[] getUploadLimitType(){
+	public LimitUnit[] getUploadLimitType() {
 		return null;
 	}
 
 	@Override
-	public long getMaxUploadSize(){
+	public long getMaxUploadSize() {
 		return 0L;
 	}
 
 	@Override
-	public TAPMetadata getTAPMetadata(){
+	public TAPMetadata getTAPMetadata() {
 		return null;
 	}
 
 	@Override
-	public Collection<String> getCoordinateSystems(){
+	public Collection<String> getCoordinateSystems() {
 		return null;
 	}
 
 	@Override
-	public Collection<String> getGeometries(){
+	public Collection<String> getGeometries() {
 		return null;
 	}
 
 	@Override
-	public Collection<FunctionDef> getUDFs(){
+	public boolean isExtendedRegionExpressionAllowed() {
+		return false;
+	}
+
+	@Override
+	public Collection<FunctionDef> getUDFs() {
 		return null;
 	}
 
 	@Override
-	public int getNbMaxAsyncJobs(){
+	public int getNbMaxAsyncJobs() {
 		return 0;
 	}
 
 	@Override
-	public TAPLog getLogger(){
+	public TAPLog getLogger() {
 		return null;
 	}
 
 	@Override
-	public TAPFactory getFactory(){
+	public TAPFactory getFactory() {
 		return null;
 	}
 
 	@Override
-	public UWSFileManager getFileManager(){
+	public UWSFileManager getFileManager() {
 		return null;
 	}
 
 	@Override
-	public Iterator<OutputFormat> getOutputFormats(){
+	public Iterator<OutputFormat> getOutputFormats() {
 		return outputFormats.iterator();
 	}
 
 	@Override
-	public OutputFormat getOutputFormat(String mimeOrAlias){
+	public OutputFormat getOutputFormat(String mimeOrAlias) {
 		for(OutputFormat f : outputFormats)
 			if (f.getMimeType().equalsIgnoreCase(mimeOrAlias) || f.getShortMimeType().equalsIgnoreCase(mimeOrAlias))
 				return f;
@@ -170,12 +175,12 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 	}
 
 	@Override
-	public int[] getFetchSize(){
+	public int[] getFetchSize() {
 		return null;
 	}
 
 	@Override
-	public boolean fixOnFailEnabled(){
+	public boolean fixOnFailEnabled() {
 		return false;
 	}
 

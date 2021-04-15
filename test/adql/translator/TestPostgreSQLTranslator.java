@@ -73,11 +73,8 @@ public class TestPostgreSQLTranslator {
 		// TEST: Not NULL:
 		assertNotNull(supportedFeatures);
 
-		// TEST: Any UDF should be allowed, by default:
-		assertTrue(supportedFeatures.isAnyUdfAllowed());
-
 		// Create the list of all expected supported features:
-		final FeatureSet expectedFeatures = new FeatureSet(true, true);
+		final FeatureSet expectedFeatures = new FeatureSet(true);
 		expectedFeatures.unsupportAll(LanguageFeature.TYPE_ADQL_GEO);
 		expectedFeatures.unsupport(InUnitFunction.FEATURE);
 

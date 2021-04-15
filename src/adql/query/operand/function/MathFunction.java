@@ -16,7 +16,7 @@ package adql.query.operand.function;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -29,7 +29,7 @@ import adql.query.operand.ADQLOperand;
  * It represents any basic mathematical function.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (04/2021)
  *
  * @see MathFunctionType
  */
@@ -99,9 +99,9 @@ public class MathFunction extends ADQLFunction {
 					case 0:
 						throw new Exception("The function " + type.name() + " must have no parameter!");
 					case 1:
-						throw new Exception("The function " + type.name() + " must have only one parameter!");
-					case 2:
-						throw new Exception("The function " + type.name() + " must have two parameters!");
+						throw new Exception("The function " + type.name() + " may have up to only one parameter!");
+					default:
+						throw new Exception("The function " + type.name() + " may have between " + type.nbMinParams() + " and " + type.nbMaxParams() + " parameters!");
 				}
 			}
 		}

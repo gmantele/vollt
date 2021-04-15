@@ -886,6 +886,38 @@
 				<td><ul><li>ø <em>(default)</em></li><li>NONE</li><li>CONTAINS, intersects, Point, Box, CIRCLE</li></ul></td>
 			</tr>
 			<tr class="optional">
+				<td class="done">extendedRegionExpression</td>
+				<td></td>
+				<td>boolean</td>
+				<td>
+					<p>
+						In the strict ADQL language, the function <code>REGION(...)</code> only accepts a string
+						literal as parameter. In such cases, VOLLT automatically parses this string
+						literal parameter (using DALI or STC/s serialization) and then translates the whole
+						<code>REGION(...)</code> function into the corresponding geometry expression, so that no
+						implementation of <code>REGION(...)</code> is required in the database.
+					</p>
+					<p> 
+						However, some database implementations may already support the <code>REGION(...)</code>
+						function and may be interested by accepting any kind of string expression
+						(e.g. string column, concatenation or function) instead of only a string
+						literal, or by supporting a different or more syntaxes. Though it is not
+						strictly part of the ADQL language it is possible to allow this extension in
+						the ADQL parser. For that, set the property <code>extendedRegionExpression</code> to
+						<code>true</code>.
+					</p>
+					<p>
+						When this feature is enabled, the string literal parameter is no longer
+						checked by the VOLLT's ADQL parser and the <code>REGION(...)</code> function is merely
+						translated as in ADQL. An overwrite of the default translation of this
+						function may then be required (see
+						<a href="https://cdsportal.u-strasbg.fr/adqltuto/javadoc/adql/translator/ADQLTranslator.html#translate-adql.query.operand.function.geometry.RegionFunction-">ADQLTranslator.translate(RegionFunction)</a>).
+					</p>
+					<p><em>By default, only a string literal is allowed.</em></p>
+				</td>
+				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
+			</tr>
+			<tr class="optional">
 				<td class="done">udfs</td>
 				<td></td>
 				<td>text</td>

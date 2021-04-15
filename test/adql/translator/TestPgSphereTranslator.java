@@ -19,7 +19,7 @@ import org.postgresql.util.PGobject;
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.STCS.Region;
+import adql.db.region.Region;
 import adql.parser.ADQLParser;
 import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
@@ -398,11 +398,8 @@ public class TestPgSphereTranslator {
 		// TEST: Not NULL:
 		assertNotNull(supportedFeatures);
 
-		// TEST: Any UDF should be allowed, by default:
-		assertTrue(supportedFeatures.isAnyUdfAllowed());
-
 		// Create the list of all expected supported features:
-		final FeatureSet expectedFeatures = new FeatureSet(true, true);
+		final FeatureSet expectedFeatures = new FeatureSet(true);
 		expectedFeatures.unsupport(InUnitFunction.FEATURE);
 
 		// TEST: same number of features:

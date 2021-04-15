@@ -21,7 +21,7 @@ package tap.config;
  */
 
 import adql.db.FunctionDef;
-import adql.db.STCS;
+import adql.db.region.CoordSys;
 import adql.parser.grammar.ParseException;
 import adql.query.operand.function.UserDefinedFunction;
 import tap.ServiceConnection;
@@ -153,6 +153,11 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private ArrayList<String> geometries = null;
 	private final String GEOMETRY_REGEXP = "(AREA|BOX|CENTROID|CIRCLE|CONTAINS|DISTANCE|COORD1|COORD2|COORDSYS|INTERSECTS|POINT|POLYGON|REGION)";
 
+	/** Indicated whether only a string literal is allowed as parameter of
+	 * REGION(...) (default) or not.
+	 * @since 2.4 */
+	private boolean isExtendedRegionExpressionAllowed = false;
+
 	/** List of all known and allowed User Defined Functions.
 	 * <em>If NULL, any unknown function is allowed. If empty list, none is
 	 * allowed.</em> */
@@ -237,6 +242,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		// 10. CONFIGURE ADQL:
 		initCoordSys(tapConfig);
 		initADQLGeometries(tapConfig);
+		isExtendedRegionExpressionAllowed = Boolean.parseBoolean(getProperty(tapConfig, KEY_EXTENDED_REGION_EXPRESSION));
 		initUDFs(tapConfig);
 		isFixOnFailEnabled = Boolean.parseBoolean(getProperty(tapConfig, KEY_FIX_ON_FAIL));
 
@@ -1101,7 +1107,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 					// parse the coordinate system regular expression in order to check it:
 					else {
 						try {
-							STCS.buildCoordSysRegExp(new String[]{ item });
+							CoordSys.buildCoordSysRegExp(new String[]{ item });
 							lstCoordSys.add(item);
 						} catch(ParseException pe) {
 							throw new TAPException("Incorrect coordinate system regular expression (\"" + item + "\"): " + pe.getMessage(), pe);
@@ -1736,6 +1742,11 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	@Override
 	public Collection<String> getGeometries() {
 		return geometries;
+	}
+
+	@Override
+	public boolean isExtendedRegionExpressionAllowed() {
+		return isExtendedRegionExpressionAllowed;
 	}
 
 	@Override

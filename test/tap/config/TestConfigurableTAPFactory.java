@@ -70,7 +70,7 @@ public class TestConfigurableTAPFactory {
 
 	private static ServiceConnection serviceConnection = null;
 
-	private static void setJNDIDatasource() throws NamingException{
+	private static void setJNDIDatasource() throws NamingException {
 		// Create an initial JNDI context:
 		/* note: this requires that the simple-jndi jar is in the classpath. (https://code.google.com/p/osjava/downloads/detail?name=simple-jndi-0.11.4.1.zip&can=2&q=) */
 		System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.osjava.sj.memory.MemoryContextFactory");
@@ -90,7 +90,7 @@ public class TestConfigurableTAPFactory {
 	}
 
 	@BeforeClass
-	public static void beforeClass() throws Exception{
+	public static void beforeClass() throws Exception {
 		// BUILD A FAKE SERVICE CONNECTION:
 		serviceConnection = new ServiceConnectionTest();
 
@@ -163,141 +163,141 @@ public class TestConfigurableTAPFactory {
 	}
 
 	@AfterClass
-	public static void tearDownAfterClass() throws Exception{
+	public static void tearDownAfterClass() throws Exception {
 		DBTools.dropTestDB();
 	}
 
 	@Test
-	public void testDefaultServiceConnection(){
+	public void testDefaultServiceConnection() {
 		// Correct Parameters (JDBC CASE):
 		DBConnection connection = null;
-		try{
+		try {
 			TAPFactory factory = new ConfigurableTAPFactory(serviceConnection, validJDBCProp);
 			connection = factory.getConnection("0");
 			assertNotNull(connection);
 			assertNull(factory.createUWSBackupManager(new UWSService(factory, new LocalUWSFileManager(new File(".")))));
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			fail(getPertinentMessage(ex));
-		}finally{
-			if (connection != null){
-				try{
+		} finally {
+			if (connection != null) {
+				try {
 					((JDBCConnection)connection).getInnerConnection().close();
 					connection = null;
-				}catch(SQLException se){
+				} catch(SQLException se) {
 				}
 			}
 		}
 
 		// Correct Parameters (JNDI CASE):
-		try{
+		try {
 			TAPFactory factory = new ConfigurableTAPFactory(serviceConnection, validJNDIProp);
 			connection = factory.getConnection("0");
 			assertNotNull(connection);
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			fail(getPertinentMessage(ex));
-		}finally{
-			if (connection != null){
-				try{
+		} finally {
+			if (connection != null) {
+				try {
 					((JDBCConnection)connection).getInnerConnection().close();
 					connection = null;
-				}catch(SQLException se){
+				} catch(SQLException se) {
 				}
 			}
 		}
 
 		// Incorrect database access method:
-		try{
+		try {
 			new ConfigurableServiceConnection(incorrectDBAccessProp);
 			fail("This MUST have failed because the value of the property '" + KEY_DATABASE_ACCESS + "' is incorrect!");
-		}catch(Exception e){
+		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("Unsupported value for the property " + KEY_DATABASE_ACCESS + ": \"foo\"! Allowed values: \"" + VALUE_JNDI + "\" or \"" + VALUE_JDBC + "\".", e.getMessage());
 		}
 
 		// Missing database access method:
-		try{
+		try {
 			new ConfigurableServiceConnection(missingDBAccessProp);
 			fail("This MUST have failed because the property '" + KEY_DATABASE_ACCESS + "' is missing!");
-		}catch(Exception e){
+		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("The property \"" + KEY_DATABASE_ACCESS + "\" is missing! It is required to connect to the database. Two possible values: \"" + VALUE_JDBC + "\" and \"" + VALUE_JNDI + "\".", e.getMessage());
 		}
 
 		// Missing JNDI name:
-		try{
+		try {
 			new ConfigurableServiceConnection(missingDatasourceJNDINameProp);
 			fail("This MUST have failed because the property '" + KEY_DATASOURCE_JNDI_NAME + "' is missing!");
-		}catch(Exception e){
+		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("The property \"" + KEY_DATASOURCE_JNDI_NAME + "\" is missing! Since the choosen database access method is \"" + VALUE_JNDI + "\", this property is required.", e.getMessage());
 		}
 
 		// Wrong JNDI name:
-		try{
+		try {
 			new ConfigurableServiceConnection(wrongDatasourceJNDINameProp);
 			fail("This MUST have failed because the value of the property '" + KEY_DATASOURCE_JNDI_NAME + "' is incorrect!");
-		}catch(Exception e){
+		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
 			assertEquals("No datasource found with the JNDI name \"foo\"!", e.getMessage());
 		}
 
 		// No JDBC Driver but the database type is known:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, noJdbcProp1);
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			fail(getPertinentMessage(ex));
 		}
 
 		// No JDBC Driver but the database type is UNKNOWN:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, noJdbcProp2);
 			fail("This MUST have failed because no JDBC Driver has been successfully guessed from the database type!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("No JDBC driver known for the DBMS \"[^\\\"]*\"!"));
 		}
 
 		// Missing JDBC URL:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, noJdbcProp3);
 			fail("This MUST have failed because the property \"" + KEY_JDBC_URL + "\" is missing!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("The property \"" + KEY_JDBC_URL + "\" is missing! Since the choosen database access method is \"" + VALUE_JDBC + "\", this property is required."));
 		}
 
 		// Bad JDBC Driver:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, badJdbcProp);
 			fail("This MUST have failed because the provided JDBC Driver doesn't exist!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to find the JDBC driver \"[^\\\"]*\" !"));
 		}
 
 		// Missing Translator:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, missingTranslatorProp);
 			fail("This MUST have failed because the provided SQL translator is missing!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("The property \"" + KEY_SQL_TRANSLATOR + "\" is missing! ADQL queries can not be translated without it. Allowed values: \"" + VALUE_POSTGRESQL + "\", \"" + VALUE_PGSPHERE + "\" or a class path of a class implementing SQLTranslator."));
 		}
 
 		// Bad Translator:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, badTranslatorProp);
 			fail("This MUST have failed because the provided SQL translator is incorrect!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Unsupported value for the property sql_translator: \"[^\\\"]*\" !"));
 		}
 
 		// Bad DB Name:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, badDBNameProp);
 			fail("This MUST have failed because the provided database name is incorrect!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to establish a connection to the database \"[^\\\"]*\"!"));
 			assertEquals(JdbcSQLException.class, ex.getCause().getClass());
@@ -305,10 +305,10 @@ public class TestConfigurableTAPFactory {
 		}
 
 		// Bad DB Username: ABORTED BECAUSE THE BAD USERNAME IS NOT DETECTED FOR THE DB WHICH HAS THE SAME NAME AS THE USERNAME !
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, badUsernameProp);
 			fail("This MUST have failed because the provided database username is incorrect!");
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to establish a connection to the database \"[^\\\"]*\"!"));
 			assertEquals(JdbcSQLException.class, ex.getCause().getClass());
@@ -316,10 +316,10 @@ public class TestConfigurableTAPFactory {
 		}
 
 		// Bad DB Password:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, badPasswordProp);
 			//fail("This MUST have failed because the provided database password is incorrect!"); // NOTE: In function of the database configuration, a password may be required or not. So this test is not automatic!
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(DBException.class, ex.getClass());
 			assertTrue(ex.getMessage().matches("Impossible to establish a connection to the database \"[^\\\"]*\"!"));
 			assertEquals(JdbcSQLException.class, ex.getCause().getClass());
@@ -327,35 +327,35 @@ public class TestConfigurableTAPFactory {
 		}
 
 		// Valid backup frequency:
-		try{
+		try {
 			ConfigurableTAPFactory factory = new ConfigurableTAPFactory(serviceConnection, validBackupFrequency);
 			DefaultTAPBackupManager backupManager = (DefaultTAPBackupManager)factory.createUWSBackupManager(new UWSService(factory, new LocalUWSFileManager(new File("/tmp"))));
 			assertEquals(3600L, backupManager.getBackupFreq());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			fail(getPertinentMessage(ex));
 		}
 
 		// No backup:
-		try{
+		try {
 			ConfigurableTAPFactory factory = new ConfigurableTAPFactory(serviceConnection, noBackup);
 			assertNull(factory.createUWSBackupManager(new UWSService(factory, new LocalUWSFileManager(new File("/tmp")))));
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			fail(getPertinentMessage(ex));
 		}
 
 		// User backup:
-		try{
+		try {
 			UWSService uws;
 			UserIdentifier userIdent = new UserIdentifier() {
 				private static final long serialVersionUID = 1L;
 
 				@Override
-				public JobOwner restoreUser(String id, String pseudo, Map<String, Object> otherData) throws UWSException{
+				public JobOwner restoreUser(String id, String pseudo, Map<String, Object> otherData) throws UWSException {
 					return null;
 				}
 
 				@Override
-				public JobOwner extractUserId(UWSUrl urlInterpreter, HttpServletRequest request) throws UWSException{
+				public JobOwner extractUserId(UWSUrl urlInterpreter, HttpServletRequest request) throws UWSException {
 					return null;
 				}
 			};
@@ -374,20 +374,20 @@ public class TestConfigurableTAPFactory {
 			uws.setUserIdentifier(userIdent);
 			backupManager = (DefaultTAPBackupManager)factory.createUWSBackupManager(uws);
 			assertEquals(DefaultTAPBackupManager.AT_USER_ACTION, backupManager.getBackupFreq());
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			fail(getPertinentMessage(ex));
 		}
 
 		// Bad backup frequency:
-		try{
+		try {
 			new ConfigurableTAPFactory(serviceConnection, badBackupFrequency);
-		}catch(Exception ex){
+		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
 			assertEquals("Long expected for the property \"" + KEY_BACKUP_FREQUENCY + "\", instead of: \"foo\"!", ex.getMessage());
 		}
 	}
 
-	public static final String getPertinentMessage(final Exception ex){
+	public static final String getPertinentMessage(final Exception ex) {
 		return (ex.getCause() == null || ex.getMessage().equals(ex.getCause().getMessage())) ? ex.getMessage() : ex.getCause().getMessage();
 	}
 
@@ -397,132 +397,137 @@ public class TestConfigurableTAPFactory {
 		private boolean isAvailable = true;
 
 		@Override
-		public String getProviderName(){
+		public String getProviderName() {
 			return null;
 		}
 
 		@Override
-		public String getProviderDescription(){
+		public String getProviderDescription() {
 			return null;
 		}
 
 		@Override
-		public boolean isAvailable(){
+		public boolean isAvailable() {
 			return isAvailable;
 		}
 
 		@Override
-		public String getAvailability(){
+		public String getAvailability() {
 			return null;
 		}
 
 		@Override
-		public int[] getRetentionPeriod(){
+		public int[] getRetentionPeriod() {
 			return null;
 		}
 
 		@Override
-		public int[] getExecutionDuration(){
+		public int[] getExecutionDuration() {
 			return null;
 		}
 
 		@Override
-		public int[] getOutputLimit(){
+		public int[] getOutputLimit() {
 			return null;
 		}
 
 		@Override
-		public tap.ServiceConnection.LimitUnit[] getOutputLimitType(){
+		public tap.ServiceConnection.LimitUnit[] getOutputLimitType() {
 			return null;
 		}
 
 		@Override
-		public UserIdentifier getUserIdentifier(){
+		public UserIdentifier getUserIdentifier() {
 			return null;
 		}
 
 		@Override
-		public boolean uploadEnabled(){
+		public boolean uploadEnabled() {
 			return false;
 		}
 
 		@Override
-		public long[] getUploadLimit(){
+		public long[] getUploadLimit() {
 			return null;
 		}
 
 		@Override
-		public tap.ServiceConnection.LimitUnit[] getUploadLimitType(){
+		public tap.ServiceConnection.LimitUnit[] getUploadLimitType() {
 			return null;
 		}
 
 		@Override
-		public long getMaxUploadSize(){
+		public long getMaxUploadSize() {
 			return 0L;
 		}
 
 		@Override
-		public TAPMetadata getTAPMetadata(){
+		public TAPMetadata getTAPMetadata() {
 			return null;
 		}
 
 		@Override
-		public Collection<String> getCoordinateSystems(){
+		public Collection<String> getCoordinateSystems() {
 			return null;
 		}
 
 		@Override
-		public TAPLog getLogger(){
+		public TAPLog getLogger() {
 			return logger;
 		}
 
 		@Override
-		public TAPFactory getFactory(){
+		public TAPFactory getFactory() {
 			return null;
 		}
 
 		@Override
-		public UWSFileManager getFileManager(){
+		public UWSFileManager getFileManager() {
 			return null;
 		}
 
 		@Override
-		public Iterator<OutputFormat> getOutputFormats(){
+		public Iterator<OutputFormat> getOutputFormats() {
 			return null;
 		}
 
 		@Override
-		public OutputFormat getOutputFormat(String mimeOrAlias){
+		public OutputFormat getOutputFormat(String mimeOrAlias) {
 			return null;
 		}
 
 		@Override
-		public void setAvailable(boolean isAvailable, String message){
+		public void setAvailable(boolean isAvailable, String message) {
 			this.isAvailable = isAvailable;
 		}
 
 		@Override
-		public Collection<String> getGeometries(){
+		public Collection<String> getGeometries() {
 			return null;
 		}
 
 		@Override
-		public Collection<FunctionDef> getUDFs(){
+		public boolean isExtendedRegionExpressionAllowed() {
+			return false;
+		}
+
+		@Override
+		public Collection<FunctionDef> getUDFs() {
 			return null;
 		}
 
 		@Override
-		public int getNbMaxAsyncJobs(){
+		public int getNbMaxAsyncJobs() {
 			return -1;
 		}
 
 		@Override
-		public int[] getFetchSize(){
+		public int[] getFetchSize() {
 			return null;
 		}
 
 		@Override
-		public boolean fixOnFailEnabled(){
+		public boolean fixOnFailEnabled() {
 			return false;
 		}
 	}

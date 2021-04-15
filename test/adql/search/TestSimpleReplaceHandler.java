@@ -83,7 +83,9 @@ public class TestSimpleReplaceHandler {
 		String testQuery = "SELECT foo(bar(123)) FROM myTable";
 		try {
 			// Parse the query:
-			ADQLQuery query = new ADQLParser().parseQuery(testQuery);
+			ADQLParser parser = new ADQLParser();
+			parser.allowAnyUdf(true);
+			ADQLQuery query = parser.parseQuery(testQuery);
 
 			// Check it is as expected, before the replacements:
 			assertEquals(testQuery, query.toADQL().replaceAll("\\n", " "));

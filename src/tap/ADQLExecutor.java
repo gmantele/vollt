@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -105,7 +105,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (10/2020)
+ * @version 2.4 (04/2021)
  */
 public class ADQLExecutor {
 
@@ -509,27 +509,35 @@ public class ADQLExecutor {
 	}
 
 	/**
-	 * <p>Parse the ADQL query provided in the parameters by the user.</p>
-	 *
-	 * <p>The query factory and the query checker are got from the TAP factory.</p>
+	 * Parse the ADQL query provided in the parameters by the user.
 	 *
 	 * <p>
-	 * 	The configuration of this TAP service list all allowed coordinate systems. These are got here and provided to the query checker
-	 * 	in order to ensure the coordinate systems used in the query are in this list.
+	 * 	The query factory and the query checker are got from the TAP factory.
 	 * </p>
 	 *
 	 * <p>
-	 * 	The row limit specified in the ADQL query (with TOP) is checked and adjusted (if needed). Indeed, this limit
-	 * 	can not exceed MAXREC given in parameter and the maximum value specified in the configuration of this TAP service.
-	 * 	In the case no row limit is specified in the query or the given value is greater than MAXREC, (MAXREC+1) is used by default.
-	 * 	The "+1" aims to detect overflows.
+	 * 	The configuration of this TAP service list all allowed coordinate
+	 * 	systems. These are got here and provided to the query checker in order
+	 * 	to ensure the coordinate systems used in the query are in this list.
+	 * </p>
+	 *
+	 * <p>
+	 * 	The row limit specified in the ADQL query (with TOP) is checked and
+	 * 	adjusted (if needed). Indeed, this limit can not exceed MAXREC given in
+	 * 	parameter and the maximum value specified in the configuration of this
+	 * 	TAP service. In the case no row limit is specified in the query or the
+	 * 	given value is greater than MAXREC, (MAXREC+1) is used by default. The
+	 * 	"+1" aims to detect overflows.
 	 * </p>
 	 *
 	 * @return	The object representation of the ADQL query.
 	 *
-	 * @throws ParseException			If the given ADQL query can not be parsed or if the construction of the object representation has failed.
-	 * @throws InterruptedException		If the thread has been interrupted.
-	 * @throws TAPException				If the TAP factory is unable to create the ADQL factory or the query checker.
+	 * @throws ParseException		If the given ADQL query can not be
+	 *                       		parsed or if the construction of the object
+	 *                       		representation has failed.
+	 * @throws InterruptedException	If the thread has been interrupted.
+	 * @throws TAPException			If the TAP factory is unable to create the
+	 *                     			ADQL factory or the query checker.
 	 */
 	protected ADQLQuery parseADQL() throws ParseException, InterruptedException, TAPException {
 		// Log the start of the parsing:
@@ -541,6 +549,9 @@ public class ADQLExecutor {
 			logger.logTAP(LogLevel.WARNING, null, "PARSING", "No ADQL parser returned by the TAPFactory! The default implementation is used instead.", null);
 			parser = new ADQLParser();
 		}
+
+		// Set optional features:
+		parser.allowExtendedRegionParam(service.isExtendedRegionExpressionAllowed());
 
 		// Set the ADQL factory:
 		if (parser.getQueryFactory() == null || parser.getQueryFactory().getClass() == ADQLQueryFactory.class)

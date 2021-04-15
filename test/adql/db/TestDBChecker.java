@@ -306,7 +306,7 @@ public class TestDBChecker {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			// UNKNOWN FUNCTIONS ARE NOT ALLOWED:
 			ADQLParser parser = new ADQLParser(version);
-			parser.getSupportedFeatures().allowAnyUdf(true);
+			parser.allowAnyUdf(true);
 			parser.setQueryChecker(new DBChecker(tables, new ArrayList<FunctionDef>(0)));
 
 			// Test with a simple ADQL query without unknown or user defined function:
@@ -333,7 +333,7 @@ public class TestDBChecker {
 			try {
 				udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR)), new FunctionDef("tata", new DBType(DBDatatype.INTEGER)) };
 				parser = new ADQLParser(version);
-				parser.getSupportedFeatures().allowAnyUdf(true);
+				parser.allowAnyUdf(true);
 				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 			} catch(ParseException pe) {
 				pe.printStackTrace();
@@ -389,7 +389,7 @@ public class TestDBChecker {
 				udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) }) };
 				udfs[0].setUDFClass(UDFToto.class);
 				parser = new ADQLParser(version);
-				parser.getSupportedFeatures().allowAnyUdf(true);
+				parser.allowAnyUdf(true);
 				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 			} catch(ParseException pe) {
 				pe.printStackTrace();
@@ -429,7 +429,7 @@ public class TestDBChecker {
 				udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) }) };
 				udfs[0].setUDFClass(WrongUDFToto.class);
 				parser = new ADQLParser(version);
-				parser.getSupportedFeatures().allowAnyUdf(true);
+				parser.allowAnyUdf(true);
 				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 			} catch(ParseException pe) {
 				pe.printStackTrace();
@@ -561,6 +561,8 @@ public class TestDBChecker {
 			try {
 				udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR)), new FunctionDef("tata", new DBType(DBDatatype.INTEGER)), new FunctionDef("titi", new DBType(DBDatatype.REGION)) };
 				parser = new ADQLParser(version);
+				for(FunctionDef udf : udfs)
+					parser.getSupportedFeatures().support(udf.toLanguageFeature());
 				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 			} catch(ParseException pe) {
 				pe.printStackTrace();
@@ -680,6 +682,8 @@ public class TestDBChecker {
 				complexFcts[1] = new FunctionDef("fct2", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("str", new DBType(DBDatatype.VARCHAR)) });
 				complexFcts[2] = new FunctionDef("fct3", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("str", new DBType(DBDatatype.VARCHAR)) });
 				parser = new ADQLParser(version);
+				for(FunctionDef udf : complexFcts)
+					parser.getSupportedFeatures().support(udf.toLanguageFeature());
 				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(complexFcts)));
 			} catch(ParseException pe) {
 				pe.printStackTrace();
@@ -706,6 +710,7 @@ public class TestDBChecker {
 
 			// CLEAR ALL UDFs AND ALLOW UNKNOWN FUNCTION:
 			parser = new ADQLParser(version);
+			parser.allowAnyUdf(true);
 			parser.setQueryChecker(new DBChecker(tables, null));
 
 			// Test again:
@@ -732,7 +737,9 @@ public class TestDBChecker {
 			// DECLARE THE UDF (while unknown functions are allowed):
 			try {
 				parser = new ADQLParser(version);
-				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR)) })));
+				FunctionDef udf = new FunctionDef("toto", new DBType(DBDatatype.VARCHAR));
+				parser.getSupportedFeatures().support(udf.toLanguageFeature());
+				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udf)));
 			} catch(ParseException pe) {
 				pe.printStackTrace();
 				fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
@@ -755,6 +762,8 @@ public class TestDBChecker {
 			try {
 				udfs = new FunctionDef[]{ new FunctionDef("toto", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("attr", new DBType(DBDatatype.VARCHAR)) }), new FunctionDef("toto", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("attr", new DBType(DBDatatype.INTEGER)) }), new FunctionDef("toto", new DBType(DBDatatype.INTEGER), new FunctionParam[]{ new FunctionParam("attr", new DBType(DBDatatype.POINT)) }) };
 				parser = new ADQLParser(version);
+				for(FunctionDef udf : udfs)
+					assertTrue(parser.getSupportedFeatures().support(udf.toLanguageFeature()));
 				parser.setQueryChecker(new DBChecker(tables, Arrays.asList(udfs)));
 			} catch(ParseException pe) {
 				pe.printStackTrace();

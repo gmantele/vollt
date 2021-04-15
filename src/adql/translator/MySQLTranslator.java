@@ -16,13 +16,13 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2019 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2021 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.STCS.Region;
+import adql.db.region.Region;
 import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
@@ -31,6 +31,7 @@ import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
+import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
@@ -44,7 +45,6 @@ import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
-import adql.query.operand.function.geometry.RegionFunction;
 
 /**
  * Translates all ADQL objects into an SQL interrogation query designed for
@@ -64,7 +64,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (11/2019)
+ * @version 2.0 (04/2021)
  * @since 1.4
  */
 public class MySQLTranslator extends JDBCTranslator {
@@ -155,9 +155,6 @@ public class MySQLTranslator extends JDBCTranslator {
 	 * @since 2.0
 	 */
 	protected void initSupportedFeatures() {
-		// Any UDF allowed:
-		supportedFeatures.allowAnyUdf(true);
-
 		// Support all features...
 		supportedFeatures.supportAll();
 		// ...except all geometries:
@@ -244,6 +241,25 @@ public class MySQLTranslator extends JDBCTranslator {
 	/* * TYPE MANAGEMENT                                                    * */
 	/* *                                                                    * */
 	/* ********************************************************************** */
+
+	@Override
+	public String translate(final DatatypeParam type) throws TranslationException {
+		if (type == null)
+			return null;
+
+		switch(type.getTypeName()) {
+			case SMALLINT:
+			case INTEGER:
+			case BIGINT:
+				return "SIGNED INTEGER";
+			case VARCHAR:
+				return "CHAR" + (type.getTypeLength() != null && type.getTypeLength() > 0 ? "(" + type.getTypeLength() + ")" : "");
+			case TIMESTAMP:
+				return "DATETIME";
+			default:
+				return super.translate(type);
+		}
+	}
 
 	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params) {
@@ -409,11 +425,6 @@ public class MySQLTranslator extends JDBCTranslator {
 	@Override
 	public String translate(PolygonFunction polygon) throws TranslationException {
 		return getDefaultADQLFunction(polygon);
-	}
-
-	@Override
-	public String translate(RegionFunction region) throws TranslationException {
-		return getDefaultADQLFunction(region);
 	}
 
 }

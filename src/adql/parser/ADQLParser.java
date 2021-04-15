@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.io.ByteArrayInputStream;
@@ -27,12 +27,11 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import adql.db.DBChecker;
-import adql.db.STCS;
-import adql.db.STCS.CoordSys;
-import adql.db.STCS.Region;
-import adql.db.STCS.RegionType;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnsupportedFeatureException;
+import adql.db.region.CoordSys;
+import adql.db.region.Region;
+import adql.db.region.STCS;
 import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ADQLGrammar;
@@ -124,6 +123,7 @@ import adql.translator.TranslationException;
  * <pre>java -jar adqllib.jar --help</pre>
  * </i>
  *
+ *
  * <h3>ADQL version</h3>
  *
  * <p>
@@ -140,6 +140,7 @@ import adql.translator.TranslationException;
  * <p><i><b>Example: </b></i>
  * 	<code>new {@link #ADQLParser(ADQLVersion) ADQLParser}({@link ADQLVersion#V2_1})</code>
  * </p>
+ *
  *
  * <h3>Main functions</h3>
  *
@@ -160,7 +161,16 @@ import adql.translator.TranslationException;
  * 		REGION) ; <i><b>note:</b> this function is mainly useful with ADQL-2.0
  * 		because it is the only version in which the coordinate system parameter
  * 		is mandatory</i></li>
+ * 	<li>{@link #allowAnyUdf(boolean)} to support any undeclared User Defined
+ * 	    Function. By default only UDFs declared as <i>supported features</i>
+ * 	    are allowed</li>
+ * 	<li>{@link #allowExtendedRegionParam(boolean)} to allow any string
+ * 	    expression and serialization as parameter of the
+ * 	    <code>REGION(...)</code> function. By default, only a string literal
+ * 	    using a supported serialization (see {@link Region#parse(String)} ;
+ * 	    e.g. DALI, STC/s) is allowed</li>
  * </ul>
+ *
  *
  * <h3>Default general checks</h3>
  *
@@ -172,10 +182,24 @@ import adql.translator.TranslationException;
  * 	{@link ParseException} is immediately raised.
  * </p>
  *
- * <p><i><b>Note:</b>
- * 	By default, all optional language features are supported, and any UDF and
- * 	coordinate system are allowed.
- * </i></p>
+ * <p>
+ * 	By default, all optional language features are supported, and any coordinate
+ * 	system is allowed.
+ * </p>
+ *
+ * <p>
+ * 	By default, no undeclared UDF is allowed. To change this, use
+ * 	{@link #allowAnyUdf(boolean)}.
+ * </p>
+ *
+ * <p>
+ * 	By default, only a string literal using a supported serialization (e.g. DALI
+ * 	and STC/s) is allowed as parameter of the <code>REGION(...)</code> function.
+ * 	It is however possible to accept any string expression or to support any
+ * 	other serialization thanks to {@link #allowExtendedRegionParam(boolean)}.
+ * 	<i>Look at {@link Region#parse(String)} to know the exhaustive list of
+ * 	supported region serializations.</i>
+ * </p>
  *
  *
  * <h3>Custom checks</h3>
@@ -219,7 +243,7 @@ import adql.translator.TranslationException;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (04/2021)
  * @since 2.0
  */
 public class ADQLParser {
@@ -277,6 +301,15 @@ public class ADQLParser {
 	 * ADQL query.
 	 * <p><i><b>Implementation note:</b> Never NULL.</i></p> */
 	protected QueryFixer quickFixer;
+
+	/** Indicate whether any UDF (even if not declared) should be considered as
+	 * supported. */
+	protected boolean anyUdfAllowed = false;
+
+	/** Indicate whether the REGION(...) function accepts any string expression
+	 * and any serialization or only a string literal using a supported
+	 * serialization (e.g. DALI, STC/s). */
+	protected boolean extendedRegionExpressionAllowed = false;
 
 	/* **********************************************************************
 	   *                       VERSION MANAGEMENT                           *
@@ -591,14 +624,14 @@ public class ADQLParser {
 		switch(getADQLVersion()) {
 			case V2_0:
 				// any UDF is allowed and no optional feature supported...:
-				this.supportedFeatures = new FeatureSet(false, true);
+				this.supportedFeatures = new FeatureSet(false);
 				// ...except geometries which are all supported by default:
 				supportedFeatures.supportAll(LanguageFeature.TYPE_ADQL_GEO);
 				break;
 			case V2_1:
 			default:
 				// all available features are considered as supported:
-				this.supportedFeatures = new FeatureSet(true, true);
+				this.supportedFeatures = new FeatureSet(true);
 				break;
 		}
 	}
@@ -666,8 +699,56 @@ public class ADQLParser {
 	 */
 	public final void setAllowedCoordSys(final Collection<String> allowedCoordSys) throws ParseException {
 		String[] tempAllowedCoordSys = specialSort(allowedCoordSys);
-		coordSysRegExp = STCS.buildCoordSysRegExp(tempAllowedCoordSys);
+		coordSysRegExp = CoordSys.buildCoordSysRegExp(tempAllowedCoordSys);
 		this.allowedCoordSys = tempAllowedCoordSys;
+	}
+
+	/**
+	* Let specify whether any UDF (even if not declared) should be considered
+	* as supported or not. If not, UDFs must be explicitly declared to be
+	* considered as supported (as any other optional language feature).
+	*
+	* @param allowed	<code>true</code> to support any UDF,
+	*               	<code>false</code> to force the declaration of supported
+	*               	UDFs.
+	*/
+	public void allowAnyUdf(final boolean allowed) {
+		this.anyUdfAllowed = allowed;
+	}
+
+	/**
+	* Tell whether UDFs are considered as supported even if undeclared.
+	*
+	* @return	<code>true</code> if any UDF is considered as supported,
+	*        	<code>false</code> if supported UDFs must be explicitly
+	*        	declared.
+	*/
+	public boolean isAnyUdfAllowed() {
+		return anyUdfAllowed;
+	}
+
+	/**
+	* Let specify whether any UDF (even if not declared) should be considered
+	* as supported or not. If not, UDFs must be explicitly declared to be
+	* considered as supported (as any other optional language feature).
+	*
+	* @param allowed	<code>true</code> to support any UDF,
+	*               	<code>false</code> to force the declaration of supported
+	*               	UDFs.
+	*/
+	public void allowExtendedRegionParam(final boolean allowed) {
+		this.anyUdfAllowed = allowed;
+	}
+
+	/**
+	* Tell whether UDFs are considered as supported even if undeclared.
+	*
+	* @return	<code>true</code> if any UDF is considered as supported,
+	*        	<code>false</code> if supported UDFs must be explicitly
+	*        	declared.
+	*/
+	public boolean isExtendedRegionParamAllowed() {
+		return anyUdfAllowed;
 	}
 
 	/**
@@ -754,22 +835,12 @@ public class ADQLParser {
 	}
 
 	/**
-	 * Run the query parsing, then, if successful, the general and the custom
-	 * checks (if any) on the parsing result (i.e. the query tree).
-	 *
-	 * <p>This function follows these steps:</p>
-	 * <ol>
-	 * 	<li>Parse the full ADQL query,</li>
-	 * 	<li>Run the general checks on the parsing result (i.e. the ADQL
-	 * 		tree),</li>
-	 * 	<li>Run the custom checks (if any).</li>
-	 * </ol>
+	 * Run the query parsing, then, if successful, all the available checks on
+	 * the parsing result (i.e. the query tree).
 	 *
 	 * <p>
-	 * 	When a step is successful, this function run the next one. But, if it
-	 * 	fails, a {@link ParseException} is immediately thrown. This exception
-	 * 	may represent more than one error ; especially during the steps 2. and
-	 * 	3.
+	 * 	This functions stops immediately with a {@link ParseException} if the
+	 * 	parsing failed or if any of the available checks fails.
 	 * </p>
 	 *
 	 * @return	The object representation of the successfully parsed query
@@ -779,8 +850,7 @@ public class ADQLParser {
 	 *                       	generated), or if any check on the parsing
 	 *                       	result fails.
 	 *
-	 * @see #generalChecks(ADQLQuery)
-	 * @see QueryChecker#check(ADQLQuery)
+	 * @see #allChecks(ADQLQuery)
 	 */
 	protected ADQLQuery effectiveParseQuery() throws ParseException {
 		// 1. Parse the full ADQL query:
@@ -791,14 +861,8 @@ public class ADQLParser {
 			throw new ParseException(tme);
 		}
 
-		/* 2. Run the general checks on the parsed query:
-		 * (note: this check is very close to grammar check...hence its higher
-		 *        priority) */
-		generalChecks(parsedQuery);
-
-		// 3. Run the custom checks (if any):
-		if (queryChecker != null)
-			queryChecker.check(parsedQuery);
+		// 2. Run all available checks:
+		allChecks(parsedQuery);
 
 		// If no syntactic error and that all checks passed, return the result:
 		return parsedQuery;
@@ -823,6 +887,11 @@ public class ADQLParser {
 	 * <pre>SELECT DISTINCT TOP 10 aColumn, bColumn AS "B"</pre>
 	 * </i>
 	 *
+	 * <p>
+	 * 	This functions stops immediately with a {@link ParseException} if the
+	 * 	parsing failed or if any of the available checks fails.
+	 * </p>
+	 *
 	 * @param adql	The <code>SELECT</code> clause to parse.
 	 *
 	 * @return	The corresponding object representation of the given clause.
@@ -842,6 +911,9 @@ public class ADQLParser {
 
 			// Parse the string as a SELECT clause:
 			grammarParser.Select();
+
+			// Run all available checks on this ADQL query part:
+			allChecks(grammarParser.getQuery());
 
 			// Return what's just got parsed:
 			return grammarParser.getQuery().getSelect();
@@ -871,6 +943,11 @@ public class ADQLParser {
 	 * <pre>FROM aTable JOIN bTable AS "B" USING(id)</pre>
 	 * </i>
 	 *
+	 * <p>
+	 * 	This functions stops immediately with a {@link ParseException} if the
+	 * 	parsing failed or if any of the available checks fails.
+	 * </p>
+	 *
 	 * @param adql	The <code>FROM</code> clause to parse.
 	 *
 	 * @return	The corresponding object representation of the given clause.
@@ -890,6 +967,9 @@ public class ADQLParser {
 
 			// Parse the string as a FROM clause:
 			grammarParser.From();
+
+			// Run all available checks on this ADQL query part:
+			allChecks(grammarParser.getQuery());
 
 			// Return what's just got parsed:
 			return grammarParser.getQuery().getFrom();
@@ -918,6 +998,11 @@ public class ADQLParser {
 	 * <pre>WHERE foo = 'bar'</pre>
 	 * </i>
 	 *
+	 * <p>
+	 * 	This functions stops immediately with a {@link ParseException} if the
+	 * 	parsing failed or if any of the available checks fails.
+	 * </p>
+	 *
 	 * @param adql	The <code>WHERE</code> clause to parse.
 	 *
 	 * @return	The corresponding object representation of the given clause.
@@ -937,6 +1022,9 @@ public class ADQLParser {
 
 			// Parse the string as a WHERE clause:
 			grammarParser.Where();
+
+			// Run all available checks on this ADQL query part:
+			allChecks(grammarParser.getQuery());
 
 			// Return what's just got parsed:
 			return grammarParser.getQuery().getWhere();
@@ -964,6 +1052,11 @@ public class ADQLParser {
 	 * <pre>ORDER BY aColumn DESC</pre>
 	 * </i>
 	 *
+	 * <p>
+	 * 	This functions stops immediately with a {@link ParseException} if the
+	 * 	parsing failed or if any of the available checks fails.
+	 * </p>
+	 *
 	 * @param adql	The <code>ORDER BY</code> clause to parse.
 	 *
 	 * @return	The corresponding object representation of the given clause.
@@ -983,6 +1076,9 @@ public class ADQLParser {
 
 			// Parse the string as a ORDER BY clause:
 			grammarParser.OrderBy();
+
+			// Run all available checks on this ADQL query part:
+			allChecks(grammarParser.getQuery());
 
 			// Return what's just got parsed:
 			return grammarParser.getQuery().getOrderBy();
@@ -1012,6 +1108,11 @@ public class ADQLParser {
 	 * <pre>GROUP BY aColumn</pre>
 	 * </i>
 	 *
+	 * <p>
+	 * 	This functions stops immediately with a {@link ParseException} if the
+	 * 	parsing failed or if any of the available checks fails.
+	 * </p>
+	 *
 	 * @param adql	The <code>GROUP BY</code> clause to parse.
 	 *
 	 * @return	The corresponding object representation of the given clause.
@@ -1032,6 +1133,9 @@ public class ADQLParser {
 			// Parse the string as a GROUP BY clause:
 			grammarParser.GroupBy();
 
+			// Run all available checks on this ADQL query part:
+			allChecks(grammarParser.getQuery());
+
 			// Return what's just got parsed:
 			return grammarParser.getQuery().getGroupBy();
 
@@ -1043,6 +1147,34 @@ public class ADQLParser {
 	/* **********************************************************************
 	   *                          QUERY CHECKS                              *
 	   ********************************************************************** */
+
+	/**
+	 * Run all available checks on the given ADQL tree:
+	 *
+	 * <ul>
+	 * 	<li>the general checks: optional features support, region
+	 * 	    serializations, ...</li>
+	 * 	<li>the custom checks (if any).</li>
+	 * </ul>
+	 *
+	 * @param q	The ADQL query to check.
+	 *
+	 * @throws ParseException	If any of the common checks or any of the
+	 *                       	optional ones failed
+	 *
+	 * @see #generalChecks(ADQLQuery)
+	 * @see QueryChecker#check(ADQLQuery)
+	 */
+	protected void allChecks(final ADQLQuery q) throws ParseException {
+		/* Run the general checks on the parsed query:
+		 * (note: this check is very close to grammar check...hence its higher
+		 *        priority) */
+		generalChecks(q);
+
+		// Run the custom checks (if any):
+		if (queryChecker != null)
+			queryChecker.check(q);
+	}
 
 	/**
 	 * Run the general and common checks on the given ADQL tree.
@@ -1071,8 +1203,12 @@ public class ADQLParser {
 
 		// Append an error for each unsupported one:
 		for(ADQLObject obj : sFeaturesHandler) {
-			if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
-				exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
+			// ignore UDF if any UDF is allowed:
+			if (!isAnyUdfAllowed() || !LanguageFeature.TYPE_UDF.equals(obj.getFeatureDescription().type)) {
+				// otherwise, test whether this feature is supported:
+				if (!supportedFeatures.isSupporting(obj.getFeatureDescription()))
+					exUnsupportedFeatures.addException(new UnsupportedFeatureException(obj));
+			}
 		}
 
 		// [only for ADQL-2.0] Resolve explicit coordinate system declarations:
@@ -1080,7 +1216,7 @@ public class ADQLParser {
 
 		// [only for ADQL-2.0] Resolve explicit REGION declarations:
 		if (supportedFeatures.isSupporting(RegionFunction.FEATURE))
-			resolveSTCSExpressions(q, exUnsupportedFeatures);
+			resolveRegionExpressions(q, exUnsupportedFeatures);
 
 		// If unsupported features have been found, throw a ParseException:
 		if (exUnsupportedFeatures.getNbErrors() > 0)
@@ -1196,43 +1332,56 @@ public class ADQLParser {
 	}
 
 	/**
-	 * Search for all STC-S expressions inside the given query, parse them (and
+	 * Search for all region expressions inside the given query, parse them (and
 	 * so check their syntax) and then determine whether the declared coordinate
 	 * system and the expressed region are allowed in this implementation.
 	 *
-	 * <p><i><b>Note:</b>
-	 * 	In the current ADQL language definition, STC-S expressions can be found
-	 * 	only as only parameter of the REGION function.
-	 * </i></p>
-	 *
-	 * @param query		Query in which STC-S expressions must be checked.
+	 * @param query		Query in which region expressions must be checked.
 	 * @param errors	List of errors to complete in this function each time
-	 *              	the STC-S syntax is wrong or each time the declared
+	 *              	the region syntax is wrong or each time the declared
 	 *              	coordinate system or region is not supported.
 	 *
-	 * @see STCS#parseRegion(String)
+	 * @see Region#parse(String)
 	 * @see #checkRegion(Region, RegionFunction, UnresolvedIdentifiersException)
 	 */
-	protected void resolveSTCSExpressions(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
+	protected void resolveRegionExpressions(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
 		// Search REGION functions:
 		ISearchHandler sHandler = new SearchRegionHandler();
 		sHandler.search(query);
 
-		// Parse and check their STC-S expression:
-		String stcs;
+		// Parse and check their region expression:
+		String regionStr;
 		Region region;
 		for(ADQLObject result : sHandler) {
-			try {
-				// get the STC-S expression:
-				stcs = ((StringConstant)((RegionFunction)result).getParameter(0)).getValue();
+			RegionFunction fct = (RegionFunction)result;
 
-				// parse the STC-S expression (and so check the syntax):
-				region = STCS.parseRegion(stcs);
+			/* ensure the region is translated into the corresponding geometry
+			 * if a string literal, or merely as in ADQL if not: */
+			fct.setExtendedRegionExpression(isExtendedRegionParamAllowed());
 
-				// check whether the regions (this one + the possible inner ones) and the coordinate systems are allowed:
-				checkRegion(region, (RegionFunction)result, errors);
-			} catch(ParseException pe) {
-				errors.addException(new ParseException(pe.getMessage(), result.getPosition()));
+			// no test to run, if not only a string literal is allowed:
+			if (!isExtendedRegionParamAllowed()) {
+
+				// ensure the parameter is a string literal:
+				if (fct.getParameter(0) instanceof StringConstant) {
+					try {
+
+						// ...then, get the region expression:
+						regionStr = ((StringConstant)((RegionFunction)result).getParameter(0)).getValue();
+
+						// ...parse it (and so check its syntax):
+						region = Region.parse(regionStr);
+
+						// ...and finally check whether the regions (this one + the possible inner ones) and the coordinate systems are allowed:
+						checkRegion(region, (RegionFunction)result, errors);
+
+					} catch(ParseException pe) {
+						errors.addException(new ParseException(pe.getMessage(), result.getPosition()));
+					}
+				}
+				// if not a string literal, ERROR!
+				else
+					errors.addException(new ParseException("Unsupported REGION(...) parameter! Only a string literal is accepted.", result.getPosition()));
 			}
 		}
 	}
@@ -1284,8 +1433,8 @@ public class ADQLParser {
 				feature = null;
 				break;
 		}
-		if (r.type != RegionType.NOT && (feature == null || !supportedFeatures.isSupporting(feature)))
-			errors.addException(new UnsupportedFeatureException(fct, "Unsupported STC-s region type: \"" + r.type + "\"" + (feature == null ? "!" : " (equivalent to the ADQL feature \"" + feature.form + "\" of type '" + feature.type + "')!")));
+		if (r.type != Region.RegionType.NOT && (feature == null || !supportedFeatures.isSupporting(feature)))
+			errors.addException(new UnsupportedFeatureException(fct, "Unsupported region type: \"" + r.type + "\"" + (feature == null ? "!" : " (equivalent to the ADQL feature \"" + feature.form + "\" of type '" + feature.type + "')!")));
 
 		// Check all the inner regions:
 		if (r.regions != null) {
@@ -1319,19 +1468,16 @@ public class ADQLParser {
 	}
 
 	/**
-	 * Let searching all {@link RegionFunction}s.
+	 * Let search for all {@link RegionFunction}s.
 	 *
 	 * @author Gr&eacute;gory Mantelet (CDS)
-	 * @version 2.0 (08/2019)
+	 * @version 2.0 (04/2021)
 	 * @since 2.0
 	 */
 	private static class SearchRegionHandler extends SimpleSearchHandler {
 		@Override
 		protected boolean match(ADQLObject obj) {
-			if (obj instanceof RegionFunction)
-				return (((RegionFunction)obj).getParameter(0) instanceof StringConstant);
-			else
-				return false;
+			return (obj instanceof RegionFunction);
 		}
 
 	}

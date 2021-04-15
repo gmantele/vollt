@@ -402,6 +402,11 @@ public final class TAPConfiguration {
 	/** Value of {@value #KEY_COORD_SYS} and {@value #KEY_GEOMETRIES} that
 	 * forbid all possible values. */
 	public final static String VALUE_NONE = "NONE";
+	/** Name/Key of the property specifying whether the parameter of REGION(...)
+	 * is strict (i.e. only a string literal) or not. By default, it is strict
+	 * (so this property is <code>false</code>).
+	 * @since 2.4 */
+	public final static String KEY_EXTENDED_REGION_EXPRESSION = "extendedRegionExpression";
 	/** Name/Key of the property that lets declare all User Defined Functions
 	 * that must be allowed in ADQL queries. By default, all unknown functions
 	 * are rejected. This default behavior can be totally reversed by using the

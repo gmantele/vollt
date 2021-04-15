@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -42,8 +42,8 @@ import adql.db.DBColumn;
 import adql.db.DBIdentifier;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.STCS;
-import adql.db.STCS.Region;
+import adql.db.region.Region;
+import adql.db.region.STCS;
 import adql.query.ADQLQuery;
 import adql.query.IdentifierField;
 import adql.translator.ADQLTranslator;
@@ -225,7 +225,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (09/2019)
+ * @version 2.4 (04/2021)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {

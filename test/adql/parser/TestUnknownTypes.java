@@ -116,6 +116,7 @@ public class TestUnknownTypes {
 
 			// Define a UDF, and allow all geometrical functions and coordinate systems:
 			FunctionDef udf1 = FunctionDef.parse("FOO(x INTEGER) -> INTEGER");
+			parser.getSupportedFeatures().support(udf1.toLanguageFeature());
 			Collection<FunctionDef> udfList = Arrays.asList(new FunctionDef[]{ udf1 });
 			Collection<String> geoList = null;
 			Collection<String> csList = null;

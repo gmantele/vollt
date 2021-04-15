@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2011-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2011-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -30,13 +30,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import adql.db.STCS.CoordSys;
-import adql.db.STCS.Region;
-import adql.db.STCS.RegionType;
+import adql.db.DBChecker.BinarySearch;
 import adql.db.exception.UnresolvedColumnException;
 import adql.db.exception.UnresolvedFunctionException;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnresolvedTableException;
+import adql.db.region.CoordSys;
+import adql.db.region.Region;
+import adql.db.region.STCS;
 import adql.parser.QueryChecker;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLIterator;
@@ -108,7 +109,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (11/2019)
+ * @version 2.0 (04/2021)
  */
 public class DBChecker implements QueryChecker {
 
@@ -1551,7 +1552,7 @@ public class DBChecker implements QueryChecker {
 
 		// Set the list of allowed coordinate systems:
 		this.allowedCoordSys = specialSort(allowedCoordSys);
-		coordSysRegExp = STCS.buildCoordSysRegExp(this.allowedCoordSys);
+		coordSysRegExp = CoordSys.buildCoordSysRegExp(this.allowedCoordSys);
 	}
 
 	/**
@@ -1744,7 +1745,7 @@ public class DBChecker implements QueryChecker {
 	 * @param errors		List of errors to complete in this function each time a coordinate system has a wrong syntax or is not supported.
 	 *
 	 * @see STCS#parseCoordSys(String)
-	 * @see #checkCoordinateSystem(adql.db.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 * @see #checkCoordinateSystem(adql.db.region.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
 	 *
@@ -1808,7 +1809,7 @@ public class DBChecker implements QueryChecker {
 	 * @param errors		List of errors to complete in this function each time the STC-S syntax is wrong or each time the declared coordinate system or region is not supported.
 	 *
 	 * @see STCS#parseRegion(String)
-	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
+	 * @see #checkRegion(adql.db.region.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
 	 *
@@ -1854,9 +1855,9 @@ public class DBChecker implements QueryChecker {
 	 * @param fct		The REGION function containing the region to check.
 	 * @param errors	List of errors to complete in this function if the given region or its inner regions are not supported.
 	 *
-	 * @see #checkCoordinateSystem(adql.db.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 * @see #checkCoordinateSystem(adql.db.region.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 * @see #checkGeometryFunction(String, ADQLFunction, BinarySearch, UnresolvedIdentifiersException)
-	 * @see #checkRegion(adql.db.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
+	 * @see #checkRegion(adql.db.region.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
 	 *
@@ -1877,7 +1878,7 @@ public class DBChecker implements QueryChecker {
 			if (allowedGeo.length == 0)
 				errors.addException(new UnresolvedFunctionException("The region type \"" + r.type + "\" is not available in this implementation!", fct));
 			else
-				checkGeometryFunction((r.type == RegionType.POSITION) ? "POINT" : r.type.toString(), fct, binSearch, errors);
+				checkGeometryFunction((r.type == Region.RegionType.POSITION) ? "POINT" : r.type.toString(), fct, binSearch, errors);
 		}
 
 		// Check all the inner regions:

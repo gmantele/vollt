@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2020 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2021 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -25,9 +25,9 @@ import java.util.Iterator;
 import adql.db.DBColumn;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.db.STCS.Region;
 import adql.db.SearchColumnList;
 import adql.db.exception.UnresolvedJoinException;
+import adql.db.region.Region;
 import adql.parser.SQLServer_ADQLQueryFactory;
 import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
@@ -43,6 +43,7 @@ import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
+import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
@@ -56,7 +57,6 @@ import adql.query.operand.function.geometry.ExtractCoordSys;
 import adql.query.operand.function.geometry.IntersectsFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
-import adql.query.operand.function.geometry.RegionFunction;
 
 /**
  * MS SQL Server translator.
@@ -72,7 +72,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * TODO See how case sensitivity is supported by MS SQL Server and modify this translator accordingly.
  *
  * TODO Extend this class for each MS SQL Server extension supporting geometry and particularly
- *      {@link #translateGeometryFromDB(Object)}, {@link #translateGeometryToDB(adql.db.STCS.Region)} and all this other
+ *      {@link #translateGeometryFromDB(Object)}, {@link #translateGeometryToDB(adql.db.region.STCSRegion.Region)} and all this other
  *      translate(...) functions for the ADQL's geometrical functions.
  *
  * TODO Check MS SQL Server datatypes (see {@link #convertTypeFromDB(int, String, String, String[])},
@@ -91,7 +91,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (11/2020)
+ * @version 2.0 (04/2021)
  * @since 1.4
  *
  * @see SQLServer_ADQLQueryFactory
@@ -182,9 +182,6 @@ public class SQLServerTranslator extends JDBCTranslator {
 	 * @since 2.0
 	 */
 	protected void initSupportedFeatures() {
-		// Any UDF allowed:
-		supportedFeatures.allowAnyUdf(true);
-
 		// Support all features...
 		supportedFeatures.supportAll();
 		// ...except all geometries:
@@ -492,11 +489,6 @@ public class SQLServerTranslator extends JDBCTranslator {
 	}
 
 	@Override
-	public String translate(final RegionFunction region) throws TranslationException {
-		return getDefaultADQLFunction(region);
-	}
-
-	@Override
 	public String translate(MathFunction fct) throws TranslationException {
 		switch(fct.getType()) {
 			case TRUNCATE:
@@ -533,6 +525,25 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 			default:
 				return getDefaultADQLFunction(fct);
+		}
+	}
+
+	/* ********************************************************************** */
+	/* *                                                                    * */
+	/* * TYPE MANAGEMENT                                                    * */
+	/* *                                                                    * */
+	/* ********************************************************************** */
+
+	@Override
+	public String translate(final DatatypeParam type) throws TranslationException {
+		if (type == null)
+			return null;
+
+		switch(type.getTypeName()) {
+			case TIMESTAMP:
+				return "DATETIME";
+			default:
+				return super.translate(type);
 		}
 	}
 

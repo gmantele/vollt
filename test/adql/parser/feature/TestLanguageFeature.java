@@ -8,6 +8,11 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
+import adql.db.FunctionDef;
+import adql.db.FunctionDef.FunctionParam;
+
 public class TestLanguageFeature {
 
 	@Test
@@ -97,5 +102,36 @@ public class TestLanguageFeature {
 		assertTrue(feat1.equals(feat2));
 		// the test order does not matter:
 		assertTrue(feat2.equals(feat1));
+
+		try {
+
+			// CASE: equality test between 2 UDFs with a different name => false
+			LanguageFeature udfFeat1 = new LanguageFeature(new FunctionDef("toto", new DBType(DBDatatype.CHAR)));
+			LanguageFeature udfFeat2 = new LanguageFeature(new FunctionDef("tata", new DBType(DBDatatype.CHAR)));
+			assertFalse(udfFeat1.equals(udfFeat2));
+
+			// CASE: equality test between 2 UDFs with same name and no parameter => true
+			udfFeat2 = new LanguageFeature(new FunctionDef(udfFeat1.udfDefinition.name, new DBType(DBDatatype.CHAR)));
+			assertTrue(udfFeat1.equals(udfFeat2));
+
+			// CASE: equality test between 2 UDFs with same name but different number of parameters => false
+			udfFeat1 = new LanguageFeature(new FunctionDef("toto", new DBType(DBDatatype.CHAR)));
+			udfFeat2 = new LanguageFeature(new FunctionDef(udfFeat1.udfDefinition.name, new DBType(DBDatatype.CHAR), new FunctionParam[]{ new FunctionParam("param1", new DBType(DBDatatype.CHAR)) }));
+			assertFalse(udfFeat1.equals(udfFeat2));
+
+			// CASE: equality test between 2 UDFs with same name and same number of parameters but of different types => true
+			udfFeat1 = new LanguageFeature(new FunctionDef("toto", new DBType(DBDatatype.CHAR), new FunctionParam[]{ new FunctionParam("param1", new DBType(DBDatatype.BIGINT)) }));
+			udfFeat2 = new LanguageFeature(new FunctionDef(udfFeat1.udfDefinition.name, new DBType(DBDatatype.CHAR), new FunctionParam[]{ new FunctionParam("param1", new DBType(DBDatatype.CHAR)) }));
+			assertTrue(udfFeat1.equals(udfFeat2));
+
+			// CASE: equality test between 2 UDFs with same name and same number of parameters of same types => true
+			udfFeat1 = new LanguageFeature(new FunctionDef("toto", new DBType(DBDatatype.CHAR), new FunctionParam[]{ new FunctionParam("param1", new DBType(DBDatatype.CHAR)) }));
+			udfFeat2 = new LanguageFeature(new FunctionDef(udfFeat1.udfDefinition.name, new DBType(DBDatatype.CHAR), new FunctionParam[]{ new FunctionParam("param1", new DBType(DBDatatype.CHAR)) }));
+			assertTrue(udfFeat1.equals(udfFeat2));
+
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error! There is apparently a problem with the FunctionDef declaration....it should not be.");
+		}
 	}
 }
