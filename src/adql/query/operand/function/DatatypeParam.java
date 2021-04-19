@@ -80,7 +80,7 @@ public class DatatypeParam implements ADQLOperand {
 		}
 
 		public final static DatatypeName getDatatype(final String str) throws NullPointerException, IllegalArgumentException {
-			if (str.equalsIgnoreCase("DOUBLE") || str.toUpperCase().matches("DOUBLE +PRECISION"))
+			if (str.equalsIgnoreCase("DOUBLE") || str.toUpperCase().matches("DOUBLE\\s+PRECISION"))
 				return DOUBLE_PRECISION;
 			else
 				return DatatypeName.valueOf(str.trim().toUpperCase());

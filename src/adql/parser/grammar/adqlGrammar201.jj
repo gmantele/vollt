@@ -347,7 +347,7 @@ TOKEN : {
                                  | "SMALLINT"
                                  | "BIGINT"
                                  | "REAL"
-                                 | "DOUBLE" "PRECISION"
+                                 | "DOUBLE" (" "|"\n"|"\r"|"\t")+ "PRECISION"
                                  | "TIMESTAMP") >       { matchedToken.adqlReserved = true; }
 }
 
