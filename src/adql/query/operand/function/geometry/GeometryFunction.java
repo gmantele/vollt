@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -28,8 +28,8 @@ import adql.query.TextPosition;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
+import adql.query.operand.UnknownType;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.UserDefinedFunction;
 
 /**
  * It represents any geometric function of ADQL.
@@ -42,7 +42,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (06/2020)
+ * @version 2.0 (04/2021)
  */
 public abstract class GeometryFunction extends ADQLFunction {
 
@@ -128,94 +128,82 @@ public abstract class GeometryFunction extends ADQLFunction {
 
 	/**
 	 * This class represents a parameter of a geometry function
-	 * which, in general, is either a GeometryFunction, a Column or a
-	 * UserDefinedFunction.
+	 * which, in general, is either a GeometryFunction or an UnknownType operand
+	 * (e.g. a Column, a UserDefinedFunction, a CastFunction).
 	 *
 	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
-	 * @version 2.0 (04/2020)
+	 * @version 2.0 (04/2021)
 	 */
 	public static final class GeometryValue<F extends GeometryFunction> implements ADQLOperand {
 
-		private ADQLColumn column;
 		private F geomFunct;
 
 		/** @since 2.0 */
-		private UserDefinedFunction udf;
+		private UnknownType unknownValue;
 
 		/** Position of this {@link GeometryValue} in the ADQL query string.
 		 * @since 1.4 */
 		private TextPosition position = null;
 
-		public GeometryValue(ADQLColumn col) throws NullPointerException {
-			if (col == null)
-				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function!");
-			setColumn(col);
-		}
-
 		public GeometryValue(F geometry) throws NullPointerException {
 			if (geometry == null)
-				throw new NullPointerException("Impossible to build a GeometryValue without a column or a geometry function!");
+				throw new NullPointerException("Impossible to build a GeometryValue without a geometry function or an operand whose type can not be determined at parsing time (e.g. a column, a User Defined Function, a casting function)!");
 			setGeometry(geometry);
 		}
 
 		/** @since 2.0 */
-		public GeometryValue(UserDefinedFunction udf) throws NullPointerException {
-			if (udf == null)
-				throw new NullPointerException("Impossible to build a GeometryValue without a column, a geometry function or User Defined Function!");
-			setUDF(udf);
+		public GeometryValue(UnknownType val) throws NullPointerException {
+			if (val == null)
+				throw new NullPointerException("Impossible to build a GeometryValue without a geometry function or an operand whose type can not be determined at parsing time (e.g. a column, a User Defined Function, a casting function)!");
+			setUnknownTypeValue(val);
 		}
 
 		@SuppressWarnings("unchecked")
 		public GeometryValue(GeometryValue<F> toCopy) throws Exception {
-			column = (toCopy.column == null) ? null : ((ADQLColumn)(toCopy.column.getCopy()));
+			unknownValue = (toCopy.unknownValue == null) ? null : ((UnknownType)(toCopy.unknownValue.getCopy()));
 			geomFunct = (toCopy.geomFunct == null) ? null : ((F)(toCopy.geomFunct.getCopy()));
 			position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 		}
 
 		@Override
 		public final LanguageFeature getFeatureDescription() {
-			return (column != null ? column.getFeatureDescription() : geomFunct.getFeatureDescription());
+			return (unknownValue != null ? unknownValue.getFeatureDescription() : geomFunct.getFeatureDescription());
 		}
 
-		public void setColumn(ADQLColumn col) {
-			if (col != null) {
-				udf = null;
-				geomFunct = null;
-				column = col;
-				position = (column.getPosition() != null) ? column.getPosition() : null;
-			}
+		/**
+		 * @deprecated Use {@link #setUnknownTypeValue(UnknownType)} instead.
+		 */
+		@Deprecated
+		public final void setColumn(ADQLColumn col) {
+			setUnknownTypeValue(col);
 		}
 
 		public void setGeometry(F geometry) {
 			if (geometry != null) {
-				udf = null;
-				column = null;
+				unknownValue = null;
 				geomFunct = geometry;
 				position = (geomFunct.getPosition() != null) ? geomFunct.getPosition() : null;
 			}
 		}
 
 		/** @since 2.0 */
-		public void setUDF(UserDefinedFunction udf) {
-			if (udf != null) {
-				column = null;
+		public void setUnknownTypeValue(UnknownType val) {
+			if (val != null) {
+				unknownValue = val;
 				geomFunct = null;
-				this.udf = udf;
-				position = (udf.getPosition() != null) ? udf.getPosition() : null;
+				position = (val.getPosition() != null) ? val.getPosition() : null;
 			}
 		}
 
 		public ADQLOperand getValue() {
-			if (column != null)
-				return column;
-			else if (geomFunct != null)
+			if (geomFunct != null)
 				return geomFunct;
 			else
-				return udf;
+				return unknownValue;
 		}
 
 		public boolean isColumn() {
-			return column != null;
+			return unknownValue != null && unknownValue instanceof ADQLColumn;
 		}
 
 		@Override

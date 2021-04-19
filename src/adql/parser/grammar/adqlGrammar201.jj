@@ -88,6 +88,7 @@ import adql.query.constraint.*;
 import adql.query.operand.*;
 
 import adql.query.operand.function.*;
+import adql.query.operand.function.DatatypeParam.DatatypeName;
 
 import adql.query.operand.function.string.*;
 
@@ -933,7 +934,7 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 		| LOOKAHEAD(<COORDSYS> | <LOWER> | <UPPER> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER_CANDIDATE> <LEFT_PAR>) valueExpr=UserDefinedFunction()
-		| LOOKAHEAD(<CAST> <LEFT_PAR>) valueExpr=CastFunction()
+		| LOOKAHEAD(<CAST> <LEFT_PAR>) valueExpr=CastFunction('?')
 		| LOOKAHEAD(2) valueExpr=GeometryValueFunction()
 		| LOOKAHEAD(Column()) valueExpr=Column()
 		| LOOKAHEAD(String()) valueExpr=StringFactor()
@@ -1043,13 +1044,19 @@ ADQLOperand StringFactor(): {ADQLOperand op;} {
 	(op=ExtractCoordSys()
 	| op=LowerFunction()
 	| op=UpperFunction()
+	| op=StringCastFunction()
 	| LOOKAHEAD(2) op=UserDefinedFunction() { ((UserDefinedFunction)op).setExpectedType('S'); }
 	| op=StringValueExpressionPrimary())
 	{return op;}
 }
 
-GeometryValue<GeometryFunction> GeometryExpression(): {ADQLColumn col = null; UserDefinedFunction udf = null; GeometryFunction gf = null;} {
-	( gf=GeometryValueFunction() | LOOKAHEAD(2) udf=UserDefinedFunction() | col=Column())
+GeometryValue<GeometryFunction> GeometryExpression(): {ADQLColumn col = null; UserDefinedFunction udf = null; CastFunction cf = null; GeometryFunction gf = null;} {
+	(
+	  	  gf=GeometryValueFunction()
+		| cf=GeometricCastFunction()
+		| LOOKAHEAD(2) udf=UserDefinedFunction()
+		| col=Column()
+	)
 	{
 		if (col != null){
 		  	col.setExpectedType('G');
@@ -1057,6 +1064,9 @@ GeometryValue<GeometryFunction> GeometryExpression(): {ADQLColumn col = null; Us
 		}else if (udf != null){
 			udf.setExpectedType('G');
 			return new GeometryValue<GeometryFunction>(udf);
+		}else if (cf != null) {
+			udf.setExpectedType('G');
+			return new GeometryValue<GeometryFunction>(cf);
 		}else
 			return new GeometryValue<GeometryFunction>(gf);
 	}
@@ -1615,6 +1625,7 @@ ADQLFunction NumericFunction(): {ADQLFunction fct;} {
 	| fct=TrigFunction()
 	| fct=GeometryFunction()
 	| fct=InUnitFunction()
+	| fct=NumericCastFunction()
 	| fct=UserDefinedFunction() { ((UserDefinedFunction)fct).setExpectedType('N'); })
 	{return fct;}
 }
@@ -1683,8 +1694,32 @@ MathFunction TrigFunction(): {Token fct=null, end; ADQLOperand param1=null, para
 /* CAST FUNCTION */
 /* ************* */
 
-CastFunction CastFunction(): {Token fct, end, typeName, typeSize=null; ADQLOperand value; DatatypeParam type;} {
-	fct=<CAST> <LEFT_PAR> value=ValueExpression() <AS> type=DatatypeParam() end=<RIGHT_PAR>
+CastFunction NumericCastFunction(): { CastFunction fct; } {
+	fct=CastFunction('N')
+	{
+	  fct.setExpectedType('N');
+	  return fct;
+	}
+}
+
+CastFunction StringCastFunction(): { CastFunction fct; } {
+	fct=CastFunction('S')
+	{
+	  fct.setExpectedType('S');
+	  return fct;
+	}
+}
+
+CastFunction GeometricCastFunction(): { CastFunction fct; } {
+	fct=CastFunction('G')
+	{
+	  fct.setExpectedType('G');
+	  return fct;
+	}
+}
+
+CastFunction CastFunction(final char expectedType): {Token fct, end, typeName, typeSize=null; ADQLOperand value; DatatypeParam type;} {
+	fct=<CAST> <LEFT_PAR> value=ValueExpression() <AS> type=DatatypeParam(expectedType) end=<RIGHT_PAR>
 	{
 		try{
 			CastFunction cast = queryFactory.createCastFunction(value, type);
@@ -1696,7 +1731,7 @@ CastFunction CastFunction(): {Token fct, end, typeName, typeSize=null; ADQLOpera
 	}
 }
 
-DatatypeParam DatatypeParam(): {Token typeName, typeLength=null, end=null;} {
+DatatypeParam DatatypeParam(final char expectedType): {Token typeName, typeLength=null, end=null;} {
 	(
 		  typeName=<VARIABLE_LENGTH_DATATYPE> (<LEFT_PAR> typeLength=<UNSIGNED_INTEGER> end=<RIGHT_PAR>)?
 		| typeName=<NO_LENGTH_DATATYPE>
@@ -1708,6 +1743,59 @@ DatatypeParam DatatypeParam(): {Token typeName, typeLength=null, end=null;} {
 				type.setPosition(new TextPosition(typeName, end));
 			else
 				type.setPosition(new TextPosition(typeName));
+
+			// Ensure the returned datatype matched the expectation:
+			switch(expectedType) {
+			  case 'n':
+			  case 'N':
+			  	if (!type.isNumeric()) {
+			  	  	StringBuilder buf = new StringBuilder("Encountered: \"");
+			  	  	buf.append(typeName.image).append("\"!");
+			  	  	buf.append(" Was expecting one numeric datatype among: ");
+			  	  	boolean first = true;
+			  	  	for(DatatypeName d : DatatypeName.getNumericDatatypes()) { 
+						if (!first) buf.append(", ");
+						buf.append('"').append(d.toString()).append('"');
+						first = false;
+			  	 	}
+			  	 	buf.append('.');
+			  		throw new ParseException(buf.toString(), type.getPosition());
+			  	}
+			  	break;
+			  case 's':
+			  case 'S':
+			  	if (!type.isString()) {
+			  	  	StringBuilder buf = new StringBuilder("Encountered: \"");
+			  	  	buf.append(typeName.image).append("\"!");
+			  	  	buf.append(" Was expecting one character datatype among: ");
+			  	  	boolean first = true;
+			  	  	for(DatatypeName d : DatatypeName.getStringDatatypes()) {
+						if (!first) buf.append(", ");
+						buf.append('"').append(d.toString()).append('"');
+						first = false;
+			  	 	}
+			  	 	buf.append('.');
+			  		throw new ParseException(buf.toString(), type.getPosition());
+			  	}
+			  	break;
+			  case 'g':
+			  case 'G':
+			  	if (!type.isGeometry()) {
+			  	  	StringBuilder buf = new StringBuilder("Encountered: \"");
+			  	  	buf.append(typeName.image).append("\"!");
+			  	  	buf.append(" Was expecting one geometric datatype among: ");
+			  	  	boolean first = true;
+			  	  	for(DatatypeName d : DatatypeName.getGeometricDatatypes()) { 
+						if (!first) buf.append(", ");
+						buf.append('"').append(d.toString()).append('"');
+						first = false;
+			  	 	}
+			  	 	buf.append('.');
+			  		throw new ParseException(buf.toString(), type.getPosition());
+			 	}
+			  	break;
+			}
+			
 			return type;
 		}catch(Exception ex){
 			throw generateParseException(ex);

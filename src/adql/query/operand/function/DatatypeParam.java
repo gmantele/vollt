@@ -79,6 +79,11 @@ public class DatatypeParam implements ADQLOperand {
 			return nbMaxRequiredParameters;
 		}
 
+		@Override
+		public final String toString() {
+			return (this == DOUBLE_PRECISION ? "DOUBLE PRECISION" : name());
+		}
+
 		public final static DatatypeName getDatatype(final String str) throws NullPointerException, IllegalArgumentException {
 			if (str.equalsIgnoreCase("DOUBLE") || str.toUpperCase().matches("DOUBLE\\s+PRECISION"))
 				return DOUBLE_PRECISION;
@@ -86,9 +91,16 @@ public class DatatypeParam implements ADQLOperand {
 				return DatatypeName.valueOf(str.trim().toUpperCase());
 		}
 
-		@Override
-		public final String toString() {
-			return (this == DOUBLE_PRECISION ? "DOUBLE PRECISION" : name());
+		public final static DatatypeName[] getNumericDatatypes() {
+			return new DatatypeName[]{ SMALLINT, INTEGER, BIGINT, REAL, DOUBLE_PRECISION };
+		}
+
+		public final static DatatypeName[] getStringDatatypes() {
+			return new DatatypeName[]{ CHAR, VARCHAR, TIMESTAMP };
+		}
+
+		public final static DatatypeName[] getGeometricDatatypes() {
+			return new DatatypeName[0];
 		}
 	}
 
@@ -136,16 +148,34 @@ public class DatatypeParam implements ADQLOperand {
 
 	@Override
 	public boolean isNumeric() {
+		if (typeName != null) {
+			for(DatatypeName d : DatatypeName.getNumericDatatypes()) {
+				if (d == this.typeName)
+					return true;
+			}
+		}
 		return false;
 	}
 
 	@Override
 	public boolean isString() {
+		if (typeName != null) {
+			for(DatatypeName d : DatatypeName.getStringDatatypes()) {
+				if (d == this.typeName)
+					return true;
+			}
+		}
 		return false;
 	}
 
 	@Override
 	public boolean isGeometry() {
+		if (typeName != null) {
+			for(DatatypeName d : DatatypeName.getGeometricDatatypes()) {
+				if (d == this.typeName)
+					return true;
+			}
+		}
 		return false;
 	}
 

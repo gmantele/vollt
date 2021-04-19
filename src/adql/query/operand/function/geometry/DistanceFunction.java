@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -24,6 +24,7 @@ import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLObject;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.UnknownType;
 import adql.query.operand.function.UserDefinedFunction;
 
 /**
@@ -102,7 +103,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2020)
+ * @version 2.0 (04/2021)
  */
 public class DistanceFunction extends GeometryFunction {
 
@@ -246,7 +247,7 @@ public class DistanceFunction extends GeometryFunction {
 		if (replacer == null)
 			throw new NullPointerException("Impossible to remove a parameter from the function " + getName() + "!");
 		else if (!(replacer instanceof GeometryValue || replacer instanceof ADQLColumn || replacer instanceof GeometryFunction || replacer instanceof UserDefinedFunction))
-			throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction/UDF by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+			throw new Exception("Impossible to replace a GeometryValue/GeometryFunction/UnknownType by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 
 		ADQLOperand replaced = null;
 		GeometryValue<GeometryFunction> toUpdate = null;
@@ -270,12 +271,10 @@ public class DistanceFunction extends GeometryFunction {
 		}
 
 		if (toUpdate != null) {
-			if (replacer instanceof ADQLColumn)
-				toUpdate.setColumn((ADQLColumn)replacer);
+			if (replacer instanceof UnknownType)
+				toUpdate.setUnknownTypeValue((UnknownType)replacer);
 			else if (replacer instanceof GeometryFunction)
 				toUpdate.setGeometry((GeometryFunction)replacer);
-			else if (replacer instanceof UserDefinedFunction)
-				toUpdate.setUDF((UserDefinedFunction)replacer);
 		}
 
 		setPosition(null);

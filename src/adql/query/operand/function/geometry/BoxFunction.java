@@ -16,15 +16,14 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLObject;
-import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
-import adql.query.operand.function.UserDefinedFunction;
+import adql.query.operand.UnknownType;
 
 /**
  * It represents the box function of the ADQL language.
@@ -88,7 +87,7 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (06/2020)
+ * @version 2.0 (04/2021)
  */
 public class BoxFunction extends GeometryFunction {
 
@@ -428,14 +427,12 @@ public class BoxFunction extends GeometryFunction {
 					replaced = centerPoint;
 					if (replacer instanceof GeometryValue)
 						setCenter((GeometryValue<GeometryFunction>)replacer);
-					else if (replaced instanceof ADQLColumn)
-						centerPoint.setColumn((ADQLColumn)replaced);
+					else if (replaced instanceof UnknownType)
+						centerPoint.setUnknownTypeValue((UnknownType)replaced);
 					else if (replaced instanceof GeometryFunction)
 						centerPoint.setGeometry((GeometryFunction)replaced);
-					else if (replaced instanceof UserDefinedFunction)
-						centerPoint.setUDF((UserDefinedFunction)replaced);
 					else
-						throw new Exception("Impossible to replace a GeometryValue/Column/GeometryFunction/UDF by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+						throw new Exception("Impossible to replace a GeometryValue/GeometryFunction/UnknownType by " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 					break;
 				case 2:
 					replaced = width;

@@ -23,8 +23,9 @@ import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLObject;
 import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.UnknownType;
 
-public class CastFunction extends ADQLFunction {
+public class CastFunction extends ADQLFunction implements UnknownType {
 
 	/** Description of this ADQL Feature. */
 	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_TYPE, "CAST", true, "Convert the given value into the specified datatype.");
@@ -34,6 +35,9 @@ public class CastFunction extends ADQLFunction {
 
 	protected ADQLOperand value;
 	protected DatatypeParam datatype;
+
+	/** Type expected by the parser. */
+	private char expectedType = '?';
 
 	public CastFunction(final ADQLOperand value, final DatatypeParam datatype) {
 		this.value = value;
@@ -48,17 +52,27 @@ public class CastFunction extends ADQLFunction {
 
 	@Override
 	public boolean isNumeric() {
-		return true;
+		return datatype.isNumeric();
 	}
 
 	@Override
 	public boolean isString() {
-		return true;
+		return datatype.isString();
 	}
 
 	@Override
 	public boolean isGeometry() {
-		return true;
+		return datatype.isGeometry();
+	}
+
+	@Override
+	public char getExpectedType() {
+		return expectedType;
+	}
+
+	@Override
+	public void setExpectedType(final char c) {
+		expectedType = c;
 	}
 
 	@Override
