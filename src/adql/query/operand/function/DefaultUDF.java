@@ -1,7 +1,5 @@
 package adql.query.operand.function;
 
-import java.util.regex.Matcher;
-
 /*
  * This file is part of ADQLLibrary.
  *
@@ -17,8 +15,8 @@ import java.util.regex.Matcher;
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -35,12 +33,13 @@ import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 import adql.translator.ADQLTranslator;
 import adql.translator.TranslationException;
+import adql.translator.TranslationPattern;
 
 /**
  * It represents any function which is not managed by ADQL.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2020)
+ * @version 2.0 (05/2021)
  */
 public final class DefaultUDF extends UserDefinedFunction {
 
@@ -79,7 +78,7 @@ public final class DefaultUDF extends UserDefinedFunction {
 
 	/**
 	 * Builds a UserFunction by copying the given one.
-	 * 
+	 *
 	 * @param toCopy		The UserFunction to copy.
 	 *
 	 * @throws Exception	If there is an error during the copy.
@@ -118,14 +117,14 @@ public final class DefaultUDF extends UserDefinedFunction {
 	 * 	MUST be the same (case insensitive) as the name of the given definition.
 	 * 	Advanced checks must have been done before calling this setter.
 	 * </i></p>
-	 * 
+	 *
 	 * @param def	The definition applying to this parsed UDF,
 	 *           	or NULL if none has been found.
-	 * 
+	 *
 	 * @throws IllegalArgumentException	If the name in the given definition does
 	 *                                 	not match the name of this parsed
 	 *                                 	function.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public final void setDefinition(final FunctionDef def) throws IllegalArgumentException {
@@ -241,52 +240,12 @@ public final class DefaultUDF extends UserDefinedFunction {
 	@Override
 	public String translate(final ADQLTranslator caller) throws TranslationException {
 		// Use the translation pattern if any is specified:
-		if (definition != null && definition.getTranslationPattern() != null) {
-			StringBuffer sql = new StringBuffer();
+		if (definition != null && definition.getTranslationPattern() != null)
+			return TranslationPattern.apply(definition.getTranslationPattern(), this, caller);
 
-			final String escapedDollarRegex = "\\$\\$";
-			final String dollarReplacement = Matcher.quoteReplacement("$");
-			final String transPattern = definition.getTranslationPattern();
-
-			Matcher m = FunctionDef.argRefPattern.matcher(transPattern);
-			int startIndex = 0;
-			ADQLOperand arg;
-
-			// Search for all argument references:
-			while(m.find()) {
-				// append the string before the argument to insert:
-				sql.append(transPattern.substring(startIndex, m.start()).replaceAll(escapedDollarRegex, dollarReplacement));
-				startIndex = m.end();
-				// get the argument:
-				arg = getParameter(Integer.parseInt(m.group().substring(1)) - 1);
-				// translate and insert the argument:
-				sql.append(caller.translate(arg));
-			}
-
-			// If no argument found, take the whole string as such
-			// (and just replace escaped $):
-			if (startIndex == 0)
-				sql.append(transPattern.replaceAll(escapedDollarRegex, dollarReplacement));
-
-			// Otherwise, take the whole end of the string as such
-			// (and again replace escaped $):
-			else if (startIndex < transPattern.length())
-				sql.append(transPattern.substring(startIndex).replaceAll(escapedDollarRegex, dollarReplacement));
-
-			return sql.toString();
-		}
-		// Otherwise, no translation needed (use the ADQL as translation result):
-		else {
-			StringBuffer sql = new StringBuffer(functionName);
-			sql.append('(');
-			for(int i = 0; i < parameters.size(); i++) {
-				if (i > 0)
-					sql.append(',').append(' ');
-				sql.append(caller.translate(parameters.get(i)));
-			}
-			sql.append(')');
-			return sql.toString();
-		}
+		// Otherwise, no translation needed (let the caller use a default translation):
+		else
+			return null;
 	}
 
 }

@@ -170,7 +170,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -855,12 +855,17 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 * @throws TranslationException	If there is an error during the translation.
 	 */
 	protected final String getDefaultADQLFunction(ADQLFunction fct) throws TranslationException {
-		String sql = fct.getName() + "(";
+		StringBuilder sql = new StringBuilder(fct.getName());
+		sql.append('(');
 
-		for(int i = 0; i < fct.getNbParameters(); i++)
-			sql += ((i == 0) ? "" : ", ") + translate(fct.getParameter(i));
+		for(int i = 0; i < fct.getNbParameters(); i++) {
+			if (i > 0)
+				sql.append(',').append(' ');
+			sql.append(translate(fct.getParameter(i)));
+		}
 
-		return sql + ")";
+		sql.append(')');
+		return sql.toString();
 	}
 
 	@Override
@@ -878,7 +883,11 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(UserDefinedFunction fct) throws TranslationException {
-		return fct.translate(this);
+		String tr = fct.translate(this);
+		if (tr == null)
+			return getDefaultADQLFunction(fct);
+		else
+			return tr;
 	}
 
 	@Override

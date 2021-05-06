@@ -1,6 +1,7 @@
 package adql.translator;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -278,6 +279,7 @@ public class TestJDBCTranslator {
 		// TEST: a FunctionDef with no translation pattern => just return the ADQL
 		try {
 			udf.setDefinition(FunctionDef.parse("split(str VARCHAR, sep VARCHAR) -> VARCHAR"));
+			assertNull(udf.translate(tr));
 			assertEquals("split(values, ';')", tr.translate(udf));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
@@ -303,6 +305,18 @@ public class TestJDBCTranslator {
 		try {
 			udf.getDefinition().setTranslationPattern("splitWith($2, $1)");
 			assertEquals("splitWith(" + tr.translate(udf.getParameter(1)) + ", " + tr.translate(udf.getParameter(0)) + ")", tr.translate(udf));
+		} catch(TranslationException e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem to translate this UDF as in ADQL.");
+		} catch(Exception e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem preparing this test.");
+		}
+
+		// TEST: a FunctionDef with a translation pattern and with an argument list => the pattern should be applied
+		try {
+			udf.getDefinition().setTranslationPattern("splitWith($1..)");
+			assertEquals("splitWith(" + tr.translate(udf.getParameter(0)) + ", " + tr.translate(udf.getParameter(1)) + ")", tr.translate(udf));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
 			fail("There should have been no problem to translate this UDF as in ADQL.");

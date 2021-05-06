@@ -939,12 +939,14 @@
 						<i>transPattern</i> is a simple way to translate the ADQL function into the target
 						language (e.g. SQL). The string will represent the exact translation of the
 						function. It is possible to insert arguments with <code>$i</code> (where i is an
-						integer &gt; 0 corresponding to the argument index). This translation pattern is
-						very useful when just the name of the function or the order of arguments is
-						different from the ADQL function, or if a simple operation in the target
-						language (e.g. math operation) is required (note that it will not be executed
-						in the TAP library but in the database). If a more complex translation is
-						required, you should give <i>className</i> instead (see next paragraph).
+						integer &gt; 0 corresponding to the argument index), and <code>$i..</code> (to print all
+						arguments from the i-th to the last ; there are separated with a comma). This
+						translation pattern is very useful when just the name of the function or the
+						order of arguments is different from the ADQL function, or if a simple
+						operation in the target language (e.g. math operation) is required (note that
+						it will not be executed in the TAP library but in the database). If a more
+						complex translation is required, you should give <code>className</code> instead (see next
+						paragraph).
 					</p>
 					<p>
 						<i>className</i> is the name of a class extending UserDefinedFunction.
@@ -973,6 +975,7 @@
 						<li>[newFct(x double)-&gt;double, {apackage.MyNewFunction}]</li>
 						<li>[ivo_healpix_index(hpxOrder integer, ra double, dec double) -&gt; bigint, {adql.query.operand.function.healpix.HealpixIndex}, "Compute the index of the \"Healpix cell\" containing the specified position at the given Healpix order."]</li>
 						<li>[random() -&gt; DOUBLE,,"Generate a random number."]</li>
+						<li>[myFunction(str varchar, length int)->varchar, "fct($1..)"]</li>
 				</ul></td>
 			</tr>
 			
