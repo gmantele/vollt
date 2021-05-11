@@ -31,9 +31,9 @@ import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
-import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
+import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -64,7 +64,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  * @since 1.4
  */
 public class MySQLTranslator extends JDBCTranslator {
@@ -243,21 +243,46 @@ public class MySQLTranslator extends JDBCTranslator {
 	/* ********************************************************************** */
 
 	@Override
-	public String translate(final DatatypeParam type) throws TranslationException {
-		if (type == null)
-			return null;
+	public String translate(CastFunction fct) throws TranslationException {
+		// If a translator is defined, just use it:
+		if (fct.getFunctionTranslator() != null)
+			return fct.getFunctionTranslator().translate(fct, this);
 
-		switch(type.getTypeName()) {
-			case SMALLINT:
-			case INTEGER:
-			case BIGINT:
-				return "SIGNED INTEGER";
-			case VARCHAR:
-				return "CHAR" + (type.getTypeLength() != null && type.getTypeLength() > 0 ? "(" + type.getTypeLength() + ")" : "");
-			case TIMESTAMP:
-				return "DATETIME";
-			default:
-				return super.translate(type);
+		// Otherwise, apply a default translation:
+		else {
+			StringBuilder sql = new StringBuilder(fct.getName());
+
+			sql.append('(');
+			sql.append(translate(fct.getValue()));
+			sql.append(" AS ");
+
+			// if the returned type is known, translate it:
+			if (fct.getTargetType().getReturnType() != null) {
+				final DBType returnType = fct.getTargetType().getReturnType();
+				switch(returnType.type) {
+					case SMALLINT:
+					case INTEGER:
+					case BIGINT:
+						sql.append("SIGNED INTEGER");
+						break;
+					case CHAR:
+					case VARCHAR:
+						sql.append("CHAR").append((returnType.length > 0 ? "(" + returnType.length + ")" : ""));
+						break;
+					case TIMESTAMP:
+						sql.append("DATETIME");
+						break;
+					default:
+						sql.append(convertTypeToDB(fct.getTargetType().getReturnType()));
+						break;
+				}
+			}
+			// but if not known, use the ADQL version:
+			else
+				sql.append(fct.toADQL());
+
+			sql.append(')');
+			return sql.toString();
 		}
 	}
 

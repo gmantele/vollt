@@ -12,6 +12,7 @@ import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
 import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
 import static tap.config.TAPConfiguration.fetchClass;
 import static tap.config.TAPConfiguration.hasConstructor;
+import static tap.config.TAPConfiguration.isClassFor;
 import static tap.config.TAPConfiguration.isClassName;
 import static tap.config.TAPConfiguration.newInstance;
 import static tap.config.TAPConfiguration.parseLimit;
@@ -45,10 +46,10 @@ public class TestTAPConfiguration {
 	 * 	- null, "", "{}", "an incorrect syntax" 				=> FALSE must be returned
 	 * 	- "{ }", "{ 	}", "{class.path}", "{ class.path	}" 	=> TRUE must be returned
 	 *
-	 * @see ConfigurableServiceConnection#isClassName(String)
+	 * @see TAPConfiguration#isClassName(String)
 	 */
 	@Test
-	public void testIsClassPath() {
+	public void testIsClassName() {
 		// NULL and EMPTY:
 		assertFalse(isClassName(null));
 		assertFalse(isClassName(""));
@@ -68,6 +69,32 @@ public class TestTAPConfiguration {
 
 		// NOT TRIM CLASSPATH:
 		assertTrue(isClassName("{ class.name	}"));
+	}
+
+	/**
+	 * TEST isClassFor(String, Class<?>):
+	 * 	- null, "", "{}", "an incorrect syntax", "{valid.but.incompatible}" => FALSE
+	 * 	- "{valid.and.compatible}" 	                                        => TRUE must be returned
+	 *
+	 * @see TAPConfiguration#isClassFor(String, Class)
+	 */
+	@Test
+	public void testIsClassFor() {
+		// NULL or EMPTY => false
+		assertFalse(isClassFor(null, String.class));
+		assertFalse(isClassFor("", String.class));
+
+		// EMPTY CLASSPATH => false
+		assertFalse(isClassFor("{}", String.class));
+
+		// INCORRECT CLASSPATH => false
+		assertFalse(isClassFor("incorrect class name ; missing {}", String.class));
+
+		// VALID CLASSPATH but NOT COMPATIBLE => false
+		assertFalse(isClassFor("{java.lang.Integer}", String.class));
+
+		// VALID CLASSPATH AND COMPATIBLE => true
+		assertTrue(isClassFor("{java.lang.Integer}", Number.class));
 	}
 
 	/**

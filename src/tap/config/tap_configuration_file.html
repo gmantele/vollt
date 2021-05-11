@@ -940,26 +940,41 @@
 						language (e.g. SQL). The string will represent the exact translation of the
 						function. It is possible to insert arguments with <code>$i</code> (where i is an
 						integer &gt; 0 corresponding to the argument index), and <code>$i..</code> (to print all
-						arguments from the i-th to the last ; there are separated with a comma). This
-						translation pattern is very useful when just the name of the function or the
-						order of arguments is different from the ADQL function, or if a simple
-						operation in the target language (e.g. math operation) is required (note that
-						it will not be executed in the TAP library but in the database). If a more
-						complex translation is required, you should give <code>className</code> instead (see next
-						paragraph).
+						arguments from the i-th to the last, each separated with a comma from the
+						others). This translation pattern is very useful when just the name of the
+						function or the order of arguments is different from the ADQL function, or if
+						a simple operation in the target language (e.g. math operation) is required
+						(note that it will not be executed in the TAP library but in the database). If
+						a more complex translation is required, you should give <code>className</code> instead
+						(see next paragraph).
 					</p>
+					<p><i>className</i> is the name of one of the following classes:</p>
+					<ul>
+						<li>
+							<a href="https://cdsportal.u-strasbg.fr/adqltuto/javadoc/adql/translator/FunctionTranslator.html">FunctionTranslator</a>:
+							an instance of this class will be created and used
+							each time the UDF has to be translated. There is only one function to
+							implement - translate(...) - and is then easier and smaller to define than
+							UserDefinedFunction (see below). The specified class must have have at
+							least one empty constructor.
+						</li>
+						<li>
+							<a href="https://cdsportal.u-strasbg.fr/adqltuto/javadoc/adql/query/operand/function/UserDefinedFunction.html">UserDefinedFunction</a>:
+							an instance of this class will replace any reference
+							of the specified UDF. The specified class must have at least one
+							constructor accepting a single argument of type ADQLOperand[]. More
+							complex to define than a FunctionTranslator, but allows more control than
+							just the translation.
+						</li>
+					</ul>
 					<p>
-						<i>className</i> is the name of a class extending UserDefinedFunction.
-						An instance of this class will replace any reference of a UDF written in an
-						ADQL function with the associated signature. A class name must be specified if
-						the function to represent has a signature (and more particularly a name)
-						different in ADQL and in SQL. description is the human description of the
-						function to be displayed in the /capabilities of the TAP service. It must be
-						written between double quotes.
+						It is recommended to specify a class (of either type) if the UDF to represent
+						has a signature different in ADQL and in SQL, and is not simple enough to be
+						translated using a translation pattern.
 					</p>
 					<p>
 						<i>description</i> is the human description of this function. It will be visible in
-						the TAP's capabilities.
+						the TAP's capabilities. It must written between double quotes.
 					</p>
 					<p>
 						If the list is empty (no item), all unknown functions are forbidden. And if the special value <code>ANY</code> is given, any unknown function is allowed ;
@@ -973,6 +988,7 @@
 						<li>[ivo_lower(str varchar)->varchar, "lower($1)"]</li>
 						<li>[ivo_nocasematch(value varchar, pattern varchar)->integer, "CAST($1 ILIKE $2 AS INTEGER)", "Compare a string with a given LIKE's SQL pattern in a case-insensitive way."]</li>
 						<li>[newFct(x double)-&gt;double, {apackage.MyNewFunction}]</li>
+						<li>[newFct2(x double)-&gt;double, {apackage.MyFunctionTranslator}]</li>
 						<li>[ivo_healpix_index(hpxOrder integer, ra double, dec double) -&gt; bigint, {adql.query.operand.function.healpix.HealpixIndex}, "Compute the index of the \"Healpix cell\" containing the specified position at the given Healpix order."]</li>
 						<li>[random() -&gt; DOUBLE,,"Generate a random number."]</li>
 						<li>[myFunction(str varchar, length int)->varchar, "fct($1..)"]</li>

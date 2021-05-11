@@ -1,7 +1,5 @@
 package adql.parser.feature;
 
-import java.util.ArrayList;
-
 /*
  * This file is part of ADQLLibrary.
  *
@@ -21,6 +19,7 @@ import java.util.ArrayList;
  * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,8 +32,8 @@ import adql.db.FunctionDef;
 import adql.query.ClauseOffset;
 import adql.query.WithItem;
 import adql.query.constraint.ComparisonOperator;
-import adql.query.operand.function.CastFunction;
 import adql.query.operand.function.InUnitFunction;
+import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -123,7 +122,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  * @since 2.0
  */
 public class FeatureSet implements Iterable<LanguageFeature> {

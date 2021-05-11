@@ -16,7 +16,7 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -37,6 +37,7 @@ import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
 import adql.query.operand.function.geometry.CircleFunction;
@@ -53,7 +54,7 @@ import adql.search.ISearchHandler;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (08/2019)
+ * @version 2.0 (05/2021)
  */
 public class ADQLQuery implements ADQLObject {
 
@@ -501,6 +502,9 @@ public class ADQLQuery implements ADQLObject {
 					DBType type = ((DefaultUDF)operand).getDefinition().returnType;
 					((DefaultDBColumn)col).setDatatype(type);
 				}
+				// CASE: CAST with a known datatype:
+				else if (operand instanceof CastFunction && ((CastFunction)operand).getReturnType() != null)
+					((DefaultDBColumn)col).setDatatype(((CastFunction)operand).getReturnType());
 				// CASE: Point type:
 				else if (operand instanceof PointFunction || operand instanceof CentroidFunction)
 					((DefaultDBColumn)col).setDatatype(new DBType(DBDatatype.POINT));

@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (04/2021)
+* Version: 2.0 (05/2021)
 */
 
 							/* ########### */
@@ -81,6 +81,8 @@ import adql.parser.IdentifierItems.IdentifierItem;
 
 import adql.parser.ADQLQueryFactory.JoinType;
 
+import adql.db.DBType.DBDatatype;
+
 import adql.query.*;
 import adql.query.from.*;
 import adql.query.constraint.*;
@@ -88,7 +90,8 @@ import adql.query.constraint.*;
 import adql.query.operand.*;
 
 import adql.query.operand.function.*;
-import adql.query.operand.function.DatatypeParam.DatatypeName;
+
+import adql.query.operand.function.cast.*;
 
 import adql.query.operand.function.string.*;
 
@@ -108,7 +111,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  * @since 2.0
  */
 public class ADQLGrammar201 extends ADQLGrammarBase {
@@ -1718,8 +1721,8 @@ CastFunction GeometricCastFunction(): { CastFunction fct; } {
 	}
 }
 
-CastFunction CastFunction(final char expectedType): {Token fct, end, typeName, typeSize=null; ADQLOperand value; DatatypeParam type;} {
-	fct=<CAST> <LEFT_PAR> value=ValueExpression() <AS> type=DatatypeParam(expectedType) end=<RIGHT_PAR>
+CastFunction CastFunction(final char expectedType): {Token fct, end, typeName, typeSize=null; ADQLOperand value; TargetType type;} {
+	fct=<CAST> <LEFT_PAR> value=ValueExpression() <AS> type=CastDatatype(expectedType) end=<RIGHT_PAR>
 	{
 		try{
 			CastFunction cast = queryFactory.createCastFunction(value, type);
@@ -1731,31 +1734,45 @@ CastFunction CastFunction(final char expectedType): {Token fct, end, typeName, t
 	}
 }
 
-DatatypeParam DatatypeParam(final char expectedType): {Token typeName, typeLength=null, end=null;} {
+TargetType CastDatatype(final char expectedType): {Token typeName, typeLength=null, start=null, end=null; String customName = null; ADQLOperand param; ArrayList<ADQLOperand> customParams = new ArrayList<ADQLOperand>();} {
 	(
-		  typeName=<VARIABLE_LENGTH_DATATYPE> (<LEFT_PAR> typeLength=<UNSIGNED_INTEGER> end=<RIGHT_PAR>)?
-		| typeName=<NO_LENGTH_DATATYPE>
+	  		typeName=<NO_LENGTH_DATATYPE>
+		|
+			typeName=<VARIABLE_LENGTH_DATATYPE> (<LEFT_PAR> typeLength=<UNSIGNED_INTEGER> end=<RIGHT_PAR>)?
+		|
+			start=<REGULAR_IDENTIFIER_CANDIDATE>     { customName = start.image; typeName = start; }
+			(typeName=<REGULAR_IDENTIFIER_CANDIDATE> { customName += " "+typeName.image; })*
+			(<LEFT_PAR>
+				param=ValueExpression()          {customParams.add(param);}
+				(<COMMA> param=ValueExpression() {customParams.add(param);})*
+			end=<RIGHT_PAR>)?
 	)
 	{
   		try{
-  		  	DatatypeParam type = queryFactory.createDatatypeParam(DatatypeParam.DatatypeName.getDatatype(typeName.image), (typeLength == null ? null : Integer.parseInt(typeLength.image)));
+  		  	TargetType type;
+  		  	if (customName != null) {
+  		  		type = new CustomTargetType(customName, customParams.toArray(new ADQLOperand[customParams.size()]));
+  		 	}else{
+  		 		type = new StandardTargetType(typeName.image, (typeLength == null ? -1 : Integer.parseInt(typeLength.image)));
+  		 	}
 			if (end != null)
-				type.setPosition(new TextPosition(typeName, end));
+				type.setPosition(new TextPosition((start != null ? start : typeName), end));
 			else
-				type.setPosition(new TextPosition(typeName));
+				type.setPosition(new TextPosition(start != null ? start : typeName));
 
 			// Ensure the returned datatype matched the expectation:
+  		  	final String typeNameStr = (customName == null ? typeName.image : customName);
 			switch(expectedType) {
 			  case 'n':
 			  case 'N':
 			  	if (!type.isNumeric()) {
 			  	  	StringBuilder buf = new StringBuilder("Encountered: \"");
-			  	  	buf.append(typeName.image).append("\"!");
+			  	  	buf.append(typeNameStr).append("\"!");
 			  	  	buf.append(" Was expecting one numeric datatype among: ");
 			  	  	boolean first = true;
-			  	  	for(DatatypeName d : DatatypeName.getNumericDatatypes()) { 
+			  	  	for(DBDatatype d : StandardTargetType.getNumericDatatypes()) { 
 						if (!first) buf.append(", ");
-						buf.append('"').append(d.toString()).append('"');
+						buf.append('"').append((d == DBDatatype.DOUBLE ? "DOUBLE PRECISION" : d.toString())).append('"');
 						first = false;
 			  	 	}
 			  	 	buf.append('.');
@@ -1766,10 +1783,10 @@ DatatypeParam DatatypeParam(final char expectedType): {Token typeName, typeLengt
 			  case 'S':
 			  	if (!type.isString()) {
 			  	  	StringBuilder buf = new StringBuilder("Encountered: \"");
-			  	  	buf.append(typeName.image).append("\"!");
+			  	  	buf.append(typeNameStr).append("\"!");
 			  	  	buf.append(" Was expecting one character datatype among: ");
 			  	  	boolean first = true;
-			  	  	for(DatatypeName d : DatatypeName.getStringDatatypes()) {
+			  	  	for(DBDatatype d : StandardTargetType.getStringDatatypes()) {
 						if (!first) buf.append(", ");
 						buf.append('"').append(d.toString()).append('"');
 						first = false;
@@ -1782,10 +1799,10 @@ DatatypeParam DatatypeParam(final char expectedType): {Token typeName, typeLengt
 			  case 'G':
 			  	if (!type.isGeometry()) {
 			  	  	StringBuilder buf = new StringBuilder("Encountered: \"");
-			  	  	buf.append(typeName.image).append("\"!");
+			  	  	buf.append(typeNameStr).append("\"!");
 			  	  	buf.append(" Was expecting one geometric datatype among: ");
 			  	  	boolean first = true;
-			  	  	for(DatatypeName d : DatatypeName.getGeometricDatatypes()) { 
+			  	  	for(DBDatatype d : StandardTargetType.getGeometricDatatypes()) { 
 						if (!first) buf.append(", ");
 						buf.append('"').append(d.toString()).append('"');
 						first = false;

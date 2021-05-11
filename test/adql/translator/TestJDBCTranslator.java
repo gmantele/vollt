@@ -14,6 +14,7 @@ import org.junit.Test;
 import adql.db.DBChecker;
 import adql.db.DBTable;
 import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import adql.db.DefaultDBColumn;
 import adql.db.DefaultDBTable;
 import adql.db.FunctionDef;
@@ -30,11 +31,14 @@ import adql.query.WithItem;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
+import adql.query.operand.NumericConstant;
 import adql.query.operand.StringConstant;
-import adql.query.operand.function.CastFunction;
-import adql.query.operand.function.DatatypeParam;
+import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.InUnitFunction;
+import adql.query.operand.function.cast.CastFunction;
+import adql.query.operand.function.cast.CustomTargetType;
+import adql.query.operand.function.cast.StandardTargetType;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -57,19 +61,22 @@ public class TestJDBCTranslator {
 	@Test
 	public void testTranslateCast() {
 		JDBCTranslator tr = new AJDBCTranslator();
-
 		try {
 
-			// CASE: CAST(...) into any possible datatype always translated as in ADQL:
-			for(DatatypeParam.DatatypeName datatype : DatatypeParam.DatatypeName.values()) {
-				CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new DatatypeParam(datatype));
-				assertEquals(datatype.toString(), tr.translate(castFn.getTargetType()));
+			// CASE: CAST into a standard target type => use convertTypeToDB(...)
+			for(DBDatatype datatype : StandardTargetType.getStandardDatatypes()) {
+				CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new StandardTargetType(new DBType(datatype, -1)));
 				assertEquals(castFn.toADQL(), tr.translate(castFn));
 			}
 
-		} catch(ParseException pe) {
-			pe.printStackTrace();
-			fail("Unexpected parsing failure! (see console for more details)");
+			// CASE: CAST into a custom target type with no FunctionTranslator => ADQL serialization
+			CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new CustomTargetType("MY MOC", new ADQLOperand[]{ new NumericConstant(10) }));
+			assertEquals(castFn.toADQL(), tr.translate(castFn));
+
+			// CASE: CAST into a custom target type WITH a FunctionTranslator => Translator version
+			castFn.setFunctionTranslator(new FunctionTranslatorWithPattern("smoc($3, $1)"));
+			assertEquals("smoc(10, aColumn)", tr.translate(castFn));
+
 		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected error while translating a correct CAST function! (see console for more details)");
@@ -270,17 +277,17 @@ public class TestJDBCTranslator {
 
 		// TEST: no FunctionDef, so no translation pattern => just return the ADQL
 		try {
-			assertEquals("split(values, ';')", tr.translate(udf));
+			assertEquals(udf.toADQL(), tr.translate(udf));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
 			fail("There should have been no problem to translate this UDF as in ADQL.");
 		}
 
-		// TEST: a FunctionDef with no translation pattern => just return the ADQL
+		// TEST: a FunctionDef with no translation pattern and translator => just return the ADQL
 		try {
 			udf.setDefinition(FunctionDef.parse("split(str VARCHAR, sep VARCHAR) -> VARCHAR"));
 			assertNull(udf.translate(tr));
-			assertEquals("split(values, ';')", tr.translate(udf));
+			assertEquals(udf.toADQL(), tr.translate(udf));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
 			fail("There should have been no problem to translate this UDF as in ADQL.");
@@ -317,6 +324,31 @@ public class TestJDBCTranslator {
 		try {
 			udf.getDefinition().setTranslationPattern("splitWith($1..)");
 			assertEquals("splitWith(" + tr.translate(udf.getParameter(0)) + ", " + tr.translate(udf.getParameter(1)) + ")", tr.translate(udf));
+		} catch(TranslationException e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem to translate this UDF as in ADQL.");
+		} catch(Exception e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem preparing this test.");
+		}
+
+		// TEST: a FunctionDef with a FunctionTranslator return null => default translation
+		try {
+			udf.getDefinition().setTranslatorClass(FunctionTranslatorReturningNull.class);
+			assertNull(udf.getDefinition().getTranslationPattern());
+			assertEquals(udf.toADQL(), tr.translate(udf));
+		} catch(TranslationException e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem to translate this UDF as in ADQL.");
+		} catch(Exception e) {
+			e.printStackTrace(System.err);
+			fail("There should have been no problem preparing this test.");
+		}
+
+		// TEST: a FunctionDef with a FunctionTranslator return something => "something" expected
+		try {
+			udf.getDefinition().setTranslatorClass(FunctionTranslatorReturningSomething.class);
+			assertEquals("something", tr.translate(udf));
 		} catch(TranslationException e) {
 			e.printStackTrace(System.err);
 			fail("There should have been no problem to translate this UDF as in ADQL.");
@@ -492,7 +524,7 @@ public class TestJDBCTranslator {
 
 		@Override
 		public String convertTypeToDB(DBType type) {
-			return null;
+			return (DBDatatype.DOUBLE == type.type ? "DOUBLE PRECISION" : type.toString());
 		}
 
 		@Override
@@ -503,6 +535,24 @@ public class TestJDBCTranslator {
 		@Override
 		public Object translateGeometryToDB(Region region) throws ParseException {
 			return null;
+		}
+
+	}
+
+	public static final class FunctionTranslatorReturningNull implements FunctionTranslator {
+
+		@Override
+		public String translate(ADQLFunction fct, ADQLTranslator caller) throws TranslationException {
+			return null;
+		}
+
+	}
+
+	public static final class FunctionTranslatorReturningSomething implements FunctionTranslator {
+
+		@Override
+		public String translate(ADQLFunction fct, ADQLTranslator caller) throws TranslationException {
+			return "something";
 		}
 
 	}

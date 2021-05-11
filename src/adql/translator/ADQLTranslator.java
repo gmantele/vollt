@@ -51,12 +51,11 @@ import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.CastFunction;
-import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.UserDefinedFunction;
+import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -78,7 +77,7 @@ import adql.query.operand.function.string.UpperFunction;
  * Translates ADQL objects into any language (i.e. SQL).
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  *
  * @see PostgreSQLTranslator
  */
@@ -183,9 +182,6 @@ public interface ADQLTranslator {
 	public String translate(InUnitFunction fct) throws TranslationException;
 
 	/** @since 2.0 */
-	public String translate(DatatypeParam type) throws TranslationException;
-
-	/** @since 2.0 */
 	public String translate(CastFunction fct) throws TranslationException;
 
 	/* ***** GEOMETRICAL FUNCTIONS ***** */
@@ -216,4 +212,5 @@ public interface ADQLTranslator {
 	public String translate(PolygonFunction polygon) throws TranslationException;
 
 	public String translate(RegionFunction region) throws TranslationException;
+
 }

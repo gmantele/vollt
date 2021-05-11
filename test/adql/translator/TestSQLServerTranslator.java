@@ -24,9 +24,6 @@ import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import adql.query.constraint.ComparisonOperator;
-import adql.query.operand.ADQLColumn;
-import adql.query.operand.function.CastFunction;
-import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 
 public class TestSQLServerTranslator {
@@ -46,35 +43,6 @@ public class TestSQLServerTranslator {
 		t.addColumn(new DefaultDBColumn("name", t));
 		t.addColumn(new DefaultDBColumn("anotherColumn", t));
 		tables.add(t);
-	}
-
-	@Test
-	public void testTranslateCast() {
-		JDBCTranslator tr = new SQLServerTranslator();
-		try {
-			for(DatatypeParam.DatatypeName datatype : DatatypeParam.DatatypeName.values()) {
-				CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new DatatypeParam(datatype));
-				switch(datatype) {
-
-					// TIMESTAMP into `DATETIME`:
-					case TIMESTAMP:
-						assertEquals("DATETIME", tr.translate(castFn.getTargetType()));
-						assertEquals("CAST(aColumn AS DATETIME)", tr.translate(castFn));
-						break;
-
-					// All others are the same as in ADQL:
-					default:
-						assertEquals(datatype.toString(), tr.translate(castFn.getTargetType()));
-						assertEquals(castFn.toADQL(), tr.translate(castFn));
-				}
-			}
-		} catch(ParseException pe) {
-			pe.printStackTrace();
-			fail("Unexpected parsing failure! (see console for more details)");
-		} catch(Exception ex) {
-			ex.printStackTrace();
-			fail("Unexpected error while translating a correct CAST function! (see console for more details)");
-		}
 	}
 
 	@Test

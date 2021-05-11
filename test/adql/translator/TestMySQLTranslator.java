@@ -8,6 +8,8 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
+import adql.db.DBType;
+import adql.db.DBType.DBDatatype;
 import adql.parser.ADQLParser;
 import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
@@ -15,9 +17,9 @@ import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.ADQLColumn;
-import adql.query.operand.function.CastFunction;
-import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
+import adql.query.operand.function.cast.CastFunction;
+import adql.query.operand.function.cast.StandardTargetType;
 
 public class TestMySQLTranslator {
 
@@ -25,42 +27,34 @@ public class TestMySQLTranslator {
 	public void testTranslateCast() {
 		JDBCTranslator tr = new MySQLTranslator();
 		try {
-			for(DatatypeParam.DatatypeName datatype : DatatypeParam.DatatypeName.values()) {
-				CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new DatatypeParam(datatype));
+			for(DBDatatype datatype : StandardTargetType.getStandardDatatypes()) {
+				CastFunction castFn = new CastFunction(new ADQLColumn("aColumn"), new StandardTargetType(new DBType(datatype)));
 				switch(datatype) {
-
 					// All integers into `SIGNED INTEGER`:
 					case SMALLINT:
 					case INTEGER:
 					case BIGINT:
-						assertEquals("SIGNED INTEGER", tr.translate(castFn.getTargetType()));
 						assertEquals("CAST(aColumn AS SIGNED INTEGER)", tr.translate(castFn));
 						break;
 
 					// No VARCHAR[(n)] => CHAR[(n)]
 					case VARCHAR:
-						assertEquals("CHAR", tr.translate(castFn.getTargetType()));
 						assertEquals("CAST(aColumn AS CHAR)", tr.translate(castFn));
-						castFn = new CastFunction(new ADQLColumn("aColumn"), new DatatypeParam(datatype, 1));
-						assertEquals("CHAR(1)", tr.translate(castFn.getTargetType()));
+						castFn = new CastFunction(new ADQLColumn("aColumn"), new StandardTargetType(new DBType(datatype, 1)));
 						assertEquals("CAST(aColumn AS CHAR(1))", tr.translate(castFn));
 						break;
 
 					// TIMESTAMP into `DATETIME`:
 					case TIMESTAMP:
-						assertEquals("DATETIME", tr.translate(castFn.getTargetType()));
 						assertEquals("CAST(aColumn AS DATETIME)", tr.translate(castFn));
 						break;
 
 					// All others are the same as in ADQL:
 					default:
-						assertEquals(datatype.toString(), tr.translate(castFn.getTargetType()));
 						assertEquals(castFn.toADQL(), tr.translate(castFn));
+						break;
 				}
 			}
-		} catch(ParseException pe) {
-			pe.printStackTrace();
-			fail("Unexpected parsing failure! (see console for more details)");
 		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected error while translating a correct CAST function! (see console for more details)");

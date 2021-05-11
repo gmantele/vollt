@@ -43,7 +43,6 @@ import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.Concatenation;
-import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.geometry.AreaFunction;
@@ -91,7 +90,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  * @since 1.4
  *
  * @see SQLServer_ADQLQueryFactory
@@ -533,19 +532,6 @@ public class SQLServerTranslator extends JDBCTranslator {
 	/* * TYPE MANAGEMENT                                                    * */
 	/* *                                                                    * */
 	/* ********************************************************************** */
-
-	@Override
-	public String translate(final DatatypeParam type) throws TranslationException {
-		if (type == null)
-			return null;
-
-		switch(type.getTypeName()) {
-			case TIMESTAMP:
-				return "DATETIME";
-			default:
-				return super.translate(type);
-		}
-	}
 
 	@Override
 	public DBType convertTypeFromDB(final int dbmsType, final String rawDbmsTypeName, String dbmsTypeName, final String[] params) {

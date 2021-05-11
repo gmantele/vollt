@@ -60,7 +60,11 @@ import adql.db.TestDBChecker.UDFToto;
 import adql.db.region.CoordSys.Flavor;
 import adql.db.region.CoordSys.Frame;
 import adql.db.region.CoordSys.RefPos;
+import adql.query.operand.function.ADQLFunction;
+import adql.translator.ADQLTranslator;
 import adql.translator.AstroH2Translator;
+import adql.translator.FunctionTranslator;
+import adql.translator.TranslationException;
 import tap.AbstractTAPFactory;
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
@@ -111,7 +115,7 @@ public class TestConfigurableServiceConnection {
 			anyCoordSysProp, noneInsideCoordSysProp, unknownCoordSysProp,
 			geometriesProp, noneGeomProp, anyGeomProp, noneInsideGeomProp,
 			unknownGeomProp, anyUdfsProp, noneUdfsProp, udfsProp,
-			udfsWithTranslationProp, udfsWithClassNameProp,
+			udfsWithTranslationProp, udfsWithUDFClassProp, udfsWithTranslatorClassProp,
 			udfsWithClassNameAndDescriptionProp, udfsWithEmptyOptParamsProp,
 			udfsListWithNONEorANYProp, udfsWithWrongDescriptionFormatProp,
 			udfsWithWrongParamLengthProp, udfsWithMissingBracketsProp,
@@ -324,8 +328,11 @@ public class TestConfigurableServiceConnection {
 		udfsWithTranslationProp = (Properties)validProp.clone();
 		udfsWithTranslationProp.setProperty(KEY_UDFS, "[my_lower(a string)->VARCHAR, \"toLowerCase($1)\"],[my_substring(str string, sub string, startIndex integer)->VARCHAR, \"substr($1, $2, $3)\", \"Extract a substring.\"]");
 
-		udfsWithClassNameProp = (Properties)validProp.clone();
-		udfsWithClassNameProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
+		udfsWithUDFClassProp = (Properties)validProp.clone();
+		udfsWithUDFClassProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
+
+		udfsWithTranslatorClassProp = (Properties)validProp.clone();
+		udfsWithTranslatorClassProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {tap.config.TestConfigurableServiceConnection$TotoTranslator}]");
 
 		udfsWithClassNameAndDescriptionProp = (Properties)validProp.clone();
 		udfsWithClassNameAndDescriptionProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, \"Bla \\\"bla\\\".\"], [ titi(b REAL) -> double, {adql.db.TestDBChecker$UDFToto}, \"Function titi.\"]");
@@ -1138,14 +1145,31 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
 		}
 
-		// Valid list of UDFs containing one UDF with a class name:
+		// Valid list of UDFs containing one UDF with the name of a UserDefinedFunction class:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithClassNameProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithUDFClassProp);
 			assertNotNull(connection.getUDFs());
 			assertEquals(1, connection.getUDFs().size());
 			FunctionDef def = connection.getUDFs().iterator().next();
 			assertEquals("toto(a VARCHAR) -> VARCHAR", def.toString());
 			assertEquals(UDFToto.class, def.getUDFClass());
+			assertNull(def.getTranslatorClass());
+			assertNull(def.getTranslationPattern());
+			assertNull(def.description);
+		} catch(Exception e) {
+			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
+		}
+
+		// Valid list of UDFs containing one UDF with the name of a FunctionTranslator class:
+		try {
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithTranslatorClassProp);
+			assertNotNull(connection.getUDFs());
+			assertEquals(1, connection.getUDFs().size());
+			FunctionDef def = connection.getUDFs().iterator().next();
+			assertEquals("toto(a VARCHAR) -> VARCHAR", def.toString());
+			assertEquals(TotoTranslator.class, def.getTranslatorClass());
+			assertNull(def.getUDFClass());
+			assertNull(def.getTranslationPattern());
 			assertNull(def.description);
 		} catch(Exception e) {
 			fail("This MUST have succeeded because the given list of UDFs contains valid items! \nCaught exception: " + getPertinentMessage(e));
@@ -1355,6 +1379,22 @@ public class TestConfigurableServiceConnection {
 		public FileManagerTest(Properties tapConfig) throws UWSException {
 			super(new File(tapConfig.getProperty("file_root_path")), true, false);
 		}
+	}
+
+	/**
+	 * A {@link FunctionTranslator} which always return the same translation:
+	 * <code>toto()</code>.
+	 *
+	 * @author Gr&eacute;gory Mantelet (CDS)
+	 * @version 05/2021
+	 */
+	public static class TotoTranslator implements FunctionTranslator {
+
+		@Override
+		public String translate(final ADQLFunction fct, final ADQLTranslator caller) throws TranslationException {
+			return "toto()";
+		}
+
 	}
 
 	/**

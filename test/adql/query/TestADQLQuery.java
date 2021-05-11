@@ -1,6 +1,7 @@
 package adql.query;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -13,8 +14,8 @@ import org.junit.Test;
 
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
-import adql.parser.grammar.ParseException;
 import adql.db.FunctionDef;
+import adql.parser.grammar.ParseException;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.constraint.ConstraintsGroup;
@@ -32,6 +33,9 @@ import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
+import adql.query.operand.function.cast.CastFunction;
+import adql.query.operand.function.cast.CustomTargetType;
+import adql.query.operand.function.cast.StandardTargetType;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
 import adql.query.operand.function.geometry.CircleFunction;
@@ -241,5 +245,26 @@ public class TestADQLQuery {
 			pe.printStackTrace();
 			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");
 		}
+
+		// Test with a CAST and standard datatype:
+		select.clear();
+		select.add(new CastFunction(new StringConstant("2021-05-07T20:33:00"), new StandardTargetType("timestamp")));
+		assertEquals(1, query.getResultingColumns().length);
+		assertNotNull(query.getResultingColumns()[0].getDatatype());
+		assertEquals(DBDatatype.TIMESTAMP, query.getResultingColumns()[0].getDatatype().type);
+
+		// Test with a CAST and a custom datatype:
+		select.clear();
+		select.add(new CastFunction(new StringConstant("2021-05-07T20:33:00"), new CustomTargetType("my custom type")));
+		assertEquals(1, query.getResultingColumns().length);
+		assertNull(query.getResultingColumns()[0].getDatatype());
+
+		// Re-Test after having added a DB type:
+		select.clear();
+		CustomTargetType targetType = new CustomTargetType("my custom type");
+		targetType.setReturnType(new DBType(DBDatatype.TIMESTAMP));
+		select.add(new CastFunction(new StringConstant("2021-05-07T20:33:00"), targetType));
+		assertNotNull(query.getResultingColumns()[0].getDatatype());
+		assertEquals(DBDatatype.TIMESTAMP, query.getResultingColumns()[0].getDatatype().type);
 	}
 }

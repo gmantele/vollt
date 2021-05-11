@@ -62,13 +62,12 @@ import adql.query.operand.Operation;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.CastFunction;
-import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
 import adql.query.operand.function.UserDefinedFunction;
+import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -902,14 +901,29 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 
 	@Override
 	public String translate(CastFunction fct) throws TranslationException {
-		String sql = fct.getName() + "(";
-		sql += translate(fct.getValue()) + " AS " + translate(fct.getTargetType());
-		return sql + ")";
-	}
+		// If a translator is defined, just use it:
+		if (fct.getFunctionTranslator() != null)
+			return fct.getFunctionTranslator().translate(fct, this);
 
-	@Override
-	public String translate(DatatypeParam type) throws TranslationException {
-		return (type == null) ? null : type.toADQL();
+		// Otherwise, apply a default translation:
+		else {
+			StringBuilder sql = new StringBuilder(fct.getName());
+
+			sql.append('(');
+			sql.append(translate(fct.getValue()));
+			sql.append(" AS ");
+
+			// if the returned type is known, translate it:
+			final DBType returnType = fct.getTargetType().getReturnType();
+			if (returnType != null)
+				sql.append(convertTypeToDB(returnType));
+			// but if not known, use the ADQL version:
+			else
+				sql.append(fct.getTargetType().toADQL());
+
+			sql.append(')');
+			return sql.toString();
+		}
 	}
 
 	/* *********************************** */

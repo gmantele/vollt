@@ -21,6 +21,7 @@ package adql.db;
  */
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,9 +35,14 @@ import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.UserDefinedFunction;
+import adql.translator.FunctionTranslator;
+import adql.translator.FunctionTranslatorWithPattern;
+import adql.translator.TranslationPattern;
 
 /**
  * Definition of any function that could be used in ADQL queries.
+ *
+ * <h3>Creating a function definition</h3>
  *
  * <p>
  * 	A such definition can be built manually thanks to the different constructors
@@ -51,13 +57,41 @@ import adql.query.operand.function.UserDefinedFunction;
  * </p>
  * <pre>{fctName}([{param1Name} {param1Type}, ...])[ -> {returnType}]</pre>
  *
+ * <h3>Description</h3>
+ *
  * <p>
  * 	A description of this function may be set thanks to the public class
  * 	attribute {@link #description}.
  * </p>
  *
+ * <h3>Custom UDF</h3>
+ *
+ * <p>
+ * 	To specify a special UDF representation use {@link #setUDFClass(Class)}.
+ * 	Then, to create an instance of this class, use
+ * 	{@link #createUDF(ADQLOperand[])}. Specifying a UDF class is also one of the
+ * 	two ways to describe how to translate the represented UDF into the target
+ * 	language.
+ * </p>
+ *
+ * <h3>Translation</h3>
+ *
+ * <p>
+ * 	An alternative (and simpler) way to tell how to the translate the
+ * 	represented UDF is through a {@link FunctionTranslator} thanks to
+ * 	{@link #setTranslatorClass(Class)}. Then, to create an instance of this class,
+ * 	use {@link #createTranslator()}.
+ * </p>
+ *
+ * <p><i><b>Warning:</b>
+ * 	It has to be noted that {@link #setUDFClass(Class)} and
+ * 	{@link #setTranslatorClass(Class)} are mutually exclusive. Setting a UDF class
+ * 	reset to NULL any previously set translator, and setting a translator class,
+ * 	reset to NULL any previously set UDF class.
+ * </i></p>
+ *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  *
  * @since 1.3
  */
@@ -91,16 +125,6 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	/** Pattern of a single parameter definition. This object has been compiled
 	 * with {@link #fctParamRegExp}. */
 	protected final static Pattern paramPattern = Pattern.compile(fctParamRegExp);
-
-	/** Regular expression for a reference to a UDF argument inside a
-	 * translation pattern.
-	 * @since 2.0  */
-	protected final static String argRefRegExp = "\\$([0-9]|[1-9][0-9]+)";
-
-	/** Pattern of a single argument reference in a translation pattern.
-	 * This object has been compiled with {@link #argRefRegExp}.
-	 * @since 2.0 */
-	public final static Pattern argRefPattern = Pattern.compile(argRefRegExp);
 
 	/** Name of the function. */
 	public final String name;
@@ -189,34 +213,37 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * </p>
 	 *
 	 * <p><i><b>WARNING:</b>
-	 * 	{@link #udfClass} and {@link #translationPattern} are multually
-	 * 	exclusive. Only once can be set. Setting one, will set the other to
-	 * 	NULL.
+	 * 	{@link #udfClass} and {@link #translatorClass} are mutually
+	 * 	exclusive. Only one can be set. Setting one, will set the other to NULL.
 	 * </i></p>
 	 */
 	private Class<? extends UserDefinedFunction> udfClass = null;
 
 	/**
-	 * Translation to apply for this User Defined Function.
-	 *
-	 * <p>
-	 * 	It can be any string. Any <code>$i</code> substring (i being an integer
-	 * 	&gt;0) will be replaced by the corresponding function argument.
-	 * </p>
-	 *
-	 * <p>For instance, for the UDF signature</p>
-	 * <pre>foo(p1 VARCHAR, p2 DOUBLE)</pre>
-	 * <p>, the translation pattern</p>
-	 * <pre>foobar($2*2, $1)</pre>
-	 * <p>which, once applied on the ADQL expression</p>
-	 * <pre>foo('toto', 3.14)</pre>
-	 * <p>will result in the following translation:</p>
-	 * <pre>foobar(3.14*2, 'toto')</pre>
+	 * Class of the specific translator to use for the represented UDF.
 	 *
 	 * <p><i><b>WARNING:</b>
-	 * 	{@link #udfClass} and {@link #translationPattern} are multually
+	 * 	{@link #udfClass} and {@link #translatorClass} are mutually
+	 * 	exclusive. Only one can be set. Setting one, will set the other to NULL.
+	 * </i></p>
+	 *
+	 * @since 2.0
+	 */
+	private Class<? extends FunctionTranslator> translatorClass = null;
+
+	/**
+	 * Translation to apply for this User Defined Function.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	See the Javadoc of {@link TranslationPattern} for a syntax description.
+	 * </i></p>
+	 *
+	 * <p><i><b>WARNING:</b>
+	 * 	{@link #translatorClass} and {@link #translationPattern} are mutually
 	 * 	exclusive. Only once can be set. Setting one, will set the other to
-	 * 	NULL.
+	 * 	NULL. Similarly, setting {@link #udfClass} reset to NULL
+	 * 	{@link #translationPattern} and {@link #translatorClass}, and the other
+	 * 	way around as well.
 	 * </i></p>
 	 *
 	 * @since 2.0
@@ -561,11 +588,14 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 *
 	 * <p><i><b>WARNING:</b>
 	 * 	If successful, this operation will reset to NULL any translation pattern
-	 * 	already set with {@link #setTranslationPattern(String)}.
+	 * 	already set with {@link #setTranslationPattern(String)} as well as any
+	 * 	translator function set with {@link #setTranslatorClass(Class)}.
 	 * </i></p>
 	 *
 	 * @param udfClass	Class to use to represent in an ADQL tree the User
 	 *                	Defined Function defined in this {@link FunctionDef}.
+	 *                	<i>NULL to set no UDF class (and no translator and
+	 *                	translation pattern as well).</i>
 	 *
 	 * @throws IllegalArgumentException	If the given class does not provide any
 	 *                                 	constructor with a single parameter of
@@ -584,7 +614,8 @@ public class FunctionDef implements Comparable<FunctionDef> {
 			// Set the new UDF class:
 			this.udfClass = udfClass;
 
-			// Set to NULL the translation pattern (if any):
+			// Set to NULL the translation class and pattern (if any):
+			this.translatorClass = null;
 			this.translationPattern = null;
 
 		} catch(SecurityException e) {
@@ -595,10 +626,118 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	}
 
 	/**
-	 * Get the translation pattern to apply on any ADQL function implementing
+	 * Create an instance of the {@link UserDefinedFunction} class specified
+	 * by {@link #getUDFClass()}.
+	 *
+	 * @param parameters	The {@link UserDefinedFunction} parameters.
+	 *                  	<i>May be NULL.</i>
+	 *
+	 * @return	The created instance.
+	 *
+	 * @throws NoSuchMethodException		If {@link #getUDFClass()} does not
+	 *                              		provide a constructor with a single
+	 *                              		argument of type {@link ADQLOperand}[].
+	 * @throws SecurityException			If a security manager, s, is present
+	 *                          			and the caller's class loader is not
+	 *                          			the same as or an ancestor of the
+	 *                          			class loader for the current class
+	 *                          			and invocation of s.checkPackageAccess()
+	 *                          			denies access to the package of this
+	 *                          			class.
+	 * @throws InstantiationException		If the class returned by
+	 *                               		{@link #getUDFClass()} represents an
+	 *                               		abstract class.
+	 * @throws IllegalAccessException		If {@link #getUDFClass()} is NULL or
+	 *                               		if this Constructor object is
+	 *                               		enforcing Java language access
+	 *                               		control and the underlying
+	 *                               		constructor is inaccessible.
+	 * @throws IllegalArgumentException		If the given array is unexpected,
+	 *                                 		or contains incorrect items.
+	 * @throws InvocationTargetException	If the underlying constructor throws
+	 *                                  	an exception (use
+	 *                                  	{@link InvocationTargetException#getCause()}
+	 *                                  	to get it).
+	 *
+	 * @since 2.0
+	 */
+	public final UserDefinedFunction createUDF(final ADQLOperand[] parameters) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		// Ensure a udfClass is specified:
+		if (udfClass == null)
+			throw new IllegalAccessException("Impossible to create a UserDefinedFunction instance! Cause: no UserDefinedFunction class specified (i.e. FunctionDef.getUDFClass() == null).");
+
+		// Get the constructor with a single parameter of type ADQLOperand[]:
+		Constructor<? extends UserDefinedFunction> constructor = udfClass.getConstructor(ADQLOperand[].class);
+
+		// Create a new instance of this UDF class with the given parameters:
+		return constructor.newInstance((Object)parameters);
+		/* note: without the cast into Object, each item of the given array will
+		 *       be considered as a single parameter. */
+	}
+
+	/**
+	 * Get the class of the translator to use for any ADQL function implementing
 	 * this UDF definition.
 	 *
-	 * @return	The corresponding {@link UserDefinedFunction}.
+	 * @return	The {@link FunctionTranslator} to use.
+	 *        	<i>NULL if no custom translator is defined.</i>
+	 *
+	 * @since 2.0
+	 */
+	public final Class<? extends FunctionTranslator> getTranslatorClass() {
+		return translatorClass;
+	}
+
+	/**
+	 * Set the {@link FunctionTranslator} class to use for any ADQL function
+	 * implementing this UDF definition.
+	 *
+	 * <p><i><b>WARNING:</b>
+	 * 	If successful, this operation will reset to NULL any UDF class
+	 * 	already set with {@link #setUDFClass(Class)} as well any translation
+	 * 	pattern set with {@link #setTranslationPattern(String)}.
+	 * </i></p>
+	 *
+	 * @param translatorClass	Class of the translator to use.
+	 *                       	<i>NULL to set no translator (and no translation
+	 *                       	pattern and UDF class as well).</i>
+	 *
+	 * @throws IllegalArgumentException	If the given class does not provide an
+	 *                                 	empty constructor.
+	 *
+	 * @since 2.0
+	 */
+	public final <T extends FunctionTranslator> void setTranslatorClass(final Class<T> translatorClass) throws IllegalArgumentException {
+		try {
+
+			// Ensure that, if a class is provided, it contains an empty constructor:
+			if (translatorClass != null) {
+				Constructor<T> constructor = translatorClass.getConstructor();
+				if (constructor == null)
+					throw new IllegalArgumentException("The given class (" + translatorClass.getName() + ") does not provide an empty constructor!");
+			}
+
+			// Set the new FunctionTranslator class:
+			this.translatorClass = translatorClass;
+
+			// Set to NULL the translation pattern (if any):
+			this.translationPattern = null;
+
+			// Set to NULL the UDF class (if any):
+			this.udfClass = null;
+
+		} catch(SecurityException e) {
+			throw new IllegalArgumentException("A security problem occurred while trying to get constructor from the class " + translatorClass.getName() + ": " + e.getMessage());
+		} catch(NoSuchMethodException e) {
+			throw new IllegalArgumentException("The given class (" + translatorClass.getName() + ") does not provide an empty constructor!");
+		}
+	}
+
+	/**
+	 * Get the translation pattern to use for any ADQL function implementing
+	 * this UDF definition.
+	 *
+	 * @return	The translation pattern to use.
 	 *        	<i>NULL if no translation pattern is defined.</i>
 	 *
 	 * @since 2.0
@@ -608,62 +747,133 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	}
 
 	/**
-	 * Set the translation pattern to apply on any ADQL function implementing
+	 * Set the translation pattern to use for any ADQL function implementing
 	 * this UDF definition.
 	 *
-	 * <p>
-	 * 	The given pattern is expected to be the exact string (even an empty
-	 * 	string) resulting from a translation operation. It is possible to insert
-	 * 	somewhere in this string any input argument through the syntax
-	 * 	<code>$i</code> (where <code>i</code> is an integer &gt;0). For instance
-	 * 	<code>$1</code> will insert the value of the 1st argument,
-	 * 	<code>$2</code> of the 2nd, etc...
-	 * </p>
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	Double the <code>$</code> character to escape it.
-	 * 	For instance, <code>$$1</code> won't be interpreted as an argument
-	 * 	reference and will be translated as the literal <code>$1</code>.
-	 * </i></p>
-	 *
-	 * <p><i><b>WARNING 1:</b>
-	 * 	If the given pattern references an out-of-bound argument
-	 * 	(i.e. $i &le; 0 or $i &gt; number of arguments),
-	 * 	an {@link IllegalArgumentException} will be thrown.
-	 * </i></p>
-	 *
-	 * <p><i><b>WARNING 2:</b>
+	 * <p><i><b>WARNING:</b>
 	 * 	If successful, this operation will reset to NULL any UDF class
-	 * 	already set with {@link #setUDFClass(Class)}.
+	 * 	already set with {@link #setUDFClass(Class)} and any translator already
+	 * 	set with {@link #setTranslatorClass(Class)}.
 	 * </i></p>
 	 *
-	 * @param pattern	Pattern to apply while translating the here-defined UDF.
-	 *               	<i>NULL to set no pattern.</i>
+	 * @param translationPattern	Pattern to follow at translation time.
+	 *                       		<i>NULL to set no translation pattern (and
+	 *                       		no translator and UDF class as well).</i>
 	 *
-	 * @throws IllegalArgumentException	If an argument reference is out-of-bound.
+	 * @throws IllegalArgumentException	If the given translation pattern is
+	 *                                 	incorrect (e.g. a referenced argument
+	 *                                 	does not exist according to this
+	 *                                 	{@link FunctionDef}).
 	 *
 	 * @since 2.0
 	 */
-	public final void setTranslationPattern(String pattern) throws IllegalArgumentException {
-		// Check argument references:
+	public final void setTranslationPattern(final String pattern) throws IllegalArgumentException {
+		// Ensure the pattern is correct:
 		if (pattern != null) {
-			Matcher m = argRefPattern.matcher(pattern.replaceAll("\\$\\$", "@"));
-			/* Note: escaped '$' (i.e. '$$') are replaced by a different
-			 *       character in order to easier the matching process while
-			 *       searching for $i strings. */
-			while(m.find()) {
-				// too small => error
-				if (m.group().equals("$0"))
-					throw new IllegalArgumentException("'$0' is not a valid ; an argument reference should be an integer starting from 1.");
-				// too big => error
-				if (Integer.parseInt(m.group().substring(1)) > nbParams)
-					throw new IllegalArgumentException("'" + m.group() + "' is not valid ; the argument index is bigger than the actual number of arguments (" + nbParams + ") according to this UDF definition.");
+			try {
+				TranslationPattern.check(pattern, getNbParams());
+			} catch(java.text.ParseException pe) {
+				throw new IllegalArgumentException(pe.getMessage(), pe);
 			}
 		}
 
-		// Set the given translation pattern:
+		// Set the new translation pattern:
 		this.translationPattern = pattern;
+
+		// Set to NULL the translator (if any):
+		this.translatorClass = null;
+
+		// Set to NULL the UDF class (if any):
 		this.udfClass = null;
+	}
+
+	/**
+	 * Tell whether either a translation pattern or a {@link FunctionTranslator}
+	 * class is specified in this function definition.
+	 *
+	 * <p><i><b>Note:</b>
+	 * 	It is recommended to use this function before using
+	 * 	{@link #createTranslator()}. It <code>true</code> is returned, this
+	 * 	latter can be safely used, otherwise an error will be thrown.
+	 * </i></p>
+	 *
+	 * <p><i><b>Implementation note:</b>
+	 * 	This function is similar to check that either
+	 * 	{@link #getTranslationPattern()} or {@link #getTranslatorClass()} return
+	 * 	a non NULL value.
+	 * </i></p>
+	 *
+	 * @return	<code>true</code> if either a translation pattern or translator
+	 *        	class is specified,
+	 *        	<code>false</code> otherwise (but maybe a custom UDF class is
+	 *        	specified).
+	 *
+	 * @since 2.0
+	 */
+	public final boolean withCustomTranslation() {
+		return translationPattern != null || translatorClass != null;
+	}
+
+	/**
+	 * Create an instance of the specified {@link FunctionTranslator} interface
+	 * ({@link #getTranslatorClass()}) or of a
+	 * {@link FunctionTranslatorWithPattern} with the specified translation
+	 * pattern ({@link #getTranslationPattern()}).
+	 *
+	 * <p><i><b>Hint:</b>
+	 * 	This function will throw an error if no translation pattern or
+	 * 	translator class is defined. To avoid this undesired behavior, you
+	 * 	should use {@link #withCustomTranslation()}. If <code>true</code> is
+	 * 	returned, {@link #createTranslator()} can be safely used.
+	 * </i></p>
+	 *
+	 * @return	The created instance.
+	 *
+	 * @throws NoSuchMethodException		If {@link #getTranslatorClass()()}
+	 *                              		does not provide an empty
+	 *                              		constructor.
+	 * @throws SecurityException			If a security manager, s, is present
+	 *                          			and the caller's class loader is not
+	 *                          			the same as or an ancestor of the
+	 *                          			class loader for the current class
+	 *                          			and invocation of s.checkPackageAccess()
+	 *                          			denies access to the package of this
+	 *                          			class.
+	 * @throws InstantiationException		If the class returned by
+	 *                               		{@link #getTranslatorClass()}
+	 *                               		represents an abstract class.
+	 * @throws IllegalAccessException		If both {@link #getTranslatorClass()}
+	 *                               		and {@link #getTranslationPattern()}
+	 *                               		return NULL or if this Constructor
+	 *                               		object is enforcing Java language
+	 *                               		access control and the underlying
+	 *                               		constructor is inaccessible.
+	 * @throws IllegalArgumentException		If the given array is unexpected,
+	 *                                 		or contains incorrect items.
+	 * @throws InvocationTargetException	If the underlying constructor throws
+	 *                                  	an exception (use
+	 *                                  	{@link InvocationTargetException#getCause()}
+	 *                                  	to get it).
+	 *
+	 * @since 2.0
+	 */
+	public final FunctionTranslator createTranslator() throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		// CASE: translation pattern
+		if (translationPattern != null) {
+			return new FunctionTranslatorWithPattern(translationPattern);
+		}
+		// CASE/DEFAULT: a custom translator
+		else {
+			// Ensure a udfClass is specified:
+			if (translatorClass == null)
+				throw new IllegalAccessException("Impossible to create a FunctionTranslator instance! Cause: no FunctionTranslator class specified (i.e. FunctionDef.getTranslatorClass() == null).");
+
+			// Get the empty constructor:
+			Constructor<? extends FunctionTranslator> constructor = translatorClass.getConstructor();
+
+			// Create a new instance of this translator class:
+			return constructor.newInstance();
+		}
 	}
 
 	/**

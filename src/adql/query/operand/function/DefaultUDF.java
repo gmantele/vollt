@@ -20,6 +20,8 @@ package adql.query.operand.function;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
+import java.lang.reflect.InvocationTargetException;
+
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.FunctionDef;
@@ -32,8 +34,8 @@ import adql.query.ClauseADQL;
 import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
 import adql.translator.ADQLTranslator;
+import adql.translator.FunctionTranslator;
 import adql.translator.TranslationException;
-import adql.translator.TranslationPattern;
 
 /**
  * It represents any function which is not managed by ADQL.
@@ -239,10 +241,17 @@ public final class DefaultUDF extends UserDefinedFunction {
 
 	@Override
 	public String translate(final ADQLTranslator caller) throws TranslationException {
-		// Use the translation pattern if any is specified:
-		if (definition != null && definition.getTranslationPattern() != null)
-			return TranslationPattern.apply(definition.getTranslationPattern(), this, caller);
-
+		// Use the custom translator if any is specified:
+		if (definition != null && definition.withCustomTranslation()) {
+			try {
+				FunctionTranslator translator = definition.createTranslator();
+				return translator.translate(this, caller);
+			} catch(TranslationException te) {
+				throw te;
+			} catch(Exception ex) {
+				throw new TranslationException("Impossible to translate the function \"" + getName() + "\" (" + toADQL() + ")! Cause: error with a custom FunctionTranslator: \"" + ((ex instanceof InvocationTargetException) ? "[" + ex.getCause().getClass().getSimpleName() + "] " + ex.getCause().getMessage() : ex.getMessage()) + "\".", ex);
+			}
+		}
 		// Otherwise, no translation needed (let the caller use a default translation):
 		else
 			return null;

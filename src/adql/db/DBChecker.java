@@ -20,7 +20,6 @@ package adql.db;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -109,7 +108,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  */
 public class DBChecker implements QueryChecker {
 
@@ -1283,8 +1282,8 @@ public class DBChecker implements QueryChecker {
 	 * 	{@link FunctionDef#getUDFClass()}, no replacement is performed.
 	 * </i></p>
 	 *
-	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.3 (02/2015)
+	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
+	 * @version 2.0 (05/2021)
 	 * @since 1.3
 	 */
 	private static class ReplaceDefaultUDFHandler extends SimpleReplaceHandler {
@@ -1304,17 +1303,13 @@ public class DBChecker implements QueryChecker {
 
 		@Override
 		protected ADQLObject getReplacer(ADQLObject objToReplace) throws UnsupportedOperationException {
+			final DefaultUDF udf = ((DefaultUDF)objToReplace);
 			try {
-				// get the associated UDF class:
-				Class<? extends UserDefinedFunction> udfClass = ((DefaultUDF)objToReplace).getDefinition().getUDFClass();
-				// get the constructor with a single parameter of type ADQLOperand[]:
-				Constructor<? extends UserDefinedFunction> constructor = udfClass.getConstructor(ADQLOperand[].class);
-				// create a new instance of this UDF class with the operands stored in the object to replace:
-				return constructor.newInstance((Object)(((DefaultUDF)objToReplace).getParameters())); /* note: without this class, each item of the given array will be considered as a single parameter. */
+				return udf.getDefinition().createUDF(udf.getParameters());
 			} catch(Exception ex) {
 				// IF NO INSTANCE CAN BE CREATED...
 				// ...keep the error for further report:
-				errors.addException(new UnresolvedFunctionException("Impossible to represent the function \"" + ((DefaultUDF)objToReplace).getName() + "\": the following error occured while creating this representation: \"" + ((ex instanceof InvocationTargetException) ? "[" + ex.getCause().getClass().getSimpleName() + "] " + ex.getCause().getMessage() : ex.getMessage()) + "\"", (DefaultUDF)objToReplace));
+				errors.addException(new UnresolvedFunctionException("Impossible to represent the function \"" + udf.getName() + "\": the following error occured while creating this representation: \"" + ((ex instanceof InvocationTargetException) ? "[" + ex.getCause().getClass().getSimpleName() + "] " + ex.getCause().getMessage() : ex.getMessage()) + "\"", udf));
 				// ...keep the same object (i.e. no replacement):
 				return objToReplace;
 			}

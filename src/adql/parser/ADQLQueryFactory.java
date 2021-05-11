@@ -59,8 +59,6 @@ import adql.query.operand.Operation;
 import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
-import adql.query.operand.function.CastFunction;
-import adql.query.operand.function.DatatypeParam;
 import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
@@ -68,6 +66,8 @@ import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
 import adql.query.operand.function.UserDefinedFunction;
+import adql.query.operand.function.cast.CastFunction;
+import adql.query.operand.function.cast.TargetType;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -95,7 +95,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2021)
+ * @version 2.0 (05/2021)
  *
  * @see ADQLParser
  */
@@ -537,23 +537,6 @@ public class ADQLQueryFactory {
 	}
 
 	/**
-	 * Create a {@link DatatypeParam}.
-	 *
-	 * @param typeName	Name of the datatype to represent.
-	 * @param typeLength	Its length, if this datatype is a fixed- or
-	 *                  	variable-length type (e.g. CHAR, VARCHAR).
-	 *
-	 * @return	The created {@link DatatypeParam}.
-	 *
-	 * @throws Exception	If one or both parameters are incorrect.
-	 *
-	 * @since 2.0
-	 */
-	public DatatypeParam createDatatypeParam(final DatatypeParam.DatatypeName typeName, final Integer typeLength) throws Exception {
-		return new DatatypeParam(typeName, typeLength);
-	}
-
-	/**
 	 * Create a {@link CastFunction}.
 	 *
 	 * @param value	The value to convert.
@@ -565,7 +548,7 @@ public class ADQLQueryFactory {
 	 *
 	 * @since 2.0
 	 */
-	public CastFunction createCastFunction(final ADQLOperand value, final DatatypeParam type) throws Exception {
+	public CastFunction createCastFunction(final ADQLOperand value, final TargetType type) throws Exception {
 		return new CastFunction(value, type);
 	}
 }
