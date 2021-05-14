@@ -57,7 +57,6 @@ import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
 import adql.query.operand.UnknownType;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CircleFunction;
@@ -992,9 +991,9 @@ public class DBChecker implements QueryChecker {
 					// if no match...
 					if (match < 0)
 						errors.addException(new UnresolvedFunctionException(udf));
-					// if there is a match, metadata may be attached (particularly if the function is built automatically by the syntactic parser):
-					else if (udf instanceof DefaultUDF)
-						((DefaultUDF)udf).setDefinition(allowedUdfs[match]);
+					// if there is a match, metadata can be attached:
+					else
+						udf.setDefinition(allowedUdfs[match]);
 				}
 			}
 
@@ -1008,9 +1007,9 @@ public class DBChecker implements QueryChecker {
 				// if no match, add an error:
 				if (match < 0)
 					errors.addException(new UnresolvedFunctionException(udf));
-				// otherwise, metadata may be attached (particularly if the function is built automatically by the syntactic parser):
-				else if (udf instanceof DefaultUDF)
-					((DefaultUDF)udf).setDefinition(allowedUdfs[match]);
+				// otherwise, metadata can be attached:
+				else
+					udf.setDefinition(allowedUdfs[match]);
 			}
 
 			// 3. Replace all the resolved DefaultUDF by an instance of the class associated with the set signature:
@@ -1274,8 +1273,9 @@ public class DBChecker implements QueryChecker {
 	}
 
 	/**
-	 * Let replacing every {@link DefaultUDF}s whose a {@link FunctionDef} is
-	 * set by their corresponding {@link UserDefinedFunction} class.
+	 * Let replacing every {@link UserDefinedFunction}s whose a
+	 * {@link FunctionDef} is set by their corresponding custom
+	 * {@link UserDefinedFunction} extension.
 	 *
 	 * <p><i><b>Important note:</b>
 	 * 	If the replacer can not be created using the class returned by
@@ -1295,15 +1295,12 @@ public class DBChecker implements QueryChecker {
 
 		@Override
 		protected boolean match(ADQLObject obj) {
-			return (obj.getClass().getName().equals(DefaultUDF.class.getName())) && (((DefaultUDF)obj).getDefinition() != null) && (((DefaultUDF)obj).getDefinition().getUDFClass() != null);
-			/* Note: detection of DefaultUDF is done on the exact class name rather than using "instanceof" in order to have only direct instances of DefaultUDF,
-			 * and not extensions of it. Indeed, DefaultUDFs are generally created automatically by the ADQLQueryFactory ; so, extensions of it can only be custom
-			 * UserDefinedFunctions. */
+			return (obj instanceof UserDefinedFunction) && (((UserDefinedFunction)obj).getDefinition() != null) && (((UserDefinedFunction)obj).getDefinition().getUDFClass() != null);
 		}
 
 		@Override
 		protected ADQLObject getReplacer(ADQLObject objToReplace) throws UnsupportedOperationException {
-			final DefaultUDF udf = ((DefaultUDF)objToReplace);
+			final UserDefinedFunction udf = ((UserDefinedFunction)objToReplace);
 			try {
 				return udf.getDefinition().createUDF(udf.getParameters());
 			} catch(Exception ex) {

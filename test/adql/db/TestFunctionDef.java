@@ -18,7 +18,7 @@ import adql.query.operand.ADQLOperand;
 import adql.query.operand.NumericConstant;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.geometry.PointFunction;
 
 public class TestFunctionDef {
@@ -367,23 +367,23 @@ public class TestFunctionDef {
 			}
 
 			// TEST :: "fct1()": [EQUAL]
-			assertEquals(0, def.compareTo(new DefaultUDF("fct1", null)));
+			assertEquals(0, def.compareTo(new UserDefinedFunction("fct1", null)));
 
 			// TEST :: "fct0()": [GREATER]
-			assertEquals(1, def.compareTo(new DefaultUDF("fct0", null)));
+			assertEquals(1, def.compareTo(new UserDefinedFunction("fct0", null)));
 
 			// TEST :: "fct1(12.3, 3.14)": [LESS (of 2 params)]
-			assertEquals(-2, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new NumericConstant(12.3), new NumericConstant(3.14) })));
+			assertEquals(-2, def.compareTo(new UserDefinedFunction("fct1", new ADQLOperand[]{ new NumericConstant(12.3), new NumericConstant(3.14) })));
 
 			// DEFINITION :: fct1(foo1 CHAR(12), foo2 DOUBLE) -> VARCHAR
 			def = new FunctionDef("fct1", new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("foo1", new DBType(DBDatatype.CHAR, 12)), new FunctionParam("foo2", new DBType(DBDatatype.DOUBLE)) });
 
 			// TEST :: "fct1('blabla', 'blabla2')": [GREATER (because the second param is numeric and Numeric = 10 > String = 01)]
-			assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new StringConstant("blabla2") })));
+			assertEquals(1, def.compareTo(new UserDefinedFunction("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new StringConstant("blabla2") })));
 
 			// TEST :: "fct1('blabla', POINT('COORDSYS', 1.2, 3.4))": [GREATER (same reason ; POINT is considered as a String)]
 			try {
-				assertEquals(1, def.compareTo(new DefaultUDF("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4)) })));
+				assertEquals(1, def.compareTo(new UserDefinedFunction("fct1", new ADQLOperand[]{ new StringConstant("blabla"), new PointFunction(new StringConstant("COORDSYS"), new NumericConstant(1.2), new NumericConstant(3.4)) })));
 			} catch(Exception e) {
 				e.printStackTrace();
 				fail();
@@ -396,10 +396,10 @@ public class TestFunctionDef {
 			dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN));
 			ADQLColumn col = new ADQLColumn("foo");
 			col.setDBLink(dbcol);
-			assertEquals(0, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
+			assertEquals(0, def0.compareTo(new UserDefinedFunction("fct0", new ADQLOperand[]{ col })));
 			// TEST :: "fct0(foo)", where foo is an UNKNOWN NUMERIC [LESS]
 			dbcol.setDatatype(new DBType(DBDatatype.UNKNOWN_NUMERIC));
-			assertEquals(-1, def0.compareTo(new DefaultUDF("fct0", new ADQLOperand[]{ col })));
+			assertEquals(-1, def0.compareTo(new UserDefinedFunction("fct0", new ADQLOperand[]{ col })));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
 			fail("Failed initialization because of an invalid UDF declaration! Cause: (cf console)");

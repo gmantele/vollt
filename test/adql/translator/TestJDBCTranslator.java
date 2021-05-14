@@ -34,8 +34,8 @@ import adql.query.operand.Concatenation;
 import adql.query.operand.NumericConstant;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.InUnitFunction;
+import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.cast.CustomTargetType;
 import adql.query.operand.function.cast.StandardTargetType;
@@ -273,7 +273,7 @@ public class TestJDBCTranslator {
 	public void testTranslateUserDefinedFunction() {
 		JDBCTranslator tr = new AJDBCTranslator();
 
-		DefaultUDF udf = new DefaultUDF("split", new ADQLOperand[]{ new ADQLColumn("values"), new StringConstant(";") });
+		UserDefinedFunction udf = new UserDefinedFunction("split", new ADQLOperand[]{ new ADQLColumn("values"), new StringConstant(";") });
 
 		// TEST: no FunctionDef, so no translation pattern => just return the ADQL
 		try {

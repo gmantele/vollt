@@ -23,14 +23,12 @@ import adql.db.FunctionDef.FunctionParam;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParser.ADQLVersion;
-import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.search.SimpleSearchHandler;
 import adql.translator.ADQLTranslator;
@@ -573,8 +571,8 @@ public class TestDBChecker {
 			try {
 				ADQLQuery query = parser.parseQuery("SELECT toto() FROM foo;");
 				ADQLOperand fct = query.getSelect().get(0).getOperand();
-				assertTrue(fct instanceof DefaultUDF);
-				assertNotNull(((DefaultUDF)fct).getDefinition());
+				assertTrue(fct instanceof UserDefinedFunction);
+				assertNotNull(((UserDefinedFunction)fct).getDefinition());
 				assertTrue(fct.isString());
 				assertFalse(fct.isNumeric());
 				assertFalse(fct.isGeometry());
@@ -604,8 +602,8 @@ public class TestDBChecker {
 			try {
 				ADQLQuery query = parser.parseQuery("SELECT tata() FROM foo;");
 				ADQLOperand fct = query.getSelect().get(0).getOperand();
-				assertTrue(fct instanceof DefaultUDF);
-				assertNotNull(((DefaultUDF)fct).getDefinition());
+				assertTrue(fct instanceof UserDefinedFunction);
+				assertNotNull(((UserDefinedFunction)fct).getDefinition());
 				assertFalse(fct.isString());
 				assertTrue(fct.isNumeric());
 				assertFalse(fct.isGeometry());
@@ -644,8 +642,8 @@ public class TestDBChecker {
 			try {
 				ADQLQuery query = parser.parseQuery("SELECT titi() FROM foo;");
 				ADQLOperand fct = query.getSelect().get(0).getOperand();
-				assertTrue(fct instanceof DefaultUDF);
-				assertNotNull(((DefaultUDF)fct).getDefinition());
+				assertTrue(fct instanceof UserDefinedFunction);
+				assertNotNull(((UserDefinedFunction)fct).getDefinition());
 				assertFalse(fct.isString());
 				assertFalse(fct.isNumeric());
 				assertTrue(fct.isGeometry());
@@ -725,8 +723,8 @@ public class TestDBChecker {
 			try {
 				ADQLQuery query = parser.parseQuery("SELECT toto() FROM foo;");
 				ADQLOperand fct = query.getSelect().get(0).getOperand();
-				assertTrue(fct instanceof DefaultUDF);
-				assertNull(((DefaultUDF)fct).getDefinition());
+				assertTrue(fct instanceof UserDefinedFunction);
+				assertNull(((UserDefinedFunction)fct).getDefinition());
 				assertTrue(fct.isString());
 				assertTrue(fct.isNumeric());
 			} catch(ParseException e1) {
@@ -749,8 +747,8 @@ public class TestDBChecker {
 			try {
 				ADQLQuery query = parser.parseQuery("SELECT toto() FROM foo;");
 				ADQLOperand fct = query.getSelect().get(0).getOperand();
-				assertTrue(fct instanceof DefaultUDF);
-				assertNotNull(((DefaultUDF)fct).getDefinition());
+				assertTrue(fct instanceof UserDefinedFunction);
+				assertNotNull(((UserDefinedFunction)fct).getDefinition());
 				assertTrue(fct.isString());
 				assertFalse(fct.isNumeric());
 			} catch(ParseException e1) {
@@ -815,7 +813,6 @@ public class TestDBChecker {
 	}
 
 	public static class UDFToto extends UserDefinedFunction {
-		private LanguageFeature FEATURE = (new FunctionDef(getName(), new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) })).toLanguageFeature();
 
 		protected StringConstant fakeParam;
 
@@ -827,6 +824,8 @@ public class TestDBChecker {
 			else if (!(params[0] instanceof StringConstant))
 				throw new Exception("Wrong parameter type! The parameter of the UDF \"toto\" must be a string constant.");
 			fakeParam = (StringConstant)params[0];
+			functionName = "toto";
+			languageFeature = (new FunctionDef(getName(), new DBType(DBDatatype.VARCHAR), new FunctionParam[]{ new FunctionParam("txt", new DBType(DBDatatype.VARCHAR)) })).toLanguageFeature();
 		}
 
 		@Override
@@ -848,11 +847,6 @@ public class TestDBChecker {
 		public ADQLObject getCopy() throws Exception {
 			ADQLOperand[] params = new ADQLOperand[]{ (StringConstant)fakeParam.getCopy() };
 			return new UDFToto(params);
-		}
-
-		@Override
-		public final String getName() {
-			return "toto";
 		}
 
 		@Override
@@ -885,11 +879,6 @@ public class TestDBChecker {
 		public String translate(final ADQLTranslator caller) throws TranslationException {
 			/* Note: Since this function is totally fake, this function will be replaced in SQL by its parameter (the string). */
 			return caller.translate(fakeParam);
-		}
-
-		@Override
-		public LanguageFeature getFeatureDescription() {
-			return FEATURE;
 		}
 	}
 

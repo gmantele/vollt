@@ -36,7 +36,7 @@ import adql.parser.grammar.ParseException;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
 import adql.query.operand.ADQLOperand;
-import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -497,9 +497,9 @@ public class ADQLQuery implements ADQLObject {
 
 				/* For columns created by default (from functions and operations generally),
 				 * set the adequate type if known: */
-				// CASE: Well-defined UDF
-				if (operand instanceof DefaultUDF && ((DefaultUDF)operand).getDefinition() != null) {
-					DBType type = ((DefaultUDF)operand).getDefinition().returnType;
+				// CASE: UDF
+				if (operand instanceof UserDefinedFunction && ((UserDefinedFunction)operand).getDefinition() != null) {
+					DBType type = ((UserDefinedFunction)operand).getDefinition().returnType;
 					((DefaultDBColumn)col).setDatatype(type);
 				}
 				// CASE: CAST with a known datatype:

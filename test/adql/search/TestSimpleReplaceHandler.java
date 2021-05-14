@@ -9,9 +9,9 @@ import org.junit.Test;
 import adql.parser.ADQLParser;
 import adql.query.ADQLObject;
 import adql.query.ADQLQuery;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
+import adql.query.operand.function.UserDefinedFunction;
 
 public class TestSimpleReplaceHandler {
 
@@ -49,7 +49,7 @@ public class TestSimpleReplaceHandler {
 
 				@Override
 				protected ADQLObject getReplacer(ADQLObject objToReplace) throws UnsupportedOperationException {
-					return new DefaultUDF("foo", ((MathFunction)objToReplace).getParameters());
+					return new UserDefinedFunction("foo", ((MathFunction)objToReplace).getParameters());
 				}
 			};
 
@@ -94,13 +94,13 @@ public class TestSimpleReplaceHandler {
 			SimpleReplaceHandler replaceHandler = new SimpleReplaceHandler() {
 				@Override
 				protected boolean match(ADQLObject obj) {
-					return obj instanceof DefaultUDF && ((DefaultUDF)obj).getName().toLowerCase().matches("(foo|bar)");
+					return obj instanceof UserDefinedFunction && ((UserDefinedFunction)obj).getName().toLowerCase().matches("(foo|bar)");
 				}
 
 				@Override
 				protected ADQLObject getReplacer(ADQLObject objToReplace) throws UnsupportedOperationException {
 					try {
-						return new MathFunction(MathFunctionType.ROUND, (DefaultUDF)objToReplace);
+						return new MathFunction(MathFunctionType.ROUND, (UserDefinedFunction)objToReplace);
 					} catch(Exception e) {
 						e.printStackTrace(System.err);
 						fail("No error should have occured here since nothing is wrong in the ADQL query used for the test. See the stack trace in the console for more details.");

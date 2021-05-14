@@ -12,7 +12,7 @@ import adql.query.operand.ADQLOperand;
 import adql.query.operand.NumericConstant;
 import adql.query.operand.StringConstant;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.DefaultUDF;
+import adql.query.operand.function.UserDefinedFunction;
 
 public class TestTranslationPattern {
 
@@ -22,7 +22,7 @@ public class TestTranslationPattern {
 	@Before
 	public void initTest() throws Exception {
 		translator = new PostgreSQLTranslator();
-		fct = new DefaultUDF("anyFunction", new ADQLOperand[]{ new StringConstant("Blabla"), new NumericConstant(123), new NumericConstant(1.23) });
+		fct = new UserDefinedFunction("anyFunction", new ADQLOperand[]{ new StringConstant("Blabla"), new NumericConstant(123), new NumericConstant(1.23) });
 	}
 
 	/* *************************************************************************

@@ -33,7 +33,6 @@ import adql.parser.grammar.ParseException;
 import adql.parser.grammar.Token;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.function.ADQLFunction;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.translator.FunctionTranslator;
 import adql.translator.FunctionTranslatorWithPattern;
@@ -556,10 +555,10 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 	<br/>
 	 * 	However, if this {@link FunctionDef} is defining a user defined function
 	 * 	and this function returns NULL, the library will create on the fly a
-	 * 	{@link DefaultUDF} corresponding to this definition when needed. Indeed
-	 * 	this UDF class is useful only if the translation from ADQL (to SQL for
-	 * 	instance) of the defined function has a different signature (e.g. a
-	 * 	different name) in the target language (e.g. SQL).
+	 * 	{@link UserDefinedFunction} corresponding to this definition when
+	 * 	needed. Indeed this UDF class is useful only if the translation from
+	 * 	ADQL (to SQL for instance) of the defined function has a different
+	 * 	signature (e.g. a different name) in the target language (e.g. SQL).
 	 * </i></p>
 	 *
 	 * @return	The corresponding {@link UserDefinedFunction}.
@@ -581,9 +580,9 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	 * 	to set a UDF class. It is useful only if the translation from ADQL (to
 	 * 	SQL for instance) of the function has a different signature (e.g. a
 	 * 	different name) in the target language (e.g. SQL). If the signature is
-	 * 	the same, there is no need to set a UDF class ; a {@link DefaultUDF}
-	 * 	will be created on the fly by the library when needed if it turns out
-	 * 	that no UDF class is set.
+	 * 	the same, there is no need to set a UDF class ; a
+	 * 	{@link UserDefinedFunction} will be created on the fly by the library
+	 * 	when needed if it turns out that no UDF class is set.
 	 * </i></p>
 	 *
 	 * <p><i><b>WARNING:</b>

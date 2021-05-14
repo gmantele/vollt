@@ -28,11 +28,11 @@ import adql.query.operand.Operation;
 import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
+import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.cast.CustomTargetType;
 import adql.query.operand.function.cast.StandardTargetType;
@@ -229,14 +229,14 @@ public class TestADQLQuery {
 
 		// Test with a UDF having no definition:
 		select.clear();
-		select.add(new DefaultUDF("foo", new ADQLOperand[0]));
+		select.add(new UserDefinedFunction("foo", new ADQLOperand[0]));
 		assertEquals(1, query.getResultingColumns().length);
 		assertNull(query.getResultingColumns()[0].getDatatype());
 
 		// Test with a UDF having a definition:
 		try {
 			select.clear();
-			DefaultUDF udf = new DefaultUDF("foo", new ADQLOperand[0]);
+			UserDefinedFunction udf = new UserDefinedFunction("foo", new ADQLOperand[0]);
 			udf.setDefinition(new FunctionDef("foo", new DBType(DBDatatype.INTEGER)));
 			select.add(udf);
 			assertEquals(1, query.getResultingColumns().length);

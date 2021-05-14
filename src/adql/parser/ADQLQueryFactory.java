@@ -59,7 +59,6 @@ import adql.query.operand.Operation;
 import adql.query.operand.OperationType;
 import adql.query.operand.StringConstant;
 import adql.query.operand.WrappedOperand;
-import adql.query.operand.function.DefaultUDF;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
@@ -324,37 +323,39 @@ public class ADQLQueryFactory {
 	}
 
 	/**
-	 * Creates the user defined functions called as the given name and with
-	 * the given parameters.
+	 * Creates the user defined function with the given name and parameters.
 	 *
 	 * <p>
-	 * 	By default, this function returns a {@link DefaultUDF} instance. It is
-	 * 	generic enough to cover every kind of functions. But you can of course
-	 * 	override this function in order to return your own instance of
-	 * 	{@link UserDefinedFunction}. In this case, you may not forget to call
-	 * 	the super function (super.createUserDefinedFunction(name, params)) so
-	 * 	that all other unknown functions are still returned as
-	 * 	{@link DefaultUDF} instances.
+	 * 	By default, this function returns a {@link UserDefinedFunction}
+	 * 	instance. It is generic enough to cover every kind of functions. But you
+	 * 	can of course override this function in order to return your own
+	 * 	instance of {@link UserDefinedFunction}. In this case, you may not
+	 * 	forget to call the super function
+	 * 	(super.createUserDefinedFunction(name, params)) so that all other
+	 * 	unknown functions are still returned as {@link UserDefinedFunction}
+	 * 	instances.
 	 * </p>
 	 *
 	 * <p><i><b>IMPORTANT:</b>
 	 * 	The tests done to check whether a user defined function is
-	 * 	allowed/managed in this implementation, is done later by the parser.
-	 * 	Only declared UDF will pass the test of the parser. For that, you should
-	 * 	give it a list of allowed UDFs (each UDF will be then represented by a
-	 * 	{@link FunctionDef} object).
+	 * 	allowed/supported in this implementation, is done later by the
+	 * 	{@link QueryChecker} provided by {@link ADQLParser#getQueryChecker()}.
+	 * 	Only UDFs declared in the supported
+	 * 	{@link ADQLParser#getSupportedFeatures() features} will pass the test of
+	 * 	the parser. For that, you should give it a list of allowed UDFs (each
+	 * 	UDF will be then represented by a {@link FunctionDef} object).
 	 * </i></p>
 	 *
-	 * @param name			Name of the user defined function to create.
-	 * @param params		Parameters of the user defined function to create.
+	 * @param name		Name of the user defined function to create.
+	 * @param params	Parameters of the user defined function to create.
 	 *
-	 * @return				The corresponding user defined function (by default
-	 *        				an instance of {@link DefaultUDF}).
+	 * @return	The corresponding user defined function (by default an instance
+	 *        	of {@link UserDefinedFunction}).
 	 *
 	 * @throws Exception	If there is a problem while creating the function.
 	 */
 	public UserDefinedFunction createUserDefinedFunction(String name, ADQLOperand[] params) throws Exception {
-		return new DefaultUDF(name, params);
+		return new UserDefinedFunction(name, params);
 	}
 
 	/** @deprecated Since 2.0, prefer to use directly {@link #createDistance(GeometryFunction, GeometryFunction)} */
