@@ -87,14 +87,14 @@ public class MAST_Geometry_SQLServerTranslator extends SQLServerTranslator {
 
 	// In order to translate complex queries, we need to give the
 	// temporary function tables a unique name, or catch aliasing in the query.
-	private static String defaultFunctionTableName = "geometryTempResults";
-	private static String defaultFunctionName = "STCSFootprint";
+	private String defaultFunctionTableName = "geometryTempResults";
+	private String defaultFunctionName = "STCSFootprint";
 
-	private static String[] CatalogSchemaNames = null;
-	private static String[] CatalogTableNames = null;
-	private static String[] CatalogFunctionNames = null;	
-	private static String[] CatalogUserFunctionNames = null;
-	private static float maxRadiusAllowed = (float) 0.25; //default. negative for no limit.
+	private String[] CatalogSchemaNames = null;
+	private String[] CatalogTableNames = null;
+	private String[] CatalogFunctionNames = null;	
+	private String[] CatalogUserFunctionNames = null;
+	private float maxRadiusAllowed = (float) 0.25; //default. negative for no limit.
 	
 	public MAST_Geometry_SQLServerTranslator(final String geometrySchemaNames[], 
 			final String geometryTableNames[], final String userFunctionNames[], final String geometryFunctionNames[], final float geometryMaxRadius)
@@ -210,6 +210,7 @@ public class MAST_Geometry_SQLServerTranslator extends SQLServerTranslator {
 					return tables.get(i);
 			}
 		}
+                
 		throw new TranslationException("Geometry query requested for non-indexed table.");
 	}
 	
