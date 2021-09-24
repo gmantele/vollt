@@ -87,7 +87,7 @@ import adql.query.operand.function.geometry.RegionFunction;
 
 public class MAST_SQLServerTranslator extends SQLServerTranslator {
 
-	private static String[] CatalogUserFunctionNames = null;
+	private String[] CatalogUserFunctionNames = null;
 	
 	public MAST_SQLServerTranslator(){
 		super(false);
