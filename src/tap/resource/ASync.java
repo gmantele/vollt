@@ -16,16 +16,9 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
-
-import java.io.IOException;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
 import tap.TAPException;
@@ -36,9 +29,16 @@ import uws.job.UWSJob;
 import uws.job.manager.AbstractQueuedExecutionManager;
 import uws.job.manager.QueuedExecutionManager;
 import uws.service.UWSService;
+import uws.service.UWSUrl;
 import uws.service.backup.UWSBackupManager;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * <p>Asynchronous resource of a TAP service.</p>
@@ -71,7 +71,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </ul>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (01/2020)
+ * @version 2.4 (11/2021)
  *
  * @see UWSService
  */
@@ -155,7 +155,8 @@ public class ASync implements TAPResource {
 
 	@Override
 	public void setTAPBaseURL(final String baseURL) {
-		;
+		/* Let the UWS service determine this URL,
+		 * or it is already done by #init(ServletConfig). */
 	}
 
 	/**
@@ -169,7 +170,23 @@ public class ASync implements TAPResource {
 
 	@Override
 	public void init(final ServletConfig config) throws ServletException {
-		;
+		// Configure the URL interpreter of UWS/Async:
+		if (service.getBaseUrl() != null && uws.getUrlInterpreter() == null) {
+			final String strBaseUrl = service.getBaseUrl().toString().replaceAll("/+$", "");
+			// ...get the servlet's context path:
+			final String contextPath = config.getServletContext().getContextPath().replaceAll("/+$", "");
+			// ...check that the base URL includes this path:
+			if (!strBaseUrl.contains(contextPath))
+				service.getLogger().logUWS(LogLevel.ERROR, null, "ASYNC_INIT", "Base URL ignored! Cause: it does not include the servlet's context path ("+contextPath+").", null);
+			else {
+				// ...create the URL interpreter:
+				final UWSUrl urlInterpreter = new UWSUrl(strBaseUrl.substring(strBaseUrl.indexOf(contextPath)));
+				// ...load all information about the URL:
+				urlInterpreter.load(service.getBaseUrl());
+				// ...set this URL interpreter into the UWS service:
+				uws.setUrlInterpreter(urlInterpreter);
+			}
+		}
 	}
 
 	@Override

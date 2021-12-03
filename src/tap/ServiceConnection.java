@@ -16,12 +16,9 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
-
-import java.util.Collection;
-import java.util.Iterator;
 
 import adql.db.FunctionDef;
 import tap.db.DBConnection;
@@ -32,6 +29,10 @@ import tap.metadata.TAPMetadata;
 import uws.service.UserIdentifier;
 import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
+
+import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Description and parameters list of a TAP service.
@@ -44,7 +45,7 @@ import uws.service.file.UWSFileManager;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (08/2020)
+ * @version 2.4 (11/2021)
  */
 public interface ServiceConnection {
 
@@ -232,6 +233,22 @@ public interface ServiceConnection {
 	 * @return	The TAP service description or NULL to leave this field blank.
 	 */
 	public String getProviderDescription();
+
+	/**
+	 * <i>[OPTIONAL]</i>
+	 * <p>Base/Root URL of the TAP service.</p>
+	 *
+	 * <p>
+	 *     It will be used to set the base URL of the Async resource.
+	 *     If NULL, it will be determined automatically from the URL of the
+	 *     first incoming asynchronous request.
+	 * </p>
+	 *
+	 * @return	Base URL of the TAP service.
+	 *
+	 * @since 2.4
+	 */
+	public URL getBaseUrl();
 
 	/**
 	 * <i><b>[MANDATORY]</b></i>
