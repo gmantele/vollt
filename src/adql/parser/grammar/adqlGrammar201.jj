@@ -1458,7 +1458,8 @@ GeometryFunction BoxWithCoords(): { Token fct=null, end=null; ADQLOperand coordS
 }
 
 GeometryFunction Circle(): { GeometryFunction gf; } {
-	(		LOOKAHEAD(CircleWithPoint())
+	(
+		LOOKAHEAD(CircleWithPoint())
 		gf=CircleWithPoint()
 	|
 		gf=CircleWithCoords()
@@ -1504,7 +1505,9 @@ CentroidFunction Centroid(): {Token fct=null, end=null; GeometryValue<GeometryFu
 	(fct=<CENTROID> <LEFT_PAR> gvf=GeometryExpression() end=<RIGHT_PAR>)
 	{
 		try {
-	  		return queryFactory.createCentroid(gvf);
+	  		CentroidFunction cf = queryFactory.createCentroid(gvf);
+	  		cf.setPosition(new TextPosition(fct, end));
+	  		return cf;
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}
