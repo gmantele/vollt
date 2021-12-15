@@ -16,23 +16,24 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2015 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
-
-import java.util.NoSuchElementException;
 
 import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
+import adql.query.operand.UnknownType;
+
+import java.util.NoSuchElementException;
 
 /**
  * Represents a comparison (numeric or not) between two operands.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 1.6 (12/2021)
  *
  * @see ComparisonOperator
  */
@@ -175,10 +176,13 @@ public class Comparison implements ADQLConstraint {
 	public void setRightOperand(ADQLOperand newRightOperand) throws NullPointerException, UnsupportedOperationException {
 		if (newRightOperand == null)
 			throw new NullPointerException("Impossible to update the right operand of the comparison (" + toADQL() + ") with a NULL operand!");
-		if (leftOperand != null && newRightOperand.isNumeric() != leftOperand.isNumeric() && newRightOperand.isString() != leftOperand.isString())
+		if (leftOperand != null && !(newRightOperand instanceof UnknownType) && !(leftOperand instanceof UnknownType)
+				&& (newRightOperand.isNumeric() != leftOperand.isNumeric() || newRightOperand.isString() != leftOperand.isString() || newRightOperand.isGeometry() != leftOperand.isGeometry()))
 			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison (" + toADQL() + ") with \"" + newRightOperand.toADQL() + "\" because its type is not compatible with the type of the left operand!");
 		if (compOperator != null && newRightOperand.isNumeric() && (compOperator == ComparisonOperator.LIKE || compOperator == ComparisonOperator.NOTLIKE))
 			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison (" + toADQL() + ") with \"" + newRightOperand.toADQL() + "\" because the comparison operator " + compOperator.toADQL() + " is not applicable on numeric operands!");
+		if (compOperator != null && newRightOperand.isGeometry() && (compOperator == ComparisonOperator.LIKE || compOperator == ComparisonOperator.NOTLIKE))
+			throw new UnsupportedOperationException("Impossible to update the right operand of the comparison (" + toADQL() + ") with \"" + newRightOperand.toADQL() + "\" because the comparison operator " + compOperator.toADQL() + " is not applicable on geometric operands!");
 
 		rightOperand = newRightOperand;
 		position = null;
