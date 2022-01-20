@@ -16,19 +16,19 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2015-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2015-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Properties;
 
 import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import tap.TAPFactory;
 import tap.backup.DefaultTAPBackupManager;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Properties;
 
 /**
  * Utility class gathering tool functions and properties' names useful to
@@ -41,7 +41,7 @@ import tap.backup.DefaultTAPBackupManager;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (08/2020)
+ * @version 2.4 (11/2021)
  * @since 2.0
  */
 public final class TAPConfiguration {
@@ -295,6 +295,11 @@ public final class TAPConfiguration {
 	public final static String KEY_PROVIDER_NAME = "provider_name";
 	/** Name/Key of the property specifying the description of the TAP service. */
 	public final static String KEY_SERVICE_DESCRIPTION = "service_description";
+
+	/** Name/Key of the property specifying the base/root URL of the TAP
+	 * service.
+	 * @since 2.4 */
+	public final static String KEY_BASE_URL = "base_url";
 
 	/* UPLOAD KEYS */
 	/** Name/Key of the property indicating whether the UPLOAD feature must be

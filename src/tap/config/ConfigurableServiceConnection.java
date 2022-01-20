@@ -16,88 +16,9 @@ package tap.config;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2016-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2016-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
-
-import static tap.config.TAPConfiguration.DEFAULT_ASYNC_FETCH_SIZE;
-import static tap.config.TAPConfiguration.DEFAULT_DIRECTORY_PER_USER;
-import static tap.config.TAPConfiguration.DEFAULT_EXECUTION_DURATION;
-import static tap.config.TAPConfiguration.DEFAULT_FIX_ON_FAIL;
-import static tap.config.TAPConfiguration.DEFAULT_GROUP_USER_DIRECTORIES;
-import static tap.config.TAPConfiguration.DEFAULT_LOGGER;
-import static tap.config.TAPConfiguration.DEFAULT_MAX_ASYNC_JOBS;
-import static tap.config.TAPConfiguration.DEFAULT_MAX_UPLOAD_LIMIT;
-import static tap.config.TAPConfiguration.DEFAULT_RETENTION_PERIOD;
-import static tap.config.TAPConfiguration.DEFAULT_SYNC_FETCH_SIZE;
-import static tap.config.TAPConfiguration.DEFAULT_UPLOAD_MAX_REQUEST_SIZE;
-import static tap.config.TAPConfiguration.KEY_ASYNC_FETCH_SIZE;
-import static tap.config.TAPConfiguration.KEY_COORD_SYS;
-import static tap.config.TAPConfiguration.KEY_DEFAULT_EXECUTION_DURATION;
-import static tap.config.TAPConfiguration.KEY_DEFAULT_OUTPUT_LIMIT;
-import static tap.config.TAPConfiguration.KEY_DEFAULT_RETENTION_PERIOD;
-import static tap.config.TAPConfiguration.KEY_DEFAULT_UPLOAD_LIMIT;
-import static tap.config.TAPConfiguration.KEY_DIRECTORY_PER_USER;
-import static tap.config.TAPConfiguration.KEY_FILE_MANAGER;
-import static tap.config.TAPConfiguration.KEY_FILE_ROOT_PATH;
-import static tap.config.TAPConfiguration.KEY_FIX_ON_FAIL;
-import static tap.config.TAPConfiguration.KEY_GEOMETRIES;
-import static tap.config.TAPConfiguration.KEY_GROUP_USER_DIRECTORIES;
-import static tap.config.TAPConfiguration.KEY_LOGGER;
-import static tap.config.TAPConfiguration.KEY_LOG_ROTATION;
-import static tap.config.TAPConfiguration.KEY_MAX_ASYNC_JOBS;
-import static tap.config.TAPConfiguration.KEY_MAX_EXECUTION_DURATION;
-import static tap.config.TAPConfiguration.KEY_MAX_OUTPUT_LIMIT;
-import static tap.config.TAPConfiguration.KEY_MAX_RETENTION_PERIOD;
-import static tap.config.TAPConfiguration.KEY_MAX_UPLOAD_LIMIT;
-import static tap.config.TAPConfiguration.KEY_METADATA;
-import static tap.config.TAPConfiguration.KEY_METADATA_FILE;
-import static tap.config.TAPConfiguration.KEY_MIN_LOG_LEVEL;
-import static tap.config.TAPConfiguration.KEY_OUTPUT_FORMATS;
-import static tap.config.TAPConfiguration.KEY_PROVIDER_NAME;
-import static tap.config.TAPConfiguration.KEY_SERVICE_DESCRIPTION;
-import static tap.config.TAPConfiguration.KEY_SYNC_EXECUTION_DURATION;
-import static tap.config.TAPConfiguration.KEY_SYNC_FETCH_SIZE;
-import static tap.config.TAPConfiguration.KEY_TAP_FACTORY;
-import static tap.config.TAPConfiguration.KEY_UDFS;
-import static tap.config.TAPConfiguration.KEY_UPLOAD_ENABLED;
-import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_FILE_SIZE;
-import static tap.config.TAPConfiguration.KEY_UPLOAD_MAX_REQUEST_SIZE;
-import static tap.config.TAPConfiguration.KEY_USER_IDENTIFIER;
-import static tap.config.TAPConfiguration.SLF4J_LOGGER;
-import static tap.config.TAPConfiguration.VALUE_ALL;
-import static tap.config.TAPConfiguration.VALUE_ANY;
-import static tap.config.TAPConfiguration.VALUE_CSV;
-import static tap.config.TAPConfiguration.VALUE_DB;
-import static tap.config.TAPConfiguration.VALUE_FITS;
-import static tap.config.TAPConfiguration.VALUE_HTML;
-import static tap.config.TAPConfiguration.VALUE_JSON;
-import static tap.config.TAPConfiguration.VALUE_LOCAL;
-import static tap.config.TAPConfiguration.VALUE_NONE;
-import static tap.config.TAPConfiguration.VALUE_SV;
-import static tap.config.TAPConfiguration.VALUE_TEXT;
-import static tap.config.TAPConfiguration.VALUE_TSV;
-import static tap.config.TAPConfiguration.VALUE_VOT;
-import static tap.config.TAPConfiguration.VALUE_VOTABLE;
-import static tap.config.TAPConfiguration.VALUE_XML;
-import static tap.config.TAPConfiguration.fetchClass;
-import static tap.config.TAPConfiguration.getProperty;
-import static tap.config.TAPConfiguration.hasConstructor;
-import static tap.config.TAPConfiguration.isClassName;
-import static tap.config.TAPConfiguration.newInstance;
-import static tap.config.TAPConfiguration.parseLimit;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import adql.db.FunctionDef;
 import adql.db.STCS;
@@ -108,13 +29,7 @@ import tap.TAPException;
 import tap.TAPFactory;
 import tap.db.DBConnection;
 import tap.db.JDBCConnection;
-import tap.formatter.FITSFormat;
-import tap.formatter.HTMLFormat;
-import tap.formatter.JSONFormat;
-import tap.formatter.OutputFormat;
-import tap.formatter.SVFormat;
-import tap.formatter.TextFormat;
-import tap.formatter.VOTableFormat;
+import tap.formatter.*;
 import tap.log.DefaultTAPLog;
 import tap.log.Slf4jTAPLog;
 import tap.log.TAPLog;
@@ -128,6 +43,18 @@ import uws.service.file.LocalUWSFileManager;
 import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog.LogLevel;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static tap.config.TAPConfiguration.*;
+
 /**
  * Concrete implementation of {@link ServiceConnection}, fully parameterized
  * with a TAP configuration file.
@@ -139,7 +66,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (08/2020)
+ * @version 2.4 (11/2021)
  * @since 2.0
  */
 public final class ConfigurableServiceConnection implements ServiceConnection {
@@ -162,6 +89,10 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	private final String providerName;
 	/** Description of the TAP service. */
 	private final String serviceDescription;
+
+	/** Base/Root URL of the TAP service.
+	 * @since 2.4 */
+	private final URL baseURL;
 
 	/** Indicate whether the TAP service is available or not. */
 	private boolean isAvailable = false;	// the TAP service must be disabled until the end of its connection initialization
@@ -308,6 +239,31 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 		initADQLGeometries(tapConfig);
 		initUDFs(tapConfig);
 		isFixOnFailEnabled = Boolean.parseBoolean(getProperty(tapConfig, KEY_FIX_ON_FAIL));
+
+		// 11. BASE URL:
+		baseURL = initBaseURL(tapConfig);
+	}
+
+	/**
+	 * Parse and return the base/root URL specified in the configuration.
+	 *
+	 * @param tapConfig	The content of the TAP configuration file.
+	 *
+	 * @return	The corresponding URL,
+	 *        	or NULL, if none is specified.
+	 *
+	 * @throws TAPException	If the specified URL is invalid.
+	 *
+	 * @since 2.4
+	 */
+	private URL initBaseURL(final Properties tapConfig) throws TAPException {
+		try {
+			final String value = getProperty(tapConfig, KEY_BASE_URL);
+			return (value == null) ? null : new URL(value);
+		}
+		catch (MalformedURLException mue) {
+			throw new TAPException("Incorrect URL for the property \""+KEY_BASE_URL+"\"! Cause: "+mue.getMessage());
+		}
 	}
 
 	/**
@@ -1342,6 +1298,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	public String getProviderDescription() {
 		return serviceDescription;
 	}
+
+	@Override
+	public URL getBaseUrl() { return baseURL; }
 
 	@Override
 	public boolean isAvailable() {
