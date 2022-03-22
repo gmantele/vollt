@@ -11,7 +11,7 @@
 	<property name="version" value="2.101" />
 
 	<property name="srcDir" value="src" />
-	<property name="testDir" value="test" />
+	<property name="testDir" value="test/adql" />
 	<property name="compileDir" value="antBuild" />
 	<property name="junitBuildDir" value="junitBuild" />
 	<property name="classesDir" value="${compileDir}"/>
