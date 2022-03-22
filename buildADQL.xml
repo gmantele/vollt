@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project>
-<project name="adql" basedir="." default="buildLib">
+<project name="adql" basedir="." default="buildLibNoCheck">
 	
     <property name="POSTGRES" value="lib/postgresql-42.2.5.jar"/>
     <property name="SERVLET-API" value="lib/javax.servlet-api.jar"/>
