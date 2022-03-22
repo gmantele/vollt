@@ -95,6 +95,7 @@
 		<javac destdir="${junitBuildDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
 			<src path="${testDir}" />
 			<exclude name="**/TestPostgreSQLTranslator.java"/>
+			<exclude name="**/TestPgSphereTranslator.java"/>
 			<classpath refid="junit.class.path" />
 			<classpath refid="adql.classpath" />
 			<classpath>
@@ -117,6 +118,7 @@
 		<mkdir dir="${compileDir}" />
 		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
 			<exclude name="**/PostgreSQLTranslator.java"/>
+			<exclude name="**/PgSphereTranslator.java"/>
 			<classpath refid="adql.classpath" />
 		</javac>
 	</target>
