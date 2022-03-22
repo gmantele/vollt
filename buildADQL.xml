@@ -94,6 +94,7 @@
 		<mkdir dir="${junitBuildDir}" />
 		<javac destdir="${junitBuildDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
 			<src path="${testDir}" />
+			<exclude name="**/TestPostgreSQLTranslator.java"/>
 			<classpath refid="junit.class.path" />
 			<classpath refid="adql.classpath" />
 			<classpath>
@@ -115,6 +116,7 @@
 	<target name="compileLib" depends="clean" description="Build all the classes of the ADQL library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
 		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
+			<exclude name="**/PostgreSQLTranslator.java"/>
 			<classpath refid="adql.classpath" />
 		</javac>
 	</target>
