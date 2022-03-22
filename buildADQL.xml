@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project>
-<project name="adql" basedir="." default="buildLib">
+<project name="adql" basedir="." default="buildLibNoCheck">
 	
-	<property name="version" value="1.5-1" />
+    <property name="POSTGRES" value="lib/postgresql-42.2.5.jar"/>
+    <property name="SERVLET-API" value="lib/javax.servlet-api.jar"/>
+    <property name="SQLSERVER-API" value="lib/sqljdbc4.jar"/>
+    <property name="JUNIT-API" value="lib/junit.jar"/>
+	<property name="JUNIT-HAMCREST" value="lib/hamcrest-core-1.3.jar"/>
+	
+	<property name="version" value="2.101" />
 
 	<property name="srcDir" value="src" />
 	<property name="testDir" value="test" />
@@ -47,6 +53,7 @@
 	<path id="junit.class.path">
 		<path refid="adql.classpath" />
 		<pathelement path="${JUNIT-API}" />
+		<pathelement path="${JUNIT-HAMCREST}"/>
 		<pathelement location="bin" />
 	</path>
 	
@@ -127,6 +134,22 @@
 		<echo>Delete compiled classes:</echo>
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>
+	
+	<target name="buildLibNoCheck" depends="compileLib" description="After 'clean', build the library JAR (only classes) and the runnable ADQL parser.">
+		<echo>Generate the library:</echo>
+		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}" />
+		<echo>Generate the ADQL parser:</echo>
+		<jar basedir="${classesDir}" destfile="${adqlParserJarFile}" filesetmanifest="mergewithoutmain" includes="${includesList}">
+            <manifest>
+                <attribute name="Main-Class" value="adql.parser.ADQLParser"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+        </jar>
+		<echo>And its symbolic link:</echo>
+		<symlink action="single" link="${adqlParserLink}" resource="${adqlParserJarFile}" failonerror="false" />
+		<echo>Delete compiled classes:</echo>
+		<delete dir="${compileDir}" failonerror="true" />
+	</target>	
 	
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
 		<jar compress="false" destfile="${srcJarFile}">
