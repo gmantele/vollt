@@ -139,22 +139,6 @@
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>
 	
-	<target name="buildLibNoCheck" depends="compileLib" description="After 'clean', build the library JAR (only classes) and the runnable ADQL parser.">
-		<echo>Generate the library:</echo>
-		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}" />
-		<echo>Generate the ADQL parser:</echo>
-		<jar basedir="${classesDir}" destfile="${adqlParserJarFile}" filesetmanifest="mergewithoutmain" includes="${includesList}">
-            <manifest>
-                <attribute name="Main-Class" value="adql.parser.ADQLParser"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-        </jar>
-		<echo>And its symbolic link:</echo>
-		<symlink action="single" link="${adqlParserLink}" resource="${adqlParserJarFile}" failonerror="false" />
-		<echo>Delete compiled classes:</echo>
-		<delete dir="${compileDir}" failonerror="true" />
-	</target>	
-	
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
 		<jar compress="false" destfile="${srcJarFile}">
 			<zipfileset dir="${srcDir}" includes="${includesList},${licensePath}" prefix="${srcDir}" />
