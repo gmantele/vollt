@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project>
-<project name="adql" basedir="." default="buildLibNoCheck">
+<project name="adql" basedir="." default="buildLib">
 	
     <property name="POSTGRES" value="lib/postgresql-42.2.5.jar"/>
     <property name="SERVLET-API" value="lib/javax.servlet-api.jar"/>
@@ -94,7 +94,7 @@
 		<mkdir dir="${junitBuildDir}" />
 		<javac destdir="${junitBuildDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
 			<src path="${testDir}" />
-			<exclude name="**/TestPostgreSQLTranslator.java"/>
+			<exclude name="**/TestPostgreSQLTranslator.java"/> <!--we are not including unused postgres/pgsphere libraries-->
 			<exclude name="**/TestPgSphereTranslator.java"/>
 			<classpath refid="junit.class.path" />
 			<classpath refid="adql.classpath" />
@@ -117,7 +117,7 @@
 	<target name="compileLib" depends="clean" description="Build all the classes of the ADQL library. This target is particularly usefull because it lets highlighting missing dependencies.">
 		<mkdir dir="${compileDir}" />
 		<javac destdir="${compileDir}" srcdir="${srcDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
-			<exclude name="**/PostgreSQLTranslator.java"/>
+			<exclude name="**/PostgreSQLTranslator.java"/> <!--we are not including unused postgres/pgsphere libraries-->
 			<exclude name="**/PgSphereTranslator.java"/>
 			<classpath refid="adql.classpath" />
 		</javac>
@@ -138,22 +138,6 @@
 		<echo>Delete compiled classes:</echo>
 		<delete dir="${compileDir}" failonerror="true" />
 	</target>
-	
-	<target name="buildLibNoCheck" depends="compileLib" description="After 'clean', build the library JAR (only classes) and the runnable ADQL parser.">
-		<echo>Generate the library:</echo>
-		<jar basedir="${classesDir}" destfile="${libJarFile}" includes="${includesList}" />
-		<echo>Generate the ADQL parser:</echo>
-		<jar basedir="${classesDir}" destfile="${adqlParserJarFile}" filesetmanifest="mergewithoutmain" includes="${includesList}">
-            <manifest>
-                <attribute name="Main-Class" value="adql.parser.ADQLParser"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-        </jar>
-		<echo>And its symbolic link:</echo>
-		<symlink action="single" link="${adqlParserLink}" resource="${adqlParserJarFile}" failonerror="false" />
-		<echo>Delete compiled classes:</echo>
-		<delete dir="${compileDir}" failonerror="true" />
-	</target>	
 	
 	<target name="buildLibAndSrc" depends="buildLib" description="After 'clean' and 'buildLib', build the sources JAR (only .java).">
 		<jar compress="false" destfile="${srcJarFile}">
