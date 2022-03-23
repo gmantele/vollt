@@ -11,7 +11,7 @@
 	<property name="version" value="2.101" />
 
 	<property name="srcDir" value="src" />
-	<property name="testDir" value="test/adql" />
+	<property name="testDir" value="test" />
 	<property name="compileDir" value="antBuild" />
 	<property name="junitBuildDir" value="junitBuild" />
 	<property name="classesDir" value="${compileDir}"/>
@@ -94,8 +94,6 @@
 		<mkdir dir="${junitBuildDir}" />
 		<javac destdir="${junitBuildDir}" includes="${includesList}" includeantruntime="false" encoding="utf8" bootclasspath="${adql.bootclasspath}" debug="true">
 			<src path="${testDir}" />
-			<exclude name="**/TestPostgreSQLTranslator.java"/> <!--we are not including unused postgres/pgsphere libraries-->
-			<exclude name="**/TestPgSphereTranslator.java"/>
 			<classpath refid="junit.class.path" />
 			<classpath refid="adql.classpath" />
 			<classpath>
