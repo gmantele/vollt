@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import adql.parser.ADQLParser;
@@ -17,6 +18,7 @@ import tap.metadata.TAPMetadata;
 import tap.metadata.TAPTable;
 import tap.metadata.TableSetParser;
 
+@Ignore
 public class TestSubQueries {
 
 	@Before

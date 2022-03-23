@@ -9,6 +9,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import adql.query.ADQLQuery;
@@ -344,6 +345,7 @@ public class TestADQLParser {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testTryQuickFix() {
 		ADQLParser parser = new ADQLParser();
