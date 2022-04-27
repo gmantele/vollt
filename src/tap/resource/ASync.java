@@ -39,6 +39,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * <p>Asynchronous resource of a TAP service.</p>
@@ -173,18 +175,13 @@ public class ASync implements TAPResource {
 		// Configure the URL interpreter of UWS/Async:
 		if (service.getBaseUrl() != null && uws.getUrlInterpreter() == null) {
 			final String strBaseUrl = service.getBaseUrl().toString().replaceAll("/+$", "");
-			// ...get the servlet's context path:
-			final String contextPath = config.getServletContext().getContextPath().replaceAll("/+$", "");
-			// ...check that the base URL includes this path:
-			if (!strBaseUrl.contains(contextPath))
-				service.getLogger().logUWS(LogLevel.ERROR, null, "ASYNC_INIT", "Base URL ignored! Cause: it does not include the servlet's context path ("+contextPath+").", null);
-			else {
-				// ...create the URL interpreter:
-				final UWSUrl urlInterpreter = new UWSUrl(strBaseUrl.substring(strBaseUrl.indexOf(contextPath)));
-				// ...load all information about the URL:
-				urlInterpreter.load(service.getBaseUrl());
+			// ...create and set the URL interpreter with the given root URL:
+			try {
+				final UWSUrl urlInterpreter = new UWSUrl(new URL(strBaseUrl));
 				// ...set this URL interpreter into the UWS service:
 				uws.setUrlInterpreter(urlInterpreter);
+			} catch (MalformedURLException mue) {
+				service.getLogger().logUWS(LogLevel.ERROR, null, "ASYNC_INIT", "Root URL ignored! Cause: not a valid URL ("+mue.getMessage()+").", null);
 			}
 		}
 	}

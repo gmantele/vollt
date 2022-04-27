@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012,2014 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -34,7 +34,7 @@ import uws.job.UWSJob;
  * This class helps managing with UWS URLs and URIs.
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.1 (09/2014)
+ * @version 4.5 (04/2022)
  */
 public class UWSUrl implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -43,12 +43,14 @@ public class UWSUrl implements Serializable {
 	protected String requestURL = null;									// http://cds-dev-gm:8080/uwstuto/basic/timers/job1/results/report
 
 	/** The URL prefix (i.e. http://foo.org/mySite). */
-	protected String urlHeader = null;									// http://cds-dev-gm:8080/uwstuto
+	protected final String urlHeader;									// http://cds-dev-gm:8080/uwstuto
 
-	/** The request URI (i.e. /uws/jobList/job1/results/report) */
-	protected String requestURI = null;									// /basic/timers/job1/results/report
+	/** The request URI (i.e. /.../uws/jobList/job1/results/report) */
+	protected String requestURI = null;									// /uwstuto/basic/timers/job1/results/report
 
-	/** Base UWS URI (i.e. /uws). */
+	/** Base UWS URI (i.e. /uws).
+	 * @deprecated Not reliable in some cases (e.g. proxy usage). */
+	@Deprecated
 	protected final String baseURI;										// /basic
 
 	/** The URI from the base UWS URI (i.e. /jobList/job1/results/report). */
@@ -86,48 +88,67 @@ public class UWSUrl implements Serializable {
 	/**
 	 * Builds a UWSUrl with a fixed baseURI.
 	 * 
-	 * @param baseURI			The baseURI to consider in all URL or request parsing.
+	 * @param baseURI	The baseURI to consider in all URL or request parsing.
 	 * 
-	 * @throws NullPointerException		If the given baseURI is <i>null</i> or is an empty string.
+	 * @throws NullPointerException	If the given baseURI is <i>null</i>
+	 *                             	or is an empty string.
+	 *
+	 * @deprecated Initialization with base URI is not reliable in some cases
+	 *             (proxy usage). Use {@link #UWSUrl(java.net.URL)} instead.
 	 */
+	@Deprecated
 	public UWSUrl(String baseURI) throws NullPointerException{
 		if (baseURI == null)
 			throw new NullPointerException("The given base UWS URI is NULL!");
 
-		this.baseURI = normalizeURI(baseURI);
+		this.baseURI   = normalizeURI(baseURI);
+		this.urlHeader = this.baseURI;
 
 		if (baseURI.length() == 0)
 			throw new NullPointerException("The given base UWS URI is empty!");
 	}
 
 	/**
+	 * Builds a UWSUrl with a fixed root URL (aka URL header).
+	 *
+	 * @param rootURL	The URL prefix of all UWS requests.
+	 *
+	 * @throws NullPointerException	If the given rootURL is <code>NULL</code>.
+	 *
+	 * @since 4.5
+	 */
+	public UWSUrl(final URL rootURL) throws NullPointerException {
+		if (rootURL == null)
+			throw new NullPointerException("Missing UWS' root URL!");
+
+		this.urlHeader = rootURL.toString();
+		this.baseURI   = null; // NULL because impossible to determine
+	}
+
+	/**
 	 * Builds a UWSUrl considering the given request to set the baseURI.
 	 * 
 	 * @param request		The request to parse to get the baseURI.
-	 * 
-	 * @throws NullPointerException	If the given request is <i>null</i> or if the extracted baseURI is <i>null</i> or is an empty string.
-	 * 
-	 * @see #extractBaseURI(HttpServletRequest)
 	 */
-	public UWSUrl(HttpServletRequest request) throws NullPointerException{
-		// Extract the base URI:
-		String uri = extractBaseURI(request);
-		if (uri == null)
-			throw new NullPointerException("The extracted base UWS URI is NULL!");
-		else
-			baseURI = normalizeURI(uri);
-
-		// Load the rest of the request:
+	public UWSUrl(HttpServletRequest request){
+		baseURI    = null; // NULL because not any more used
+		requestURL = request.getRequestURL().toString();
+		urlHeader  = requestURL.substring(0, requestURL.indexOf(request.getPathInfo()));
 		load(request);
 	}
 
 	/**
 	 * Extracts the base UWS URI from the given request.
 	 * 
-	 * @param request	The request from which the base UWS URI must be extracted.
+	 * @param request	The request from which the base UWS URI must be
+	 *                  extracted.
 	 * 
-	 * @return			The extracted URI (may be <i>null</i>).
+	 * @return	The extracted URI (may be <i>null</i>).
+	 *
+	 * @deprecated BaseURI is now considered as not always reliable
+	 *             (e.g. proxy usage).
 	 */
+	@Deprecated
 	protected String extractBaseURI(HttpServletRequest request){
 		if (request == null)
 			return null;
@@ -138,7 +159,9 @@ public class UWSUrl implements Serializable {
 	/**
 	 * <p>Normalizes the given URI.</p>
 	 * 
-	 * <p><i><u>Note:</u> A normalized URI always starts with a / and ends with no /.</i></p>
+	 * <p><i><u>Note:</u>
+	 * 	A normalized URI always starts with a / and ends with no /.
+	 * 	</i></p>
 	 * 
 	 * @param uri	The URI to normalize.
 	 * 
@@ -160,52 +183,32 @@ public class UWSUrl implements Serializable {
 	 * <p>Parses and loads the given request.</p>
 	 * 
 	 * <p>
-	 * 	Before all, {@link #extractBaseURI(HttpServletRequest)} is called so that extracting the base URI from the request.
-	 * 	If this URI is different from the URI stored in this UWSUrl, {@link #load(URL)} is called so that parsing only the request URL
-	 * 	and then this method ends immediately.
-	 * </p>
-	 * 
-	 * <p>
-	 * 	Otherwise this method sets its fields as following:
+	 * 	This method sets its fields as following:
 	 * 	<ul>
 	 * 		<li>requestURL = {@link HttpServletRequest#getRequestURL()}</li>
-	 * 		<li>urlHeader = {@link HttpServletRequest#getScheme()}+"://"+{@link HttpServletRequest#getServerName()}+":"+{@link HttpServletRequest#getServerPort()}+{@link HttpServletRequest#getContextPath()}</li>
 	 * 		<li>requestURI = {@link HttpServletRequest#getRequestURI()}</li>
 	 * 		<li>uwsURI = {@link HttpServletRequest#getPathInfo()}</li>
 	 * 		<li>for jobListName, jobId and attributes, see {@link #loadUwsURI()}</li>
 	 * 	</ul>
 	 * </p>
 	 * 
-	 * <p><i><u>Note:</u> If the given request is NULL, all fields are set to NULL.</i></p>
+	 * <p><i><u>Note:</u>
+	 * 	If the given request is NULL, all fields are set to NULL.
+	 * </i></p>
 	 * 
 	 * @param request	The request to parse and to load.
-	 * 
-	 * @see #extractBaseURI(HttpServletRequest)
-	 * @see #load(URL)
+	 *
 	 * @see #loadUwsURI()
 	 */
 	public void load(HttpServletRequest request){
 		if (request == null){
-			urlHeader = null;
 			requestURL = null;
 			requestURI = null;
 			uwsURI = null;
 		}else{
-			if (extractBaseURI(request).equalsIgnoreCase(baseURI)){
-				requestURL = request.getRequestURL().toString();
-				urlHeader = (new StringBuffer(request.getScheme())).append("://").append(request.getServerName()).append(":").append(request.getServerPort()).append(request.getContextPath()).toString();
-				requestURI = request.getRequestURI().substring(request.getRequestURI().indexOf(baseURI));
-				uwsURI = request.getPathInfo();
-			}else{
-				URL url = null;
-				try{
-					url = new URL(request.getRequestURL().toString());
-				}catch(MalformedURLException ex){
-					;
-				}
-				load(url);
-				return;
-			}
+			requestURL = request.getRequestURL().toString();
+			requestURI = request.getRequestURI();
+			uwsURI     = request.getPathInfo();
 		}
 
 		loadUwsURI();
@@ -225,15 +228,19 @@ public class UWSUrl implements Serializable {
 	 * 	</ul>
 	 * </p>
 	 * 
-	 * <p><i><u>Note:</u> If the given URL is NULL, all fields are set to NULL.</i></p>
+	 * <p><i><u>Note:</u>
+	 * 	If the given URL is NULL, all fields are set to NULL.
+	 * </i></p>
 	 * 
 	 * @param requestUrl	The URL to parse and to load.
 	 * 
 	 * @see #loadUwsURI()
+	 *
+	 * @deprecated Not reliable because working on {@link #baseURI}.
 	 */
+	@Deprecated
 	public void load(URL requestUrl){
 		if (requestUrl == null){
-			urlHeader = null;
 			requestURL = null;
 			requestURI = null;
 			uwsURI = null;
@@ -244,11 +251,9 @@ public class UWSUrl implements Serializable {
 
 			int indBaseURI = requestURL.indexOf(baseURI);
 			if (indBaseURI >= 0){
-				urlHeader = requestURL.substring(0, indBaseURI);
 				requestURI = requestURL.substring(indBaseURI);
 				uwsURI = requestURI.substring(baseURI.length());
 			}else{
-				urlHeader = null;
 				requestURI = null;
 				uwsURI = null;
 			}
@@ -261,16 +266,20 @@ public class UWSUrl implements Serializable {
 	 * <p>Loads and parses the URI stored in the member {@link #uwsURI}.</p>
 	 * 
 	 * <p>
-	 * 	The URI is split by the / character. The items of the resulting array corresponds to:
-	 * 	<ul>
-	 * 		<li>item 0 = empty (the empty string before the first / of a URI)</li>
-	 * 		<li>item 1 = jobListName</li>
-	 * 		<li>item 2 = jobId</li>
-	 * 		<li>item 3 and more = attributes</li>
-	 * 	</ul>
+	 * 	The URI is split by the / character. The items of the resulting array
+	 * 	corresponds to:
 	 * </p>
+	 * <ul>
+	 * 	<li>item 0 = empty (the empty string before the first / of a URI)</li>
+	 * 	<li>item 1 = jobListName</li>
+	 * 	<li>item 2 = jobId</li>
+	 * 	<li>item 3 and more = attributes</li>
+	 * </ul>
 	 * 
-	 * <p><i><u>Note:</u> If {@link #uwsURI} is NULL, jobListName and jobId are set to null while attributes is set to an empty array.</i></p>
+	 * <p><i><u>Note:</u>
+	 * 	If {@link #uwsURI} is NULL, jobListName and jobId are set to null while
+	 * 	attributes is set to an empty array.
+	 * </i></p>
 	 */
 	protected void loadUwsURI(){
 		jobListName = null;
@@ -309,10 +318,14 @@ public class UWSUrl implements Serializable {
 	/* GETTERS */
 	/* ******* */
 	/**
-	 * Gets the base UWS URI given at the initialization of this instance of {@link UWSUrl}.
+	 * Gets the base UWS URI given at the initialization of this instance of
+	 * {@link UWSUrl}.
 	 * 
 	 * @return The baseUri.
+	 *
+	 * @deprecated Not reliable in some cases (e.g. proxy usage).
 	 */
+	@Deprecated
 	public final String getBaseURI(){
 		return baseURI;
 	}
@@ -340,7 +353,9 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * <p>
 	 * 	<i><u>Example:</u>
-	 * 		If the base URI is "/uws" and the request URL is "http://foo.org/mySite/uws/jobList/job1/results/report", then the URL header will be:
+	 * 		If the Servlet path is "/uws" and the request URL is
+	 * 		"http://foo.org/mySite/uws/jobList/job1/results/report",
+	 * 		then the URL header will be:
 	 * 		"http://foo.org/mySite".
 	 * 	</i>
 	 * </p>
@@ -356,8 +371,10 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * <p>
 	 * 	<i><u>Example:</u>
-	 * 		If the base URI is "/uws" and the request URL is "http://foo.org/mySite/uws/jobList/job1/results/report", then the request URI will be:
-	 * 		"/uws/jobList/jobId/results/report".
+	 * 		If the Servlet path is "/uws" and the request URL is
+	 * 		"http://foo.org/mySite/uws/jobList/job1/results/report",
+	 * 		then the request URI will be:
+	 * 		"/mySite/uws/jobList/job1/results/report".
 	 * 	</i>
 	 * </p>
 	 * 
@@ -372,7 +389,9 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * <p>
 	 * 	<i><u>Example:</u>
-	 * 		If the base URI is "/uws" and the request URL is "http://foo.org/mySite/uws/jobList/job1/results/report", then the request URI will be:
+	 * 		If the Servlet path is "/uws" and the request URL is
+	 * 		"http://foo.org/mySite/uws/jobList/job1/results/report",
+	 * 		then the request URI will be:
 	 * 		"/jobList/jobId/results/report".
 	 * 	</i>
 	 * </p>
@@ -384,16 +403,19 @@ public class UWSUrl implements Serializable {
 	}
 
 	/**
-	 * Tells whether the last loaded request or request URL contains a jobs list name.
+	 * Tells whether the last loaded request or request URL contains a jobs list
+	 * name.
 	 * 
-	 * @return	<i>true</i> if a jobs list name has been extracted, <i>false</i> otherwise.
+	 * @return	<i>true</i> if a jobs list name has been extracted,
+	 *        	<i>false</i> otherwise.
 	 */
 	public final boolean hasJobList(){
 		return jobListName != null;
 	}
 
 	/**
-	 * Gets the jobs list name extracted from the last parsed request or request URL.
+	 * Gets the jobs list name extracted from the last parsed request or
+	 * request URL.
 	 * 
 	 * @return The extracted jobs list name.
 	 */
@@ -404,7 +426,8 @@ public class UWSUrl implements Serializable {
 	/**
 	 * Tells whether the last loaded request or request URL contains a job ID.
 	 * 
-	 * @return	<i>true</i> if a job ID has been extracted, <i>false</i> otherwise.
+	 * @return	<i>true</i> if a job ID has been extracted,
+	 *        	<i>false</i> otherwise.
 	 */
 	public final boolean hasJob(){
 		return jobId != null;
@@ -420,20 +443,25 @@ public class UWSUrl implements Serializable {
 	}
 
 	/**
-	 * Tells whether the last loaded request or request URL contains at least one job attribute.
+	 * Tells whether the last loaded request or request URL contains at least
+	 * one job attribute.
 	 * 
-	 * @return	<i>true</i> if at least one job attribute has been extracted, <i>false</i> otherwise.
+	 * @return	<i>true</i> if at least one job attribute has been extracted,
+	 *        	<i>false</i> otherwise.
 	 */
 	public final boolean hasAttribute(){
 		return attributes != null && attributes.length > 0;
 	}
 
 	/**
-	 * Tells whether the last loaded request or request URL contains a job attribute with the given name.
+	 * Tells whether the last loaded request or request URL contains a job
+	 * attribute with the given name.
 	 * 
-	 * @param attributeName	The name of the job attribute expected in the last request or request URL.
+	 * @param attributeName	The name of the job attribute expected in the last
+	 *                      request or request URL.
 	 * 
-	 * @return				<i>true</i> if the specified job attribute has been extracted, <i>false</i> otherwise.
+	 * @return	<i>true</i> if the specified job attribute has been extracted,
+	 *        	<i>false</i> otherwise.
 	 */
 	public final boolean hasAttribute(String attributeName){
 		for(String att : attributes){
@@ -456,10 +484,13 @@ public class UWSUrl implements Serializable {
 	/* SETTERS */
 	/* ******* */
 	/**
-	 * <p>Updates the field {@link #uwsURI} in function of {@link #jobListName}, {@link #jobId} and {@link #attributes} as following:
+	 * <p>Updates the field {@link #uwsURI} in function of {@link #jobListName},
+	 * {@link #jobId} and {@link #attributes} as following:
 	 * uwsURI = "/"+jobListName+"/"+jobId+"/"+attributes.</p>
 	 * 
-	 * <p>Once {@link #uwsURI} updated the request URL and URI are also updated.</p>
+	 * <p>
+	 * 	Once {@link #uwsURI} updated the request URL and URI are also updated.
+	 * </p>
 	 * 
 	 * @see #updateRequestURL()
 	 */
@@ -483,21 +514,38 @@ public class UWSUrl implements Serializable {
 
 	/**
 	 * <p>
-	 * 	Updates the fields {@link #requestURI} and {@link #requestURL} as following:
-	 * 	<ul>
-	 * 		<li>requestURI = baseURI+uwsURI</li>
-	 * 		<li>requestURL = urlHeader+requestURI (or <i>null</i> if urlHeader is <i>null</i>)</li>
-	 * 	</ul>
+	 * 	Updates the fields {@link #requestURI} and {@link #requestURL} as
+	 * 	following:
 	 * </p>
+	 * <ul>
+	 * 	<li>requestURL = urlHeader+uwsURI (or <i>null</i> if urlHeader is
+	 * 		<i>null</i>)</li>
+	 * 	<li>requestURI = (new URL(requestURL)).getPath()</li>
+	 * </ul>
 	 */
 	protected void updateRequestURL(){
-		requestURI = baseURI + ((uwsURI != null) ? uwsURI : "");
-		requestURL = (urlHeader == null) ? null : (urlHeader + requestURI);
+		if (urlHeader == null){
+			requestURL = null;
+			requestURI = null;
+		}
+		else {
+			requestURL = (urlHeader + uwsURI);
+			try {
+				requestURI = (new URL(requestURL)).getPath();
+			} catch (MalformedURLException e) {
+				// get the path (starting with '/') after the 'http(s)://' prefix
+				final int indPath = requestURL.indexOf('/', 10);
+				if (indPath >= 0)
+					requestURI = requestURL.substring(indPath);
+				else
+					requestURI = "/";
+			}
+		}
 	}
 
 	/**
-	 * Sets the whole UWS URI (that is to say a URI starting with the jobs list name).
-	 * Once done all the other fields of this UWS URL are updated.
+	 * Sets the whole UWS URI (that is to say a URI starting with the jobs list
+	 * name). Once done all the other fields of this UWS URL are updated.
 	 * 
 	 * @param uwsURI	The UWS URI to set.
 	 * 
@@ -664,22 +712,26 @@ public class UWSUrl implements Serializable {
 	/* ******************************* */
 	/* URL BUILDING METHODS (HTTP GET) */
 	/* ******************************* */
-	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>create</b> a job with the given parameters. */
+	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>create</b> a job with the
+	 * given parameters. */
 	public final String createJob(String jobListName, Map<String,String> parameters){
 		return listJobs(jobListName) + "?" + UWSToolBox.getQueryPart(parameters);
 	}
 
-	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>delete</b> the specified job. */
+	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>delete</b> the specified
+	 * job. */
 	public final String deleteJob(String jobListName, String jobId){
 		return jobSummary(jobListName, jobId) + "?" + UWSJob.PARAM_ACTION + "=" + UWSJob.ACTION_DELETE;
 	}
 
-	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>start</b> the specified job. */
+	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>start</b> the specified
+	 * job. */
 	public final String startJob(String jobListName, String jobId){
 		return jobPhase(jobListName, jobId) + "?" + UWSJob.PARAM_PHASE.toUpperCase() + "=" + UWSJob.PHASE_RUN;
 	}
 
-	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>abort</b> the specified job. */
+	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to <b>abort</b> the specified
+	 * job. */
 	public final String abortJob(String jobListName, String jobId){
 		return jobPhase(jobListName, jobId) + "?" + UWSJob.PARAM_PHASE.toUpperCase() + "=" + UWSJob.PHASE_ABORT;
 	}
@@ -694,12 +746,14 @@ public class UWSUrl implements Serializable {
 		return jobDestruction(jobListName, jobId) + "?" + UWSJob.PARAM_DESTRUCTION_TIME.toUpperCase() + "=" + newDestructionTime;
 	}
 
-	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the execution duration. */
+	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the execution
+	 * duration. */
 	public final String changeExecDuration(String jobListName, String jobId, String newExecDuration){
 		return jobExecDuration(jobListName, jobId) + "?" + UWSJob.PARAM_EXECUTION_DURATION.toUpperCase() + "=" + newExecDuration;
 	}
 
-	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the specified parameter. */
+	/** Gets the UWS URL <b>(HTTP-GET ONLY)</b> to change the specified
+	 * parameter. */
 	public final String changeJobParam(String jobListName, String jobId, String paramName, String paramValue){
 		return jobParameters(jobListName, jobId) + "?" + paramName.toUpperCase() + "=" + paramValue;
 	}
@@ -709,7 +763,8 @@ public class UWSUrl implements Serializable {
 	 * 
 	 * @return	The corresponding request URL.
 	 * 
-	 * @throws MalformedURLException If there is an error while building the URL object from the {@link #requestURL} field.
+	 * @throws MalformedURLException If there is an error while building the URL
+	 *                               object from the {@link #requestURL} field.
 	 * 
 	 * @see #getRequestURL()
 	 */

@@ -16,7 +16,7 @@ package org.json;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -38,7 +38,7 @@ import uws.service.UWSUrl;
  * Useful conversion functions from UWS to JSON.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (03/2018)
+ * @version 4.5 (04/2022)
  */
 public final class Json4Uws {
 
@@ -52,7 +52,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final UWS uws) throws JSONException{
+	public static JSONObject getJson(final UWS uws) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (uws != null){
 			json.put("name", uws.getName());
@@ -65,7 +65,7 @@ public final class Json4Uws {
 				UWSUrl jlUrl = jobList.getUrl();
 				jsonJL.put("name", jobList.getName());
 				if (jlUrl != null)
-					jsonJL.put("href", jlUrl.getRequestURI());
+					jsonJL.put("href", jlUrl.getRequestURL());
 				jobLists.put(jsonJL);
 			}
 
@@ -88,7 +88,7 @@ public final class Json4Uws {
 	 *
 	 * @see #getJson(JobList, JobOwner, JobListRefiner)
 	 */
-	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner) throws JSONException{
+	public static JSONObject getJson(final JobList jobsList, final JobOwner owner) throws JSONException{
 		return getJson(jobsList, owner, null);
 	}
 
@@ -110,7 +110,7 @@ public final class Json4Uws {
 	 *
 	 * @since 4.3
 	 */
-	public final static JSONObject getJson(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner) throws JSONException{
+	public static JSONObject getJson(final JobList jobsList, final JobOwner owner, final JobListRefiner listRefiner) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (jobsList != null){
 			json.put("name", jobsList.getName());
@@ -146,7 +146,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final UWSJob job) throws JSONException{
+	public static JSONObject getJson(final UWSJob job) throws JSONException{
 		return getJson(job, null, false);
 	}
 
@@ -159,7 +159,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final UWSJob job, final UWSUrl jobsListUrl, final boolean reference) throws JSONException{
+	public static JSONObject getJson(final UWSJob job, final UWSUrl jobsListUrl, final boolean reference) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (job != null){
 			json.put("version", UWS.VERSION);
@@ -219,7 +219,7 @@ public final class Json4Uws {
 	 *
 	 * @since 4.2
 	 */
-	public final static JSONObject getJobInfoJson(final UWSJob job) throws JSONException{
+	public static JSONObject getJobInfoJson(final UWSJob job) throws JSONException{
 		if (job.getJobInfo() != null){
 			try{
 				return XML.toJSONObject(job.getJobInfo().getXML(null));
@@ -236,7 +236,7 @@ public final class Json4Uws {
 	 * @return					The JSON representation of its parameters.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJobParamsJson(final UWSJob job) throws JSONException{
+	public static JSONObject getJobParamsJson(final UWSJob job) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (job != null){
 			Object val;
@@ -266,7 +266,7 @@ public final class Json4Uws {
 	 * @return					The JSON representation of its results.
 	 * @throws JSONException	If there is an error while building the JSON array.
 	 */
-	public final static JSONArray getJobResultsJson(final UWSJob job) throws JSONException{
+	public static JSONArray getJobResultsJson(final UWSJob job) throws JSONException{
 		JSONArray json = new JSONArray();
 		if (job != null){
 			Iterator<Result> it = job.getResults();
@@ -285,7 +285,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJobResultJson(final Result r) throws JSONException{
+	public static JSONObject getJobResultJson(final Result r) throws JSONException{
 		JSONObject resultJson = new JSONObject();
 		if (r != null){
 			resultJson.put("id", r.getId());
@@ -306,7 +306,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final ErrorSummary error) throws JSONException{
+	public static JSONObject getJson(final ErrorSummary error) throws JSONException{
 		JSONObject errorJson = new JSONObject();
 		if (error != null){
 			errorJson.put("type", error.getType());
@@ -324,7 +324,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final String key, final long value) throws JSONException{
+	public static JSONObject getJson(final String key, final long value) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (key != null && !key.trim().isEmpty())
 			json.put(key, value);
@@ -338,7 +338,7 @@ public final class Json4Uws {
 	 * @return					Its JSON representation.
 	 * @throws JSONException	If there is an error while building the JSON object.
 	 */
-	public final static JSONObject getJson(final String key, final String value) throws JSONException{
+	public static JSONObject getJson(final String key, final String value) throws JSONException{
 		JSONObject json = new JSONObject();
 		if (key != null && !key.trim().isEmpty())
 			json.put(key, value);

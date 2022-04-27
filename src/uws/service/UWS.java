@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -64,7 +64,7 @@ import uws.service.request.UWSRequestParser;
  * </b></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.3 (09/2017)
+ * @version 4.5 (04/2022)
  */
 public interface UWS extends Iterable<JobList> {
 
@@ -196,7 +196,7 @@ public interface UWS extends Iterable<JobList> {
 
 	/**
 	 * <p>Gets the object which is able to interpret and to build any UWS URL.
-	 * It MUST be loaded with the root URL of this UWS: see {@link UWSUrl#load(javax.servlet.http.HttpServletRequest)} and {@link UWSUrl#load(java.net.URL)}.</p>
+	 * It MUST be loaded with the root URL of this UWS: see {@link UWSUrl#load(javax.servlet.http.HttpServletRequest)}.</p>
 	 *
 	 * <p><i><u>note:</u> This getter is particularly used to serialize the jobs lists and their jobs.</i></p>
 	 *

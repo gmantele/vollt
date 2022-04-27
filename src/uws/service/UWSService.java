@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -139,7 +139,7 @@ import uws.service.wait.BlockingPolicy;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.4 (08/2018)
+ * @version 4.4 (04/2022)
  */
 public class UWSService implements UWS {
 
@@ -308,7 +308,11 @@ public class UWSService implements UWS {
 	 * @throws UWSException	If the given URI is <i>null</i> or empty.
 	 *
 	 * @see #UWSService(UWSFactory, UWSFileManager, UWSLog, String)
+	 *
+	 * @deprecated Initialization with baseURI is not reliable in some cases
+	 *             (e.g. proxies). Use {@link #UWSService(UWSFactory, UWSFileManager, UWSUrl)} instead.
 	 */
+	@Deprecated
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final String baseURI) throws UWSException{
 		this(jobFactory, fileManager, null, baseURI);
 	}
@@ -324,7 +328,11 @@ public class UWSService implements UWS {
 	 * @throws UWSException	If the given URI is <i>null</i> or empty.
 	 *
 	 * @see UWSUrl#UWSUrl(String)
+	 *
+	 * @deprecated Initialization with baseURI is not reliable in some cases
+	 *             (e.g. proxies). Use {@link #UWSService(UWSFactory, UWSFileManager, UWSLog, UWSUrl)} instead.
 	 */
+	@Deprecated
 	public UWSService(final UWSFactory jobFactory, final UWSFileManager fileManager, final UWSLog logger, final String baseURI) throws UWSException{
 		this(jobFactory, fileManager, logger);
 
@@ -478,7 +486,10 @@ public class UWSService implements UWS {
 	 * @return	The base UWS URL.
 	 *
 	 * @see UWSUrl#getBaseURI()
+	 *
+	 * @deprecated 1/ Source of error, 2/ Never used.
 	 */
+	@Deprecated
 	public final String getBaseURI(){
 		return (urlInterpreter == null) ? null : urlInterpreter.getBaseURI();
 	}

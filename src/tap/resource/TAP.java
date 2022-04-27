@@ -16,7 +16,7 @@ package tap.resource;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -60,7 +60,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (08/2018)
+ * @version 2.3 (04/2022)
  */
 public class TAP implements VOSIResource {
 
@@ -215,6 +215,10 @@ public class TAP implements VOSIResource {
 
 		TAPMetadata metadata = service.getTAPMetadata();
 		resources.put(metadata.getName(), metadata);
+
+		// If a custom Base URL is provided, share it with all TAP resources:
+		if (service.getBaseUrl() != null)
+			setTAPBaseURL(service.getBaseUrl().toString());
 	}
 
 	/**
