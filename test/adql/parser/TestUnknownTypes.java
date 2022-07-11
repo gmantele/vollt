@@ -25,6 +25,7 @@ import adql.db.DefaultDBColumn;
 import adql.db.DefaultDBTable;
 import adql.db.FunctionDef;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 
 public class TestUnknownTypes {
 
@@ -125,40 +126,40 @@ public class TestUnknownTypes {
 			QueryChecker checker = new DBChecker(tList, udfList, geoList, csList);
 
 			// Parse the query:
-			ADQLQuery pq = parser.parseQuery(QUERY_TXT);
+			ADQLSet pq = parser.parseQuery(QUERY_TXT);
 
 			// Check the parsed query:
 			checker.check(pq);
 
 			/* Ensure the type of every ADQLColumn is as expected: */
 			// isNumeric() = true for FOO(C1), but false for the others
-			assertTrue(pq.getSelect().get(0).getOperand().isNumeric());
-			assertFalse(pq.getSelect().get(0).getOperand().isString());
-			assertFalse(pq.getSelect().get(0).getOperand().isGeometry());
+			assertTrue(((ADQLQuery)pq).getSelect().get(0).getOperand().isNumeric());
+			assertFalse(((ADQLQuery)pq).getSelect().get(0).getOperand().isString());
+			assertFalse(((ADQLQuery)pq).getSelect().get(0).getOperand().isGeometry());
 			// isNumeric() = true for FOO(C2), but false for the others
-			assertTrue(pq.getSelect().get(1).getOperand().isNumeric());
-			assertFalse(pq.getSelect().get(1).getOperand().isString());
-			assertFalse(pq.getSelect().get(1).getOperand().isGeometry());
+			assertTrue(((ADQLQuery)pq).getSelect().get(1).getOperand().isNumeric());
+			assertFalse(((ADQLQuery)pq).getSelect().get(1).getOperand().isString());
+			assertFalse(((ADQLQuery)pq).getSelect().get(1).getOperand().isGeometry());
 			// isNumeric() = true for FOO(C4), but false for the others
-			assertTrue(pq.getSelect().get(2).getOperand().isNumeric());
-			assertFalse(pq.getSelect().get(2).getOperand().isString());
-			assertFalse(pq.getSelect().get(2).getOperand().isGeometry());
+			assertTrue(((ADQLQuery)pq).getSelect().get(2).getOperand().isNumeric());
+			assertFalse(((ADQLQuery)pq).getSelect().get(2).getOperand().isString());
+			assertFalse(((ADQLQuery)pq).getSelect().get(2).getOperand().isGeometry());
 			// isNumeric() = isString() = isGeometry() for C1
-			assertTrue(pq.getSelect().get(3).getOperand().isNumeric());
-			assertTrue(pq.getSelect().get(3).getOperand().isString());
-			assertTrue(pq.getSelect().get(3).getOperand().isGeometry());
+			assertTrue(((ADQLQuery)pq).getSelect().get(3).getOperand().isNumeric());
+			assertTrue(((ADQLQuery)pq).getSelect().get(3).getOperand().isString());
+			assertTrue(((ADQLQuery)pq).getSelect().get(3).getOperand().isGeometry());
 			// isNumeric() = isString() = isGeometry() for C2
-			assertTrue(pq.getSelect().get(4).getOperand().isNumeric());
-			assertTrue(pq.getSelect().get(4).getOperand().isString());
-			assertTrue(pq.getSelect().get(4).getOperand().isGeometry());
+			assertTrue(((ADQLQuery)pq).getSelect().get(4).getOperand().isNumeric());
+			assertTrue(((ADQLQuery)pq).getSelect().get(4).getOperand().isString());
+			assertTrue(((ADQLQuery)pq).getSelect().get(4).getOperand().isGeometry());
 			// isString() = true for C3, but false for the others
-			assertFalse(pq.getSelect().get(5).getOperand().isNumeric());
-			assertTrue(pq.getSelect().get(5).getOperand().isString());
-			assertFalse(pq.getSelect().get(5).getOperand().isGeometry());
+			assertFalse(((ADQLQuery)pq).getSelect().get(5).getOperand().isNumeric());
+			assertTrue(((ADQLQuery)pq).getSelect().get(5).getOperand().isString());
+			assertFalse(((ADQLQuery)pq).getSelect().get(5).getOperand().isGeometry());
 			// isString() = true for C4, but false for the others
-			assertTrue(pq.getSelect().get(6).getOperand().isNumeric());
-			assertFalse(pq.getSelect().get(6).getOperand().isString());
-			assertFalse(pq.getSelect().get(6).getOperand().isGeometry());
+			assertTrue(((ADQLQuery)pq).getSelect().get(6).getOperand().isNumeric());
+			assertFalse(((ADQLQuery)pq).getSelect().get(6).getOperand().isString());
+			assertFalse(((ADQLQuery)pq).getSelect().get(6).getOperand().isGeometry());
 		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("The construction, configuration and usage of the parser are correct. Nothing should have failed here. (see console for more details)");

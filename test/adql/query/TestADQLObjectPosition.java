@@ -33,7 +33,7 @@ public class TestADQLObjectPosition {
 			try {
 				ADQLParser parser = new ADQLParser(version);
 				parser.allowAnyUdf(true);
-				ADQLQuery query = parser.parseQuery((version != ADQLVersion.V2_0 ? "WITH bar AS (SELECT * FROM superbar) " : "") + "SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors, 2 DESC");
+				ADQLSet query = parser.parseQuery((version != ADQLVersion.V2_0 ? "WITH bar AS (SELECT * FROM superbar) " : "") + "SELECT truc, bidule.machin, toto(truc, chose) AS \"super\" FROM foo JOIN bidule USING(id) WHERE truc > 12.5 AND bidule.machin < 5 GROUP BY chose HAVING try > 0 ORDER BY chouetteAlors, 2 DESC");
 
 				Iterator<ADQLObject> results = query.search(new SimpleSearchHandler(true) {
 					@Override
@@ -70,27 +70,27 @@ public class TestADQLObjectPosition {
 	public void testPositionAccuracy() {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			try {
-				ADQLQuery query = new ADQLParser(version).parseQuery("SELECT TOP 1000 oid FROM foo JOIN bar USING(oid)\nWHERE foo || toto = 'truc'\n      AND 2 > 1+0 GROUP BY oid HAVING COUNT(oid) > 10\n\tORDER BY 1 DESC");
+				ADQLSet query = new ADQLParser(version).parseQuery("SELECT TOP 1000 oid FROM foo JOIN bar USING(oid)\nWHERE foo || toto = 'truc'\n      AND 2 > 1+0 GROUP BY oid HAVING COUNT(oid) > 10\n\tORDER BY 1 DESC");
 				// Test SELECT
-				assertEquality(new TextPosition(1, 1, 1, 20), query.getSelect().getPosition());
+				assertEquality(new TextPosition(1, 1, 1, 20), ((ADQLQuery)query).getSelect().getPosition());
 				// Test ADQLColumn (here: "oid")
-				assertEquality(new TextPosition(1, 17, 1, 20), query.getSelect().get(0).getPosition());
+				assertEquality(new TextPosition(1, 17, 1, 20), ((ADQLQuery)query).getSelect().get(0).getPosition());
 				// Test FROM & ADQLJoin
 				/* NB: The clause FROM is the only one which is not a list but a single item of type FromContent (JOIN or table).
 				 *     That's why, it is not possible to get its exact starting position ('FROM') ; the starting position is
 				 *     the one of the first table of the clause FROM. */
-				assertEquality(new TextPosition(1, 26, 1, 49), query.getFrom().getPosition());
+				assertEquality(new TextPosition(1, 26, 1, 49), ((ADQLQuery)query).getFrom().getPosition());
 				// Test ADQLTable
-				List<ADQLTable> tables = query.getFrom().getTables();
+				List<ADQLTable> tables = ((ADQLQuery)query).getFrom().getTables();
 				assertEquality(new TextPosition(1, 26, 1, 29), tables.get(0).getPosition());
 				assertEquality(new TextPosition(1, 35, 1, 38), tables.get(1).getPosition());
 				// Test the join condition:
-				Iterator<ADQLColumn> itCol = ((ADQLJoin)query.getFrom()).getJoinedColumns();
+				Iterator<ADQLColumn> itCol = ((ADQLJoin)((ADQLQuery)query).getFrom()).getJoinedColumns();
 				assertEquality(new TextPosition(1, 45, 1, 48), itCol.next().getPosition());
 				// Test WHERE
-				assertEquality(new TextPosition(2, 1, 3, 18), query.getWhere().getPosition());
+				assertEquality(new TextPosition(2, 1, 3, 18), ((ADQLQuery)query).getWhere().getPosition());
 				// Test COMPARISON = CONSTRAINT
-				Comparison comp = (Comparison)(query.getWhere().get(0));
+				Comparison comp = (Comparison)(((ADQLQuery)query).getWhere().get(0));
 				assertEquality(new TextPosition(2, 7, 2, 27), comp.getPosition());
 				// Test left operand = concatenation:
 				ADQLOperand operand = comp.getLeftOperand();
@@ -104,7 +104,7 @@ public class TestADQLObjectPosition {
 				operand = comp.getRightOperand();
 				assertEquality(new TextPosition(2, 21, 2, 27), operand.getPosition());
 				// Test COMPARISON > CONSTRAINT:
-				comp = (Comparison)(query.getWhere().get(1));
+				comp = (Comparison)(((ADQLQuery)query).getWhere().get(1));
 				assertEquality(new TextPosition(3, 11, 3, 18), comp.getPosition());
 				// Test left operand = numeric:
 				operand = comp.getLeftOperand();
@@ -118,13 +118,13 @@ public class TestADQLObjectPosition {
 				// 0
 				assertEquality(new TextPosition(3, 17, 3, 18), itObj.next().getPosition());
 				// Test GROUP BY
-				assertEquality(new TextPosition(3, 19, 3, 31), query.getGroupBy().getPosition());
+				assertEquality(new TextPosition(3, 19, 3, 31), ((ADQLQuery)query).getGroupBy().getPosition());
 				// oid
-				assertEquality(new TextPosition(3, 28, 3, 31), query.getGroupBy().get(0).getPosition());
+				assertEquality(new TextPosition(3, 28, 3, 31), ((ADQLQuery)query).getGroupBy().get(0).getPosition());
 				// Test HAVING
-				assertEquality(new TextPosition(3, 32, 3, 54), query.getHaving().getPosition());
+				assertEquality(new TextPosition(3, 32, 3, 54), ((ADQLQuery)query).getHaving().getPosition());
 				// Test COMPARISON > CONSTRAINT:
-				comp = (Comparison)(query.getHaving().get(0));
+				comp = (Comparison)(((ADQLQuery)query).getHaving().get(0));
 				assertEquality(new TextPosition(3, 39, 3, 54), comp.getPosition());
 				// Test left operand = COUNT function:
 				operand = comp.getLeftOperand();

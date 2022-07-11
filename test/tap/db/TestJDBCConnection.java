@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Objects;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -29,7 +30,7 @@ import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.parser.ADQLParser;
 import adql.parser.grammar.ParseException;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.IdentifierField;
 import adql.translator.AstroH2Translator;
 import adql.translator.PostgreSQLTranslator;
@@ -369,9 +370,7 @@ public class TestJDBCConnection {
 	public void testIsColumnExisting() {
 		// There should be no difference between a H2 connection and a SQLITE one!
 		JDBCConnection[] connections = new JDBCConnection[]{ h2JDBCConnection, sensH2JDBCConnection, sqliteJDBCConnection, sensSqliteJDBCConnection };
-		int i = -1;
 		for(JDBCConnection conn : connections) {
-			i++;
 			try {
 				// Get the database metadata:
 				DatabaseMetaData dbMeta = conn.connection.getMetaData();
@@ -545,7 +544,7 @@ public class TestJDBCConnection {
 				// Prepare the test: create the TAP_SCHEMA:
 				dropSchema(STDSchema.TAPSCHEMA.label, conn);
 				// Build the ADQLQuery object:
-				ADQLQuery query = parser.parseQuery("SELECT table_name FROM TAP_SCHEMA.tables;");
+				ADQLSet query = parser.parseQuery("SELECT table_name FROM TAP_SCHEMA.tables;");
 				// Execute the query:
 				result = conn.executeQuery(query);
 				fail("{" + conn.ID + "} This test should have failed because TAP_SCHEMA was supposed to not exist!");
@@ -569,7 +568,7 @@ public class TestJDBCConnection {
 				// Prepare the test: create the TAP_SCHEMA:
 				createTAPSchema(conn);
 				// Build the ADQLQuery object:
-				ADQLQuery query = parser.parseQuery("SELECT table_name FROM TAP_SCHEMA.tables;");
+				ADQLSet query = parser.parseQuery("SELECT table_name FROM TAP_SCHEMA.tables;");
 				// Execute the query:
 				result = conn.executeQuery(query);
 				assertEquals(1, result.getMetadata().length);
@@ -970,12 +969,12 @@ public class TestJDBCConnection {
 			return false;
 		}
 
-		if (col1.getUnit() != col2.getUnit()) {
+		if (!Objects.equals(col1.getUnit(), col2.getUnit())) {
 			//System.out.println("[EQUALS] columns unit different: " + col1.getUnit() + " != " + col2.getUnit() + "!");
 			return false;
 		}
 
-		if (col1.getUcd() != col2.getUcd()) {
+		if (!Objects.equals(col1.getUcd(), col2.getUcd())) {
 			//System.out.println("[EQUALS] columns ucd different: " + col1.getUcd() + " != " + col2.getUcd() + "!");
 			return false;
 		}

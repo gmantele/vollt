@@ -16,12 +16,11 @@ package adql.query;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import adql.db.DBColumn;
@@ -44,31 +43,23 @@ import adql.query.operand.function.geometry.CircleFunction;
 import adql.query.operand.function.geometry.PointFunction;
 import adql.query.operand.function.geometry.PolygonFunction;
 import adql.query.operand.function.geometry.RegionFunction;
-import adql.search.ISearchHandler;
 
 /**
  * Object representation of an ADQL query or sub-query.
  *
  * <p>
- * 	The resulting object of the {@link ADQLParser} is an object of this class.
+ * 	The resulting object of the {@link ADQLParser} is an object of this class
+ * 	if no set operation is performed.
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  */
-public class ADQLQuery implements ADQLObject {
+public class ADQLQuery extends ADQLSet {
 
 	/** Description of this ADQL Feature.
 	 * @since 2.0 */
 	public static final LanguageFeature FEATURE = new LanguageFeature(null, "QUERY", false, "An entire ADQL (sub-)query.");
-
-	/** Version of the ADQL grammar in which this query is written.
-	 * @since 2.0 */
-	private final ADQLVersion adqlVersion;
-
-	/** The ADQL clause WITH.
-	 * @since 2.0 */
-	private ClauseADQL<WithItem> with;
 
 	/** The ADQL clause SELECT. */
 	private ClauseSelect select;
@@ -84,18 +75,6 @@ public class ADQLQuery implements ADQLObject {
 
 	/** The ADQL clause HAVING. */
 	private ClauseConstraints having;
-
-	/** The ADQL clause ORDER BY. */
-	private ClauseADQL<ADQLOrder> orderBy;
-
-	/** The ADQL clause OFFSET.
-	 * @since 2.0 */
-	private ClauseOffset offset;
-
-	/** Position of this Query (or sub-query) inside the whole given ADQL query
-	 * string.
-	 * @since 1.4 */
-	private TextPosition position = null;
 
 	/**
 	 * Builds an empty ADQL query.
@@ -115,15 +94,12 @@ public class ADQLQuery implements ADQLObject {
 	 * @since 2.0
 	 */
 	public ADQLQuery(final ADQLVersion version) {
-		this.adqlVersion = (version == null ? ADQLParser.DEFAULT_VERSION : version);
-		with = new ClauseADQL<WithItem>("WITH");
+		super(version);
 		select = new ClauseSelect();
 		from = null;
 		where = new ClauseConstraints("WHERE");
 		groupBy = new ClauseADQL<ADQLOperand>("GROUP BY");
 		having = new ClauseConstraints("HAVING");
-		orderBy = new ClauseADQL<ADQLOrder>("ORDER BY");
-		offset = null;
 	}
 
 	/**
@@ -135,16 +111,12 @@ public class ADQLQuery implements ADQLObject {
 	 */
 	@SuppressWarnings("unchecked")
 	public ADQLQuery(ADQLQuery toCopy) throws Exception {
-		adqlVersion = toCopy.adqlVersion;
-		with = (ClauseADQL<WithItem>)toCopy.with.getCopy();
+		super(toCopy);
 		select = (ClauseSelect)toCopy.select.getCopy();
 		from = (FromContent)toCopy.from.getCopy();
 		where = (ClauseConstraints)toCopy.where.getCopy();
 		groupBy = (ClauseADQL<ADQLOperand>)toCopy.groupBy.getCopy();
 		having = (ClauseConstraints)toCopy.having.getCopy();
-		orderBy = (ClauseADQL<ADQLOrder>)toCopy.orderBy.getCopy();
-		offset = (ClauseOffset)toCopy.offset.getCopy();
-		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
 	@Override
@@ -153,19 +125,11 @@ public class ADQLQuery implements ADQLObject {
 	}
 
 	/**
-	 * Get the followed version of the ADQL grammar.
-	 *
-	 * @return	The followed ADQL grammar version.
-	 */
-	public final ADQLVersion getADQLVersion() {
-		return adqlVersion;
-	}
-
-	/**
 	 * Clear all the clauses.
 	 */
+	@Override
 	public void reset() {
-		with.clear();
+		super.reset();
 
 		select.clear();
 		select.setDistinctColumns(false);
@@ -175,41 +139,6 @@ public class ADQLQuery implements ADQLObject {
 		where.clear();
 		groupBy.clear();
 		having.clear();
-		orderBy.clear();
-		offset = null;
-		position = null;
-	}
-
-	/**
-	 * Gets the WITH clause of this query.
-	 *
-	 * @return	Its WITH clause.
-	 *
-	 * @since 2.0
-	 */
-	public final ClauseADQL<WithItem> getWith() {
-		return with;
-	}
-
-	/**
-	 * Replaces its WITH clause by the given one.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	The position of the query is erased.
-	 * </i></p>
-	 *
-	 * @param newWith	The new WITH clause.
-	 *
-	 * @throws NullPointerException	If the given WITH clause is NULL.
-	 *
-	 * @since 2.0
-	 */
-	public void setWith(ClauseADQL<WithItem> newWith) throws NullPointerException {
-		if (newWith == null)
-			throw new NullPointerException("Impossible to replace the WITH clause of a query by NULL!");
-		else
-			with = newWith;
-		position = null;
 	}
 
 	/**
@@ -352,77 +281,24 @@ public class ADQLQuery implements ADQLObject {
 		position = null;
 	}
 
-	/**
-	 * Gets the ORDER BY clause of this query.
-	 *
-	 * @return	Its ORDER BY clause.
-	 */
-	public final ClauseADQL<ADQLOrder> getOrderBy() {
-		return orderBy;
-	}
-
-	/**
-	 * Replaces its ORDER BY clause by the given one.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	The position of the query is erased.
-	 * </i></p>
-	 *
-	 * @param newOrderBy	The new ORDER BY clause.
-	 *
-	 * @throws NullPointerException	If the given ORDER BY clause is NULL.
-	 */
-	public void setOrderBy(ClauseADQL<ADQLOrder> newOrderBy) throws NullPointerException {
-		if (newOrderBy == null)
-			orderBy.clear();
-		else
-			orderBy = newOrderBy;
-		position = null;
-	}
-
-	/**
-	 * Gets the OFFSET value of this query.
-	 *
-	 * @return	Its OFFSET value,
-	 *        	or NULL if not OFFSET is set.
-	 *
-	 * @since 2.0
-	 */
-	public final ClauseOffset getOffset() {
-		return offset;
-	}
-
-	/**
-	 * Replaces its OFFSET value by the given one.
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	The position of the query is erased.
-	 * </i></p>
-	 *
-	 * @param newOffset	The new OFFSET value,
-	 *                 	or NULL to remove the current OFFSET.
-	 *
-	 * @since 2.0
-	 */
-	public void setOffset(final ClauseOffset newOffset) {
-		offset = newOffset;
-		position = null;
+	@Override
+	public boolean hasLimit() {
+		return select.hasLimit();
 	}
 
 	@Override
-	public final TextPosition getPosition() {
-		return position;
+	public int getLimit() {
+		return select.getLimit();
 	}
 
-	/**
-	 * Set the position of this {@link ADQLQuery} (or sub-query) inside the
-	 * whole given ADQL query string.
-	 *
-	 * @param position New position of this {@link ADQLQuery}.
-	 * @since 1.4
-	 */
-	public final void setPosition(final TextPosition position) {
-		this.position = position;
+	@Override
+	public final void setNoLimit() {
+		select.setNoLimit();
+	}
+
+	@Override
+	public final void setLimit(int limit) {
+		select.setLimit(limit);
 	}
 
 	@Override
@@ -444,6 +320,7 @@ public class ADQLQuery implements ADQLObject {
 	 *
 	 * @return	Selected columns metadata.
 	 */
+	@Override
 	public DBColumn[] getResultingColumns() {
 		ArrayList<DBColumn> columns = new ArrayList<DBColumn>(select.size());
 
@@ -530,19 +407,6 @@ public class ADQLQuery implements ADQLObject {
 
 		DBColumn[] resColumns = new DBColumn[columns.size()];
 		return columns.toArray(resColumns);
-	}
-
-	/**
-	 * Lets searching ADQL objects into this ADQL query thanks to the given
-	 * search handler.
-	 *
-	 * @param sHandler	A search handler.
-	 *
-	 * @return An iterator on all ADQL objects found.
-	 */
-	public Iterator<ADQLObject> search(ISearchHandler sHandler) {
-		sHandler.search(this);
-		return sHandler.iterator();
 	}
 
 	@Override

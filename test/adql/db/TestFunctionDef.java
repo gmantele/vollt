@@ -160,6 +160,7 @@ public class TestFunctionDef {
 						assertEquals("foo() -> ?custom?(10)", FunctionDef.parse("foo() -> custom(10)").toString());
 						break;
 					default:
+						System.out.println("DEBUG: " + "foo() -> " + t.toString());
 						assertEquals("foo() -> " + t.toString(), FunctionDef.parse("foo() -> " + t.toString() + "(10)").toString());
 				}
 			}

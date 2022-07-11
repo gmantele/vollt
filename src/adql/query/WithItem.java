@@ -1,5 +1,24 @@
 package adql.query;
 
+/*
+ * This file is part of ADQLLibrary.
+ *
+ * ADQLLibrary is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ADQLLibrary is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ */
+
 import java.util.NoSuchElementException;
 
 import adql.db.DBColumn;
@@ -17,7 +36,7 @@ import adql.parser.feature.LanguageFeature;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (09/2019)
+ * @version 2.0 (07/2022)
  * @since 2.0
  */
 public class WithItem implements ADQLObject {
@@ -32,7 +51,7 @@ public class WithItem implements ADQLObject {
 	protected boolean caseSensitive = false;
 
 	/** ADQL query providing the CTE's content. */
-	protected ADQLQuery query;
+	protected ADQLSet query;
 
 	/** Position of this WITH item in the original ADQL query. */
 	protected TextPosition position = null;
@@ -46,7 +65,7 @@ public class WithItem implements ADQLObject {
 	 * @param label	Name of the resulting table/CTE.
 	 * @param query	ADQL query returning the content of this CTE.
 	 */
-	public WithItem(final String label, final ADQLQuery query) {
+	public WithItem(final String label, final ADQLSet query) {
 		if (label == null || label.trim().isEmpty())
 			throw new NullPointerException("Missing label of the WITH item!");
 
@@ -137,7 +156,7 @@ public class WithItem implements ADQLObject {
 	 *
 	 * @return	CTE's query.
 	 */
-	public final ADQLQuery getQuery() {
+	public final ADQLSet getQuery() {
 		return query;
 	}
 
@@ -146,7 +165,7 @@ public class WithItem implements ADQLObject {
 	 *
 	 * @param query	New CTE's query.
 	 */
-	public final void setQuery(ADQLQuery query) {
+	public final void setQuery(ADQLSet query) {
 		this.query = query;
 	}
 
@@ -209,10 +228,10 @@ public class WithItem implements ADQLObject {
 					throw new IllegalStateException("No iteration yet started!");
 				else if (replacer == null)
 					throw new UnsupportedOperationException("Impossible to remove the query from a WithItem object! You have to remove the WithItem from its ClauseWith for that.");
-				else if (!(replacer instanceof ADQLQuery))
-					throw new UnsupportedOperationException("Impossible to replace an ADQLQuery by a " + replacer.getClass() + "!");
+				else if (!(replacer instanceof ADQLSet))
+					throw new UnsupportedOperationException("Impossible to replace an ADQLSet by a " + replacer.getClass() + "!");
 				else
-					query = (ADQLQuery)replacer;
+					query = (ADQLSet)replacer;
 			}
 		};
 	}

@@ -16,7 +16,7 @@ package adql.parser.grammar;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.io.InputStream;
@@ -31,7 +31,7 @@ import adql.query.TextPosition;
  * Common partial implementation of an {@link ADQLGrammar}.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (07/2022)
  * @since 2.0
  */
 public abstract class ADQLGrammarBase implements ADQLGrammar {
@@ -49,11 +49,6 @@ public abstract class ADQLGrammarBase implements ADQLGrammar {
 	/* **********************************************************************
 	   *                         GETTERS/SETTERS                            *
 	   ********************************************************************** */
-
-	@Override
-	public final ADQLQuery getQuery() {
-		return query;
-	}
 
 	@Override
 	public final ADQLQueryFactory getQueryFactory() {
@@ -79,9 +74,6 @@ public abstract class ADQLGrammarBase implements ADQLGrammar {
 
 		// Empty the stack:
 		stackQuery.clear();
-
-		// Create a new and empty ADQL query tree:
-		query = queryFactory.createQuery(getVersion());
 
 		// Finally re-initialize the parser with the expression to parse:
 		ReInit(inputADQLExpression);

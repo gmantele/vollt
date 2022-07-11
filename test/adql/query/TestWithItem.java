@@ -62,7 +62,7 @@ public class TestWithItem {
 			assertEquals("myQuery AS (\n" + "SELECT foo , stuff\n" + "FROM bar\n" + ")", item.toADQL());
 
 			// CASE: after an integral parsing
-			ADQLQuery query = parser.parseQuery("WITH myQuery AS (SELECT foo, stuff FROM bar) SELECT * FROM myQuery");
+			ADQLSet query = parser.parseQuery("WITH myQuery AS (SELECT foo, stuff FROM bar) SELECT * FROM myQuery");
 			assertEquals("WITH myQuery AS (\n" + "SELECT foo , stuff\n" + "FROM bar\n" + ")\nSELECT *\nFROM myQuery", query.toADQL());
 		} catch(ParseException ex) {
 			ex.printStackTrace();

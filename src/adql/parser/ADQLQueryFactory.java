@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -27,11 +27,14 @@ import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.IdentifierItems.IdentifierItem;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.ClauseConstraints;
 import adql.query.ClauseOffset;
 import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectItem;
+import adql.query.SetOperation;
+import adql.query.SetOperationType;
 import adql.query.TextPosition;
 import adql.query.WithItem;
 import adql.query.constraint.ADQLConstraint;
@@ -94,7 +97,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  *
  * @see ADQLParser
  */
@@ -141,6 +144,11 @@ public class ADQLQueryFactory {
 		return new ADQLQuery(version);
 	}
 
+	/** @since 2.0 */
+	public SetOperation createSetOperation(final ADQLVersion version, final ADQLSet leftSet, final SetOperationType operation, final ADQLSet rightSet) throws Exception {
+		return new SetOperation(version, leftSet, operation, rightSet);
+	}
+
 	public ADQLTable createTable(final IdentifierItems idItems, final IdentifierItem alias) throws Exception {
 		ADQLTable t = new ADQLTable(idItems.getCatalog(), idItems.getSchema(), idItems.getTable());
 
@@ -157,7 +165,7 @@ public class ADQLQueryFactory {
 		return t;
 	}
 
-	public ADQLTable createTable(ADQLQuery query, IdentifierItem alias) throws Exception {
+	public ADQLTable createTable(ADQLSet query, IdentifierItem alias) throws Exception {
 		ADQLTable t = new ADQLTable(query);
 
 		if (alias != null) {
@@ -210,7 +218,7 @@ public class ADQLQueryFactory {
 	}
 
 	/** @since 2.0 */
-	public WithItem createWithItem(final IdentifierItem queryLabel, final ADQLQuery query) throws Exception {
+	public WithItem createWithItem(final IdentifierItem queryLabel, final ADQLSet query) throws Exception {
 		WithItem item = new WithItem(queryLabel.identifier, query);
 		item.setLabelCaseSensitive(queryLabel.caseSensitivity);
 		return item;
@@ -287,11 +295,11 @@ public class ADQLQueryFactory {
 		return new IsNull(column, notNull);
 	}
 
-	public Exists createExists(ADQLQuery query) throws Exception {
+	public Exists createExists(ADQLSet query) throws Exception {
 		return new Exists(query);
 	}
 
-	public In createIn(ADQLOperand leftOp, ADQLQuery query, boolean notIn) throws Exception {
+	public In createIn(ADQLOperand leftOp, ADQLSet query, boolean notIn) throws Exception {
 		return new In(leftOp, query, notIn);
 	}
 

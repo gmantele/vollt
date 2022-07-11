@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 /*
@@ -30,7 +30,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-*  Version: 2.0 (04/2021)
+*  Version: 2.0 (07/2022)
 */
 
 							/* ########### */
@@ -67,7 +67,7 @@ package adql.parser.grammar;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Vector;
@@ -101,10 +101,10 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * 	interface and provides additional features.
  * </i></p>
  * 
- * @see ADQLParser
+ * @see adql.parser.ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (10/2020)
+ * @version 2.0 (07/2022)
  * @since 2.0
  */
 public class ADQLGrammar200 extends ADQLGrammarBase {
@@ -417,12 +417,12 @@ TOKEN : {
 /* GENERAL ADQL SYNTAX */
 /* ******************* */
 
-ADQLQuery Query(): {ADQLQuery q = null;}{
+ADQLSet Query(): {ADQLSet q = null;}{
 	q=QueryExpression() (<EOF> | <EOQ>)
 	{ return q; }
 }
 
-ADQLQuery QueryExpression(): {TextPosition endPos = null;} {
+ADQLSet QueryExpression(): {TextPosition endPos = null; ClauseSelect select; FromContent from; ClauseConstraints where, having; ClauseADQL<ADQLOperand> groupBy; ClauseADQL<ADQLOrder> orderBy;} {
 	{
 		try{
 			// create the query:
@@ -432,18 +432,18 @@ ADQLQuery QueryExpression(): {TextPosition endPos = null;} {
 			throw generateParseException(ex);
 		}
 	}
-	Select()
-	From()     {endPos = query.getFrom().getPosition();}
-	[Where()   {endPos = query.getWhere().getPosition();}]
-	[GroupBy() {endPos = query.getGroupBy().getPosition();}]
-	[Having()  {endPos = query.getHaving().getPosition();}]
-	[OrderBy() {endPos = query.getOrderBy().getPosition();}]
+	select=Select()    {query.setSelect(select);}
+	from=From()        {query.setFrom(from);       endPos = from.getPosition();}
+	[where=Where()     {query.setWhere(where);     endPos = where.getPosition();}]
+	[groupBy=GroupBy() {query.setGroupBy(groupBy); endPos = groupBy.getPosition();}]
+	[having=Having()   {query.setHaving(having);   endPos = having.getPosition();}]
+	[orderBy=OrderBy() {query.setOrderBy(orderBy); endPos = orderBy.getPosition();}]
 	{
 		// set the position of the query:
-		query.setPosition(new TextPosition(query.getSelect().getPosition(), endPos));
+		query.setPosition(new TextPosition(select.getPosition(), endPos));
 		
 		// get the previous query (!= null if the current query is a sub-query):
-		ADQLQuery previousQuery = stackQuery.pop();
+		ADQLSet previousQuery = stackQuery.pop();
 		if (stackQuery.isEmpty())
 			query = null;
 		else
@@ -453,7 +453,7 @@ ADQLQuery QueryExpression(): {TextPosition endPos = null;} {
 	}
 }
 
-ADQLQuery SubQueryExpression(): {ADQLQuery q = null; Token start, end;} {
+ADQLSet SubQueryExpression(): {ADQLSet q = null; Token start, end;} {
 	start=<LEFT_PAR> q=QueryExpression() end=<RIGHT_PAR>
 	{
 		q.setPosition(new TextPosition(start, end));
@@ -461,7 +461,7 @@ ADQLQuery SubQueryExpression(): {ADQLQuery q = null; Token start, end;} {
 	}
 }
 
-void Select(): {ClauseSelect select = query.getSelect(); SelectItem item=null; Token start,t = null;} {
+ClauseSelect Select(): {ClauseSelect select = new ClauseSelect(); SelectItem item = null; Token start,t = null;} {
 	start=<SELECT>
 	[t=<QUANTIFIER> {select.setDistinctColumns(t.image.equalsIgnoreCase("DISTINCT"));}]
 	[<TOP> t=<UNSIGNED_INTEGER>
@@ -477,8 +477,10 @@ void Select(): {ClauseSelect select = query.getSelect(); SelectItem item=null; T
 	item=SelectItem() {select.add(item);}
 	(<COMMA> item=SelectItem() {select.add(item);})*
 	{
-		TextPosition lastItemPos = query.getSelect().get(query.getSelect().size()-1).getPosition();
+		TextPosition lastItemPos = select.get(select.size()-1).getPosition();
 		select.setPosition(new TextPosition(start.beginLine, start.beginColumn, lastItemPos.endLine, lastItemPos.endColumn));
+
+		return select;
 	}
 }
 
@@ -534,7 +536,7 @@ SelectItem SelectItem(): {IdentifierItems identifiers = new IdentifierItems(true
 	}
 }
 
-void From():{FromContent content = null, content2 = null;}{
+FromContent From():{FromContent content = null, content2 = null;}{
 	try{
 		<FROM> content=TableRef()
 		(<COMMA> content2=TableRef()
@@ -544,38 +546,46 @@ void From():{FromContent content = null, content2 = null;}{
 		   content.setPosition(new TextPosition(startPos, endPos));
 		 }
 		)*
-		{ query.setFrom(content); }
+		{ return content; }
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
 }
 
-void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condition; Token start;} {
+ClauseConstraints Where(): {ClauseConstraints where = new ClauseConstraints("WHERE"); ADQLConstraint condition; Token start;} {
 	start=<WHERE> ConditionsList(where)
 	{
 	  TextPosition endPosition = where.getPosition();
 	  where.setPosition(new TextPosition(start.beginLine, start.beginColumn, endPosition.endLine, endPosition.endColumn));
+	  return where;
 	}
 }
 
-void GroupBy(): {ClauseADQL<ADQLOperand> groupBy = query.getGroupBy(); ADQLColumn colRef = null; Token start;} {
+ClauseADQL<ADQLOperand> GroupBy(): {ClauseADQL<ADQLOperand> groupBy = new ClauseADQL<ADQLOperand>("GROUP BY"); ADQLColumn colRef = null; Token start;} {
 	start=<GROUP> <BY> colRef=Column() { groupBy.add(colRef); }
 	( <COMMA> colRef=Column() { groupBy.add(colRef); } )*
-	{ groupBy.setPosition(new TextPosition(new TextPosition(start), colRef.getPosition())); }
+	{
+	  groupBy.setPosition(new TextPosition(new TextPosition(start), colRef.getPosition()));
+	  return groupBy;
+	}
 }
 
-void Having(): {ClauseConstraints having = query.getHaving(); Token start;} {
+ClauseConstraints Having(): {ClauseConstraints having = new ClauseConstraints("HAVING"); Token start;} {
 	start=<HAVING> ConditionsList(having)
 	{
 	  TextPosition endPosition = having.getPosition();
 	  having.setPosition(new TextPosition(start.beginLine, start.beginColumn, endPosition.endLine, endPosition.endColumn));
+	  return having;
 	}
 }
 
-void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder order = null; Token start;} {
+ClauseADQL<ADQLOrder> OrderBy(): {ClauseADQL<ADQLOrder> orderBy = new ClauseADQL<ADQLOrder>("ORDER BY"); ADQLOrder order = null; Token start;} {
 	start=<ORDER> <BY> order=OrderItem() {orderBy.add(order);}
 	( <COMMA> order=OrderItem() {orderBy.add(order);} )*
-	{ orderBy.setPosition(new TextPosition(start, token)); }
+	{
+	  orderBy.setPosition(new TextPosition(start, token));
+	  return orderBy;
+	}
 }
 
 /* *************************** */
@@ -662,7 +672,7 @@ ADQLOrder OrderItem(): {IdentifierItem identifier = null; Token ind = null, desc
 	}
 }
 
-FromContent SimpleTableRef(): {IdentifierItem alias = null; IdentifierItems identifiers = null; ADQLQuery subQuery = null; FromContent content = null; Token start,end;} {
+FromContent SimpleTableRef(): {IdentifierItem alias = null; IdentifierItems identifiers = null; ADQLSet subQuery = null; FromContent content = null; Token start,end;} {
 	try{
 		(
 			identifiers=TableName() [[<AS>] alias=Identifier()]
@@ -1053,7 +1063,7 @@ ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, en
 	{return constraint;}
 }
 
-ADQLConstraint Predicate(): {ADQLQuery q=null; ADQLColumn column=null; ADQLOperand strExpr1=null, strExpr2=null; ADQLOperand op; Token start, notToken = null, end; ADQLConstraint constraint = null;} {
+ADQLConstraint Predicate(): {ADQLSet q=null; ADQLColumn column=null; ADQLOperand strExpr1=null, strExpr2=null; ADQLOperand op; Token start, notToken = null, end; ADQLConstraint constraint = null;} {
 	try{
 		// exists_predicate
 		(
@@ -1123,7 +1133,7 @@ Between BetweenEnd(ADQLOperand leftOp): {Token start,notToken=null; ADQLOperand 
 	}
 }
 
-In InEnd(ADQLOperand leftOp): {Token not=null, start; ADQLQuery q = null; ADQLOperand item; Vector<ADQLOperand> items = new Vector<ADQLOperand>();} {
+In InEnd(ADQLOperand leftOp): {Token not=null, start; ADQLSet q = null; ADQLOperand item; Vector<ADQLOperand> items = new Vector<ADQLOperand>();} {
 	[not=<NOT>] start=<IN>
 	(LOOKAHEAD(2) q=SubQueryExpression()
 	| (<LEFT_PAR> item=ValueExpression() {items.add(item);} (<COMMA> item=ValueExpression() {items.add(item);})* <RIGHT_PAR>))
@@ -1178,9 +1188,9 @@ SQLFunction SqlFunction(): {Token fct, all=null, distinct=null, end; ADQLOperand
 /* ************** */
 /* ADQL FUNCTIONS */
 /* ************** */
-ADQLOperand[] Coordinates(): {ADQLOperand[] ops = new ADQLOperand[2];} {
-	ops[0]=NumericExpression() <COMMA> ops[1]=NumericExpression()
-	{return ops;}
+ADQLOperand[] Coordinates(): {ADQLOperand op1, op2;} {
+    op1=NumericExpression() <COMMA> op2=NumericExpression()
+    {return new ADQLOperand[]{op1,op2};}
 }
 
 GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<GeometryFunction> gvf1, gvf2; GeometryValue<GeometryFunction> gvp1, gvp2; GeometryFunction gf = null; PointFunction p1=null, p2=null; ADQLColumn col1 = null, col2 = null;} {

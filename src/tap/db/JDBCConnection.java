@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -44,7 +44,7 @@ import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.region.Region;
 import adql.db.region.STCS;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.IdentifierField;
 import adql.translator.ADQLTranslator;
 import adql.translator.JDBCTranslator;
@@ -94,7 +94,7 @@ import uws.service.log.UWSLog.LogLevel;
  * 	All the following functions are synchronized in order to prevent parallel
  * 	execution of them by several threads:
  * 	{@link #addUploadedTable(TAPTable, TableIterator)},
- * 	{@link #dropUploadedTable(TAPTable)}, {@link #executeQuery(ADQLQuery)},
+ * 	{@link #dropUploadedTable(TAPTable)}, {@link #executeQuery(ADQLSet)},
  * 	{@link #getTAPSchema()} and {@link #setTAPSchema(TAPMetadata)}.
  * </p>
  *
@@ -106,7 +106,7 @@ import uws.service.log.UWSLog.LogLevel;
  * 	flag and may then stop immediately by throwing a
  * 	{@link DBCancelledException} as soon as the flag turns <code>true</code>.
  * 	It should be the case for {@link #addUploadedTable(TAPTable, TableIterator)},
- * 	{@link #executeQuery(ADQLQuery)} and {@link #setTAPSchema(TAPMetadata)}.
+ * 	{@link #executeQuery(ADQLSet)} and {@link #setTAPSchema(TAPMetadata)}.
  * </p>
  *
  *
@@ -120,7 +120,7 @@ import uws.service.log.UWSLog.LogLevel;
  * 	<li><b>data definition</b>: when not supported, no update operation will be
  * 		                        possible. All corresponding functions will then
  * 		                        throw a {@link DBException} ; only
- * 		                        {@link #executeQuery(ADQLQuery)} will be
+ * 		                        {@link #executeQuery(ADQLSet)} will be
  * 		                        possibly called.</li>
  *
  * 	<li><b>transactions</b>: when not supported, no transaction is started or
@@ -156,7 +156,7 @@ import uws.service.log.UWSLog.LogLevel;
  *
  * <p><i><b>Warning</b>:
  * 	All these features have no impact at all on ADQL query executions
- * 	({@link #executeQuery(ADQLQuery)}).
+ * 	({@link #executeQuery(ADQLSet)}).
  * </i></p>
  *
  *
@@ -204,7 +204,7 @@ import uws.service.log.UWSLog.LogLevel;
  *
  * <p><i><b>Note 1:</b>
  * 	The "fetch size" feature is used only for SELECT queries executed by
- * 	{@link #executeQuery(ADQLQuery)}. In all other functions, results of SELECT
+ * 	{@link #executeQuery(ADQLSet)}. In all other functions, results of SELECT
  * 	queries are fetched with the default parameter of the JDBC driver and its
  * 	{@link Statement} implementation.
  * </i></p>
@@ -225,7 +225,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (04/2021)
+ * @version 2.4 (07/2022)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -586,7 +586,7 @@ public class JDBCConnection implements DBConnection {
 	 * <p>
 	 * 	In any case, this function sets anyway the flag {@link #isCancelled()} to <code>true</code> so that after
 	 * 	a DB processing this {@link DBConnection} can interrupt immediately any potentially long running functions
-	 * 	(i.e. {@link #addUploadedTable(TAPTable, TableIterator)}, {@link #executeQuery(ADQLQuery)} and
+	 * 	(i.e. {@link #addUploadedTable(TAPTable, TableIterator)}, {@link #executeQuery(ADQLSet)} and
 	 * 	{@link #setTAPSchema(TAPMetadata)}). When these functions realize this flag is set, they immediately stop
 	 * 	by throwing a {@link DBCancelledException}.
 	 * </p>
@@ -727,7 +727,7 @@ public class JDBCConnection implements DBConnection {
 	/* INTERROGATION METHODS */
 	/* ********************* */
 	@Override
-	public synchronized TableIterator executeQuery(final ADQLQuery adqlQuery) throws DBException {
+	public synchronized TableIterator executeQuery(final ADQLSet adqlQuery) throws DBException {
 		// Starting of new query execution => disable the cancel flag:
 		resetCancel();
 

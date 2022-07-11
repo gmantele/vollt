@@ -16,7 +16,7 @@ package adql.parser.grammar;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.io.InputStream;
@@ -24,7 +24,12 @@ import java.io.InputStream;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.ADQLQueryFactory;
-import adql.query.ADQLQuery;
+import adql.query.ADQLOrder;
+import adql.query.ADQLSet;
+import adql.query.ClauseADQL;
+import adql.query.ClauseConstraints;
+import adql.query.ClauseSelect;
+import adql.query.from.FromContent;
 import adql.query.operand.ADQLOperand;
 import adql.query.operand.StringConstant;
 
@@ -44,7 +49,7 @@ import adql.query.operand.StringConstant;
  * 	<li>Call the appropriate parsing in function of what should be parsed
  * 		(e.g. {@link #Query()} for a full ADQL query, {@link #Where()} for a
  * 		WHERE clause),</li>
- * 	<li>Get the result with {@link #getQuery()}.</li>
+ * 	<li>The corresponding class representation is returned.</li>
  * </ol>
  *
  * <i>
@@ -90,7 +95,7 @@ import adql.query.operand.StringConstant;
  * @see ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (08/2019)
+ * @version 2.0 (11/2020)
  * @since 2.0
  */
 public interface ADQLGrammar {
@@ -105,35 +110,6 @@ public interface ADQLGrammar {
 	 * @return	Implemented ADQL Grammar version. <i>Never NULL</i>
 	 */
 	public ADQLVersion getVersion();
-
-	/**
-	 * Get the result of the last ADQL query parsing.
-	 *
-	 * <p>
-	 * 	This function returns something only if the ADQL expression parsing
-	 * 	succeeded. Otherwise, NULL will be returned.
-	 * </p>
-	 *
-	 * <p>
-	 * 	Even if the parsed expression was not a full ADQL query, a full ADQL
-	 * 	query tree is always returned as an instance of {@link ADQLQuery}. In
-	 * 	case the parsed expression is an ADQL clause, the result will be set in
-	 * 	the corresponding part of the ADQL tree.
-	 * </p>
-	 *
-	 * <p><i><b>Example:</b>
-	 * 	if {@link #Select()} has been successfully executed, an
-	 * 	{@link ADQLQuery} with only the part corresponding to the
-	 * 	<code>SELECT</code> will be filled ; this can then be got thanks to
-	 * 	{@link ADQLQuery#getSelect()}. The same applies for all the individual
-	 * 	parsing of the other ADQL clauses.
-	 * </i></p>
-	 *
-	 * @return	An ADQL query tree filled with the parsing result,
-	 *        	or NULL if no ADQL query or clause has been parsed or if this
-	 *        	parsing failed.
-	 */
-	public ADQLQuery getQuery();
 
 	/**
 	 * Get the {@link ADQLQueryFactory} used by this Grammar Parser to create
@@ -190,14 +166,11 @@ public interface ADQLGrammar {
 	 *
 	 * @throws ParseException	If the parsing failed.
 	 */
-	public ADQLQuery Query() throws ParseException;
+	public ADQLSet Query() throws ParseException;
 
 	/**
 	 * Parse the ADQL expression as a single <code>SELECT</code> clause.
 	 *
-	 * <p>To get the result:</p>
-	 * <pre>grammarParser.{@link #getQuery()}.{@link ADQLQuery#getSelect() getSelect()}</pre>
-	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function MUST always be called AFTER {@link #reset(InputStream)}
 	 * 	with the ADQL expression to parse.
@@ -205,14 +178,11 @@ public interface ADQLGrammar {
 	 *
 	 * @throws ParseException	If the parsing failed.
 	 */
-	public void Select() throws ParseException;
+	public ClauseSelect Select() throws ParseException;
 
 	/**
 	 * Parse the ADQL expression as a single <code>FROM</code> clause.
 	 *
-	 * <p>To get the result:</p>
-	 * <pre>grammarParser.{@link #getQuery()}.{@link ADQLQuery#getFrom() getFrom()}</pre>
-	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function MUST always be called AFTER {@link #reset(InputStream)}
 	 * 	with the ADQL expression to parse.
@@ -220,14 +190,11 @@ public interface ADQLGrammar {
 	 *
 	 * @throws ParseException	If the parsing failed.
 	 */
-	public void From() throws ParseException;
+	public FromContent From() throws ParseException;
 
 	/**
 	 * Parse the ADQL expression as a single <code>WHERE</code> clause.
 	 *
-	 * <p>To get the result:</p>
-	 * <pre>grammarParser.{@link #getQuery()}.{@link ADQLQuery#getWhere() getWhere()}</pre>
-	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function MUST always be called AFTER {@link #reset(InputStream)}
 	 * 	with the ADQL expression to parse.
@@ -235,14 +202,11 @@ public interface ADQLGrammar {
 	 *
 	 * @throws ParseException	If the parsing failed.
 	 */
-	public void Where() throws ParseException;
+	public ClauseConstraints Where() throws ParseException;
 
 	/**
 	 * Parse the ADQL expression as a single <code>ORDER BY</code> clause.
 	 *
-	 * <p>To get the result:</p>
-	 * <pre>grammarParser.{@link #getQuery()}.{@link ADQLQuery#getOrderBy() getOrderBy()}</pre>
-	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function MUST always be called AFTER {@link #reset(InputStream)}
 	 * 	with the ADQL expression to parse.
@@ -250,14 +214,11 @@ public interface ADQLGrammar {
 	 *
 	 * @throws ParseException	If the parsing failed.
 	 */
-	public void OrderBy() throws ParseException;
+	public ClauseADQL<ADQLOrder> OrderBy() throws ParseException;
 
 	/**
 	 * Parse the ADQL expression as a single <code>GROUP BY</code> clause.
 	 *
-	 * <p>To get the result:</p>
-	 * <pre>grammarParser.{@link #getQuery()}.{@link ADQLQuery#getGroupBy() getGroupBy()}</pre>
-	 *
 	 * <p><i><b>Important note:</b>
 	 * 	This function MUST always be called AFTER {@link #reset(InputStream)}
 	 * 	with the ADQL expression to parse.
@@ -265,7 +226,7 @@ public interface ADQLGrammar {
 	 *
 	 * @throws ParseException	If the parsing failed.
 	 */
-	public void GroupBy() throws ParseException;
+	public ClauseADQL<ADQLOperand> GroupBy() throws ParseException;
 
 	/**
 	 * Parse the ADQL expression as a single string constant.

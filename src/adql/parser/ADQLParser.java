@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.io.ByteArrayInputStream;
@@ -45,6 +45,7 @@ import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.ClauseADQL;
 import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
@@ -83,7 +84,7 @@ import adql.translator.TranslationException;
  *     ADQLParser parser = new {@link #ADQLParser()};
  *
  *     // 2. PARSE AN ADQL QUERY:
- *     ADQLQuery query = parser.{@link #parseQuery(String) parseQuery}("SELECT foo FROM bar WHERE stuff = 1");
+ *     ADQLSet query = parser.{@link #parseQuery(String) parseQuery}("SELECT foo FROM bar WHERE stuff = 1");
  *
  *     System.out.println("((i)) Correct ADQL query ((i))");
  *     System.out.println("((i)) As interpreted: ((i))\n    " + query.toADQL().replaceAll("\n", "\n    "));
@@ -207,9 +208,9 @@ import adql.translator.TranslationException;
  * <p>
  * 	Besides the general checks, this parser allows the addition of a custom
  * 	validation. Thanks to a {@link QueryChecker} object, it is able to check
- * 	each {@link ADQLQuery} just after its generation and the general checks.
- * 	It could be used, for instance, to check the consistency between the ADQL
- * 	query to parse and the "database" on which the query must be executed.
+ * 	each {@link ADQLSet} just after its generation and the general checks. It
+ * 	could be used, for instance, to check the consistency between the ADQL query
+ * 	to parse and the "database" on which the query must be executed.
  * </p>
  *
  * <p>
@@ -243,7 +244,7 @@ import adql.translator.TranslationException;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (07/2022)
  * @since 2.0
  */
 public class ADQLParser {
@@ -799,7 +800,7 @@ public class ADQLParser {
 	*
 	* @see #effectiveParseQuery()
 	*/
-	public final ADQLQuery parseQuery(final String q) throws ParseException {
+	public final ADQLSet parseQuery(final String q) throws ParseException {
 		// Reset the parser with the string to parse:
 		try {
 			grammarParser.reset(new ByteArrayInputStream(q.getBytes()));
@@ -822,7 +823,7 @@ public class ADQLParser {
 	*
 	* @see #effectiveParseQuery()
 	*/
-	public final ADQLQuery parseQuery(final InputStream stream) throws ParseException {
+	public final ADQLSet parseQuery(final InputStream stream) throws ParseException {
 		// Reset the parser with the stream to parse:
 		try {
 			grammarParser.reset(stream);
@@ -850,11 +851,11 @@ public class ADQLParser {
 	 *                       	generated), or if any check on the parsing
 	 *                       	result fails.
 	 *
-	 * @see #allChecks(ADQLQuery)
+	 * @see #allChecks(ADQLSet)
 	 */
-	protected ADQLQuery effectiveParseQuery() throws ParseException {
+	protected ADQLSet effectiveParseQuery() throws ParseException {
 		// 1. Parse the full ADQL query:
-		ADQLQuery parsedQuery;
+		ADQLSet parsedQuery;
 		try {
 			parsedQuery = grammarParser.Query();
 		} catch(TokenMgrError tme) {
@@ -910,13 +911,15 @@ public class ADQLParser {
 		try {
 
 			// Parse the string as a SELECT clause:
-			grammarParser.Select();
+			final ClauseSelect select = grammarParser.Select();
 
 			// Run all available checks on this ADQL query part:
-			allChecks(grammarParser.getQuery());
+			ADQLQuery q = new ADQLQuery(grammarParser.getVersion());
+			q.setSelect(select);
+			allChecks(q);
 
 			// Return what's just got parsed:
-			return grammarParser.getQuery().getSelect();
+			return select;
 
 		} catch(TokenMgrError tme) {
 			throw new ParseException(tme);
@@ -966,13 +969,15 @@ public class ADQLParser {
 		try {
 
 			// Parse the string as a FROM clause:
-			grammarParser.From();
+			final FromContent from = grammarParser.From();
 
 			// Run all available checks on this ADQL query part:
-			allChecks(grammarParser.getQuery());
+			ADQLQuery q = new ADQLQuery(grammarParser.getVersion());
+			q.setFrom(from);
+			allChecks(q);
 
 			// Return what's just got parsed:
-			return grammarParser.getQuery().getFrom();
+			return from;
 
 		} catch(TokenMgrError tme) {
 			throw new ParseException(tme);
@@ -1021,13 +1026,15 @@ public class ADQLParser {
 		try {
 
 			// Parse the string as a WHERE clause:
-			grammarParser.Where();
+			final ClauseConstraints where = grammarParser.Where();
 
 			// Run all available checks on this ADQL query part:
-			allChecks(grammarParser.getQuery());
+			ADQLQuery q = new ADQLQuery(grammarParser.getVersion());
+			q.setWhere(where);
+			allChecks(q);
 
 			// Return what's just got parsed:
-			return grammarParser.getQuery().getWhere();
+			return where;
 
 		} catch(TokenMgrError tme) {
 			throw new ParseException(tme);
@@ -1075,13 +1082,15 @@ public class ADQLParser {
 		try {
 
 			// Parse the string as a ORDER BY clause:
-			grammarParser.OrderBy();
+			final ClauseADQL<ADQLOrder> orderBy = grammarParser.OrderBy();
 
 			// Run all available checks on this ADQL query part:
-			allChecks(grammarParser.getQuery());
+			ADQLQuery q = new ADQLQuery(grammarParser.getVersion());
+			q.setOrderBy(orderBy);
+			allChecks(q);
 
 			// Return what's just got parsed:
-			return grammarParser.getQuery().getOrderBy();
+			return orderBy;
 
 		} catch(TokenMgrError tme) {
 			throw new ParseException(tme);
@@ -1131,13 +1140,15 @@ public class ADQLParser {
 		try {
 
 			// Parse the string as a GROUP BY clause:
-			grammarParser.GroupBy();
+			final ClauseADQL<ADQLOperand> groupBy = grammarParser.GroupBy();
 
 			// Run all available checks on this ADQL query part:
-			allChecks(grammarParser.getQuery());
+			ADQLQuery q = new ADQLQuery(grammarParser.getVersion());
+			q.setGroupBy(groupBy);
+			allChecks(q);
 
 			// Return what's just got parsed:
-			return grammarParser.getQuery().getGroupBy();
+			return groupBy;
 
 		} catch(TokenMgrError tme) {
 			throw new ParseException(tme);
@@ -1162,10 +1173,10 @@ public class ADQLParser {
 	 * @throws ParseException	If any of the common checks or any of the
 	 *                       	optional ones failed
 	 *
-	 * @see #generalChecks(ADQLQuery)
-	 * @see QueryChecker#check(ADQLQuery)
+	 * @see #generalChecks(ADQLSet)
+	 * @see QueryChecker#check(ADQLSet)
 	 */
-	protected void allChecks(final ADQLQuery q) throws ParseException {
+	protected void allChecks(final ADQLSet q) throws ParseException {
 		/* Run the general checks on the parsed query:
 		 * (note: this check is very close to grammar check...hence its higher
 		 *        priority) */
@@ -1193,7 +1204,7 @@ public class ADQLParser {
 	 * @throws ParseException	If any unsupported language feature is used in
 	 *                       	the given ADQL tree.
 	 */
-	protected void generalChecks(final ADQLQuery q) throws ParseException {
+	protected void generalChecks(final ADQLSet q) throws ParseException {
 		// Create the exception in which errors have to be appended:
 		UnresolvedIdentifiersException exUnsupportedFeatures = new UnresolvedIdentifiersException("unsupported expression");
 
@@ -1274,7 +1285,7 @@ public class ADQLParser {
 	 *
 	 * @see #checkCoordinateSystem(StringConstant, UnresolvedIdentifiersException)
 	 */
-	protected void resolveCoordinateSystems(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
+	protected void resolveCoordinateSystems(final ADQLSet query, final UnresolvedIdentifiersException errors) {
 		ISearchHandler sHandler = new SearchCoordSysHandler();
 		sHandler.search(query);
 		for(ADQLObject result : sHandler)
@@ -1344,7 +1355,7 @@ public class ADQLParser {
 	 * @see Region#parse(String)
 	 * @see #checkRegion(Region, RegionFunction, UnresolvedIdentifiersException)
 	 */
-	protected void resolveRegionExpressions(final ADQLQuery query, final UnresolvedIdentifiersException errors) {
+	protected void resolveRegionExpressions(final ADQLSet query, final UnresolvedIdentifiersException errors) {
 		// Search REGION functions:
 		ISearchHandler sHandler = new SearchRegionHandler();
 		sHandler.search(query);
@@ -1834,7 +1845,7 @@ public class ADQLParser {
 			try {
 				if (verbose)
 					System.out.print("((i)) Parsing ADQL query...");
-				ADQLQuery q = parser.parseQuery(in);
+				ADQLSet q = parser.parseQuery(in);
 				if (verbose)
 					System.out.println("((i)) CORRECT ADQL QUERY ((i))");
 				if (mode == 2) {

@@ -25,6 +25,7 @@ import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.ClauseADQL;
 import adql.query.IdentifierField;
 import adql.query.WithItem;
@@ -56,6 +57,45 @@ public class TestJDBCTranslator {
 
 	@Before
 	public void setUp() throws Exception {
+	}
+
+	@Test
+	public void testTranslateSetOperation() {
+		JDBCTranslator tr = new AJDBCTranslator();
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_1);
+
+		try {
+			// CASE: A simple UNION
+			ADQLSet query = parser.parseQuery("SELECT * FROM foo UNION SELECT * FROM bar");
+			assertEquals("SELECT *\nFROM foo\nUNION\nSELECT *\nFROM bar", tr.translate(query));
+
+			// CASE: With quantifier ALL
+			query = parser.parseQuery("SELECT * FROM foo EXCEPT ALL SELECT * FROM bar");
+			assertEquals("SELECT *\nFROM foo\nEXCEPT ALL\nSELECT *\nFROM bar", tr.translate(query));
+
+			// CASE: With a TOP:
+			query = parser.parseQuery("SELECT TOP 10 * FROM foo EXCEPT ALL SELECT TOP 20 * FROM bar");
+			assertEquals("(SELECT *\nFROM foo\nLIMIT 10)\nEXCEPT ALL\n(SELECT *\nFROM bar\nLIMIT 20)", tr.translate(query));
+
+			// CASE: With ORDER BY or OFFSET:
+			query = parser.parseQuery("(SELECT * FROM foo ORDER BY id DESC) INTERSECT (SELECT * FROM bar WHERE mag < 5 OFFSET 10)");
+			assertEquals("(SELECT *\nFROM foo\nORDER BY id DESC)\nINTERSECT\n(SELECT *\nFROM bar\nWHERE mag < 5\nOFFSET 10)", tr.translate(query));
+
+			// CASE: CTE at the top:
+			query = parser.parseQuery("WITH toto AS (SELECT * FROM tt) SELECT first_col FROM foo INTERSECT SELECT col1 FROM toto");
+			assertEquals("WITH \"toto\" AS (\nSELECT *\nFROM tt\n)\nSELECT first_col AS \"first_col\"\nFROM foo\nINTERSECT\nSELECT col1 AS \"col1\"\nFROM toto", tr.translate(query));
+
+			// CASE: Set operation with a grouped set operation:
+			query = parser.parseQuery("( SELECT col1 FROM foo WHERE col1 <= 10 UNION SELECT col1 FROM foo WHERE col1 > 120406 ) INTERSECT SELECT col1 FROM foo WHERE (col1 <= 10 OR col1> 120406) AND mod(col1, 2) = 0 ORDER BY 1 DESC");
+			assertEquals("(SELECT col1 AS \"col1\"\nFROM foo\nWHERE col1 <= 10\nUNION\nSELECT col1 AS \"col1\"\nFROM foo\nWHERE col1 > 120406)\nINTERSECT\nSELECT col1 AS \"col1\"\nFROM foo\nWHERE (col1 <= 10 OR col1 > 120406) AND MOD(col1, 2) = 0\nORDER BY 1 DESC", tr.translate(query));
+
+		} catch(ParseException pe) {
+			pe.printStackTrace();
+			fail("Unexpected parsing failure! (see console for more details)");
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while translating a correct SET operation! (see console for more details)");
+		}
 	}
 
 	@Test
@@ -91,7 +131,7 @@ public class TestJDBCTranslator {
 		// CASE: ANY STRING EXPRESSION AND SYNTAX ALLOWED => SQL = ADQL:
 		parser.allowExtendedRegionParam(true);
 		try {
-			ADQLQuery query = parser.parseQuery("SELECT REGION('my custom region serialization') AS \"r\" FROM foo");
+			ADQLSet query = parser.parseQuery("SELECT REGION('my custom region serialization') AS \"r\" FROM foo");
 			assertEquals(query.toADQL(), tr.translate(query));
 		} catch(ParseException pe) {
 			pe.printStackTrace();
@@ -133,7 +173,7 @@ public class TestJDBCTranslator {
 			String[] regionStrings = new String[]{ "1 2", "1 2 3", "1 2  3 4  5 6" };
 			String[] expectedSQL = new String[]{ "sql_point(1.0,2.0)", "sql_circle(1.0,2.0,3.0)", "sql_polygon(1.0,2.0,3.0,4.0,5.0,6.0)" };
 			for(int i = 0; i < regionStrings.length; i++) {
-				ADQLQuery query = parser.parseQuery("SELECT REGION('" + regionStrings[i] + "') AS \"r\" FROM foo");
+				ADQLSet query = parser.parseQuery("SELECT REGION('" + regionStrings[i] + "') AS \"r\" FROM foo");
 				assertEquals("SELECT " + expectedSQL[i] + " AS \"r\"\nFROM foo", tr.translate(query));
 			}
 
@@ -141,7 +181,7 @@ public class TestJDBCTranslator {
 			regionStrings = new String[]{ "Position 1 2", "Circle 1 2 3", "Box 1 2 3 4", "Polygon 1 2  3 4  5 6" };
 			expectedSQL = new String[]{ "sql_point(1.0,2.0)", "sql_circle(1.0,2.0,3.0)", "sql_box(1.0,2.0,3.0,4.0)", "sql_polygon(1.0,2.0,3.0,4.0,5.0,6.0)" };
 			for(int i = 0; i < regionStrings.length; i++) {
-				ADQLQuery query = parser.parseQuery("SELECT REGION('" + regionStrings[i] + "') AS \"r\" FROM foo");
+				ADQLSet query = parser.parseQuery("SELECT REGION('" + regionStrings[i] + "') AS \"r\" FROM foo");
 				assertEquals("SELECT " + expectedSQL[i] + " AS \"r\"\nFROM foo", tr.translate(query));
 			}
 
@@ -161,7 +201,7 @@ public class TestJDBCTranslator {
 
 		try {
 			// CASE: No WITH clause
-			ADQLQuery query = parser.parseQuery("SELECT * FROM foo");
+			ADQLSet query = parser.parseQuery("SELECT * FROM foo");
 			ClauseADQL<WithItem> withClause = query.getWith();
 			assertTrue(withClause.isEmpty());
 			assertEquals("WITH ", tr.translate(withClause));
@@ -187,6 +227,15 @@ public class TestJDBCTranslator {
 		} catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected error while translating a correct WITH item! (see console for more details)");
+		}
+
+		// CASE: Internal CTEs forbidden!
+		try {
+			parser.parseQuery("SELECT first_col FROM foo INTERSECT (WITH toto AS (SELECT * FROM tt) SELECT col1 FROM toto)");
+			fail("WITH expressions not allowed somewhere else than at the main query level!");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals(" Encountered \"WITH\". Was expecting one of: \"(\" \"SELECT\" \n(HINT: \"WITH\" is a reserved ADQL word in v2.1. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
 		}
 	}
 
@@ -220,8 +269,9 @@ public class TestJDBCTranslator {
 
 	public final static int countFeatures(final FeatureSet features) {
 		int cnt = 0;
-		for(LanguageFeature feat : features)
+		for(Iterator<LanguageFeature> iterator = features.iterator(); iterator.hasNext(); iterator.next()) {
 			cnt++;
+		}
 		return cnt;
 	}
 
@@ -377,14 +427,17 @@ public class TestJDBCTranslator {
 		try {
 			ADQLParser parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables));
-			ADQLQuery query = parser.parseQuery(adqlquery);
+			ADQLSet query = parser.parseQuery(adqlquery);
 			JDBCTranslator translator = new AJDBCTranslator();
 
+			// Ensure the query is an ADQLQuery:
+			assertEquals(ADQLQuery.class, query.getClass());
+
 			// Test the FROM part:
-			assertEquals("aTable AS \"a\" NATURAL INNER JOIN anotherTable AS \"b\" ", translator.translate(query.getFrom()));
+			assertEquals("aTable AS \"a\" NATURAL INNER JOIN anotherTable AS \"b\" ", translator.translate(((ADQLQuery)query).getFrom()));
 
 			// Test the SELECT part (in order to ensure the usual common columns (due to NATURAL) are actually translated as columns of the first joined table):
-			assertEquals("SELECT id AS \"id\" , name AS \"name\" , a.aColumn AS \"acolumn\" , b.anotherColumn AS \"anothercolumn\"", translator.translate(query.getSelect()));
+			assertEquals("SELECT id AS \"id\" , name AS \"name\" , a.aColumn AS \"acolumn\" , b.anotherColumn AS \"anothercolumn\"", translator.translate(((ADQLQuery)query).getSelect()));
 
 		} catch(ParseException pe) {
 			pe.printStackTrace();
@@ -414,14 +467,17 @@ public class TestJDBCTranslator {
 		try {
 			ADQLParser parser = new ADQLParser();
 			parser.setQueryChecker(new DBChecker(tables));
-			ADQLQuery query = parser.parseQuery(adqlquery);
+			ADQLSet query = parser.parseQuery(adqlquery);
 			JDBCTranslator translator = new AJDBCTranslator();
 
+			// Ensure the query is an ADQLQuery:
+			assertEquals(ADQLQuery.class, query.getClass());
+
 			// Test the FROM part:
-			assertEquals("aTable AS \"a\" INNER JOIN anotherTable AS \"b\" USING (name)", translator.translate(query.getFrom()));
+			assertEquals("aTable AS \"a\" INNER JOIN anotherTable AS \"b\" USING (name)", translator.translate(((ADQLQuery)query).getFrom()));
 
 			// Test the SELECT part (in order to ensure the usual common columns (due to USING) are actually translated as columns of the first joined table):
-			assertEquals("SELECT b.id AS \"id\" , name AS \"name\" , a.aColumn AS \"acolumn\" , b.anotherColumn AS \"anothercolumn\"", translator.translate(query.getSelect()));
+			assertEquals("SELECT b.id AS \"id\" , name AS \"name\" , a.aColumn AS \"acolumn\" , b.anotherColumn AS \"anothercolumn\"", translator.translate(((ADQLQuery)query).getSelect()));
 
 		} catch(ParseException pe) {
 			pe.printStackTrace();

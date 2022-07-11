@@ -1,11 +1,10 @@
 plugins {
 	id 'java'
 	id 'war'
-	id 'com.intershop.gradle.javacc' version '4.0.0'
+	id 'com.intershop.gradle.javacc' version '4.0.1'
 }
 
 repositories {
-    jcenter()
     mavenCentral()
     mavenLocal()
 }
@@ -17,37 +16,44 @@ javacc {
 
         adqlGrammar200 {
             inputFile = file('src/adql/parser/grammar/adqlGrammar200.jj')
-            outputDir = file('src/adql/parser/grammar/')
+            outputDir = file("src")
+            packageName = "adql.parser.grammar"
         }
+
         adqlGrammar201 {
             inputFile = file('src/adql/parser/grammar/adqlGrammar201.jj')
-            outputDir = file('src/adql/parser/grammar/')
+            outputDir = file("src")
+            packageName = "adql.parser.grammar"
         }
     }
 }
+javaccAdqlGrammar201.configure {
+    dependsOn(javaccAdqlGrammar200)
+}
+
 
 dependencies {
-    compile fileTree(dir: 'lib', includes: ['stil_3.3-2.jar'])
-    compile 'javax.servlet:javax.servlet-api:3.0.1'
-    compile 'postgresql:postgresql:9.1-901.jdbc4'
-    compile 'org.slf4j:slf4j-api:1.7.25'
-    compile 'commons-io:commons-io:2.6'
-    compile 'commons-fileupload:commons-fileupload:1.3.3'
-    compile 'org.json:json:20180813'
+    implementation fileTree(dir: 'lib', includes: ['stil_3.3-2.jar'])
+    implementation 'javax.servlet:javax.servlet-api:3.0.1'
+    implementation 'postgresql:postgresql:9.1-901.jdbc4'
+    implementation 'org.slf4j:slf4j-api:1.7.25'
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'commons-fileupload:commons-fileupload:1.3.3'
+    implementation 'org.json:json:20180813'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.h2database:h2:1.4.193'
-    testCompile fileTree(dir: 'lib', include: 'astroh2-0.4.jar')
-    testCompile 'org.slf4j:slf4j-simple:1.7.25'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'com.h2database:h2:1.4.193'
+    testImplementation fileTree(dir: 'lib', include: 'astroh2-0.4.jar')
+    testImplementation 'org.slf4j:slf4j-simple:1.7.25'
     
-    testRuntime 'simple-jndi:simple-jndi:0.11.4.1'
-    testRuntime 'com.vividsolutions:jts-core:1.14.0'
-    testRuntime 'org.locationtech.spatial4j:spatial4j:0.6'
-    testRuntime 'org.xerial:sqlite-jdbc:3.16.1'
+    testRuntimeOnly 'simple-jndi:simple-jndi:0.11.4.1'
+    testRuntimeOnly 'com.vividsolutions:jts-core:1.14.0'
+    testRuntimeOnly 'org.locationtech.spatial4j:spatial4j:0.6'
+    testRuntimeOnly 'org.xerial:sqlite-jdbc:3.16.1'
     
     /* Needed to run Gradle with Java 9+: */
     // https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
-	compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
 }
 
 compileJava {
@@ -61,6 +67,7 @@ test{
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
+
 
 /* Set the minimum Java version compatibility: */
 sourceCompatibility = '1.8'

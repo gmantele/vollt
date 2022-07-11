@@ -12,7 +12,7 @@ import org.junit.Test;
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLParser.ADQLVersion;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.translator.PostgreSQLTranslator;
 
 public class TestIdentifierCaseSensitivity {
@@ -270,7 +270,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Non-case-sensitive ADQL name, Specified DB name:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT * FROM table1");
+				ADQLSet query = parser.parseQuery("SELECT * FROM table1");
 				assertEquals("SELECT *\nFROM table1", query.toADQL());
 				assertEquals("SELECT *\nFROM \"dbTable1\"", trCS.translate(query));
 				assertEquals("SELECT *\nFROM dbTable1", trCI.translate(query));
@@ -281,7 +281,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Case-sensitive ADQL name, Specified DB name:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT * FROM \"Table2\"");
+				ADQLSet query = parser.parseQuery("SELECT * FROM \"Table2\"");
 				assertEquals("SELECT *\nFROM \"Table2\"", query.toADQL());
 				assertEquals("SELECT *\nFROM \"dbTable2\"", trCS.translate(query));
 				assertEquals("SELECT *\nFROM dbTable2", trCI.translate(query));
@@ -292,7 +292,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Non-case-sensitive ADQL name, UNspecified DB name:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT * FROM table3");
+				ADQLSet query = parser.parseQuery("SELECT * FROM table3");
 				assertEquals("SELECT *\nFROM table3", query.toADQL());
 				assertEquals("SELECT *\nFROM \"Table3\"", trCS.translate(query));
 				assertEquals("SELECT *\nFROM Table3", trCI.translate(query));
@@ -303,7 +303,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Case-sensitive ADQL name, UNspecified DB name:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT * FROM table4");
+				ADQLSet query = parser.parseQuery("SELECT * FROM table4");
 				assertEquals("SELECT *\nFROM table4", query.toADQL());
 				assertEquals("SELECT *\nFROM \"Table4\"", trCS.translate(query));
 				assertEquals("SELECT *\nFROM Table4", trCI.translate(query));
@@ -329,7 +329,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Non-case-sensitive lower-case name:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT T1.*, t1.col1 FROM table1 AS t1");
+				ADQLSet query = parser.parseQuery("SELECT T1.*, t1.col1 FROM table1 AS t1");
 				assertEquals("SELECT T1.* , t1.col1\nFROM table1 AS t1", query.toADQL());
 				assertEquals("SELECT \"t1\".\"col1\" AS \"col1\" , \"t1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\" AS \"t1\"", trCS.translate(query));
 				assertEquals("SELECT t1.col1 AS \"col1\" , t1.col1 AS \"col1\"\nFROM dbTable1 AS \"t1\"", trCI.translate(query));
@@ -340,7 +340,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Non-case-sensitive mixed-case name:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT T1.*, t1.col1 FROM table1 AS T1");
+				ADQLSet query = parser.parseQuery("SELECT T1.*, t1.col1 FROM table1 AS T1");
 				assertEquals("SELECT T1.* , t1.col1\nFROM table1 AS T1", query.toADQL());
 				assertEquals("SELECT \"t1\".\"col1\" AS \"col1\" , \"t1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\" AS \"t1\"", trCS.translate(query));
 				assertEquals("SELECT t1.col1 AS \"col1\" , t1.col1 AS \"col1\"\nFROM dbTable1 AS \"t1\"", trCI.translate(query));
@@ -351,7 +351,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Case-sensitive ADQL name:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT T1.*, t1.col1 FROM table1 AS \"T1\"");
+				ADQLSet query = parser.parseQuery("SELECT T1.*, t1.col1 FROM table1 AS \"T1\"");
 				assertEquals("SELECT T1.* , t1.col1\nFROM table1 AS \"T1\"", query.toADQL());
 				assertEquals("SELECT \"T1\".\"col1\" AS \"col1\" , \"T1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\" AS \"T1\"", trCS.translate(query));
 				assertEquals("SELECT T1.col1 AS \"col1\" , T1.col1 AS \"col1\"\nFROM dbTable1 AS \"T1\"", trCI.translate(query));
@@ -376,7 +376,7 @@ public class TestIdentifierCaseSensitivity {
 
 		// CASE: Non-case-sensitive lower-case name:
 		try {
-			ADQLQuery query = parser.parseQuery("WITH t1 AS (SELECT * FROM table1) SELECT * FROM t1");
+			ADQLSet query = parser.parseQuery("WITH t1 AS (SELECT * FROM table1) SELECT * FROM t1");
 			assertEquals("WITH t1 AS (\nSELECT *\nFROM table1\n)\nSELECT *\nFROM t1", query.toADQL());
 			assertEquals("WITH \"t1\" AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"t1\".\"col1\" AS \"col1\"\nFROM \"t1\"", trCS.translate(query));
 			assertEquals("WITH \"t1\" AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT t1.col1 AS \"col1\"\nFROM t1", trCI.translate(query));
@@ -387,7 +387,7 @@ public class TestIdentifierCaseSensitivity {
 
 		// CASE: Non-case-sensitive mixed-case name:
 		try {
-			ADQLQuery query = parser.parseQuery("WITH T1 AS (SELECT * FROM table1) SELECT * FROM t1");
+			ADQLSet query = parser.parseQuery("WITH T1 AS (SELECT * FROM table1) SELECT * FROM t1");
 			assertEquals("WITH T1 AS (\nSELECT *\nFROM table1\n)\nSELECT *\nFROM t1", query.toADQL());
 			assertEquals("WITH \"t1\" AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"t1\".\"col1\" AS \"col1\"\nFROM \"t1\"", trCS.translate(query));
 			assertEquals("WITH \"t1\" AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT t1.col1 AS \"col1\"\nFROM t1", trCI.translate(query));
@@ -398,7 +398,7 @@ public class TestIdentifierCaseSensitivity {
 
 		// CASE: Case-sensitive ADQL name:
 		try {
-			ADQLQuery query = parser.parseQuery("WITH \"T1\" AS (SELECT * FROM table1) SELECT * FROM t1");
+			ADQLSet query = parser.parseQuery("WITH \"T1\" AS (SELECT * FROM table1) SELECT * FROM t1");
 			assertEquals("WITH \"T1\" AS (\nSELECT *\nFROM table1\n)\nSELECT *\nFROM t1", query.toADQL());
 			assertEquals("WITH \"T1\" AS (\nSELECT \"dbTable1\".\"col1\" AS \"col1\"\nFROM \"dbTable1\"\n)\nSELECT \"T1\".\"col1\" AS \"col1\"\nFROM \"T1\"", trCS.translate(query));
 			assertEquals("WITH \"T1\" AS (\nSELECT dbTable1.col1 AS \"col1\"\nFROM dbTable1\n)\nSELECT T1.col1 AS \"col1\"\nFROM T1", trCI.translate(query));
@@ -425,7 +425,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Columns from database:
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT COL1, col2, col1 AS \"SuperCol\" FROM table1");
+				ADQLSet query = parser.parseQuery("SELECT COL1, col2, col1 AS \"SuperCol\" FROM table1");
 				assertEquals("SELECT COL1 , col2 , col1 AS \"SuperCol\"\nFROM table1", query.toADQL());
 				assertEquals("SELECT \"dbTable1\".\"Col1\" AS \"col1\" , \"dbTable1\".\"Col2\" AS \"Col2\" , \"dbTable1\".\"Col1\" AS \"SuperCol\"\nFROM \"dbTable1\"", trCS.translate(query));
 				assertEquals("SELECT dbTable1.Col1 AS \"col1\" , dbTable1.Col2 AS \"Col2\" , dbTable1.Col1 AS \"SuperCol\"\nFROM dbTable1", trCI.translate(query));
@@ -436,7 +436,7 @@ public class TestIdentifierCaseSensitivity {
 
 			// CASE: Columns from subquery
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT * FROM (SELECT col1, col2, col1 AS Col3, col2 AS \"COL4\" FROM table1) AS table2");
+				ADQLSet query = parser.parseQuery("SELECT * FROM (SELECT col1, col2, col1 AS Col3, col2 AS \"COL4\" FROM table1) AS table2");
 				assertEquals("SELECT *\nFROM (SELECT col1 , col2 , col1 AS Col3 , col2 AS \"COL4\"\nFROM table1) AS table2", query.toADQL());
 				assertEquals("SELECT \"table2\".\"col1\" AS \"col1\" , \"table2\".\"Col2\" AS \"Col2\" , \"table2\".\"col3\" AS \"col3\" , \"table2\".\"COL4\" AS \"COL4\"\nFROM (SELECT \"dbTable1\".\"Col1\" AS \"col1\" , \"dbTable1\".\"Col2\" AS \"Col2\" , \"dbTable1\".\"Col1\" AS \"col3\" , \"dbTable1\".\"Col2\" AS \"COL4\"\nFROM \"dbTable1\") AS \"table2\"", trCS.translate(query));
 				assertEquals("SELECT table2.col1 AS \"col1\" , table2.Col2 AS \"Col2\" , table2.col3 AS \"col3\" , table2.COL4 AS \"COL4\"\nFROM (SELECT dbTable1.Col1 AS \"col1\" , dbTable1.Col2 AS \"Col2\" , dbTable1.Col1 AS \"col3\" , dbTable1.Col2 AS \"COL4\"\nFROM dbTable1) AS \"table2\"", trCI.translate(query));
@@ -448,7 +448,7 @@ public class TestIdentifierCaseSensitivity {
 			// CASE: Columns from CTE
 			if (parser.getADQLVersion() != ADQLVersion.V2_0) {
 				try {
-					ADQLQuery query = parser.parseQuery("WITH table3 AS (SELECT COL1, col2, col1 AS \"SuperCol\" FROM table1) SELECT * FROM table3");
+					ADQLSet query = parser.parseQuery("WITH table3 AS (SELECT COL1, col2, col1 AS \"SuperCol\" FROM table1) SELECT * FROM table3");
 					assertEquals("WITH table3 AS (\nSELECT COL1 , col2 , col1 AS \"SuperCol\"\nFROM table1\n)\nSELECT *\nFROM table3", query.toADQL());
 					assertEquals("WITH \"table3\" AS (\nSELECT \"dbTable1\".\"Col1\" AS \"col1\" , \"dbTable1\".\"Col2\" AS \"Col2\" , \"dbTable1\".\"Col1\" AS \"SuperCol\"\nFROM \"dbTable1\"\n)\nSELECT \"table3\".\"col1\" AS \"col1\" , \"table3\".\"Col2\" AS \"Col2\" , \"table3\".\"SuperCol\" AS \"SuperCol\"\nFROM \"table3\"", trCS.translate(query));
 					assertEquals("WITH \"table3\" AS (\nSELECT dbTable1.Col1 AS \"col1\" , dbTable1.Col2 AS \"Col2\" , dbTable1.Col1 AS \"SuperCol\"\nFROM dbTable1\n)\nSELECT table3.col1 AS \"col1\" , table3.Col2 AS \"Col2\" , table3.SuperCol AS \"SuperCol\"\nFROM table3", trCI.translate(query));

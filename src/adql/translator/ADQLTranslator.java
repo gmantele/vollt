@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -25,12 +25,14 @@ import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.ClauseADQL;
 import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
 import adql.query.ColumnReference;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
+import adql.query.SetOperation;
 import adql.query.WithItem;
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
@@ -77,7 +79,7 @@ import adql.query.operand.function.string.UpperFunction;
  * Translates ADQL objects into any language (i.e. SQL).
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  *
  * @see PostgreSQLTranslator
  */
@@ -101,7 +103,14 @@ public interface ADQLTranslator {
 
 	public String translate(ADQLObject obj) throws TranslationException;
 
+	/* ***** QUERY & SETS ***** */
+	/** @since 2.0 */
+	public String translate(ADQLSet set) throws TranslationException;
+
 	public String translate(ADQLQuery query) throws TranslationException;
+
+	/** @since 2.0 */
+	public String translate(SetOperation setOp) throws TranslationException;
 
 	/* ***** LIST & CLAUSE ***** */
 	public String translate(ADQLList<? extends ADQLObject> list) throws TranslationException;

@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2021 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2022 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -35,6 +35,7 @@ import adql.parser.grammar.ParseException;
 import adql.query.ADQLQuery;
 import adql.query.ClauseSelect;
 import adql.query.IdentifierField;
+import adql.query.SetOperation;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.from.ADQLJoin;
@@ -71,7 +72,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * TODO See how case sensitivity is supported by MS SQL Server and modify this translator accordingly.
  *
  * TODO Extend this class for each MS SQL Server extension supporting geometry and particularly
- *      {@link #translateGeometryFromDB(Object)}, {@link #translateGeometryToDB(adql.db.region.STCSRegion.Region)} and all this other
+ *      {@link #translateGeometryFromDB(Object)}, {@link #translateGeometryToDB(Region)} and all this other
  *      translate(...) functions for the ADQL's geometrical functions.
  *
  * TODO Check MS SQL Server datatypes (see {@link #convertTypeFromDB(int, String, String, String[])},
@@ -90,7 +91,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  * @since 1.4
  *
  * @see SQLServer_ADQLQueryFactory
@@ -198,7 +199,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 	@Override
 	public boolean isCaseSensitive(final IdentifierField field) {
-		return field == null ? false : field.isCaseSensitive(caseSensitivity);
+		return field != null && field.isCaseSensitive(caseSensitivity);
 	}
 
 	/**
@@ -216,6 +217,9 @@ public class SQLServerTranslator extends JDBCTranslator {
 	@Override
 	public String translate(ADQLQuery query) throws TranslationException {
 		StringBuffer sql = new StringBuffer();
+
+		if (!query.getWith().isEmpty())
+			sql.append(translate(query.getWith())).append('\n');
 
 		// Start with the SELECT clause:
 		/* NOTE: If a limit is specified, TOP should be used if no OFFSET is
@@ -252,6 +256,45 @@ public class SQLServerTranslator extends JDBCTranslator {
 			if (query.hasLimit())
 				sql.append(" FETCH NEXT ").append(query.getLimit()).append(" ROWS ONLY");
 		}
+
+		return sql.toString();
+	}
+
+	@Override
+	public String translate(SetOperation set) throws TranslationException {
+		StringBuffer sql = new StringBuffer();
+
+		String tPrefix = "t" + System.currentTimeMillis() + "_";
+		int tCnt = 1;
+
+		if (!set.getWith().isEmpty())
+			sql.append(translate(set.getWith())).append('\n');
+
+		boolean extendedSetExp = (set.getLeftSet() instanceof SetOperation || !set.getLeftSet().getWith().isEmpty() || !set.getLeftSet().getOrderBy().isEmpty() || set.getLeftSet().getOffset() != null);
+		if (extendedSetExp)
+			sql.append("SELECT * FROM\n(");
+		sql.append(translate(set.getLeftSet()));
+		if (extendedSetExp)
+			sql.append(") AS ").append(tPrefix + (tCnt++));
+		sql.append('\n');
+
+		sql.append(set.getOperation());
+		if (set.isWithDuplicates())
+			sql.append(" ALL");
+		sql.append('\n');
+
+		extendedSetExp = (set.getRightSet() instanceof SetOperation || !set.getRightSet().getWith().isEmpty() || !set.getRightSet().getOrderBy().isEmpty() || set.getRightSet().getOffset() != null);
+		if (extendedSetExp)
+			sql.append("SELECT * FROM\n(");
+		sql.append(translate(set.getRightSet()));
+		if (extendedSetExp)
+			sql.append(") AS ").append(tPrefix + (tCnt++));
+
+		if (!set.getOrderBy().isEmpty())
+			sql.append('\n').append(translate(set.getOrderBy()));
+
+		if (set.getOffset() != null)
+			sql.append("\nOFFSET ").append(set.getOffset().getValue());
 
 		return sql.toString();
 	}
@@ -332,14 +375,14 @@ public class SQLServerTranslator extends JDBCTranslator {
 
 	@Override
 	public String translate(final ADQLJoin join) throws TranslationException {
-		StringBuffer sql = new StringBuffer(translate(join.getLeftTable()));
+		StringBuilder sql = new StringBuilder(translate(join.getLeftTable()));
 
 		sql.append(' ').append(join.getJoinType()).append(' ').append(translate(join.getRightTable())).append(' ');
 
 		// CASE: NATURAL
 		if (join.isNatural()) {
 			try {
-				StringBuffer buf = new StringBuffer();
+				StringBuilder buf = new StringBuilder();
 
 				// Find duplicated items between the two lists and translate them as ON conditions:
 				DBColumn rightCol;
@@ -371,7 +414,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 		// CASE: USING
 		else if (join.hasJoinedColumns()) {
 			try {
-				StringBuffer buf = new StringBuffer();
+				StringBuilder buf = new StringBuilder();
 
 				// For each columns of usingList, check there is in each list exactly one matching column, and then, translate it as ON condition:
 				DBColumn leftCol, rightCol;
@@ -497,7 +540,7 @@ public class SQLServerTranslator extends JDBCTranslator {
 				else
 					return "round(convert(float, " + translate(fct.getParameter(0)) + "), 0, 1)";
 			case MOD:
-				return ((fct.getNbParameters() >= 2) ? ("convert(float, " + translate(fct.getParameter(0)) + ") % convert(float, " + translate(fct.getParameter(1)) + ")") : "");
+				return ((fct.getNbParameters() >= 2) ? ("convert(numeric, " + translate(fct.getParameter(0)) + ") % convert(numeric, " + translate(fct.getParameter(1)) + ")") : "");
 			case ATAN2:
 				return "ATN2(" + translate(fct.getParameter(0)) + ", " + translate(fct.getParameter(1)) + ")";
 

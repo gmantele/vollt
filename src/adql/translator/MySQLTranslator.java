@@ -16,10 +16,13 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2021 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2022 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
+
+import adql.db.DBColumn;
+import adql.db.DBIdentifier;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import adql.db.region.Region;
@@ -27,6 +30,8 @@ import adql.parser.feature.FeatureSet;
 import adql.parser.feature.LanguageFeature;
 import adql.parser.grammar.ParseException;
 import adql.query.IdentifierField;
+import adql.query.SetOperation;
+import adql.query.SetOperationType;
 import adql.query.constraint.Comparison;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.ADQLOperand;
@@ -64,7 +69,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  * @since 1.4
  */
 public class MySQLTranslator extends JDBCTranslator {
@@ -99,7 +104,7 @@ public class MySQLTranslator extends JDBCTranslator {
 	 * SQL translation.
 	 */
 	public MySQLTranslator() {
-		caseSensitivity = 0x0F;
+		caseSensitivity = (byte)0x0F;
 		initSupportedFeatures();
 	}
 
@@ -172,16 +177,135 @@ public class MySQLTranslator extends JDBCTranslator {
 
 	@Override
 	public boolean isCaseSensitive(final IdentifierField field) {
-		return field == null ? false : field.isCaseSensitive(caseSensitivity);
+		return field != null && field.isCaseSensitive(caseSensitivity);
 	}
 
 	@Override
 	public StringBuffer appendIdentifier(final StringBuffer str, final String id, final boolean caseSensitive) {
 		/* Note: In MySQL the identifier quoting character is a back-quote. */
-		if (caseSensitive && !id.matches("\"[^\"]*\""))
+		if (caseSensitive && !DBIdentifier.isDelimited(id))
 			return str.append('`').append(id).append('`');
 		else
 			return str.append(id);
+	}
+
+	/* ********************************************************************** */
+	/* *                                                                    * */
+	/* * SET OPERATIONS TRANSLATIONS                                        * */
+	/* *                                                                    * */
+	/* ********************************************************************** */
+
+	@Override
+	public String translate(SetOperation set) throws TranslationException {
+		StringBuffer sql = new StringBuffer();
+
+		String tPrefix = "t" + System.currentTimeMillis() + "_";
+		int tCnt = 1;
+
+		switch(set.getOperation()) {
+
+			/* CASE: UNION */
+			case UNION:
+
+				if (!set.getWith().isEmpty())
+					sql.append(translate(set.getWith())).append('\n');
+
+				boolean extendedSetExp = (set.getLeftSet() instanceof SetOperation || !set.getLeftSet().getOrderBy().isEmpty() || set.getLeftSet().getLimit() > 0 || set.getLeftSet().getOffset() != null);
+				if (extendedSetExp)
+					sql.append('(');
+				sql.append(translate(set.getLeftSet()));
+				if (extendedSetExp)
+					sql.append(')');
+				sql.append('\n');
+
+				sql.append(set.getOperation());
+				if (set.isWithDuplicates())
+					sql.append(" ALL");
+				sql.append('\n');
+
+				extendedSetExp = (set.getRightSet() instanceof SetOperation || !set.getRightSet().getOrderBy().isEmpty() || set.getRightSet().getLimit() > 0 || set.getRightSet().getOffset() != null);
+				if (extendedSetExp)
+					sql.append('(');
+				sql.append(translate(set.getRightSet()));
+				if (extendedSetExp)
+					sql.append(')');
+
+				if (!set.getOrderBy().isEmpty())
+					sql.append('\n').append(translate(set.getOrderBy()));
+
+				if (set.getOffset() != null)
+					sql.append("\nOFFSET ").append(set.getOffset().getValue());
+
+				break;
+
+			/* CASE: INTERSECT and EXCEPT */
+			case INTERSECT:
+			case EXCEPT:
+
+				final String t1 = tPrefix + (tCnt++);
+				final String t2 = tPrefix + (tCnt++);
+
+				if (!set.getWith().isEmpty())
+					sql.append(translate(set.getWith())).append('\n');
+
+				sql.append("SELECT " + (set.isWithDuplicates() ? "" : "DISTINCT "));
+				appendIdentifier(sql, t1, IdentifierField.TABLE);
+				sql.append(".*\nFROM");
+
+				sql.append(" (\n").append(translate(set.getLeftSet()));
+				sql.append(") AS ");
+				appendIdentifier(sql, t1, IdentifierField.TABLE);
+
+				if (set.getOperation() == SetOperationType.INTERSECT)
+					sql.append("\nINNER JOIN");
+				else
+					sql.append("\nLEFT JOIN");
+
+				sql.append(" (\n").append(translate(set.getRightSet()));
+				sql.append(") AS ");
+				appendIdentifier(sql, t2, IdentifierField.TABLE);
+
+				sql.append("\nON ");
+				final DBColumn[] leftCols = set.getLeftSet().getResultingColumns();
+				final DBColumn[] rightCols = set.getRightSet().getResultingColumns();
+				for(int i = 0; i < leftCols.length; i++) {
+					if (i > 0)
+						sql.append(" AND ");
+					appendIdentifier(sql, t1, IdentifierField.TABLE);
+					sql.append('.');
+					appendIdentifier(sql, leftCols[i].getADQLName(), IdentifierField.COLUMN);
+					sql.append('=');
+					appendIdentifier(sql, t2, IdentifierField.TABLE);
+					sql.append('.');
+					appendIdentifier(sql, rightCols[i].getADQLName(), IdentifierField.COLUMN);
+				}
+
+				if (set.getOperation() == SetOperationType.EXCEPT) {
+					sql.append("\nWHERE ");
+					for(int i = 0; i < rightCols.length; i++) {
+						if (i > 0)
+							sql.append(" AND ");
+						appendIdentifier(sql, t2, IdentifierField.TABLE);
+						sql.append('.');
+						appendIdentifier(sql, rightCols[i].getADQLName(), IdentifierField.COLUMN);
+						sql.append(" IS NULL");
+					}
+				}
+
+				if (!set.getOrderBy().isEmpty())
+					sql.append('\n').append(translate(set.getOrderBy()));
+
+				if (set.getOffset() != null)
+					sql.append("\nOFFSET ").append(set.getOffset().getValue());
+
+				break;
+
+			/* ANYTHING ELSE: error! */
+			default:
+				throw new TranslationException("Unsupported SET operation: " + set.getOperation() + "!");
+		}
+
+		return sql.toString();
 	}
 
 	/* ********************************************************************** */
@@ -217,7 +341,7 @@ public class MySQLTranslator extends JDBCTranslator {
 
 	@Override
 	public String translate(Concatenation concat) throws TranslationException {
-		StringBuffer translated = new StringBuffer();
+		StringBuilder translated = new StringBuilder();
 
 		for(ADQLOperand op : concat) {
 			if (translated.length() == 0)

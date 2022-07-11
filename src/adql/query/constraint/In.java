@@ -16,7 +16,7 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -26,7 +26,7 @@ import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLIterator;
 import adql.query.ADQLList;
 import adql.query.ADQLObject;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.ClauseADQL;
 import adql.query.TextPosition;
 import adql.query.operand.ADQLOperand;
@@ -41,7 +41,7 @@ import adql.query.operand.ADQLOperand;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (07/2022)
  */
 public class In implements ADQLConstraint {
 
@@ -54,7 +54,7 @@ public class In implements ADQLConstraint {
 	private ADQLOperand leftOp;
 
 	/** The sub-query which must return a list of values. */
-	private ADQLQuery subQuery;
+	private ADQLSet subQuery;
 
 	/** The list of values. */
 	private ADQLList<ADQLOperand> list;
@@ -76,7 +76,7 @@ public class In implements ADQLConstraint {
 	 * @throws NullPointerException If the given operand and/or the given
 	 *                             	sub-query is NULL.
 	 */
-	public In(ADQLOperand op, ADQLQuery query) throws NullPointerException {
+	public In(ADQLOperand op, ADQLSet query) throws NullPointerException {
 		this(op, query, false);
 	}
 
@@ -92,7 +92,7 @@ public class In implements ADQLConstraint {
 	 * @throws NullPointerException	If the given operand and/or the given
 	 *                             	sub-query is NULL.
 	 */
-	public In(ADQLOperand op, ADQLQuery query, boolean notIn) throws NullPointerException {
+	public In(ADQLOperand op, ADQLSet query, boolean notIn) throws NullPointerException {
 		setOperand(op);
 		setSubQuery(query);
 		setNotIn(notIn);
@@ -170,7 +170,7 @@ public class In implements ADQLConstraint {
 	public In(In toCopy) throws Exception {
 		leftOp = (ADQLOperand)toCopy.leftOp.getCopy();
 		if (toCopy.hasSubQuery())
-			setSubQuery((ADQLQuery)toCopy.subQuery.getCopy());
+			setSubQuery((ADQLSet)toCopy.subQuery.getCopy());
 		else
 			setValuesList((ADQLList<ADQLOperand>)toCopy.list.getCopy());
 		notIn = toCopy.notIn;
@@ -212,7 +212,7 @@ public class In implements ADQLConstraint {
 	 *
 	 * @return	Its sub-query.
 	 */
-	public final ADQLQuery getSubQuery() {
+	public final ADQLSet getSubQuery() {
 		return subQuery;
 	}
 
@@ -234,7 +234,7 @@ public class In implements ADQLConstraint {
 	 *
 	 * @throws NullPointerException		If the given sub-query is NULL.
 	 */
-	public void setSubQuery(ADQLQuery newSubQuery) throws NullPointerException {
+	public void setSubQuery(ADQLSet newSubQuery) throws NullPointerException {
 		if (newSubQuery == null)
 			throw new NullPointerException("Impossible to set a sub-query NULL in an IN constraint!");
 		else {
@@ -373,14 +373,14 @@ public class In implements ADQLConstraint {
 					} else
 						throw new UnsupportedOperationException("Impossible to replace an ADQLOperand by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 				} else if (index == 1) {
-					if (hasSubQuery() && replacer instanceof ADQLQuery) {
-						subQuery = (ADQLQuery)replacer;
+					if (hasSubQuery() && replacer instanceof ADQLSet) {
+						subQuery = (ADQLSet)replacer;
 						position = null;
 					} else if (!hasSubQuery() && replacer instanceof ADQLList) {
 						list = (ADQLList<ADQLOperand>)replacer;
 						position = null;
 					} else
-						throw new UnsupportedOperationException("Impossible to replace an " + (hasSubQuery() ? "ADQLQuery" : "ADQLList<ADQLOperand>") + " by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+						throw new UnsupportedOperationException("Impossible to replace an " + (hasSubQuery() ? "ADQLSet" : "ADQLList<ADQLOperand>") + " by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 				}
 			}
 

@@ -16,7 +16,7 @@ package adql.query.constraint;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
  */
 
@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.TextPosition;
 
 /**
@@ -37,7 +37,7 @@ import adql.query.TextPosition;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (07/2022)
  */
 public class Exists implements ADQLConstraint {
 
@@ -46,7 +46,7 @@ public class Exists implements ADQLConstraint {
 	public static final LanguageFeature FEATURE = new LanguageFeature(null, "EXISTS", false, "An EXISTS constraint (which tests whether the given sub-query returns any row).");
 
 	/** The sub-query. */
-	private ADQLQuery subQuery;
+	private ADQLSet subQuery;
 
 	/** Position of this {@link Exists} in the given ADQL query string.
 	 * @since 1.4 */
@@ -57,7 +57,7 @@ public class Exists implements ADQLConstraint {
 	 *
 	 * @param query	Its sub-query.
 	 */
-	public Exists(ADQLQuery query) {
+	public Exists(ADQLSet query) {
 		subQuery = query;
 	}
 
@@ -69,7 +69,7 @@ public class Exists implements ADQLConstraint {
 	 * @throws Exception	If there is an error during the copy.
 	 */
 	public Exists(Exists toCopy) throws Exception {
-		subQuery = (ADQLQuery)toCopy.subQuery.getCopy();
+		subQuery = (ADQLSet)toCopy.subQuery.getCopy();
 		position = (toCopy.position == null) ? null : new TextPosition(toCopy.position);
 	}
 
@@ -83,7 +83,7 @@ public class Exists implements ADQLConstraint {
 	 *
 	 * @return	Its sub-query.
 	 */
-	public final ADQLQuery getSubQuery() {
+	public final ADQLSet getSubQuery() {
 		return subQuery;
 	}
 
@@ -94,7 +94,7 @@ public class Exists implements ADQLConstraint {
 	 *
 	 * @throws NullPointerException	If the given query is NULL.
 	 */
-	public void setSubQuery(ADQLQuery query) throws NullPointerException {
+	public void setSubQuery(ADQLSet query) throws NullPointerException {
 		if (query == null)
 			throw new NullPointerException("Impossible to build an EXISTS constraint with a sub-query NULL!");
 		else {
@@ -154,11 +154,11 @@ public class Exists implements ADQLConstraint {
 
 				if (replacer == null)
 					remove();
-				else if (replacer instanceof ADQLQuery) {
-					subQuery = (ADQLQuery)replacer;
+				else if (replacer instanceof ADQLSet) {
+					subQuery = (ADQLSet)replacer;
 					position = null;
 				} else
-					throw new UnsupportedOperationException("Impossible to replace an ADQLQuery by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
+					throw new UnsupportedOperationException("Impossible to replace an ADQLSet by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 			}
 
 			@Override

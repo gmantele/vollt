@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2021 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2022 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -34,6 +34,7 @@ import adql.query.ADQLList;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.ClauseADQL;
 import adql.query.ClauseConstraints;
 import adql.query.ClauseSelect;
@@ -41,6 +42,7 @@ import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
+import adql.query.SetOperation;
 import adql.query.WithItem;
 import adql.query.constraint.ADQLConstraint;
 import adql.query.constraint.Between;
@@ -169,7 +171,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -365,6 +367,16 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	}
 
 	@Override
+	public String translate(ADQLSet set) throws TranslationException {
+		if (set instanceof ADQLQuery)
+			return translate((ADQLQuery)set);
+		else if (set instanceof SetOperation)
+			return translate((SetOperation)set);
+		else
+			return set.toADQL();
+	}
+
+	@Override
 	public String translate(ADQLQuery query) throws TranslationException {
 		StringBuffer sql = new StringBuffer();
 
@@ -387,11 +399,47 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 		if (!query.getOrderBy().isEmpty())
 			sql.append('\n').append(translate(query.getOrderBy()));
 
-		if (query.getSelect().hasLimit())
-			sql.append("\nLIMIT ").append(query.getSelect().getLimit());
+		if (query.hasLimit())
+			sql.append("\nLIMIT ").append(query.getLimit());
 
 		if (query.getOffset() != null)
 			sql.append("\nOFFSET ").append(query.getOffset().getValue());
+
+		return sql.toString();
+	}
+
+	@Override
+	public String translate(SetOperation set) throws TranslationException {
+		StringBuffer sql = new StringBuffer();
+
+		if (!set.getWith().isEmpty())
+			sql.append(translate(set.getWith())).append('\n');
+
+		boolean extendedSetExp = (set.getLeftSet() instanceof SetOperation || set.getLeftSet().hasLimit() || !set.getLeftSet().getWith().isEmpty() || !set.getLeftSet().getOrderBy().isEmpty() || set.getLeftSet().getOffset() != null);
+		if (extendedSetExp)
+			sql.append('(');
+		sql.append(translate(set.getLeftSet()));
+		if (extendedSetExp)
+			sql.append(')');
+		sql.append('\n');
+
+		sql.append(set.getOperation());
+		if (set.isWithDuplicates())
+			sql.append(" ALL");
+		sql.append('\n');
+
+		extendedSetExp = (set.getRightSet() instanceof SetOperation || set.getRightSet().hasLimit() || !set.getRightSet().getWith().isEmpty() || !set.getRightSet().getOrderBy().isEmpty() || set.getRightSet().getOffset() != null);
+		if (extendedSetExp)
+			sql.append('(');
+		sql.append(translate(set.getRightSet()));
+		if (extendedSetExp)
+			sql.append(')');
+
+		if (!set.getOrderBy().isEmpty())
+			sql.append('\n').append(translate(set.getOrderBy()));
+
+		if (set.getOffset() != null)
+			sql.append("\nOFFSET ").append(set.getOffset().getValue());
 
 		return sql.toString();
 	}

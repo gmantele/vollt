@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import adql.parser.ADQLParser;
 import adql.query.ADQLObject;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
 import adql.query.operand.function.UserDefinedFunction;
@@ -35,7 +35,7 @@ public class TestSimpleReplaceHandler {
 		String testQuery = "SELECT SQRT(ABS(81)) FROM myTable";
 		try {
 			// Parse the query:
-			ADQLQuery query = new ADQLParser().parseQuery(testQuery);
+			ADQLSet query = new ADQLParser().parseQuery(testQuery);
 
 			// Check it is as expected, before the replacements:
 			assertEquals(testQuery, query.toADQL().replaceAll("\\n", " "));
@@ -85,7 +85,7 @@ public class TestSimpleReplaceHandler {
 			// Parse the query:
 			ADQLParser parser = new ADQLParser();
 			parser.allowAnyUdf(true);
-			ADQLQuery query = parser.parseQuery(testQuery);
+			ADQLSet query = parser.parseQuery(testQuery);
 
 			// Check it is as expected, before the replacements:
 			assertEquals(testQuery, query.toADQL().replaceAll("\\n", " "));

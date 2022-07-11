@@ -16,7 +16,7 @@ package adql.parser.feature;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.ArrayList;
@@ -30,6 +30,7 @@ import java.util.Set;
 
 import adql.db.FunctionDef;
 import adql.query.ClauseOffset;
+import adql.query.SetOperationType;
 import adql.query.WithItem;
 import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.function.InUnitFunction;
@@ -122,7 +123,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  * @since 2.0
  */
 public class FeatureSet implements Iterable<LanguageFeature> {
@@ -441,10 +442,6 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	   *                                                                    *
 	   ********************************************************************** */
 
-	/*public static final LanguageFeature UNION = new LanguageFeature(FeatureType.ADQL_SETS, "UNION"); // TODO UNION
-	public static final LanguageFeature EXCEPT = new LanguageFeature(FeatureType.ADQL_SETS, "EXCEPT"); // TODO EXCEPT
-	public static final LanguageFeature INTERSECT = new LanguageFeature(FeatureType.ADQL_SETS, "INTERSECT");  // TODO INTERSECT*/
-
 	/** All standard features available.
 	 * <p>
 	 * 	This list of features is used by the functions
@@ -455,7 +452,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * <p><i><b>Important note:</b>
 	 * 	All of them must be optional and must have a type.
 	 * </i></p> */
-	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ CastFunction.FEATURE, WithItem.FEATURE, InUnitFunction.FEATURE, ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, UpperFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
+	static LanguageFeature[] availableFeatures = new LanguageFeature[]{ SetOperationType.UNION.getFeatureDescription(), SetOperationType.EXCEPT.getFeatureDescription(), SetOperationType.INTERSECT.getFeatureDescription(), CastFunction.FEATURE, WithItem.FEATURE, InUnitFunction.FEATURE, ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, UpperFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
 
 	/**
 	 * List all available language features.

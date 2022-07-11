@@ -25,6 +25,9 @@ import adql.parser.grammar.ADQLGrammar200Constants;
 import adql.parser.grammar.ParseException;
 import adql.parser.grammar.Token;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
+import adql.query.SetOperation;
+import adql.query.SetOperationType;
 import adql.query.WithItem;
 import adql.query.from.ADQLJoin;
 import adql.query.from.ADQLTable;
@@ -51,6 +54,88 @@ public class TestADQLParser {
 
 	@After
 	public void tearDown() throws Exception {
+	}
+
+	@Test
+	public void testSetOperation() {
+		// CASE: ADQL-2.0 => ERROR
+		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);
+		try {
+			parser.parseQuery("SELECT * FROM foo UNION SELECT * FROM bar");
+			fail("In ADQL-2.0, UNION should not be allowed....it does not exist!");
+		} catch(Exception ex) {
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals(" Encountered \"UNION\". Was expecting one of: <EOF> \".\" \",\" \";\" \"AS\" \"WHERE\" \"GROUP\" \"HAVING\" \"ORDER\" \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> \n(HINT: \"UNION\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
+		}
+
+		parser = new ADQLParser(ADQLVersion.V2_1);
+		try {
+
+			// CASE: Same with ADQL-2.1 => OK
+			for(SetOperationType setOp : SetOperationType.values()) {
+				ADQLSet query = parser.parseQuery("SELECT * FROM foo " + setOp + " SELECT * FROM bar");
+				assertEquals(SetOperation.class, query.getClass());
+				assertEquals("SELECT *\nFROM foo", ((SetOperation)query).getLeftSet().toADQL());
+				assertEquals(setOp, ((SetOperation)query).getOperation());
+				assertFalse(((SetOperation)query).isWithDuplicates());
+				assertEquals("SELECT *\nFROM bar", ((SetOperation)query).getRightSet().toADQL());
+			}
+
+			// CASE: with sub-queries more elaborated (e.g. with, order by) => OK
+			for(SetOperationType setOp : SetOperationType.values()) {
+				ADQLSet query = parser.parseQuery("WITH tt AS (SELECT * FROM titi) (SELECT * FROM foo ORDER BY 1) " + setOp + " (SELECT * FROM bar OFFSET 1)");
+				assertEquals(SetOperation.class, query.getClass());
+				assertNotNull(query.getWith());
+				assertEquals(1, query.getWith().size());
+				assertEquals("SELECT *\nFROM foo\nORDER BY 1 ASC", ((SetOperation)query).getLeftSet().toADQL());
+				assertEquals(setOp, ((SetOperation)query).getOperation());
+				assertFalse(((SetOperation)query).isWithDuplicates());
+				assertEquals("SELECT *\nFROM bar\nOFFSET 1", ((SetOperation)query).getRightSet().toADQL());
+			}
+
+			// CASE: sub-queries with set operation => OK
+			ADQLSet query = parser.parseQuery("SELECT * FROM titi UNION SELECT * FROM foo UNION SELECT * FROM bar");
+			assertEquals(SetOperation.class, query.getClass());
+			assertEquals(SetOperation.class, ((SetOperation)query).getLeftSet().getClass());
+			assertEquals("SELECT *\nFROM titi", ((SetOperation)((SetOperation)query).getLeftSet()).getLeftSet().toADQL());
+			assertEquals(SetOperationType.UNION, ((SetOperation)((SetOperation)query).getLeftSet()).getOperation());
+			assertFalse(((SetOperation)((SetOperation)query).getLeftSet()).isWithDuplicates());
+			assertEquals("SELECT *\nFROM foo", ((SetOperation)((SetOperation)query).getLeftSet()).getRightSet().toADQL());
+			assertEquals(SetOperationType.UNION, ((SetOperation)query).getOperation());
+			assertFalse(((SetOperation)query).isWithDuplicates());
+			assertEquals("SELECT *\nFROM bar", ((SetOperation)query).getRightSet().toADQL());
+			assertEquals("((SELECT *\nFROM titi\nUNION\nSELECT *\nFROM foo)\nUNION\nSELECT *\nFROM bar)", query.toADQL());
+
+			// CASE: sub-queries with set operation (using operation precedence) => OK
+			query = parser.parseQuery("SELECT * FROM titi UNION ALL SELECT * FROM foo INTERSECT SELECT * FROM bar");
+			assertEquals(SetOperation.class, query.getClass());
+			assertEquals("SELECT *\nFROM titi", ((SetOperation)query).getLeftSet().toADQL());
+			assertEquals(SetOperationType.UNION, ((SetOperation)query).getOperation());
+			assertTrue(((SetOperation)query).isWithDuplicates());
+			assertEquals(SetOperation.class, ((SetOperation)query).getRightSet().getClass());
+			assertEquals("SELECT *\nFROM foo", ((SetOperation)((SetOperation)query).getRightSet()).getLeftSet().toADQL());
+			assertEquals(SetOperationType.INTERSECT, ((SetOperation)((SetOperation)query).getRightSet()).getOperation());
+			assertFalse(((SetOperation)((SetOperation)query).getRightSet()).isWithDuplicates());
+			assertEquals("SELECT *\nFROM bar", ((SetOperation)((SetOperation)query).getRightSet()).getRightSet().toADQL());
+			assertEquals("(SELECT *\nFROM titi\nUNION ALL\n(SELECT *\nFROM foo\nINTERSECT\nSELECT *\nFROM bar))", query.toADQL());
+
+			// CASE: sub-queries with set operation (using parenthesis precedence) => OK
+			query = parser.parseQuery("(SELECT * FROM titi UNION ALL SELECT * FROM foo) INTERSECT SELECT * FROM bar");
+			assertEquals(SetOperation.class, query.getClass());
+			assertEquals(SetOperation.class, ((SetOperation)query).getLeftSet().getClass());
+			assertEquals("SELECT *\nFROM titi", ((SetOperation)((SetOperation)query).getLeftSet()).getLeftSet().toADQL());
+			assertEquals(SetOperationType.UNION, ((SetOperation)((SetOperation)query).getLeftSet()).getOperation());
+			assertTrue(((SetOperation)((SetOperation)query).getLeftSet()).isWithDuplicates());
+			assertEquals("SELECT *\nFROM foo", ((SetOperation)((SetOperation)query).getLeftSet()).getRightSet().toADQL());
+			assertEquals(SetOperationType.INTERSECT, ((SetOperation)query).getOperation());
+			assertFalse(((SetOperation)query).isWithDuplicates());
+			assertEquals("SELECT *\nFROM bar", ((SetOperation)query).getRightSet().toADQL());
+			assertEquals("((SELECT *\nFROM titi\nUNION ALL\nSELECT *\nFROM foo)\nINTERSECT\nSELECT *\nFROM bar)", query.toADQL());
+
+		} catch(Exception ex) {
+			ex.printStackTrace();
+			fail("Unexpected error while parsing a valid query with a UNION operation! (see console for more details)");
+		}
 	}
 
 	@Test
@@ -96,16 +181,17 @@ public class TestADQLParser {
 		try {
 			parser.parseQuery("WITH foo AS (SELECT * FROM bar) SELECT * FROM foo");
 			fail("In ADQL-2.0, the WITH should not be allowed....it does not exist!");
-		} catch(Exception ex) {
+		}
+		catch(Exception ex) {
 			assertEquals(ParseException.class, ex.getClass());
-			assertEquals(" Encountered \"WITH\". Was expecting: \"SELECT\" \n" + "(HINT: \"WITH\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
+			assertEquals(" Encountered \"WITH\". Was expecting: \"SELECT\" \n(HINT: \"WITH\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
 		}
 
 		parser = new ADQLParser(ADQLVersion.V2_1);
 		try {
 
 			// CASE: Same with ADQL-2.1 => OK
-			ADQLQuery query = parser.parseQuery("WITH foo AS (SELECT * FROM bar) SELECT * FROM foo");
+			ADQLSet query = parser.parseQuery("WITH foo AS (SELECT * FROM bar) SELECT * FROM foo");
 			assertNotNull(query.getWith());
 			assertEquals(1, query.getWith().size());
 			WithItem item = query.getWith().get(0);
@@ -134,25 +220,19 @@ public class TestADQLParser {
 			assertEquals("Foo2", item.getLabel());
 			assertTrue(item.isLabelCaseSensitive());
 			assertEquals("SELECT *\nFROM bar2", item.getQuery().toADQL());
-
-			// CASE: WITH clause inside a WITH clause => OK
-			query = parser.parseQuery("WITH foo  AS (WITH innerFoo AS (SELECT col1, col2, col3 FROM bar) SELECT * FROM stars NATURAL JOIN innerFoo) SELECT * FROM foo");
-			assertNotNull(query.getWith());
-			assertEquals(1, query.getWith().size());
-			item = query.getWith().get(0);
-			assertEquals("foo", item.getLabel());
-			assertFalse(item.isLabelCaseSensitive());
-			assertEquals("WITH innerFoo AS (\nSELECT col1 , col2 , col3\nFROM bar\n)\nSELECT *\nFROM stars NATURAL INNER JOIN innerFoo", item.getQuery().toADQL());
-			assertNotNull(query.getWith().get(0).getQuery().getWith());
-			assertEquals(1, query.getWith().get(0).getQuery().getWith().size());
-			item = query.getWith().get(0).getQuery().getWith().get(0);
-			assertEquals("innerFoo", item.getLabel());
-			assertFalse(item.isLabelCaseSensitive());
-			assertEquals("SELECT col1 , col2 , col3\nFROM bar", item.getQuery().toADQL());
-
-		} catch(Exception ex) {
+		}
+		catch(Exception ex) {
 			ex.printStackTrace();
 			fail("Unexpected error while parsing a valid query with a WITH clause! (see console for more details)");
+		}
+
+		// CASE: WITH clause inside a WITH clause => ERROR
+		try{
+			parser.parseQuery("WITH foo  AS (WITH innerFoo AS (SELECT col1, col2, col3 FROM bar) SELECT * FROM stars NATURAL JOIN innerFoo) SELECT * FROM foo");
+		}
+		catch(Exception ex){
+			assertEquals(ParseException.class, ex.getClass());
+			assertEquals(" Encountered \"WITH\". Was expecting one of: \"(\" \"SELECT\" \n(HINT: \"WITH\" is a reserved ADQL word in v2.1. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
 		}
 	}
 
@@ -322,7 +402,7 @@ public class TestADQLParser {
 			ADQLParser parser = new ADQLParser(version);
 			try {
 				// CASE: Simple column name
-				ADQLQuery query;
+				ADQLSet query;
 				query = parser.parseQuery("SELECT * FROM cat ORDER BY oid;");
 				assertNotNull(query.getOrderBy().get(0).getExpression());
 				query = parser.parseQuery("SELECT * FROM cat ORDER BY oid ASC;");
@@ -448,8 +528,8 @@ public class TestADQLParser {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			ADQLParser parser = new ADQLParser(version);
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT * FROM \"B/avo.rad/catalog\";");
-				assertEquals("B/avo.rad/catalog", query.getFrom().getTables().get(0).getTableName());
+				ADQLSet query = parser.parseQuery("SELECT * FROM \"B/avo.rad/catalog\";");
+				assertEquals("B/avo.rad/catalog", ((ADQLQuery)query).getFrom().getTables().get(0).getTableName());
 			} catch(Exception e) {
 				e.printStackTrace(System.err);
 				fail("The ADQL query is strictly correct! No error should have occured. (see stdout for more details)");
@@ -464,11 +544,11 @@ public class TestADQLParser {
 			try {
 				String[] queries = new String[]{ "SELECT * FROM aTable A JOIN aSecondTable B ON A.id = B.id JOIN aThirdTable C ON B.id = C.id;", "SELECT * FROM aTable A NATURAL JOIN aSecondTable B NATURAL JOIN aThirdTable C;" };
 				for(String q : queries) {
-					ADQLQuery query = parser.parseQuery(q);
+					ADQLSet query = parser.parseQuery(q);
 
-					assertTrue(query.getFrom() instanceof ADQLJoin);
+					assertTrue(((ADQLQuery)query).getFrom() instanceof ADQLJoin);
 
-					ADQLJoin join = ((ADQLJoin)query.getFrom());
+					ADQLJoin join = ((ADQLJoin)((ADQLQuery)query).getFrom());
 					assertTrue(join.getLeftTable() instanceof ADQLJoin);
 					assertTrue(join.getRightTable() instanceof ADQLTable);
 					assertEquals("aThirdTable", ((ADQLTable)join.getRightTable()).getTableName());
@@ -491,17 +571,17 @@ public class TestADQLParser {
 		for(ADQLVersion version : ADQLVersion.values()) {
 			ADQLParser parser = new ADQLParser(version);
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT 'truc''machin'  	'bidule' --- why not a comment now ^^\n'FIN' FROM foo;");
+				ADQLSet query = parser.parseQuery("SELECT 'truc''machin'  	'bidule' --- why not a comment now ^^\n'FIN' FROM foo;");
 				assertNotNull(query);
-				assertEquals("truc'machinbiduleFIN", ((StringConstant)(query.getSelect().get(0).getOperand())).getValue());
-				assertEquals("'truc''machinbiduleFIN'", query.getSelect().get(0).getOperand().toADQL());
+				assertEquals("truc'machinbiduleFIN", ((StringConstant)(((ADQLQuery)query).getSelect().get(0).getOperand())).getValue());
+				assertEquals("'truc''machinbiduleFIN'", ((ADQLQuery)query).getSelect().get(0).getOperand().toADQL());
 			} catch(Exception ex) {
 				fail("String litteral concatenation is perfectly legal according to the ADQL standard.");
 			}
 
 			// With a comment ending the query
 			try {
-				ADQLQuery query = parser.parseQuery("SELECT TOP 1 * FROM ivoa.ObsCore -- comment");
+				ADQLSet query = parser.parseQuery("SELECT TOP 1 * FROM ivoa.ObsCore -- comment");
 				assertNotNull(query);
 			} catch(Exception ex) {
 				ex.printStackTrace();
@@ -754,7 +834,7 @@ public class TestADQLParser {
 		// CASE: LOWER supported by default in ADQL-2.1 => OK
 		parser = new ADQLParser(ADQLVersion.V2_1);
 		try {
-			ADQLQuery q = parser.parseQuery("SELECT LOWER(foo) FROM aTable");
+			ADQLSet q = parser.parseQuery("SELECT LOWER(foo) FROM aTable");
 			assertNotNull(q);
 			assertEquals("SELECT LOWER(foo)\nFROM aTable", q.toADQL());
 		} catch(Throwable t) {

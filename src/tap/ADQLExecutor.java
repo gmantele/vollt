@@ -16,7 +16,7 @@ package tap;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -28,7 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.grammar.ParseException;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
 import tap.db.DBCancelledException;
@@ -90,7 +90,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * <p>
- * 	So, you are able to customize almost all individual steps of the ADQL query processing: {@link #parseADQL()}, {@link #executeADQL(ADQLQuery)} and
+ * 	So, you are able to customize almost all individual steps of the ADQL query processing: {@link #parseADQL()}, {@link #executeADQL(ADQLSet)} and
  * 	{@link #writeResult(TableIterator, OutputFormat, OutputStream)}.
  * </p>
  *
@@ -105,7 +105,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (04/2021)
+ * @version 2.4 (07/2022)
  */
 public class ADQLExecutor {
 
@@ -314,7 +314,7 @@ public class ADQLExecutor {
 	 * 	<li>{@link TAPFactory#getConnection(String)}</li>
 	 * 	<li>{@link #uploadTables()}</li>
 	 * 	<li>{@link #parseADQL()}</li>
-	 * 	<li>{@link #executeADQL(ADQLQuery)}</li>
+	 * 	<li>{@link #executeADQL(ADQLSet)}</li>
 	 * 	<li>{@link #writeResult(TableIterator)}</li>
 	 * 	<li>{@link #dropUploadedTables()}</li>
 	 * 	<li>{@link TAPFactory#freeConnection(DBConnection)}</li>
@@ -361,7 +361,7 @@ public class ADQLExecutor {
 			// 2. PARSE THE ADQL QUERY:
 			startStep(ExecutionProgression.PARSING);
 			// Parse the query:
-			ADQLQuery adqlQuery = null;
+			ADQLSet adqlQuery = null;
 			try {
 				adqlQuery = parseADQL();
 			} catch(ParseException pe) {
@@ -539,7 +539,7 @@ public class ADQLExecutor {
 	 * @throws TAPException			If the TAP factory is unable to create the
 	 *                     			ADQL factory or the query checker.
 	 */
-	protected ADQLQuery parseADQL() throws ParseException, InterruptedException, TAPException {
+	protected ADQLSet parseADQL() throws ParseException, InterruptedException, TAPException {
 		// Log the start of the parsing:
 		logger.logTAP(LogLevel.INFO, report, "PARSING", "Parsing ADQL: " + tapParams.getQuery().replaceAll("(\t|\r?\n)+", " "), null);
 
@@ -562,7 +562,7 @@ public class ADQLExecutor {
 			parser.setQueryChecker(service.getFactory().createQueryChecker(uploadSchema));
 
 		// Parse the ADQL query:
-		ADQLQuery query = null;
+		ADQLSet query = null;
 		// if the fixOnFail option is enabled...
 		if (service.fixOnFailEnabled()) {
 			try {
@@ -588,11 +588,11 @@ public class ADQLExecutor {
 		}
 
 		// Set or check the row limit:
-		final int limit = query.getSelect().getLimit();
+		final int limit = query.getLimit();
 		final Integer maxRec = tapParams.getMaxRec();
 		if (maxRec != null && maxRec > -1) {
 			if (limit <= -1 || limit > maxRec)
-				query.getSelect().setLimit(maxRec + 1);
+				query.setLimit(maxRec + 1);
 		}
 
 		return query;
@@ -601,7 +601,7 @@ public class ADQLExecutor {
 	/**
 	 * <p>Execute in "database" the given object representation of an ADQL query.</p>
 	 *
-	 * <p>By default, this function is just calling {@link DBConnection#executeQuery(ADQLQuery)} and then it returns the value returned by this call.</p>
+	 * <p>By default, this function is just calling {@link DBConnection#executeQuery(ADQLSet)} and then it returns the value returned by this call.</p>
 	 *
 	 * <p><i>Note:
 	 * 	An INFO message is logged at the end of the query execution in order to report the result status (success or error)
@@ -616,9 +616,9 @@ public class ADQLExecutor {
 	 * @throws DBCancelledException	If the inner DB connection has been canceled.
 	 * @throws TAPException			If the {@link DBConnection} has failed to deal with the given ADQL query.
 	 *
-	 * @see DBConnection#executeQuery(ADQLQuery)
+	 * @see DBConnection#executeQuery(ADQLSet)
 	 */
-	protected TableIterator executeADQL(final ADQLQuery adql) throws InterruptedException, DBCancelledException, TAPException {
+	protected TableIterator executeADQL(final ADQLSet adql) throws InterruptedException, DBCancelledException, TAPException {
 		// Log the start of execution:
 		logger.logTAP(LogLevel.INFO, report, "START_DB_EXECUTION", "ADQL query: " + adql.toADQL().replaceAll("(\t|\r?\n)+", " "), null);
 

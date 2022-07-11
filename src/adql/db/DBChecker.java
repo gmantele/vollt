@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2011-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2011-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -43,12 +43,14 @@ import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
 import adql.query.ADQLOrder;
 import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.ClauseADQL;
 import adql.query.ClauseSelect;
 import adql.query.ColumnReference;
 import adql.query.IdentifierField;
 import adql.query.SelectAllColumns;
 import adql.query.SelectItem;
+import adql.query.SetOperation;
 import adql.query.WithItem;
 import adql.query.from.ADQLTable;
 import adql.query.from.FromContent;
@@ -107,7 +109,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (05/2021)
+ * @version 2.0 (07/2022)
  */
 public class DBChecker implements QueryChecker {
 
@@ -263,8 +265,149 @@ public class DBChecker implements QueryChecker {
 	 * @see #check(ADQLQuery, Stack)
 	 */
 	@Override
-	public final void check(final ADQLQuery query) throws ParseException {
+	public final void check(final ADQLSet query) throws ParseException {
 		check(query, null);
+	}
+
+	/**
+	 * Process several (semantic) verifications in the given ADQL query.
+	 *
+	 * <p>Main operations performed in this function:</p>
+	 * <ol>
+	 * 	<li>Check all tables possibly defined in the WITH clause</li>
+	 * 	<li>Check the main query (a simple SELECT) or the set operation
+	 * 	    (e.g. UNION, INTERSECT, EXCEPT)</li>
+	 * </ol>
+	 *
+	 * @param query			The (sub-)query to check.
+	 * @param contextList	Each item of this stack represents a recursion level
+	 *                   	inside the main ADQL query. A such item contains the
+	 *                   	list of columns and tables available at this level.
+	 *
+	 * @throws UnresolvedIdentifiersException	An {@link UnresolvedIdentifiersException}
+	 *                                       	if one or several of the above
+	 *                                       	listed tests have detected some
+	 *                                       	semantic errors (i.e. unresolved
+	 *                                       	table, columns, function).
+	 *
+	 * @since 2.0
+	 *
+	 * @see #check(ADQLQuery, Stack, UnresolvedIdentifiersException)
+	 * @see #check(SetOperation, Stack, UnresolvedIdentifiersException)
+	 */
+	protected void check(final ADQLSet query, Stack<CheckContext> contextList) throws UnresolvedIdentifiersException {
+		UnresolvedIdentifiersException errors = new UnresolvedIdentifiersException();
+
+		// Initialize the context:
+		if (contextList == null)
+			contextList = new Stack<CheckContext>();
+		if (contextList.isEmpty())
+			contextList.push(new CheckContext(null, null));
+		else
+			contextList.push(contextList.peek().getCopy());
+
+		// Get the first context:
+		final CheckContext context = contextList.peek();
+
+		// Resolve tables/queries declared in the WITH clause, if any:
+		ADQLTable[] declaredCTEs = new ADQLTable[query.getWith().size()];
+		int i = 0;
+		for(WithItem withItem : query.getWith()) {
+
+			// Check this query (and set all the metadata on all DB items)
+			try {
+				check(withItem.getQuery(), contextList);
+			} catch(UnresolvedIdentifiersException uie) {
+				for(ParseException pe : uie)
+					errors.addException(pe);
+			}
+
+			// Generate the corresponding DBTable:
+			withItem.setDBLink(generateDBTable(withItem));
+
+			// Build a corresponding virtual ADQLTable:
+			ADQLTable adqlTable = new ADQLTable(null, withItem.getLabel());
+			adqlTable.setCaseSensitive(IdentifierField.TABLE, withItem.isLabelCaseSensitive());
+			adqlTable.setDBLink(withItem.getDBLink());
+			declaredCTEs[i++] = adqlTable;
+
+			// Update the context:
+			context.cteTables.add(adqlTable.getDBLink());
+		}
+
+		// CASE: Simple query:
+		if (query instanceof ADQLQuery)
+			check((ADQLQuery)query, contextList, errors);
+
+		// CASE: Operation between 2 rows sets:
+		else if (query instanceof SetOperation)
+			check((SetOperation)query, contextList, errors);
+
+		// ELSE: nothing to do!
+
+		// Throw all errors, if any:
+		if (errors.getNbErrors() > 0)
+			throw errors;
+
+		// Remove the current context:
+		contextList.pop();
+	}
+
+	/**
+	 * Process several (semantic) verifications in the queries used in the given
+	 * UNION/INTERSECT/EXCEPT operation.
+	 *
+	 * <p>Main operations performed in this function:</p>
+	 * <ol>
+	 * 	<li>Check left query</li>
+	 * 	<li>Check right query</li>
+	 * 	<li>Check equality of both sets of columns</li>
+	 * 	<li>Check equality of these columns' datatypes</li>
+	 * </ol>
+	 *
+	 * @param query			The (sub-)query to check.
+	 * @param contextList	Each item of this stack represents a recursion level
+	 *                   	inside the main ADQL query. A such item contains the
+	 *                   	list of columns and tables available at this level.
+	 * @param errors        Accumulative list of semantic errors. Detected
+	 *                      semantic errors should be appended to this list.
+	 *
+	 * @since 2.0
+	 *
+	 * @see #check(ADQLSet, Stack)
+	 */
+	protected void check(final SetOperation setOp, Stack<CheckContext> contextList, final UnresolvedIdentifiersException errors) {
+		// Check the left set:
+		try {
+			check(setOp.getLeftSet(), contextList);
+		} catch(UnresolvedIdentifiersException uie) {
+			Iterator<ParseException> itPe = uie.getErrors();
+			while(itPe.hasNext())
+				errors.addException(itPe.next());
+		}
+
+		// Check the right set:
+		try {
+			check(setOp.getRightSet(), contextList);
+		} catch(UnresolvedIdentifiersException uie) {
+			Iterator<ParseException> itPe = uie.getErrors();
+			while(itPe.hasNext())
+				errors.addException(itPe.next());
+		}
+
+		// Check the number of columns:
+		final DBColumn[] leftColumns = setOp.getLeftSet().getResultingColumns();
+		final DBColumn[] rightColumns = setOp.getRightSet().getResultingColumns();
+		if (leftColumns.length != rightColumns.length)
+			errors.addException(new ParseException("Columns number mismatch! This sub-query must return the same of number of columns as the left sub-query (i.e. " + leftColumns.length + " instead of " + rightColumns.length + ").", setOp.getRightSet().getPosition()));
+
+		// Check the columns datatype:
+		if (leftColumns.length == rightColumns.length) {
+			for(int i = 0; i < leftColumns.length; i++) {
+				if (leftColumns[i].getDatatype() != null && rightColumns[i].getDatatype() != null && !leftColumns[i].getDatatype().isCompatible(rightColumns[i].getDatatype()))
+					errors.addException(new ParseException("Columns datatype mismatch! The " + (i + 1) + "-th SELECT-ed column (named '" + rightColumns[i].getADQLName() + "') was expected to be a " + leftColumns[i].getDatatype() + " instead of a " + rightColumns[i].getDatatype() + "!", setOp.getRightSet().getPosition()));
+			}
+		}
 	}
 
 	/**
@@ -285,12 +428,6 @@ public class DBChecker implements QueryChecker {
 	 *                   	inside the main ADQL query. A such item contains the
 	 *                   	list of columns and tables available at this level.
 	 *
-	 * @throws UnresolvedIdentifiersException	An {@link UnresolvedIdentifiersException}
-	 *                                       	if one or several of the above
-	 *                                       	listed tests have detected some
-	 *                                       	semantic errors (i.e. unresolved
-	 *                                       	table, columns, function).
-	 *
 	 * @since 1.2
 	 *
 	 * @see #checkDBItems(ADQLQuery, Stack, UnresolvedIdentifiersException)
@@ -298,16 +435,7 @@ public class DBChecker implements QueryChecker {
 	 * @see #checkUDFs(ADQLQuery, UnresolvedIdentifiersException)
 	 * @see #checkTypes(ADQLQuery, UnresolvedIdentifiersException)
 	 */
-	protected void check(final ADQLQuery query, Stack<CheckContext> contextList) throws UnresolvedIdentifiersException {
-		UnresolvedIdentifiersException errors = new UnresolvedIdentifiersException();
-
-		// Initialize the context:
-		if (contextList == null)
-			contextList = new Stack<CheckContext>();
-		if (contextList.isEmpty())
-			contextList.push(new CheckContext(null, null));
-		else
-			contextList.push(contextList.peek().getCopy());
+	protected void check(final ADQLQuery query, Stack<CheckContext> contextList, final UnresolvedIdentifiersException errors) {
 
 		// A. Check DB items (tables and columns):
 		checkDBItems(query, contextList, errors);
@@ -321,13 +449,6 @@ public class DBChecker implements QueryChecker {
 
 		// D. Check sub-queries:
 		checkSubQueries(query, contextList, errors);
-
-		// Throw all errors, if any:
-		if (errors.getNbErrors() > 0)
-			throw errors;
-
-		// Remove the current context:
-		contextList.pop();
 	}
 
 	/* **********************************************************************
@@ -438,32 +559,6 @@ public class DBChecker implements QueryChecker {
 	protected void resolveTables(final ADQLQuery query, final Stack<CheckContext> contextList, final UnresolvedIdentifiersException errors) {
 		final CheckContext context = contextList.peek();
 		ISearchHandler sHandler;
-
-		// Resolve tables/queries declared in the WITH clause:
-		ADQLTable[] declaredCTEs = new ADQLTable[query.getWith().size()];
-		int i = 0;
-		for(WithItem withItem : query.getWith()) {
-
-			// Check this query (and set all the metadata on all DB items)
-			try {
-				check(withItem.getQuery(), contextList);
-			} catch(UnresolvedIdentifiersException uie) {
-				for(ParseException pe : uie)
-					errors.addException(pe);
-			}
-
-			// Generate the corresponding DBTable:
-			withItem.setDBLink(generateDBTable(withItem));
-
-			// Build a corresponding virtual ADQLTable:
-			ADQLTable adqlTable = new ADQLTable(null, withItem.getLabel());
-			adqlTable.setCaseSensitive(IdentifierField.TABLE, withItem.isLabelCaseSensitive());
-			adqlTable.setDBLink(withItem.getDBLink());
-			declaredCTEs[i++] = adqlTable;
-
-			// Update the context:
-			context.cteTables.add(adqlTable.getDBLink());
-		}
 
 		// Check the existence of all tables in the FROM clause:
 		sHandler = new SearchTableHandler();
@@ -884,7 +979,7 @@ public class DBChecker implements QueryChecker {
 	 * @throws ParseException	Can be used to explain why the table has not
 	 *                       	been found. <i>Not used by default.</i>
 	 */
-	public static DBTable generateDBTable(final ADQLQuery subQuery, final String tableName) throws ParseException {
+	public static DBTable generateDBTable(final ADQLSet subQuery, final String tableName) throws ParseException {
 		// Create default DB meta:
 		DefaultDBTable dbTable = new DefaultDBTable((DefaultDBTable.isDelimited(tableName) ? tableName : tableName.toLowerCase()));
 

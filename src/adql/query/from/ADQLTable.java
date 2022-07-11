@@ -16,7 +16,7 @@ package adql.query.from;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -32,7 +32,7 @@ import adql.db.SearchColumnList;
 import adql.parser.feature.LanguageFeature;
 import adql.query.ADQLIterator;
 import adql.query.ADQLObject;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 import adql.query.IdentifierField;
 import adql.query.TextPosition;
 
@@ -42,7 +42,7 @@ import adql.query.TextPosition;
  * <p>A table reference may have an alias (MUST if it is a sub-query).</p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2019)
+ * @version 2.0 (07/2022)
  */
 public class ADQLTable implements ADQLObject, FromContent {
 
@@ -60,7 +60,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	private String table;
 
 	/** A sub-query whose the result will be used as a table. */
-	private ADQLQuery subQuery;
+	private ADQLSet subQuery;
 
 	/** Label of the table reference.
 	 * If not a sub-query, this attribute is set by default to the table name. */
@@ -117,9 +117,9 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @param query	Sub-query.
 	 *
-	 * @see #setSubQuery(ADQLQuery)
+	 * @see #setSubQuery(ADQLSet)
 	 */
-	public ADQLTable(ADQLQuery query) {
+	public ADQLTable(ADQLSet query) {
 		setSubQuery(query);
 	}
 
@@ -134,7 +134,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 		catalog = toCopy.catalog;
 		schema = toCopy.schema;
 		table = toCopy.table;
-		subQuery = (toCopy.subQuery == null) ? null : (ADQLQuery)toCopy.subQuery.getCopy();
+		subQuery = (toCopy.subQuery == null) ? null : (ADQLSet)toCopy.subQuery.getCopy();
 		alias = toCopy.alias;
 		caseSensitivity = toCopy.caseSensitivity;
 		position = toCopy.position;
@@ -336,7 +336,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @return	Sub-query.
 	 */
-	public final ADQLQuery getSubQuery() {
+	public final ADQLSet getSubQuery() {
 		return subQuery;
 	}
 
@@ -347,7 +347,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * @see #refreshDBLink()
 	 */
-	public final void setSubQuery(final ADQLQuery query) {
+	public final void setSubQuery(final ADQLSet query) {
 		if (query != null) {
 			// set all ADQLTable attributes:
 			subQuery = query;
@@ -368,7 +368,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 * table is not a sub-query or has no alias.
 	 *
 	 * @see DefaultDBTable
-	 * @see ADQLQuery#getResultingColumns()
+	 * @see ADQLSet#getResultingColumns()
 	 * @see DBColumn#copy(String, String, DBTable)
 	 */
 	public final void refreshDBLink() {
@@ -504,7 +504,7 @@ public class ADQLTable implements ADQLObject, FromContent {
 	 *
 	 * <p><i><b>Note:</b>
 	 * 	This information is added automatically by {@link DBChecker} when
-	 * 	{@link DBChecker#check(adql.query.ADQLQuery)} is called.
+	 * 	{@link DBChecker#check(adql.query.ADQLSet)} is called.
 	 * </i></p>
 	 *
 	 * @return The corresponding {@link DBTable}.
@@ -601,8 +601,8 @@ public class ADQLTable implements ADQLObject, FromContent {
 				if (replacer == null)
 					remove();
 
-				if (replacer instanceof ADQLQuery)
-					subQuery = (ADQLQuery)replacer;
+				if (replacer instanceof ADQLSet)
+					subQuery = (ADQLSet)replacer;
 				else
 					throw new UnsupportedOperationException("Impossible to replace a sub-query (" + subQuery.toADQL() + ") by a " + replacer.getClass().getName() + " (" + replacer.toADQL() + ")!");
 			}
