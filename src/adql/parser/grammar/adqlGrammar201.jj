@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (07/2022)
+* Version: 2.0 (09/2022)
 */
 
 							/* ########### */
@@ -112,7 +112,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see adql.parser.ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2022)
+ * @version 2.0 (09/2022)
  * @since 2.0
  */
 
@@ -1805,8 +1805,8 @@ CastFunction GeometricCastFunction(): { CastFunction fct; } {
 	}
 }
 
-CastFunction CastFunction(char expectedType): {Token fct, end, typeName, typeSize=null; ADQLOperand value; TargetType type;} {
-	fct=<CAST> <LEFT_PAR> value=ValueExpression() <AS> type=CastDatatype(expectedType) end=<RIGHT_PAR>
+CastFunction CastFunction(char expectedType): {Token fct, end, typeName, typeSize=null; ADQLOperand value=null; TargetType type;} {
+	fct=<CAST> <LEFT_PAR> (<NULL> | value=ValueExpression()) <AS> type=CastDatatype(expectedType) end=<RIGHT_PAR>
 	{
 		try{
 			CastFunction cast = queryFactory.createCastFunction(value, type);

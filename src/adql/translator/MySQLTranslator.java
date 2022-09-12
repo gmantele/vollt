@@ -69,7 +69,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (07/2022)
+ * @version 2.0 (09/2022)
  * @since 1.4
  */
 public class MySQLTranslator extends JDBCTranslator {
@@ -377,7 +377,7 @@ public class MySQLTranslator extends JDBCTranslator {
 			StringBuilder sql = new StringBuilder(fct.getName());
 
 			sql.append('(');
-			sql.append(translate(fct.getValue()));
+			sql.append(fct.getValue() == null ? "NULL" : translate(fct.getValue()));
 			sql.append(" AS ");
 
 			// if the returned type is known, translate it:

@@ -16,7 +16,7 @@ package adql.query.operand.function.cast;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2021-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import adql.db.DBType;
@@ -33,7 +33,7 @@ import adql.translator.FunctionTranslator;
  * Object representation of the ADQL CAST function.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (05/2021)
+ * @version 2.0 (09/2022)
  * @since 2.0
  */
 public class CastFunction extends ADQLFunction implements UnknownType {
@@ -66,7 +66,7 @@ public class CastFunction extends ADQLFunction implements UnknownType {
 	}
 
 	public CastFunction(final CastFunction toCopy) throws Exception {
-		this.value = (ADQLOperand)toCopy.value.getCopy();
+		this.value = (toCopy.value == null ? null : (ADQLOperand)toCopy.value.getCopy());
 		this.targetType = toCopy.targetType.getCopy();
 		setPosition((toCopy.getPosition() == null) ? null : new TextPosition(toCopy.getPosition()));
 	}
@@ -278,7 +278,7 @@ public class CastFunction extends ADQLFunction implements UnknownType {
 	@Override
 	public String toADQL() {
 		final StringBuilder adql = new StringBuilder(FCT_NAME);
-		adql.append('(').append(value.toADQL());
+		adql.append('(').append(value == null ? "NULL" : value.toADQL());
 		adql.append(" AS ").append(targetType.toADQL());
 		adql.append(')');
 		return adql.toString();
