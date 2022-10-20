@@ -58,6 +58,7 @@ import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.cast.CastFunction;
+import adql.query.operand.function.conditional.CoalesceFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -79,7 +80,7 @@ import adql.query.operand.function.string.UpperFunction;
  * Translates ADQL objects into any language (i.e. SQL).
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2022)
+ * @version 2.0 (10/2022)
  *
  * @see PostgreSQLTranslator
  */
@@ -192,6 +193,9 @@ public interface ADQLTranslator {
 
 	/** @since 2.0 */
 	public String translate(CastFunction fct) throws TranslationException;
+
+	/** @since 2.0 */
+	public String translate(CoalesceFunction fct) throws TranslationException;
 
 	/* ***** GEOMETRICAL FUNCTIONS ***** */
 	public String translate(GeometryFunction fct) throws TranslationException;

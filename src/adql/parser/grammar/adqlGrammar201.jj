@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (09/2022)
+* Version: 2.0 (10/2022)
 */
 
 							/* ########### */
@@ -94,6 +94,8 @@ import adql.query.operand.function.*;
 
 import adql.query.operand.function.cast.*;
 
+import adql.query.operand.function.conditional.*;
+
 import adql.query.operand.function.string.*;
 
 import adql.query.operand.function.geometry.*;
@@ -112,7 +114,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see adql.parser.ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (09/2022)
+ * @version 2.0 (10/2022)
  * @since 2.0
  */
 
@@ -212,7 +214,7 @@ SKIP : { < " " | "\t" | "\n" | "\r" | "\r\n" > }
 /* ************************************************************************** */
 
 TOKEN : {
-	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CATALOG"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COALESCE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
+	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CATALOG"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
 	{ matchedToken.sqlReserved = true; }
 }
 
@@ -415,6 +417,14 @@ TOKEN : {
 TOKEN : {
 	< IN_UNIT: "IN_UNIT" >   { matchedToken.adqlReserved = matchedToken.isFunctionName = true; }
 }
+
+/* ********************* */
+/* Conditional functions */
+/* ********************* */
+TOKEN : {
+   < COALESCE: "COALESCE" >
+}
+
 
 /* ******* */
 /* Comment */
@@ -1019,6 +1029,7 @@ ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right;
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
 		| LOOKAHEAD(<REGULAR_IDENTIFIER_CANDIDATE> <LEFT_PAR>) valueExpr=UserDefinedFunction()
 		| LOOKAHEAD(<CAST> <LEFT_PAR>) valueExpr=CastFunction('?')
+		| LOOKAHEAD(<COALESCE> <LEFT_PAR>) valueExpr=ConditionalFunction()
 		| LOOKAHEAD(2) valueExpr=GeometryValueFunction()
 		| LOOKAHEAD(Column()) valueExpr=Column()
 		| LOOKAHEAD(String()) valueExpr=StringFactor()
@@ -1902,6 +1913,26 @@ TargetType CastDatatype(char expectedType): {Token typeName, typeLength=null, st
 			throw generateParseException(ex);
 		}
 	}
+}
+
+/* ********************* */
+/* CONDITIONAL FUNCTIONS */
+/* ********************* */
+
+ADQLOperand ConditionalFunction(): {Token fct, end; ArrayList<ADQLOperand> operands = new ArrayList<ADQLOperand>(3); ADQLOperand op;} {
+    fct=<COALESCE> <LEFT_PAR>
+    op=ValueExpression() { operands.add(op); }
+    ( <COMMA> op=ValueExpression() { operands.add(op); } )+
+    end=<RIGHT_PAR>
+    {
+        try{
+            CoalesceFunction coalesce = queryFactory.createCoalesceFunction(operands);
+            coalesce.setPosition(new TextPosition(fct, end));
+            return coalesce;
+        }catch(Exception ex){
+            throw generateParseException(ex);
+        }
+    }
 }
 
 /* ********************* */

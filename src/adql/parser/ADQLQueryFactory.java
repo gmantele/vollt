@@ -70,6 +70,7 @@ import adql.query.operand.function.SQLFunctionType;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.cast.TargetType;
+import adql.query.operand.function.conditional.CoalesceFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -97,7 +98,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2022)
+ * @version 2.0 (10/2022)
  *
  * @see ADQLParser
  */
@@ -559,5 +560,21 @@ public class ADQLQueryFactory {
 	 */
 	public CastFunction createCastFunction(final ADQLOperand value, final TargetType type) throws Exception {
 		return new CastFunction(value, type);
+	}
+
+	/**
+	 * Create a {@link CoalesceFunction}.
+	 *
+	 * @param operands	All values to take into account (only the first non-NULL
+	 *                  will be kept).
+	 *
+	 * @return The created {@link CoalesceFunction}:
+	 *
+	 * @throws Exception	If one or both parameters are incorrect.
+	 *
+	 * @since 2.0
+	 */
+	public CoalesceFunction createCoalesceFunction(final Collection<ADQLOperand> operands) throws Exception {
+		return new CoalesceFunction(operands);
 	}
 }

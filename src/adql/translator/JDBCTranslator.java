@@ -70,6 +70,7 @@ import adql.query.operand.function.SQLFunction;
 import adql.query.operand.function.SQLFunctionType;
 import adql.query.operand.function.UserDefinedFunction;
 import adql.query.operand.function.cast.CastFunction;
+import adql.query.operand.function.conditional.CoalesceFunction;
 import adql.query.operand.function.geometry.AreaFunction;
 import adql.query.operand.function.geometry.BoxFunction;
 import adql.query.operand.function.geometry.CentroidFunction;
@@ -171,7 +172,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (09/2022)
+ * @version 2.0 (10/2022)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -972,6 +973,11 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 			sql.append(')');
 			return sql.toString();
 		}
+	}
+
+	@Override
+	public String translate(CoalesceFunction fct) throws TranslationException{
+		return getDefaultADQLFunction(fct);
 	}
 
 	/* *********************************** */

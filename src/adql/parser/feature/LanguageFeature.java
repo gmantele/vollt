@@ -16,7 +16,7 @@ package adql.parser.feature;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Objects;
@@ -52,7 +52,7 @@ import adql.db.FunctionDef;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (04/2021)
+ * @version 2.0 (10/2022)
  * @since 2.0
  *
  * @see FeatureSet
@@ -320,6 +320,9 @@ public final class LanguageFeature {
 
 	/** Datatype manipulation functions (e.g. <code>CAST</code>). */
 	public final static String TYPE_ADQL_TYPE = IVOID_TAP_REGEXT + "#features-adql-type";
+
+	/** Conditional functions (e.g. <code>COALESCE</code>). */
+	public final static String TYPE_ADQL_CONDITIONAL = IVOID_TAP_REGEXT + "#features-adql-conditional";
 
 	/** Unit manipulation functions (e.g. <code>IN_UNIT</code>). */
 	public final static String TYPE_ADQL_UNIT = IVOID_TAP_REGEXT + "#features-adql-unit";
