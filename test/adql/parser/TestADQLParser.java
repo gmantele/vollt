@@ -57,6 +57,37 @@ public class TestADQLParser {
 	}
 
 	@Test
+	public void testEncapsulatedConstraints(){
+		for(ADQLVersion vers : ADQLVersion.values()){
+			ADQLParser parser = new ADQLParser(vers);
+			try {
+				parser.parseQuery("SELECT * FROM myTable WHERE (((4+5)>6))");
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				fail("Multi level constraints should be supported!");
+			}
+		}
+	}
+
+	@Test
+	public void testEncapsulatedConstraints_ForReal(){
+		/* Note: The tested query comes from a real and more complex ADQL query
+		 *       which originally did not pass the VOLLT/ADQLLib parser. */
+		for(ADQLVersion vers : ADQLVersion.values()){
+			ADQLParser parser = new ADQLParser(vers);
+			try {
+				parser.parseQuery("SELECT * FROM ivoa.Obscore \n" +
+						"WHERE ((em_min < 2.2E-6 AND em_max > 2.2E-6)    -- wavelength covering (either the Ks band\n" +
+						"   OR  (em_min < 1.65E-6 AND em_max > 1.65E-6)  --                          or the H band,\n" +
+						"   OR  (em_min < 1.25E-6 AND em_max > 1.25E-6)) --                          or the J band).");
+			} catch(Exception ex) {
+				ex.printStackTrace();
+				fail("Multi level constraints should be supported!");
+			}
+		}
+	}
+
+	@Test
 	public void testSetOperation() {
 		// CASE: ADQL-2.0 => ERROR
 		ADQLParser parser = new ADQLParser(ADQLVersion.V2_0);

@@ -1045,7 +1045,7 @@ ClauseConstraints ConditionsList(ClauseConstraints clause): {ADQLConstraint cons
 }
 
 ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, end;} {
-	(LOOKAHEAD(<LEFT_PAR> [<NOT>] Predicate())
+	(LOOKAHEAD(<LEFT_PAR> [<NOT>] Constraint())
 		start=<LEFT_PAR>
 		{
 			try{

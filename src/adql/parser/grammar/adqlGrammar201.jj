@@ -1219,7 +1219,7 @@ ClauseConstraints ConditionsList(ClauseConstraints clause): {ADQLConstraint cons
 }
 
 ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, end;} {
-	(LOOKAHEAD(<LEFT_PAR> [<NOT>] Predicate())
+	(LOOKAHEAD(<LEFT_PAR> [<NOT>] Constraint())
 		start=<LEFT_PAR>
 		{
 			try{
@@ -1231,7 +1231,7 @@ ADQLConstraint Constraint(): {ADQLConstraint constraint =  null; Token start, en
 		ConditionsList((ConstraintsGroup)constraint)
 		end=<RIGHT_PAR>
 		{ ((ConstraintsGroup)constraint).setPosition(new TextPosition(start, end)); }
-	|
+    |
 		 constraint=Predicate()
 	)
 	{return constraint;}
