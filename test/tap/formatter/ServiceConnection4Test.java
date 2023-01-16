@@ -1,5 +1,6 @@
 package tap.formatter;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -44,6 +45,9 @@ public class ServiceConnection4Test implements ServiceConnection {
 	public String getProviderDescription() {
 		return null;
 	}
+
+	@Override
+	public URL getBaseUrl() { return null; }
 
 	@Override
 	public boolean isAvailable() {

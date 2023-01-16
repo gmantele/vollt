@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2022 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2023 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -172,7 +172,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (10/2022)
+ * @version 2.0 (01/2023)
  * @since 1.4
  *
  * @see PostgreSQLTranslator
@@ -902,7 +902,7 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 	 *
 	 * @throws TranslationException	If there is an error during the translation.
 	 */
-	protected final String getDefaultADQLFunction(ADQLFunction fct) throws TranslationException {
+	public final String getDefaultADQLFunction(ADQLFunction fct) throws TranslationException {
 		StringBuilder sql = new StringBuilder(fct.getName());
 		sql.append('(');
 
@@ -948,31 +948,47 @@ public abstract class JDBCTranslator implements ADQLTranslator {
 		return getDefaultADQLFunction(fct);
 	}
 
+	/**
+	 * Default translation for the given CAST function.
+	 *
+	 * <p>
+	 * 	It basically writes the same as in ADQL, except for the target datatype
+	 * 	which is written, as much as possible, in SQL.
+	 * </p>
+	 *
+	 * @param fct	The CAST function to translate.
+	 *
+	 * @return	The corresponding translation.
+	 *
+	 * @throws TranslationException	If any error occurred during translation.
+	 */
+	public final String getDefaultCastFunction(final CastFunction fct) throws TranslationException {
+		StringBuilder sql = new StringBuilder(fct.getName());
+
+		sql.append('(');
+		sql.append(fct.getValue() == null ? "NULL" : translate(fct.getValue()));
+		sql.append(" AS ");
+
+		// if the returned type is known, translate it:
+		final DBType returnType = fct.getTargetType().getReturnType();
+		if (returnType != null)
+			sql.append(convertTypeToDB(returnType));
+		// but if not known, use the ADQL version:
+		else
+			sql.append(fct.getTargetType().toADQL());
+
+		sql.append(')');
+		return sql.toString();
+	}
+
 	@Override
 	public String translate(CastFunction fct) throws TranslationException {
 		// If a translator is defined, just use it:
 		if (fct.getFunctionTranslator() != null)
 			return fct.getFunctionTranslator().translate(fct, this);
-
 		// Otherwise, apply a default translation:
-		else {
-			StringBuilder sql = new StringBuilder(fct.getName());
-
-			sql.append('(');
-			sql.append(fct.getValue() == null ? "NULL" : translate(fct.getValue()));
-			sql.append(" AS ");
-
-			// if the returned type is known, translate it:
-			final DBType returnType = fct.getTargetType().getReturnType();
-			if (returnType != null)
-				sql.append(convertTypeToDB(returnType));
-			// but if not known, use the ADQL version:
-			else
-				sql.append(fct.getTargetType().toADQL());
-
-			sql.append(')');
-			return sql.toString();
-		}
+		else
+			return getDefaultCastFunction(fct);
 	}
 
 	@Override

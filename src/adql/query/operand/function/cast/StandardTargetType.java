@@ -16,7 +16,7 @@ package adql.query.operand.function.cast;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import adql.db.DBType;
@@ -55,7 +55,7 @@ import adql.query.operand.NumericConstant;
  * <h3>Datatype normalization</h3>
  * <p>
  * 	The constructors {@link #StandardTargetType(String)} and
- * 	{@link #StandardTargetType(String, Integer)} accepts the string version of
+ * 	{@link #StandardTargetType(String, int)} accepts the string version of
  * 	a standard datatype. To resolve it, they rely on the static function
  * 	{@link #resolveDatatype(String)}. This latter always normalize the input
  * 	string so that consecutive whitespace characters are replaced by only one
@@ -64,7 +64,7 @@ import adql.query.operand.NumericConstant;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (05/2021)
+ * @version 2.0 (01/2023)
  * @since 2.0
  *
  * @see CastFunction
@@ -72,7 +72,7 @@ import adql.query.operand.NumericConstant;
 public class StandardTargetType implements TargetType {
 
 	/** All datatypes allowed by ADQL as CAST's target type. */
-	protected final static DBDatatype[] STANDARD_DATATYPES = new DBDatatype[]{ DBDatatype.CHAR, DBDatatype.VARCHAR, DBDatatype.INTEGER, DBDatatype.SMALLINT, DBDatatype.BIGINT, DBDatatype.REAL, DBDatatype.DOUBLE, DBDatatype.TIMESTAMP };
+	protected final static DBDatatype[] STANDARD_DATATYPES = new DBDatatype[]{ DBDatatype.CHAR, DBDatatype.VARCHAR, DBDatatype.INTEGER, DBDatatype.SMALLINT, DBDatatype.BIGINT, DBDatatype.REAL, DBDatatype.DOUBLE, DBDatatype.TIMESTAMP, DBDatatype.POINT, DBDatatype.REGION };
 
 	/** The represented target type. */
 	protected DBType type;
@@ -268,7 +268,7 @@ public class StandardTargetType implements TargetType {
 	 * @return	All standard geometric CAST's target types.
 	 */
 	public final static DBDatatype[] getGeometricDatatypes() {
-		return new DBDatatype[0];
+		return new DBDatatype[]{ DBDatatype.POINT, DBDatatype.CIRCLE, DBDatatype.POLYGON, DBDatatype.REGION };
 	}
 
 	@Override

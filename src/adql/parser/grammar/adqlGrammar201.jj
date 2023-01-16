@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2020-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2020-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 /*
@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (10/2022)
+* Version: 2.0 (01/2023)
 */
 
 							/* ########### */
@@ -69,7 +69,7 @@ package adql.parser.grammar;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2020-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2020-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Vector;
@@ -114,7 +114,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see adql.parser.ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (10/2022)
+ * @version 2.0 (01/2023)
  * @since 2.0
  */
 
@@ -1831,7 +1831,7 @@ CastFunction CastFunction(char expectedType): {Token fct, end, typeName, typeSiz
 
 TargetType CastDatatype(char expectedType): {Token typeName, typeLength=null, start=null, end=null; String customName = null; ADQLOperand param; ArrayList<ADQLOperand> customParams = new ArrayList<ADQLOperand>();} {
 	(
-	  		typeName=<NO_LENGTH_DATATYPE>
+	  		(typeName=<NO_LENGTH_DATATYPE> | typeName=<POINT> | typeName=<CIRCLE> | typeName=<POLYGON>)
 		|
 			typeName=<VARIABLE_LENGTH_DATATYPE> (<LEFT_PAR> typeLength=<UNSIGNED_INTEGER> end=<RIGHT_PAR>)?
 		|

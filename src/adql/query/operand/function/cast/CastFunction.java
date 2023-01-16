@@ -47,7 +47,7 @@ public class CastFunction extends ADQLFunction implements UnknownType {
 	/** The value to cast. */
 	protected ADQLOperand value;
 
-	/** The type into which the value must be casted. */
+	/** The type into which the value must be cast. */
 	protected TargetType targetType;
 
 	/** How to translate this CAST function.

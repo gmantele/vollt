@@ -803,7 +803,7 @@
 					expressed in bytes if you wanted to limit the size of each uploaded file, or
 					<code>upload_max_request_size</code> if your goal was to limit the input HTTP request
 					size. If it is set anyway, its value will be used as value for
-					<code>upload_max_request_size</code> ONLY IF this latter is not set.
+					<code>upload_max_request_size</code> ONLY IF this latter is not set.</em></p>
 					<p><em>Default: <code>upload_max_file_size=-1</code> (i.e. unlimited)</em></p>
 				</td>
 				<td><ul><li>-1 <em>(default)</em></li><li>2147483647B</li><li>2MB</li></ul></td>
@@ -916,6 +916,78 @@
 					<p><em>By default, only a string literal is allowed.</em></p>
 				</td>
 				<td><ul><li>false <em>(default)</em></li><li>true</li></ul></td>
+			</tr>
+			<tr class="optional">
+				<td class="done">casts</td>
+				<td></td>
+				<td>text</td>
+				<td>
+					<p>
+						Comma-separated list of all custom translations of CAST
+						in function of the target datatype.
+					</p>
+					<p>Each item of the list must follow one of these syntaxes:</p>
+					<ul>
+						<li><code>[target_type]</code></li>
+						<li><code>[target_type, transPattern]</code></li>
+						<li><code>[target_type, className]</code></li>
+					</ul>
+					<p>
+						<code>target_type</code> is the datatype in which the
+						given value must be cast. Datatypes already supported by
+						default: <code>CHAR</code>, <code>VARCHAR</code>,
+						<code>INTEGER</code>, <code>SMALLINT</code>,
+						<code>BIGINT</code>, <code>REAL</code>,
+						<code>DOUBLE</code>, <code>TIMESTAMP</code>,
+						<code>POINT</code>, <code>REGION</code>. Another custom
+						datatype name can be provided.
+					</p>
+					<p>
+						<i>transPattern</i> is a simple way to translate the ADQL function into the target
+						language (e.g. SQL). The string will represent the exact translation of the
+						function. It is possible to insert arguments with <code>$i</code> (where i is an
+						integer &gt; 0 corresponding to the argument index), and <code>$i..</code> (to print all
+						arguments from the i-th to the last, each separated with a comma from the
+						others). This translation pattern is very useful when just the name of the
+						function or the order of arguments is different from the ADQL function, or if
+						a simple operation in the target language (e.g. math operation) is required
+						(note that it will not be executed in the TAP library but in the database). If
+						a more complex translation is required, you should give <code>className</code> instead
+						(see next paragraph).
+					</p>
+					<p>
+						<i>className</i> is the name of a class extending
+						<a href="https://cdsportal.u-strasbg.fr/adqltuto/javadoc/adql/translator/FunctionTranslator.html">FunctionTranslator</a>.
+						An instance of this class will be created and used each
+						time the CAST has to be translated. There is only one function to
+						implement - translate(...). The specified class must have at
+						least one empty constructor. It can sometimes be useful to use the
+						default translation:
+						<a href="https://cdsportal.u-strasbg.fr/adqltuto/javadoc/adql/translator/JDBCTranslator.html#getDefaultCastFunction(adql.query.operand.function.cast.CastFunction)">getDefaultCastFunction(CastFunction)</a>.
+					</p>
+					<p>
+						If the special value <code>ALL</code> is given for <code>target_type</code>, the
+						given translation pattern/function will be used whatever is the target type.
+						Any other item of this list will then be ignored.
+					</p>
+					<p>
+						If this list is empty, a default translation will be applied. It is designed
+						to work on the target DBMS for standard datatypes. So, it will ok for types
+						like <code>VARCHAR</code> and <code>DOUBLE</code> but not for
+						<code>POINT</code>, <code>CIRCLE</code>, <code>POLYGON</code> and
+						any custom datatype.
+					</p>
+					<p><em>By default, a default translation is applied. It is
+						generally similar to the ADQL one, but with SQL data types.</em></p>
+				</td>
+				<td><ul><li>ø <em>(default)</em></li>
+					<li>[ALL, "CAST($1 AS $2) <em>(warning: not the default translation)</em></li>
+					<li>[POINT, "dali_point($1)"]</li>
+					<li>[CIRCLE, "dali_circle($1)"]</li>
+					<li>[POLYGON, "dali_polygon($1)"]</li>
+					<li>[MOC, "dali_moc($1)"]</li>
+					<li>[STUFF, "smth_to_stuff($1)"]</li>
+				</ul></td>
 			</tr>
 			<tr class="optional">
 				<td class="done">udfs</td>

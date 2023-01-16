@@ -20,6 +20,7 @@ import static tap.config.TAPConfiguration.VALUE_PGSPHERE;
 import static tap.config.TAPConfiguration.VALUE_POSTGRESQL;
 
 import java.io.File;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -405,6 +406,9 @@ public class TestConfigurableTAPFactory {
 		public String getProviderDescription() {
 			return null;
 		}
+
+		@Override
+		public URL getBaseUrl() { return null; }
 
 		@Override
 		public boolean isAvailable() {

@@ -88,6 +88,6 @@ public interface FunctionTranslator {
 	 *
 	 * @throws TranslationException	If the translation fails.
 	 */
-	public abstract String translate(final ADQLFunction fct, final ADQLTranslator caller) throws TranslationException;
+	String translate(final ADQLFunction fct, final ADQLTranslator caller) throws TranslationException;
 
 }

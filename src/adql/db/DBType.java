@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2014-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2014-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -32,7 +32,7 @@ package adql.db;
  * It is used to set the attribute type/datatype of this class.</p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2022)
+ * @version 2.0 (01/2023)
  * @since 1.3
  */
 public class DBType {
@@ -40,8 +40,8 @@ public class DBType {
 	/**
 	 * List of all datatypes declared in the IVOA recommendation of TAP (in the section UPLOAD).
 	 *
-	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.4 (07/2016)
+	 * @author Gr&eacute;gory Mantelet (ARI;CDS)
+	 * @version 2.0 (01/2023)
 	 * @since 1.3
 	 */
 	public enum DBDatatype {
@@ -58,6 +58,10 @@ public class DBType {
 		CLOB,
 		TIMESTAMP,
 		POINT,
+		/** @since 2.0 */
+		CIRCLE,
+		/** @since 2.0 */
+		POLYGON,
 		REGION,
 		/** Type to use when the precise datatype is unknown.
 		 * @since 1.4 */
@@ -229,23 +233,35 @@ public class DBType {
 	}
 
 	/**
-	 * <p>Tells whether this type is a geometrical region.</p>
+	 * Tells whether this type is a geometrical region.
 	 *
 	 * <p><i>Concerned types:
-	 * 	{@link DBDatatype#POINT POINT} and {@link DBDatatype#REGION REGION}.
+	 * 	{@link DBDatatype#POINT POINT}, {@link DBDatatype#CIRCLE CIRCLE},
+	 * 	{@link DBDatatype#POLYGON POLYGON} and {@link DBDatatype#REGION REGION}.
 	 * </i></p>
 	 *
 	 * <p><i><b>Important note</b>:
-	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can potentially be anything.
-	 * 	But, in order to avoid incorrect operation while expecting a geometry although the type is unknown
-	 * 	and is in fact not really a geometry, this function will return <code>false</code> if the type is
-	 * 	{@link DBDatatype#UNKNOWN UNKNOWN} or {@link DBDatatype#UNKNOWN_NUMERIC UNKNOWN_NUMERIC}.
+	 * 	Since {@link DBDatatype#UNKNOWN UNKNOWN} is an unresolved type, it can
+	 * 	potentially be anything. But, in order to avoid incorrect operation
+	 * 	while expecting a geometry although the type is unknown and is in fact
+	 * 	not really a geometry, this function will return <code>false</code> if
+	 * 	the type is {@link DBDatatype#UNKNOWN UNKNOWN} or
+	 * 	{@link DBDatatype#UNKNOWN_NUMERIC UNKNOWN_NUMERIC}.
 	 * </i></p>
 	 *
-	 * @return	<code>true</code> if this type is a geometry, <code>false</code> otherwise.
+	 * @return	<code>true</code> if this type is a geometry,
+	 *        	<code>false</code> otherwise.
 	 */
 	public boolean isGeometry() {
-		return (type == DBDatatype.POINT || type == DBDatatype.REGION);
+		switch(type){
+			case POINT:
+			case CIRCLE:
+			case POLYGON:
+			case REGION:
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	/**
