@@ -1922,7 +1922,7 @@ TargetType CastDatatype(char expectedType): {Token typeName, typeLength=null, st
 ADQLOperand ConditionalFunction(): {Token fct, end; ArrayList<ADQLOperand> operands = new ArrayList<ADQLOperand>(3); ADQLOperand op;} {
     fct=<COALESCE> <LEFT_PAR>
     op=ValueExpression() { operands.add(op); }
-    ( <COMMA> op=ValueExpression() { operands.add(op); } )+
+    ( <COMMA> op=ValueExpression() { operands.add(op); } )*
     end=<RIGHT_PAR>
     {
         try{
