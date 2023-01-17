@@ -72,7 +72,7 @@ import adql.query.operand.NumericConstant;
 public class StandardTargetType implements TargetType {
 
 	/** All datatypes allowed by ADQL as CAST's target type. */
-	protected final static DBDatatype[] STANDARD_DATATYPES = new DBDatatype[]{ DBDatatype.CHAR, DBDatatype.VARCHAR, DBDatatype.INTEGER, DBDatatype.SMALLINT, DBDatatype.BIGINT, DBDatatype.REAL, DBDatatype.DOUBLE, DBDatatype.TIMESTAMP, DBDatatype.POINT, DBDatatype.REGION };
+	protected final static DBDatatype[] STANDARD_DATATYPES = new DBDatatype[]{ DBDatatype.CHAR, DBDatatype.VARCHAR, DBDatatype.INTEGER, DBDatatype.SMALLINT, DBDatatype.BIGINT, DBDatatype.REAL, DBDatatype.DOUBLE, DBDatatype.TIMESTAMP, DBDatatype.POINT, DBDatatype.CIRCLE, DBDatatype.POLYGON, DBDatatype.REGION };
 
 	/** The represented target type. */
 	protected DBType type;
