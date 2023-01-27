@@ -16,7 +16,7 @@ package adql.parser;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.io.ByteArrayInputStream;
@@ -244,7 +244,7 @@ import adql.translator.TranslationException;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2022)
+ * @version 2.0 (01/2023)
  * @since 2.0
  */
 public class ADQLParser {
@@ -729,27 +729,27 @@ public class ADQLParser {
 	}
 
 	/**
-	* Let specify whether any UDF (even if not declared) should be considered
-	* as supported or not. If not, UDFs must be explicitly declared to be
-	* considered as supported (as any other optional language feature).
+	* Let specify whether the REGION(...) function accepts any string expression
+	* and any serialization or only a string literal using a supported
+	* serialization (e.g. DALI, STC/s).
 	*
-	* @param allowed	<code>true</code> to support any UDF,
-	*               	<code>false</code> to force the declaration of supported
-	*               	UDFs.
+	* @param allowed	<code>true</code> to support any string expression,
+	*               	<code>false</code> to only support string literal.
 	*/
 	public void allowExtendedRegionParam(final boolean allowed) {
-		this.anyUdfAllowed = allowed;
+		this.extendedRegionExpressionAllowed = allowed;
 	}
 
 	/**
-	* Tell whether UDFs are considered as supported even if undeclared.
+	* Tell whether the REGION(...) function accepts any string expression
+	* and any serialization or only a string literal using a supported
+	* serialization (e.g. DALI, STC/s).
 	*
-	* @return	<code>true</code> if any UDF is considered as supported,
-	*        	<code>false</code> if supported UDFs must be explicitly
-	*        	declared.
+	* @return	<code>true</code> if any string expression is supported,
+	*        	<code>false</code> if only a string literal is supported.
 	*/
 	public boolean isExtendedRegionParamAllowed() {
-		return anyUdfAllowed;
+		return extendedRegionExpressionAllowed;
 	}
 
 	/**
