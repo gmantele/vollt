@@ -55,6 +55,8 @@ public class TestFunctionDef {
 			for(DBDatatype type : DBDatatype.values()) {
 				switch(type) {
 					case POINT:
+					case CIRCLE:
+					case POLYGON:
 					case REGION:
 						assertTrue(new FunctionDef("foo", new DBType(type)).isGeometry);
 						break;
@@ -77,6 +79,8 @@ public class TestFunctionDef {
 					case VARCHAR:
 					case TIMESTAMP:
 					case POINT:
+					case CIRCLE:
+					case POLYGON:
 					case REGION:
 					case CLOB:
 					case UNKNOWN:
