@@ -1517,7 +1517,10 @@ GeometryFunction Box(): { GeometryFunction gf; } {
 		LOOKAHEAD(BoxWithPoint())
 		gf=BoxWithPoint()
 	|
-		gf=BoxWithCoords()
+	    LOOKAHEAD(BoxWithCoordsAndNoCoordSys())
+     	gf=BoxWithCoordsAndNoCoordSys()
+    |
+     	gf=BoxWithCoordsAndCoordSys()
 	)
 	{ return gf; }
 }
@@ -1525,7 +1528,7 @@ GeometryFunction Box(): { GeometryFunction gf; } {
 GeometryFunction BoxWithPoint(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand width, height; GeometryValue<GeometryFunction> center = null; } {
 	fct=<BOX> <LEFT_PAR>
 		[ coordSys=CoordinateSystem() <COMMA> ] // coord_sys (deprecated since ADQL-2.1)
-		center=PointValue()                     // center point
+		center=PointValue()                 // center point
 		<COMMA> width=NumericExpression()       // width
 		<COMMA> height=NumericExpression()      // height
 	end=<RIGHT_PAR>
@@ -1540,16 +1543,33 @@ GeometryFunction BoxWithPoint(): { Token fct=null, end=null; ADQLOperand coordSy
 	}
 }
 
-GeometryFunction BoxWithCoords(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand width, height; ADQLOperand[] coords = null; } {
+GeometryFunction BoxWithCoordsAndCoordSys(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand width, height; ADQLOperand[] coords = null; } {
 	fct=<BOX> <LEFT_PAR>
-		[ coordSys=CoordinateSystem() <COMMA> ] // coord_sys (deprecated since ADQL-2.1)
-		coords=Coordinates()                    // center coordinates
+		coordSys=CoordinateSystem() <COMMA> // coord_sys (deprecated since ADQL-2.1)
+		coords=Coordinates()                // center coordinates
 		<COMMA> width=NumericExpression()       // width
 		<COMMA> height=NumericExpression()      // height
 	end=<RIGHT_PAR>
 	{
 		try {
 			GeometryFunction gf = queryFactory.createBox(coordSys, coords[0], coords[1], width, height);
+			gf.setPosition(new TextPosition(fct, end));
+			return gf;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+GeometryFunction BoxWithCoordsAndNoCoordSys(): { Token fct=null, end=null; ADQLOperand width, height; ADQLOperand[] coords = null; } {
+	fct=<BOX> <LEFT_PAR>
+		coords=Coordinates()                // center coordinates
+		<COMMA> width=NumericExpression()       // width
+		<COMMA> height=NumericExpression()      // height
+	end=<RIGHT_PAR>
+	{
+		try {
+			GeometryFunction gf = queryFactory.createBox(null, coords[0], coords[1], width, height);
 			gf.setPosition(new TextPosition(fct, end));
 			return gf;	
 		}catch(Exception ex){
@@ -1563,7 +1583,10 @@ GeometryFunction Circle(): { GeometryFunction gf; } {
 		LOOKAHEAD(CircleWithPoint())
 		gf=CircleWithPoint()
 	|
-		gf=CircleWithCoords()
+	    LOOKAHEAD(CircleWithCoordsAndNoCoordSys())
+     	gf=CircleWithCoordsAndNoCoordSys()
+    |
+        gf=CircleWithCoordsAndCoordSys()
 	)
 	{ return gf; }
 }
@@ -1571,7 +1594,7 @@ GeometryFunction Circle(): { GeometryFunction gf; } {
 GeometryFunction CircleWithPoint(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand width; GeometryValue<GeometryFunction> center = null; } {
 	fct=<CIRCLE> <LEFT_PAR>
 		[ coordSys=CoordinateSystem() <COMMA> ] // coord_sys (deprecated since ADQL-2.1)
-		center=PointValue()                     // center coordinates
+		center=PointValue()                 // center coordinates
 		<COMMA> width=NumericExpression()       // radius
 	end=<RIGHT_PAR>
 	{
@@ -1585,15 +1608,31 @@ GeometryFunction CircleWithPoint(): { Token fct=null, end=null; ADQLOperand coor
 	}
 }
 
-GeometryFunction CircleWithCoords(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand width; ADQLOperand[] coords = null; } {
+GeometryFunction CircleWithCoordsAndCoordSys(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand width; ADQLOperand[] coords = null; } {
 	fct=<CIRCLE> <LEFT_PAR>
-		[ coordSys=CoordinateSystem() <COMMA> ] // coord_sys (deprecated since ADQL-2.1)
-		coords=Coordinates()                    // center coordinates
+		coordSys=CoordinateSystem() <COMMA> // coord_sys (deprecated since ADQL-2.1)
+		coords=Coordinates()                // center coordinates
 		<COMMA> width=NumericExpression()       // radius
 	end=<RIGHT_PAR>
 	{
 		try {
 			GeometryFunction gf = queryFactory.createCircle(coordSys, coords[0], coords[1], width);
+			gf.setPosition(new TextPosition(fct, end));
+			return gf;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+GeometryFunction CircleWithCoordsAndNoCoordSys(): { Token fct=null, end=null; ADQLOperand width; ADQLOperand[] coords = null; } {
+	fct=<CIRCLE> <LEFT_PAR>
+		coords=Coordinates()           // center coordinates
+		<COMMA> width=NumericExpression()  // radius
+	end=<RIGHT_PAR>
+	{
+		try {
+			GeometryFunction gf = queryFactory.createCircle(null, coords[0], coords[1], width);
 			gf.setPosition(new TextPosition(fct, end));
 			return gf;	
 		}catch(Exception ex){
@@ -1615,10 +1654,32 @@ CentroidFunction Centroid(): {Token fct=null, end=null; GeometryValue<GeometryFu
 	}
 }
 
-PointFunction Point(): {Token start, end; ADQLOperand coordSys=null; ADQLOperand[] coords; PointFunction pf;} {
+PointFunction Point(): {PointFunction pf;} {
+	(LOOKAHEAD(PointWithoutCoordSys())
+	  pf=PointWithoutCoordSys()
+	|
+	  pf=PointWithCoordSys()
+	)
+	{return pf;}
+}
+
+PointFunction PointWithoutCoordSys(): {Token start, end; ADQLOperand[] coords; PointFunction pf;} {
+	start=<POINT> <LEFT_PAR> coords=Coordinates() end=<RIGHT_PAR>
+	{
+		try{
+			pf = queryFactory.createPoint(null, coords[0], coords[1]);
+			pf.setPosition(new TextPosition(start, end));
+			return pf;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+PointFunction PointWithCoordSys(): {Token start, end; ADQLOperand coordSys=null; ADQLOperand[] coords; PointFunction pf;} {
 	start=<POINT> <LEFT_PAR>
-		[ coordSys=CoordinateSystem() <COMMA> ] // coord_sys (deprecated since ADQL-2.1)
-		coords=Coordinates()                    // coordinates
+		coordSys=CoordinateSystem() <COMMA> // coord_sys (deprecated since ADQL-2.1)
+		coords=Coordinates()                // coordinates
 	end=<RIGHT_PAR>
 	{
 		try{
@@ -1636,7 +1697,10 @@ GeometryFunction Polygon(): { GeometryFunction gf; } {
 		LOOKAHEAD(PolygonWithPoints())
 		gf=PolygonWithPoints()
 	|
-		gf=PolygonWithCoords()
+	    LOOKAHEAD(PolygonWithCoordsAndNoCoordSys())
+		gf=PolygonWithCoordsAndNoCoordSys()
+	|
+		gf=PolygonWithCoordsAndCoordSys()
 	)
 	{ return gf; }
 }
@@ -1661,10 +1725,10 @@ GeometryFunction PolygonWithPoints(): { Token fct=null, end=null; ADQLOperand co
 	}
 }
 
-GeometryFunction PolygonWithCoords(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; } {
+GeometryFunction PolygonWithCoordsAndCoordSys(): { Token fct=null, end=null; ADQLOperand coordSys=null; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; } {
 	fct=<POLYGON> <LEFT_PAR>
-		[ coordSys=CoordinateSystem() <COMMA> ]  // coord_sys (deprecated since ADQL-2.1)
-		{ vCoords = new Vector<ADQLOperand>(); } // coordinates (min. 3 pairs)
+		coordSys=CoordinateSystem() <COMMA>        // coord_sys (deprecated since ADQL-2.1)
+		{ vCoords = new Vector<ADQLOperand>(); }   // coordinates (min. 3 pairs)
 		 tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
 		 <COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
 		 <COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
@@ -1673,6 +1737,25 @@ GeometryFunction PolygonWithCoords(): { Token fct=null, end=null; ADQLOperand co
 	{
 		try {
 			GeometryFunction gf = queryFactory.createPolygon(coordSys, vCoords);
+			gf.setPosition(new TextPosition(fct, end));
+			return gf;
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+GeometryFunction PolygonWithCoordsAndNoCoordSys(): { Token fct=null, end=null; ADQLOperand[] coords, tmp; Vector<ADQLOperand> vCoords; } {
+	fct=<POLYGON> <LEFT_PAR>
+		{ vCoords = new Vector<ADQLOperand>(); }                  // coordinates (min. 3 pairs)
+		 tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+		 <COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+		 <COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);}
+		(<COMMA> tmp=Coordinates() {vCoords.add(tmp[0]); vCoords.add(tmp[1]);})*
+	end=<RIGHT_PAR>
+	{
+		try {
+			GeometryFunction gf = queryFactory.createPolygon(null, vCoords);
 			gf.setPosition(new TextPosition(fct, end));
 			return gf;
 		}catch(Exception ex){

@@ -1045,7 +1045,7 @@ public class TestADQLParser {
 				fail("Impossible to create a POLYGON with an incomplete list of vertices! The last point is missing or incomplete.");
 			} catch(Exception ex) {
 				assertEquals(ParseException.class, ex.getClass());
-				assertTrue(ex.getMessage().trim().startsWith("Encountered \")\"."));
+				assertTrue(ex.getMessage().trim().startsWith("Encountered \""));
 			}
 	}
 
@@ -1163,7 +1163,7 @@ public class TestADQLParser {
 				fail("A coordinate system can NOT be a column reference!");
 			} catch(ParseException pe) {
 				assertEquals(ParseException.class, pe.getClass());
-				assertEquals((version == ADQLVersion.V2_0 ? 40 : 53), pe.getPosition().beginColumn);
+				assertEquals(40, pe.getPosition().beginColumn);
 			}
 
 			// Test with several coordinate systems while all are allowed:
