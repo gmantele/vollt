@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2022 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2023 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -69,7 +69,7 @@ import adql.query.operand.function.geometry.PolygonFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 2.0 (09/2022)
+ * @version 2.0 (02/2023)
  * @since 1.4
  */
 public class MySQLTranslator extends JDBCTranslator {
@@ -403,7 +403,7 @@ public class MySQLTranslator extends JDBCTranslator {
 			}
 			// but if not known, use the ADQL version:
 			else
-				sql.append(fct.toADQL());
+				sql.append(fct.getTargetType().toADQL());
 
 			sql.append(')');
 			return sql.toString();
@@ -499,6 +499,8 @@ public class MySQLTranslator extends JDBCTranslator {
 				return "TEXT";
 
 			case POINT:
+			case CIRCLE:
+			case POLYGON:
 			case REGION:
 			default:
 				return "VARCHAR(" + DEFAULT_VARIABLE_LENGTH + ")";

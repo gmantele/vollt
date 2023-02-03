@@ -104,6 +104,14 @@ public class TestMySQLTranslator {
 						assertEquals("CAST(aColumn AS DATETIME)", tr.translate(castFn));
 						break;
 
+					// Geometries, by default in VARCHAR:
+					case POINT:
+					case CIRCLE:
+					case POLYGON:
+					case REGION:
+						assertEquals("CAST(aColumn AS VARCHAR("+MySQLTranslator.DEFAULT_VARIABLE_LENGTH+"))", tr.translate(castFn));
+						break;
+
 					// All others are the same as in ADQL:
 					default:
 						assertEquals(castFn.toADQL(), tr.translate(castFn));
