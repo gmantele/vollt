@@ -53,15 +53,7 @@ import adql.query.from.FromContent;
 import adql.query.from.InnerJoin;
 import adql.query.from.OuterJoin;
 import adql.query.from.OuterJoin.OuterType;
-import adql.query.operand.ADQLColumn;
-import adql.query.operand.ADQLOperand;
-import adql.query.operand.Concatenation;
-import adql.query.operand.NegativeOperand;
-import adql.query.operand.NumericConstant;
-import adql.query.operand.Operation;
-import adql.query.operand.OperationType;
-import adql.query.operand.StringConstant;
-import adql.query.operand.WrappedOperand;
+import adql.query.operand.*;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.MathFunction;
 import adql.query.operand.function.MathFunctionType;
@@ -98,7 +90,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (10/2022)
+ * @version 2.0 (02/2023)
  *
  * @see ADQLParser
  */
@@ -576,5 +568,16 @@ public class ADQLQueryFactory {
 	 */
 	public CoalesceFunction createCoalesceFunction(final Collection<ADQLOperand> operands) throws Exception {
 		return new CoalesceFunction(operands);
+	}
+
+	/**
+	 * Create a {@link NullValue}.
+	 *
+	 * @return	The created {@link NullValue} instance.
+	 *
+	 * @since 2.0
+	 */
+	public NullValue createNullValue() {
+		return new NullValue();
 	}
 }

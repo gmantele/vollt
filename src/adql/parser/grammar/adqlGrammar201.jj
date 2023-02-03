@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (01/2023)
+* Version: 2.0 (02/2023)
 */
 
 							/* ########### */
@@ -114,7 +114,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see adql.parser.ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (01/2023)
+ * @version 2.0 (02/2023)
  * @since 2.0
  */
 
@@ -992,8 +992,11 @@ NumericConstant SignedInteger(): {Token sign=null, number; NumericConstant cst;}
 /* *********** */
 ADQLOperand NumericValueExpressionPrimary(): {ADQLColumn column; ADQLOperand op; Token left, right;} {
 	try{
-		(// unsigned_value_specification
-		  op=UnsignedNumeric() {return op;}
+		(
+		// NULL
+		left=<NULL> { op = queryFactory.createNullValue(); ((NullValue)op).setPosition(new TextPosition(left)); return op; }
+		// unsigned_value_specification
+		| op=UnsignedNumeric() {return op;}
 		// column_reference
 		| column=Column() {column.setExpectedType('N'); return column;}
 		// set_function_specification
@@ -1007,8 +1010,11 @@ ADQLOperand NumericValueExpressionPrimary(): {ADQLColumn column; ADQLOperand op;
 
 ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn column; ADQLOperand op; Token left, right;} {
 	try{
-		(// string
-		  expr=String() {return expr;}
+		(
+		// NULL
+		left=<NULL> { op = queryFactory.createNullValue(); ((NullValue)op).setPosition(new TextPosition(left)); return op; }
+		// string
+		| expr=String() {return expr;}
 		// unsigned numeric
 		| op=UnsignedNumeric() {return op;}
 		// set_function_specification
@@ -1463,8 +1469,11 @@ DistanceFunction DistanceFunction2(): { Token fct=null, end=null; DistanceFuncti
 	}
 }
 
-ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null;}{
-	coordSys=String()
+ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null; Token tok;}{
+	(
+      tok=<NULL> {coordSys=queryFactory.createNullValue(); ((NullValue)coordSys).setPosition(new TextPosition(tok)); }
+	| coordSys=String()
+	)
 	{ return coordSys; }
 }
 
@@ -1817,7 +1826,7 @@ CastFunction GeometricCastFunction(): { CastFunction fct; } {
 }
 
 CastFunction CastFunction(char expectedType): {Token fct, end, typeName, typeSize=null; ADQLOperand value=null; TargetType type;} {
-	fct=<CAST> <LEFT_PAR> (<NULL> | value=ValueExpression()) <AS> type=CastDatatype(expectedType) end=<RIGHT_PAR>
+	fct=<CAST> <LEFT_PAR> value=ValueExpression() <AS> type=CastDatatype(expectedType) end=<RIGHT_PAR>
 	{
 		try{
 			CastFunction cast = queryFactory.createCastFunction(value, type);

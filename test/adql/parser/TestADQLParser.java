@@ -1352,4 +1352,75 @@ public class TestADQLParser {
 		}
 	}
 
+	/* ************************************************************************
+	   TESTS WITH NULL VALUES                                                 */
+
+	@Test
+	public void testNULL_in_SELECT(){
+		for(ADQLVersion version : ADQLVersion.values()) {
+			ADQLParser parser = new ADQLParser(version);
+			try {
+				assertEquals("SELECT NULL\nFROM atable", parser.parseQuery("SELECT NULL FROM atable").toADQL());
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! It must be possible to select NULL. (see console for more details)");
+			}
+		}
+	}
+
+	@Test
+	public void testNULL_operation(){
+		for(ADQLVersion version : ADQLVersion.values()) {
+			ADQLParser parser = new ADQLParser(version);
+			try {
+				assertEquals("SELECT 2*NULL , NULL+1\nFROM atable", parser.parseQuery("SELECT 2*NULL, NULL+1 FROM atable").toADQL());
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! It must be possible to make numeric operations with NULL. (see console for more details)");
+			}
+		}
+	}
+
+	@Test
+	public void testNULL_concat(){
+		for(ADQLVersion version : ADQLVersion.values()) {
+			ADQLParser parser = new ADQLParser(version);
+			try {
+				assertEquals("SELECT 'Something ' || NULL , NULL || ' is absolute'\nFROM atable", parser.parseQuery("SELECT 'Something ' || NULL, NULL || ' is absolute' FROM atable").toADQL());
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! It must be possible to make string concatenations with NULL. (see console for more details)");
+			}
+		}
+	}
+
+	@Test
+	public void testNULL_coordsys(){
+		for(ADQLVersion version : ADQLVersion.values()) {
+			ADQLParser parser = new ADQLParser(version);
+			try {
+				assertEquals("SELECT POINT(NULL, ra, dec)\nFROM atable", parser.parseQuery("SELECT POINT(NULL, ra, dec) FROM atable").toADQL());
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				fail("Unexpected error! It must be possible to create a point with NULL as coord sys. (see console for more details)");
+			}
+		}
+	}
+
+	@Test
+	public void testCOALESCE_NULL(){
+		for(ADQLVersion version : ADQLVersion.values()) {
+			// Skip the test for ADQL-2.0 where COALESCE(...) is not supported:
+			if (version != ADQLVersion.V2_0) {
+				ADQLParser parser = new ADQLParser(version);
+				try {
+					assertEquals("SELECT COALESCE(NULL)\nFROM atable", parser.parseQuery("SELECT COALESCE(NULL) FROM atable").toADQL());
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					fail("Unexpected error! It must be possible to select COALESCE(NULL). (see console for more details)");
+				}
+			}
+		}
+	}
+
 }

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 /*
@@ -30,7 +30,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-*  Version: 2.0 (07/2022)
+*  Version: 2.0 (02/2023)
 */
 
 							/* ########### */
@@ -67,7 +67,7 @@ package adql.parser.grammar;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Vector;
@@ -104,7 +104,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see adql.parser.ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (07/2022)
+ * @version 2.0 (02/2023)
  * @since 2.0
  */
 public class ADQLGrammar200 extends ADQLGrammarBase {
@@ -830,8 +830,11 @@ NumericConstant SignedInteger(): {Token sign=null, number; NumericConstant cst;}
 /* *********** */
 ADQLOperand NumericValueExpressionPrimary(): {ADQLColumn column; ADQLOperand op; Token left, right;} {
 	try{
-		(// unsigned_value_specification
-		  op=UnsignedNumeric() {return op;}
+		(
+		// NULL
+		left=<NULL> { op = queryFactory.createNullValue(); ((NullValue)op).setPosition(new TextPosition(left)); return op; }
+		// unsigned_value_specification
+		| op=UnsignedNumeric() {return op;}
 		// column_reference
 		| column=Column() {column.setExpectedType('N'); return column;}
 		// set_function_specification
@@ -845,8 +848,11 @@ ADQLOperand NumericValueExpressionPrimary(): {ADQLColumn column; ADQLOperand op;
 
 ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn column; ADQLOperand op; Token left, right;} {
 	try{
-		(// string
-		  expr=String() {return expr;}
+		(
+		// NULL
+		left=<NULL> { op = queryFactory.createNullValue(); ((NullValue)op).setPosition(new TextPosition(left)); return op; }
+		// string
+		| expr=String() {return expr;}
 		// unsigned numeric
 		| op=UnsignedNumeric() {return op;}
 		// set_function_specification
@@ -1243,8 +1249,11 @@ GeometryFunction GeometryFunction(): {Token fct=null, end; GeometryValue<Geometr
 	}
 }
 
-ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null;}{
-	coordSys=String()
+ADQLOperand CoordinateSystem(): { ADQLOperand coordSys=null; Token tok;}{
+	(
+      tok=<NULL> {coordSys=queryFactory.createNullValue(); ((NullValue)coordSys).setPosition(new TextPosition(tok)); }
+    | coordSys=String()
+    )
 	{ return coordSys; }
 }
 
