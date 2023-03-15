@@ -16,17 +16,8 @@ package adql.parser.feature;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
 
 import adql.db.FunctionDef;
 import adql.query.ClauseOffset;
@@ -36,20 +27,11 @@ import adql.query.constraint.ComparisonOperator;
 import adql.query.operand.function.InUnitFunction;
 import adql.query.operand.function.cast.CastFunction;
 import adql.query.operand.function.conditional.CoalesceFunction;
-import adql.query.operand.function.geometry.AreaFunction;
-import adql.query.operand.function.geometry.BoxFunction;
-import adql.query.operand.function.geometry.CentroidFunction;
-import adql.query.operand.function.geometry.CircleFunction;
-import adql.query.operand.function.geometry.ContainsFunction;
-import adql.query.operand.function.geometry.DistanceFunction;
-import adql.query.operand.function.geometry.ExtractCoord;
-import adql.query.operand.function.geometry.ExtractCoordSys;
-import adql.query.operand.function.geometry.IntersectsFunction;
-import adql.query.operand.function.geometry.PointFunction;
-import adql.query.operand.function.geometry.PolygonFunction;
-import adql.query.operand.function.geometry.RegionFunction;
+import adql.query.operand.function.geometry.*;
 import adql.query.operand.function.string.LowerFunction;
 import adql.query.operand.function.string.UpperFunction;
+
+import java.util.*;
 
 /**
  * Set of supported ADQL's language features.
@@ -124,7 +106,7 @@ import adql.query.operand.function.string.UpperFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (10/2022)
+ * @version 2.0 (03/2023)
  * @since 2.0
  */
 public class FeatureSet implements Iterable<LanguageFeature> {
@@ -215,7 +197,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 		boolean done = false;
 		if (type != null) {
 			for(LanguageFeature feature : availableFeatures) {
-				if (feature.type == type)
+				if (type.equals(feature.type))
 					done = support(feature) || done;
 			}
 		}
@@ -295,7 +277,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 		boolean done = false;
 		if (type != null) {
 			for(LanguageFeature feature : availableFeatures) {
-				if (feature.type == type)
+				if (type.equals(feature.type))
 					done = unsupport(feature) || done;
 			}
 		}
@@ -453,7 +435,7 @@ public class FeatureSet implements Iterable<LanguageFeature> {
 	 * <p><i><b>Important note:</b>
 	 * 	All of them must be optional and must have a type.
 	 * </i></p> */
-	static LanguageFeature[] availableFeatures = new LanguageFeature[]{CoalesceFunction.FEATURE, SetOperationType.UNION.getFeatureDescription(), SetOperationType.EXCEPT.getFeatureDescription(), SetOperationType.INTERSECT.getFeatureDescription(), CastFunction.FEATURE, WithItem.FEATURE, InUnitFunction.FEATURE, ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, UpperFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE };
+	static LanguageFeature[] availableFeatures = new LanguageFeature[]{CoalesceFunction.FEATURE, SetOperationType.UNION.getFeatureDescription(), SetOperationType.EXCEPT.getFeatureDescription(), SetOperationType.INTERSECT.getFeatureDescription(), CastFunction.FEATURE, WithItem.FEATURE, InUnitFunction.FEATURE, ClauseOffset.FEATURE, ComparisonOperator.ILIKE.getFeatureDescription(), LowerFunction.FEATURE, UpperFunction.FEATURE, AreaFunction.FEATURE, BoxFunction.FEATURE, CentroidFunction.FEATURE, CircleFunction.FEATURE, ContainsFunction.FEATURE, ExtractCoord.FEATURE_COORD1, ExtractCoord.FEATURE_COORD2, ExtractCoordSys.FEATURE, DistanceFunction.FEATURE, IntersectsFunction.FEATURE, PointFunction.FEATURE, PolygonFunction.FEATURE, RegionFunction.FEATURE, RegionFunction.FEATURE_UNION, RegionFunction.FEATURE_INTERSECT };
 
 	/**
 	 * List all available language features.

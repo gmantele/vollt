@@ -244,7 +244,7 @@ import adql.translator.TranslationException;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (01/2023)
+ * @version 2.0 (03/2023)
  * @since 2.0
  */
 public class ADQLParser {
@@ -1439,8 +1439,13 @@ public class ADQLParser {
 			case POLYGON:
 				feature = PolygonFunction.FEATURE;
 				break;
+			case UNION:
+				feature = RegionFunction.FEATURE_UNION;
+				break;
+			case INTERSECTION:
+				feature = RegionFunction.FEATURE_INTERSECT;
+				break;
 			default:
-				/* TODO Add a case for UNION and INTERSECT when supported! */
 				feature = null;
 				break;
 		}

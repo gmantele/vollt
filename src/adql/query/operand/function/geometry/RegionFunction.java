@@ -16,7 +16,7 @@ package adql.query.operand.function.geometry;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -51,13 +51,29 @@ import adql.translator.JDBCTranslator;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (04/2021)
+ * @version 2.0 (03/2023)
  */
 public class RegionFunction extends GeometryFunction {
 
 	/** Description of this ADQL Feature.
 	 * @since 2.0 */
 	public static final LanguageFeature FEATURE = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "REGION", true, "Express a region on the sky in a generic way (e.g. STC-S).");
+
+	/** Description of this special geometry operation: UNION.
+	 * <p><i><b>Implementation note:</b>
+	 * 	There is no corresponding ADQL function for the moment. In the meantime,
+	 * 	this language feature stands here.
+	 * </i></p>
+	 * @since 2.0 */
+	public static final LanguageFeature FEATURE_UNION = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "UNION", true, "Express a region being the union of two (or more) other regions. This is only supported in STC-s expressions of the REGION(...) function.");
+
+	/** Description of this special geometry operation: INTERSECT.
+	 * <p><i><b>Implementation note:</b>
+	 * 	There is no corresponding ADQL function for the moment. In the meantime,
+	 * 	this language feature stands here.
+	 * </i></p>
+	 * @since 2.0 */
+	public static final LanguageFeature FEATURE_INTERSECT = new LanguageFeature(LanguageFeature.TYPE_ADQL_GEO, "INTERSECT", true, "Express a region being the intersection of two (or more) other regions. This is only supported in STC-s expressions of the REGION(...) function.");
 
 	/** The only parameter of this function. */
 	protected ADQLOperand parameter;
@@ -79,11 +95,14 @@ public class RegionFunction extends GeometryFunction {
 	/**
 	 * Builds a REGION function.
 	 *
-	 * @param param				The parameter (a string or a column reference or
-	 *             				a concatenation or a user function).
-	 * @throws ParseException	If the given parameter is NULL.
+	 * @param param				    The parameter (a string or a column reference or
+	 *             				    a concatenation or a user function).
+	 *
+	 * @throws NullPointerException	If the given parameter is NULL.
+	 * @throws Exception	        If the given operand does not represent a
+	 *                              string value.
 	 */
-	public RegionFunction(ADQLOperand param) throws NullPointerException, Exception {
+	public RegionFunction(ADQLOperand param) throws Exception {
 		super();
 		if (param == null)
 			throw new NullPointerException("The ADQL function REGION must have exactly one parameter!");
