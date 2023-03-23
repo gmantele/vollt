@@ -307,7 +307,7 @@ public final class LanguageFeature {
 	public final static String TYPE_UDF = IVOID_TAP_REGEXT + "#features-udf";
 
 	/** Geometric functions/regions. */
-	public final static String TYPE_ADQL_GEO = IVOID_TAP_REGEXT + "#features-adql-geo";
+	public final static String TYPE_ADQL_GEO = IVOID_TAP_REGEXT + "#features-adqlgeo";
 
 	/** String manipulation functions */
 	public final static String TYPE_ADQL_STRING = IVOID_TAP_REGEXT + "#features-adql-string";
