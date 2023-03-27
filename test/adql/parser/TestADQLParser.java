@@ -912,7 +912,7 @@ public class TestADQLParser {
 			assertEquals(UnresolvedIdentifiersException.class, t.getClass());
 			UnresolvedIdentifiersException allErrors = (UnresolvedIdentifiersException)t;
 			assertEquals(1, allErrors.getNbErrors());
-			assertEquals("Unsupported ADQL feature: \"POINT\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", allErrors.getErrors().next().getMessage());
+			assertEquals("Unsupported ADQL feature: \"POINT\" (of type '"+LanguageFeature.TYPE_ADQL_GEO+"')!", allErrors.getErrors().next().getMessage());
 		}
 
 		// now support only POINT:
@@ -961,7 +961,7 @@ public class TestADQLParser {
 				assertTrue(pe instanceof UnresolvedIdentifiersException);
 				UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 				assertEquals(1, ex.getNbErrors());
-				assertEquals("Unsupported ADQL feature: \"INTERSECTS\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", ex.getErrors().next().getMessage());
+				assertEquals("Unsupported ADQL feature: \"INTERSECTS\" (of type '"+LanguageFeature.TYPE_ADQL_GEO+"')!", ex.getErrors().next().getMessage());
 			}
 
 			// TODO Test by adding REGION: // Only possible with ADQL-2.0 since in ADQL-2.1, REGION has been removed!
@@ -985,7 +985,7 @@ public class TestADQLParser {
 				assertTrue(pe instanceof UnresolvedIdentifiersException);
 				UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 				assertEquals(1, ex.getNbErrors());
-				assertEquals("Unsupported region type: \"BOX\" (equivalent to the ADQL feature \"BOX\" of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", ex.getErrors().next().getMessage());
+				assertEquals("Unsupported region type: \"BOX\" (equivalent to the ADQL feature \"BOX\" of type '"+LanguageFeature.TYPE_ADQL_GEO+"')!", ex.getErrors().next().getMessage());
 			}
 
 			// Test with several geometries while none geometry is allowed:
@@ -1000,9 +1000,9 @@ public class TestADQLParser {
 				UnresolvedIdentifiersException ex = (UnresolvedIdentifiersException)pe;
 				assertEquals(3, ex.getNbErrors());
 				Iterator<ParseException> itErrors = ex.getErrors();
-				assertEquals("Unsupported ADQL feature: \"CONTAINS\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
-				assertEquals("Unsupported ADQL feature: \"POINT\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
-				assertEquals("Unsupported ADQL feature: \"CIRCLE\" (of type 'ivo://ivoa.net/std/TAPRegExt#features-adql-geo')!", itErrors.next().getMessage());
+				assertEquals("Unsupported ADQL feature: \"CONTAINS\" (of type '"+LanguageFeature.TYPE_ADQL_GEO+"')!", itErrors.next().getMessage());
+				assertEquals("Unsupported ADQL feature: \"POINT\" (of type '"+LanguageFeature.TYPE_ADQL_GEO+"')!", itErrors.next().getMessage());
+				assertEquals("Unsupported ADQL feature: \"CIRCLE\" (of type '"+LanguageFeature.TYPE_ADQL_GEO+"')!", itErrors.next().getMessage());
 			}
 		}
 	}
