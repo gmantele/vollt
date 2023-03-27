@@ -114,8 +114,8 @@ public class TestFunctionDef {
 
 	@Test
 	public void testParse() {
-		final String WRONG_FULL_SYNTAX = "Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\"";
-		final String WRONG_PARAM_SYNTAX = "Wrong parameters syntax! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"";
+		final String WRONG_FULL_SYNTAX = "Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\"";
+		final String WRONG_PARAM_SYNTAX = "Wrong parameters syntax! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"";
 
 		// NULL test:
 		try {
@@ -141,6 +141,7 @@ public class TestFunctionDef {
 			assertEquals("foo() -> VARCHAR", FunctionDef.parse("foo() -> string").toString());
 			assertEquals("foo() -> VARCHAR", FunctionDef.parse("foo()->string").toString());
 			assertEquals("foo(toto VARCHAR) -> SMALLINT", FunctionDef.parse("foo(toto varchar) -> boolean").toString());
+			assertEquals("foo(a_b INTEGER) -> INTEGER", FunctionDef.parse("foo(a_b integer) -> integer").toString());
 			assertEquals("foo(param1 DOUBLE, param2 INTEGER) -> DOUBLE", FunctionDef.parse(" foo ( param1	numeric,	param2    int )	->	DOUBLE ").toString());
 			assertEquals("foo_ALTernative2first(p POINT, d TIMESTAMP) -> TIMESTAMP", FunctionDef.parse("foo_ALTernative2first	(p POINT,d date) -> time").toString());
 			assertEquals("blabla_123(toto INTEGER, bla SMALLINT, truc CLOB, bidule CHAR, smurph POINT, date TIMESTAMP) -> SMALLINT", FunctionDef.parse("blabla_123(toto int4, bla bool, truc text, bidule character, smurph point, date timestamp) -> BOOLEAN").toString());
@@ -221,7 +222,7 @@ public class TestFunctionDef {
 			fail("A parameter must always have a type!");
 		} catch(Exception ex) {
 			assertTrue(ex instanceof ParseException);
-			assertEquals("Wrong syntax for the 1-th parameter: \"param\"! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"", ex.getMessage());
+			assertEquals("Wrong syntax for the 1-th parameter: \"param\"! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"", ex.getMessage());
 		}
 		try {
 			FunctionDef fct = FunctionDef.parse("foo()->aType");

@@ -1249,7 +1249,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because one UDFs list item has a wrong signature part (it has been forgotten)!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\" (position in the property " + KEY_UDFS + ": 2-33)", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\" (position in the property " + KEY_UDFS + ": 2-33)", e.getMessage());
 		}
 
 		// UDF with missing definition part (or wrong since there is no comma):

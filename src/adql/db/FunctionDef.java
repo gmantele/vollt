@@ -16,7 +16,7 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2015-2021 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2015-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -90,7 +90,7 @@ import adql.translator.TranslationPattern;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (05/2021)
+ * @version 2.0 (03/2023)
  *
  * @since 1.3
  */
@@ -115,7 +115,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 	protected final static String fctParamRegExp = "\\s*(" + regularIdentifierRegExp + ")\\s+" + typeRegExp + "\\s*";
 
 	/** Rough regular expression for a whole function definition. */
-	protected final static String fctDefRegExp = "\\s*(" + regularIdentifierRegExp + ")\\s*\\(([a-zA-Z0-9,() \r\n\t]*)\\)(\\s*->\\s*(" + typeRegExp + "))?\\s*";
+	protected final static String fctDefRegExp = "\\s*(" + regularIdentifierRegExp + ")\\s*\\(([a-zA-Z0-9_,() \r\n\t]*)\\)(\\s*->\\s*(" + typeRegExp + "))?\\s*";
 
 	/** Pattern of a function definition. This object has been compiled with
 	 * {@link #fctDefRegExp}. */
@@ -975,7 +975,7 @@ public class FunctionDef implements Comparable<FunctionDef> {
 
 				// Check the syntax of the parameters' list:
 				if (!paramsList.matches(fctParamsRegExp))
-					throw new ParseException("Wrong parameters syntax! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"");
+					throw new ParseException("Wrong parameters syntax! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"");
 
 				// Split all the parameter definitions:
 				String[] paramsSplit = paramsList.split(",");
@@ -998,14 +998,14 @@ public class FunctionDef implements Comparable<FunctionDef> {
 						params[i] = new FunctionParam(m.group(1), paramType);
 					} else
 						// note: should never happen because we have already check the syntax of the whole parameters list before parsing each individual parameter.
-						throw new ParseException("Wrong syntax for the " + (i + 1) + "-th parameter: \"" + paramsSplit[i].trim() + "\"! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"");
+						throw new ParseException("Wrong syntax for the " + (i + 1) + "-th parameter: \"" + paramsSplit[i].trim() + "\"! Expected syntax: \"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"()\", \"(param INTEGER)\", \"(param1 INTEGER, param2 DOUBLE)\"");
 				}
 			}
 
 			// Build the function definition object:
 			return new FunctionDef(fctName, returnType, params);
 		} else
-			throw new ParseException("Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z]+[a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\"");
+			throw new ParseException("Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\"");
 	}
 
 	/**
