@@ -31,7 +31,7 @@
 * ParseException is thrown.
 *
 * Author:  Gr&eacute;gory Mantelet (CDS)
-* Version: 2.0 (02/2023)
+* Version: 2.0 (03/2023)
 */
 
 							/* ########### */
@@ -114,7 +114,7 @@ import adql.query.operand.function.geometry.GeometryFunction.GeometryValue;
  * @see adql.parser.ADQLParser
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (02/2023)
+ * @version 2.0 (03/2023)
  * @since 2.0
  */
 
@@ -457,7 +457,7 @@ TOKEN : {
 
 TOKEN : {
 	< REGULAR_IDENTIFIER_CANDIDATE: ((<Letter>)+ (<DIGIT> | <Letter>)* | (<DIGIT>)+ <Letter> (<DIGIT> | <Letter>)*) >
-|	< #Letter: ["a"-"z","A"-"Z","_","?","!","$","@","#","`","[","]","{","}"] >
+|	< #Letter: ["a"-"z","A"-"Z","_","?","$","@","#","`","[","]","{","}"] >
 }
 
 							/* ########## */
