@@ -16,7 +16,7 @@ package adql.parser.feature;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2019-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2019-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
 import java.util.Objects;
@@ -52,7 +52,7 @@ import adql.db.FunctionDef;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.0 (10/2022)
+ * @version 2.0 (03/2023)
  * @since 2.0
  *
  * @see FeatureSet
@@ -307,7 +307,7 @@ public final class LanguageFeature {
 	public final static String TYPE_UDF = IVOID_TAP_REGEXT + "#features-udf";
 
 	/** Geometric functions/regions. */
-	public final static String TYPE_ADQL_GEO = IVOID_TAP_REGEXT + "#features-adql-geo";
+	public final static String TYPE_ADQL_GEO = IVOID_TAP_REGEXT + "#features-adqlgeo";
 
 	/** String manipulation functions */
 	public final static String TYPE_ADQL_STRING = IVOID_TAP_REGEXT + "#features-adql-string";
