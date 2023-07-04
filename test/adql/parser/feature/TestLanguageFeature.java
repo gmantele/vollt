@@ -103,6 +103,12 @@ public class TestLanguageFeature {
 		// the test order does not matter:
 		assertTrue(feat2.equals(feat1));
 
+                // CASE: equality test with differing capitalisation of type
+                LanguageFeature feat3 = new LanguageFeature("ivo://stuff", "bar");
+                LanguageFeature feat4 = new LanguageFeature("ivo://Stuff", "bar");
+                assertTrue(feat3.equals(feat4));
+                assertTrue(feat4.equals(feat3));
+
 		try {
 
 			// CASE: equality test between 2 UDFs with a different name => false

@@ -255,7 +255,7 @@ public final class LanguageFeature {
 			throw new NullPointerException("Missing form/name of the language feature to create!");
 		this.form = form.trim();
 
-		if (TYPE_UDF.equals(this.type) && udfDef == null)
+		if (TYPE_UDF.equalsIgnoreCase(this.type) && udfDef == null)
 			throw new NullPointerException("Missing UDF definition! To declare a UDF feature, you MUST use the constructor LanguageFeature(FunctionDef, ...) with a non-NULL FunctionDef instance.");
 		this.udfDefinition = udfDef;
 
@@ -270,12 +270,12 @@ public final class LanguageFeature {
 	public boolean equals(final Object obj) {
 		if ((obj != null) && (obj instanceof LanguageFeature)) {
 			// If UDF, equals IF SAME NAME and SAME NB PARAMETERS:
-			if (TYPE_UDF.equals(type) && type.equals(((LanguageFeature)obj).type)) {
+			if (TYPE_UDF.equalsIgnoreCase(type) && type.equalsIgnoreCase(((LanguageFeature)obj).type)) {
 				FunctionDef udfDefinition2 = ((LanguageFeature)obj).udfDefinition;
 				return udfDefinition.name.equalsIgnoreCase(udfDefinition2.name) && (udfDefinition.nbParams == udfDefinition2.nbParams);
 			}
 			// Otherwise, equals IF SAME ID:
-			else if (id.equals(((LanguageFeature)obj).id))
+			else if (id.equalsIgnoreCase(((LanguageFeature)obj).id))
 				return true;
 		}
 		return false;
@@ -284,9 +284,9 @@ public final class LanguageFeature {
 	@Override
 	public int hashCode() {
 		if (udfDefinition != null)
-			return Objects.hash(type, udfDefinition.name.toLowerCase(), udfDefinition.nbParams);
+			return Objects.hash(type == null ? null : type.toLowerCase(), udfDefinition.name.toLowerCase(), udfDefinition.nbParams);
 		else
-			return Objects.hash(type, form, -1);
+			return Objects.hash(type == null ? null : type.toLowerCase(), form, -1);
 	}
 
 	@Override
