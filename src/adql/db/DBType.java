@@ -31,7 +31,7 @@ package adql.db;
  * It is used to set the attribute type/datatype of this class.</p>
  * 
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 1.4 (07/2016)
+ * @version 1.5 (08/2023)
  * @since 1.3
  */
 public class DBType {
@@ -40,11 +40,11 @@ public class DBType {
 	 * List of all datatypes declared in the IVOA recommendation of TAP (in the section UPLOAD).
 	 * 
 	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.4 (07/2016)
+	 * @version 1.5 (08/2023)
 	 * @since 1.3
 	 */
 	public static enum DBDatatype{
-		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, BLOB, CLOB, TIMESTAMP, POINT, REGION,
+		SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, BINARY, VARBINARY, CHAR, VARCHAR, UNICODECHAR, BLOB, CLOB, TIMESTAMP, POINT, REGION,
 		/** Type to use when the precise datatype is unknown.
 		 * @since 1.4 */
 		UNKNOWN,
@@ -206,6 +206,7 @@ public class DBType {
 		switch(type){
 			case CHAR:
 			case VARCHAR:
+			case UNICODECHAR:
 			case CLOB:
 			case TIMESTAMP:
 				return true;

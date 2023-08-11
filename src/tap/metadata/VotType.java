@@ -19,7 +19,7 @@ import adql.db.DBType.DBDatatype;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -35,7 +35,7 @@ import uk.ac.starlink.votable.VOSerializer;
  * </ul>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (03/2017)
+ * @version 2.4 (08/2023)
  */
 public final class VotType {
 	/**
@@ -207,6 +207,12 @@ public final class VotType {
 				this.datatype = VotDatatype.CHAR;
 				this.arraysize = "*";
 				this.xtype = VotType.XTYPE_REGION;
+				break;
+
+			case UNICODECHAR:
+				this.datatype = VotDatatype.UNICODECHAR;
+				this.arraysize = (tapType.length > 0 ? tapType.length + "*" : "*");
+				this.xtype = null;
 				break;
 
 			case VARCHAR:

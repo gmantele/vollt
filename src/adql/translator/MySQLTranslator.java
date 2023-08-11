@@ -36,7 +36,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2019 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2023 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -51,7 +51,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 1.5 (03/2019)
+ * @version 1.5 (08/2023)
  * @since 1.4
  */
 public class MySQLTranslator extends JDBCTranslator {
@@ -248,6 +248,7 @@ public class MySQLTranslator extends JDBCTranslator {
 
 			case POINT:
 			case REGION:
+			case UNICODECHAR:
 			default:
 				return "VARCHAR(" + DEFAULT_VARIABLE_LENGTH + ")";
 		}

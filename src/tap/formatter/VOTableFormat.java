@@ -16,7 +16,7 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -103,7 +103,7 @@ import uk.ac.starlink.votable.VOTableVersion;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (08/2020)
+ * @version 2.4 (08/2023)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -639,6 +639,10 @@ public class VOTableFormat implements OutputFormat {
 
 		// Set the shape (VOTable arraysize):
 		colInfo.setShape(getShape(votType.arraysize));
+
+		// If character datatype, specify if it is Unicode or not:
+		if (votType.datatype == VotDatatype.UNICODECHAR)
+			colInfo.setAuxDatum(new DescribedValue(VOStarTable.DATATYPE_INFO, "unicodeChar"));
 
 		// Set this value may be NULL (note: it is not really necessary since STIL set this flag to TRUE by default):
 		colInfo.setNullable(true);

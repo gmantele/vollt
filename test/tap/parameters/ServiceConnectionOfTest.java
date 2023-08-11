@@ -1,5 +1,6 @@
 package tap.parameters;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -34,6 +35,11 @@ public class ServiceConnectionOfTest implements ServiceConnection {
 
 	@Override
 	public String getProviderDescription(){
+		return null;
+	}
+
+	@Override
+	public URL getBaseUrl() {
 		return null;
 	}
 

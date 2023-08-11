@@ -16,7 +16,7 @@ package tap.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -181,7 +181,7 @@ import uws.service.log.UWSLog.LogLevel;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (10/2018)
+ * @version 2.4 (08/2023)
  * @since 2.0
  */
 public class JDBCConnection implements DBConnection {
@@ -2757,6 +2757,7 @@ public class JDBCConnection implements DBConnection {
 			case POINT:
 			case REGION:
 			case VARCHAR:
+			case UNICODECHAR:
 			default:
 				if (dbms.equals("sqlite"))
 					return "TEXT";

@@ -32,6 +32,7 @@ public class TestFunctionDef {
 			switch(type) {
 				case CHAR:
 				case VARCHAR:
+				case UNICODECHAR:
 				case TIMESTAMP:
 				case CLOB:
 					assertTrue(new FunctionDef("foo", new DBType(type)).isString);
@@ -62,6 +63,7 @@ public class TestFunctionDef {
 			switch(type) {
 				case CHAR:
 				case VARCHAR:
+				case UNICODECHAR:
 				case TIMESTAMP:
 				case POINT:
 				case REGION:
