@@ -1,1 +1,3 @@
-rootProject.name = 'vollt' // default: 'tap'
+rootProject.name = 'vollt'
+include 'ADQLLib', 'UWSLib', 'TAPLib'
+

@@ -1,0 +1,69 @@
+plugins {
+	id 'java'
+    id 'application'
+	id 'com.intershop.gradle.javacc' version '4.0.1'
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+javacc {
+    configs {
+
+        javaCCVersion = '7.0.10'
+
+        adqlGrammar200 {
+            inputFile = file('src/adql/parser/grammar/adqlGrammar200.jj')
+            outputDir = file("src")
+            packageName = "adql.parser.grammar"
+        }
+
+        adqlGrammar201 {
+            inputFile = file('src/adql/parser/grammar/adqlGrammar201.jj')
+            outputDir = file("src")
+            packageName = "adql.parser.grammar"
+        }
+    }
+}
+javaccAdqlGrammar201.configure {
+    dependsOn(javaccAdqlGrammar200)
+}
+
+dependencies {
+    implementation fileTree(dir: 'lib', includes: ['stil_3.3-2.jar'])
+    implementation 'postgresql:postgresql:9.1-901.jdbc4'
+
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'org.slf4j:slf4j-simple:1.7.25'
+    
+    /* Needed to run Gradle with Java 9+: */
+    // https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
+	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+}
+
+compileJava {
+    options.encoding = "UTF-8"
+}
+
+test{
+	forkEvery = 1
+	include '**/Test*'
+}
+
+sourceSets.main.java.srcDirs = ["src"]
+sourceSets.test.java.srcDirs = ["test"]
+
+
+/* Set the minimum Java version compatibility: */
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+
+tasks.register('runnableJar', Jar) {
+    manifest {
+        attributes 'Main-Class': 'adql.parser.ADQLParser'
+    }
+    from sourceSets.main.output
+}
