@@ -19,7 +19,7 @@ dependencies {
     implementation 'org.json:json:20180813'
 
     testImplementation 'com.h2database:h2:1.4.193'
-    testImplementation fileTree(dir: 'lib', include: 'astroh2-0.4.jar')
+    testImplementation fileTree(dir: '../lib', include: 'astroh2-0.4.jar')
     testImplementation 'junit:junit:4.13.1'
     testImplementation 'org.slf4j:slf4j-simple:1.7.25'
 
