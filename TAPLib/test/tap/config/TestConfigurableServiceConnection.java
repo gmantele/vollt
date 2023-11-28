@@ -56,7 +56,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import adql.db.FunctionDef;
-import adql.db.TestDBChecker.UDFToto;
 import adql.db.region.CoordSys.Flavor;
 import adql.db.region.CoordSys.Frame;
 import adql.db.region.CoordSys.RefPos;
@@ -329,13 +328,13 @@ public class TestConfigurableServiceConnection {
 		udfsWithTranslationProp.setProperty(KEY_UDFS, "[my_lower(a string)->VARCHAR, \"toLowerCase($1)\"],[my_substring(str string, sub string, startIndex integer)->VARCHAR, \"substr($1, $2, $3)\", \"Extract a substring.\"]");
 
 		udfsWithUDFClassProp = (Properties)validProp.clone();
-		udfsWithUDFClassProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}]");
+		udfsWithUDFClassProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {tap.config.UDFToto}]");
 
 		udfsWithTranslatorClassProp = (Properties)validProp.clone();
 		udfsWithTranslatorClassProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {tap.config.TestConfigurableServiceConnection$TotoTranslator}]");
 
 		udfsWithClassNameAndDescriptionProp = (Properties)validProp.clone();
-		udfsWithClassNameAndDescriptionProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, \"Bla \\\"bla\\\".\"], [ titi(b REAL) -> double, {adql.db.TestDBChecker$UDFToto}, \"Function titi.\"]");
+		udfsWithClassNameAndDescriptionProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {tap.config.UDFToto}, \"Bla \\\"bla\\\".\"], [ titi(b REAL) -> double, {tap.config.UDFToto}, \"Function titi.\"]");
 
 		udfsWithEmptyOptParamsProp = (Properties)validProp.clone();
 		udfsWithEmptyOptParamsProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR,,  	 ]");
@@ -344,19 +343,19 @@ public class TestConfigurableServiceConnection {
 		udfsListWithNONEorANYProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR],ANY");
 
 		udfsWithWrongDescriptionFormatProp = (Properties)validProp.clone();
-		udfsWithWrongDescriptionFormatProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, Blabla]");
+		udfsWithWrongDescriptionFormatProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {tap.config.UDFToto}, Blabla]");
 
 		udfsWithWrongParamLengthProp = (Properties)validProp.clone();
-		udfsWithWrongParamLengthProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, \"Blabla\", foo]");
+		udfsWithWrongParamLengthProp.setProperty(KEY_UDFS, "[toto(a string)->VARCHAR, {tap.config.UDFToto}, \"Blabla\", foo]");
 
 		udfsWithMissingBracketsProp = (Properties)validProp.clone();
 		udfsWithMissingBracketsProp.setProperty(KEY_UDFS, "toto(a string)->VARCHAR");
 
 		udfsWithMissingDefProp1 = (Properties)validProp.clone();
-		udfsWithMissingDefProp1.setProperty(KEY_UDFS, "[{adql.db.TestDBChecker$UDFToto}]");
+		udfsWithMissingDefProp1.setProperty(KEY_UDFS, "[{tap.config.UDFToto}]");
 
 		udfsWithMissingDefProp2 = (Properties)validProp.clone();
-		udfsWithMissingDefProp2.setProperty(KEY_UDFS, "[,{adql.db.TestDBChecker$UDFToto}]");
+		udfsWithMissingDefProp2.setProperty(KEY_UDFS, "[,{tap.config.UDFToto}]");
 
 		emptyUdfItemProp1 = (Properties)validProp.clone();
 		emptyUdfItemProp1.setProperty(KEY_UDFS, "[ ]");
@@ -1231,7 +1230,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because one UDFs list item has too many parameters!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, Blabla]\"! (position in the property " + KEY_UDFS + ": 1-67)", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {tap.config.UDFToto}, Blabla]\"! (position in the property " + KEY_UDFS + ": 1-67)", e.getMessage());
 		}
 
 		// UDFs whose one item have more parts than supported:
@@ -1240,7 +1239,7 @@ public class TestConfigurableServiceConnection {
 			fail("This MUST have failed because one UDFs list item has too many parameters!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {adql.db.TestDBChecker$UDFToto}, \"Blabla\", foo]\"! (position in the property " + KEY_UDFS + ": 1-74)", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {tap.config.UDFToto}, \"Blabla\", foo]\"! (position in the property " + KEY_UDFS + ": 1-74)", e.getMessage());
 		}
 
 		// UDF with missing definition part (or wrong since there is no comma):
