@@ -8,7 +8,7 @@ DB_PWD='super-pwd'
 
 LIB_DIR='../../../../lib'
 
-H2_CP="$LIB_DIR/h2-1.4.193.jar:$LIB_DIR/jts-core-1.14.0.jar:$LIB_DIR/spatial4j-0.6.jar:$LIB_DIR/astroh2-0.3.jar"
+H2_CP="$LIB_DIR/h2-1.4.193.jar:$LIB_DIR/jts-core-1.14.0.jar:$LIB_DIR/spatial4j-0.6.jar:$LIB_DIR/astroh2-0.4.jar"
 
 if [ ! -f "$DB_FILE" ]
 then
