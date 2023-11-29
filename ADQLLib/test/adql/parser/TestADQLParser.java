@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
+import adql.parser.grammar.ADQLGrammar200Constants;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -21,7 +22,6 @@ import adql.db.exception.UnresolvedIdentifiersException;
 import adql.db.exception.UnsupportedFeatureException;
 import adql.parser.ADQLParser.ADQLVersion;
 import adql.parser.feature.LanguageFeature;
-import adql.parser.grammar.ADQLGrammar200Constants;
 import adql.parser.grammar.ParseException;
 import adql.parser.grammar.Token;
 import adql.query.ADQLQuery;

@@ -1,69 +1,44 @@
 plugins {
-	id 'java'
-    id 'application'
-	id 'com.intershop.gradle.javacc' version '4.0.1'
-}
-
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
-
-javacc {
-    configs {
-
-        javaCCVersion = '7.0.10'
-
-        adqlGrammar200 {
-            inputFile = file('src/adql/parser/grammar/adqlGrammar200.jj')
-            outputDir = file("src")
-            packageName = "adql.parser.grammar"
-        }
-
-        adqlGrammar201 {
-            inputFile = file('src/adql/parser/grammar/adqlGrammar201.jj')
-            outputDir = file("src")
-            packageName = "adql.parser.grammar"
-        }
-    }
-}
-javaccAdqlGrammar201.configure {
-    dependsOn(javaccAdqlGrammar200)
+    id "org.javacc.javacc" version "3.0.0"
 }
 
 dependencies {
     implementation fileTree(dir: 'lib', includes: ['stil_3.3-2.jar'])
     implementation 'postgresql:postgresql:9.1-901.jdbc4'
-
-    testImplementation 'junit:junit:4.13.1'
-    testImplementation 'org.slf4j:slf4j-simple:1.7.25'
-    
-    /* Needed to run Gradle with Java 9+: */
-    // https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
-	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
 }
 
-compileJava {
-    options.encoding = "UTF-8"
-}
-
-test{
-	forkEvery = 1
-	include '**/Test*'
-}
-
-sourceSets.main.java.srcDirs = ["src"]
-sourceSets.test.java.srcDirs = ["test"]
-
-
-/* Set the minimum Java version compatibility: */
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
-
-
+// Add a task to generate a runnable Jar running the command line ADQL parser:
 tasks.register('runnableJar', Jar) {
+    group = 'build'
+    description = 'Assemble a jar archive which can run the ADQL parser in command line.'
     manifest {
         attributes 'Main-Class': 'adql.parser.ADQLParser'
     }
     from sourceSets.main.output
 }
+
+/* ##########################################################################
+ * # GRAMMAR CLASSES GENERATION (for ADQL-2.0 and 2.1)                      #
+ * ########################################################################## */
+
+compileJavacc {
+    inputDirectory  = file('src/adql/parser/grammar')
+    outputDirectory = file(project.buildDir.absolutePath + '/generated/adql/parser/grammar')
+    /* Note: the 'generated/' directory is by default included in the classpath
+     *       set up by Gradle. Hence the output directory being this one. */
+    arguments = [grammar_encoding: 'UTF-8', static: 'false']
+}
+
+// Remove generated classes extended and included in 'src/adql/parser/grammar/':
+/* Note: theoretically JavaCC does not re-generate the following files if they
+ *       already exist in the classpath. However, for some reason, the Gradle
+ *       plugin used here is unable to see these files. Hence this custom
+ *       task to remove these generated files. */
+compileJavacc.doLast {
+    delete project.buildDir.absolutePath + '/generated/adql/parser/grammar/ParseException.java'
+    delete project.buildDir.absolutePath + '/generated/adql/parser/grammar/SimpleCharStream.java'
+    delete project.buildDir.absolutePath + '/generated/adql/parser/grammar/Token.java'
+    delete project.buildDir.absolutePath + '/generated/adql/parser/grammar/TokenMgrError.java'
+}
+
+sourceSets.main.java.srcDirs = ["src", project.buildDir.absolutePath+'/generated']
