@@ -2,6 +2,13 @@ plugins {
     id "org.javacc.javacc" version "3.0.0"
 }
 
+// Describe the library:
+version = "2.0-beta"
+description = "Java library to parse, analyze and transform ADQL queries."
+
+// Name of the JAR name (which will be then suffixed by the version number):
+archivesBaseName = "adql"
+
 dependencies {
     implementation fileTree(dir: 'lib', includes: ['stil_3.3-2.jar'])
     implementation 'postgresql:postgresql:9.1-901.jdbc4'
@@ -41,4 +48,5 @@ compileJavacc.doLast {
     delete project.buildDir.absolutePath + '/generated/adql/parser/grammar/TokenMgrError.java'
 }
 
+// Ensure the generated Java classes are included in the classpath:
 sourceSets.main.java.srcDirs = ["src", project.buildDir.absolutePath+'/generated']

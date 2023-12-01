@@ -1,3 +1,11 @@
+
+// Describe the library:
+version = "2.4-beta"
+description = "Java library to set up a TAP service."
+
+// Name of the JAR name (which will be then suffixed by the version number):
+archivesBaseName = "tap"
+
 dependencies {
     implementation project(':ADQLLib')
     implementation project(':UWSLib')
@@ -5,15 +13,15 @@ dependencies {
     implementation fileTree(dir: '../lib', includes: ['stil_3.3-2.jar'])
     implementation 'javax.servlet:javax.servlet-api:3.0.1'
     implementation 'org.slf4j:slf4j-api:1.7.25'
-    implementation 'org.json:json:20180813'
+    implementation 'org.json:json:20231013'
 
-    testImplementation 'com.h2database:h2:1.4.193'
+    testImplementation 'com.h2database:h2:2.2.224'
     testImplementation fileTree(dir: '../lib', include: 'astroh2-0.4.jar')
 
     testRuntimeOnly 'simple-jndi:simple-jndi:0.11.4.1'
     testRuntimeOnly 'com.vividsolutions:jts-core:1.14.0'
     testRuntimeOnly 'org.locationtech.spatial4j:spatial4j:0.6'
-    testRuntimeOnly 'org.xerial:sqlite-jdbc:3.16.1'
+    testRuntimeOnly 'org.xerial:sqlite-jdbc:3.44.1.0'
     
     /* Needed to run Gradle with Java 9+: */
     // https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
