@@ -8,20 +8,32 @@ description = "Java library to parse, analyze and transform ADQL queries."
 
 // Name of the JAR name (which will be then suffixed by the version number):
 archivesBaseName = "adql"
+distributions {
+    main {
+        distributionBaseName = archivesBaseName
+    }
+}
 
 dependencies {
-    implementation fileTree(dir: 'lib', includes: ['stil_3.3-2.jar'])
+    implementation 'uk.ac.starlink:stil:4.2'
     implementation 'postgresql:postgresql:9.1-901.jdbc4'
+}
+
+// Examples should not be included in any JAR:
+jar {
+    exclude('adql/example/**')
 }
 
 // Add a task to generate a runnable Jar running the command line ADQL parser:
 tasks.register('runnableJar', Jar) {
     group = 'build'
     description = 'Assemble a jar archive which can run the ADQL parser in command line.'
+
     manifest {
         attributes 'Main-Class': 'adql.parser.ADQLParser'
     }
     from sourceSets.main.output
+    exclude('adql/example/**')
 }
 
 /* ##########################################################################
@@ -48,5 +60,5 @@ compileJavacc.doLast {
     delete project.buildDir.absolutePath + '/generated/adql/parser/grammar/TokenMgrError.java'
 }
 
-// Ensure the generated Java classes are included in the classpath:
-sourceSets.main.java.srcDirs = ["src", project.buildDir.absolutePath+'/generated']
+// Ensure the generated Java classes and examples are included in the classpath:
+sourceSets.main.java.srcDirs = ["src", "examples", project.buildDir.absolutePath+'/generated']

@@ -1,8 +1,8 @@
-package vollt_examples.adql.parse;
+package adql.example.parse;
 
 import adql.parser.ADQLParser;
 import adql.parser.grammar.ParseException;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 
 /**
  * Minimal lines required to parse an ADQL query.
@@ -32,7 +32,7 @@ public class A_SimpleQueryParsing {
 			 */
 
 			// 2. PARSE AN ADQL QUERY:
-			ADQLQuery query = parser.parseQuery(QUERY);
+			ADQLSet query = parser.parseQuery(QUERY);
 
 			System.out.println("\n((i)) Correct ADQL query ((i))");
 

@@ -1,4 +1,4 @@
-package vollt_examples.adql.parse;
+package adql.example.parse;
 
 import java.util.HashSet;
 
@@ -16,7 +16,7 @@ import adql.query.TextPosition;
  * error.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2019
+ * @version 12/2023
  */
 public class C_HandleParseException {
 
@@ -131,7 +131,9 @@ public class C_HandleParseException {
 
 			/* Parse the query (as above, with an empty list of DB tables
 			 *  BUT ALSO with absolutely no optional feature supported): */
-			(new ADQLParser(ADQLVersion.V2_1, new DBChecker(new HashSet<DBTable>(0)), null, new FeatureSet(false, false))).parseQuery(QUERY);
+			final ADQLParser parser = new ADQLParser(ADQLVersion.V2_1, new DBChecker(new HashSet<DBTable>(0)), null, new FeatureSet(false));
+			parser.allowAnyUdf(false);
+			parser.parseQuery(QUERY);
 
 			System.err.println("\n((X)) This message should never be visible! ((X)");
 

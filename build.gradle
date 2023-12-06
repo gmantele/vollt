@@ -1,5 +1,6 @@
 subprojects {
-    apply plugin: 'java'
+    apply plugin: 'java-library'
+    apply plugin: 'java-library-distribution'
 
     repositories {
         mavenCentral()
@@ -14,6 +15,23 @@ subprojects {
         forkEvery = 1
         include '**/Test*'
     }
+
+    tasks.register('srcZip', Zip) {
+        group = 'build'
+        description = 'Assembles all source and test files into a ZIP file.'
+
+        from projectDir
+        include 'src/**/*'
+        include 'test/**/*'
+        include '*.gradle'
+        include 'README.md'
+        include 'COPYING'
+        include 'COPYING.LESSER'
+        doLast {
+            println "Path to zip: "+  archiveFile.get().asFile.path
+        }
+    }
+    assemble.dependsOn(srcZip)
 
     sourceSets.main.java.srcDirs = ["src"]
     sourceSets.test.java.srcDirs = ["test"]

@@ -1,16 +1,16 @@
-package vollt_examples.adql.parse;
+package adql.example.parse;
 
 import adql.db.FunctionDef;
 import adql.parser.ADQLParser;
 import adql.parser.feature.FeatureSet;
 import adql.parser.grammar.ParseException;
-import adql.query.ADQLQuery;
+import adql.query.ADQLSet;
 
 /**
  * Examples and explanations about how to declare UDF.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2019
+ * @version 12/2023
  */
 public class E_DeclareUDF {
 
@@ -31,7 +31,7 @@ public class E_DeclareUDF {
 			ADQLParser parser = new ADQLParser();
 
 			// Parse the query:
-			ADQLQuery query = parser.parseQuery(QUERY);
+			ADQLSet query = parser.parseQuery(QUERY);
 
 			System.out.println("\n((i)) Correct ADQL query ((i))");
 
@@ -55,10 +55,10 @@ public class E_DeclareUDF {
 			ADQLParser parser = new ADQLParser();
 
 			// FORBID ALL UNDECLARED UDF:
-			parser.getSupportedFeatures().allowAnyUdf(false);
+			parser.allowAnyUdf(false);
 
 			// Parse the query:
-			ADQLQuery query = parser.parseQuery(QUERY);
+			ADQLSet query = parser.parseQuery(QUERY);
 
 			System.out.println("\n((i)) Correct ADQL query ((i))");
 
@@ -82,10 +82,11 @@ public class E_DeclareUDF {
 			ADQLParser parser = new ADQLParser();
 
 			// FORBID ALL UNDECLARED UDF:
-			FeatureSet features = parser.getSupportedFeatures();
-			features.allowAnyUdf(false);
+			parser.allowAnyUdf(false);
 
 			// DECLARE A UDF:
+			// ...get the list of supported features to update:
+			final FeatureSet features = parser.getSupportedFeatures();
 			// ...define this function:
 			FunctionDef myUdf = FunctionDef.parse("my_udf(param1 VARCHAR) -> VARCHAR", parser.getADQLVersion());
 			// ...now add it to the supported features:
@@ -93,7 +94,7 @@ public class E_DeclareUDF {
 				throw new Error("Impossible to support the UDF `" + myUdf + "`! This is the important point of this example file.");
 
 			// Parse the query:
-			ADQLQuery query = parser.parseQuery(QUERY);
+			ADQLSet query = parser.parseQuery(QUERY);
 
 			System.out.println("\n((i)) Correct ADQL query ((i))");
 

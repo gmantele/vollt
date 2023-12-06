@@ -1,4 +1,4 @@
-package vollt_examples.adql.parse;
+package adql.example.parse;
 
 import adql.parser.ADQLParser;
 import adql.parser.grammar.ParseException;

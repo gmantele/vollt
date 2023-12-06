@@ -1,4 +1,4 @@
-package vollt_examples.adql.parse;
+package adql.example.parse;
 
 import adql.db.exception.UnresolvedIdentifiersException;
 import adql.parser.ADQLParser;
@@ -13,7 +13,7 @@ import adql.query.operand.function.string.LowerFunction;
  * parsing an ADQL query.
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 08/2019
+ * @version 12/2023
  */
 public class D_DeclareOptionalFeatures {
 
@@ -70,7 +70,10 @@ public class D_DeclareOptionalFeatures {
 			 */
 
 			// Create an empty set of language features:
-			FeatureSet features = new FeatureSet(false, false);
+			FeatureSet features = new FeatureSet(false);
+
+			// Forbid any undeclared UDF:
+			parser.allowAnyUdf(false);
 
 			// Support all available features:
 			features.supportAll();
