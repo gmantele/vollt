@@ -1,3 +1,4 @@
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![Test TAPLib](https://github.com/gmantele/vollt/actions/workflows/taplib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/taplib.yml)
 
 # Preamble
@@ -18,7 +19,7 @@ This library currently supports version
 # About this library
 
 - **Java version:** 8 or more
-- **License:** [LGPL v3 license](https://www.gnu.org/licenses/lgpl.html)
+- **License:** [LGPL v3 license](https://www.gnu.org/licenses/lgpl-3.0)
   (details in [COPYING](COPYING) and [COPYING.LESSER](COPYING.LESSER))
 
 

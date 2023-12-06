@@ -1,3 +1,4 @@
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![Test ADQLLib](https://github.com/gmantele/vollt/actions/workflows/adqllib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/adqllib.yml)
 
 # Preamble
@@ -20,7 +21,7 @@ This library currently supports the following versions of this language:
 
 - **Java version:** 8 or more
 - **ADQL grammar language:** [JavaCC](https://javacc.github.io/javacc/)
-- **License:** [LGPL v3 license](https://www.gnu.org/licenses/lgpl.html)
+- **License:** [LGPL v3 license](https://www.gnu.org/licenses/lgpl-3.0)
   (details in [COPYING](COPYING) and [COPYING.LESSER](COPYING.LESSER))
 
 
