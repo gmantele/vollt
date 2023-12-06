@@ -1,0 +1,19 @@
+name: Build and test ADQLLib project
+
+on:
+  push:
+    paths:
+      - 'ADQLLib/**'
+      - 'build.gradle'
+      - '.github/workflows/*'
+
+jobs:
+  build-adqllib-project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project sources
+        uses: actions/checkout@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      - name: Run build with Gradle Wrapper
+        run: ./gradlew :ADQLLib:build
