@@ -1,30 +1,27 @@
 # Preamble
 
-This project aims to provide a Java library to parse, manipulate and translate
-ADQL queries. It is called _ADQLLib_ and is part of the VOLLT library-set.
+This project aims to provide a Java library to set up a TAP service. It is
+called _TAPLib_ and is part of the VOLLT library-set.
 
-# ADQL
+# TAP
 
-ADQL stands for Astronomical Data Query Language. It is a language developed by
+TAP stands for Table Access Protocol. It is a protocol developed by
 the [IVOA](http://www.ivoa.net/ "International Virtual Observatory Alliance").
-The standard describing this language is available at
-<https://www.ivoa.net/documents/ADQL/>.
+The standard describing this protocol is available at
+<https://www.ivoa.net/documents/TAP/>.
 
-This library currently supports the following versions of this language:
-- [v2.1](https://www.ivoa.net/Documents/ADQL/20231107/index.html)
-- [v2.0](https://www.ivoa.net/Documents/cover/ADQL-20081030.html)
+This library currently supports version
+[v1.0](https://www.ivoa.net/documents/TAP/20100327/).
 
 # About this library
 
 - **Java version:** 8 or more
-- **ADQL grammar language:** [JavaCC](https://javacc.github.io/javacc/)
 - **License:** [LGPL v3 license](https://www.gnu.org/licenses/lgpl.html)
   (details in [COPYING](COPYING) and [COPYING.LESSER](COPYING.LESSER))
 
 
-- **Supported SQL translations:** PostgreSQL, PgSphere, MySQL, SQLServer.
-- [Online documentation](http://cdsportal.u-strasbg.fr/adqltuto/)
-- [Online parser/validator](http://cdsportal.u-strasbg.fr/adqltuto/validator.html)
+- **Supported ADQL versions:** v2.0 and v2.1.
+- [Online documentation](http://cdsportal.u-strasbg.fr/taptuto/)
 
 # Usage examples
 
@@ -33,11 +30,8 @@ usage examples in the directory [examples/](examples) of this repository.
 
 For the moment, only examples on how to parse an ADQL query are available:
 
-- [Parse a query](examples/adql/example/parse/A_SimpleQueryParsing.java)
-- [Parse an ADQL clause](examples/adql/example/parse/B_SimpleClauseParsing.java)
-- [Handle parse errors](examples/adql/example/parse/C_HandleParseException.java)
-- [Declare an optional features](examples/adql/example/parse/D_DeclareOptionalFeatures.java)
-- [Declare a UDF](examples/adql/example/parse/E_DeclareUDF.java)
+- [Set up a `/examples` endpoint](examples/examples_endpoint)
+- [Migrate `TAP_SCHEMA` from v1.0 to v1.1](examples/tap_schema)
 
 # Build the library
 
@@ -69,9 +63,7 @@ configuration._
     _(or `gradle distTar`)_
   - Documentation (Javadoc): `gradle javadoc`
 
-- Build classes:
-  - All classes and ADQL parsers: `gradle build`
-  - Only the ADQL parsers (JavaCC): `gradle compileJavacc`
+- Build classes: `gradle build`
 
 - Run tests (Junit): `gradle test`
 
