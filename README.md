@@ -1,3 +1,7 @@
+[![Test ADQLLib](https://github.com/gmantele/vollt/actions/workflows/adqllib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/adqllib.yml)
+[![Test UWSLib](https://github.com/gmantele/vollt/actions/workflows/uwslib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/uwslib.yml)
+[![Test TAPLib](https://github.com/gmantele/vollt/actions/workflows/taplib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/taplib.yml)
+
 # Preamble
 
 This GitHub repository contains the sources of the library-set named VOLLT. It
@@ -64,6 +68,8 @@ configuration._
 - Run tests (Junit): `gradle test`
 
 - Remove all generated files: `gradle clean`
+
+- List projects: `gradle -q projects`
 
 - List all available Gradle tasks: `gradle tasks`
 

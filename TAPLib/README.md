@@ -1,3 +1,5 @@
+[![Test TAPLib](https://github.com/gmantele/vollt/actions/workflows/taplib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/taplib.yml)
+
 # Preamble
 
 This project aims to provide a Java library to set up a TAP service. It is

@@ -1,3 +1,5 @@
+[![Test ADQLLib](https://github.com/gmantele/vollt/actions/workflows/adqllib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/adqllib.yml)
+
 # Preamble
 
 This project aims to provide a Java library to parse, manipulate and translate

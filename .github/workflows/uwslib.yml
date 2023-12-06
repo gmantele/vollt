@@ -1,4 +1,4 @@
-name: Build and test UWSLib project
+name: Test UWSLib
 
 on:
   push:
@@ -16,4 +16,4 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
       - name: Run build with Gradle Wrapper
-        run: ./gradlew :UWSLib:build
+        run: ./gradlew :UWSLib:test

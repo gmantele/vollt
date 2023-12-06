@@ -1,3 +1,5 @@
+[![Test UWSLib](https://github.com/gmantele/vollt/actions/workflows/uwslib.yml/badge.svg)](https://github.com/gmantele/vollt/actions/workflows/uwslib.yml)
+
 # Preamble
 
 This project aims to provide a Java library to set up a UWS service. It is

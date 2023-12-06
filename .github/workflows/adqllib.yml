@@ -1,4 +1,4 @@
-name: Build and test ADQLLib project
+name: Test ADQLLib
 
 on:
   push:
@@ -16,4 +16,4 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
       - name: Run build with Gradle Wrapper
-        run: ./gradlew :ADQLLib:build
+        run: ./gradlew :ADQLLib:test
