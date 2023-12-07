@@ -14,29 +14,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institute (ARI)
- *
- * TODO:  needs merge (Updated by G.Landais for VizieR)
  */
 
 /*
-* This JavaCC file implements the BNF definition of ADQL v2.0
-* (IVOA Recommendation 30 Oct 2008 - http://www.ivoa.net/Documents/cover/ADQL-20081030.html).
-* 
-* To generate the parser with this file use JavaCC. This .jj file has been
-* successfully tested with JavaCC 6.0.
-* 
-* The generated parser checks the syntax of the given ADQL query and generates
-* an object representation but no coherence with any database is done.
-* If the syntax is not conform to the ADQL definition an error message is
-* printed else it will be the message "Correct syntax".
+*  This JavaCC file implements the BNF definition of ADQL v2.0 (IVOA Recommendation 30 Oct 2008 - http://www.ivoa.net/Documents/cover/ADQL-20081030.html).
+*  To generate the parser with this file use JavaCC. This .jj file has been successfully tested with JavaCC 6.0.
+*  
+*  The generated parser checks the syntax of the given ADQL query and generates an object representation but no coherence with any database is done.
+*  If the syntax is not conform to the ADQL definition an error message is printed else it will be the message "Correct syntax".
 *
-*  Author:  Gr&eacute;gory Mantelet (CDS;ARI)
-*
-*  Version: 1.5-2 (10/2020)
-* TODO:  needs merge (Updated by G.Landais for VizieR)
-*               - BINARY operator
+*  Author:  Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
+*  Version: 1.4 (03/2017)
 */
 
 							/* ########### */
@@ -84,47 +74,22 @@ import adql.translator.PostgreSQLTranslator;
 import adql.translator.TranslationException;
 
 /**
-* Parses an ADQL query thanks to the {@link ADQLParser#Query()} function.
+* <p>Parses an ADQL query thanks to the {@link ADQLParser#Query()} function. </p>
 * 
-* <p>
-*   This parser is able, thanks to a {@link QueryChecker} object, to check each
-*   {@link ADQLQuery} just after its generation. It could be used to check the
-*   consistency between the ADQL query to parse and the "database" on which the
-*   query must be executed. By default, there is no {@link QueryChecker}. Thus
-*   you must extend {@link QueryChecker} to check semantically all generated
-*   ADQLQuery objects.
-* </p>
+* <p>This parser is able, thanks to a {@link QueryChecker} object, to check each ADQLQuery just after its generation.
+* It could be used to check the consistency between the ADQL query to parse and the "database" on which the query must be executed.
+* By default, there is no {@link QueryChecker}. Thus you must extend {@link QueryChecker} to check semantically all generated ADQLQuery objects.</p>
 * 
-* <p>
-*   To create an object representation of the given ADQL query, this parser uses
-*   a {@link ADQLQueryFactory} object. So if you want customize some object
-*   (ie. CONTAINS) of this representation you just have to extend the
-*   corresponding default object (ie. ContainsFunction) and to extend the
-*   corresponding function of {@link ADQLQueryFactory}
-*   (ie. createContains(...)).
-* </p>
-*
-* <p>Here are the key functions to use:</p>
-* <ul>
-* 	<li>{@link #parseQuery(java.lang.String)} (or any of its alternatives)
-* 		to parse an input ADQL query String and get its corresponding ADQL tree
-*   </li>
-*   <li>{@link #tryQuickFix(java.lang.String)} to try fixing the most common
-* 		issues with ADQL queries (e.g. Unicode confusable characters,
-* 		unescaped ADQL identifiers, SQL reserved keywords, ...)</li>
-* </ul>
+* <p>To create an object representation of the given ADQL query, this parser uses a {@link ADQLQueryFactory} object. So if you want customize some object (ie. CONTAINS) of this representation
+* you just have to extend the corresponding default object (ie. ContainsFunction) and to extend the corresponding function of {@link ADQLQueryFactory} (ie. createContains(...)).</p>
 * 
-* <p><b><u>WARNING:</u>
-*   To modify this class it's strongly encouraged to modify the .jj file in the
-*   section between <i>PARSER_BEGIN</i> and <i>PARSER_END</i> and to re-compile
-*   it with JavaCC.
-* </b></p>
+* <p><b><u>WARNING:</u> To modify this class it's strongly encouraged to modify the .jj file in the section between <i>PARSER_BEGIN</i> and <i>PARSER_END</i> and to re-compile it with JavaCC.</b></p>
 *
 * @see QueryChecker
 * @see ADQLQueryFactory
 *
-* @author Gr&eacute;gory Mantelet (CDS;ARI)
-* @version 1.5-2 (10/2020)
+* @author Gr&eacute;gory Mantelet (CDS;ARI) - gmantele@ari.uni-heidelberg.de
+* @version 1.4 (03/2017)
 */
 public class ADQLParser {
 	
@@ -134,16 +99,13 @@ public class ADQLParser {
 	/** The stack of queries (because there may be some sub-queries). */
 	private Stack<ADQLQuery> stackQuery = new Stack<ADQLQuery>();
 	
-	/** The object representation of the ADQL query to parse.
-	 * (ONLY USED DURING THE PARSING, else it is always <i>null</i>). */
+	/** The object representation of the ADQL query to parse. (ONLY USED DURING THE PARSING, else it is always <i>null</i>). */
 	private ADQLQuery query = null;
 	
-	/** Checks each {@link ADQLQuery} (sub-query or not) just after their
-	 * generation. */
+	/** Checks each ADQLQuery (sub-query or not) just after their generation. */
 	private QueryChecker queryChecker = null;
 	
-	/** The first token of a table/column name. This token is extracted by
-	 * {@link #Identifier()}. */
+	/** The first token of a table/column name. This token is extracted by {@link #Identifier()}. */
 	private Token currentIdentifierToken = null;
 	
 	/**
@@ -155,12 +117,10 @@ public class ADQLParser {
 	}
 	
 	/**
-	* Builds an ADQL parser without a query to parse but with a
-	* {@link QueryChecker} and a {@link ADQLQueryFactory}.
+	* Builds an ADQL parser without a query to parse but with a QueryChecker and a ADQLQueryFactory.
 	*
-	* @param checker	The object to use to check each {@link ADQLQuery}.
-	* @param factory	The object to use to build an object representation of
-	*               	the given ADQL query.
+	* @param checker	The object to use to check each ADQLQuery.
+	* @param factory	The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(QueryChecker checker, ADQLQueryFactory factory) {
 		this();
@@ -172,21 +132,18 @@ public class ADQLParser {
 	}
 	
 	/**
-	* Builds an ADQL parser without a query to parse but with a
-	* {@link QueryChecker}.
+	* Builds an ADQL parser without a query to parse but with a QueryChecker.
 	*
-	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param checker	The object to use to check each ADQLQuery.
 	*/
 	public ADQLParser(QueryChecker checker) {
 		this(checker, null);
 	}
 	
 	/**
-	* Builds an ADQL parser without a query to parse but with a
-	* {@link ADQLQueryFactory}.
+	* Builds an ADQL parser without a query to parse but with a ADQLQueryFactory.
 	*
-	* @param factory	The object to use to build an object representation of
-	*               	the given ADQL query.
+	* @param factory	The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(ADQLQueryFactory factory) {
 		this((QueryChecker)null, factory);
@@ -196,9 +153,8 @@ public class ADQLParser {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each {@link ADQLQuery}.
-	* @param factory	The object to use to build an object representation of
-	*               	the given ADQL query.
+	* @param checker	The object to use to check each ADQLQuery.
+	* @param factory	The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream);
@@ -216,7 +172,7 @@ public class ADQLParser {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param checker	The object to use to check each ADQLQuery.
 	*/
 	public ADQLParser(java.io.InputStream stream, QueryChecker checker) {
 		this(stream, checker, null);
@@ -226,8 +182,7 @@ public class ADQLParser {
 	* Builds a parser with a stream containing the query to parse.
 	*
 	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param factory	The object to use to build an object representation of
-	*               	the given ADQL query.
+	* @param factory	The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, ADQLQueryFactory factory) {
 		this(stream, (QueryChecker)null, factory);
@@ -236,11 +191,10 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param encoding	The supplied encoding.
-	* @param checker	The object to use to check each {@link ADQLQuery}.
-	* @param factory	The object to use to build an object representation
-	*               	of the given ADQL query.
+	* @param stream			The stream in which the ADQL query to parse is given.
+	* @param encoding		The supplied encoding.
+	* @param checker		The object to use to check each ADQLQuery.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker, ADQLQueryFactory factory) {
 		this(stream, encoding);
@@ -255,9 +209,9 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param encoding	The supplied encoding.
-	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param stream			The stream in which the ADQL query to parse is given.
+	* @param encoding		The supplied encoding.
+	* @param checker		The object to use to check each ADQLQuery.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, QueryChecker checker) {
 		this(stream, encoding, checker, null);
@@ -266,10 +220,9 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a stream containing the query to parse.
 	*
-	* @param stream		The stream in which the ADQL query to parse is given.
-	* @param encoding	The supplied encoding.
-	* @param factory	The object to use to build an object representation
-	*               	of the given ADQL query.
+	* @param stream			The stream in which the ADQL query to parse is given.
+	* @param encoding		The supplied encoding.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(java.io.InputStream stream, String encoding, ADQLQueryFactory factory) {
 		this(stream, encoding, null, factory);
@@ -278,10 +231,9 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a reader containing the query to parse.
 	*
-	* @param reader		The reader in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each {@link ADQLQuery}.
-	* @param factory	The object to use to build an object representation
-	*               	of the given ADQL query.
+	* @param reader			The reader in which the ADQL query to parse is given.
+	* @param checker		The object to use to check each ADQLQuery.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker, ADQLQueryFactory factory) {
 		this(reader);
@@ -298,8 +250,8 @@ public class ADQLParser {
 	/**
 	* Builds a parser with a reader containing the query to parse.
 	*
-	* @param reader		The reader in which the ADQL query to parse is given.
-	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param reader			The reader in which the ADQL query to parse is given.
+	* @param checker		The object to use to check each ADQLQuery.
 	*/
 	public ADQLParser(java.io.Reader reader, QueryChecker checker) {
 		this(reader, checker, null);
@@ -309,8 +261,7 @@ public class ADQLParser {
 	* Builds a parser with a reader containing the query to parse.
 	*
 	* @param reader		The reader in which the ADQL query to parse is given.
-	* @param factory	The object to use to build an object representation
-	*               	of the given ADQL query.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(java.io.Reader reader, ADQLQueryFactory factory) {
 		this(reader, null, factory);
@@ -319,10 +270,9 @@ public class ADQLParser {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm			The manager which associates a token to a numeric code.
-	* @param checker	The object to use to check each {@link ADQLQuery }.
-	* @param factory	The object to use to build an object representation
-	*               	of the given ADQL query.
+	* @param tm				The manager which associates a token to a numeric code.
+	* @param checker		The object to use to check each ADQLQuery.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker, ADQLQueryFactory factory) {
 		this(tm);
@@ -339,8 +289,8 @@ public class ADQLParser {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm			The manager which associates a token to a numeric code.
-	* @param checker	The object to use to check each {@link ADQLQuery}.
+	* @param tm				The manager which associates a token to a numeric code.
+	* @param checker		The object to use to check each ADQLQuery.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, QueryChecker checker) {
 		this(tm, checker, null);
@@ -349,15 +299,62 @@ public class ADQLParser {
 	/**
 	* Builds a parser with another token manager.
 	*
-	* @param tm			The manager which associates a token to a numeric code.
-	* @param factory	The object to use to build an object representation of
-	*               	the given ADQL query.
+	* @param tm				The manager which associates a token to a numeric code.
+	* @param factory		The object to use to build an object representation of the given ADQL query.
 	*/
 	public ADQLParser(ADQLParserTokenManager tm, ADQLQueryFactory factory) {
 		this(tm, null, factory);
 	}
-
-	/* ADDITIONAL GETTERS & SETTERS */
+	
+	/**
+	* Parses the query given at the creation of this parser or in the <i>ReInit</i> functions.
+	*
+	* @return 					The object representation of the given ADQL query.
+	* @throws ParseException	If there is at least one syntactic error.
+	*
+	* @see ADQLParser#Query()
+	*/
+	public final ADQLQuery parseQuery() throws ParseException {
+		stackQuery.clear();
+		query = null;
+		return Query();
+	}
+	
+	/**
+	* Parses the query given in parameter.
+	*
+	* @param q					The ADQL query to parse.
+	* @return 					The object representation of the given ADQL query.
+	* @throws ParseException	If there is at least one syntactic error.
+	*
+	* @see ADQLParser#ReInit(java.io.InputStream)
+	* @see ADQLParser#setDebug(boolean)
+	* @see ADQLParser#Query()
+	*/
+	public final ADQLQuery parseQuery(String q) throws ParseException {
+		stackQuery.clear();
+		query = null;
+		ReInit(new java.io.ByteArrayInputStream(q.getBytes()));
+		return Query();
+	}
+	
+	/**
+	* Parses the query contained in the stream given in parameter.
+	*
+	* @param stream				The stream which contains the ADQL query to parse.
+	* @return 					The object representation of the given ADQL query.
+	* @throws ParseException	If there is at least one syntactic error.
+	*
+	* @see ADQLParser#ReInit(java.io.InputStream)
+	* @see ADQLParser#setDebug(boolean)
+	* @see ADQLParser#Query()
+	*/
+	public final ADQLQuery parseQuery(java.io.InputStream stream) throws ParseException {
+		stackQuery.clear();
+		query = null;
+		ReInit(stream);
+		return Query();
+	}
 	
 	public final void setDebug(boolean debug){
 		if (debug) enable_tracing();
@@ -379,8 +376,6 @@ public class ADQLParser {
 	public final void setQueryFactory(ADQLQueryFactory factory){
 		queryFactory = (factory!=null)?factory:(new ADQLQueryFactory());
 	}
-
-	/* EXCEPTION HELPER FUNCTION */
 	
 	private final ParseException generateParseException(Exception ex){
 		if (!(ex instanceof ParseException)){
@@ -391,503 +386,16 @@ public class ADQLParser {
 			return (ParseException)ex;
 	}
 
-	/* QUERY PARSING FUNCTIONS */
-
 	/**
-	 * Tell whether the given string is a valid ADQL regular identifier.
-	 *
-	 * <p>
-	 * 	According to the ADQL-2.0's BNF, a regular identifier (i.e. not delimited
-	 * 	; not between double quotes) must be a letter followed by a letter, digit
-	 * 	or underscore. So, the following regular expression:
-	 * </p>
-	 * <pre>[a-zA-Z]+[a-zA-Z0-9_]*</pre>
-	 *
-	 * <p>This is what this function tests on the given string.</p>
-	 *
-	 * @param idCandidate	The string to test.
-	 *
-	 * @return	<code>true</code> if the given string is a valid regular
-	 *        	identifier,
-	 *        	<code>false</code> otherwise.
-	 *
-	 * @see #testRegularIdentifier(adql.parser.Token)
-	 *
-	 * @since 1.5
-	 */
-	public final boolean isRegularIdentifier(final String idCandidate) {
-		return idCandidate.matches("[a-zA-Z]+[a-zA-Z0-9_]*");
-	}
-
-	/**
-	 * Test the given token as an ADQL's regular identifier.
-	 *
-	 * <p>
-	 * 	This function uses {@link #isRegularIdentifier(java.lang.String)} to
-	 * 	test the given token's image. If the test fails, a
-	 * 	{@link adql.parser.ParseException} is thrown.
-	 * </p>
-	 *
-	 * @param token	The token to test.
-	 *
-	 * @throws ParseException	If the given token is not a valid ADQL regular
-	 *                       	identifier.
-	 *
-	 * @see #isRegularIdentifier(java.lang.String)
-	 *
-	 * @since 1.5
-	 */
-	public final void testRegularIdentifier(final Token token) throws ParseException {
-		if (!isRegularIdentifier(token.image))
-			throw new ParseException("Invalid ADQL regular identifier: \""+token.image+"\"! If it aims to be a column/table name/alias, you should write it between double quotes.", new TextPosition(token));
-	}
-	
-	/**
-	* Parses the query given at the creation of this parser or in the
-	* <i>ReInit</i> functions.
-	*
-	* @return 	The object representation of the given ADQL query.
-	* 
-	* @throws ParseException	If there is at least one syntactic error.
-	*
-	* @see ADQLParser#Query()
-	*/
-	public final ADQLQuery parseQuery() throws ParseException {
-		stackQuery.clear();
-		query = null;
-		try { 
-			return Query();
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}
-	}
-	
-	/**
-	* Parses the query given in parameter.
-	*
-	* @param q	The ADQL query to parse.
-	* 
-	* @return	The object representation of the given ADQL query.
-	* 
-	* @throws ParseException	If there is at least one syntactic error.
-	*
-	* @see ADQLParser#ReInit(java.io.InputStream)
-	* @see ADQLParser#setDebug(boolean)
-	* @see ADQLParser#Query()
-	*/
-	public final ADQLQuery parseQuery(String q) throws ParseException {
-		stackQuery.clear();
-		query = null;
-		ReInit(new java.io.ByteArrayInputStream(q.getBytes()));
-		try { 
-			return Query();
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}
-	}
-	
-	/**
-	* Parses the query contained in the stream given in parameter.
-	*
-	* @param stream		The stream which contains the ADQL query to parse.
-	* 
-	* @return	The object representation of the given ADQL query.
-	* 
-	* @throws ParseException	If there is at least one syntactic error.
-	*
-	* @see ADQLParser#ReInit(java.io.InputStream)
-	* @see ADQLParser#setDebug(boolean)
-	* @see ADQLParser#Query()
-	*/
-	public final ADQLQuery parseQuery(java.io.InputStream stream) throws ParseException {
-		stackQuery.clear();
-		query = null;
-		ReInit(stream);
-		try { 
-			return Query();
-		}catch(TokenMgrError tme) {
-			throw new ParseException(tme);
-		}
-	}
-
-	/* CORRECTION SUGGESTION */
-
-	/**
-	 * Try fixing tokens/terms of the input ADQL query.
-	 *
-	 * <p>
-	 * 	<b>This function does not try to fix syntactical or semantical errors.</b>
-	 *  It just try to fix the most common issues in ADQL queries, such as:
-	 * </p>
-	 * <ul>
-	 * 	<li>some Unicode characters confusable with ASCII characters (like a
-	 * 		space, a dash, ...) ; this function replace them by their ASCII
-	 * 		alternative,</li>
-	 * 	<li>any of the following are double quoted:
-	 * 		<ul>
-	 * 			<li>non regular ADQL identifiers
-	 * 				(e.g. <code>_RAJ2000</code>),</li>
-	 * 			<li>ADQL function names used as identifiers
-	 * 				(e.g. <code>distance</code>)</li>
-	 * 			<li>and SQL reserved keywords
-	 * 				(e.g. <code>public</code>).</li>
-	 * 		</ul>
-	 * 	</li>
-	 * </ul>
-	 *
-	 * <p><i><b>Note 1:</b>
-	 * 	The given stream is NOT closed by this function even if the EOF is
-	 * 	reached. It is the responsibility of the caller to close it.
-	 * </i></p>
-	 *
-	 * <p><i><b>Note 2:</b>
-	 * 	This function does not use any instance variable of this parser
-	 * 	(especially the InputStream or Reader provided at initialisation or
-	 * 	ReInit).
-	 * </i></p>
-	 *
-	 * @param input	Stream containing the input ADQL query to fix.
-	 *
-	 * @return	The suggested correction of the input ADQL query.
-	 *
-	 * @throws java.io.IOException	If there is any error while reading from the
-	 *                            	given input stream.
-	 * @throws ParseException	If any unrecognised character is encountered,
-	 *                       	or if anything else prevented the tokenization
-	 *                       	   of some characters/words/terms.
-	 *
-	 * @see #tryQuickFix(java.lang.String)
-	 *
-	 * @since 1.5
-	 */
-	public final String tryQuickFix(final java.io.InputStream input) throws java.io.IOException, ParseException {
-		// Fetch everything into a single string:
-		StringBuffer buf = new StringBuffer();
-		byte[] cBuf = new byte[1024];
-		int nbChar;
-		while((nbChar = input.read(cBuf)) > -1){
-			buf.append(new String(cBuf, 0, nbChar));
-		}
-		
-		// Convert the buffer into a String and now try to fix it:
-		return tryQuickFix(buf.toString());
-	}
-
-	/**
-	 * Try fixing tokens/terms of the given ADQL query.
-	 *
-	 * <p>
-	 * 	<b>This function does not try to fix syntactical or semantical errors.</b>
-	 *  It just try to fix the most common issues in ADQL queries, such as:
-	 * </p>
-	 * <ul>
-	 * 	<li>some Unicode characters confusable with ASCII characters (like a
-	 * 		space, a dash, ...) ; this function replace them by their ASCII
-	 * 		alternative,</li>
-	 * 	<li>any of the following are double quoted:
-	 * 		<ul>
-	 * 			<li>non regular ADQL identifiers
-	 * 				(e.g. <code>_RAJ2000</code>),</li>
-	 * 			<li>ADQL function names used as identifiers
-	 * 				(e.g. <code>distance</code>)</li>
-	 * 			<li>and SQL reserved keywords
-	 * 				(e.g. <code>public</code>).</li>
-	 * 		</ul>
-	 * 	</li>
-	 * </ul>
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	This function does not use any instance variable of this parser
-	 * 	(especially the InputStream or Reader provided at initialisation or
-	 * 	ReInit).
-	 * </i></p>
-	 *
-	 * @param adqlQuery	The input ADQL query to fix.
-	 *
-	 * @return	The suggested correction of the given ADQL query.
-	 *
-	 * @throws ParseException	If any unrecognised character is encountered,
-	 *                       	or if anything else prevented the tokenization
-	 *                       	   of some characters/words/terms.
-	 *
-	 * @since 1.5
-	 */
-	public String tryQuickFix(String adqlQuery) throws ParseException {
-		StringBuffer suggestedQuery = new StringBuffer();
-
-		// 1. Replace all Unicode confusable characters:
-		adqlQuery = replaceUnicodeConfusables(adqlQuery);
-
-		/* 1.bis. Normalise new lines and tabulations
-		 *        (to simplify the column counting): */
-		adqlQuery = adqlQuery.replaceAll("(\r\n|\r|\n)", System.getProperty("line.separator")).replaceAll("\t", "    ");
-
-		// 2. Analyse the query token by token:
-		ADQLParserTokenManager parser = new ADQLParserTokenManager(new SimpleCharStream(new java.io.ByteArrayInputStream(adqlQuery.getBytes())));
-		
-		final String[] lines = adqlQuery.split(System.getProperty("line.separator"));
-
-		try{
-			String suggestedToken;
-			int lastLine = 1, lastCol = 1;
-
-			Token token = null, nextToken = parser.getNextToken();
-			// for all tokens until the EOF or EOQ:
-			do{
-				// get the next token:
-				token = nextToken;
-				nextToken = (isEnd(token) ? null : parser.getNextToken());
-
-				// 3. Double quote any suspect token:
-				if (mustEscape(token, nextToken)){
-					suggestedToken = "\"" + token.image + "\"";
-				}else
-					suggestedToken = token.image;
-
-				/* 4. Append all space characters (and comments) before the
-				 *    token: */
-				/* same line, just get the space characters between the last
-				 * token and the one to append: */
-				if (lastLine == token.beginLine){
-					if (token.kind == ADQLParserConstants.EOF)
-						suggestedQuery.append(lines[lastLine - 1].substring(lastCol - 1));
-					else
-						suggestedQuery.append(lines[lastLine - 1].substring(lastCol - 1, token.beginColumn - (isEnd(token) ? 0 : 1)));
-					lastCol = token.endColumn + 1;
-				}
-				// not the same line...
-				else{
-				    /* append all remaining space characters until the position
-				     * of the token to append: */
-					do{
-						suggestedQuery.append(lines[lastLine - 1].substring(lastCol - 1)).append('\n');
-						lastLine++;
-						lastCol = 1;
-					}while(lastLine < token.beginLine);
-					/* if there are still space characters before the token,
-					 * append them as well: */
-					if (lastCol < token.beginColumn)
-						suggestedQuery.append(lines[lastLine - 1].substring(lastCol - 1, token.beginColumn - 1));
-					// finally, set the correct column position:
-					lastCol = token.endColumn + 1;
-				}
-
-				// 5. Append the suggested token:
-				suggestedQuery.append(suggestedToken);
-
-			}while(!isEnd(token));
-
-		}catch(TokenMgrError err){
-		    // wrap such errors and propagate them:
-			throw new ParseException(err);
-		}
-
-		return suggestedQuery.toString();
-	}
-
-	/**
-	 * All of the most common Unicode confusable characters and their
-	 * ASCII/UTF-8 alternative.
-	 *
-	 * <p>
-	 * 	Keys of this map represent the ASCII character while the values are the
-	 * 	regular expression for all possible Unicode alternatives.
-	 * </p>
-	 *
-	 * <p><i><b>Note:</b>
-	 * 	All of them have been listed using
-	 * 	<a href="https://unicode.org/cldr/utility/confusables.jsp">Unicode Utilities: Confusables</a>.
-	 * </i></p>
-	 *
-	 * @since 1.5
-	 */
-	protected final static java.util.Map<String, String> REGEX_UNICODE_CONFUSABLES = new java.util.HashMap<String, String>(10);
-	/** Regular expression matching all Unicode alternatives for <code>-</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_DASH         = "[\u002D\u02D7\u06D4\u2010\u2011\u2012\u2013\u2043\u2212\u2796\u2CBA\uFE58\u2014\u2015\u207B\u208B\u0096\u058A\uFE63\uFF0D]";
-	/** Regular expression matching all Unicode alternatives for <code>_</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_UNDERSCORE   = "[\u005F\u07FA\uFE4D\uFE4E\uFE4F]";
-	/** Regular expression matching all Unicode alternatives for <code>'</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_QUOTE        = "[\u0027\u0060\u00B4\u02B9\u02BB\u02BC\u02BD\u02BE\u02C8\u02CA\u02CB\u02F4\u0374\u0384\u055A\u055D\u05D9\u05F3\u07F4\u07F5\u144A\u16CC\u1FBD\u1FBF\u1FEF\u1FFD\u1FFE\u2018\u2019\u201B\u2032\u2035\uA78C\uFF07\uFF40]";
-	/** Regular expression matching all Unicode alternatives for <code>"</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_DOUBLE_QUOTE = "[\u02BA\u02DD\u02EE\u02F6\u05F2\u05F4\u1CD3\u201C\u201D\u201F\u2033\u2036\u3003\uFF02]";
-	/** Regular expression matching all Unicode alternatives for <code>.</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_STOP         = "[\u002E\u0660\u06F0\u0701\u0702\u2024\uA4F8\uA60E]";
-	/** Regular expression matching all Unicode alternatives for <code>+</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_PLUS         = "[\u002B\u16ED\u2795]";
-	/** Regular expression matching all Unicode alternatives for <code> </code>.
-	 * @since 1.5 */
-	protected final static String REGEX_SPACE        = "[\u0020\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F]";
-	/** Regular expression matching all Unicode alternatives for <code>&lt;</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_LESS_THAN    = "[\u003C\u02C2\u1438\u16B2\u2039\u276E]";
-	/** Regular expression matching all Unicode alternatives for <code>&gt;</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_GREATER_THAN = "[\u003E\u02C3\u1433\u203A\u276F]";
-	/** Regular expression matching all Unicode alternatives for <code>=</code>.
-	 * @since 1.5 */
-	protected final static String REGEX_EQUAL        = "[\u003D\u1400\u2E40\u30A0\uA4FF]";
-	static {
-		REGEX_UNICODE_CONFUSABLES.put("-", REGEX_DASH);
-		REGEX_UNICODE_CONFUSABLES.put("_", REGEX_UNDERSCORE);
-		REGEX_UNICODE_CONFUSABLES.put("'", REGEX_QUOTE);
-		REGEX_UNICODE_CONFUSABLES.put("\"", REGEX_DOUBLE_QUOTE);
-		REGEX_UNICODE_CONFUSABLES.put(".", REGEX_STOP);
-		REGEX_UNICODE_CONFUSABLES.put("+", REGEX_PLUS);
-		REGEX_UNICODE_CONFUSABLES.put(" ", REGEX_SPACE);
-		REGEX_UNICODE_CONFUSABLES.put("<", REGEX_LESS_THAN);
-		REGEX_UNICODE_CONFUSABLES.put(">", REGEX_GREATER_THAN);
-		REGEX_UNICODE_CONFUSABLES.put("=", REGEX_EQUAL);
-	}
-
-	/**
-	 * Replace all Unicode characters that can be confused with other ASCI/UTF-8
-	 * characters (e.g. different spaces, dashes, ...) in their ASCII version.
-	 *
-	 * @param adqlQuery	The ADQL query string in which Unicode confusable
-	 *                 	characters must be replaced.
-	 *
-	 * @return	The same query without the most common Unicode confusable
-	 *        	characters.
-	 *
-	 * @since 1.5
-	 */
-	protected String replaceUnicodeConfusables(final String adqlQuery){
-		String newAdqlQuery = adqlQuery;
-		for(java.util.Map.Entry<String, String> confusable : REGEX_UNICODE_CONFUSABLES.entrySet())
-			newAdqlQuery = newAdqlQuery.replaceAll(confusable.getValue(), confusable.getKey());
-		return newAdqlQuery;
-	}
-
-	/**
-	 * Tell whether the given token represents the end of an ADQL query.
-	 *
-	 * @param token	Token to analyze.
-	 *
-	 * @return	<code>true</code> if the given token represents a query end,
-	 *        	<code>false</code> otherwise.
-	 *
-	 * @since 1.5
-	 */
-	protected boolean isEnd(final Token token){
-		return token.kind == ADQLParserConstants.EOF || token.kind == ADQLParserConstants.EOQ;
-	}
-
-	/**
-	 * Tell whether the given token must be double quoted.
-	 *
-	 * <p>
-	 * 	This function considers all the following as terms to double quote:
-	 * </p>
-	 * <ul>
-	 * 	<li>SQL reserved keywords</li>,
-	 * 	<li>unrecognised regular identifiers (e.g. neither a delimited nor a
-	 * 		valid ADQL regular identifier)</li>
-	 * 	<li>and ADQL function name without a parameters list.</li>
-	 * </ul>
-	 *
-	 * @param token		The token to analyze.
-	 * @param nextToken	The following token. (useful to detect the start of a
-	 *                 	function's parameters list)
-	 *
-	 * @return	<code>true</code> if the given token must be double quoted,
-	 *        	<code>false</code> to keep it as provided.
-	 *
-	 * @since 1.5
-	 */
-	protected boolean mustEscape(final Token token, final Token nextToken){
-		switch(token.kind){
-			case ADQLParserConstants.SQL_RESERVED_WORD:
-				return true;
-			case ADQLParserConstants.REGULAR_IDENTIFIER_CANDIDATE:
-				return !isRegularIdentifier(token.image);
-			default:
-				return isFunctionName(token) && (nextToken == null || nextToken.kind != ADQLParserConstants.LEFT_PAR);
-		}
-	}
-
-	/**
-	 * Tell whether the given token matches to an ADQL function name.
-	 *
-	 * @param token	The token to analyze.
-	 *
-	 * @return	<code>true</code> if the given token is an ADQL function name,
-	 *        	<code>false</code> otherwise.
-	 *
-	 * @since 1.5
-	 */
-	protected boolean isFunctionName(final Token token){
-		switch(token.kind){
-			case ADQLParserConstants.COUNT:
-			case ADQLParserConstants.EXISTS:
-			case ADQLParserConstants.AVG:
-			case ADQLParserConstants.MAX:
-			case ADQLParserConstants.MIN:
-			case ADQLParserConstants.SUM:
-			case ADQLParserConstants.BOX:
-			case ADQLParserConstants.CENTROID:
-			case ADQLParserConstants.CIRCLE:
-			case ADQLParserConstants.POINT:
-			case ADQLParserConstants.POLYGON:
-			case ADQLParserConstants.REGION:
-			case ADQLParserConstants.CONTAINS:
-			case ADQLParserConstants.INTERSECTS:
-			case ADQLParserConstants.AREA:
-			case ADQLParserConstants.COORD1:
-			case ADQLParserConstants.COORD2:
-			case ADQLParserConstants.COORDSYS:
-			case ADQLParserConstants.DISTANCE:
-			case ADQLParserConstants.ABS:
-			case ADQLParserConstants.CEILING:
-			case ADQLParserConstants.DEGREES:
-			case ADQLParserConstants.EXP:
-			case ADQLParserConstants.FLOOR:
-			case ADQLParserConstants.LOG:
-			case ADQLParserConstants.LOG10:
-			case ADQLParserConstants.MOD:
-			case ADQLParserConstants.PI:
-			case ADQLParserConstants.POWER:
-			case ADQLParserConstants.RADIANS:
-			case ADQLParserConstants.RAND:
-			case ADQLParserConstants.ROUND:
-			case ADQLParserConstants.SQRT:
-			case ADQLParserConstants.TRUNCATE:
-			case ADQLParserConstants.ACOS:
-			case ADQLParserConstants.ASIN:
-			case ADQLParserConstants.ATAN:
-			case ADQLParserConstants.ATAN2:
-			case ADQLParserConstants.COS:
-			case ADQLParserConstants.COT:
-			case ADQLParserConstants.SIN:
-			case ADQLParserConstants.TAN:
-			case ADQLParserConstants.USING:
-				return true;
-			default:
-				return false;
-		}
-	}
-
-	/* MAIN PROGRAM */
-
-	/**
-	* Gets the specified ADQL query and parses the given ADQL query. The SQL
-	* translation is then printed if the syntax is correct.
-	* 
-	* <p>
-	*     <b>ONLY the syntax is checked: the query is NOT EXECUTED !</b>
-	* </p>
+	* <p>Gets the specified ADQL query and parses the given ADQL query. The SQL translation is then printed if the syntax is correct.</p>
+	* <p><b>ONLY the syntax is checked: the query is NOT EXECUTED !</b></p>
+	* <p>Supplied parameters are: <ul><li>[-debug] -url http://...</li><li>[-debug] -file ...</li><li>[-debug] -query SELECT...</li></ul></p>
 	*
 	* @param args
-	
 	* @throws Exception
 	*/
 	public static final void main(String[] args) throws Exception {
-		final String USAGE = "Usage:\n    adqlParser.jar [-d] [-v] [-e] [-a|-s] [-f] [<FILE>|<URL>]\n\nNOTE: If no file or URL is given, the ADQL query is expected in the standard\n      input. This query must end with a ';' or <Ctrl+D>!\n\nParameters:\n    -v or --verbose : Print the main steps of the parsing\n    -d or --debug   : Print stack traces when a grave error occurs\n    -e or --explain : Explain the ADQL parsing (or Expand the parsing tree)\n    -a or --adql    : Display the understood ADQL query\n    -s or --sql     : Ask the SQL translation of the given ADQL query\n                      (SQL compatible with PostgreSQL)\n    -f or --try-fix : Try fixing the most common ADQL query issues before\n                      attempting to parse the query.\n\nReturn:\n    By default: nothing if the query is correct. Otherwise a message explaining\n                why the query is not correct is displayed.\n    With the -s option, the SQL translation of the given ADQL query will be\n    returned.\n    With the -a option, the ADQL query is returned as it has been understood.\n\nExit status:\n    0  OK !\n    1  Parameter error (missing or incorrect parameter)\n    2  File error (incorrect file/url, reading error, ...)\n    3  Parsing error (syntactic or semantic error)\n    4  Translation error (a problem has occurred during the translation of the\n       given ADQL query in SQL).";
+		final String USAGE = "Usage:\n\tadqlParser.jar [-d] [-v] [-e] [-a|-s] [<FILE>|<URL>]\n\nNOTE: If no file or URL is given, the ADQL query is expected in the standard input. This query must end with a ';' !\n\nParameters:\n\t-v or --verbose : Print the main steps of the parsing\n\t-d or --debug   : Print stack traces when a grave error occurs\n\t-e or --explain : Explain the ADQL parsing (or Expand the parsing tree)\n\t-a or --adql    : Display the understood ADQL query\n\t-s or --sql     : Ask the SQL translation of the given ADQL query (SQL compatible with PostgreSQL)\n\nReturn:\n\tBy default: nothing if the query is correct. Otherwise a message explaining why the query is not correct is displayed.\n\tWith the -s option, the SQL translation of the given ADQL query will be returned.\n\tWith the -a option, the ADQL query is returned as it has been understood.\n\nExit status:\n\t0\tOK !\n\t1\tParameter error (missing or incorrect parameter)\n\t2\tFile error (incorrect file/url, reading error, ...)\n\t3\tParsing error (syntactic or semantic error)\n\t4\tTranslation error (a problem has occurred during the translation of the given ADQL query in SQL).";
 
 		ADQLParser parser;
 
@@ -895,7 +403,7 @@ public class ADQLParser {
 
 		String file = null, metaFile = null;
 		short mode = -1;
-		boolean verbose=false, debug=false, explain=false, tryFix=false;
+		boolean verbose=false, debug=false, explain=false;
 
 		// Parameters reading:
 		for(int i=0; i<args.length; i++){
@@ -917,9 +425,7 @@ public class ADQLParser {
 					System.exit(1);
 				}else
 					mode = 2;
-			}else if (args[i].equalsIgnoreCase("-f") || args[i].equalsIgnoreCase("--try-fix"))
-				tryFix = true;
-			else if (args[i].equalsIgnoreCase("-h") || args[i].equalsIgnoreCase("--help")){
+			}else if (args[i].equalsIgnoreCase("-h") || args[i].equalsIgnoreCase("--help")){
 				System.out.println(USAGE);
 				System.exit(0);
 			}else if (args[i].startsWith("-")){
@@ -931,49 +437,13 @@ public class ADQLParser {
 
 		try{
 
-			// Try fixing the query, if asked:
-			if (tryFix) {
-				if (verbose)
-					System.out.println("((i)) Trying to automatically fix the query...");
+			if (file == null || file.length()==0)
+				parser = new ADQLParser(System.in);
+			else if (file.matches(urlRegex))
+				parser = new ADQLParser((new java.net.URL(file)).openStream());
+			else
+				parser = new ADQLParser(new FileReader(file));
 
-				String query;
-				java.io.InputStream in = null;
-				try {
-					// get the input stream...
-					if (file == null || file.length() == 0)
-						in = System.in;
-					else if (file.matches(urlRegex))
-						in = (new java.net.URL(file)).openStream();
-					else
-						in = new java.io.FileInputStream(file);
-					
-					// ...and try fixing the query:
-					query = (new ADQLParser()).tryQuickFix(in);
-				} finally {
-					// close the stream (if opened):
-					if (in != null)
-						in.close();
-					in = null;
-				}
-				
-				if (verbose)
-					System.out.println("((i)) SUGGESTED QUERY:\n" + query);
-
-				// Initialise the parser with this fixed query:
-				parser = new ADQLParser(new java.io.ByteArrayInputStream(query.getBytes()));	
-			}
-			// Otherwise, take the query as provided:
-			else {
-				// Initialise the parser with the specified input:
-				if (file == null || file.length() == 0)
-					parser = new ADQLParser(System.in);
-				else if (file.matches(urlRegex))
-					parser = new ADQLParser((new java.net.URL(file)).openStream());
-				else
-					parser = new ADQLParser(new java.io.FileInputStream(file));
-			}
-
-			// Enable/Disable the debugging in function of the parameters:
 			parser.setDebug(explain);
 
 			// Query parsing:
@@ -1027,20 +497,6 @@ PARSER_END(ADQLParser)
 /* ******************** */
 SKIP : { < " " | "\t" | "\n" | "\r" | "\r\n" > }
 
-/* ************************************************************************** */
-/* Reserved SQL words                                                         */
-/*                                                                            */
-/* NOTE:                                                                      */
-/*   This list is the one provided by the ADQL-2.0 standard after removal of  */
-/*   all ADQL used words (e.g. SELECT, AS, LIKE, AVG, ABS, COS, POINT).       */
-/*   (see ParseException.initialise(Token, int[][], String[]) for more        */
-/*   details)                                                                 */
-/* ************************************************************************** */
-
-TOKEN : {
-	< SQL_RESERVED_WORD: ("ABSOLUTE"|"ACTION"|"ADD"|"ALLOCATE"|"ALTER"|"ANY"|"ARE"|"ASSERTION"|"AT"|"AUTHORIZATION"|"BEGIN"|"BIT"|"BIT_LENGTH"|"BOTH"|"CASCADE"|"CASCADED"|"CASE"|"CAST"|"CATALOG"|"CHAR"|"CHARACTER"|"CHAR_LENGTH"|"CHARACTER_LENGTH"|"CHECK"|"CLOSE"|"COALESCE"|"COLLATE"|"COLLATION"|"COLUMN"|"COMMIT"|"CONNECT"|"CONNECTION"|"CONSTRAINT"|"CONSTRAINTS"|"CONTINUE"|"CONVERT"|"CORRESPONDING"|"CREATE"|"CURRENT"|"CURRENT_DATE"|"CURRENT_TIME"|"CURRENT_TIMESTAMP"|"CURRENT_USER"|"CURSOR"|"DATE"|"DAY"|"DEALLOCATE"|"DECIMAL"|"DECLARE"|"DEFAULT"|"DEFERRABLE"|"DEFERRED"|"DELETE"|"DESCRIBE"|"DESCRIPTOR"|"DIAGNOSTICS"|"DISCONNECT"|"DOMAIN"|"DOUBLE"|"DROP"|"ELSE"|"END"|"END-EXEC"|"ESCAPE"|"EXCEPT"|"EXCEPTION"|"EXEC"|"EXECUTE"|"EXTERNAL"|"EXTRACT"|"FALSE"|"FETCH"|"FIRST"|"FLOAT"|"FOR"|"FOREIGN"|"FOUND"|"GET"|"GLOBAL"|"GO"|"GOTO"|"GRANT"|"HOUR"|"IDENTITY"|"IMMEDIATE"|"INDICATOR"|"INITIALLY"|"INPUT"|"INSENSITIVE"|"INSERT"|"INT"|"INTEGER"|"INTERSECT"|"INTERVAL"|"INTO"|"ISOLATION"|"KEY"|"LANGUAGE"|"LAST"|"LEADING"|"LEVEL"|"LOCAL"|"LOWER"|"MATCH"|"MINUTE"|"MODULE"|"MONTH"|"NAMES"|"NATIONAL"|"NCHAR"|"NEXT"|"NO"|"NULLIF"|"NUMERIC"|"OCTET_LENGTH"|"OF"|"ONLY"|"OPEN"|"OPTION"|"OUTPUT"|"OVERLAPS"|"PAD"|"PARTIAL"|"POSITION"|"PRECISION"|"PREPARE"|"PRESERVE"|"PRIMARY"|"PRIOR"|"PRIVILEGES"|"PROCEDURE"|"PUBLIC"|"READ"|"REAL"|"REFERENCES"|"RELATIVE"|"RESTRICT"|"REVOKE"|"ROLLBACK"|"ROWS"|"SCHEMA"|"SCROLL"|"SECOND"|"SECTION"|"SESSION"|"SESSION_USER"|"SET"|"SIZE"|"SMALLINT"|"SOME"|"SPACE"|"SQL"|"SQLCODE"|"SQLERROR"|"SQLSTATE"|"SUBSTRING"|"SYSTEM_USER"|"TABLE"|"TEMPORARY"|"THEN"|"TIME"|"TIMESTAMP"|"TIMEZONE_HOUR"|"TIMEZONE_MINUTE"|"TO"|"TRAILING"|"TRANSACTION"|"TRANSLATE"|"TRANSLATION"|"TRIM"|"TRUE"|"UNION"|"UNIQUE"|"UNKNOWN"|"UPDATE"|"UPPER"|"USAGE"|"USER"|"VALUE"|"VALUES"|"VARCHAR"|"VARYING"|"VIEW"|"WHEN"|"WHENEVER"|"WITH"|"WORK"|"WRITE"|"YEAR"|"ZONE") >
-}
-
 /* *********** */
 /* Punctuation */
 /* *********** */
@@ -1061,15 +517,6 @@ TOKEN : {
 |	< MINUS: "-" >
 |	< ASTERISK: "*" >
 |	< DIVIDE: "/" >
-}
-
-/*****TODO G.Landais - *********/
-/* ************************************************* */
-/* Logic operators (added by G.Landais : 21/05/2013) */
-/* ************************************************* */
-TOKEN : {
-    < LOGIC_AND: "&" >
-|   < LOGIC_OR: "|" >
 }
 
 /* ******************** */
@@ -1130,10 +577,9 @@ TOKEN : {
 /* Other clauses' tokens */
 /* ********************* */
 TOKEN : {
-	< BY: "BY" >
-|	< GROUP: "GROUP" >
+	< GROUP_BY: "GROUP BY" >
 |	< HAVING: "HAVING" >
-|	< ORDER: "ORDER" >
+|	< ORDER_BY: "ORDER BY" >
 |	< ASC: "ASC" >
 |	< DESC: "DESC" >
 }
@@ -1216,16 +662,6 @@ SKIP : { < <MINUS><MINUS> (~["\n","\r"])* ("\n"|"\r"|"\r\n")? > }
 <WithinString> MORE : { < ~["'"] | ("''") > }
 <WithinString> TOKEN : { < STRING_LITERAL: "'" >: DEFAULT }
 
-/* *************** */
-/* Primary numbers */
-/* *************** */
-TOKEN : {
-	< SCIENTIFIC_NUMBER: (<UNSIGNED_FLOAT>|<UNSIGNED_INTEGER>) "E" (<PLUS>|<MINUS>)? <UNSIGNED_INTEGER> >
-|	< UNSIGNED_FLOAT: (<UNSIGNED_INTEGER> <DOT> (<UNSIGNED_INTEGER>)?) | (<DOT> <UNSIGNED_INTEGER>) >
-|	< UNSIGNED_INTEGER: (<DIGIT>)+ >
-|	< #DIGIT: ["0"-"9"] >
-}
-
 /* ************************************************* */
 /* Identifier (column, tables, ...) */
 /* ************************************************* */
@@ -1234,8 +670,18 @@ TOKEN : {
 <WithinDelimitedId> TOKEN : { < DELIMITED_IDENTIFIER: "\"" >: DEFAULT }
 
 TOKEN : {
-	< REGULAR_IDENTIFIER_CANDIDATE: ((<Letter>)+ (<DIGIT> | <Letter>)* | (<DIGIT>)+ <Letter> (<DIGIT> | <Letter>)*) >
-|	< #Letter: ["a"-"z","A"-"Z","_","?","$","@","^","#","`","~","[","]","{","}"] >
+	< REGULAR_IDENTIFIER: (<Letter>)+ (<DIGIT> | <Letter> | "_")* >
+|	< #Letter: ["a"-"z","A"-"Z"] >
+}
+
+/* *************** */
+/* Primary numbers */
+/* *************** */
+TOKEN : {
+	< SCIENTIFIC_NUMBER: (<UNSIGNED_FLOAT>|<UNSIGNED_INTEGER>) "E" (<PLUS>|<MINUS>)? <UNSIGNED_INTEGER> >
+|	< UNSIGNED_FLOAT: (<UNSIGNED_INTEGER> <DOT> (<UNSIGNED_INTEGER>)?) | (<DOT> <UNSIGNED_INTEGER>) >
+|	< UNSIGNED_INTEGER: (<DIGIT>)+ >
+|	< #DIGIT: ["0"-"9"] >
 }
 
 							/* ########## */
@@ -1395,9 +841,9 @@ void Where(): {ClauseConstraints where = query.getWhere(); ADQLConstraint condit
 	}
 }
 
-void GroupBy(): {ClauseADQL<ADQLColumn> groupBy = query.getGroupBy(); ADQLColumn colRef = null; Token start;} {
-	start=<GROUP> <BY> colRef=Column() { groupBy.add(colRef); }
-	( <COMMA> colRef=Column() { groupBy.add(colRef); } )*
+void GroupBy(): {ClauseADQL<ColumnReference> groupBy = query.getGroupBy(); ColumnReference colRef = null; Token start;} {
+	start=<GROUP_BY> colRef=ColumnRef() { groupBy.add(colRef); }
+	( <COMMA> colRef=ColumnRef() { groupBy.add(colRef); } )*
 	{ groupBy.setPosition(new TextPosition(start.beginLine, start.beginColumn, colRef.getPosition().endLine, colRef.getPosition().endColumn)); }
 }
 
@@ -1410,7 +856,7 @@ void Having(): {ClauseConstraints having = query.getHaving(); Token start;} {
 }
 
 void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder order = null; Token start;} {
-	start=<ORDER> <BY> order=OrderItem() {orderBy.add(order);}
+	start=<ORDER_BY> order=OrderItem() {orderBy.add(order);}
 	( <COMMA> order=OrderItem() {orderBy.add(order);} )*
 	{ orderBy.setPosition(new TextPosition(start, token)); }
 }
@@ -1420,11 +866,8 @@ void OrderBy(): {ClauseADQL<ADQLOrder> orderBy = query.getOrderBy(); ADQLOrder o
 /* *************************** */
 IdentifierItem Identifier(): {Token t;} {
 	(
-		t=<REGULAR_IDENTIFIER_CANDIDATE>
-		{
-		  	testRegularIdentifier(t);
-			return new IdentifierItem(t, false);
-		}
+		t=<REGULAR_IDENTIFIER>
+		{ return new IdentifierItem(t, false); }
 	|
 		t=<DELIMITED_IDENTIFIER>
 		{ return new IdentifierItem(t, true); }
@@ -1467,6 +910,17 @@ ADQLColumn Column(): {IdentifierItems identifiers;} {
 	{
 		try{
 			return queryFactory.createColumn(identifiers);
+		}catch(Exception ex){
+			throw generateParseException(ex);
+		}
+	}
+}
+
+ColumnReference ColumnRef(): {IdentifierItem identifier = null;}{
+	identifier=Identifier()
+	{
+		try{
+			return queryFactory.createColRef(identifier);
 		}catch(Exception ex){
 			throw generateParseException(ex);
 		}
@@ -1667,41 +1121,25 @@ ADQLOperand StringValueExpressionPrimary(): {StringConstant expr; ADQLColumn col
 	try{
 		(// string
 		  expr=String() {return expr;}
-		// unsigned numeric
-		| op=UnsignedNumeric() {return op;}
-		// set_function_specification
-		| op=SqlFunction() {return op;}
 		// column_reference
-		| column=Column() {column.setExpectedType('*'); return column;}
+		| column=Column() {column.setExpectedType('S'); return column;}
 		// LEFT_PAR value_expression RIGHT_PAR
-		| (left=<LEFT_PAR> (op=ValueExpression()) right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop; })
+		| (left=<LEFT_PAR> (op=StringExpression()) right=<RIGHT_PAR>) { WrappedOperand wop = queryFactory.createWrappedOperand(op); wop.setPosition(new TextPosition(left, right)); return wop; })
 	}catch(Exception ex){
 		throw generateParseException(ex);
 	}
 }
 
-/*****TODO G.Landais update AND/OR *********/
 ADQLOperand ValueExpression(): {ADQLOperand valueExpr = null; Token left, right; } {
 	try{
-		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>|<LOGIC_AND>|<LOGIC_OR>))) valueExpr=NumericExpression()
+		(LOOKAHEAD((<PLUS>|<MINUS>) | (Factor() (<PLUS>|<MINUS>|<ASTERISK>|<DIVIDE>))) valueExpr=NumericExpression()
 		| LOOKAHEAD(<COORDSYS> | (StringFactor() <CONCAT>)) valueExpr=StringExpression()
 		| LOOKAHEAD(<LEFT_PAR>) left=<LEFT_PAR> valueExpr=ValueExpression() right=<RIGHT_PAR> { valueExpr = queryFactory.createWrappedOperand(valueExpr); ((WrappedOperand)valueExpr).setPosition(new TextPosition(left, right)); }
-		| LOOKAHEAD(<REGULAR_IDENTIFIER_CANDIDATE> <LEFT_PAR>) valueExpr=UserDefinedFunction()
-		| LOOKAHEAD(2) valueExpr=GeometryValueFunction()
+		| LOOKAHEAD(<REGULAR_IDENTIFIER> <LEFT_PAR>) valueExpr=UserDefinedFunction()
+		| valueExpr=GeometryValueFunction()
 		| LOOKAHEAD(Column()) valueExpr=Column()
 		| LOOKAHEAD(String()) valueExpr=StringFactor()
-		| LOOKAHEAD(3) valueExpr=Factor()
-
-		/* At this position in this switch, all possibilities (including
-		 * Column()) have already been tested and failed.
-		 * 
-		 * So, this final choice actually aims to throw an error set with the
-		 * current token and with an error message implying that a column name
-		 * was expected (which is generally the case in an ADQL query).
-		 *
-		 * Note: This choice will generally be reached if an unexpected ADQL/SQL
-		 *       word is ending the query. */
-		| valueExpr=Column() )
+		| valueExpr=Factor())
 		{return valueExpr;}
 	}catch(Exception ex){
 		throw generateParseException(ex);
@@ -1725,9 +1163,8 @@ ADQLOperand NumericExpression(): {Token sign=null; ADQLOperand leftOp, rightOp=n
 	}
 }
 
-/*****TODO G.Landais update AND/OR *********/
 ADQLOperand NumericTerm(): {Token sign=null; ADQLOperand leftOp, rightOp=null;} {
-    (leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE> | sign=<LOGIC_AND> | sign=<LOGIC_OR>) rightOp=NumericTerm())?)
+	(leftOp=Factor() ((sign=<ASTERISK> | sign=<DIVIDE>) rightOp=NumericTerm())?)
 	{
 	if (sign == null)
 		return leftOp;
@@ -1768,9 +1205,8 @@ ADQLOperand Factor(): {boolean negative = false; Token minusSign = null; ADQLOpe
 	}
 }
 
-/*****TODO G.Landais updateTRIM function *********/
 ADQLOperand StringExpression(): {ADQLOperand leftOp; ADQLOperand rightOp = null;} {
-    leftOp=StringFactor()
+	leftOp=StringFactor()
 	(
 		<CONCAT>
 		rightOp=StringFactor()
@@ -2191,25 +1627,18 @@ MathFunction TrigFunction(): {Token fct=null, end; ADQLOperand param1=null, para
 }
 
 UserDefinedFunction UserDefinedFunction(): {Token fct, end; Vector<ADQLOperand> params = new Vector<ADQLOperand>(); ADQLOperand op;} {
-	fct=<REGULAR_IDENTIFIER_CANDIDATE> <LEFT_PAR> (op=ValueExpression() {params.add(op);} (<COMMA> op=ValueExpression() {params.add(op);})*)? end=<RIGHT_PAR>
+	fct=<REGULAR_IDENTIFIER> <LEFT_PAR> (op=ValueExpression() {params.add(op);} (<COMMA> op=ValueExpression() {params.add(op);})*)? end=<RIGHT_PAR>
 	{
-		// Ensure the given function name is valid: 
-		if (!isRegularIdentifier(fct.image))
-			throw new ParseException("Invalid (User Defined) Function name: \""+fct.image+"\"!", new TextPosition(fct));
-		
 		//System.out.println("INFO [ADQLParser]: \""+fct.image+"\" (from line "+fct.beginLine+" and column "+fct.beginColumn+" to line "+token.endLine+" and column "+(token.endColumn+1)+") is considered as an user defined function !");
-		
 		try{
 			//  Build the parameters list:
 			ADQLOperand[] parameters = new ADQLOperand[params.size()];
 			for(int i=0; i<params.size(); i++)
 				parameters[i] = params.get(i);
-			
 			// Create the UDF function:
 			UserDefinedFunction udf = queryFactory.createUserDefinedFunction(fct.image, parameters);
 			udf.setPosition(new TextPosition(fct, end));
 			return udf;
-			
 		}catch(UnsupportedOperationException uoe){
 		  	/* This catch clause is just for backward compatibility:
 		  	 * if the createUserDefinedFunction(...) is overridden and

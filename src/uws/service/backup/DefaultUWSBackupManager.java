@@ -409,8 +409,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 
 		// Build the report and log it:
 		int[] report = new int[]{ nbSavedJobs, nbJobs, nbSavedOwners, nbOwners };
-		getLogger().logUWS(LogLevel.INFO, report, "BACKUPED", "UWS Service \"" + uws.getName() + "\" backuped!", null);
-
+		getLogger().logUWS(LogLevel.DEBUG, report, "BACKUPED", "UWS Service \"" + uws.getName() + "\" backuped!", null);
 		lastBackup = new Date();
 
 		return report;
@@ -473,7 +472,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 			out.endObject();
 
 			// Log the "save" report:
-			getLogger().logUWS(LogLevel.INFO, saveReport, "BACKUPED", "UWS backuped!", null);
+			getLogger().logUWS(LogLevel.DEBUG, saveReport, "BACKUPED", "UWS backuped!", null);
 
 			lastBackup = new Date();
 
