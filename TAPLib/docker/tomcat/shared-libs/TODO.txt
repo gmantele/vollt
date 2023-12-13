@@ -1,0 +1,2 @@
+Add in this directory the JAR library for the JDBC driver compatible with your
+target database.
