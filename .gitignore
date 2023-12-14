@@ -1,3 +1,20 @@
-ADQLLib/build/**
-UWSLib/build/**
-TAPLib/build/**
+# Generated files:
+*.jar
+
+# Settings in various IDE:
+.settings/
+.gradle/
+.idea/
+
+# Build (with Gradle) directories:
+build/
+ADQLLib/build/
+UWSLib/build/
+TAPLib/build/
+
+# Various custom files and directories:
+TODO.md
+NOTES/
+uml/
+survey/
+sql/
