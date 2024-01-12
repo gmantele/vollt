@@ -219,7 +219,7 @@ public class DefaultDBTable extends DBIdentifier implements DBTable {
 	}
 
 	public void setADQLCatalogName(final String name) {
-		adqlCatalogName = normalize(dbName);
+		adqlCatalogName = normalize(name);
 	}
 
 	/**
