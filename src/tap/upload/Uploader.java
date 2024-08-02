@@ -16,15 +16,9 @@ package tap.upload;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-
-import tap.upload.ExceededSizeException;
 
 import tap.ServiceConnection;
 import tap.ServiceConnection.LimitUnit;
@@ -44,6 +38,12 @@ import tap.parameters.DALIUpload;
 import uws.UWSException;
 import uws.service.file.UnsupportedURIProtocolException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
 /**
  * Let create properly given VOTable inputs in the "database".
  *
@@ -53,7 +53,7 @@ import uws.service.file.UnsupportedURIProtocolException;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.3 (08/2018)
+ * @version 2.4 (08/2024)
  *
  * @see LimitedTableIterator
  * @see VOTableIterator
@@ -70,12 +70,9 @@ public class Uploader {
 	/** Type of limit to set: ROWS or BYTES. <i>MAY be NULL ; if NULL, no limit
 	 * will be set.</i> */
 	protected final LimitUnit limitUnit;
-	/** Limit on the number of rows or bytes (depending of {@link #limitUnit})
+	/** Limit on the number of rows or bytes (depending on {@link #limitUnit})
 	 * allowed to be uploaded in once (whatever is the number of tables). */
 	protected final int limit;
-
-	/** Number of rows already loaded. */
-	protected int nbRows = 0;
 
 	/**
 	 * Build an {@link Uploader} object.
@@ -102,39 +99,54 @@ public class Uploader {
 	 * @since 2.0
 	 */
 	public Uploader(final ServiceConnection service, final DBConnection dbConn, final TAPSchema uplSchema) throws TAPException{
-		// NULL tests:
-		if (service == null)
-			throw new NullPointerException("The given ServiceConnection is NULL !");
-		if (dbConn == null)
-			throw new NullPointerException("The given DBConnection is NULL !");
-
 		// Set the service and database connections:
-		this.service = service;
-		this.dbConn = dbConn;
+		this.service = Objects.requireNonNull(service, "The given ServiceConnection is NULL !");
+		this.dbConn  = Objects.requireNonNull(dbConn, "The given DBConnection is NULL !");
+
+		// No use for this class if no upload enabled:
+		if (!this.service.uploadEnabled())
+			throw new TAPException("Upload aborted: this functionality is disabled in this TAP service!");
 
 		// Set the given upload schema:
 		if (uplSchema != null){
-			if (!uplSchema.getADQLName().equalsIgnoreCase(TAPMetadata.STDSchema.UPLOADSCHEMA.label))
-				throw new TAPException("Incorrect upload schema! Its ADQL name MUST be \"" + TAPMetadata.STDSchema.UPLOADSCHEMA.label + "\" ; here is is \"" + uplSchema.getADQLName() + "\".", UWSException.INTERNAL_SERVER_ERROR);
-			else
-				this.uploadSchema = uplSchema;
+			checkUploadSchemaName(uplSchema);
+			this.uploadSchema = uplSchema;
 		}
 		// ...or the default one:
 		else
-			this.uploadSchema = new TAPSchema(TAPMetadata.STDSchema.UPLOADSCHEMA.label, "Schema for tables uploaded by users.");
+			this.uploadSchema = buildDefaultTAPSchema();
 
-		// Ensure UPLOAD is allowed by the TAP service specification...
-		if (this.service.uploadEnabled()){
-			// ...and set the rows or bytes limit:
-			if (this.service.getUploadLimitType()[1] != null && this.service.getUploadLimit()[1] >= 0){
-				limit = (int)(this.service.getUploadLimitType()[1].bytesFactor() * this.service.getUploadLimit()[1]);
-				limitUnit = (this.service.getUploadLimitType()[1] == LimitUnit.rows) ? LimitUnit.rows : LimitUnit.bytes;
-			}else{
-				limit = -1;
-				limitUnit = null;
-			}
-		}else
-			throw new TAPException("Upload aborted: this functionality is disabled in this TAP service!");
+		// Get the upload limit:
+		final Object[] extractedLimit = extractLimitFromService();
+		this.limit     = (int)extractedLimit[0];
+		this.limitUnit = (LimitUnit)extractedLimit[1];
+	}
+
+	protected void checkUploadSchemaName(final TAPSchema uplSchema) throws TAPException {
+		if (!uplSchema.getADQLName().equalsIgnoreCase(TAPMetadata.STDSchema.UPLOADSCHEMA.label))
+			throw new TAPException("Incorrect upload schema! Its ADQL name MUST be \"" + TAPMetadata.STDSchema.UPLOADSCHEMA.label + "\" ; here is is \"" + uplSchema.getADQLName() + "\".", UWSException.INTERNAL_SERVER_ERROR);
+	}
+
+	protected TAPSchema buildDefaultTAPSchema() {
+		return new TAPSchema(TAPMetadata.STDSchema.UPLOADSCHEMA.label, "Schema for tables uploaded by users.");
+	}
+
+	/**
+	 * Extract the limit from the set service.
+	 *
+	 * @return An array with two elements:
+	 *         [0] = integer value of the limit(-1, if none),
+	 *         [1] = the corresponding unit (LimitUnit instance).
+	 */
+	protected Object[] extractLimitFromService() {
+		if (this.service.getUploadLimitType()[1] != null && this.service.getUploadLimit()[1] >= 0)
+		{
+			final int limitValue           = (int)(this.service.getUploadLimitType()[1].bytesFactor() * this.service.getUploadLimit()[1]);
+			final LimitUnit limitValueUnit = (this.service.getUploadLimitType()[1] == LimitUnit.rows) ? LimitUnit.rows : LimitUnit.bytes;
+			return new Object[]{limitValue, limitValueUnit};
+		}
+		else
+			return new Object[]{-1, null};
 	}
 
 	/**
@@ -166,90 +178,101 @@ public class Uploader {
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
 	 */
 	public TAPSchema upload(final DALIUpload[] uploads) throws TAPException{
-		TableIterator dataIt = null;
-		InputStream votable = null;
-		HashSet<String> tableNames = new HashSet<String>(uploads.length);
+		final HashSet<String> uploadedTables = new HashSet<>(uploads.length);
 		String tableName = null;
+
 		try{
-			// Iterate over the full list of uploaded tables:
-			for(DALIUpload upl : uploads){
+			for(DALIUpload upl : uploads)
+			{
 				tableName = upl.label;
 
-				// Check uniqueness of the table name inside TAP_UPLOAD:
-				boolean uniqueTableName = tableNames.add(tableName.toLowerCase());
-				if (!uniqueTableName)
-					throw new TAPException("Non unique table name (case insensitive) among all tables to upload: \"" + tableName + "\"!", UWSException.BAD_REQUEST);
+				checkForTableNameUniqueness(tableName, uploadedTables);
 
-				// Open a stream toward the VOTable:
-				votable = upl.open();
+				try(InputStream  votable = upl.open();
+					TableIterator dataIt = new LimitedTableIterator(VOTableIterator.class, votable, limitUnit, limit))
+				{
+					final TAPColumn[] columns = dataIt.getMetadata();
+					final TAPTable table = buildTAPTable(uploadSchema, tableName, columns);
 
-				// Start reading the VOTable (with the identified limit, if any):
-				dataIt = new LimitedTableIterator(VOTableIterator.class, votable, limitUnit, limit);
-
-				// Define the table to upload:
-				TAPColumn[] columns = dataIt.getMetadata();
-
-				// Check uniqueness of all column names:
-				HashSet<String> columnNames = new HashSet<String>(columns.length);
-				for(TAPColumn col : columns){
-					boolean uniqueColumnName = columnNames.add(col.getADQLName().toLowerCase());
-					if (!uniqueColumnName)
-						throw new TAPException("Non unique column name (case insensitive) among all columns of the table \"" + tableName + "\": \"" + col.getADQLName() + "\"!", UWSException.BAD_REQUEST);
+					dbConn.addUploadedTable(table, dataIt);
 				}
-
-				TAPTable table = new TAPTable(tableName);
-				table.setDBName(tableName + "_" + System.currentTimeMillis());
-				for(TAPColumn col : columns)
-					table.addColumn(col);
-
-				// Add the table to the TAP_UPLOAD schema:
-				uploadSchema.addTable(table);
-
-				// Create and fill the corresponding table in the database:
-				dbConn.addUploadedTable(table, dataIt);
-
-				// Close the VOTable stream:
-				dataIt.close();
-				votable.close();
-				votable = null;
-			}
-		}catch(DataReadException dre){
-			// Drop uploaded tables:
-			dropUploadedTables();
-			// Report the error:
-			if (dre.getCause() instanceof ExceededSizeException)
-				throw dre;
-			else
-				throw new TAPException("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
-		}catch(IOException ioe){
-			// Drop uploaded tables:
-			dropUploadedTables();
-			// Report the error:
-			throw new TAPException("IO error while reading the VOTable of \"" + tableName + "\"!", ioe);
-		}catch(UnsupportedURIProtocolException e){
-			// Drop uploaded tables:
-			dropUploadedTables();
-			// Report the error:
-			throw new TAPException("URI error while trying to open the VOTable of \"" + tableName + "\"!", e);
-		}catch(TAPException te){
-			// Drop uploaded tables:
-			dropUploadedTables();
-			// Report the error:
-			throw te;
-		}finally{
-			try{
-				if (dataIt != null)
-					dataIt.close();
-				if (votable != null)
-					votable.close();
-			}catch(IOException ioe){
-				;
 			}
 		}
+		catch(DataReadException dre){
+			reportFailedUpload("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
+		}
+		catch(IOException ioe){
+			reportFailedUpload("IO error while reading the VOTable of \"" + tableName + "\"!", ioe);
+		}
+		catch(UnsupportedURIProtocolException e){
+			reportFailedUpload("URI error while trying to open the VOTable of \"" + tableName + "\"!", e);
+		}
+		catch(TAPException te){
+			reportFailedUpload(te);
+		}
 
-		/* Return the TAP_UPLOAD schema (containing just the description of the
-		 * uploaded tables): */
 		return uploadSchema;
+	}
+
+	protected void reportFailedUpload(final Exception ex) throws TAPException {
+		reportFailedUpload(null, ex, -1);
+	}
+
+	protected void reportFailedUpload(final String message, final Exception ex) throws TAPException {
+		reportFailedUpload(message, ex, -1);
+	}
+
+	protected void reportFailedUpload(final String message, final Exception ex, final int httpErrorStatus) throws TAPException {
+		dropUploadedTables();
+
+		if (ex instanceof DataReadException && ex.getCause() instanceof ExceededSizeException)
+			throw (DataReadException) ex;
+
+		else if (httpErrorStatus > 0) {
+			if (message == null || message.trim().isEmpty())
+				throw new TAPException(ex, httpErrorStatus);
+			else
+				throw new TAPException(message, ex, httpErrorStatus);
+		}
+
+		else if (message != null && !message.trim().isEmpty())
+			throw new TAPException(message, ex);
+
+		else if (ex instanceof TAPException)
+			throw (TAPException) ex;
+
+		else
+			throw new TAPException(ex);
+	}
+
+	protected void checkForTableNameUniqueness(final String tableName, final Set<String> uploadedTables) throws TAPException {
+		final boolean uniqueTableName = uploadedTables.add(tableName.toLowerCase());
+
+		if (!uniqueTableName)
+			throw new TAPException("Non unique table name (case insensitive) among all tables to upload: \"" + tableName + "\"!", UWSException.BAD_REQUEST);
+	}
+
+	protected TAPTable buildTAPTable(final TAPSchema schema, final String tableName, final TAPColumn[] columns) throws TAPException {
+		checkForColumnNameUniqueness(columns, tableName);
+
+		final TAPTable table = new TAPTable(tableName);
+		table.setDBName(tableName + "_" + System.currentTimeMillis());
+
+		for(TAPColumn col : columns)
+			table.addColumn(col);
+
+		schema.addTable(table);
+
+		return table;
+	}
+
+	protected void checkForColumnNameUniqueness(final TAPColumn[] columns, final String tableName) throws TAPException {
+		HashSet<String> columnNames = new HashSet<>(columns.length);
+		for(TAPColumn col : columns){
+			boolean uniqueColumnName = columnNames.add(col.getADQLName().toLowerCase());
+			if (!uniqueColumnName)
+				throw new TAPException("Non unique column name (case insensitive) among all columns of the table \"" + tableName + "\": \"" + col.getADQLName() + "\"!", UWSException.BAD_REQUEST);
+		}
 	}
 
 	/**

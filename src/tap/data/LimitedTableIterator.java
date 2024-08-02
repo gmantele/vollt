@@ -16,20 +16,22 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.NoSuchElementException;
 
 import adql.db.DBType;
 import tap.ServiceConnection.LimitUnit;
 import tap.metadata.TAPColumn;
 import tap.upload.ExceededSizeException;
 import tap.upload.LimitedSizeInputStream;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * <p>Wrap a {@link TableIterator} in order to limit its reading to a fixed number of rows.</p>
@@ -53,8 +55,8 @@ import tap.upload.LimitedSizeInputStream;
  *	or of another problem.
  * </p>
  *
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (01/2015)
+ * @author Gr&eacute;gory Mantelet (CDS,ARI)
+ * @version 2.4 (08/2024)
  * @since 2.0
  */
 public class LimitedTableIterator implements TableIterator {
@@ -77,10 +79,8 @@ public class LimitedTableIterator implements TableIterator {
 	 * @param it		The iterator to wrap. <i>MUST NOT be NULL</i>
 	 * @param nbMaxRows	Maximum number of rows that can be read. There is overflow if more than this number of rows is asked. <i>A negative value means "no limit".</i>
 	 */
-	public LimitedTableIterator(final TableIterator it, final int nbMaxRows) throws DataReadException{
-		if (it == null)
-			throw new NullPointerException("Missing TableIterator to wrap!");
-		innerIt = it;
+	public LimitedTableIterator(final TableIterator it, final int nbMaxRows) {
+		innerIt        = Objects.requireNonNull(it, "Missing TableIterator to wrap!");
 		this.maxNbRows = nbMaxRows;
 	}
 
@@ -115,7 +115,7 @@ public class LimitedTableIterator implements TableIterator {
 	 *                          	or if the {@link TableIterator} instance can not be initialized,
 	 *                          	or if the limit (in rows or bytes) has been reached.
 	 */
-	public <T extends TableIterator> LimitedTableIterator(final Class<T> classIt, final InputStream input, final LimitUnit type, final int limit) throws DataReadException{
+	public <T extends TableIterator> LimitedTableIterator(final Class<T> classIt, final InputStream input, final LimitUnit type, final int limit) throws DataReadException {
 		try{
 			Constructor<T> construct = classIt.getConstructor(InputStream.class);
 			if (LimitUnit.bytes.isCompatibleWith(type) && limit > 0){
@@ -123,11 +123,11 @@ public class LimitedTableIterator implements TableIterator {
 				innerIt = construct.newInstance(new LimitedSizeInputStream(input, limit * type.bytesFactor()));
 			}else{
 				innerIt = construct.newInstance(input);
-				maxNbRows = (type == null || type != LimitUnit.rows) ? -1 : limit;
+				maxNbRows = (type != LimitUnit.rows) ? -1 : limit;
 			}
 		}catch(InvocationTargetException ite){
 			Throwable t = ite.getCause();
-			if (t != null && t instanceof DataReadException){
+			if (t instanceof DataReadException){
 				ExceededSizeException exceedEx = getExceededSizeException(t);
 				// if an error caused by an ExceedSizeException occurs, set this iterator as overflowed and throw the exception:
 				if (exceedEx != null)
@@ -176,33 +176,59 @@ public class LimitedTableIterator implements TableIterator {
 
 	@Override
 	public boolean nextRow() throws DataReadException{
-		// Test the overflow flag and proceed only if not overflowed:
 		if (overflow)
 			throw new DataReadException("Data read overflow: the limit has already been reached! No more data can be read.");
 
-		// Read the next row:
-		boolean nextRow;
-		try{
-			nextRow = innerIt.nextRow();
-			countRow++;
-		}catch(DataReadException ex){
-			ExceededSizeException exceedEx = getExceededSizeException(ex);
-			// if an error caused by an ExceedSizeException occurs, set this iterator as overflowed and throw the exception:
-			if (exceedEx != null){
-				overflow = true;
-				throw new DataReadException(exceedEx.getMessage());
-			}else
-				throw ex;
-		}
+		final boolean nextRow = readNextRow();
 
-		// If, counting this one, the number of rows exceeds the limit, set this iterator as overflowed and throw an exception:
-		if (nextRow && maxNbRows >= 0 && countRow > maxNbRows){
+		/* If, counting this one, the number of rows exceeds the limit, set this
+		 * iterator as overflowed and throw an exception: */
+		if (nextRow && maxNbRows >= 0 && countRow > maxNbRows)
+		{
 			overflow = true;
 			throw new DataReadException("Data read overflow: the limit of " + maxNbRows + " rows has been reached!");
 		}
 
-		// Send back the value returned by the inner iterator:
 		return nextRow;
+	}
+
+	private boolean readNextRow() throws DataReadException {
+		try
+		{
+			final boolean nextRow = innerIt.nextRow();
+			countRow++;
+			return nextRow;
+		}
+		catch(DataReadException ex){
+			throw cleanDataReadException(ex);
+		}
+	}
+
+	private DataReadException cleanDataReadException(final DataReadException ex){
+		final ExceededSizeException exceedEx = getExceededSizeException(ex);
+
+		/* if an error caused by an ExceedSizeException occurs,
+		 * set this iterator as overflowed and throw the exception: */
+		if (exceedEx != null){
+			overflow = true;
+			return new DataReadException(exceedEx.getMessage());
+		}else
+			return ex;
+	}
+
+	/**
+	 * Get the first {@link ExceededSizeException} found in the given {@link Throwable} trace.
+	 *
+	 * @param ex	A {@link Throwable}
+	 *
+	 * @return	The first {@link ExceededSizeException} encountered, or NULL if none has been found.
+	 */
+	private ExceededSizeException getExceededSizeException(Throwable ex){
+		if (ex == null)
+			return null;
+		while(!(ex instanceof ExceededSizeException) && ex.getCause() != null)
+			ex = ex.getCause();
+		return (ex instanceof ExceededSizeException) ? (ExceededSizeException)ex : null;
 	}
 
 	@Override
@@ -231,21 +257,6 @@ public class LimitedTableIterator implements TableIterator {
 	private void testOverflow() throws IllegalStateException{
 		if (overflow)
 			throw new IllegalStateException("Data read overflow: the limit has already been reached! No more data can be read.");
-	}
-
-	/**
-	 * Get the first {@link ExceededSizeException} found in the given {@link Throwable} trace.
-	 *
-	 * @param ex	A {@link Throwable}
-	 *
-	 * @return	The first {@link ExceededSizeException} encountered, or NULL if none has been found.
-	 */
-	private ExceededSizeException getExceededSizeException(Throwable ex){
-		if (ex == null)
-			return null;
-		while(!(ex instanceof ExceededSizeException) && ex.getCause() != null)
-			ex = ex.getCause();
-		return (ex instanceof ExceededSizeException) ? (ExceededSizeException)ex : null;
 	}
 
 }

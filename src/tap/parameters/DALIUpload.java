@@ -313,7 +313,7 @@ public class DALIUpload {
 			entry = it.next();
 
 			// If the parameter is an "UPLOAD" one:
-			if (entry.getKey() != null && entry.getKey().toLowerCase().equals(TAPJob.PARAM_UPLOAD)){
+			if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(TAPJob.PARAM_UPLOAD)){
 				// get its value:
 				value = entry.getValue();
 

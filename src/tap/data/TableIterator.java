@@ -16,13 +16,14 @@ package tap.data;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
-import java.util.NoSuchElementException;
-
-import tap.metadata.TAPColumn;
 import adql.db.DBType;
+import tap.metadata.TAPColumn;
+
+import java.util.NoSuchElementException;
 
 /**
  * <p>Let's iterate on each row and then on each column over a table dataset.</p>
@@ -50,11 +51,11 @@ import adql.db.DBType;
  * 	}
  * </pre>
  * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (12/2014)
+ * @author Gr&eacute;gory Mantelet (CDS,ARI)
+ * @version 2.4 (08/2024)
  * @since 2.0
  */
-public interface TableIterator {
+public interface TableIterator extends AutoCloseable {
 	/**
 	 * <p>Get all the metadata column that have been successfully extracted at the creation of this iterator.</p>
 	 * 
@@ -70,7 +71,7 @@ public interface TableIterator {
 	 * 
 	 * @see #getColType()
 	 */
-	public TAPColumn[] getMetadata() throws DataReadException;
+	TAPColumn[] getMetadata() throws DataReadException;
 
 	/**
 	 * <p>Go to the next row if there is one.</p>
@@ -83,7 +84,7 @@ public interface TableIterator {
 	 * 
 	 * @throws DataReadException	If an error occurs while reading the table dataset.
 	 */
-	public boolean nextRow() throws DataReadException;
+	boolean nextRow() throws DataReadException;
 
 	/**
 	 * Tell whether another column is available.
@@ -94,7 +95,7 @@ public interface TableIterator {
 	 * @throws IllegalStateException	If {@link #nextRow()} has not yet been called.
 	 * @throws DataReadException	If an error occurs while reading the table dataset.
 	 */
-	public boolean hasNextCol() throws IllegalStateException, DataReadException;
+	boolean hasNextCol() throws IllegalStateException, DataReadException;
 
 	/**
 	 * <p>Return the value of the next column.</p>
@@ -107,7 +108,7 @@ public interface TableIterator {
 	 * @throws IllegalStateException	If {@link #nextRow()} has not yet been called.
 	 * @throws DataReadException	If an error occurs while reading the table dataset.
 	 */
-	public Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException;
+	Object nextCol() throws NoSuchElementException, IllegalStateException, DataReadException;
 
 	/**
 	 * <p>Get the type of the current column value.</p>
@@ -126,13 +127,13 @@ public interface TableIterator {
 	 * @throws IllegalStateException	If {@link #nextCol()} has not yet been called.
 	 * @throws DataReadException		If an error occurs while reading the table dataset.
 	 */
-	public DBType getColType() throws IllegalStateException, DataReadException;
+	DBType getColType() throws IllegalStateException, DataReadException;
 
 	/**
 	 * Close the stream or input over which this class iterates.
 	 * 
 	 * @throws DataReadException	If any error occurs while closing it.
 	 */
-	public void close() throws DataReadException;
+	void close() throws DataReadException;
 
 }
