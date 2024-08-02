@@ -16,8 +16,17 @@ package tap.parameters;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
+
+import tap.TAPException;
+import tap.TAPJob;
+import uws.UWSException;
+import uws.service.file.UWSFileManager;
+import uws.service.file.UnsupportedURIProtocolException;
+import uws.service.request.RequestParser;
+import uws.service.request.UploadFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,14 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import tap.TAPException;
-import tap.TAPJob;
-import uws.UWSException;
-import uws.service.file.UWSFileManager;
-import uws.service.file.UnsupportedURIProtocolException;
-import uws.service.request.RequestParser;
-import uws.service.request.UploadFile;
 
 /**
  * <p>Description of an uploaded content specified using the DALI/TAP syntax.</p>
@@ -95,8 +96,8 @@ import uws.service.request.UploadFile;
  * 	done by setting the second parameter of {@link #getDALIUploads(Map, boolean, UWSFileManager)} to <i>false</i>.
  * </i></p>
  * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.0 (12/2014)
+ * @author Gr&eacute;gory Mantelet (CDS,ARI)
+ * @version 2.4 (08/2024)
  * @since 2.0
  * 
  * @see RequestParser
@@ -145,7 +146,7 @@ public class DALIUpload {
 		if (file == null)
 			throw new NullPointerException("Missing UploadFile! => Can not build a DaliUpload instance.");
 
-		this.label = (label == null) ? file.paramName : label;
+		this.label = (label == null) ? file.getParamName() : label;
 		this.file = file;
 		this.uri = null;
 		this.fileManager = null;
@@ -207,7 +208,7 @@ public class DALIUpload {
 
 	@Override
 	public String toString(){
-		return label + "," + (file != null ? "param:" + file.paramName : uri.toString());
+		return label + "," + (file != null ? "param:" + file.getParamName() : uri.toString());
 	}
 
 	/* ****************************** */
@@ -300,7 +301,7 @@ public class DALIUpload {
 	 * 
 	 * @see RequestParser#parse(javax.servlet.http.HttpServletRequest)
 	 */
-	public final static List<DALIUpload> getDALIUploads(final Map<String,Object> requestParams, final boolean allowTAPSyntax, final UWSFileManager fileManager) throws TAPException{
+	public static List<DALIUpload> getDALIUploads(final Map<String,Object> requestParams, final boolean allowTAPSyntax, final UWSFileManager fileManager) throws TAPException{
 
 		// 1. Get all "UPLOAD" parameters and build/get their corresponding DALIUpload(s):
 		ArrayList<DALIUpload> uploads = new ArrayList<DALIUpload>(3);
@@ -322,7 +323,7 @@ public class DALIUpload {
 						DALIUpload upl = (DALIUpload)value;
 						uploads.add(upl);
 						if (!upl.isByReference())
-							usedFiles.add(upl.file.paramName);
+							usedFiles.add(upl.file.getParamName());
 					}
 					// CASE String: it must be parsed and transformed into a DALIUpload item which will be then added inside the list:
 					else if (value instanceof String)
@@ -348,7 +349,7 @@ public class DALIUpload {
 		}
 
 		// 2. Remove all other files of the request parameters ONLY IF there was a not-NULL "UPLOAD" parameter:
-		if (uploads.size() > 0){
+		if (!uploads.isEmpty()){
 			it = requestParams.entrySet().iterator();
 			while(it.hasNext()){
 				entry = it.next();
@@ -382,8 +383,8 @@ public class DALIUpload {
 		}
 
 		// 3. Re-add a new "UPLOAD" parameter gathering all extracted DALI Uploads:
-		if (uploads.size() > 0)
-			requestParams.put("UPLOAD", uploads.toArray(new DALIUpload[uploads.size()]));
+		if (!uploads.isEmpty())
+			requestParams.put("UPLOAD", uploads.toArray(new DALIUpload[0]));
 
 		return uploads;
 	}
@@ -414,12 +415,12 @@ public class DALIUpload {
 		if (allowTAPSyntax && uploadParam.matches("([^,]+,.+);([^,]+,.+)")){
 			Pattern p = Pattern.compile("([^,]+,.+);([^,]+,.+)");
 			Matcher m = p.matcher(uploadParam);
-			while(m != null && m.matches()){
+			while(m.matches()){
 				// Fetch the last UPLOAD item:
 				DALIUpload upl = fetchDALIUpload(m.group(2), parameters, fileManager);
 				uploads.add(upl);
 				if (!upl.isByReference())
-					usedFiles.add(upl.file.paramName);
+					usedFiles.add(upl.file.getParamName());
 
 				// Prepare the fetching of the other DALI parameters:
 				if (m.group(1) != null)
@@ -433,7 +434,7 @@ public class DALIUpload {
 			DALIUpload upl = fetchDALIUpload(uploadParam, parameters, fileManager);
 			uploads.add(upl);
 			if (!upl.isByReference())
-				usedFiles.add(upl.file.paramName);
+				usedFiles.add(upl.file.getParamName());
 		}
 
 		// /!\ INCORRECT SYNTAX /!\
@@ -548,7 +549,7 @@ public class DALIUpload {
 	 * 
 	 * @throws TAPException	If the parameter reference is broken or if the given URI has a wrong syntax.
 	 */
-	protected final static DALIUpload buildDALIUpload(final String label, String uri, final Map<String,Object> parameters, final UWSFileManager fileManager) throws TAPException{
+	protected static DALIUpload buildDALIUpload(final String label, String uri, final Map<String,Object> parameters, final UWSFileManager fileManager) throws TAPException{
 		// FILE case:
 		if (uri.toLowerCase().startsWith("param:")){
 
@@ -564,7 +565,7 @@ public class DALIUpload {
 				Object[] objects = (Object[])obj;
 				obj = null;
 				for(Object o : objects){
-					if (o != null && o instanceof UploadFile)
+					if (o instanceof UploadFile)
 						obj = o;
 				}
 			}

@@ -16,15 +16,18 @@ package uws.service.request;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
-
-import java.io.IOException;
-import java.io.InputStream;
 
 import uws.job.UWSJob;
 import uws.job.parameters.UWSParameters;
 import uws.service.file.UWSFileManager;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * <p>This class lets represent a file submitted inline in an HTTP request.</p>
@@ -42,8 +45,8 @@ import uws.service.file.UWSFileManager;
  * 	In this case, the way to proceed is different, hence the use of the file manager.
  * </p>
  * 
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.1 (11/2014)
+ * @author Gr&eacute;gory Mantelet (CDS,ARI)
+ * @version 4.5 (08/2024)
  * 
  * @see UWSParameters
  * @see MultipartParser
@@ -69,11 +72,10 @@ public class UploadFile {
 	protected boolean used = false;
 
 	/** MIME type of the file. */
-	public String mimeType = null;
+	protected String mimeType = null;
 
-	/** Length in bytes of the file.
-	 * If negative, the length should be considered as unknown. */
-	public long length = -1;
+	/** Length in bytes of the file. */
+	protected Long length = null;
 
 	/** File manager to use in order to open, move or delete this uploaded file. */
 	protected final UWSFileManager fileManager;
@@ -94,24 +96,23 @@ public class UploadFile {
 	 * Build the description of an uploaded file.
 	 * 
 	 * @param paramName		Name of the HTTP request parameter in which the uploaded content was stored. <b>MUST NOT be NULL</b>
-	 * @param fileName		Filename as provided by the HTTP request. <i>MAY be NULL</i>
+	 * @param fileName		Filename as provided by the HTTP request. <i>If NULL, set by default to paramName.</i>
 	 * @param location		Location of the file on the server. This String is then used by the given file manager in order to open,
 	 *                		move or delete the uploaded file. Thus, it can be a path, an ID or any other String meaningful to the file manager.
 	 * @param fileManager	File manager to use in order to open, move or delete this uploaded file from the server.
 	 */
 	public UploadFile(final String paramName, final String fileName, final String location, final UWSFileManager fileManager){
-		if (paramName == null)
-			throw new NullPointerException("Missing name of the parameter in which the uploaded file content was => can not create UploadFile!");
-		else if (location == null)
-			throw new NullPointerException("Missing server location of the uploaded file => can not create UploadFile!");
-		else if (fileManager == null)
-			throw new NullPointerException("Missing file manager => can not create the UploadFile!");
-
-		this.paramName = paramName;
-		this.fileName = (fileName == null) ? "" : fileName;
-		this.location = location;
-		this.fileManager = fileManager;
+		this.paramName   = Objects.requireNonNull(paramName,"Missing name of the parameter in which the uploaded file content was => can not create UploadFile!");
+		this.fileName    = (fileName == null || fileName.trim().isEmpty()) ? this.paramName : fileName;
+		this.location    = Objects.requireNonNull(location, "Missing server location of the uploaded file => can not create UploadFile!");
+		this.fileManager = Objects.requireNonNull(fileManager, "Missing file manager => can not create the UploadFile!");
 	}
+
+	/** @since 4.5 */
+	public String getParamName() { return paramName; }
+
+	/** @since 4.5 */
+	public String getFileName() { return fileName;}
 
 	/**
 	 * <p>Get the location (e.g. URI, file path) of this file on the server.</p>
@@ -133,8 +134,8 @@ public class UploadFile {
 	 * 
 	 * @return	The owner of this file.
 	 */
-	public UWSJob getOwner(){
-		return owner;
+	public Optional<UWSJob> getOwner(){
+		return Optional.ofNullable(owner);
 	}
 
 	/**
@@ -145,6 +146,32 @@ public class UploadFile {
 	 */
 	public final boolean isUsed(){
 		return used;
+	}
+
+	/** @since 4.5 */
+	public Optional<String> getMimeType() {
+		return Optional.ofNullable(mimeType);
+	}
+
+	/** @since 4.5 */
+	public void setMimeType(final String mimeType) {
+		if (mimeType == null || mimeType.trim().isEmpty())
+			this.mimeType = null;
+		else
+			this.mimeType = mimeType.trim();
+	}
+
+	/** @since 4.5 */
+	public Optional<Long> getLength() {
+		if (length == null || length < 0)
+			return Optional.empty();
+		else
+			return Optional.of(length);
+	}
+
+	/** @since 4.5 */
+	public void setLength(final Long length) {
+		this.length = (length == null || length < 0) ? null : length;
 	}
 
 	/**
@@ -192,12 +219,11 @@ public class UploadFile {
 	 * @see UWSFileManager#moveUpload(UploadFile, UWSJob)
 	 */
 	public void move(final UWSJob destination) throws IOException{
-		if (destination == null)
-			throw new NullPointerException("Missing move destination (i.e. the job in which the uploaded file must be stored)!");
+		Objects.requireNonNull(destination, "Missing move destination (i.e. the job in which the uploaded file must be stored)!");
 
 		location = fileManager.moveUpload(this, destination);
-		used = true;
-		owner = destination;
+		used     = true;
+		owner    = destination;
 	}
 
 	@Override

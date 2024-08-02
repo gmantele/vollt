@@ -36,7 +36,7 @@ import javax.servlet.http.HttpServletResponse;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2019 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -55,7 +55,7 @@ import uws.service.request.UploadFile;
  * Some useful functions for the managing of a UWS service.
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.4 (03/2019)
+ * @version 4.5 (08/2024)
  */
 public class UWSToolBox {
 
@@ -520,7 +520,7 @@ public class UWSToolBox {
 	 *
 	 * @throws IOException	If there is an error while opening the output stream or while copying.
 	 */
-	public static final void write(final InputStream input, final String mimeType, final long contentSize, final HttpServletResponse response) throws IOException{
+	public static void write(final InputStream input, final String mimeType, final long contentSize, final HttpServletResponse response) throws IOException{
 		ServletOutputStream output = null;
 		try{
 			// Set the HTTP content type:
@@ -531,7 +531,8 @@ public class UWSToolBox {
 			response.setCharacterEncoding(UWSToolBox.DEFAULT_CHAR_ENCODING);
 
 			// Set the HTTP content length:
-			setContentLength(response, contentSize);
+			if (contentSize >= 0)
+				setContentLength(response, contentSize);
 
 			// Write the file into the HTTP response:
 			output = response.getOutputStream();

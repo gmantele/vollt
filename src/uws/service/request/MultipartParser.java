@@ -16,7 +16,7 @@ package uws.service.request;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2014-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2014-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -84,7 +84,7 @@ import uws.service.file.UWSFileManager;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 4.4 (09/2018)
+ * @version 4.5 (08/2024)
  * @since 4.1
  */
 public class MultipartParser implements RequestParser {
@@ -299,8 +299,8 @@ public class MultipartParser implements RequestParser {
 						FileUtils.copyInputStreamToFile(stream, file);
 						// build its description/pointer:
 						UploadFile lob = new UploadFile(name, FilenameUtils.getName(item.getName()), file.toURI().toString(), fileManager);
-						lob.mimeType = item.getContentType();
-						lob.length = file.length();
+						lob.setMimeType(item.getContentType());
+						lob.setLength(file.length());
 						// add it inside the parameters map:
 						consumeParameter(name, lob, parameters);
 					}

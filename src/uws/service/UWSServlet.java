@@ -16,7 +16,7 @@ package uws.service;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -153,7 +153,7 @@ import uws.service.wait.BlockingPolicy;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.5 (07/2020)
+ * @version 4.5 (08/2024)
  */
 public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory {
 	private static final long serialVersionUID = 1L;
@@ -740,10 +740,10 @@ public abstract class UWSServlet extends HttpServlet implements UWS, UWSFactory 
 				InputStream input = null;
 				try {
 					input = getFileManager().getUploadInput(upl);
-					UWSToolBox.write(input, upl.mimeType, upl.length, resp);
+					UWSToolBox.write(input, upl.getMimeType().orElse(null), upl.getLength().orElse((long)-1), resp);
 				} catch(IOException ioe) {
-					getLogger().logUWS(LogLevel.ERROR, upl, "GET_PARAMETER", "Can not read the content of the uploaded file \"" + upl.paramName + "\" of the job \"" + job.getJobId() + "\"!", ioe);
-					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the uploaded file " + upl.paramName + " (job ID: " + job.getJobId() + ").");
+					getLogger().logUWS(LogLevel.ERROR, upl, "GET_PARAMETER", "Can not read the content of the uploaded file \"" + upl.getParamName() + "\" of the job \"" + job.getJobId() + "\"!", ioe);
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the uploaded file " + upl.getParamName() + " (job ID: " + job.getJobId() + ").");
 				} finally {
 					if (input != null)
 						input.close();

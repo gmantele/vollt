@@ -16,7 +16,7 @@ package uws.service.backup;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -86,7 +86,7 @@ import uws.service.request.UploadFile;
  * <p>Another positive value will be considered as the frequency (in milliseconds) of the automatic backup (= {@link #saveAll()}).</p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.5 (01/2020)
+ * @version 4.5 (08/2024)
  */
 public class DefaultUWSBackupManager implements UWSBackupManager {
 
@@ -717,11 +717,13 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		if (upl == null)
 			return null;
 		JSONObject o = new JSONObject();
-		o.put("paramName", upl.paramName);
-		o.put("fileName", upl.fileName);
+		o.put("paramName", upl.getParamName());
+		o.put("fileName", upl.getFileName());
 		o.put("location", upl.getLocation());
-		o.put("mime", upl.mimeType);
-		o.put("length", upl.length);
+		if (upl.getMimeType().isPresent())
+			o.put("mime", upl.getMimeType().get());
+		if (upl.getLength().isPresent())
+			o.put("length", upl.getLength().get());
 		return o;
 	}
 
@@ -1068,7 +1070,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 					upl = getUploadFile(uploads.getJSONObject(i));
 					;
 					if (upl != null)
-						params.put(upl.paramName, upl);
+						params.put(upl.getParamName(), upl);
 				}
 			} catch(JSONException je) {
 				getLogger().logUWS(LogLevel.ERROR, json, "RESTORATION", "Incorrect JSON format for the serialization of the job \"" + jobId + "\" (attribute: \"uwsUploads\")!", je);
@@ -1180,9 +1182,9 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 		try {
 			UploadFile upl = new UploadFile(obj.getString("paramName"), (obj.has("fileName") ? obj.getString("fileName") : null), obj.getString("location"), uws.getFileManager());
 			if (obj.has("mime"))
-				upl.mimeType = obj.getString("mime");
+				upl.setMimeType(obj.getString("mime"));
 			if (obj.has("length"))
-				upl.length = obj.getLong("length");
+				upl.setLength(obj.getLong("length"));
 			return upl;
 		} catch(JSONException je) {
 			getLogger().logUWS(LogLevel.ERROR, obj, "RESTORATION", "Incorrect JSON format for the serialization of an uploaded file!", je);

@@ -16,7 +16,7 @@ package uws.job.jobInfo;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017-2020 - Astronomisches Rechen Institut (ARI),
+ * Copyright 2017-2024 - Astronomisches Rechen Institut (ARI),
  *                       UDS/Centre de Données astronomiques de Strasbourg (CDS)
  */
 
@@ -142,7 +142,7 @@ import uws.service.request.UploadFile;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI;CDS)
- * @version 4.5 (05/2020)
+ * @version 4.5 (08/2024)
  * @since 4.2
  */
 public class XMLJobInfo implements JobInfo {
@@ -230,13 +230,13 @@ public class XMLJobInfo implements JobInfo {
 	 * @throws NullPointerException	If the given file is NULL or empty.
 	 */
 	public XMLJobInfo(final UploadFile xmlFile) throws NullPointerException {
-		if (xmlFile == null || xmlFile.length <= 0)
+		if (xmlFile == null || !xmlFile.getLength().isPresent())
 			throw new NullPointerException("Missing XML file!");
 
-		file = xmlFile;
+		file     = xmlFile;
 		location = file.getLocation();
-		length = (int)file.length;
-		content = null;
+		length   = file.getLength().orElse((long)-1).intValue();
+		content  = null;
 	}
 
 	@Override
@@ -302,7 +302,7 @@ public class XMLJobInfo implements JobInfo {
 		// CASE: XML FILE:
 		else {
 			restoreFile();
-			UWSToolBox.write(file.open(), "text/xml", file.length, response);
+			UWSToolBox.write(file.open(), "text/xml", file.getLength().orElse((long)-1), response);
 		}
 	}
 

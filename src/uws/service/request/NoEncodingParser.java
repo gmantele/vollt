@@ -16,7 +16,8 @@ package uws.service.request;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2014 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2014-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -54,7 +55,7 @@ import uws.service.file.UWSFileManager;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.4 (08/2018)
+ * @version 4.5 (08/2024)
  * @since 4.1
  */
 public class NoEncodingParser implements RequestParser {
@@ -157,8 +158,8 @@ public class NoEncodingParser implements RequestParser {
 
 		// Build its description:
 		UploadFile lob = new UploadFile(paramName, f.toURI().toString(), fileManager);
-		lob.mimeType = request.getContentType();
-		lob.length = totalLength;
+		lob.setMimeType(request.getContentType());
+		lob.setLength(totalLength);
 
 		// Create the parameters map:
 		HashMap<String, Object> parameters = new HashMap<String, Object>();

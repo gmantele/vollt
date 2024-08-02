@@ -16,7 +16,7 @@ package uws.service.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -78,7 +78,7 @@ import uws.service.request.UploadFile;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.4 (08/2018)
+ * @version 4.5 (08/2024)
  */
 public class LocalUWSFileManager implements UWSFileManager {
 
@@ -469,7 +469,7 @@ public class LocalUWSFileManager implements UWSFileManager {
 		// Check the source file:
 		File source = getFile(upload);
 		if (!source.exists())
-			throw new FileNotFoundException("The uploaded file submitted with the parameter \"" + upload.paramName + "\" can not be found any more on the server!");
+			throw new FileNotFoundException("The uploaded file submitted with the parameter \"" + upload.getParamName() + "\" can not be found any more on the server!");
 		// Return the stream:
 		return new FileInputStream(source);
 	}
@@ -505,11 +505,11 @@ public class LocalUWSFileManager implements UWSFileManager {
 		// Check the source file:
 		File source = getFile(upload);
 		if (!source.exists())
-			throw new FileNotFoundException("The uploaded file submitted with the parameter \"" + upload.paramName + "\" can not be found any more on the server!");
+			throw new FileNotFoundException("The uploaded file submitted with the parameter \"" + upload.getParamName() + "\" can not be found any more on the server!");
 
 		// Build the final location (in the owner directory, under the name "UPLOAD_{job-id}_{param-name}":
 		File ownerDir = getOwnerDirectory(destination.getOwner());
-		File copy = new File(ownerDir, "UPLOAD_" + destination.getJobId() + "_" + upload.paramName);
+		File copy = new File(ownerDir, "UPLOAD_" + destination.getJobId() + "_" + upload.getParamName());
 
 		OutputStream output = null;
 		InputStream input = null;

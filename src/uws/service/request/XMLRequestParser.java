@@ -16,7 +16,8 @@ package uws.service.request;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2017 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2017-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -115,7 +116,7 @@ import uws.service.file.UWSFileManager;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (ARI)
- * @version 4.2 (06/2017)
+ * @version 4.5 (08/2024)
  * @since 4.2
  */
 public class XMLRequestParser implements RequestParser {
@@ -238,8 +239,8 @@ public class XMLRequestParser implements RequestParser {
 
 				// Create a UWS wrapping for this uploaded file:
 				UploadFile xmlUpload = new UploadFile(UWS.REQ_ATTRIBUTE_JOB_DESCRIPTION, xmlFile.toURI().toString(), fileManager);
-				xmlUpload.mimeType = request.getContentType();
-				xmlUpload.length = totalLength;
+				xmlUpload.setMimeType(request.getContentType());
+				xmlUpload.setLength(totalLength);
 
 				// And create the corresponding jobInfo:
 				jobDesc = new XMLJobInfo(xmlUpload);

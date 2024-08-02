@@ -16,7 +16,7 @@ package uws.service.actions;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -51,7 +51,7 @@ import uws.service.request.UploadFile;
  * The serializer is choosen in function of the HTTP Accept header.</p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.2 (06/2017)
+ * @version 4.5 (08/2024)
  */
 public class GetJobParam extends UWSAction {
 	private static final long serialVersionUID = 1L;
@@ -167,10 +167,10 @@ public class GetJobParam extends UWSAction {
 				InputStream input = null;
 				try{
 					input = uws.getFileManager().getUploadInput(upl);
-					UWSToolBox.write(input, upl.mimeType, upl.length, response);
+					UWSToolBox.write(input, upl.getMimeType().orElse(null), upl.getLength().orElse((long)-1), response);
 				}catch(IOException ioe){
-					getLogger().logUWS(LogLevel.ERROR, upl, "GET_PARAMETER", "Can not read the content of the uploaded file \"" + upl.paramName + "\" of the job \"" + job.getJobId() + "\"!", ioe);
-					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the uploaded file " + upl.paramName + " (job ID: " + job.getJobId() + ").");
+					getLogger().logUWS(LogLevel.ERROR, upl, "GET_PARAMETER", "Can not read the content of the uploaded file \"" + upl.getParamName() + "\" of the job \"" + job.getJobId() + "\"!", ioe);
+					throw new UWSException(UWSException.INTERNAL_SERVER_ERROR, ioe, "Can not read the content of the uploaded file " + upl.getParamName() + " (job ID: " + job.getJobId() + ").");
 				}finally{
 					if (input != null)
 						input.close();
