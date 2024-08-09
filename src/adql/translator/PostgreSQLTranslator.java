@@ -16,7 +16,7 @@ package adql.translator;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -64,7 +64,7 @@ import adql.query.operand.function.geometry.RegionFunction;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 1.5 (08/2023)
+ * @version 2.0 (08/2024)
  *
  * @see PgSphereTranslator
  */
@@ -294,10 +294,12 @@ public class PostgreSQLTranslator extends JDBCTranslator {
 			case INTEGER:
 			case REAL:
 			case BIGINT:
-			case CHAR:
 			case VARCHAR:
 			case TIMESTAMP:
 				return type.type.toString();
+
+			case CHAR:
+				return type.type + (type.length > 0 ? "(" + type.length + ")" : "");
 
 			case DOUBLE:
 				return "DOUBLE PRECISION";
