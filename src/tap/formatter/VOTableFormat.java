@@ -16,7 +16,7 @@ package tap.formatter;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2023 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS)
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -103,7 +103,7 @@ import uk.ac.starlink.votable.VOTableVersion;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (08/2023)
+ * @version 2.4 (08/2024)
  */
 public class VOTableFormat implements OutputFormat {
 
@@ -649,7 +649,7 @@ public class VOTableFormat implements OutputFormat {
 
 		// Set the XType (if any):
 		if (votType.xtype != null)
-			colInfo.setAuxDatum(new DescribedValue(VOStarTable.XTYPE_INFO, votType.xtype));
+			colInfo.setXtype(votType.xtype);
 
 		// Set the additional information: unit, UCD and UType:
 		colInfo.setUnitString(tapCol.getUnit());
