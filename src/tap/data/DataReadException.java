@@ -22,7 +22,8 @@ package tap.data;
 import tap.TAPException;
 
 /**
- * Exception that occurs when reading a data input (can be an InputStream, a ResultSet, a SavotTable, ...).
+ * Exception that occurs when reading a data input (can be an InputStream, a
+ * ResultSet, a SavotTable, ...).
  * 
  * @author Gr&eacute;gory Mantelet (ARI) - gmantele@ari.uni-heidelberg.de
  * @version 2.0 (06/2014)

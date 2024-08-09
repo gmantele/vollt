@@ -16,7 +16,8 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2015-2018 - Astronomisches Rechen Institut (ARI)
+ * Copyright 2015-2024 - Centre de Données astronomiques de Strasbourg (CDS),
+ *                       Astronomisches Rechen Institut (ARI)
  */
 
 import java.io.BufferedInputStream;
@@ -40,6 +41,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import adql.db.DBType;
 import adql.db.DBType.DBDatatype;
 import tap.TAPException;
+import tap.data.STILTableIterator;
 import tap.data.VOTableIterator;
 import tap.metadata.TAPTable.TableType;
 
@@ -83,8 +85,8 @@ import tap.metadata.TAPTable.TableType;
  * 	but it is however used a lot of time by TAP implementors.
  * </p>
  *
- * @author Gr&eacute;gory Mantelet (ARI)
- * @version 2.3 (04/2018)
+ * @author Gr&eacute;gory Mantelet (CDS;ARI)
+ * @version 2.4 (08/2024)
  * @since 2.0
  */
 public class TableSetParser extends DefaultHandler {
@@ -607,7 +609,7 @@ public class TableSetParser extends DefaultHandler {
 		// Resolve the datatype in function of the value of xsi:type:
 		// CASE: VOTable
 		if (split[1].equalsIgnoreCase("VOTableType"))
-			return VOTableIterator.resolveVotType(datatype, arraysize, xtype).toTAPType();
+			return STILTableIterator.resolveVotType(datatype, arraysize, xtype).toTAPType();
 
 		// CASE: TAP type
 		else if (split[1].equalsIgnoreCase("TAPType")){

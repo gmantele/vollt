@@ -2,20 +2,20 @@ package uws.service.request;
 
 /*
  * This file is part of UWSLibrary.
- * 
+ *
  * UWSLibrary is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * UWSLibrary is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright 2014-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
@@ -31,12 +31,12 @@ import java.util.Optional;
 
 /**
  * <p>This class lets represent a file submitted inline in an HTTP request.</p>
- * 
+ *
  * <p>
  * 	To read this special kind of parameter, an {@link InputStream} must be open. This class lets do it
  * 	by its function {@link #open()}.
  * </p>
- * 
+ *
  * <p>
  * 	When not used any more this file should be deleted, in order to save server disk space.
  * 	This can be easily done thanks to {@link #deleteFile()}. This function actually just call the corresponding function
@@ -44,10 +44,10 @@ import java.util.Optional;
  * 	of the time this file is stored on the local file system, it could also be stored on a distant server by a VOSpace.
  * 	In this case, the way to proceed is different, hence the use of the file manager.
  * </p>
- * 
+ *
  * @author Gr&eacute;gory Mantelet (CDS,ARI)
  * @version 4.5 (08/2024)
- * 
+ *
  * @see UWSParameters
  * @see MultipartParser
  */
@@ -82,7 +82,7 @@ public class UploadFile {
 
 	/**
 	 * Build the description of an uploaded file.
-	 * 
+	 *
 	 * @param paramName		Name of the HTTP request parameter in which the uploaded content was stored. <b>MUST NOT be NULL</b>
 	 * @param location		Location of the file on the server. This String is then used by the given file manager in order to open,
 	 *                		move or delete the uploaded file. Thus, it can be a path, an ID or any other String meaningful to the file manager.
@@ -94,7 +94,7 @@ public class UploadFile {
 
 	/**
 	 * Build the description of an uploaded file.
-	 * 
+	 *
 	 * @param paramName		Name of the HTTP request parameter in which the uploaded content was stored. <b>MUST NOT be NULL</b>
 	 * @param fileName		Filename as provided by the HTTP request. <i>If NULL, set by default to paramName.</i>
 	 * @param location		Location of the file on the server. This String is then used by the given file manager in order to open,
@@ -103,9 +103,32 @@ public class UploadFile {
 	 */
 	public UploadFile(final String paramName, final String fileName, final String location, final UWSFileManager fileManager){
 		this.paramName   = Objects.requireNonNull(paramName,"Missing name of the parameter in which the uploaded file content was => can not create UploadFile!");
-		this.fileName    = (fileName == null || fileName.trim().isEmpty()) ? this.paramName : fileName;
 		this.location    = Objects.requireNonNull(location, "Missing server location of the uploaded file => can not create UploadFile!");
+		this.fileName    = (fileName == null || fileName.trim().isEmpty()) ? extractFileNameFromLocation(this.location) : fileName;
 		this.fileManager = Objects.requireNonNull(fileManager, "Missing file manager => can not create the UploadFile!");
+	}
+
+	/**
+	 * Extract the file name from the location (URI or file path).
+	 *
+	 * <p><b>Note:</b>
+	 *     The filename (especially its file extension) is pretty useful to
+	 *     guess the format of the file to upload.
+	 *     See {@link tap.data.STILTableIterator}
+	 * </p>
+	 *
+	 * @param location	Location from which the file name should be extracted.
+	 *                  It can be a URI/URL/file path.
+	 *
+	 * @return	The expected file name.
+	 *
+	 * @since 4.5
+	 */
+	private String extractFileNameFromLocation(final String location){
+		final int indPathSep = location.lastIndexOf('/');
+		return (indPathSep >= 0)
+				? location.substring(indPathSep+1).trim()
+				: location;
 	}
 
 	/** @since 4.5 */
@@ -116,13 +139,13 @@ public class UploadFile {
 
 	/**
 	 * <p>Get the location (e.g. URI, file path) of this file on the server.</p>
-	 * 
+	 *
 	 * <p><i>Important note:
 	 * 	This function SHOULD be used only by the {@link UWSFileManager} when open, move and delete operations are executed.
 	 * 	The {@link RequestParser} provided by the library set this location to the file URI (i.e. "file://{local-file-path}")
 	 * 	since the default behavior is to store uploaded file on the system temporary directory.
 	 * </i></p>
-	 * 
+	 *
 	 * @return	Location (e.g. URI) or ID or any other meaningful String used by the file manager to access to the uploaded file.
 	 */
 	public String getLocation(){
@@ -131,7 +154,7 @@ public class UploadFile {
 
 	/**
 	 * Get the job that uses this uploaded file.
-	 * 
+	 *
 	 * @return	The owner of this file.
 	 */
 	public Optional<UWSJob> getOwner(){
@@ -141,7 +164,7 @@ public class UploadFile {
 	/**
 	 * <p>Tell whether this uploaded file has been or will be used.
 	 * That's to say, whether an open, delete or move operation has been executed (even if it failed) on this {@link UploadFile} instance.</p>
-	 * 
+	 *
 	 * @return	<i>true</i> if the file must be preserved, <i>false</i> otherwise.
 	 */
 	public final boolean isUsed(){
@@ -176,11 +199,11 @@ public class UploadFile {
 
 	/**
 	 * Open a stream toward this uploaded file.
-	 * 
+	 *
 	 * @return	Stream toward this upload content.
-	 * 
+	 *
 	 * @throws IOException	If an error occurs while opening the stream.
-	 * 
+	 *
 	 * @see UWSFileManager#getUploadInput(UploadFile)
 	 */
 	public InputStream open() throws IOException{
@@ -190,9 +213,9 @@ public class UploadFile {
 
 	/**
 	 * Delete definitely this uploaded file from the server.
-	 * 
+	 *
 	 * @throws IOException	If the delete operation can not be performed.
-	 *        
+	 *
 	 * @see UWSFileManager#deleteUpload(UploadFile)
 	 */
 	public void deleteFile() throws IOException{
@@ -204,18 +227,18 @@ public class UploadFile {
 	 * <p>Move this uploaded file in a location related to the given {@link UWSJob}.
 	 * It is particularly useful if at reception of an HTTP request uploaded files are stored in a temporary
 	 * directory (e.g. /tmp on Unix/Linux systems).</p>
-	 * 
+	 *
 	 * <p>
 	 * 	This function calls {@link UWSFileManager#moveUpload(UploadFile, UWSJob)} to process to the physical
 	 * 	moving of the file, but it then, it updates its location in this {@link UploadFile} instance.
 	 * 	<b>The file manager does NOT update this location! That's why it must not be called directly, but
 	 * 	through {@link #move(UWSJob)}.</b>
 	 * </p>
-	 * 
+	 *
 	 * @param destination	The job by which this uploaded file will be exclusively used.
-	 * 
+	 *
 	 * @throws IOException	If the move operation can not be performed.
-	 * 
+	 *
 	 * @see UWSFileManager#moveUpload(UploadFile, UWSJob)
 	 */
 	public void move(final UWSJob destination) throws IOException{

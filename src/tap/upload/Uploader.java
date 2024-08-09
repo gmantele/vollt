@@ -25,8 +25,8 @@ import tap.ServiceConnection.LimitUnit;
 import tap.TAPException;
 import tap.data.DataReadException;
 import tap.data.LimitedTableIterator;
+import tap.data.STILTableIterator;
 import tap.data.TableIterator;
-import tap.data.VOTableIterator;
 import tap.db.DBConnection;
 import tap.db.DBException;
 import tap.metadata.TAPColumn;
@@ -35,11 +35,9 @@ import tap.metadata.TAPMetadata.STDSchema;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
 import tap.parameters.DALIUpload;
+import uk.ac.starlink.util.DataSource;
 import uws.UWSException;
-import uws.service.file.UnsupportedURIProtocolException;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -49,14 +47,14 @@ import java.util.Set;
  *
  * <p>
  * 	This class manages particularly the upload limit in rows and in bytes by
- * 	creating a {@link LimitedTableIterator} with a {@link VOTableIterator}.
+ * 	creating a {@link LimitedTableIterator} with a {@link STILTableIterator}.
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
  * @version 2.4 (08/2024)
  *
  * @see LimitedTableIterator
- * @see VOTableIterator
+ * @see STILTableIterator
  */
 public class Uploader {
 	/** Specification of the TAP service. */
@@ -188,8 +186,10 @@ public class Uploader {
 
 				checkForTableNameUniqueness(tableName, uploadedTables);
 
-				try(InputStream  votable = upl.open();
-					TableIterator dataIt = new LimitedTableIterator(VOTableIterator.class, votable, limitUnit, limit))
+				final boolean isLimitInBytes = LimitUnit.bytes.isCompatibleWith(limitUnit) && limit > 0;
+				final DataSource tableSource = isLimitInBytes ? new UploadDataSource(upl.file, limit * limitUnit.bytesFactor()) : new UploadDataSource(upl.file);
+
+				try(TableIterator dataIt = new LimitedTableIterator(new STILTableIterator(tableSource), (limitUnit == LimitUnit.rows ? limit : -1)))
 				{
 					final TAPColumn[] columns = dataIt.getMetadata();
 					final TAPTable table = buildTAPTable(uploadSchema, tableName, columns);
@@ -201,12 +201,6 @@ public class Uploader {
 		catch(DataReadException dre){
 			reportFailedUpload("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
 		}
-		catch(IOException ioe){
-			reportFailedUpload("IO error while reading the VOTable of \"" + tableName + "\"!", ioe);
-		}
-		catch(UnsupportedURIProtocolException e){
-			reportFailedUpload("URI error while trying to open the VOTable of \"" + tableName + "\"!", e);
-		}
 		catch(TAPException te){
 			reportFailedUpload(te);
 		}
@@ -216,10 +210,6 @@ public class Uploader {
 
 	protected void reportFailedUpload(final Exception ex) throws TAPException {
 		reportFailedUpload(null, ex, -1);
-	}
-
-	protected void reportFailedUpload(final String message, final Exception ex) throws TAPException {
-		reportFailedUpload(message, ex, -1);
 	}
 
 	protected void reportFailedUpload(final String message, final Exception ex, final int httpErrorStatus) throws TAPException {

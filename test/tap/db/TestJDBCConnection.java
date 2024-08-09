@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -33,9 +32,7 @@ import adql.query.ADQLQuery;
 import adql.query.IdentifierField;
 import adql.translator.AstroH2Translator;
 import adql.translator.PostgreSQLTranslator;
-import tap.data.DataReadException;
-import tap.data.TableIterator;
-import tap.data.VOTableIterator;
+import tap.data.*;
 import tap.db_testtools.DBTools;
 import tap.metadata.TAPColumn;
 import tap.metadata.TAPForeignKey;
@@ -44,6 +41,11 @@ import tap.metadata.TAPMetadata.STDSchema;
 import tap.metadata.TAPMetadata.STDTable;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
+import tap.upload.UploadDataSource;
+import uws.UWSException;
+import uws.service.file.LocalUWSFileManager;
+import uws.service.file.UWSFileManager;
+import uws.service.request.UploadFile;
 
 public class TestJDBCConnection {
 
@@ -55,6 +57,7 @@ public class TestJDBCConnection {
 	private static JDBCConnection sqliteJDBCConnection;
 	private static JDBCConnection sensSqliteJDBCConnection;
 
+	private static String uploadExampleDir;
 	private static String uploadExamplePath;
 
 	private final static String sqliteDbFile = "./test/tap/db_testtools/db-test/sqlite_testDB.db";
@@ -62,7 +65,8 @@ public class TestJDBCConnection {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception{
 
-		uploadExamplePath = "./test/tap/db/upload_example.vot";
+		uploadExampleDir  = "./test/tap/db";
+		uploadExamplePath = uploadExampleDir+"/upload_example.vot";
 
 		DBTools.createTestDB();
 		h2Connection = DBTools.createConnection("h2", null, null, DBTools.DB_TEST_PATH, DBTools.DB_TEST_USER, DBTools.DB_TEST_PWD);
@@ -398,81 +402,78 @@ public class TestJDBCConnection {
 	}
 
 	@Test
-	public void testAddUploadedTable(){
+	public void testAddUploadedTable() throws UWSException {
 		// There should be no difference between a H2 connection and a SQLITE one!
 		JDBCConnection[] connections = new JDBCConnection[]{h2JDBCConnection,sensH2JDBCConnection,sqliteJDBCConnection,sensSqliteJDBCConnection};
 		TAPTable tableDef = null;
+		UWSFileManager fileManager = new LocalUWSFileManager(new File(uploadExampleDir));
 		for(JDBCConnection conn : connections){
-			InputStream io = null;
 			try{
-				io = new FileInputStream(uploadExamplePath);
-				TableIterator it = new VOTableIterator(io);
+				final UploadFile upl = new UploadFile("testFile", uploadExamplePath, uploadExamplePath, fileManager);
 
-				TAPColumn[] cols = it.getMetadata();
-				tableDef = new TAPTable("UploadExample");
-				for(TAPColumn c : cols)
-					tableDef.addColumn(c);
+				try(TableIterator it = new STILTableIterator(new UploadDataSource(upl)))
+				{
+					TAPColumn[] cols = it.getMetadata();
+					tableDef = new TAPTable("UploadExample");
+					for (TAPColumn c : cols)
+						tableDef.addColumn(c);
 
-				// Test with no schema set:
-				try{
-					conn.addUploadedTable(tableDef, it);
-					fail("The table is not inside a TAPSchema, so this test should have failed!");
-				}catch(Exception ex){
-					assertTrue(ex instanceof DBException);
-					assertEquals("Missing upload schema! An uploaded table must be inside a schema whose the ADQL name is strictly equals to \"" + STDSchema.UPLOADSCHEMA.label + "\" (but the DB name may be different).", ex.getMessage());
-				}
+					// Test with no schema set:
+					try {
+						conn.addUploadedTable(tableDef, it);
+						fail("The table is not inside a TAPSchema, so this test should have failed!");
+					} catch (Exception ex) {
+						assertTrue(ex instanceof DBException);
+						assertEquals("Missing upload schema! An uploaded table must be inside a schema whose the ADQL name is strictly equals to \"" + STDSchema.UPLOADSCHEMA.label + "\" (but the DB name may be different).", ex.getMessage());
+					}
 
-				// Specify the UPLOAD schema for the table to upload:
-				TAPSchema schema = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
-				schema.addTable(tableDef);
+					// Specify the UPLOAD schema for the table to upload:
+					TAPSchema schema = new TAPSchema(STDSchema.UPLOADSCHEMA.label);
+					schema.addTable(tableDef);
 
-				// Prepare the test: no TAP_UPLOAD schema and no table TAP_UPLOAD.UploadExample:
-				dropSchema(STDSchema.UPLOADSCHEMA.label, conn);
-				// Test:
-				try{
-					assertTrue(conn.addUploadedTable(tableDef, it));
-				}catch(Exception ex){
-					ex.printStackTrace(System.err);
-					fail("{" + conn.ID + "} This error should not happen: no TAP_UPLOAD schema.");
-				}
-
-				close(io);
-				io = new FileInputStream(uploadExamplePath);
-				it = new VOTableIterator(io);
-
-				// Prepare the test: the TAP_UPLOAD schema exist but not the table TAP_UPLOAD.UploadExample:
-				dropTable(tableDef.getDBSchemaName(), tableDef.getDBName(), conn);
-				// Test:
-				try{
-					assertTrue(conn.addUploadedTable(tableDef, it));
-				}catch(Exception ex){
-					ex.printStackTrace(System.err);
-					fail("{" + conn.ID + "} This error should not happen: no TAP_UPLOAD schema.");
-				}
-
-				close(io);
-				io = new FileInputStream(uploadExamplePath);
-				it = new VOTableIterator(io);
-
-				// Prepare the test: the TAP_UPLOAD schema and the table TAP_UPLOAD.UploadExample BOTH exist:
-				;
-				// Test:
-				try{
-					assertFalse(conn.addUploadedTable(tableDef, it));
-				}catch(Exception ex){
-					if (ex instanceof DBException)
-						assertEquals("Impossible to create the user uploaded table in the database: " + conn.translator.getTableName(tableDef, conn.supportsSchema) + "! This table already exists.", ex.getMessage());
-					else{
+					// Prepare the test: no TAP_UPLOAD schema and no table TAP_UPLOAD.UploadExample:
+					dropSchema(STDSchema.UPLOADSCHEMA.label, conn);
+					// Test:
+					try {
+						assertTrue(conn.addUploadedTable(tableDef, it));
+					} catch (Exception ex) {
 						ex.printStackTrace(System.err);
-						fail("{" + conn.ID + "} DBException was the expected exception!");
+						fail("{" + conn.ID + "} This error should not happen: no TAP_UPLOAD schema.");
+					}
+				}
+
+				try(TableIterator it = new STILTableIterator(new UploadDataSource(upl)))
+				{
+					// Prepare the test: the TAP_UPLOAD schema exist but not the table TAP_UPLOAD.UploadExample:
+					dropTable(tableDef.getDBSchemaName(), tableDef.getDBName(), conn);
+					// Test:
+					try {
+						assertTrue(conn.addUploadedTable(tableDef, it));
+					} catch (Exception ex) {
+						ex.printStackTrace(System.err);
+						fail("{" + conn.ID + "} This error should not happen: no TAP_UPLOAD schema.");
+					}
+				}
+
+				try(TableIterator it = new STILTableIterator(new UploadDataSource(upl))) {
+					// Prepare the test: the TAP_UPLOAD schema and the table TAP_UPLOAD.UploadExample BOTH exist:
+					;
+					// Test:
+					try {
+						assertFalse(conn.addUploadedTable(tableDef, it));
+					} catch (Exception ex) {
+						if (ex instanceof DBException)
+							assertEquals("Impossible to create the user uploaded table in the database: " + conn.translator.getTableName(tableDef, conn.supportsSchema) + "! This table already exists.", ex.getMessage());
+						else {
+							ex.printStackTrace(System.err);
+							fail("{" + conn.ID + "} DBException was the expected exception!");
+						}
 					}
 				}
 
 			}catch(Exception ex){
 				ex.printStackTrace(System.err);
 				fail("{" + conn.ID + "} This error should never happen except there is a problem with the file (" + uploadExamplePath + ").");
-			}finally{
-				close(io);
 			}
 		}
 	}

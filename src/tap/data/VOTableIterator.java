@@ -46,6 +46,8 @@ import uk.ac.starlink.table.TableSink;
  * @author Gr&eacute;gory Mantelet (ARI)
  * @version 2.1 (03/2017)
  * @since 2.0
+ *
+ * @deprecated Use {@link STILTableIterator} instead.
  */
 public class VOTableIterator implements TableIterator {
 

@@ -25,6 +25,7 @@ import tap.ServiceConnection.LimitUnit;
 import tap.metadata.TAPColumn;
 import tap.upload.ExceededSizeException;
 import tap.upload.LimitedSizeInputStream;
+import tap.upload.UploadDataSource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,14 +75,15 @@ public class LimitedTableIterator implements TableIterator {
 	private boolean overflow = false;
 
 	/**
-	 * Wrap the given {@link TableIterator} so that limiting the number of rows to read.
+	 * Wrap the given {@link TableIterator} so that limiting the number of rows
+	 * to read.
 	 *
 	 * @param it		The iterator to wrap. <i>MUST NOT be NULL</i>
 	 * @param nbMaxRows	Maximum number of rows that can be read. There is overflow if more than this number of rows is asked. <i>A negative value means "no limit".</i>
 	 */
 	public LimitedTableIterator(final TableIterator it, final int nbMaxRows) {
 		innerIt        = Objects.requireNonNull(it, "Missing TableIterator to wrap!");
-		this.maxNbRows = nbMaxRows;
+		this.maxNbRows = (nbMaxRows > 0) ? nbMaxRows : -1;
 	}
 
 	/**
@@ -109,12 +111,16 @@ public class LimitedTableIterator implements TableIterator {
 	 * @param classIt	Class of the {@link TableIterator} implementation to create and whose the output must be limited.
 	 * @param input		Input stream toward the table to read.
 	 * @param type		Type of the limit: ROWS or BYTES. <i>MAY be NULL</i>
-	 * @param limit		Limit in rows or bytes, depending of the "type" parameter. <i>MAY BE <=0</i>
+	 * @param limit		Limit in rows or bytes, depending on the "type" parameter. <i>MAY BE <=0</i>
 	 *
 	 * @throws DataReadException	If no instance of the given class can be created,
 	 *                          	or if the {@link TableIterator} instance can not be initialized,
 	 *                          	or if the limit (in rows or bytes) has been reached.
+	 *
+	 * @deprecated Prefer instead:
+	 *            <code>new {@link LimitedTableIterator}(new {@link STILTableIterator}(new {@link UploadDataSource}(uploadFile, byteLimit)), rowsLimit)</code>.
 	 */
+	@Deprecated
 	public <T extends TableIterator> LimitedTableIterator(final Class<T> classIt, final InputStream input, final LimitUnit type, final int limit) throws DataReadException {
 		try{
 			Constructor<T> construct = classIt.getConstructor(InputStream.class);
