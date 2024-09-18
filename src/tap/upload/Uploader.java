@@ -43,7 +43,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Let create properly given VOTable inputs in the "database".
+ * Let create properly given table inputs in the "database".
  *
  * <p>
  * 	This class manages particularly the upload limit in rows and in bytes by
@@ -51,7 +51,7 @@ import java.util.Set;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.4 (08/2024)
+ * @version 2.4 (09/2024)
  *
  * @see LimitedTableIterator
  * @see STILTableIterator
@@ -60,7 +60,7 @@ public class Uploader {
 	/** Specification of the TAP service. */
 	protected final ServiceConnection service;
 	/** Connection to the "database" (which lets upload the content of any given
-	 * VOTable). */
+	 * table). */
 	protected final DBConnection dbConn;
 	/** Description of the TAP_UPLOAD schema to use.
 	 * @since 2.0 */
@@ -148,7 +148,7 @@ public class Uploader {
 	}
 
 	/**
-	 * Upload all the given VOTable inputs.
+	 * Upload all the given table inputs.
 	 *
 	 * <p><b>Note 1:</b>
 	 * 	The {@link TAPTable} objects representing the uploaded tables will be
@@ -170,7 +170,7 @@ public class Uploader {
 	 * @return	A {@link TAPSchema} containing the list and the description of
 	 *        	all uploaded tables.
 	 *
-	 * @throws TAPException	If any error occurs while reading the VOTable inputs
+	 * @throws TAPException	If any error occurs while reading the table inputs
 	 *                     	or while uploading the table into the "database".
 	 *
 	 * @see DBConnection#addUploadedTable(TAPTable, tap.data.TableIterator)
@@ -199,7 +199,7 @@ public class Uploader {
 			}
 		}
 		catch(DataReadException dre){
-			reportFailedUpload("Error while reading the VOTable \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
+			reportFailedUpload("Error while reading the table \"" + tableName + "\": " + dre.getMessage(), dre, UWSException.BAD_REQUEST);
 		}
 		catch(TAPException te){
 			reportFailedUpload(te);
