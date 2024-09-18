@@ -48,7 +48,7 @@ import java.util.*;
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version 2.4 (08/2024)
+ * @version 2.4 (09/2024)
  * @since 2.4
  */
 public class STILTableIterator implements TableIterator {
@@ -231,6 +231,7 @@ public class STILTableIterator implements TableIterator {
 			// FITS:
 			case "fits":
 			case "application/fits":
+			case "image/fits": /* Note: more permissive on purpose. Web-browsers generally interpret a .fits file as an `image/fits` by default with an `<input type="file">`, even if it is a tabular FITS. */
 				return Optional.of(new FitsTableBuilder());
 			// Parquet:
 			case "parquet":
