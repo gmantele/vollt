@@ -193,6 +193,37 @@ public class TestSTILTableIterator {
     }
 
     @Test
+    public void constructor_ShouldFail_WhenFileNameExtensionIsIncorrect_AndParamNameWithoutFileExtension() throws Exception {
+        // Given
+        final UploadDataSource dataSource = makeDataSource(uploadExampleDir+"/testdata_csv.lis", null, "test");
+
+        // When
+        try(TableIterator ignored = new STILTableIterator(dataSource)) {
+            fail("File is CSV which is a format that can not be detected automatically and there is no other file extension as 'lis' which is incorrect. This test should fail.");
+        }
+
+        // Then
+        catch(Exception ex){
+            assertEquals(DataReadException.class, ex.getClass());
+            assertEquals("Failed to read the table 'test'! Cause: failed to automatically detect the table format of the table to upload ("+dataSource.getName()+")!", ex.getMessage().substring(0, 118));
+        }
+
+    }
+
+    @Test
+    public void constructor_ShouldSucceed_WhenFileNameExtensionIsIncorrect_ButParamNameWithFileExtensionIsCorrect() throws Exception {
+        // Given
+        final UploadDataSource dataSource = makeDataSource(uploadExampleDir+"/testdata_csv.lis", null, "test.csv");
+
+        // When
+        try(TableIterator valid = new STILTableIterator(dataSource)) {
+
+            // Then
+            assertNotNull(valid);
+        }
+    }
+
+    @Test
     public void getMetadata_ShouldSucceed_WhenAskingForThem() throws Exception {
         // Given
         final UploadDataSource dataSource = makeDataSource(uploadExampleDir+"/testdata.vot");

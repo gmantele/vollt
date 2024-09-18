@@ -117,21 +117,38 @@ public class STILTableIterator implements TableIterator {
 	/* ********************************************************************** */
 
 	protected StarTable openTable() throws DataReadException {
+		// If a MIME type is provided, open the table with it:
 		if (hasMimeType(dataSource))
 			return openTableWithMimeType(getMimeType(dataSource));
 		else
 		{
-			final Optional<String> fileExtension = getFileExtension(dataSource);
-			if (fileExtension.isPresent()){
-				try{
-					return openTableWithFileExtension(fileExtension.get());
-				}
-				catch(Exception ignored){
-					return tryToOpenTableWithMultipleFormats();
+			/* Otherwise, try all file extensions (first, from the filename,
+			 * then from the parameter name): */
+			final String[] fileExtensions = new String[]{
+					getFileExtensionFromFileName(dataSource).orElse(null),
+					getFileExtensionFromNameParam(dataSource).orElse(null)
+			};
+
+			// Try with each file extension ; stop when one works:
+			for(String fileExt : fileExtensions) {
+				if (fileExt != null) {
+					final Optional<StarTable> optTable = tryOpenTableWithFileExtension(fileExt);
+					if (optTable.isPresent())
+						return optTable.get();
 				}
 			}
-			else
-				return tryToOpenTableWithMultipleFormats();
+
+			// If no file extension is useful, try to guess:
+			return tryToOpenTableWithMultipleFormats();
+		}
+	}
+
+	private Optional<StarTable> tryOpenTableWithFileExtension(final String fileExtension) {
+		try{
+			return Optional.of(openTableWithFileExtension(fileExtension));
+		}
+		catch(Exception ignored){
+			return Optional.empty();
 		}
 	}
 
@@ -152,19 +169,19 @@ public class STILTableIterator implements TableIterator {
 		return ((UploadDataSource) dataSource).getMimeType().orElse(null);
 	}
 
-	private Optional<String> getFileExtension(final DataSource dataSource){
-		// If there is a file name having a file extension, take this one:
+	private Optional<String> getFileExtensionFromFileName(final DataSource dataSource){
 		if (hasFileNameWithExtension(dataSource))
 		{
 			final String fileName = getFileName((UploadDataSource) dataSource);
 			return Optional.of(getFileExtension(fileName));
 		}
+		else
+			return Optional.empty();
+	}
 
-		// If there is a parameter name with a file extension, try with it:
-		else if (hasFileExtension(dataSource.getName()))
+	private Optional<String> getFileExtensionFromNameParam(final DataSource dataSource){
+		if (hasFileExtension(dataSource.getName()))
 			return Optional.of(getFileExtension(dataSource.getName()));
-
-		// Otherwise, nothing:
 		else
 			return Optional.empty();
 	}
