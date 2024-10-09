@@ -811,6 +811,28 @@ public class TestDBChecker {
 		}
 	}
 
+	@Test
+	public void test_ShouldSucceed_WhenSubQueryUsesSameTableAsMainQuery() throws Exception {
+		// Given...
+		// ...this only table with 3 columns:
+		final ArrayList<DBTable> lstTables = new ArrayList<>(1);
+		final DefaultDBTable tableResource = new DefaultDBTable("resource");
+		tableResource.addColumn(new DefaultDBColumn("ivoid", tableResource));
+		tableResource.addColumn(new DefaultDBColumn("short_name", tableResource));
+		tableResource.addColumn(new DefaultDBColumn("res_description", tableResource));
+		lstTables.add(tableResource);
+		// ...and this parser:
+		final DBChecker dbChecker = new DBChecker(lstTables);
+		final ADQLParser parser = new ADQLParser();
+		parser.setQueryChecker(dbChecker);
+
+		// When parsing the query with a sub-query using the same table:
+		final ADQLSet query = parser.parseQuery("SELECT res_description FROM resource WHERE ivoid IN (SELECT ivoid FROM resource WHERE short_name = 'anything')");
+
+		// Then, the query should successfully pass:
+		assertNotNull(query);
+	}
+
 	private static class WrongUDFToto extends UDFToto {
 		public WrongUDFToto(final ADQLOperand[] params) throws Exception {
 			super(params);

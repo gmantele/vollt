@@ -1204,13 +1204,23 @@ public class DBChecker implements QueryChecker {
 		if (sHandler.getNbMatch() > 0) {
 
 			// Check each found sub-query:
-			for(ADQLObject result : sHandler) {
+			for(ADQLObject result : sHandler)
+			{
+				/* Create an empty context in order to use at first only the
+				 * local context (and if needed, we will look at the parent
+				 * contexts) ; see resolveColumn(final ADQLColumn column, final Stack<CheckContext> contextList): */
+				contextList.push(new CheckContext(null, null));
+
 				try {
-					check((ADQLQuery)result, contextList);
+					check((ADQLSet)result, contextList);
 				} catch(UnresolvedIdentifiersException uie) {
 					Iterator<ParseException> itPe = uie.getErrors();
 					while(itPe.hasNext())
 						errors.addException(itPe.next());
+				}
+				/* Forget about the pushed context: */
+				finally {
+					contextList.pop();
 				}
 			}
 		}
