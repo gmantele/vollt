@@ -16,7 +16,7 @@ package tap.metadata;
  * You should have received a copy of the GNU Lesser General Public License
  * along with TAPLibrary.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2012-2017 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -69,7 +69,7 @@ import adql.db.DBType.DBDatatype;
  * </p>
  * 
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.1 (07/2017)
+ * @version 2.4 (10/2024)
  */
 public class TAPColumn implements DBColumn {
 
@@ -191,7 +191,7 @@ public class TAPColumn implements DBColumn {
 			throw new NullPointerException("Missing column name!");
 
 		adqlName = columnName.trim();
-		simplificationNeeded = (adqlName.indexOf('.') > 0 || adqlName.indexOf('"') >= 0);
+		simplificationNeeded = (adqlName.indexOf('.') > 0 || adqlName.matches("\"[^\"]*\""));
 
 		if (getADQLName().length() == 0)
 			throw new NullPointerException("Missing column name!");
@@ -971,7 +971,7 @@ public class TAPColumn implements DBColumn {
 	 */
 	@Override
 	public DBColumn copy(final String dbName, final String adqlName, final DBTable dbTable){
-		TAPColumn copy = new TAPColumn((adqlName == null) ? this.adqlName : adqlName, datatype, description, unit, ucd, utype);
+		TAPColumn copy = new TAPColumn("\""+((adqlName == null) ? this.adqlName : adqlName)+"\"", datatype, description, unit, ucd, utype);
 		copy.setDBName((dbName == null) ? this.getDBName() : dbName);
 		copy.setTable(dbTable);
 

@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import adql.db.DBChecker;
+import adql.db.DBColumn;
+import adql.parser.ADQLParser;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,6 +46,8 @@ import adql.search.IReplaceHandler;
 import adql.search.ISearchHandler;
 import adql.search.SearchColumnHandler;
 import adql.search.SimpleReplaceHandler;
+import tap.metadata.TAPColumn;
+import tap.metadata.TAPTable;
 
 public class TestADQLQuery {
 	private ADQLQuery query = null;
@@ -236,5 +241,61 @@ public class TestADQLQuery {
 		assertEquals(1, query.getResultingColumns().length);
 		assertEquals(DBDatatype.INTEGER, query.getResultingColumns()[0].getDatatype().type);
 
+	}
+
+	@Test
+	public void getResultingColumns_ShouldRemoveTablePrefix_WhenTablePrefixInColumnName() throws Exception {
+		// Given...
+		// ...the table "flux":
+		final String TABLE_NAME = "flux";
+		final TAPTable tableFlux = new TAPTable(TABLE_NAME);
+		// ...its only column "qual":
+		final String COLNAME = "qual";
+		final TAPColumn colQual = new TAPColumn(COLNAME);
+		tableFlux.addColumn(colQual);
+		// ...which gives a list of tables of only 1:
+		final ArrayList<TAPTable> lstTables = new ArrayList<>(1);
+		lstTables.add(tableFlux);
+		// ...and finally creating the ADQL parser with this list:
+		final DBChecker dbChecker = new DBChecker(lstTables);
+		final ADQLParser parser = new ADQLParser(dbChecker);
+
+		// When...
+		// ...parsing the query:
+		final ADQLQuery fluxQuery = parser.parseQuery("SELECT TOP 1 "+TABLE_NAME+"."+COLNAME+" FROM "+TABLE_NAME);
+		// ...and generating the resulting columns:
+		final DBColumn[] fluxColumns = fluxQuery.getResultingColumns();
+
+		// Then, the column name should still be prefixed with the column name:
+		assertEquals(COLNAME, fluxColumns[0].getADQLName());
+	}
+
+	@Test
+	public void getResultingColumns_ShouldKeepTablePrefix_WhenTablePrefixInDelimitedAlias() throws Exception {
+		// Given...
+		// ...the table "flux":
+		final String TABLE_NAME = "flux";
+		final TAPTable tableFlux = new TAPTable(TABLE_NAME);
+		// ...its only column "qual":
+		final String COLNAME = "qual";
+		final TAPColumn colQual = new TAPColumn(COLNAME);
+		tableFlux.addColumn(colQual);
+		// ...which gives a list of tables of only 1:
+		final ArrayList<TAPTable> lstTables = new ArrayList<>(1);
+		lstTables.add(tableFlux);
+		// ...and finally creating the ADQL parser with this list:
+		final DBChecker dbChecker = new DBChecker(lstTables);
+		final ADQLParser parser = new ADQLParser(dbChecker);
+
+		// When...
+		// ...parsing the query:
+		final String ALIAS = TABLE_NAME+"."+COLNAME;
+		final ADQLQuery fluxQuery = parser.parseQuery("SELECT TOP 1 "+COLNAME+" AS \""+ALIAS+"\" FROM "+TABLE_NAME);
+		// ...and generating the resulting columns:
+		final DBColumn[] fluxColumns = fluxQuery.getResultingColumns();
+
+		// Then, the column name should still be prefixed with the column name:
+		assertEquals(ALIAS, fluxQuery.getSelect().get(0).getAlias());
+		assertEquals(ALIAS, fluxColumns[0].getADQLName());
 	}
 }
