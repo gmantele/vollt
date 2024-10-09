@@ -16,20 +16,10 @@ package adql.db;
  * You should have received a copy of the GNU Lesser General Public License
  * along with ADQLLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2011-2022 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2011-2024 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-
-import adql.db.DBChecker.BinarySearch;
 import adql.db.exception.UnresolvedColumnException;
 import adql.db.exception.UnresolvedFunctionException;
 import adql.db.exception.UnresolvedIdentifiersException;
@@ -39,19 +29,7 @@ import adql.db.region.Region;
 import adql.db.region.STCS;
 import adql.parser.QueryChecker;
 import adql.parser.grammar.ParseException;
-import adql.query.ADQLIterator;
-import adql.query.ADQLObject;
-import adql.query.ADQLOrder;
-import adql.query.ADQLQuery;
-import adql.query.ADQLSet;
-import adql.query.ClauseADQL;
-import adql.query.ClauseSelect;
-import adql.query.ColumnReference;
-import adql.query.IdentifierField;
-import adql.query.SelectAllColumns;
-import adql.query.SelectItem;
-import adql.query.SetOperation;
-import adql.query.WithItem;
+import adql.query.*;
 import adql.query.from.ADQLTable;
 import adql.query.from.FromContent;
 import adql.query.operand.ADQLColumn;
@@ -60,16 +38,14 @@ import adql.query.operand.StringConstant;
 import adql.query.operand.UnknownType;
 import adql.query.operand.function.ADQLFunction;
 import adql.query.operand.function.UserDefinedFunction;
-import adql.query.operand.function.geometry.BoxFunction;
-import adql.query.operand.function.geometry.CircleFunction;
-import adql.query.operand.function.geometry.GeometryFunction;
-import adql.query.operand.function.geometry.PointFunction;
-import adql.query.operand.function.geometry.PolygonFunction;
-import adql.query.operand.function.geometry.RegionFunction;
+import adql.query.operand.function.geometry.*;
 import adql.search.ISearchHandler;
 import adql.search.SearchColumnHandler;
 import adql.search.SimpleReplaceHandler;
 import adql.search.SimpleSearchHandler;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 /**
  * <h3>ADQL Query verification</h3>
@@ -109,7 +85,7 @@ import adql.search.SimpleSearchHandler;
  * </i></p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 2.0 (07/2022)
+ * @version 2.0 (10/2024)
  */
 public class DBChecker implements QueryChecker {
 
@@ -214,7 +190,6 @@ public class DBChecker implements QueryChecker {
 			this.allowedUdfs = new FunctionDef[cnt];
 			System.arraycopy(tmp, 0, this.allowedUdfs, 0, cnt);
 
-			tmp = null;
 			// sort the values:
 			Arrays.sort(this.allowedUdfs);
 		}
@@ -262,7 +237,7 @@ public class DBChecker implements QueryChecker {
 	 * @throws ParseException	An {@link UnresolvedIdentifiersException} if
 	 *                       	some tables or columns can not be resolved.
 	 *
-	 * @see #check(ADQLQuery, Stack)
+	 * @see #check(ADQLSet, Stack)
 	 */
 	@Override
 	public final void check(final ADQLSet query) throws ParseException {
@@ -310,8 +285,6 @@ public class DBChecker implements QueryChecker {
 		final CheckContext context = contextList.peek();
 
 		// Resolve tables/queries declared in the WITH clause, if any:
-		ADQLTable[] declaredCTEs = new ADQLTable[query.getWith().size()];
-		int i = 0;
 		for(WithItem withItem : query.getWith()) {
 
 			// Check this query (and set all the metadata on all DB items)
@@ -329,7 +302,6 @@ public class DBChecker implements QueryChecker {
 			ADQLTable adqlTable = new ADQLTable(null, withItem.getLabel());
 			adqlTable.setCaseSensitive(IdentifierField.TABLE, withItem.isLabelCaseSensitive());
 			adqlTable.setDBLink(withItem.getDBLink());
-			declaredCTEs[i++] = adqlTable;
 
 			// Update the context:
 			context.cteTables.add(adqlTable.getDBLink());
@@ -365,7 +337,7 @@ public class DBChecker implements QueryChecker {
 	 * 	<li>Check equality of these columns' datatypes</li>
 	 * </ol>
 	 *
-	 * @param query			The (sub-)query to check.
+	 * @param setOp			The (sub-)query to check.
 	 * @param contextList	Each item of this stack represents a recursion level
 	 *                   	inside the main ADQL query. A such item contains the
 	 *                   	list of columns and tables available at this level.
@@ -431,7 +403,7 @@ public class DBChecker implements QueryChecker {
 	 * @since 1.2
 	 *
 	 * @see #checkDBItems(ADQLQuery, Stack, UnresolvedIdentifiersException)
-	 * @see #checkSubQueries(ADQLQuery, Stack, SearchColumnList, UnresolvedIdentifiersException)
+	 * @see #checkSubQueries(ADQLQuery, Stack, UnresolvedIdentifiersException)
 	 * @see #checkUDFs(ADQLQuery, UnresolvedIdentifiersException)
 	 * @see #checkTypes(ADQLQuery, UnresolvedIdentifiersException)
 	 */
@@ -519,9 +491,9 @@ public class DBChecker implements QueryChecker {
 	 * <h3>Management of sub-query tables</h3>
 	 * <p>
 	 * 	If a table is not a DB table reference but a sub-query, this latter is
-	 * 	first checked, using {@link #check(ADQLQuery, Stack)}. Then, its
+	 * 	first checked, using {@link #check(ADQLSet, Stack)}. Then, its
 	 * 	corresponding table metadata are generated (using
-	 * 	{@link #generateDBTable(ADQLQuery, String)}) and attached to it.
+	 * 	{@link #generateDBTable(ADQLSet, String)}) and attached to it.
 	 * </p>
 	 *
 	 * <h3>Management of "{table}.*" in the SELECT clause</h3>
@@ -576,8 +548,7 @@ public class DBChecker implements QueryChecker {
 					dbTable = generateDBTable(table.getSubQuery(), (table.isCaseSensitive(IdentifierField.ALIAS) ? "\"" + table.getAlias() + "\"" : table.getAlias()));
 				} else {
 					// search among DB tables:
-					if (dbTable == null)
-						dbTable = resolveTable(table, contextList);
+					dbTable = resolveTable(table, contextList);
 					// wrap this table metadata if an alias should be used:
 					if (dbTable != null && table.hasAlias()) {
 						dbTable = new DBTableAlias(dbTable, (table.isCaseSensitive(IdentifierField.ALIAS) ? "\"" + table.getAlias() + "\"" : table.getAlias().toLowerCase()));
@@ -588,7 +559,7 @@ public class DBChecker implements QueryChecker {
 				table.setDBLink(dbTable);
 				if (table.isSubQuery() || table.hasAlias()) {
 					if (!context.cteTables.add(dbTable))
-						errors.addException(new ParseException("Table name already used: \"" + dbTable.getADQLName() + "\". Please, choose a different alias for this table."));
+						errors.addException(new ParseException("Table name already used: \"" + (dbTable == null ? "-" : dbTable.getADQLName()) + "\". Please, choose a different alias for this table."));
 				}
 			} catch(ParseException pe) {
 				errors.addException(pe);
@@ -677,13 +648,11 @@ public class DBChecker implements QueryChecker {
 	 *                   	inside the main ADQL query. A such item contains the
 	 *                   	list of columns and tables available at this level.
 	 * @param mapTables		List of all resolved tables.
-	 * @param list			List of column metadata to complete in this function
-	 *            			each time a column reference is resolved.
 	 * @param errors		List of errors to complete in this function each
 	 *              		time an unknown table or column is encountered.
 	 *
 	 * @deprecated	Since v2.0, the parameter 'mapTables' is no more used.
-	 *            	You should used {@link #resolveColumns(ADQLQuery, Stack, UnresolvedIdentifiersException)} instead.
+	 *            	You should use {@link #resolveColumns(ADQLQuery, Stack, UnresolvedIdentifiersException)} instead.
 	 */
 	@Deprecated
 	protected final void resolveColumns(final ADQLQuery query, final Stack<CheckContext> contextList, final Map<DBTable, ADQLTable> mapTables, final UnresolvedIdentifiersException errors) {
@@ -862,9 +831,8 @@ public class DBChecker implements QueryChecker {
 	 * @since 2.0
 	 */
 	protected void checkOrderBy(final ClauseADQL<ADQLOrder> orderBy, final ClauseSelect select, final Stack<CheckContext> contextList, final UnresolvedIdentifiersException errors) {
-		for(ADQLObject obj : orderBy) {
+		for(ADQLOrder order : orderBy) {
 			try {
-				ADQLOrder order = (ADQLOrder)obj;
 				if (order.getExpression() != null) {
 					ADQLOperand expr = order.getExpression();
 					if (expr instanceof ADQLColumn) {
@@ -1216,7 +1184,7 @@ public class DBChecker implements QueryChecker {
 	/**
 	 * Search for all sub-queries found in the given query but not in the clause
 	 * FROM. These sub-queries are then checked using
-	 * {@link #check(ADQLQuery, Stack)}.
+	 * {@link #check(ADQLSet, Stack)}.
 	 *
 	 *
 	 * @param query				Query in which sub-queries must be checked.
@@ -1224,7 +1192,6 @@ public class DBChecker implements QueryChecker {
 	 *                   		level inside the main ADQL query. A such item
 	 *                   		contains the list of columns and tables
 	 *                   		available at this level.
-	 * @param availableColumns	List of all columns resolved in the given query.
 	 * @param errors			List of errors to complete in this function each
 	 *              			time a semantic error is encountered.
 	 *
@@ -1447,8 +1414,8 @@ public class DBChecker implements QueryChecker {
 	 * 	For that reason, the "compare" function must always be implemented.
 	 * </p>
 	 *
-	 * @author Gr&eacute;gory Mantelet (ARI)
-	 * @version 1.3 (10/2014)
+	 * @author Gr&eacute;gory Mantelet (CDS;ARI)
+	 * @version 2.0 (10/2024)
 	 *
 	 * @param <T>	Type of items stored in the array.
 	 * @param <S>	Type of the item to search.
@@ -1456,7 +1423,6 @@ public class DBChecker implements QueryChecker {
 	 * @since 1.3
 	 */
 	protected static abstract class BinarySearch<T, S> {
-		private int s, e, m, comp;
 
 		/**
 		 * Search the given item in the given array.
@@ -1474,13 +1440,13 @@ public class DBChecker implements QueryChecker {
 		 * @return	The array index of the first item of all matches.
 		 */
 		public int search(final S searchItem, final T[] array) {
-			s = 0;
-			e = array.length - 1;
+			int s = 0;
+			int e = array.length - 1;
 			while(s < e) {
 				// middle of the sorted array:
-				m = s + ((e - s) / 2);
+				int m = s + ((e - s) / 2);
 				// compare the fct with the middle item of the array:
-				comp = compare(searchItem, array[m]);
+				int comp = compare(searchItem, array[m]);
 				// if the fct is after, trigger the inspection of the right part of the array:
 				if (comp > 0)
 					s = m + 1;
@@ -1658,7 +1624,7 @@ public class DBChecker implements QueryChecker {
 	 *            	{@link adql.parser.ADQLParser ADQLParser}.
 	 */
 	@Deprecated
-	protected final static String[] specialSort(final Collection<String> items) {
+	protected static String[] specialSort(final Collection<String> items) {
 		// Nothing to do if the array is NULL:
 		if (items == null)
 			return null;
@@ -1667,7 +1633,7 @@ public class DBChecker implements QueryChecker {
 		String[] tmp = new String[items.size()];
 		int cnt = 0;
 		for(String item : items) {
-			if (item != null && item.trim().length() > 0)
+			if (item != null && !item.trim().isEmpty())
 				tmp[cnt++] = item;
 		}
 
@@ -1832,7 +1798,7 @@ public class DBChecker implements QueryChecker {
 	 * @param errors		List of errors to complete in this function each time a coordinate system has a wrong syntax or is not supported.
 	 *
 	 * @see STCS#parseCoordSys(String)
-	 * @see #checkCoordinateSystem(adql.db.region.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 * @see #checkCoordinateSystem(CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
 	 *
@@ -1864,7 +1830,7 @@ public class DBChecker implements QueryChecker {
 	@Deprecated
 	protected void checkCoordinateSystem(final CoordSys coordSys, final ADQLOperand operand, final UnresolvedIdentifiersException errors) {
 		if (coordSysRegExp != null && coordSys != null && !coordSys.toFullSTCS().matches(coordSysRegExp)) {
-			StringBuffer buf = new StringBuffer();
+			StringBuilder buf = new StringBuilder();
 			if (allowedCoordSys != null) {
 				for(String cs : allowedCoordSys) {
 					if (buf.length() > 0)
@@ -1896,7 +1862,7 @@ public class DBChecker implements QueryChecker {
 	 * @param errors		List of errors to complete in this function each time the STC-S syntax is wrong or each time the declared coordinate system or region is not supported.
 	 *
 	 * @see STCS#parseRegion(String)
-	 * @see #checkRegion(adql.db.region.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
+	 * @see #checkRegion(Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
 	 *
@@ -1942,9 +1908,9 @@ public class DBChecker implements QueryChecker {
 	 * @param fct		The REGION function containing the region to check.
 	 * @param errors	List of errors to complete in this function if the given region or its inner regions are not supported.
 	 *
-	 * @see #checkCoordinateSystem(adql.db.region.STCS.CoordSys, ADQLOperand, UnresolvedIdentifiersException)
+	 * @see #checkCoordinateSystem(CoordSys, ADQLOperand, UnresolvedIdentifiersException)
 	 * @see #checkGeometryFunction(String, ADQLFunction, BinarySearch, UnresolvedIdentifiersException)
-	 * @see #checkRegion(adql.db.region.STCS.Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
+	 * @see #checkRegion(Region, RegionFunction, BinarySearch, UnresolvedIdentifiersException)
 	 *
 	 * @since 1.3
 	 *
