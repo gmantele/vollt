@@ -33,7 +33,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
-import tap.TAPException;
 import uws.AcceptHeader;
 import uws.UWSException;
 import uws.UWSToolBox;
