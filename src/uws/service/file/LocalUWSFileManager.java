@@ -16,7 +16,7 @@ package uws.service.file;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2018 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2025 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
 
@@ -72,13 +72,13 @@ import uws.service.request.UploadFile;
  *
  * <p>
  * 	A log file rotation is set by default so that avoiding a too big log file
- * 	after several months/years of use. By default the rotation is done every
+ * 	after several months/years of use. By default, the rotation is done every
  * 	month on the 1st at 6am. This frequency can be changed easily thanks to the
  * 	function {@link #setLogRotationFreq(String)}.
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS;ARI)
- * @version 4.4 (08/2018)
+ * @version 4.5 (02/2025)
  */
 public class LocalUWSFileManager implements UWSFileManager {
 
@@ -510,6 +510,8 @@ public class LocalUWSFileManager implements UWSFileManager {
 		// Build the final location (in the owner directory, under the name "UPLOAD_{job-id}_{param-name}":
 		File ownerDir = getOwnerDirectory(destination.getOwner());
 		File copy = new File(ownerDir, "UPLOAD_" + destination.getJobId() + "_" + upload.paramName);
+		if (!ownerDir.exists())
+			createParentDir(copy);
 
 		OutputStream output = null;
 		InputStream input = null;

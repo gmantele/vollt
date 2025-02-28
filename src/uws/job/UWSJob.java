@@ -16,22 +16,9 @@ package uws.job;
  * You should have received a copy of the GNU Lesser General Public License
  * along with UWSLibrary.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2012-2020 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
+ * Copyright 2012-2025 - UDS/Centre de Données astronomiques de Strasbourg (CDS),
  *                       Astronomisches Rechen Institut (ARI)
  */
-
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
-
-import javax.servlet.ServletOutputStream;
 
 import uws.ISO8601Format;
 import uws.UWSException;
@@ -50,6 +37,12 @@ import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog;
 import uws.service.log.UWSLog.LogLevel;
 import uws.service.request.UploadFile;
+
+import javax.servlet.ServletOutputStream;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * <h3>Brief description</h3>
@@ -130,7 +123,7 @@ import uws.service.request.UploadFile;
  * </ul>
  *
  * @author	Gr&eacute;gory Mantelet (CDS;ARI)
- * @version	4.5 (07/2020)
+ * @version	4.5 (02/2025)
  */
 public class UWSJob extends SerializableUWSObject {
 	private static final long serialVersionUID = 1L;
@@ -361,31 +354,10 @@ public class UWSJob extends SerializableUWSObject {
 	 * @param owner		Job.owner ({@link #PARAM_OWNER}).
 	 * @param params	UWS standard and non-standard parameters.
 	 *
-	 * @see UWSParameters#init()
+	 * @see #UWSJob(JobOwner, UWSParameters, String)
 	 */
 	public UWSJob(JobOwner owner, final UWSParameters params) {
-		this.creationTime = new Date();
-
-		this.owner = owner;
-
-		phase = new JobPhase(this);
-
-		results = new HashMap<String, Result>();
-
-		inputParams = (params == null ? new UWSParameters() : params);
-		inputParams.init();
-
-		jobId = generateJobId();
-		restorationDate = null;
-
-		// Move all uploaded files in a location related with this job:
-		Iterator<UploadFile> files = inputParams.getFiles();
-		while(files.hasNext()) {
-			try {
-				files.next().move(this);
-			} catch(IOException ioe) {
-			}
-		}
+		this(owner, params, null);
 	}
 
 	/**
@@ -425,7 +397,7 @@ public class UWSJob extends SerializableUWSObject {
 
 		// Set the Job ID with the value of the HTTP request ID (if not already used by a job):
 		synchronized (lastId) {
-			if (requestID == null || requestID.trim().length() == 0 || lastId.equals(requestID))
+			if (requestID == null || requestID.trim().isEmpty() || lastId.equals(requestID))
 				jobId = generateJobId();
 			else {
 				jobId = requestID;
@@ -437,10 +409,7 @@ public class UWSJob extends SerializableUWSObject {
 		// Move all uploaded files in a location related with this job:
 		Iterator<UploadFile> files = inputParams.getFiles();
 		while(files.hasNext()) {
-			try {
-				files.next().move(this);
-			} catch(IOException ioe) {
-			}
+			moveUploadedFile(files.next());
 		}
 	}
 
@@ -1143,11 +1112,8 @@ public class UWSJob extends SerializableUWSObject {
 	 * job can be updated (considering its current execution phase, see
 	 * {@link JobPhase#isJobUpdatable()}).
 	 *
-	 * <p><i><b>Important note:</b>
-	 * 	If the given parameter value is an {@link UploadFile} and that it is
-	 * 	impossible to move it close to the job, this parameter will be removed.
-	 * 	No error is thrown, but a warning message is logged.
-	 * </i></p>
+	 * See {@link #addOrUpdateParameters(UWSParameters, JobOwner)} for more
+	 * details.
 	 *
 	 * @param paramName		The name of the parameter to add or to update.
 	 * @param paramValue	The (new) value of the specified parameter.
@@ -1160,38 +1126,12 @@ public class UWSJob extends SerializableUWSObject {
 	 * @throws UWSException	If a parameter value is incorrect.
 	 *
 	 * @since 4.1
-	 *
-	 * @see JobPhase#isJobUpdatable()
 	 */
 	public final boolean addOrUpdateParameter(String paramName, Object paramValue, final JobOwner user) throws UWSException {
-		if (paramValue != null && !phase.isFinished()) {
+		final UWSParameters newParameter = new UWSParameters();
+		newParameter.set(paramName, paramValue);
 
-			// Set the parameter:
-			inputParams.set(paramName, paramValue);
-
-			// CASE DESTRUCTION_TIME: update the thread dedicated to the destruction:
-			if (paramValue.equals(PARAM_DESTRUCTION_TIME)) {
-				if (myJobList != null)
-					myJobList.updateDestruction(this);
-			}
-			// DEFAULT: test whether the parameter is a file, and if yes, move it in a location related to this job:
-			else {
-				if (paramValue != null && paramValue instanceof UploadFile) {
-					try {
-						((UploadFile)paramValue).move(this);
-					} catch(IOException ioe) {
-						getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
-						inputParams.remove(paramName);
-					}
-				}
-			}
-
-			// Apply the retrieved phase:
-			applyPhaseParam(user);
-
-			return true;
-		} else
-			return false;
+		return addOrUpdateParameters(newParameter, user);
 	}
 
 	/**
@@ -1310,13 +1250,10 @@ public class UWSJob extends SerializableUWSObject {
 			// DEFAULT: test whether the parameter is a file, and if yes, move it in a location related to this job:
 			else {
 				newValue = inputParams.get(updatedParam);
-				if (newValue != null && newValue instanceof UploadFile) {
-					try {
-						((UploadFile)newValue).move(this);
-					} catch(IOException ioe) {
-						getLogger().logJob(LogLevel.WARNING, this, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
+				if (newValue instanceof UploadFile) {
+					final boolean successfulMove = moveUploadedFile((UploadFile)newValue);
+					if (!successfulMove)
 						inputParams.remove(updatedParam);
-					}
 				}
 			}
 		}
@@ -1325,6 +1262,16 @@ public class UWSJob extends SerializableUWSObject {
 		applyPhaseParam(user);
 
 		return (updated.length == params.size());
+	}
+
+	protected boolean moveUploadedFile(final UploadFile uplFile){
+		try {
+			uplFile.move(this);
+			return true;
+		} catch(IOException ioe) {
+			getLogger().log(LogLevel.WARNING, "MOVE_UPLOAD", "Can not move an uploaded file in the job \"" + jobId + "\"!", ioe);
+			return false;
+		}
 	}
 
 	/**
