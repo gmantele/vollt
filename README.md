@@ -73,10 +73,12 @@ You may also need another library called `hamcrest`. You can find this one on it
 ### ANT scripts
 At the root of the repository, there are 3 ANT scripts. Each is dedicated to one library. They are able to generate JAR for sources, binaries and Javadoc.
 
-4 properties must be set before using one of these scripts:
+6 properties must be set before using one of these scripts:
 * `POSTGRES` *only for ADQL and TAP if you want to keep adql.translator.PgSphereTranslator*: a path toward a JAR or a binary directory containing all `org.postgresql.*` - [https://jdbc.postgresql.org/download.html](JDBC Postgres driver)
 * `SERVLET-API` *only for UWS and TAP*: a path toward a JAR or a binary directory containing all `javax.servlet.*`
+* `XML-API` *only for UWS*: a path toward a JAR or binary directory containing all `javax.xml`
 * `JUNIT-API` *not required if you are not interested by running the JUnit tests*: a path toward one or several JARs or binary directories containing all classes to use JUnit.
+* `HAMCREST` *not required if you are not interested by running the JUnit tests*: a path toward a or binary JAR containing the hamcrest library, required by JUnit.
 * `JNDI-API`  *only for TAP AND only if you are interested by running the JUnit tests*: a path toward one or several JARs or binary directories containing all classes to run a JNDI. Several libraries exist for that ; [Simple-JNDI](https://code.google.com/archive/p/osjava/wikis/SimpleJNDI.wiki) is very simple and is used by the libraries developer to run the related JUnit tests.
 
 *__Note:__ No JNDI library is provided in this Git repository because any JNDI Library may work and there is no reason to impose a specific one. Besides, similarly as the other libraries required to compile the sources, it lets avoiding version incompatibility with the host system (i.e. your machine when you checkout/clone/fork this repository).*
