@@ -40,9 +40,10 @@ Below are summed up the dependencies of each library:
 | Package `cds.utils`    |  X   |     |  X  |
 | Postgres JDBC Driver   |  X   |     |  X  |
 | Package `uws`          |      |  X  |  X  |
-| JSON library            |      |  X  |  X  |
+| JSON library           |      |  X  |  X  |
 | HTTP Servlet API       |      |  X  |  X  |
 | HTTP Multipart Library |      |  X  |  X  |
+| XML Library            |      |  X  |     |
 | Packages `cds.*`       |      |     |  X  |
 | STIL Library           |      |     |  X  |
 
