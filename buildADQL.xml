@@ -40,8 +40,8 @@
 	</fail>
 
 	<!-- JAVA VERSION COMPATIBILITY -->
-	<property name="ant.build.javac.source" value="1.9"/>
-	<property name="ant.build.javac.target" value="1.9"/>
+	<property name="ant.build.javac.source" value="1.8"/>
+	<property name="ant.build.javac.target" value="1.8"/>
 	
 	<!-- CLASSPATHS -->
 	<path id="adql.classpath">
@@ -150,7 +150,7 @@
 	</target>
 	
 	<target name="compileJavadoc" depends="cleanJavadoc" description="After 'cleanJavadoc', compile the whole Javadoc.">
-		<javadoc encoding="utf-8" charset="utf-8" docencoding="utf-8" access="protected" author="true" classpath="." destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.9" splitindex="true" use="true" version="true">
+		<javadoc encoding="utf-8" charset="utf-8" docencoding="utf-8" access="protected" author="true" classpath="." destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.8" splitindex="true" use="true" version="true">
 			<packageset dir="${srcDir}" includes="${includesList}" />
 			<classpath refid="adql.classpath" />
 		</javadoc>
