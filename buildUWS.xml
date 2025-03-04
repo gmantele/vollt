@@ -40,10 +40,22 @@
 	<fail message="The property SERVLET-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.servlet.">
 		<condition><not><isset property="SERVLET-API"/></not></condition>
 	</fail>
+
+	<fail message="The property XML-API must be set! It provides the path toward a directory or a JAR which contains all classes inside javax.xml.">
+		<condition><not><isset property="XML-API"/></not></condition>
+	</fail>	
+	
+	<fail message="The property JUNIT-API must be set! It provides the path toward a directory or a JAR which contains all classes needed to use JUnit.">
+		<condition><not><isset property="JUNIT-API"/></not></condition>
+	</fail>
+	
+	<fail message="The property HAMCREST must be set! It provides the path toward a directory or a JAR which contains the hamcrest library, required by JUnit.">
+		<condition><not><isset property="HAMCREST"/></not></condition>
+	</fail>
 	
 	<!-- JAVA VERSION COMPATIBILITY -->
-	<property name="ant.build.javac.source" value="1.7"/>
-	<property name="ant.build.javac.target" value="1.7"/>
+	<property name="ant.build.javac.source" value="1.8"/>
+	<property name="ant.build.javac.target" value="1.8"/>
 
 	<!-- CLASSPATHS -->
 	<path id="uws.classpath">
@@ -52,11 +64,13 @@
 		<pathelement location="${slf4jApiJar}" />
 		<pathelement location="${jsonJar}" />
 		<pathelement location="${SERVLET-API}" />
+		<pathelement location="${XML-API}" />
 	</path>
 	
 	<path id="junit.class.path">
 		<path refid="uws.classpath" />
 		<pathelement path="${JUNIT-API}" />
+		<pathelement path="${HAMCREST}" />
 		<pathelement location="bin" />
 	</path>
 	
@@ -148,7 +162,7 @@
 	</target>
 	
 	<target name="compileJavadoc" depends="cleanJavadoc" description="After 'cleanJavadoc', compile the whole Javadoc.">
-		<javadoc encoding="utf-8" charset="utf-8" docencoding="utf-8" access="protected" author="true" destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.7" splitindex="true" use="true" version="true">
+		<javadoc encoding="utf-8" charset="utf-8" docencoding="utf-8" access="protected" author="true" destdir="${javadocDir}" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" source="1.8" splitindex="true" use="true" version="true">
 			<packageset dir="${srcDir}" includes="${includesList}" />
 			<classpath refid="uws.classpath" />
 		</javadoc>
