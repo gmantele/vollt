@@ -551,4 +551,20 @@ public class TestUWSUrl {
 		}
 	}
 
+	@Test
+	public void testNormalizeURI() {
+		
+		assertEquals("Leading slash", "/async", UWSUrl.normalizeURI("/async"));
+		assertEquals("No leading slash", "/async1", UWSUrl.normalizeURI("async1"));
+		assertEquals("Double leading slash", "/async", UWSUrl.normalizeURI("//async "));
+		assertEquals("Quad leading slash", "/async1", UWSUrl.normalizeURI("////async1"));
+		assertEquals("Leading and trailing space", "/async2", UWSUrl.normalizeURI(" /async2  "));
+		
+		assertEquals("Leading and trailing slash", "/async", UWSUrl.normalizeURI("/async/"));
+		assertEquals("No leading slash, with trailing slash", "/async1", UWSUrl.normalizeURI("async1/"));
+		assertEquals("Double leading and trailing slash", "/async", UWSUrl.normalizeURI("//async//"));
+		assertEquals("Quad leading and trailing slash", "/async1", UWSUrl.normalizeURI("////async1////"));
+		assertEquals("Leading and trailing space with trailing slash", "/async2", UWSUrl.normalizeURI(" /async2/  "));
+	}
+	
 }
