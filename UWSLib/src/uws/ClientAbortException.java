@@ -34,7 +34,7 @@ import java.io.IOException;
  * 
  * <p><i>Note:
  * 	Instead of this exception any IOException thrown by an {@link java.io.OutputStream} or a {@link java.io.PrintWriter}
- * 	which has been provided by an {@link javax.servlet.http.HttpServletResponse} should be considered as an abortion of
+ * 	which has been provided by an {@link jakarta.servlet.http.HttpServletResponse} should be considered as an abortion of
  * 	the HTTP client.
  * </i></p>
  * 

@@ -19,7 +19,7 @@ package uws.service.wait;
  * Copyright 2017 - Astronomisches Rechen Institut (ARI)
  */
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import uws.job.UWSJob;
 import uws.job.user.JobOwner;

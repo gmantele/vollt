@@ -366,7 +366,7 @@ public class ADQLParser {
 
 	/** Version of the ADQL grammar to use when none is specified:
 	 * {@link ADQLVersion#V2_0 2.0}. */
-	public final static ADQLVersion DEFAULT_VERSION = ADQLVersion.V2_0; // TODO Move 2.1 as default when it becomes REC
+	public final static ADQLVersion DEFAULT_VERSION = ADQLVersion.V2_1; // TODO Move 2.1 as default when it becomes REC
 
 	/**
 	 * Get the list of all supported ADQL grammar versions.

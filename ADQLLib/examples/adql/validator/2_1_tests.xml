@@ -1,0 +1,221 @@
+<?xml version="1.0"?>
+<queries>
+  <title>ADQL2.1 functionality</title>
+  <contact>
+    <name>Stephen Lloyd</name>
+    <url>mailto:stephen.lloyd@manchester.ac.uk</url>
+  </contact>
+  <publisher>
+    <name>SKA Regional Centre - UK</name>
+    <url>https://www.uksrc.org/</url>
+  </publisher>
+  <description>ADQL queries to test ADQL 2.1 validation</description>
+  <query uuid="fe36c86c-4509-11e6-a82a-4fe7326f7d72">
+    <description>Distance with individual values</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM caom2.Observation WHERE DISTANCE(160.0, 0, 180.0, 0.0) &lt; 1.0
+    </adql>
+  </query>
+  <query uuid="1281cf42-450a-11e6-a82a-4fe7326f7d72">
+    <description>BOX with individual values and no geometric coord system defined</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT 1 FROM TAP_SCHEMA.tables WHERE 1 = CONTAINS(POINT(180.0, 0.0), BOX(180.0, 0.0, 10.0, 10.0))
+    </adql>
+  </query>
+  <query uuid="187ca43a-450a-11e6-a82a-4fe7326f7d72">
+    <description>CIRCLE with individual values and no geometric coord system defined</description>
+    <adql valid="false" version="adql-2.1">
+      SELECT 1 WHERE CONTAINS(POINT(180.0, 0.0), CIRCLE(180.0, 0.0, 5.0)) = 1
+    </adql>
+  </query>
+  <query uuid="e257048e-450b-11e6-a621-b59840aabaf1">
+    <description>POLYGON with individual values and no geometric coord system defined</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT 1 FROM TAP_SCHEMA.tables WHERE 1 = CONTAINS(POINT('ICRS', 180.0, 0.0), POLYGON(175.0, -5.0, 185.0, -5.0, 185.0, 5.0, 175.0, 5.0))
+    </adql>
+  </query>
+  <query uuid="1f5d27dc-450c-11e6-8564-332de33a5c03">
+    <description>POLYGON with POINT and no geometric coord system defined</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT 1 FROM TAP_SCHEMA.tables WHERE 1 = CONTAINS(POINT('ICRS', 180.0, 0.0), POLYGON(POINT(175.0, -5.0), POINT(185.0, -5.0), POINT(185.0, 5.0), POINT(175.0, 5.0)))
+    </adql>
+  </query>
+  <query uuid="bda5ba15-45b4-4ae6-905a-e722c71acedb">
+    <description>REGION with POINT</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT 1 FROM TAP_SCHEMA.tables WHERE 1 = CONTAINS(POINT(180.0, 0.0), REGION('CIRCLE ICRS 180.0 0.0 5.0'))
+    </adql>
+  </query>
+  <query uuid="b441ae38-bd7f-48fb-9400-1e5de7734958">
+    <description>REGION with POINT (with an incorrect geometric coord system defined)</description>
+    <adql valid="false" version="adql-2.1">
+      SELECT 1 FROM TAP_SCHEMA.tables WHERE 1 = CONTAINS(POINT('MADE_UP', 180.0, 0.0), REGION('CIRCLE ICRS 180.0 0.0 5.0'))
+    </adql>
+  </query>
+  <query uuid="6146f389-6ece-4fb3-a9f0-898d3b6d1424">
+    <description>Cone search using Distance</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM my_catalog WHERE DISTANCE(ra, dec, 180.0, 0.0) &lt; 2.5
+    </adql>
+  </query>
+  <query uuid="0b990f16-96c8-4cba-be11-c70227dfc8b2">
+    <description>Attempt at a crossmatch using Distance</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT a.id AS src_id, b.id AS cat_id, DISTANCE(POINT(a.ra, a.dec), POINT(b.ra, b.dec)) AS dist_deg FROM my_sources AS a JOIN my_catalogue AS b ON DISTANCE(POINT(a.ra, a.dec), POINT(b.ra, b.dec)) &lt; 0.001
+    </adql>
+  </query>
+  <!-- User defined functions not supported by the validator unfortunately -->
+  <!--<query uuid="6e3536fc-9ff9-49e9-8e3a-041cbc6bd642">
+    <description>Geometric results from a user defined function</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT obs_id, ra, dec FROM observations WHERE CONTAINS(POINT('ICRS', ra, dec), get_observation_region(obs_id)) = 1
+    </adql>
+  </query>-->
+  <query uuid="4b5f2620-20bd-48d7-a15a-15e5294579a2">
+    <description>Convert the unit returned</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM my_catalog WHERE IN_UNIT(DISTANCE(POINT(ra, dec), POINT(180.0, 0.0)), 'arcsec') &lt; 10.0
+    </adql>
+  </query>
+  <query uuid="ed847fc7-03c7-4804-b27c-61408e2391fb">
+    <description>Return first non-null value</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT name, COALESCE(name, 'Unknown') AS safe_name FROM some_table
+    </adql>
+  </query>
+  <query uuid="03c6ca93-4bac-4dc3-817c-2a166bc24be6">
+    <description>Cast to a double value from ?</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT CAST(ra AS DOUBLE) AS ra_double FROM some_table
+    </adql>
+  </query>
+  <query uuid="ea67d05d-4b6e-4627-aa89-33caba9b6c2e">
+    <description>Cast to varchar value from a numeric value</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT CAST(42 AS VARCHAR) AS value_text FROM some_table
+    </adql>
+  </query>
+  <query uuid="a14750ba-2d0f-4186-bae5-bc7923fdabde">
+    <description>UNION of both tables, removing duplicates</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT ra, dec FROM table_a UNION SELECT ra, dec FROM table_b
+    </adql>
+  </query>
+  <query uuid="bd0d5f76-27cf-4428-8944-d08842b4ec74">
+    <description>INTERSECTion of both tables, retuning rows that only appear in both results</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT ra, dec FROM table_a INTERSECT SELECT ra, dec FROM table_b
+    </adql>
+  </query>
+  <query uuid="19457dfe-f4a6-440d-a133-c45adae56035">
+    <description>EXCEPTion of first table, retuning rows that only appear in first result</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT ra, dec FROM table_a EXCEPT SELECT ra, dec FROM table_b
+    </adql>
+  </query>
+  <query uuid="029c8aa1-a118-4691-bead-408ee5de008f">
+    <description>Chaining of SET operators</description>
+    <adql valid="true" version="adql-2.1">
+      (SELECT ra, dec FROM table_a UNION SELECT ra, dec FROM table_b) EXCEPT SELECT ra, dec FROM table_c
+    </adql>
+  </query>
+  <query uuid="478fef34-2fc5-45c8-ad75-e77bdb5222d3">
+    <description>ORDER_BY a specific qualified column</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT s.ra, s.dec FROM source AS s ORDER BY s.ra
+    </adql>
+  </query>
+  <query uuid="fc5714e5-e75b-4e98-aa0c-bae1237f66f6">
+    <description>ORDER_BY with an expression</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT ra, dec, flux FROM source ORDER BY flux / exposure_time DESC
+    </adql>
+  </query>
+  <query uuid="44a24155-968e-4b6c-930e-a958e9538e42">
+    <description>Commments inside a query</description>
+    <adql valid="true" version="adql-2.1">
+      -- A header comment
+      SELECT * -- a sub-comment
+      FROM source;
+    </adql>
+  </query>
+  <query uuid="a0ac6d1d-6ffa-47fc-97e5-af237a4ed7c6">
+    <description>Simple use of a string literal including an enclosed quote</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM source WHERE name = 'Barnard''s Star'
+    </adql>
+  </query>
+  <query uuid="02c546ac-1315-4426-b9cb-ec37d159aa2e">
+    <description>Geometric functions MUST use string literals</description>
+    <adql valid="false" version="adql-2.1">
+      SELECT 1 WHERE CONTAINS(POINT(180.0, 0.0), CIRCLE(column_name, 180.0, 0.0, 5.0)) = 1
+    </adql>
+  </query>
+  <query uuid="44d37d9b-bbc1-4558-9da9-25ced8842731">
+    <description>Geometric functions MUST use string literals</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM source WHERE 1 = CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', 180.0, 0.0, 1.0))
+    </adql>
+  </query>
+  <query uuid="cbe4bcf4-fcbe-43b4-9877-3036c3c8ce37">
+    <description>Accept NULL as a valid expression value</description>
+    <adql valid="true" version="adql-2.1">
+      -- Test for NULL
+      SELECT * FROM source WHERE flux IS NULL
+    </adql>
+  </query>
+  <query uuid="aecb0c1d-65a3-4a83-99fa-2f44c7f36c2a">
+    <description>Accept NULL as a valid expression value in COALESCE</description>
+    <adql valid="true" version="adql-2.1">
+      -- Use COALESCE with NULL
+      SELECT COALESCE(description, NULL, 'No description') AS clean_desc FROM source
+    </adql>
+  </query>
+  <query uuid="78f692bd-70cf-49ca-82c0-b25f27a4bfd0">
+    <description>COORDSYS usage as a deprecated method.</description>
+    <adql valid="true" version="adql-2.1">
+      -- Deprecated under ADQL 2.1
+      SELECT COORDSYS(s_region) FROM source
+    </adql>
+  </query>
+  
+  <!-- Optional Features - Start -->
+  <query uuid="e9754212-c6a5-496c-82d0-7dbae7db956c">
+    <description>UPPER and LOWER for values</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT UPPER(name) AS name_upper, LOWER(name) AS name_lower FROM some_table
+    </adql>
+  </query>
+  <query uuid="4b18c105-7dcb-440b-84a3-8ec38b2842e7">
+    <description>UPPER against a real value</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM some_table WHERE UPPER(name) = 'SUBARU'
+    </adql>
+  </query>
+  <query uuid="d733ff9a-3d89-4c54-a85f-80208db8a13b">
+    <description>LOWER against a value that doesn't match</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM some_table WHERE LOWER(name) = 'SUBARU'  <!-- Syntax valid, however the query evaluation expected to not match -->
+    </adql>
+  </query>
+  <query uuid="72f56976-d5e1-4567-b1e2-3f46b62df3f0">
+    <description>ILIKE to perform a case-insentive match with wildcards/patterns</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM some_table WHERE name ILIKE 'SUB%'
+    </adql>
+  </query>
+  <query uuid="d8e22a28-7b72-454b-a6b3-e5eb7d3f30fa"> <!-- ADQL 2.1 documentation shows the example below using the '%'' mod operator which doesn't work -->
+    <description>WITH to create a temporary value to use as a subquery</description>
+    <adql valid="true" version="adql-2.1">
+      WITH alpha_subset AS (SELECT * FROM alpha_source WHERE MOD(id,10) = 0) SELECT ra, dec FROM alpha_subset WHERE ra &gt; 10 AND ra &lt; 20
+    </adql>
+  </query>
+  <query uuid="5b8d5547-5797-4661-a896-d0f9703a52fd">
+    <description>Offsetting the results returned by n</description>
+    <adql valid="true" version="adql-2.1">
+      SELECT * FROM artifact ORDER BY contentLength OFFSET 10;
+    </adql>
+  </query>
+  <!-- Optional Features - End -->
+
+</queries>

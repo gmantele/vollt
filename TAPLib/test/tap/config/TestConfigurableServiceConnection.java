@@ -44,12 +44,14 @@ import static tap.config.TAPConfiguration.VALUE_XML;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -404,9 +406,10 @@ public class TestConfigurableServiceConnection {
 		// Valid Configuration File:
 		PrintWriter writer = null;
 		int nbSchemas = -1, nbTables = -1;
+        Path projectRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
 		try {
 			// build the ServiceConnection:
-			ServiceConnection connection = new ConfigurableServiceConnection(validProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validProp, projectRoot.toString());
 
 			// tests:
 			assertNotNull(connection.getLogger());
@@ -444,7 +447,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid XML metadata:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(xmlMetaProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(xmlMetaProp, projectRoot.toString());
 			assertNotNull(connection.getLogger());
 			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 			assertNotNull(connection.getFileManager());
@@ -470,7 +473,7 @@ public class TestConfigurableServiceConnection {
 
 		// Missing metadata property:
 		try {
-			new ConfigurableServiceConnection(missingMetaProp);
+			new ConfigurableServiceConnection(missingMetaProp, projectRoot.toString());
 			fail("This MUST have failed because the property 'metadata' is missing!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -479,7 +482,7 @@ public class TestConfigurableServiceConnection {
 
 		// Missing metadata_file property:
 		try {
-			new ConfigurableServiceConnection(missingMetaFileProp);
+			new ConfigurableServiceConnection(missingMetaFileProp, projectRoot.toString());
 			fail("This MUST have failed because the property 'metadata_file' is missing!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -488,7 +491,7 @@ public class TestConfigurableServiceConnection {
 
 		// Wrong metadata property:
 		try {
-			new ConfigurableServiceConnection(wrongMetaProp);
+			new ConfigurableServiceConnection(wrongMetaProp, projectRoot.toString());
 			fail("This MUST have failed because the property 'metadata' has a wrong value!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -497,7 +500,7 @@ public class TestConfigurableServiceConnection {
 
 		// Wrong MANUAL metadata:
 		try {
-			new ConfigurableServiceConnection(wrongManualMetaProp);
+			new ConfigurableServiceConnection(wrongManualMetaProp, projectRoot.toString());
 			fail("This MUST have failed because the class specified in the property 'metadata' does not extend TAPMetadata but is TAPMetadata!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -506,7 +509,7 @@ public class TestConfigurableServiceConnection {
 
 		// XML metadata method WITH a custom TAPMetadata class:
 		try {
-			ServiceConnection sConn = new ConfigurableServiceConnection(xmlMetaPropWithCustomMetaClass);
+			ServiceConnection sConn = new ConfigurableServiceConnection(xmlMetaPropWithCustomMetaClass, projectRoot.toString());
 			assertEquals(MyCustomTAPMetadata.class, sConn.getTAPMetadata().getClass());
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -515,7 +518,7 @@ public class TestConfigurableServiceConnection {
 
 		// XML metadata method WITH a BAD custom TAPMetadata class:
 		try {
-			new ConfigurableServiceConnection(xmlMetaPropWithBadCustomMetaClass);
+			new ConfigurableServiceConnection(xmlMetaPropWithBadCustomMetaClass, projectRoot.toString());
 			fail("This MUST have failed because the custom class specified in the property 'metadata' does not have any of the required constructor!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -524,7 +527,7 @@ public class TestConfigurableServiceConnection {
 
 		// XML metadata method WITH a BAD custom TAPMetadata class:
 		try {
-			new ConfigurableServiceConnection(xmlMetaPropWithANonMetaClass);
+			new ConfigurableServiceConnection(xmlMetaPropWithANonMetaClass, projectRoot.toString());
 			fail("This MUST have failed because the class specified in the property 'metadata' is not a class name!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -533,7 +536,7 @@ public class TestConfigurableServiceConnection {
 
 		// Wrong metadata_file property:
 		try {
-			new ConfigurableServiceConnection(wrongMetaFileProp);
+			new ConfigurableServiceConnection(wrongMetaFileProp, projectRoot.toString());
 			fail("This MUST have failed because the property 'metadata_file' has a wrong value!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -551,7 +554,7 @@ public class TestConfigurableServiceConnection {
 
 		// File Manager = Class Name:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(fmClassNameProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(fmClassNameProp, projectRoot.toString());
 			assertNotNull(connection.getLogger());
 			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 			assertNotNull(connection.getFileManager());
@@ -573,7 +576,7 @@ public class TestConfigurableServiceConnection {
 
 		// Incorrect File Manager Value:
 		try {
-			new ConfigurableServiceConnection(incorrectFmProp);
+			new ConfigurableServiceConnection(incorrectFmProp, projectRoot.toString());
 			fail("This MUST have failed because an incorrect File Manager value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -582,7 +585,7 @@ public class TestConfigurableServiceConnection {
 
 		// Custom log level and log rotation:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(correctLogProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(correctLogProp, projectRoot.toString());
 			assertNotNull(connection.getLogger());
 			assertEquals(LogLevel.WARNING, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 			assertNotNull(connection.getFileManager());
@@ -593,7 +596,7 @@ public class TestConfigurableServiceConnection {
 
 		// Explicit default logger:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(explicitDefaultLoggerProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(explicitDefaultLoggerProp, projectRoot.toString());
 			assertNotNull(connection.getFileManager());
 			assertEquals(DefaultTAPLog.class, connection.getLogger().getClass());
 		} catch(Exception e) {
@@ -602,7 +605,7 @@ public class TestConfigurableServiceConnection {
 
 		// Custom logger:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(customLoggerProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(customLoggerProp, projectRoot.toString());
 			assertNotNull(connection.getFileManager());
 			assertEquals(CustomLogger.class, connection.getLogger().getClass());
 		} catch(Exception e) {
@@ -611,7 +614,7 @@ public class TestConfigurableServiceConnection {
 
 		// Incorrect log level:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(incorrectLogLevelProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(incorrectLogLevelProp, projectRoot.toString());
 			assertNotNull(connection.getLogger());
 			assertEquals(LogLevel.DEBUG, ((DefaultUWSLog)connection.getLogger()).getMinLogLevel());
 		} catch(Exception e) {
@@ -620,7 +623,7 @@ public class TestConfigurableServiceConnection {
 
 		// Incorrect log rotation:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(incorrectLogRotationProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(incorrectLogRotationProp, projectRoot.toString());
 			assertNotNull(connection.getFileManager());
 			assertEquals("daily at 00:00", ((LocalUWSFileManager)connection.getFileManager()).getLogRotationFreq());
 		} catch(Exception e) {
@@ -629,7 +632,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid output formats list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(validFormatsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validFormatsProp, projectRoot.toString());
 			assertNotNull(connection.getOutputFormat(VALUE_VOTABLE));
 			assertNotNull(connection.getOutputFormat(VALUE_JSON));
 			assertNotNull(connection.getOutputFormat(VALUE_CSV));
@@ -646,7 +649,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid VOTable output formats list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(validVOTableFormatsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validVOTableFormatsProp, projectRoot.toString());
 			Iterator<OutputFormat> it = connection.getOutputFormats();
 			OutputFormat f = it.next(); /* votable */
 			assertEquals(VOTableFormat.class, f.getClass());
@@ -709,7 +712,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad SV(...) format 1 = "sv":
 		try {
-			new ConfigurableServiceConnection(badSVFormat1Prop);
+			new ConfigurableServiceConnection(badSVFormat1Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect SV output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -718,7 +721,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad SV(...) format 2 = "sv()":
 		try {
-			new ConfigurableServiceConnection(badSVFormat2Prop);
+			new ConfigurableServiceConnection(badSVFormat2Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect SV output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -727,7 +730,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad VOTable(...) format 1 = "votable(foo)":
 		try {
-			new ConfigurableServiceConnection(badVotFormat1Prop);
+			new ConfigurableServiceConnection(badVotFormat1Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -736,7 +739,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad VOTable(...) format 2 = "votable(,foo)":
 		try {
-			new ConfigurableServiceConnection(badVotFormat2Prop);
+			new ConfigurableServiceConnection(badVotFormat2Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -745,7 +748,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad VOTable(...) format 3 = "text, vot(TD":
 		try {
-			new ConfigurableServiceConnection(badVotFormat3Prop);
+			new ConfigurableServiceConnection(badVotFormat3Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -754,7 +757,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad VOTable(...) format 4 = "vot(TD, text":
 		try {
-			new ConfigurableServiceConnection(badVotFormat4Prop);
+			new ConfigurableServiceConnection(badVotFormat4Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -763,7 +766,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad VOTable(...) format 5 = "vot(TD, 1.0, foo)":
 		try {
-			new ConfigurableServiceConnection(badVotFormat5Prop);
+			new ConfigurableServiceConnection(badVotFormat5Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -772,7 +775,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad VOTable(...) format 6 = "vot:application/xml:votable:foo":
 		try {
-			new ConfigurableServiceConnection(badVotFormat6Prop);
+			new ConfigurableServiceConnection(badVotFormat6Prop, projectRoot.toString());
 			fail("This MUST have failed because an incorrect VOTable output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -781,7 +784,7 @@ public class TestConfigurableServiceConnection {
 
 		// Unknown output format:
 		try {
-			new ConfigurableServiceConnection(unknownFormatProp);
+			new ConfigurableServiceConnection(unknownFormatProp, projectRoot.toString());
 			fail("This MUST have failed because an incorrect output format value has been provided!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -790,7 +793,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid value for max_async_jobs:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(maxAsyncProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(maxAsyncProp, projectRoot.toString());
 			assertEquals(10, connection.getNbMaxAsyncJobs());
 		} catch(Exception e) {
 			fail("This MUST have succeeded because a valid max_async_jobs is provided! \nCaught exception: " + getPertinentMessage(e));
@@ -798,7 +801,7 @@ public class TestConfigurableServiceConnection {
 
 		// Negative value for max_async_jobs:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(negativeMaxAsyncProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(negativeMaxAsyncProp, projectRoot.toString());
 			assertEquals(-2, connection.getNbMaxAsyncJobs());
 		} catch(Exception e) {
 			fail("This MUST have succeeded because a negative max_async_jobs is equivalent to 'no restriction'! \nCaught exception: " + getPertinentMessage(e));
@@ -806,7 +809,7 @@ public class TestConfigurableServiceConnection {
 
 		// A not integer value for max_async_jobs:
 		try {
-			new ConfigurableServiceConnection(notIntMaxAsyncProp);
+			new ConfigurableServiceConnection(notIntMaxAsyncProp, projectRoot.toString());
 			fail("This MUST have failed because a not integer value has been provided for \"" + KEY_MAX_ASYNC_JOBS + "\"!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -815,7 +818,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with no output limit specified:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(validProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validProp, projectRoot.toString());
 			assertEquals(connection.getOutputLimit()[0], -1);
 			assertEquals(connection.getOutputLimit()[1], -1);
 			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
@@ -826,7 +829,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with only a set default output limit:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(defaultOutputLimitProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(defaultOutputLimitProp, projectRoot.toString());
 			assertEquals(connection.getOutputLimit()[0], 100);
 			assertEquals(connection.getOutputLimit()[1], -1);
 			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
@@ -837,7 +840,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with only a set maximum output limit:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(maxOutputLimitProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(maxOutputLimitProp, projectRoot.toString());
 			assertEquals(1000, connection.getOutputLimit()[0]);
 			assertEquals(1000, connection.getOutputLimit()[1]);
 			assertEquals(LimitUnit.rows, connection.getOutputLimitType()[0]);
@@ -848,7 +851,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with both a default and a maximum output limits where default <= max:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(bothOutputLimitGoodProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(bothOutputLimitGoodProp, projectRoot.toString());
 			assertEquals(connection.getOutputLimit()[0], 100);
 			assertEquals(connection.getOutputLimit()[1], 1000);
 			assertEquals(connection.getOutputLimitType()[0], LimitUnit.rows);
@@ -860,7 +863,7 @@ public class TestConfigurableServiceConnection {
 		// Test with both a default and a maximum output limits BUT where default > max:
 		/* In a such case, the default value is set silently to the maximum one. */
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(bothOutputLimitBadProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(bothOutputLimitBadProp, projectRoot.toString());
 			assertEquals(100, connection.getOutputLimit()[1]);
 			assertEquals(connection.getOutputLimit()[1], connection.getOutputLimit()[0]);
 			assertEquals(LimitUnit.rows, connection.getOutputLimitType()[1]);
@@ -871,7 +874,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with no upload limit specified:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(validProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(validProp, projectRoot.toString());
 			assertEquals(1000000, connection.getUploadLimit()[1]);
 			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
 			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
@@ -882,7 +885,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with only a set default upload limit:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(defaultUploadLimitProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(defaultUploadLimitProp, projectRoot.toString());
 			assertEquals(100, connection.getUploadLimit()[1]);
 			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
 			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
@@ -893,7 +896,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with only a set maximum upload limit:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(maxUploadLimitProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(maxUploadLimitProp, projectRoot.toString());
 			assertEquals(1000, connection.getUploadLimit()[1]);
 			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
 			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
@@ -904,7 +907,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with both a default and a maximum upload limits where default <= max:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(bothUploadLimitGoodProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(bothUploadLimitGoodProp, projectRoot.toString());
 			assertEquals(10, connection.getUploadLimit()[1]);
 			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
 			assertEquals(LimitUnit.kilobytes, connection.getUploadLimitType()[1]);
@@ -916,7 +919,7 @@ public class TestConfigurableServiceConnection {
 		// Test with both a default and a maximum output limits BUT where default > max:
 		/* In a such case, the default value is set silently to the maximum one. */
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(bothUploadLimitBadProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(bothUploadLimitBadProp, projectRoot.toString());
 			assertEquals(100, connection.getUploadLimit()[1]);
 			assertEquals(connection.getUploadLimit()[1], connection.getUploadLimit()[0]);
 			assertEquals(LimitUnit.rows, connection.getUploadLimitType()[1]);
@@ -927,7 +930,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with a not integer sync. fetch size:
 		try {
-			new ConfigurableServiceConnection(notIntSyncFetchSizeProp);
+			new ConfigurableServiceConnection(notIntSyncFetchSizeProp, projectRoot.toString());
 			fail("This MUST have failed because the set sync. fetch size is not an integer!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -936,7 +939,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with a negative sync. fetch size:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(negativeSyncFetchSizeProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(negativeSyncFetchSizeProp, projectRoot.toString());
 			assertNotNull(connection.getFetchSize());
 			assertTrue(connection.getFetchSize().length >= 2);
 			assertEquals(connection.getFetchSize()[1], 0);
@@ -946,7 +949,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with any valid sync. fetch size:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(syncFetchSizeProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(syncFetchSizeProp, projectRoot.toString());
 			assertNotNull(connection.getFetchSize());
 			assertTrue(connection.getFetchSize().length >= 2);
 			assertEquals(connection.getFetchSize()[1], 50);
@@ -956,7 +959,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with a not integer async. fetch size:
 		try {
-			new ConfigurableServiceConnection(notIntAsyncFetchSizeProp);
+			new ConfigurableServiceConnection(notIntAsyncFetchSizeProp, projectRoot.toString());
 			fail("This MUST have failed because the set async. fetch size is not an integer!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -965,7 +968,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with a negative async. fetch size:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(negativeAsyncFetchSizeProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(negativeAsyncFetchSizeProp, projectRoot.toString());
 			assertNotNull(connection.getFetchSize());
 			assertTrue(connection.getFetchSize().length >= 1);
 			assertEquals(connection.getFetchSize()[0], 0);
@@ -975,7 +978,7 @@ public class TestConfigurableServiceConnection {
 
 		// Test with any valid async. fetch size:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(asyncFetchSizeProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(asyncFetchSizeProp, projectRoot.toString());
 			assertNotNull(connection.getFetchSize());
 			assertTrue(connection.getFetchSize().length >= 1);
 			assertEquals(connection.getFetchSize()[0], 50);
@@ -985,7 +988,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid user identifier:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(userIdentProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(userIdentProp, projectRoot.toString());
 			assertNotNull(connection.getUserIdentifier());
 			assertNotNull(connection.getUserIdentifier().extractUserId(null, null));
 			assertEquals("everybody", connection.getUserIdentifier().extractUserId(null, null).getID());
@@ -995,7 +998,7 @@ public class TestConfigurableServiceConnection {
 
 		// Not a class name for user_identifier:
 		try {
-			new ConfigurableServiceConnection(notClassPathUserIdentProp);
+			new ConfigurableServiceConnection(notClassPathUserIdentProp, projectRoot.toString());
 			fail("This MUST have failed because the user_identifier value is not a class name!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1004,7 +1007,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid geometry list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(geometriesProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(geometriesProp, projectRoot.toString());
 			assertNotNull(connection.getGeometries());
 			assertEquals(4, connection.getGeometries().size());
 			assertEquals("POINT", ((ArrayList<String>)connection.getGeometries()).get(0));
@@ -1017,7 +1020,7 @@ public class TestConfigurableServiceConnection {
 
 		// "NONE" as geometry list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(noneGeomProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(noneGeomProp, projectRoot.toString());
 			assertNotNull(connection.getGeometries());
 			assertEquals(0, connection.getGeometries().size());
 		} catch(Exception e) {
@@ -1026,7 +1029,7 @@ public class TestConfigurableServiceConnection {
 
 		// "ANY" as geometry list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(anyGeomProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(anyGeomProp, projectRoot.toString());
 			assertNull(connection.getGeometries());
 		} catch(Exception e) {
 			fail("This MUST have succeeded because the given list of geometries is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
@@ -1034,7 +1037,7 @@ public class TestConfigurableServiceConnection {
 
 		// "NONE" inside a geometry list:
 		try {
-			new ConfigurableServiceConnection(noneInsideGeomProp);
+			new ConfigurableServiceConnection(noneInsideGeomProp, projectRoot.toString());
 			fail("This MUST have failed because the given geometry list contains at least 2 items, whose one is NONE!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1043,7 +1046,7 @@ public class TestConfigurableServiceConnection {
 
 		// Unknown geometrical function:
 		try {
-			new ConfigurableServiceConnection(unknownGeomProp);
+			new ConfigurableServiceConnection(unknownGeomProp, projectRoot.toString());
 			fail("This MUST have failed because the given geometry list contains at least 1 unknown ADQL geometrical function!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1052,7 +1055,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid coordinate systems list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(coordSysProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(coordSysProp, projectRoot.toString());
 			assertNotNull(connection.getCoordinateSystems());
 			assertEquals(2, connection.getCoordinateSystems().size());
 			assertEquals("icrs *		*", ((ArrayList<String>)connection.getCoordinateSystems()).get(0));
@@ -1063,7 +1066,7 @@ public class TestConfigurableServiceConnection {
 
 		// "NONE" as coordinate systems list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(noneCoordSysProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(noneCoordSysProp, projectRoot.toString());
 			assertNotNull(connection.getCoordinateSystems());
 			assertEquals(0, connection.getCoordinateSystems().size());
 		} catch(Exception e) {
@@ -1072,7 +1075,7 @@ public class TestConfigurableServiceConnection {
 
 		// "ANY" as coordinate systems list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(anyCoordSysProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(anyCoordSysProp, projectRoot.toString());
 			assertNull(connection.getCoordinateSystems());
 		} catch(Exception e) {
 			fail("This MUST have succeeded because the given list of coordinate systems is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
@@ -1080,7 +1083,7 @@ public class TestConfigurableServiceConnection {
 
 		// "NONE" inside a coordinate systems list:
 		try {
-			new ConfigurableServiceConnection(noneInsideCoordSysProp);
+			new ConfigurableServiceConnection(noneInsideCoordSysProp, projectRoot.toString());
 			fail("This MUST have failed because the given coordinate systems list contains at least 3 items, whose one is NONE!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1089,7 +1092,7 @@ public class TestConfigurableServiceConnection {
 
 		// Unknown coordinate system function:
 		try {
-			new ConfigurableServiceConnection(unknownCoordSysProp);
+			new ConfigurableServiceConnection(unknownCoordSysProp, projectRoot.toString());
 			fail("This MUST have failed because the given coordinate systems list contains at least 1 unknown coordinate system!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1098,7 +1101,7 @@ public class TestConfigurableServiceConnection {
 
 		// "ANY" as UDFs list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(anyUdfsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(anyUdfsProp, projectRoot.toString());
 			assertNull(connection.getUDFs());
 		} catch(Exception e) {
 			fail("This MUST have succeeded because the given list of UDFs is correct (reduced to only ANY)! \nCaught exception: " + getPertinentMessage(e));
@@ -1106,7 +1109,7 @@ public class TestConfigurableServiceConnection {
 
 		// "NONE" as UDFs list:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(noneUdfsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(noneUdfsProp, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(0, connection.getUDFs().size());
 		} catch(Exception e) {
@@ -1115,7 +1118,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid list of UDFs:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsProp, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(2, connection.getUDFs().size());
 			Iterator<FunctionDef> it = connection.getUDFs().iterator();
@@ -1127,7 +1130,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid list of UDFs containing UDFs with translation pattern:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithTranslationProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithTranslationProp, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(2, connection.getUDFs().size());
 			Iterator<FunctionDef> it = connection.getUDFs().iterator();
@@ -1146,7 +1149,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid list of UDFs containing one UDF with the name of a UserDefinedFunction class:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithUDFClassProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithUDFClassProp, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(1, connection.getUDFs().size());
 			FunctionDef def = connection.getUDFs().iterator().next();
@@ -1161,7 +1164,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid list of UDFs containing one UDF with the name of a FunctionTranslator class:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithTranslatorClassProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithTranslatorClassProp, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(1, connection.getUDFs().size());
 			FunctionDef def = connection.getUDFs().iterator().next();
@@ -1176,7 +1179,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid list of UDFs containing one UDF with a class name AND a description:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithClassNameAndDescriptionProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithClassNameAndDescriptionProp, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(2, connection.getUDFs().size());
 			Iterator<FunctionDef> itUdfs = connection.getUDFs().iterator();
@@ -1195,7 +1198,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid list of UDFs containing one UDF with empty optional parameters:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithEmptyOptParamsProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(udfsWithEmptyOptParamsProp, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(1, connection.getUDFs().size());
 			FunctionDef def = connection.getUDFs().iterator().next();
@@ -1208,7 +1211,7 @@ public class TestConfigurableServiceConnection {
 
 		// "NONE" inside a UDFs list:
 		try {
-			new ConfigurableServiceConnection(udfsListWithNONEorANYProp);
+			new ConfigurableServiceConnection(udfsListWithNONEorANYProp, projectRoot.toString());
 			fail("This MUST have failed because the given UDFs list contains at least 2 items, whose one is ANY!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1217,7 +1220,7 @@ public class TestConfigurableServiceConnection {
 
 		// UDF with no brackets:
 		try {
-			new ConfigurableServiceConnection(udfsWithMissingBracketsProp);
+			new ConfigurableServiceConnection(udfsWithMissingBracketsProp, projectRoot.toString());
 			fail("This MUST have failed because one UDFs list item has no brackets!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1226,34 +1229,34 @@ public class TestConfigurableServiceConnection {
 
 		// UDF with a badly formatted description:
 		try {
-			new ConfigurableServiceConnection(udfsWithWrongDescriptionFormatProp);
+			new ConfigurableServiceConnection(udfsWithWrongDescriptionFormatProp, projectRoot.toString());
 			fail("This MUST have failed because one UDFs list item has too many parameters!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {tap.config.UDFToto}, Blabla]\"! (position in the property " + KEY_UDFS + ": 1-67)", e.getMessage());
+            assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {tap.config.UDFToto}, Blabla]\"! (position in the property " + KEY_UDFS + ": 1-56)", e.getMessage());
 		}
 
 		// UDFs whose one item have more parts than supported:
 		try {
-			new ConfigurableServiceConnection(udfsWithWrongParamLengthProp);
+			new ConfigurableServiceConnection(udfsWithWrongParamLengthProp, projectRoot.toString());
 			fail("This MUST have failed because one UDFs list item has too many parameters!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {tap.config.UDFToto}, \"Blabla\", foo]\"! (position in the property " + KEY_UDFS + ": 1-74)", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: \"[toto(a string)->VARCHAR, {tap.config.UDFToto}, \"Blabla\", foo]\"! (position in the property " + KEY_UDFS + ": 1-63)", e.getMessage());
 		}
 
 		// UDF with missing definition part (or wrong since there is no comma):
 		try {
-			new ConfigurableServiceConnection(udfsWithMissingDefProp1);
+			new ConfigurableServiceConnection(udfsWithMissingDefProp1, projectRoot.toString());
 			fail("This MUST have failed because one UDFs list item has a wrong signature part (it has been forgotten)!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
-			assertEquals("Wrong UDF declaration syntax: Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\" (position in the property " + KEY_UDFS + ": 2-33)", e.getMessage());
+			assertEquals("Wrong UDF declaration syntax: Wrong function definition syntax! Expected syntax: \"<regular_identifier>(<parameters>?) <return_type>?\", where <regular_identifier>=\"[a-zA-Z][a-zA-Z0-9_]*\", <return_type>=\" -> <type_name>\", <parameters>=\"(<regular_identifier> <type_name> (, <regular_identifier> <type_name>)*)\", <type_name> should be one of the types described in the UPLOAD section of the TAP documentation. Examples of good syntax: \"foo()\", \"foo() -> VARCHAR\", \"foo(param INTEGER)\", \"foo(param1 INTEGER, param2 DOUBLE) -> DOUBLE\" (position in the property " + KEY_UDFS + ": 2-22)", e.getMessage());
 		}
 
 		// UDF with missing definition part (or wrong since there is no comma):
 		try {
-			new ConfigurableServiceConnection(udfsWithMissingDefProp2);
+			new ConfigurableServiceConnection(udfsWithMissingDefProp2, projectRoot.toString());
 			fail("This MUST have failed because one UDFs list item has no signature part!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1262,7 +1265,7 @@ public class TestConfigurableServiceConnection {
 
 		// Empty UDF item (without comma):
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(emptyUdfItemProp1);
+			ServiceConnection connection = new ConfigurableServiceConnection(emptyUdfItemProp1, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(0, connection.getUDFs().size());
 		} catch(Exception e) {
@@ -1271,7 +1274,7 @@ public class TestConfigurableServiceConnection {
 
 		// Empty UDF item (with comma):
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(emptyUdfItemProp2);
+			ServiceConnection connection = new ConfigurableServiceConnection(emptyUdfItemProp2, projectRoot.toString());
 			assertNotNull(connection.getUDFs());
 			assertEquals(0, connection.getUDFs().size());
 		} catch(Exception e) {
@@ -1280,7 +1283,7 @@ public class TestConfigurableServiceConnection {
 
 		// UDF item without its closing bracket:
 		try {
-			new ConfigurableServiceConnection(udfWithMissingEndBracketProp);
+			new ConfigurableServiceConnection(udfWithMissingEndBracketProp, projectRoot.toString());
 			fail("This MUST have failed because one UDFs list item has no closing bracket!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1289,7 +1292,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid custom TAPFactory:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(customFactoryProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(customFactoryProp, projectRoot.toString());
 			assertNotNull(connection.getFactory());
 			assertEquals(CustomTAPFactory.class, connection.getFactory().getClass());
 		} catch(Exception e) {
@@ -1298,7 +1301,7 @@ public class TestConfigurableServiceConnection {
 
 		// Valid custom "configurable" TAPFactory:
 		try {
-			ServiceConnection connection = new ConfigurableServiceConnection(customConfigurableFactoryProp);
+			ServiceConnection connection = new ConfigurableServiceConnection(customConfigurableFactoryProp, projectRoot.toString());
 			assertNotNull(connection.getFactory());
 			assertEquals(CustomConfigurableTAPFactory.class, connection.getFactory().getClass());
 		} catch(Exception e) {
@@ -1307,7 +1310,7 @@ public class TestConfigurableServiceConnection {
 
 		// Bad custom TAPFactory (required constructor missing):
 		try {
-			new ConfigurableServiceConnection(badCustomFactoryProp);
+			new ConfigurableServiceConnection(badCustomFactoryProp, projectRoot.toString());
 			fail("This MUST have failed because the specified TAPFactory extension does not have a constructor with ServiceConnection!");
 		} catch(Exception e) {
 			assertEquals(TAPException.class, e.getClass());
@@ -1317,7 +1320,7 @@ public class TestConfigurableServiceConnection {
 
 	@Test
 	public void testGetFile() {
-		final String rootPath = "/ROOT", propertyName = "SuperProperty";
+		final String rootPath = Paths.get(System.getProperty("java.io.tmpdir")).toString(), propertyName = "SuperProperty";
 		String path;
 
 		try {
@@ -1325,16 +1328,18 @@ public class TestConfigurableServiceConnection {
 			assertNull(ConfigurableServiceConnection.getFile(null, rootPath, propertyName));
 
 			// Valid absolute file path:
-			path = "/custom/user/dir";
-			assertEquals(path, ConfigurableServiceConnection.getFile(path, rootPath, propertyName).getAbsolutePath());
+			Path tmpPath = Paths.get(System.getProperty("java.io.tmpdir"));
+            File file = ConfigurableServiceConnection.getFile(tmpPath.toString(), rootPath, propertyName);
+
+			assertEquals(tmpPath.normalize().toAbsolutePath(), file.toPath().normalize().toAbsolutePath());
 
 			// File name relative to the given rootPath:
 			path = "dir";
 			assertEquals(rootPath + File.separator + path, ConfigurableServiceConnection.getFile(path, rootPath, propertyName).getAbsolutePath());
 
 			// Idem but with a relative file path:
-			path = "gmantele/workspace";
-			assertEquals(rootPath + File.separator + path, ConfigurableServiceConnection.getFile(path, rootPath, propertyName).getAbsolutePath());
+            Path relPath = Paths.get("gmantele", "workspace");
+			assertEquals(rootPath + File.separator + relPath, ConfigurableServiceConnection.getFile(relPath.toString(), rootPath, propertyName).getAbsolutePath());
 
 		} catch(Exception ex) {
 			ex.printStackTrace();
@@ -1348,7 +1353,7 @@ public class TestConfigurableServiceConnection {
 			fail("This test should have failed, because URIs are no longer supported!");
 		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
-			assertEquals("Incorrect file path for the property \"" + propertyName + "\": \"" + path + "\"! URI/URLs are not expected here.", ex.getMessage());
+			assertEquals("Invalid file path for the property \"" + propertyName + "\": \"" + path + "\"! Please check the path format.", ex.getMessage());
 		}
 
 		// Test with an URL:
@@ -1358,7 +1363,7 @@ public class TestConfigurableServiceConnection {
 			fail("This test should have failed, because the given URI uses the HTTP protocol (actually, it uses a protocol different from \"file\"!");
 		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
-			assertEquals("Incorrect file path for the property \"" + propertyName + "\": \"" + path + "\"! URI/URLs are not expected here.", ex.getMessage());
+			assertEquals("Invalid file path for the property \"" + propertyName + "\": \"" + path + "\"! Please check the path format.", ex.getMessage());
 		}
 
 	}

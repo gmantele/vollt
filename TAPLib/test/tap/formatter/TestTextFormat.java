@@ -8,10 +8,12 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -86,8 +88,11 @@ public class TestTextFormat {
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
-			assertTrue(CommandExecute.execute("wc -l < \"" + textFile.getAbsolutePath() + "\"").trim().equals("12"));
-
+			//assertTrue(CommandExecute.execute("wc -l < \"" + textFile.getAbsolutePath() + "\"").trim().equals("12"));
+            try (Stream<String> lines = Files.lines(textFile.toPath())) {
+                long lineCount = lines.count();
+                assertEquals(12, lineCount);
+            }
 		}catch(Exception t){
 			t.printStackTrace();
 			fail("Unexpected exception!");
@@ -119,8 +124,11 @@ public class TestTextFormat {
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
-			assertEquals("9", CommandExecute.execute("wc -l < \"" + textFile.getAbsolutePath() + "\"").trim()); // 5 + 2 (header) + 2 (new line + OVERFLOW message)
-
+			//assertEquals("9", CommandExecute.execute("wc -l < \"" + textFile.getAbsolutePath() + "\"").trim()); // 5 + 2 (header) + 2 (new line + OVERFLOW message)
+            try (Stream<String> lines = Files.lines(textFile.toPath())) {
+                long lineCount = lines.count();
+                assertEquals(9, lineCount);
+            }
 		}catch(Exception t){
 			t.printStackTrace();
 			fail("Unexpected exception!");

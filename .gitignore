@@ -18,3 +18,11 @@ NOTES/
 uml/
 survey/
 sql/
+/UWSLib/service_*.log
+/UWSLib/tmp.empty
+/TAPLib/test/tap/db_testtools/db-test/sqlite_testDB.db
+/TAPLib/test/tap/config/tables.xml
+/TAPLib/json_test.json
+/TAPLib/tmp.empty
+/TAPLib/test/tap/config/tables.xml
+/UWSLib/service_*.log

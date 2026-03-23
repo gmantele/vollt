@@ -46,7 +46,7 @@ CONTEXT_FILE=$WEBAPPS_DIR/tap/META-INF/context.xml
 # Start the Context and Resource definitions:
 echo -e '<Context>\n\t<Resource name="jdbc/tapdb" auth="Container"' > $CONTEXT_FILE
 # Set the Resource type (SQL's Datasource):
-echo -e '\t\ttype="javax.sql.DataSource"' >> $CONTEXT_FILE
+echo -e '\t\ttype="jakarta.sql.DataSource"' >> $CONTEXT_FILE
 # Set the JDBC driver:
 case "$DB_TYPE" in
     postgres|pgsphere)

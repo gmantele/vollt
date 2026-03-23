@@ -42,12 +42,7 @@ import tap.metadata.TAPColumn;
 import tap.metadata.TAPCoosys;
 import tap.metadata.VotType;
 import tap.metadata.VotType.VotDatatype;
-import uk.ac.starlink.table.AbstractStarTable;
-import uk.ac.starlink.table.ColumnInfo;
-import uk.ac.starlink.table.DescribedValue;
-import uk.ac.starlink.table.RowSequence;
-import uk.ac.starlink.table.StarTable;
-import uk.ac.starlink.table.StoragePolicy;
+import uk.ac.starlink.table.*;
 import uk.ac.starlink.votable.DataFormat;
 import uk.ac.starlink.votable.VOSerializer;
 import uk.ac.starlink.votable.VOStarTable;
@@ -644,8 +639,11 @@ public class VOTableFormat implements OutputFormat {
 		colInfo.setNullable(true);
 
 		// Set the XType (if any):
-		if (votType.xtype != null)
-			colInfo.setAuxDatum(new DescribedValue(VOStarTable.XTYPE_INFO, votType.xtype));
+		if (votType.xtype != null) {
+			/** XTYPE has been removed from recent versions of Starlink, hardcoding for "just in case" reasons */
+			ValueInfo XTYPE_INFO = new DefaultValueInfo("xtype", String.class, "VOTable xtype attribute" );
+			colInfo.setAuxDatum(new DescribedValue(XTYPE_INFO, votType.xtype));
+		}
 
 		// Set the additional information: unit, UCD and UType:
 		colInfo.setUnitString(tapCol.getUnit());

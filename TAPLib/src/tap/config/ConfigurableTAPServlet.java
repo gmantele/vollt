@@ -37,11 +37,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import tap.ServiceConnection;
 import tap.TAPException;
@@ -75,60 +75,75 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		if (tap != null)
 			return;
 
+		InputStream input = null;
+
 		/* 1. GET THE FILE PATH OF THE TAP CONFIGURATION FILE */
 		String tapConfPath = config.getInitParameter(TAP_CONF_PARAMETER);
-		if (tapConfPath == null || tapConfPath.trim().length() == 0)
-			tapConfPath = null;
-		//throw new ServletException("Configuration file path missing! You must set a servlet init parameter whose the name is \"" + TAP_CONF_PARAMETER + "\".");
 
 		/* 2. OPEN THE CONFIGURATION FILE */
-		InputStream input = null;
-		// CASE: No file specified => search in the classpath for a file having the default name "tap.properties".
-		if (tapConfPath == null)
-			input = searchFile(DEFAULT_TAP_CONF_FILE, config);
-		else{
+		if (tapConfPath != null && !tapConfPath.trim().isEmpty()){
+			// Look for file on system
 			File f = new File(tapConfPath);
-			// CASE: The given path matches to an existing local file.
-			if (f.exists()){
-				try{
+			if (f.exists()) {
+				try {
 					input = new FileInputStream(f);
-				}catch(IOException ioe){
+				} catch(IOException ioe){
 					throw new ServletException("Impossible to read the TAP configuration file (" + tapConfPath + ")!", ioe);
 				}
 			}
-			// CASE: The given path seems to be relative to the servlet root directory.
-			else
+			else {
+				// Look for file in web resource folders
 				input = searchFile(tapConfPath, config);
+			}
+			// If all else fails, drop back to the default location
+			if (input == null){
+				input = searchFile(DEFAULT_TAP_CONF_FILE, config);
+			}
 		}
-		// If no file has been found, cancel the servlet loading:
-		if (input == null)
-			throw new ServletException("Configuration file not found with the path: \"" + ((tapConfPath == null) ? DEFAULT_TAP_CONF_FILE : tapConfPath) + "\"! Please provide a correct file path in servlet init parameter (\"" + TAP_CONF_PARAMETER + "\") or put your configuration file named \"" + DEFAULT_TAP_CONF_FILE + "\" in a directory of the classpath or in WEB-INF or META-INF.");
+		else {
+			input = searchFile(DEFAULT_TAP_CONF_FILE, config);
+		}
 
 		/* 3. PARSE IT INTO A PROPERTIES SET */
 		Properties tapConf = new Properties();
-		try{
-			tapConf.load(input);
-		}catch(IOException ioe){
-			throw new ServletException("Impossible to read the TAP configuration file (" + tapConfPath + ")!", ioe);
-		}finally{
+		if (input != null){
 			try{
-				input.close();
-			}catch(IOException ioe2){}
+				tapConf.load(input);
+			}catch(IOException ioe){
+				throw new ServletException("Impossible to read the TAP configuration file (" + tapConfPath + ")!", ioe);
+			}finally{
+				try{
+					input.close();
+				}catch(IOException ioe2){
+					ioe2.printStackTrace();
+				}
+			}
+		}
+		else {
+			throw new ServletException("Configuration file not found with the path: \"" + ((tapConfPath == null) ? DEFAULT_TAP_CONF_FILE : tapConfPath) + "\"! Please provide a correct file path in servlet init parameter (\"" + TAP_CONF_PARAMETER + "\") or put your configuration file named \"" + DEFAULT_TAP_CONF_FILE + "\" in a directory of the classpath or in WEB-INF or META-INF.");
 		}
 
 		/* 4. CREATE THE TAP SERVICE */
 		ServiceConnection serviceConn = null;
 		try{
 			// Create the service connection:
-			serviceConn = new ConfigurableServiceConnection(tapConf, config.getServletContext().getRealPath(""));
+            String contextPath =  config.getServletContext().getRealPath("");
+            //Test contexts don't supply the base path
+            if (contextPath  == null || contextPath.trim().isEmpty()){
+                contextPath = System.getenv("VOLLT_BASE_PATH");
+            }
+            serviceConn = new ConfigurableServiceConnection(tapConf, contextPath);
 			// Create all the TAP resources:
 			tap = new TAP(serviceConn);
 		}catch(Exception ex){
 			tap = null;
 			if (ex instanceof TAPException)
 				throw new ServletException(ex.getMessage(), ex.getCause());
-			else
-				throw new ServletException("Impossible to initialize the TAP service!", ex);
+			else {
+				ex.printStackTrace();
+				System.out.println(ex.getMessage());
+				throw new ServletException("Impossible to initialize the TAP services!" + ex.getMessage());
+			}
 		}
 
 		/* 4Bis. SET THE HOME PAGE */
@@ -194,6 +209,7 @@ public class ConfigurableTAPServlet extends HttpServlet {
 		serviceConn.setAvailable(true, "TAP service available.");
 	}
 
+
 	/**
 	 * Search the given file name/path in the directories of the classpath, then inside WEB-INF and finally inside META-INF.
 	 * 
@@ -205,15 +221,14 @@ public class ConfigurableTAPServlet extends HttpServlet {
 	 * @since 2.0
 	 */
 	protected final InputStream searchFile(String filePath, final ServletConfig config){
-		InputStream input = null;
-
 		// Try to search in the classpath (with just a file name or a relative path):
-		input = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
+		InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
 
 		// If not found, try searching in WEB-INF and META-INF (as this fileName is a file path relative to one of these directories):
 		if (input == null){
-			if (filePath.startsWith("/"))
-				filePath = filePath.substring(1);
+			//This will still result in folders being treated as relative to WEB/META-INF, is this correct?
+			filePath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+
 			// ...try at the root of WEB-INF:
 			input = config.getServletContext().getResourceAsStream("/WEB-INF/" + filePath);
 			// ...and at the root of META-INF:
@@ -223,6 +238,7 @@ public class ConfigurableTAPServlet extends HttpServlet {
 
 		return input;
 	}
+
 
 	/**
 	 * Initialize the XSLT for /capabilities and /tables.

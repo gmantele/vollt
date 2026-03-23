@@ -288,7 +288,7 @@ public class TestPgSphereTranslator {
 
 		// OTHER
 		try {
-			translator.translateGeometryFromDB(new Double(12.3));
+			translator.translateGeometryFromDB(12.3);
 			fail("The translation of a Double as a geometry is not supported!");
 		} catch(Throwable t) {
 			assertTrue(t instanceof ParseException);

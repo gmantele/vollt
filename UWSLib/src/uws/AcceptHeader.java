@@ -55,7 +55,7 @@ public class AcceptHeader {
 		String[] mimeTypes = acceptS.split(",");
 		for(String mimeType : Arrays.asList(mimeTypes)){
 			// Get quality
-			Float quality = new Float(1);
+			Float quality = Float.valueOf(1);
 			String[] split = mimeType.split(";");
 			if (split.length > 1){
 				if (split[1].matches("q=[0-9.]+")){

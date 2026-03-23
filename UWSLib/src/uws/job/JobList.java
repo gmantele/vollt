@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
 
 import uws.UWSException;
 import uws.UWSExceptionFactory;
@@ -72,7 +72,7 @@ import uws.service.log.UWSLog.LogLevel;
  *
  * <p>
  * 	At each request sent to any instance of {@link UWSService} the function
- * 	{@link UserIdentifier#extractUserId(uws.service.UWSUrl, javax.servlet.http.HttpServletRequest)}
+ * 	{@link UserIdentifier#extractUserId(uws.service.UWSUrl, jakarta.servlet.http.HttpServletRequest)}
  * 	may extract the user ID. Thus the action GetJobList may know who is the
  * 	current user. If the extracted owner ID is different from <i>null</i> only
  * 	the jobs of the current user will be returned.
@@ -80,7 +80,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p><b>WARNING:</b>
  * 	You need to find a way to identify for each UWS request the current user and
  * 	then to override correctly the function
- * 	{@link UserIdentifier#extractUserId(uws.service.UWSUrl, javax.servlet.http.HttpServletRequest)}.
+ * 	{@link UserIdentifier#extractUserId(uws.service.UWSUrl, jakarta.servlet.http.HttpServletRequest)}.
  * </p>
  *
  * <p><i>Note:

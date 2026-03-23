@@ -23,7 +23,7 @@ package tap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
@@ -308,7 +308,7 @@ public abstract class TAPFactory implements UWSFactory {
 	 * 	with the given request, in order to ensure that the returned object is always a {@link TAPJob}.
 	 * </p>
 	 *
-	 * @see uws.service.AbstractUWSFactory#createJob(javax.servlet.http.HttpServletRequest, uws.job.user.JobOwner)
+	 * @see uws.service.AbstractUWSFactory#createJob(jakarta.servlet.http.HttpServletRequest, uws.job.user.JobOwner)
 	 * @see #createTAPJob(HttpServletRequest, JobOwner)
 	 */
 	@Override

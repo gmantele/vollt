@@ -43,7 +43,7 @@ import uws.service.request.UWSRequestParser;
  * <p>Two default implementations of this interface are provided in this library:</p>
  * <ul>
  * 	<li>{@link UWSService}: this class represents an object which is able to receive, to interpret
- * 		and to answer to any HTTP request as a UWS service must do (see {@link UWSService#executeRequest(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}.
+ * 		and to answer to any HTTP request as a UWS service must do (see {@link UWSService#executeRequest(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}.
  * 		Thus, an instance of this class must be used inside a servlet: all HTTP requests dedicated
  * 		to UWS will be then forwarded to it.
  *	</li>
@@ -196,7 +196,7 @@ public interface UWS extends Iterable<JobList> {
 
 	/**
 	 * <p>Gets the object which is able to interpret and to build any UWS URL.
-	 * It MUST be loaded with the root URL of this UWS: see {@link UWSUrl#load(javax.servlet.http.HttpServletRequest)}.</p>
+	 * It MUST be loaded with the root URL of this UWS: see {@link UWSUrl#load(jakarta.servlet.http.HttpServletRequest)}.</p>
 	 *
 	 * <p><i><u>note:</u> This getter is particularly used to serialize the jobs lists and their jobs.</i></p>
 	 *

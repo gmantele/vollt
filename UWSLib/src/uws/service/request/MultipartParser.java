@@ -20,24 +20,22 @@ package uws.service.request;
  *                       Astronomisches Rechen Institut (ARI)
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.fileupload.util.Streams;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.core.FileItem;
+import org.apache.commons.fileupload2.core.FileUploadException;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import org.apache.commons.io.file.PathUtils;
 import uws.UWSException;
 import uws.service.UWS;
 import uws.service.file.UWSFileManager;
@@ -135,7 +133,7 @@ public class MultipartParser implements RequestParser {
 
 	/** Tool to parse Multipart HTTP request and fetch files when necessary.
 	 * @since 4.4 */
-	protected final ServletFileUpload fileUpload;
+	protected final JakartaServletFileUpload fileUpload;
 
 	/**
 	 * Build a {@link MultipartParser} forbidding uploads (i.e. inline files).
@@ -211,17 +209,14 @@ public class MultipartParser implements RequestParser {
 		this.fileManager = fileManager;
 
 		// Create a factory for disk-based file items:
-		DiskFileItemFactory factory = new DiskFileItemFactory();
+		DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
 
-		// Configure a repository:
-		factory.setRepository(fileManager.getTmpDirectory());
-
-		/* Set the maximum size of an in-memory file before being stored on the
-		 * disk: */
-		factory.setSizeThreshold(SIZE_BEFORE_DISK_STORAGE);
+		//Worth noting that setting repository is new hidden behind a private constructor which sets to default values...
+		//setBufferSize(DEFAULT_THRESHOLD);
+		//setPath(PathUtils.getTempDirectory());
 
 		// Create a new file upload handler:
-		fileUpload = new ServletFileUpload(factory);
+		fileUpload = new JakartaServletFileUpload(factory);
 
 		// Set the maximum size for each single file:
 		fileUpload.setFileSizeMax(maxFileSize);
@@ -289,7 +284,7 @@ public class MultipartParser implements RequestParser {
 				String name = item.getFieldName();
 				InputStream stream = item.getInputStream();
 				if (item.isFormField())
-					consumeParameter(name, Streams.asString(stream), parameters);
+					consumeParameter(name, inputStreamToString(stream), parameters);
 				else{
 					if (!allowUpload)
 						throw new UWSException(UWSException.BAD_REQUEST, "Uploads are not allowed by this service!");
@@ -394,7 +389,21 @@ public class MultipartParser implements RequestParser {
 	 *        	<code>false</code> otherwise.
 	 */
 	public static final boolean isMultipartContent(final HttpServletRequest request){
-		return ServletFileUpload.isMultipartContent(request);
+		return JakartaServletFileUpload.isMultipartContent(request);
 	}
 
+		private static String inputStreamToString(InputStream inputStream) {
+			StringBuilder stringBuilder = new StringBuilder();
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					stringBuilder.append(line).append("\n"); // Append newline if needed
+				}
+			} catch (Exception e) {
+				e.printStackTrace(); // Handle exception appropriately
+			}
+
+			return stringBuilder.toString().trim(); // Trim to remove the last newline if needed
+		}
 }

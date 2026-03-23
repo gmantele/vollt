@@ -37,8 +37,8 @@ subprojects {
     sourceSets.test.java.srcDirs = ["test"]
 
     /* Set the minimum Java version compatibility: */
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     dependencies {
         testImplementation 'junit:junit:4.13.1'

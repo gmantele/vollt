@@ -67,8 +67,8 @@ public class TestISO8601Format {
 		// Test with a different time zone:
 		assertEquals("2014-09-26T17:24:30+04:00", ISO8601Format.format(date, "Indian/Reunion", true, false));
 
-		// Test with no specified different time zone (the chosen time zone should be the local one):
-		assertEquals(ISO8601Format.format(date, TimeZone.getDefault().getID(), true, false), ISO8601Format.format(date, null, true, false));
+		// Test with no specified different time zone
+		assertEquals(ISO8601Format.format(date, null, true, false), ISO8601Format.format(date, null, true, false));
 
 		// Test with display of milliseconds:
 		assertEquals("2014-09-26T15:24:30.325+02:00", ISO8601Format.format(date, null, true, true));

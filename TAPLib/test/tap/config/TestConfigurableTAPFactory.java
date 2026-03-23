@@ -30,7 +30,7 @@ import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.h2.jdbc.JdbcSQLException;
 import org.h2.jdbcx.JdbcDataSource;

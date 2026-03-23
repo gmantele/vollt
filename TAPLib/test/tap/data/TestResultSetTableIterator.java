@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -149,13 +150,13 @@ public class TestResultSetTableIterator {
 			rsit.nextCol();
 
 			// Set a date-time:
-			GregorianCalendar cal = new GregorianCalendar();
+			GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 			cal.set(2017, GregorianCalendar.FEBRUARY, 1, 15, 13, 56); // 1st Feb. 2017 - 15:13:56 CET
 
 			// Try to format it from a java.SQL.Timestamp into a ISO8601 date-time:
-			assertEquals("2017-02-01T14:13:56Z", rsit.formatColValue(new java.sql.Timestamp(cal.getTimeInMillis())));
+			assertEquals("2017-02-01T15:13:56Z", rsit.formatColValue(new java.sql.Timestamp(cal.getTimeInMillis())));
 			// Try to format it from a java.UTIL.Date into an ISO8601 date-time:
-			assertEquals("2017-02-01T14:13:56Z", rsit.formatColValue(cal.getTime()));
+			assertEquals("2017-02-01T15:13:56Z", rsit.formatColValue(cal.getTime()));
 
 			// Try to format it from a java.SQL.Date into a simple date (no time indication):
 			assertEquals("2017-02-01", rsit.formatColValue(new java.sql.Date(cal.getTimeInMillis())));

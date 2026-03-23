@@ -19,9 +19,13 @@ public class TestQuickFixer {
 			// raw ASCII query with perfectly regular ADQL identifiers:
 			assertEquals("SELECT foo, bar FROM aTable", fixer.fix("SELECT foo, bar FROM aTable"));
 			// same with \n, \r and \t (replaced by 4 spaces):
-			assertEquals("SELECT foo," + System.getProperty("line.separator") + "    bar" + System.getProperty("line.separator") + "FROM aTable", fixer.fix("SELECT foo,\r\n\tbar\nFROM aTable"));
+            String fixed = fixer.fix("SELECT foo,\r\n\tbar\nFROM aTable");
+            String expected = "SELECT foo," + System.lineSeparator() + "    bar" + System.lineSeparator() + "FROM aTable";
+            assertEquals(expected.replace("\r\n", "\n").trim(), fixed.replace("\r\n", "\n").trim());
 			// still ASCII query with delimited identifiers and ADQL functions:
-			assertEquals("SELECT \"foo\"," + System.getProperty("line.separator") + "    \"_bar\", AVG(col1)" + System.getProperty("line.separator") + "FROM \"public\".aTable", fixer.fix("SELECT \"foo\",\r\n\t\"_bar\", AVG(col1)\nFROM \"public\".aTable"));
+            fixed = fixer.fix("SELECT \"foo\",\r\n\t\"_bar\", AVG(col1)\nFROM \"public\".aTable");
+            expected = "SELECT \"foo\"," + System.lineSeparator() + "    \"_bar\", AVG(col1)" + System.lineSeparator() + "FROM \"public\".aTable";
+            assertEquals(expected.replace("\r\n", "\n").trim(), fixed.replace("\r\n", "\n").trim());
 
 			/* CASE: Unicode confusable characters => replace by their ASCII alternative */
 			assertEquals("SELECT \"_bar\" FROM aTable", fixer.fix("SELECT \"\uFE4Dbar\" FROM aTable"));
@@ -40,7 +44,9 @@ public class TestQuickFixer {
 			assertEquals("SELECT \"count\", \"distance\" FROM \"schema\".aTable", fixer.fix("SELECT count, distance FROM schema.aTable"));
 
 			/* CASE: a nice combination of everything (with comments at beginning, middle and end) */
-			assertEquals("-- begin comment" + System.getProperty("line.separator") + "SELECT id, \"_raj2000\", \"distance\", (\"date\")," + System.getProperty("line.separator") + "    \"min\",min(mag), \"_dej2000\" -- in-between commment" + System.getProperty("line.separator") + "FROM \"public\".mytable -- end comment", fixer.fix("-- begin comment\r\nSELECT id, \uFE4Draj2000, distance, (date),\r\tmin,min(mag), \"_dej2000\" -- in-between commment\nFROM public.mytable -- end comment"));
+            fixed = fixer.fix("-- begin comment\r\nSELECT id, \uFE4Draj2000, distance, (date),\r\tmin,min(mag), \"_dej2000\" -- in-between commment\nFROM public.mytable -- end comment");
+            expected = "-- begin comment" + System.getProperty("line.separator") + "SELECT id, \"_raj2000\", \"distance\", (\"date\")," + System.getProperty("line.separator") + "    \"min\",min(mag), \"_dej2000\" -- in-between commment" + System.getProperty("line.separator") + "FROM \"public\".mytable -- end comment";
+            assertEquals(expected.replace("\r\n", "\n").trim(), fixed.replace("\r\n", "\n").trim());
 
 		} catch(ParseException pe) {
 			pe.printStackTrace();

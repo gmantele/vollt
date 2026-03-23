@@ -23,10 +23,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import tap.TAPException;
 import tap.formatter.OutputFormat;
@@ -115,15 +115,16 @@ public class HomePage extends ForwardResource {
 				writer.print("\n\n\t\t<h2>Service description</h2>\n\t\t<p>" + tap.getServiceConnection().getProviderDescription() + "</p>");
 
 			// List of all available resources:
+			String domain = request.getContextPath() + request.getServletPath();
 			writer.print("\n\n\t\t<h2>Available resources</h2>\n\t\t<ul>");
 			for(TAPResource res : tap.resources.values())
-				writer.println("\n\t\t\t<li><a href=\"" + tap.tapBaseURL + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
+				writer.println("\n\t\t\t<li><a href=\"" + domain + "/" + res.getName() + "\">" + res.getName() + "</a></li>");
 			writer.print("\n\t\t</ul>");
 
 			// ADQL query form:
 			writer.print("\n\t\t\n\t\t<h2>ADQL query</h2>\n\t\t<noscript>\n\t\t\t<p><strong><u>WARNING</u>! Javascript is disabled in your browser. Consequently, you can submit queries ONLY in synchronous mode and no limit on result nor execution duration can be specified. Besides, no table can be uploaded.</strong></p>\n\t\t</noscript>");
-			writer.print("\n\t\t<form id=\"queryForm\" action=\"" + tap.getAccessURL() + "/sync\" method=\"post\" enctype=\"application/x-www-form-urlencoded\" target=\"_blank\">\n\t\t\t<input type=\"hidden\" name=\"REQUEST\" value=\"doQuery\" />\n\t\t\t<input type=\"hidden\" name=\"VERSION\" value=\"1.0\" />\n\t\t\t<input type=\"hidden\" name=\"LANG\" value=\"ADQL\" />\n\t\t\t<input type=\"hidden\" name=\"PHASE\" value=\"RUN\" />\n\t\t\t<div class=\"formField\">\n\t\t\t\t<strong>Query:</strong>\n\t\t\t\t<textarea name=\"QUERY\" cols=\"80\" rows=\"5\">\nSELECT *\nFROM TAP_SCHEMA.tables;</textarea>\n\t\t\t</div>");
-			writer.print("\n\n\t\t\t<div class=\"formField\">\n\t\t\t\t<strong>Execution mode:</strong> <input id=\"asyncOption\" name=\"REQUEST\" value=\"doQuery\" type=\"radio\" onclick=\"document.getElementById('queryForm').action='" + tap.getAccessURL() + "/async';\" /><label for=\"asyncOption\"> Asynchronous/Batch</label>\n\t\t\t\t<input id=\"syncOption\" name=\"REQUEST\" value=\"doQuery\" type=\"radio\" onclick=\"document.getElementById('queryForm').action='" + tap.getAccessURL() + "/sync';\" checked=\"checked\" /><label for=\"syncOption\"> Synchronous</label>\n\t\t\t</div>");
+			writer.print("\n\t\t<form id=\"queryForm\" action=\"" + domain + "/sync\" method=\"post\" enctype=\"application/x-www-form-urlencoded\" target=\"_blank\">\n\t\t\t<input type=\"hidden\" name=\"REQUEST\" value=\"doQuery\" />\n\t\t\t<input type=\"hidden\" name=\"VERSION\" value=\"1.0\" />\n\t\t\t<input type=\"hidden\" name=\"LANG\" value=\"ADQL\" />\n\t\t\t<input type=\"hidden\" name=\"PHASE\" value=\"RUN\" />\n\t\t\t<div class=\"formField\">\n\t\t\t\t<strong>Query:</strong>\n\t\t\t\t<textarea name=\"QUERY\" cols=\"80\" rows=\"5\">\nSELECT *\nFROM TAP_SCHEMA.tables;</textarea>\n\t\t\t</div>");
+			writer.print("\n\n\t\t\t<div class=\"formField\">\n\t\t\t\t<strong>Execution mode:</strong> <input id=\"asyncOption\" name=\"REQUEST\" value=\"doQuery\" type=\"radio\" onclick=\"document.getElementById('queryForm').action='" + domain + "/async';\" /><label for=\"asyncOption\"> Asynchronous/Batch</label>\n\t\t\t\t<input id=\"syncOption\" name=\"REQUEST\" value=\"doQuery\" type=\"radio\" onclick=\"document.getElementById('queryForm').action='" + domain + "/sync';\" checked=\"checked\" /><label for=\"syncOption\"> Synchronous</label>\n\t\t\t</div>");
 			writer.print("\n\t\t\t<div class=\"formField\"><strong>Format:</strong>\n\t\t\t\t<select name=\"FORMAT\">");
 			Iterator<OutputFormat> itFormats = tap.getServiceConnection().getOutputFormats();
 			OutputFormat fmt;

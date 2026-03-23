@@ -760,11 +760,11 @@ public class ResultSetTableIterator implements TableIterator {
 
 			// if the type is Integer but it is declared as a SMALLINT cast the value (absolutely required for the FITS format):
 			else if (colValue instanceof Integer && colType != null && colValue != null && colType.type == DBDatatype.SMALLINT)
-				colValue = new Short(((Integer)colValue).shortValue());
+				colValue = ((Integer) colValue).shortValue();
 
 			// if the column value is a Boolean object, format it as a SMALLINT:
 			else if (colValue instanceof Boolean)
-				colValue = ((Boolean)colValue) ? new Short((short)1) : new Short((short)0);
+				colValue = ((Boolean)colValue) ? Short.valueOf((short)1) : Short.valueOf((short)0);
 
 			// if the column should be only a character:
 			else if (colType != null && colValue != null && colType.type == DBDatatype.CHAR && (colType.length == 1 || colType.length <= 0) && colValue instanceof String)

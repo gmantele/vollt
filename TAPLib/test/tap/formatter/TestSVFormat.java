@@ -1,16 +1,15 @@
 package tap.formatter;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -27,6 +26,8 @@ import tap.db_testtools.CommandExecute;
 import tap.db_testtools.DBTools;
 import tap.metadata.TAPColumn;
 import tap.parameters.TAPParameters;
+
+import static org.junit.Assert.*;
 
 /**
  * <p>Test the SVFormat function {@link SVFormat#writeResult(TableIterator, OutputStream, TAPExecutionReport, Thread)}.</p>
@@ -85,9 +86,11 @@ public class TestSVFormat {
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
-			assertTrue(CommandExecute.execute("wc -l < \"" + svFile.getAbsolutePath() + "\"").trim().equals("11"));
-
-		}catch(Exception t){
+            try (Stream<String> lines = Files.lines(svFile.toPath())) {
+                long lineCount = lines.count();
+                assertEquals(11, lineCount);
+            }
+        }catch(Exception t){
 			t.printStackTrace();
 			fail("Unexpected exception!");
 		}finally{
@@ -118,8 +121,10 @@ public class TestSVFormat {
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
-			assertTrue(CommandExecute.execute("wc -l < \"" + svFile.getAbsolutePath() + "\"").trim().equals("6"));
-
+            try (Stream<String> lines = Files.lines(svFile.toPath())) {
+                long lineCount = lines.count();
+                assertEquals(6, lineCount);
+            }
 		}catch(Exception t){
 			t.printStackTrace();
 			fail("Unexpected exception!");

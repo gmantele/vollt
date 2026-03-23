@@ -32,9 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -43,6 +41,9 @@ import uws.UWSException;
 import uws.job.jobInfo.XMLJobInfo;
 import uws.service.UWS;
 import uws.service.file.UWSFileManager;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
 /**
  * This parser aims to copy the full content of an HTTP request if it is

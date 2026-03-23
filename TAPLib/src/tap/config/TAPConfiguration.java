@@ -810,7 +810,7 @@ public final class TAPConfiguration {
 
 		// If empty value, return an infinite limit:
 		if (value == null || value.length() == 0)
-			return (longValue ? new Object[]{ new Long(-1L), LimitUnit.rows } : new Object[]{ new Integer(-1), LimitUnit.rows });
+			return (longValue ? new Object[]{-1L, LimitUnit.rows } : new Object[]{-1, LimitUnit.rows });
 
 		// A. Parse the string from the end in order to extract the unit part.
 		//    The final step of the loop is the extraction of the numeric value, when the first digit is encountered.
@@ -878,9 +878,9 @@ public final class TAPConfiguration {
 		}
 
 		if (numValue < 0)
-			return (longValue ? new Object[]{ new Long(-1L), unit } : new Object[]{ new Integer(-1), unit });
+			return (longValue ? new Object[]{-1L, unit } : new Object[]{-1, unit });
 		else
-			return (longValue ? new Object[]{ new Long(numValue), unit } : new Object[]{ new Integer((int)numValue), unit });
+			return (longValue ? new Object[]{numValue, unit } : new Object[]{(int) numValue, unit });
 	}
 
 }

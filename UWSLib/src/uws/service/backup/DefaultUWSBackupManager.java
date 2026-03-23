@@ -40,7 +40,7 @@ import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.DatatypeConverter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -1521,7 +1521,7 @@ public class DefaultUWSBackupManager implements UWSBackupManager {
 					case ')':
 						endReached = true;
 						if (closeToken != c) {
-							throw input.syntaxError("Expected a '" + new Character(closeToken) + "'");
+							throw input.syntaxError("Expected a '" + closeToken + "'");
 						}
 						return;
 					default:

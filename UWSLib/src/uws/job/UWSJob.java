@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
 
 import uws.ISO8601Format;
 import uws.UWSException;

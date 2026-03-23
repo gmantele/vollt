@@ -29,8 +29,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -468,7 +468,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * <p>A message/error logged with this function will have the following format:</p>
 	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	REQUEST_RECEIVED	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	&lt;HTTP_METHOD&gt; in &lt;CONTENT_TYPE&gt; at &lt;URL&gt; from &lt;IP_ADDR&gt; using &lt;USER_AGENT&gt; with parameters (&lt;PARAM1&gt;=&lt;VAL1&gt;&...)</pre>
 	 *
-	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletRequest, java.lang.String, java.lang.String, java.lang.Throwable)
+	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, jakarta.servlet.http.HttpServletRequest, java.lang.String, java.lang.String, java.lang.Throwable)
 	 */
 	@Override
 	public void logHttp(LogLevel level, final HttpServletRequest request, final String requestId, final String message, final Throwable error){
@@ -525,7 +525,7 @@ public class DefaultUWSLog implements UWSLog {
 	 * <pre>&lt;TIMESTAMP&gt;	&lt;LEVEL&gt;	HTTP	RESPONSE_SENT	&lt;REQUEST_ID&gt;	&lt;MESSAGE&gt;	HTTP-&lt;STATUS_CODE&gt; to the user &lt;USER&gt; as &lt;CONTENT_TYPE&gt;</pre>
 	 * <p>,where &lt;USER&gt; may be either "(id:&lt;USER_ID&gt;;pseudo:&lt;USER_PSEUDO&gt;)" or "ANONYMOUS".</p>
 	 *
-	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, javax.servlet.http.HttpServletResponse, java.lang.String, uws.job.user.JobOwner, java.lang.String, java.lang.Throwable)
+	 * @see uws.service.log.UWSLog#logHttp(uws.service.log.UWSLog.LogLevel, jakarta.servlet.http.HttpServletResponse, java.lang.String, uws.job.user.JobOwner, java.lang.String, java.lang.Throwable)
 	 */
 	@Override
 	public void logHttp(LogLevel level, HttpServletResponse response, String requestId, JobOwner user, String message, Throwable error){

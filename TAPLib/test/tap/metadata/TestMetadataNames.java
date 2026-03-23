@@ -493,7 +493,7 @@ public class TestMetadataNames {
 			StringWriter str = new StringWriter();
 			metadata.write(new PrintWriter(str));
 			//System.out.println(str.toString());
-			assertEquals(expectedXMLMetadata, str.toString());
+			assertEquals(expectedXMLMetadata.replace("\r\n", "\n").trim(), str.toString().replace("\r\n", "\n").trim());
 		} catch(Exception ex) {
 			ex.printStackTrace(System.err);
 			fail("Unexpected error when writing TAP metadata into an XML format! (see console for more details)");

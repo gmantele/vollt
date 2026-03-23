@@ -45,11 +45,16 @@ import uws.service.file.UWSFileManager;
 import uws.service.log.UWSLog.LogLevel;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -178,7 +183,7 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * @throws NullPointerException	If the given properties set is NULL.
 	 * @throws TAPException			If a property is wrong or missing.
 	 */
-	public ConfigurableServiceConnection(final Properties tapConfig) throws NullPointerException, TAPException {
+	public ConfigurableServiceConnection(final Properties tapConfig) throws FileNotFoundException, TAPException {
 		this(tapConfig, null);
 	}
 
@@ -196,9 +201,9 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 * @throws NullPointerException	If the given properties set is NULL.
 	 * @throws TAPException			If a property is wrong or missing.
 	 */
-	public ConfigurableServiceConnection(final Properties tapConfig, final String webAppRootDir) throws NullPointerException, TAPException {
+	public ConfigurableServiceConnection(final Properties tapConfig, final String webAppRootDir) throws FileNotFoundException, TAPException {
 		if (tapConfig == null)
-			throw new NullPointerException("Missing TAP properties! ");
+			throw new FileNotFoundException("Missing TAP properties! ");
 
 		// 1. INITIALIZE THE FILE MANAGER:
 		initFileManager(tapConfig, webAppRootDir);
@@ -335,17 +340,37 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 *
 	 * @throws ParseException	If the given file path is a URI/URL.
 	 */
-	protected static final File getFile(final String filePath, final String webAppRootPath, final String propertyName) throws TAPException {
-		if (filePath == null)
+	static File getFile(final String filePath, final String webAppRootPath, final String propertyName) throws TAPException {
+		if (filePath == null) {
 			return null;
-		else if (filePath.matches(".*:.*"))
-			throw new TAPException("Incorrect file path for the property \"" + propertyName + "\": \"" + filePath + "\"! URI/URLs are not expected here.");
+		}
 
-		File f = new File(filePath);
-		if (f.isAbsolute())
-			return f;
-		else
-			return new File(webAppRootPath, filePath);
+        // As file://some/resource is interpreted as a literal path on Linux based OS, catch URis upfront.
+        try {
+            URI uri = URI.create(filePath);
+            if (uri.getScheme() != null) {
+                throw new TAPException("Invalid file path for the property \"" + propertyName + "\": \"" + filePath + "\"! Please check the path format.");
+            }
+        }catch(IllegalArgumentException e) {
+            //Not a valid URI, continue to create a Path
+        }
+
+		// Convert the file path into a Path object to avoid manual checks
+		Path path;
+		try {
+            path = Paths.get(filePath);
+		} catch (InvalidPathException e) {
+			throw new TAPException("Invalid file path for the property \"" + propertyName + "\": \"" + filePath + "\"! Please check the path format.", e);
+		}
+
+		// If the path is absolute, return it as a File directly
+		if (path.isAbsolute()) {
+			return path.toFile();
+		}
+
+		// Otherwise, assume it's a relative path and resolve it against the webAppRootPath
+		Path resolvedPath = Paths.get(webAppRootPath).resolve(path);
+		return resolvedPath.toFile();
 	}
 
 	/**

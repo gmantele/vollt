@@ -7,10 +7,12 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -87,8 +89,21 @@ public class TestVOTableFormat {
 			output.close();
 
 			// note: due to the pipe (|), we must call /bin/sh as a command whose the command to execute in is the "grep ... | wc -l":
-			assertEquals("10", CommandExecute.execute("grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
-			assertEquals("0", CommandExecute.execute("grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
+            long trCount;
+            try (Stream<String> lines = Files.lines(votableFile.toPath())) {
+                trCount = lines.filter(line -> line.contains("<TR>")).count();
+            }
+
+            assertEquals(10, trCount);
+
+            // Count <INFO name="QUERY_STATUS" value="OVERFLOW"/> occurrences
+            long overflowInfoCount;
+            try (Stream<String> lines = Files.lines(votableFile.toPath())) {
+                overflowInfoCount = lines.filter(line ->
+                        line.contains("<INFO name=\"QUERY_STATUS\" value=\"OVERFLOW\"/>")
+                ).count();
+            }
+            assertEquals(0, overflowInfoCount);
 
 		}catch(Exception t){
 			t.printStackTrace();
@@ -121,9 +136,21 @@ public class TestVOTableFormat {
 			formatter.writeResult(it, output, report, Thread.currentThread());
 			output.close();
 
-			// note: due to the pipe (|), we must call /bin/sh as a command whose the command to execute in is the "grep ... | wc -l":
-			assertEquals("5", CommandExecute.execute("grep \"<TR>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
-			assertEquals("1", CommandExecute.execute("grep \"<INFO name=\\\"QUERY_STATUS\\\" value=\\\"OVERFLOW\\\"/>\" \"" + votableFile.getAbsolutePath() + "\" | wc -l").trim());
+            // Count <TR> occurrences safely and portably
+            long trCount;
+            try (Stream<String> lines = Files.lines(votableFile.toPath())) {
+                trCount = lines.filter(line -> line.contains("<TR>")).count();
+            }
+            assertEquals(5, trCount);
+
+            // Count <INFO name="QUERY_STATUS" value="OVERFLOW"/> occurrences
+            long overflowInfoCount;
+            try (Stream<String> lines = Files.lines(votableFile.toPath())) {
+                overflowInfoCount = lines.filter(line ->
+                        line.contains("<INFO name=\"QUERY_STATUS\" value=\"OVERFLOW\"/>")
+                ).count();
+            }
+            assertEquals(1, overflowInfoCount);
 
 		}catch(Exception t){
 			t.printStackTrace();

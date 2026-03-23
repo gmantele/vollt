@@ -23,7 +23,7 @@ public class AllTAPConfigTests {
 		validProp.setProperty("sql_translator", "{" + DBTools.DB_TEST_TRANSLATOR + "}");
 		validProp.setProperty("metadata", "db");
 		validProp.setProperty("file_manager", "local");
-		validProp.setProperty("file_root_path", "bin/ext/test/tap");
+		validProp.setProperty("file_root_path", System.getProperty("java.io.tmpdir"));
 		return validProp;
 	}
 

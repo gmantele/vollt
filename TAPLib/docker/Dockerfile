@@ -49,8 +49,8 @@ RUN wget -O /usr/local/tomcat/webapps/tap/WEB-INF/lib/commons-fileupload.jar \
             'https://repo1.maven.org/maven2/commons-fileupload/commons-fileupload/1.3.3/commons-fileupload-1.3.3.jar'
 RUN wget -O /usr/local/tomcat/webapps/tap/WEB-INF/lib/commons-io.jar \
             'https://repo1.maven.org/maven2/commons-io/commons-io/2.6/commons-io-2.6.jar'
-RUN wget -O /usr/local/tomcat/webapps/tap/WEB-INF/lib/javax-servlet-api.jar \
-            'https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/3.0.1/javax.servlet-api-3.0.1.jar'
+RUN wget -O /usr/local/tomcat/webapps/tap/WEB-INF/lib/jakarta-servlet-api.jar \
+            'https://repo1.maven.org/maven2/jakarta/servlet/jakarta.servlet-api/3.0.1/jakarta.servlet-api-3.0.1.jar'
 RUN wget -O /usr/local/tomcat/webapps/tap/WEB-INF/lib/json.jar \
             'https://repo1.maven.org/maven2/org/json/json/20180813/json-20180813.jar'
 RUN wget -O /usr/local/tomcat/webapps/tap/WEB-INF/lib/slf4j-api.jar \

@@ -1,9 +1,11 @@
 plugins {
-    id "org.javacc.javacc" version "3.0.0"
+    id "org.javacc.javacc" version "3.0.2"
+    id 'maven-publish'
+    // FIXME really need to sign too
 }
 
 // Describe the library:
-version = "2.0-beta"
+version = "2.0-SNAPSHOT"
 description = "Java library to parse, analyze and transform ADQL queries."
 
 // Name of the JAR name (which will be then suffixed by the version number):
@@ -15,7 +17,7 @@ distributions {
 }
 
 dependencies {
-    implementation 'uk.ac.starlink:stil:4.2'
+    implementation 'uk.ac.starlink:stil:4.3.1'
     implementation 'postgresql:postgresql:9.1-901.jdbc4'
 }
 
@@ -34,6 +36,10 @@ tasks.register('runnableJar', Jar) {
     }
     from sourceSets.main.output
     exclude('adql/example/**')
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
 }
 
 /* ##########################################################################
@@ -62,3 +68,59 @@ compileJavacc.doLast {
 
 // Ensure the generated Java classes and examples are included in the classpath:
 sourceSets.main.java.srcDirs = ["src", "examples", project.buildDir.absolutePath+'/generated']
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'fr.unistra.cds' //FIXME - is this what is wanted?
+            artifactId = 'ADQLlib'
+            version = '2.0-SNAPSHOT'
+
+            from components.java
+            pom {
+                name = 'ADQLlib'
+                description = 'Java library to parse, analyze and transform ADQL queries.'
+                url = 'http://cdsportal.u-strasbg.fr/adqltuto/'
+
+                licenses {
+                    license {
+                        name = 'GNU Lesser General Public License version 3'
+                        url = 'https://opensource.org/license/lgpl-3-0'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'gmantele'
+                        name = 'Grégory Mantelet'
+                        email = 'gregory.mantelet@astro.u-strasbg.fr'
+                    }
+                    developer {
+                        id = 'slloyd-src'
+                        name = 'Stephen Lloyd'
+                        email = 'stephen.lloyd@manchester.ac.uk'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/gmantele/vollt.git'
+                    developerConnection = 'scm:git:ssh://github.com/gmantele/vollt.git'
+                    url = 'http://example.com/my-library/'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "uksrcrepo"
+            credentials {
+                username = (findProperty("uksrcNexusUsername") ?: System.getenv("UKSRC_REPO_USERNAME"))
+                password = (findProperty("uksrcNexusPassword") ?: System.getenv("UKSRC_REPO_PASSWORD"))
+            }
+            def releasesRepoUrl = uri("https://repo.dev.uksrc.org/repository/maven-releases/")
+            def snapshotsRepoUrl = uri("https://repo.dev.uksrc.org/repository/maven-snapshots/")
+            url = uri((version.toString().endsWith("SNAPSHOT"))?  snapshotsRepoUrl : releasesRepoUrl)
+
+        }
+
+    }
+}

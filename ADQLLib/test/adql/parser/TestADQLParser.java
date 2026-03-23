@@ -96,7 +96,8 @@ public class TestADQLParser {
 			fail("In ADQL-2.0, UNION should not be allowed....it does not exist!");
 		} catch(Exception ex) {
 			assertEquals(ParseException.class, ex.getClass());
-			assertEquals(" Encountered \"UNION\". Was expecting one of: <EOF> \".\" \",\" \";\" \"AS\" \"WHERE\" \"GROUP\" \"HAVING\" \"ORDER\" \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> \n(HINT: \"UNION\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
+			String expected = " Encountered \"UNION\". Was expecting one of: <EOF> \".\" \",\" \";\" \"AS\" \"WHERE\" \"GROUP\" \"HAVING\" \"ORDER\" \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> \n(HINT: \"UNION\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+            assertEquals(expected.replace("\r\n", "\n").trim(), ex.getMessage().replace("\r\n", "\n").trim());
 		}
 
 		parser = new ADQLParser(ADQLVersion.V2_1);
@@ -215,7 +216,8 @@ public class TestADQLParser {
 		}
 		catch(Exception ex) {
 			assertEquals(ParseException.class, ex.getClass());
-			assertEquals(" Encountered \"WITH\". Was expecting: \"SELECT\" \n(HINT: \"WITH\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
+			String expected = " Encountered \"WITH\". Was expecting: \"SELECT\" \n(HINT: \"WITH\" is not supported in ADQL v2.0, but is however a reserved word. To use it as a column/table/schema name/alias, write it between double quotes.)";
+            assertEquals(expected.replace("\r\n", "\n").trim(), ex.getMessage().replace("\r\n", "\n").trim());
 		}
 
 		parser = new ADQLParser(ADQLVersion.V2_1);
@@ -263,7 +265,8 @@ public class TestADQLParser {
 		}
 		catch(Exception ex){
 			assertEquals(ParseException.class, ex.getClass());
-			assertEquals(" Encountered \"WITH\". Was expecting one of: \"(\" \"SELECT\" \n(HINT: \"WITH\" is a reserved ADQL word in v2.1. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
+			String expected = " Encountered \"WITH\". Was expecting one of: \"(\" \"SELECT\" \n(HINT: \"WITH\" is a reserved ADQL word in v2.1. To use it as a column/table/schema name/alias, write it between double quotes.)";
+            assertEquals(expected.replace("\r\n", "\n").trim(), ex.getMessage().replace("\r\n", "\n").trim());
 		}
 	}
 
@@ -413,7 +416,8 @@ public class TestADQLParser {
 					fail("In ADQL-v2.0, GROUP BY with an expression is forbidden!");
 				} catch(Exception e) {
 					assertEquals(ParseException.class, e.getClass());
-					assertEquals(" Encountered \"sqrt\". Was expecting one of: \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> \n" + "(HINT: \"sqrt\" is a reserved ADQL word in v2.0. To use it as a column/table/schema name/alias, write it between double quotes.)", e.getMessage());
+					String expected = " Encountered \"sqrt\". Was expecting one of: \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> \n" + "(HINT: \"sqrt\" is a reserved ADQL word in v2.0. To use it as a column/table/schema name/alias, write it between double quotes.)";
+                    assertEquals(expected.replace("\r\n", "\n").trim(), e.getMessage().replace("\r\n", "\n").trim());
 				}
 			} else {
 				try {
@@ -509,7 +513,8 @@ public class TestADQLParser {
 					fail("In ADQL-v2.0, ORDER BY with an expression is forbidden!");
 				} catch(Exception e) {
 					assertEquals(ParseException.class, e.getClass());
-					assertEquals(" Encountered \"sqrt\". Was expecting one of: <UNSIGNED_INTEGER> \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> \n" + "(HINT: \"sqrt\" is a reserved ADQL word in v2.0. To use it as a column/table/schema name/alias, write it between double quotes.)", e.getMessage());
+                    String expected = " Encountered \"sqrt\". Was expecting one of: <UNSIGNED_INTEGER> \"\\\"\" <REGULAR_IDENTIFIER_CANDIDATE> \r\n(HINT: \"sqrt\" is a reserved ADQL word in v2.0. To use it as a column/table/schema name/alias, write it between double quotes.)";
+                    assertEquals(expected.replace("\r\n", "\n").trim(), e.getMessage().replace("\r\n", "\n").trim());
 				}
 			} else {
 				try {
@@ -699,28 +704,28 @@ public class TestADQLParser {
 				parser.parseQuery("select abs from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintAbs));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintAbs));
 			}
 			// ...with a geometric function name (but no param):
 			try {
 				parser.parseQuery("select point from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintPoint));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintPoint));
 			}
 			// ...with an ADQL function name (but no param):
 			try {
 				parser.parseQuery("select exists from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintExists));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintExists));
 			}
 			// ...with an ADQL syntax item:
 			try {
 				parser.parseQuery("select LIKE from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintLike));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintLike));
 			}
 
 			/* TEST AS AN ALIAS... */
@@ -729,28 +734,28 @@ public class TestADQLParser {
 				parser.parseQuery("select aCol AS abs from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintAbs));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintAbs));
 			}
 			// ...with a geometric function name (but no param):
 			try {
 				parser.parseQuery("select aCol AS point from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintPoint));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintPoint));
 			}
 			// ...with an ADQL function name (but no param):
 			try {
 				parser.parseQuery("select aCol AS exists from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintExists));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintExists));
 			}
 			// ...with an ADQL syntax item:
 			try {
 				parser.parseQuery("select aCol AS LIKE from aTable");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintLike));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintLike));
 			}
 
 			/* TEST AT THE END OF THE QUERY (AND IN A WHERE) */
@@ -758,7 +763,7 @@ public class TestADQLParser {
 				parser.parseQuery("select aCol from aTable WHERE toto = abs");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(hintAbs));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(hintAbs));
 			}
 		}
 	}
@@ -773,7 +778,7 @@ public class TestADQLParser {
 				fail("\"ROWS\" is an SQL reserved word. This query should not pass.");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(".*\n\\(HINT: \"rows\" is not supported in ADQL v[0-9]+\\.[0-9]+, but is however a reserved word\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)"));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(".*\n\\(HINT: \"rows\" is not supported in ADQL v[0-9]+\\.[0-9]+, but is however a reserved word\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)"));
 			}
 
 			try {
@@ -781,7 +786,7 @@ public class TestADQLParser {
 				fail("ADQL does not support the CASE syntax. This query should not pass.");
 			} catch(Throwable t) {
 				assertEquals(ParseException.class, t.getClass());
-				assertTrue(t.getMessage().matches(".*\n\\(HINT: \"CASE\" is not supported in ADQL v[0-9]+\\.[0-9]+, but is however a reserved word\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)"));
+				assertTrue(t.getMessage().replace("\r\n", "\n").trim().matches(".*\n\\(HINT: \"CASE\" is not supported in ADQL v[0-9]+\\.[0-9]+, but is however a reserved word\\. To use it as a column/table/schema name/alias, write it between double quotes\\.\\)"));
 			}
 		}
 	}
@@ -1287,11 +1292,14 @@ public class TestADQLParser {
 
 		// TEST: unknown token => ParseException
 		try {
-			parser.tokenize("grégory", false);
+			//Using unicode character value (for é) to avoid platform-dependent encoding issues
+			parser.tokenize("gr\u00E9gory", false);
 			fail("No known token is provided. A ParseException was expected.");
 		} catch(Exception ex) {
 			assertEquals(ParseException.class, ex.getClass());
-			assertEquals("Incorrect character encountered at l.1, c.3: \"\\u00e9\" ('é'), after : \"\"!" + System.getProperty("line.separator", "\n") + "Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it).", ex.getMessage());
+            String expected = "Incorrect character encountered at l.1, c.3: \"\\u00e9\" ('é'), after : \"\"!" + System.getProperty("line.separator", "\n") + "Possible cause: a non-ASCI/UTF-8 character (solution: remove/replace it).";
+            assertEquals(expected.replace("\r\n", "\n").trim(), ex.getMessage().replace("\r\n", "\n").trim()
+            );
 		}
 
 		// TEST: correct list of token => ok

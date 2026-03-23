@@ -26,8 +26,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -71,7 +71,7 @@ public class ShowHomePage extends UWSAction {
 	/**
 	 * Checks whether there is no jobs list name.
 	 * 
-	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, uws.job.user.JobOwner, javax.servlet.http.HttpServletRequest)
+	 * @see uws.service.actions.UWSAction#match(uws.service.UWSUrl, uws.job.user.JobOwner, jakarta.servlet.http.HttpServletRequest)
 	 */
 	@Override
 	public boolean match(UWSUrl urlInterpreter, JobOwner user, HttpServletRequest request) throws UWSException{

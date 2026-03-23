@@ -260,8 +260,9 @@ public class TestLogRotation {
 			// Check that all messages have been well written:
 			BufferedReader input = new BufferedReader(new InputStreamReader(fileManager.getLogInput(LogLevel.DEBUG, null)));
 			int nbLines = 0;
-			while(input.readLine() != null)
+			while(input.readLine() != null){
 				nbLines++;
+            }
 			nbLines -= 3; // deduce the number of 3 header lines
 			assertEquals(nbExpectedMessages, nbLines);
 

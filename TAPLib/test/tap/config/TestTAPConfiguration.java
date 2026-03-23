@@ -301,7 +301,7 @@ public class TestTAPConfiguration {
 
 		// NO MATCHING CONSTRUCTOR:
 		try {
-			newInstance("{tap.metadata.TAPSchema}", "schema", TAPSchema.class, new Class<?>[]{ Integer.class }, new Object[]{ new Integer(123) });
+			newInstance("{tap.metadata.TAPSchema}", "schema", TAPSchema.class, new Class<?>[]{ Integer.class }, new Object[]{123});
 			fail("This MUST have failed because the specified class does not have any expected constructor!");
 		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());
@@ -314,7 +314,7 @@ public class TestTAPConfiguration {
 			assertNotNull(colRef);
 			assertEquals(ColumnReference.class, colRef.getClass());
 			assertEquals(123, colRef.getColumnIndex());
-			colRef = newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{ int.class }, new Object[]{ new Integer(123) });
+			colRef = newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{ int.class }, new Object[]{123});
 			assertNotNull(colRef);
 			assertEquals(ColumnReference.class, colRef.getClass());
 			assertEquals(123, colRef.getColumnIndex());
@@ -325,7 +325,7 @@ public class TestTAPConfiguration {
 
 		// WRONG CONSTRUCTOR with primitive type:
 		try {
-			newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{ Integer.class }, new Object[]{ new Integer(123) });
+			newInstance("{adql.query.ColumnReference}", "colRef", ColumnReference.class, new Class<?>[]{ Integer.class }, new Object[]{123});
 			fail("This MUST have failed because the constructor of the specified class expects an int, not an java.lang.Integer!");
 		} catch(Exception ex) {
 			assertEquals(TAPException.class, ex.getClass());

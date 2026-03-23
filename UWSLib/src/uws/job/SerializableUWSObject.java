@@ -23,7 +23,7 @@ package uws.job;
 import java.io.IOException;
 import java.io.Serializable;
 
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
 
 import uws.UWSException;
 import uws.job.serializer.UWSSerializer;

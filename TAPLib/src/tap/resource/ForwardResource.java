@@ -29,9 +29,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import tap.log.TAPLog;
 import uws.ClientAbortException;
@@ -44,7 +44,7 @@ import uws.service.log.UWSLog.LogLevel;
  * <p>
  * 	In function of the URI shape (i.e. what is the scheme? none/file:/other) and the servlet path,
  * 	the HTTP request will be internally forwarded to the Web Application file (using
- * 	{@link RequestDispatcher#forward(javax.servlet.ServletRequest, javax.servlet.ServletResponse)}),
+ * 	{@link RequestDispatcher#forward(jakarta.servlet.ServletRequest, jakarta.servlet.ServletResponse)}),
  * 	the content of the specified file will be copied in the HTTP response or a redirection toward
  * 	the given URL will be performed.
  * </p>
@@ -91,7 +91,7 @@ public abstract class ForwardResource implements TAPResource {
 	 * 	is <code>/*</code>, this function will resolve the full path on the local file system and apply the
 	 * 	2nd option: write the file content directly in the response. Note that will work only in cases where the
 	 * 	specified file is not a JSP or does not need any kind of interpretation by the function
-	 * 	{@link RequestDispatcher#forward(javax.servlet.ServletRequest, javax.servlet.ServletResponse)}.
+	 * 	{@link RequestDispatcher#forward(jakarta.servlet.ServletRequest, jakarta.servlet.ServletResponse)}.
 	 * </p>
 	 *
 	 * @param file		URI/URL/path of the file to write/forward/redirect in the given HTTP response.

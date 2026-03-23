@@ -21,7 +21,7 @@ package uws.service.request;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import uws.UWSException;
 import uws.job.parameters.InputParamController;

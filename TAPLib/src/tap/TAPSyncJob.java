@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import tap.parameters.TAPExecutionDurationController;
 import tap.parameters.TAPParameters;

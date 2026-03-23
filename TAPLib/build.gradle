@@ -1,6 +1,9 @@
+plugins {
+    id 'maven-publish'
+}
 
 // Describe the library:
-version = "2.4-beta"
+version = "2.4.5-SNAPSHOT"
 description = "Java library to set up a TAP service."
 
 // Name of the JAR name (which will be then suffixed by the version number):
@@ -11,7 +14,7 @@ dependencies {
     implementation project(':UWSLib')
 
     implementation fileTree(dir: '../lib', includes: ['stil_3.3-2.jar'])
-    implementation 'javax.servlet:javax.servlet-api:3.0.1'
+    implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
     implementation 'org.slf4j:slf4j-api:1.7.25'
     implementation 'org.json:json:20231013'
 
@@ -24,6 +27,44 @@ dependencies {
     testRuntimeOnly 'org.xerial:sqlite-jdbc:3.44.1.0'
     
     /* Needed to run Gradle with Java 9+: */
-    // https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
-	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
+
+    implementation ("uk.ac.starlink:stil:4.3.1")
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'fr.unistra.cds' // Change this to the correct group
+            artifactId = 'TAPlib' // Change this for each library
+            version = '2.4.5-SNAPSHOT'
+
+            from components.java
+            pom {
+                name = 'TAPlib'
+                description = 'Java library to deploy a TAP service. This is a cloned version of the original to allow the updating of older java functionality'
+                url = 'http://cdsportal.u-strasbg.fr/taptuto/'
+
+                licenses {
+                    license {
+                        name = 'GNU Lesser General Public License version 3'
+                        url = 'https://opensource.org/license/lgpl-3-0'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'gmantele'
+                        name = 'Grégory Mantelet'
+                        email = 'gregory.mantelet@astro.u-strasbg.fr'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/slloyd-src/vollt.git'
+                    developerConnection = 'scm:git:ssh://github.com/slloyd-src/vollt.git'
+                    url = 'http://example.com/my-library/'
+                }
+            }
+        }
+    }
+
 }

@@ -298,7 +298,7 @@ public class DALIUpload {
 	 * 
 	 * @throws TAPException	If the syntax of an "UPLOAD" parameter is wrong.
 	 * 
-	 * @see RequestParser#parse(javax.servlet.http.HttpServletRequest)
+	 * @see RequestParser#parse(jakarta.servlet.http.HttpServletRequest)
 	 */
 	public final static List<DALIUpload> getDALIUploads(final Map<String,Object> requestParams, final boolean allowTAPSyntax, final UWSFileManager fileManager) throws TAPException{
 

@@ -282,7 +282,7 @@ public class TestUWSConfiguration {
 			assertNotNull(aClass);
 			assertEquals(ClassWithAPrimitiveConstructor.class, aClass.getClass());
 			assertEquals(123, aClass.myParam);
-			aClass = newInstance("{uws.config.TestUWSConfiguration$ClassWithAPrimitiveConstructor}", "aClass", ClassWithAPrimitiveConstructor.class, new Class<?>[]{int.class}, new Object[]{new Integer(123)});
+			aClass = newInstance("{uws.config.TestUWSConfiguration$ClassWithAPrimitiveConstructor}", "aClass", ClassWithAPrimitiveConstructor.class, new Class<?>[]{int.class}, new Object[]{123});
 			assertNotNull(aClass);
 			assertEquals(ClassWithAPrimitiveConstructor.class, aClass.getClass());
 			assertEquals(123, aClass.myParam);
@@ -293,7 +293,7 @@ public class TestUWSConfiguration {
 
 		// WRONG CONSTRUCTOR with primitive type:
 		try{
-			newInstance("{uws.config.TestUWSConfiguration$ClassWithAPrimitiveConstructor}", "aClass", ClassWithAPrimitiveConstructor.class, new Class<?>[]{Integer.class}, new Object[]{new Integer(123)});
+			newInstance("{uws.config.TestUWSConfiguration$ClassWithAPrimitiveConstructor}", "aClass", ClassWithAPrimitiveConstructor.class, new Class<?>[]{Integer.class}, new Object[]{123});
 			fail("This MUST have failed because the constructor of the specified class expects an int, not an java.lang.Integer!");
 		}catch(Exception ex){
 			assertEquals(UWSException.class, ex.getClass());

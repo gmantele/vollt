@@ -235,7 +235,8 @@ public class TestJDBCTranslator {
 			fail("WITH expressions not allowed somewhere else than at the main query level!");
 		} catch(Exception ex) {
 			assertEquals(ParseException.class, ex.getClass());
-			assertEquals(" Encountered \"WITH\". Was expecting one of: \"(\" \"SELECT\" \n(HINT: \"WITH\" is a reserved ADQL word in v2.1. To use it as a column/table/schema name/alias, write it between double quotes.)", ex.getMessage());
+			String expected = " Encountered \"WITH\". Was expecting one of: \"(\" \"SELECT\" \n(HINT: \"WITH\" is a reserved ADQL word in v2.1. To use it as a column/table/schema name/alias, write it between double quotes.)";
+            assertEquals(expected.replace("\r\n", "\n").trim(), ex.getMessage().replace("\r\n", "\n").trim());
 		}
 	}
 
