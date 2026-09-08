@@ -496,4 +496,13 @@ public abstract class TAPFactory implements UWSFactory {
 		return new TAPRequestParser(fileManager, service.uploadEnabled(), maxFileSize, service.getMaxUploadSize());
 	}
 
+	/**
+	 * Get the configuration of the service connection
+	 *
+	 * @return	Configuration of the service connection linked to this TAPFactory
+	 *
+	 */
+	public ServiceConnection getServiceConnection() {
+		return this.service;
+	}
 }

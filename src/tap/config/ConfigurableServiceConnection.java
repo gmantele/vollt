@@ -1053,9 +1053,52 @@ public final class ConfigurableServiceConnection implements ServiceConnection {
 	 */
 	private void initUserIdentifier(final Properties tapConfig) throws TAPException {
 		// Get the property value:
-		String propValue = getProperty(tapConfig, KEY_USER_IDENTIFIER);
-		if (propValue != null)
-			userIdentifier = newInstance(propValue, KEY_USER_IDENTIFIER, UserIdentifier.class);
+		String userIdentifierFetchType = getProperty(tapConfig, KEY_USER_IDENTIFIER);
+		if (userIdentifierFetchType != null){
+			Class<? extends UserIdentifier> userIdentifierClass = fetchClass(userIdentifierFetchType, KEY_USER_IDENTIFIER, UserIdentifier.class);
+			if (userIdentifierClass==null){
+				throw new TAPException("Class name expected for the property \""
+										+ KEY_USER_IDENTIFIER + "\" instead of: \"" + userIdentifierFetchType
+										+ "\"! The specified class must extend/implement uws.service.UserIdentifier.");
+			}
+
+			if (!UserIdentifier.class.isAssignableFrom(userIdentifierClass)){
+				throw new TAPException("Wrong class for the property \"" + KEY_USER_IDENTIFIER
+					+ "\": \"" + userIdentifierClass.getName() + "\"! The class provided in this property MUST IMPLEMENT uws.service.UserIdentifier.");
+			}
+
+			try {
+				// get one of the expected constructors:
+				try {
+					// (tapconfig):
+					Constructor<? extends UserIdentifier> constructor = userIdentifierClass.getConstructor(Properties.class);
+					// create the User Identifier:
+					userIdentifier = constructor.newInstance(tapConfig);
+				} catch(NoSuchMethodException nsme) {
+					// () (empty constructor):
+					Constructor<? extends UserIdentifier> constructor = userIdentifierClass.getConstructor();
+					// create the User Identifier:
+					userIdentifier = constructor.newInstance();
+				}
+			} catch(NoSuchMethodException nsme) {
+				throw new TAPException("Missing constructor uws.service.UserIdentifier() or uws.service.UserIdentifier(Properties)! See the value \""
+										+ userIdentifierFetchType + "\" of the property \"" + KEY_USER_IDENTIFIER + "\".");
+			} catch(InstantiationException ie) {
+				throw new TAPException("Impossible to create an instance of an abstract class: \"" + userIdentifierClass.getName() 
+										+ "\"! See the value \"" + userIdentifierFetchType + "\" of the property \"" + KEY_USER_IDENTIFIER + "\".");
+			} catch(InvocationTargetException ite) {
+				if (ite.getCause() != null) {
+					if (ite.getCause() instanceof TAPException)
+						throw (TAPException)ite.getCause();
+					else
+						throw new TAPException(ite.getCause());
+				} else
+					throw new TAPException(ite);
+			} catch(Exception ex) {
+				throw new TAPException("Impossible to create an instance of uws.service.UserIdentifier as specified in the property \""
+										+ KEY_USER_IDENTIFIER + "\": \"" + userIdentifierFetchType + "\"!", ex);
+			}
+		}
 	}
 
 	/**

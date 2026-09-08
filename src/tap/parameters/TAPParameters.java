@@ -28,14 +28,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
-
 import tap.ServiceConnection;
 import tap.TAPException;
 import tap.TAPJob;
 import uws.UWSException;
+import uws.UWSToolBox;
 import uws.job.parameters.InputParamController;
 import uws.job.parameters.StringParamController;
 import uws.job.parameters.UWSParameters;
+import uws.job.user.JobOwner;
 
 /**
  * This class lets list and describe all standard TAP parameters
@@ -45,6 +46,9 @@ import uws.job.parameters.UWSParameters;
  * @version 2.1 (04/2017)
  */
 public class TAPParameters extends UWSParameters {
+
+	/** User in which these TAP parameters belong to */
+	JobOwner owner = null;
 
 	/** All the TAP parameters. */
 	protected static final List<String> TAP_PARAMETERS = Arrays.asList(new String[]{TAPJob.PARAM_REQUEST,TAPJob.PARAM_LANGUAGE,TAPJob.PARAM_VERSION,TAPJob.PARAM_FORMAT,TAPJob.PARAM_QUERY,TAPJob.PARAM_MAX_REC,TAPJob.PARAM_UPLOAD});
@@ -70,6 +74,14 @@ public class TAPParameters extends UWSParameters {
 	 */
 	public TAPParameters(final HttpServletRequest request, final ServiceConnection service) throws TAPException{
 		this(service, getParameters(request));
+		// If given a request and service, and the ServiceConnection has a useridentifier, it can be used to authorize a user
+		if (service.getUserIdentifier() != null) {
+			try {
+				this.owner = UWSToolBox.getUser(request, service.getUserIdentifier());
+			} catch (UWSException e) {
+				throw new TAPException(e);
+			}
+		}
 	}
 
 	/**
@@ -88,6 +100,14 @@ public class TAPParameters extends UWSParameters {
 	 */
 	public TAPParameters(final HttpServletRequest request, final ServiceConnection service, final Map<String,InputParamController> controllers) throws TAPException{
 		this(service, getParameters(request), controllers);
+		// If given a request and service, and the ServiceConnection has a useridentifier, it can be used to authorize a user
+		if (service.getUserIdentifier() != null) {
+			try {
+				this.owner = UWSToolBox.getUser(request, service.getUserIdentifier());
+			} catch (UWSException e) {
+				throw new TAPException(e);
+			}
+		}
 	}
 
 	/**
@@ -302,6 +322,19 @@ public class TAPParameters extends UWSParameters {
 	}
 
 	/**
+	 * Get the owner of the TAPParameters.
+	 *
+	 * <p><i>Note:
+	 * 	Can be null if TAPParameters is not constructed using a HTTPServletRequest or if no UserIdentifier in the service connection.
+	 * <i></p>
+	 * 
+	 * @return	owner of the TAPParameters.
+	 */
+	public final JobOwner getOwner(){
+		return owner;
+	}
+
+	/**
 	 * <p>Check the coherence between all TAP parameters.</p>
 	 * 
 	 * <p>
@@ -324,4 +357,5 @@ public class TAPParameters extends UWSParameters {
 				throw new TAPException("The parameter \"" + TAPJob.PARAM_QUERY + "\" must be provided if " + TAPJob.PARAM_REQUEST + "=" + TAPJob.REQUEST_DO_QUERY + "!", UWSException.BAD_REQUEST);
 		}
 	}
+
 }

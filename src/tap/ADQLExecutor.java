@@ -22,6 +22,7 @@ package tap;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,6 +30,12 @@ import adql.parser.ADQLParser;
 import adql.parser.ADQLQueryFactory;
 import adql.parser.ParseException;
 import adql.query.ADQLQuery;
+import adql.query.constraint.In;
+import adql.query.operand.ADQLColumn;
+import adql.query.operand.StringConstant;
+import adql.query.operand.ADQLOperand;
+import adql.query.from.ADQLTable;
+import tap.auth.AuthJobOwner;
 import tap.data.DataReadException;
 import tap.data.TableIterator;
 import tap.db.DBCancelledException;
@@ -45,6 +52,7 @@ import uws.UWSException;
 import uws.UWSToolBox;
 import uws.job.JobThread;
 import uws.job.Result;
+import uws.job.user.JobOwner;
 import uws.service.log.UWSLog.LogLevel;
 
 /**
@@ -373,6 +381,23 @@ public class ADQLExecutor {
 			// List all resulting columns (it will be useful later to format the result):
 			report.resultingColumns = adqlQuery.getResultingColumns();
 			endStep();
+
+			// Only needed for authenticated users
+			if (tapParams.getOwner() instanceof AuthJobOwner){
+				AuthJobOwner authOwner = (AuthJobOwner) tapParams.getOwner();
+				// Check if the user is even allowed to run the job
+				try{
+					// See if it completes without an exception
+					authOwner.TAPParamsAllowed(tapParams, true);
+				} catch(ParseException pe) {
+					if (report.synchronous)
+						throw new TAPException("Incorrect ADQL query: " + pe.getMessage(), pe, UWSException.BAD_REQUEST, tapParams.getQuery(), progression);
+					else
+						throw new UWSException(UWSException.BAD_REQUEST, pe, "Incorrect ADQL query: " + pe.getMessage());
+				}
+				// Rebuild the adqlQuery with constraints
+				addTAPSchemaFilter(adqlQuery, authOwner); // Add TAP_SCHEMA contraints
+			}
 
 			if (thread.isInterrupted())
 				throw new InterruptedException();
@@ -772,4 +797,83 @@ public class ADQLExecutor {
 		}
 	}
 
+	/**
+	 * Modifies the ADQL query so that, if TAPSchema is being queried, the result will be filtered to only show data relating to them. Operates
+	 * directly on the ADQLQuery object
+	 * @param  owner User running the query
+	 * @param  query The query to constrain
+	 */
+	private void addTAPSchemaFilter(ADQLQuery query, AuthJobOwner owner){
+		boolean schemaNameConstrained = false;
+		boolean tableNameConstrained = false;
+		boolean tableKeysConstrained = false;
+		for (ADQLTable queriedTable : query.getFrom().getTables()){
+			if (queriedTable.getSchemaName() == null){
+				// The table doesn't have a schema, won't have TAP_SCHEMA in the first place
+				return;
+			}
+			if (queriedTable.getSchemaName().equals("TAP_SCHEMA")){
+				// Filter TAP_SCHEMA
+				switch(queriedTable.getTableName()) {
+					case "schemas":
+						if (!schemaNameConstrained){
+							ArrayList<String> userSchemaNames = new ArrayList<String>(owner.getallowedData().keySet());
+							query.getWhere().add("AND", generateInConstraint("schema_name", userSchemaNames));
+							schemaNameConstrained = true;
+						}
+						break;
+					case "tables": // Restrict .tables and schemas.
+						if (!schemaNameConstrained){
+							ArrayList<String> userSchemaNames = new ArrayList<String>(owner.getallowedData().keySet());
+							query.getWhere().add("AND", generateInConstraint("schema_name", userSchemaNames));
+							schemaNameConstrained = true;
+						} // continue on, as TAP_SCHEMA.tables contains both schema_name and table_name columns.
+					case "columns": 
+						if (!tableNameConstrained){
+							// Restrict tables
+							ArrayList<String> allTableFullNames = new ArrayList<>();
+							for (TAPSchema schema : owner.getallowedData().values()){
+								for (TAPTable table : schema){
+									allTableFullNames.add(table.getFullName()); // Adds the schema.table full name
+								}
+							}
+							In tableConstraint = generateInConstraint("table_name", allTableFullNames);
+							query.getWhere().add("AND", tableConstraint);
+							tableNameConstrained = true;
+						}
+						break;
+					case "keys": // restrict on both from_table and target_table
+						if (!tableKeysConstrained){
+							ArrayList<String> allTableFullNames = new ArrayList<>();
+							for (TAPSchema schema : owner.getallowedData().values()){
+								for (TAPTable table : schema){
+									allTableFullNames.add(table.getFullName()); // Adds the schema.table full name
+								}
+							}
+							query.getWhere().add("AND", generateInConstraint("from_table", allTableFullNames));
+							query.getWhere().add("AND", generateInConstraint("target_table", allTableFullNames));
+							tableKeysConstrained = true;
+						}
+						break;
+					default: break;
+				}
+			}
+			if (schemaNameConstrained && tableNameConstrained && tableKeysConstrained){
+				break; // All constraints possible
+			}
+		}
+	}
+
+	/**
+	 * Helper function to help generate the full IN constraint from a list of schemas/tables.
+	 * @param  columnName Column to generate constraints for
+	 * @param  values     Values to constrain to. These would be either schema names or table names
+	 */
+	private In generateInConstraint(String columnName, ArrayList<String> values){
+		ADQLOperand[] valueConstraints = new ADQLOperand[values.size()];
+	  	for (int i=0; i<values.size(); i++){
+	  		valueConstraints[i] = new StringConstant(values.get(i));
+	  	}
+	  	return new In(new ADQLColumn(columnName), valueConstraints);
+	}
 }

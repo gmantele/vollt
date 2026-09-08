@@ -38,7 +38,7 @@ import uws.job.UWSJob;
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version 05/2012
  */
-public final class DefaultJobOwner implements JobOwner {
+public class DefaultJobOwner implements JobOwner {
 
 	private final String id;
 	private String pseudo;

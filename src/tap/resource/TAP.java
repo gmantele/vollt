@@ -41,6 +41,7 @@ import tap.log.TAPLog;
 import tap.metadata.TAPMetadata;
 import tap.metadata.TAPSchema;
 import tap.metadata.TAPTable;
+import tap.auth.ConfigurableAuthUserIdentifier;
 import uk.ac.starlink.votable.VOSerializer;
 import uws.UWSException;
 import uws.UWSToolBox;
@@ -242,6 +243,7 @@ public class TAP implements VOSIResource {
 	 * @see TAPResource#init(ServletConfig)
 	 */
 	public void init(final ServletConfig config) throws ServletException{
+
 		for(TAPResource res : resources.values())
 			res.init(config);
 	}
@@ -995,15 +997,41 @@ public class TAP implements VOSIResource {
 			// log the successful initialization:
 			getLogger().logUWS(LogLevel.INFO, this, "INIT", "TAP successfully initialized (" + tapBaseURL + ").", null);
 		}
-
 		JobOwner user = null;
 		try{
+			// Check if the auth header is there to verify. If not add the WWW-Authenticate header
+			/* TODO: This attaches WWW-Authenticate to EVERY requests. Currently we are relying on the authentication API to
+			*        provide a specific anonymous user with the tables/schemas anonymous users are allowed to access.
+			*        This currently does not let us know when a user is truly anonymous and therefore no current way to tell
+			*        when a WWW-Authenticate header should be sent if anonymous users are allowed.
+			*        I have thought of just checking if the header is null, however this would disclude cases where a header
+			*        value is given, but has expired or is invalid.
+			*
+			*        Anyway looking for a better way to handle this.
+			*/
+			if (service.getUserIdentifier() instanceof ConfigurableAuthUserIdentifier){
+				ConfigurableAuthUserIdentifier authUserIdentifier = (ConfigurableAuthUserIdentifier) service.getUserIdentifier();
+				// Pre-emptively add the WWW-Authenticate header as the auth header is not there.
+				// Will be used even if the user details succeed if this service allows anonymous
+				for (String wwwAuthHeader : authUserIdentifier.getWWWAuthenticates()){
+					// Add a new WWW-Authenticate value.
+					response.addHeader("WWW-Authenticate", wwwAuthHeader);
+				}
+			}
 			// Identify the user:
 			try{
 				user = UWSToolBox.getUser(request, service.getUserIdentifier());
-			}catch(UWSException ue){
-				getLogger().logTAP(LogLevel.ERROR, null, "IDENT_USER", "Can not identify the HTTP request user!", ue);
-				throw new TAPException(ue);
+				 // If user is anonymous, hasn't thrown a 401, then allow_anonymous is true.
+				 // Allow access anonymously with the anonymous user response provided by the API
+			} catch(UWSException ue){
+				if (ue.getHttpErrorCode() == 401 && (service.getUserIdentifier() instanceof ConfigurableAuthUserIdentifier)){
+					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					getLogger().logTAP(LogLevel.INFO, null, "IDENT_USER", "Auth header not present when required, sending 401", ue);
+					return; // Finish here
+				} else{
+					getLogger().logTAP(LogLevel.ERROR, null, "IDENT_USER", "Error trying to identify the HTTP request user!", ue);
+					throw new TAPException(ue);
+				}
 			}
 
 			// Set the character encoding:
@@ -1054,15 +1082,16 @@ public class TAP implements VOSIResource {
 			getLogger().logHttp(LogLevel.INFO, response, reqID, user, "HTTP request aborted or connection with the client closed => the TAP resource \"" + resourceName + "\" has stopped and the body of the HTTP response can not have been partially or completely written!", null);
 
 		}catch(TAPException te){
-			/*
-			 *   Any known/"expected" TAP exception is logged but also returned to the HTTP client in an XML error document.
-			 *   Since the error is known, it is supposed to have already been logged with a full stack trace. Thus, there
-			 * is no need to log again its stack trace...just its message is logged.
-			 */
-			// Write the error in the response and return the appropriate HTTP status code:
-			errorWriter.writeError(te, response, request, reqID, user, resourceName);
-			// Log the error:
-			getLogger().logHttp(LogLevel.ERROR, response, reqID, user, "TAP resource \"" + resourceName + "\" execution FAILED with the error: \"" + te.getMessage() + "\"!", null);
+				/*
+				 *   Any known/"expected" TAP exception is logged but also returned to the HTTP client in an XML error document.
+				 *   Since the error is known, it is supposed to have already been logged with a full stack trace. Thus, there
+				 * is no need to log again its stack trace...just its message is logged.
+				 */
+				// Write the error in the response and return the appropriate HTTP status code:
+				errorWriter.writeError(te, response, request, reqID, user, resourceName);
+				// Log the error:
+				getLogger().logHttp(LogLevel.ERROR, response, reqID, user, "TAP resource \"" + resourceName + "\" execution FAILED with the error: \"" + te.getMessage() + "\"!", null);
+
 
 		}catch(IllegalStateException ise){
 			/*

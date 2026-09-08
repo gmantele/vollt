@@ -133,7 +133,9 @@ public class UWSUrl implements Serializable {
 	public UWSUrl(HttpServletRequest request){
 		baseURI    = null; // NULL because not any more used
 		requestURL = request.getRequestURL().toString();
-		urlHeader  = requestURL.substring(0, requestURL.indexOf(request.getPathInfo()));
+		String pathInfo = request.getPathInfo(); // If at root, will be null
+		// If null, the request URL is already the header, otherwise return the substring
+		urlHeader  = pathInfo == null ? requestURL : requestURL.substring(0, requestURL.indexOf(pathInfo));
 		load(request);
 	}
 
