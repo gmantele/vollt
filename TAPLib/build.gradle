@@ -10,7 +10,7 @@ dependencies {
     implementation project(':ADQLLib')
     implementation project(':UWSLib')
 
-    implementation fileTree(dir: '../lib', includes: ['stil_3.3-2.jar'])
+    implementation 'uk.ac.starlink:stil:4.3.6'
     implementation 'javax.servlet:javax.servlet-api:3.0.1'
     implementation 'org.slf4j:slf4j-api:1.7.25'
     implementation 'org.json:json:20231013'
@@ -25,5 +25,5 @@ dependencies {
     
     /* Needed to run Gradle with Java 9+: */
     // https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api
-	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+	implementation "javax.xml.bind:jaxb-api:2.3.1"
 }
