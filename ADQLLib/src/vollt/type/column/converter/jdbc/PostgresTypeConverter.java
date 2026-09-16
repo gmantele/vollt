@@ -1,27 +1,23 @@
 package vollt.type.column.converter.jdbc;
 
 import vollt.type.column.*;
+import vollt.type.column.jdbc.JDBCType;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.sql.Types;
 
 /**
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version (02/2026)
  */
-public class H2ColumnTypeConverter extends DefaultJDBCColumnTypeConverter {
-
-    private static final Pattern patternForArrayType = Pattern.compile("(\\w+) +ARRAY(\\[\\d+])?");
+public class PostgresTypeConverter extends DefaultJDBCTypeConverter {
 
     @Override
     protected ColumnType resolveColumnTypeAsArray(final String dbmsTypeName) {
-        final Matcher matcherForScalarType = patternForArrayType.matcher(dbmsTypeName);
-
-        if (!matcherForScalarType.matches())
+        if (!isArrayType(dbmsTypeName))
             return null;
 
-        final String scalarType    = matcherForScalarType.group(1);
-        final String defaultLength = extractLength(matcherForScalarType);
+        final String scalarType    = dbmsTypeName.substring(1);
+        final String defaultLength = "*";
 
         if (isBit(scalarType))
             return new VectorType(new TypeBit(), defaultLength);
@@ -57,11 +53,19 @@ public class H2ColumnTypeConverter extends DefaultJDBCColumnTypeConverter {
             return null;
     }
 
-    protected String extractLength(final Matcher matcherForScalarType){
-        String length = matcherForScalarType.group(3);
-        if (length == null)
-            length = "*";
-        return length;
+    protected boolean isArrayType(final String dbmsTypeName){
+        return dbmsTypeName.charAt(0) == '_';
     }
 
+    @Override
+    public JDBCType fromColumnType(ColumnType type) {
+        if (type instanceof TypeDouble)
+            return new JDBCType("DOUBLE PRECISION", Types.DOUBLE);
+        else if (type instanceof TypeFloatComplex)
+            return new JDBCType("FLOAT[2]", Types.ARRAY);
+        else if (type instanceof TypeDoubleComplex)
+            return new JDBCType("DOUBLE PRECISION[2]", Types.ARRAY);
+        else
+            return super.fromColumnType(type);
+    }
 }

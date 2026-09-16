@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 /**
- * Temporary column type representation provided by or for a JDBC driver.
+ * Intermediary column type representation provided by or for a JDBC driver.
  *
  * <p>
  *     Instances of this class aim to be used very shortly when getting data
@@ -16,15 +16,16 @@ import java.util.Optional;
  *     {@link ColumnType} just before sending data into a database. In both
  *     cases, conversions should be done with
  *     {@link vollt.type.column.ColumnTypeFactory} thanks to its functions:
- *     {@link vollt.type.column.ColumnTypeFactory#fromJDBCColumnType(JDBCColumnType) fromJDBCColumnType(JDBCColumnType)}
+ *     {@link vollt.type.column.ColumnTypeFactory#fromJDBCType(JDBCType) fromJDBCType(JDBCColumnType)}
  *     and
- *     {@link vollt.type.column.ColumnTypeFactory#toJDBCColumnType(ColumnType, String) toJDBCColumnType(ColumnType, String)}.
+ *     {@link vollt.type.column.ColumnTypeFactory#toJDBCType(ColumnType, String) toJDBCType(ColumnType, String)}.
  * </p>
  *
  * @author Gr&eacute;gory Mantelet (CDS)
- * @version (02/2026)
+ * @version 2.0 (02/2026)
+ * @since 2.0
  */
-public class JDBCColumnType {
+public class JDBCType {
 
     private final String   dbms;
     private final Integer  jdbcCode;
@@ -33,15 +34,15 @@ public class JDBCColumnType {
     private final Integer  precision;
     private final String[] parameters;
 
-    public JDBCColumnType(final String dbmsTypeName){
+    public JDBCType(final String dbmsTypeName){
         this(dbmsTypeName, null, null, null);
     }
 
-    public JDBCColumnType(final String dbmsTypeName, final Integer jdbcTypeCode){
+    public JDBCType(final String dbmsTypeName, final Integer jdbcTypeCode){
         this(dbmsTypeName, jdbcTypeCode, null, null);
     }
 
-    public JDBCColumnType(final String dbmsTypeName, final Integer jdbcTypeCode, final Integer precision, final String dbms){
+    public JDBCType(final String dbmsTypeName, final Integer jdbcTypeCode, final Integer precision, final String dbms){
         this.dbms      = dbms;
         this.jdbcCode  = jdbcTypeCode;
         this.fullName  = dbmsTypeName;

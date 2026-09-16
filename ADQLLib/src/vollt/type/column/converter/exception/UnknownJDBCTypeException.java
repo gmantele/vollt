@@ -1,7 +1,8 @@
 package vollt.type.column.converter.exception;
 
 import vollt.type.column.ColumnType;
-import vollt.type.column.jdbc.JDBCColumnType;
+import vollt.type.column.converter.jdbc.DefaultJDBCTypeConverter;
+import vollt.type.column.jdbc.JDBCType;
 
 /**
  * Exception thrown when a conversion from or into a JDBC data type failed.
@@ -10,11 +11,11 @@ import vollt.type.column.jdbc.JDBCColumnType;
  * @version 1.0 (02/2026)
  * @since 1.0
  *
- * @see vollt.type.column.converter.jdbc.DefaultJDBCColumnTypeConverter
+ * @see DefaultJDBCTypeConverter
  */
 public class UnknownJDBCTypeException extends UnknownColumnTypeException {
 
-    public UnknownJDBCTypeException(final JDBCColumnType jdbcType) {
+    public UnknownJDBCTypeException(final JDBCType jdbcType) {
         this(jdbcType, null);
     }
 
@@ -22,7 +23,7 @@ public class UnknownJDBCTypeException extends UnknownColumnTypeException {
         this(colType, null);
     }
 
-    public UnknownJDBCTypeException(final JDBCColumnType jdbcType, final Throwable error) {
+    public UnknownJDBCTypeException(final JDBCType jdbcType, final Throwable error) {
         super("Failed to convert from the JDBC type \""+jdbcType.getFullName()+"\" (JDBC code: "+jdbcType.getJDBCCode()+") into a VOLLT's ColumnType!", error);
     }
 

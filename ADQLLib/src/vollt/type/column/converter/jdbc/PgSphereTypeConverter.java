@@ -1,8 +1,7 @@
 package vollt.type.column.converter.jdbc;
 
 import vollt.type.column.*;
-import vollt.type.column.jdbc.JDBCColumnType;
-import vollt.type.column.votable.VotDatatype;
+import vollt.type.column.jdbc.JDBCType;
 
 import java.util.Optional;
 
@@ -10,7 +9,7 @@ import java.util.Optional;
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version (02 / 2025)
  */
-public class PgSphereColumnTypeConverter extends PostgresColumnTypeConverter {
+public class PgSphereTypeConverter extends PostgresTypeConverter {
 
     protected Optional<ColumnType> resolveColumnTypeFromName(final String dbmsTypeName, final String lengthSize) {
         if ("spoint".equalsIgnoreCase(dbmsTypeName))
@@ -26,7 +25,7 @@ public class PgSphereColumnTypeConverter extends PostgresColumnTypeConverter {
     }
 
     @Override
-    public JDBCColumnType fromColumnType(final ColumnType type) {
+    public JDBCType fromColumnType(final ColumnType type) {
         return super.fromColumnType(type);
     }
 

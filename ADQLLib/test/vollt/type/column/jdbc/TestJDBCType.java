@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version (02/2025)
  */
-public class TestJDBCColumnType {
+public class TestJDBCType {
 
     @Test
     public void constructor_ShouldExtractNoParameter_WhenNoneIsProvided(){
@@ -16,7 +16,7 @@ public class TestJDBCColumnType {
         final String typeName = "varchar";
 
         // When:
-        final JDBCColumnType colType = new JDBCColumnType(typeName);
+        final JDBCType colType = new JDBCType(typeName);
 
         // Then:
         assertEquals(typeName, colType.getFullName());
@@ -30,7 +30,7 @@ public class TestJDBCColumnType {
         final String fullName = typeName+"()";
 
         // When:
-        final JDBCColumnType colType = new JDBCColumnType(fullName);
+        final JDBCType colType = new JDBCType(fullName);
 
         // Then:
         assertEquals(fullName, colType.getFullName());
@@ -45,7 +45,7 @@ public class TestJDBCColumnType {
         final String fullName = typeName+"("+String.join(", ", parameters)+")";
 
         // When:
-        final JDBCColumnType colType = new JDBCColumnType(fullName);
+        final JDBCType colType = new JDBCType(fullName);
 
         // Then:
         assertEquals(fullName, colType.getFullName());

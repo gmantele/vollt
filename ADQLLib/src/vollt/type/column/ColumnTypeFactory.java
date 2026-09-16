@@ -6,7 +6,7 @@ import vollt.type.column.converter.ColumnTypeConverter;
 import vollt.type.column.converter.VOTableTypeConverter;
 import vollt.type.column.converter.exception.UnknownColumnTypeException;
 import vollt.type.column.converter.jdbc.*;
-import vollt.type.column.jdbc.JDBCColumnType;
+import vollt.type.column.jdbc.JDBCType;
 import vollt.type.column.votable.VOTableType;
 
 import java.util.HashMap;
@@ -18,8 +18,9 @@ import java.util.Optional;
  * Factory to build special {@link ColumnType} instances or to convert from and
  * into {@link ColumnType}
  *
- * @version 1.0 (02/2026)
+ * @version 2.0 (09/2026)
  * @author Gr&eacute;gory Mantelet (CDS)
+ * @since 2.0
  *
  * @see ColumnTypeConverter
  */
@@ -177,9 +178,9 @@ public final class ColumnTypeFactory {
      *  *                              JDBC                                 *
      * ********************************************************************** */
 
-    private static ColumnTypeConverter<JDBCColumnType> defaultJDBCConverter = new DefaultJDBCColumnTypeConverter();
+    private static ColumnTypeConverter<JDBCType> defaultJDBCConverter = new DefaultJDBCTypeConverter();
 
-    private static final Map<String, ColumnTypeConverter<JDBCColumnType>> mapDbmsConverters = new HashMap<>();
+    private static final Map<String, ColumnTypeConverter<JDBCType>> mapDbmsConverters = new HashMap<>();
     /* NOTE: not thread safe container, but as it can be modified only at
      *       initialization, it should not be an issue. As long as it is not an
      *       issue, lets keep it unsafe for an efficiency reason (i.e. faster). */
@@ -192,30 +193,30 @@ public final class ColumnTypeFactory {
     public static final String DBMS_H2        = "h2";
 
     static{
-        mapDbmsConverters.put(DBMS_POSTGRES , new PostgresColumnTypeConverter());
-        mapDbmsConverters.put(DBMS_PGSPHERE , new PgSphereColumnTypeConverter());
-        mapDbmsConverters.put(DBMS_MYSQL    , new MySQLColumnTypeConverter());
-        mapDbmsConverters.put(DBMS_SQLSERVER, new SQLServerColumnTypeConverter());
-        mapDbmsConverters.put(DBMS_SQLITE   , new SQLiteColumnTypeConverter());
-        mapDbmsConverters.put(DBMS_H2       , new H2ColumnTypeConverter());
+        mapDbmsConverters.put(DBMS_POSTGRES , new PostgresTypeConverter());
+        mapDbmsConverters.put(DBMS_PGSPHERE , new PgSphereTypeConverter());
+        mapDbmsConverters.put(DBMS_MYSQL    , new MySQLTypeConverter());
+        mapDbmsConverters.put(DBMS_SQLSERVER, new SQLServerTypeConverter());
+        mapDbmsConverters.put(DBMS_SQLITE   , new SQLiteTypeConverter());
+        mapDbmsConverters.put(DBMS_H2       , new H2TypeConverter());
     }
 
     /**
      * Set the converter to use between {@link ColumnType} and
-     * {@link JDBCColumnType} (used by JDBC drivers).
+     * {@link JDBCType} (used by JDBC drivers).
      *
      * <p>
-     *     This converter is used by {@link #fromJDBCColumnType(JDBCColumnType)} and
-     *     {@link #toJDBCColumnType(ColumnType, String)}.
+     *     This converter is used by {@link #fromJDBCType(JDBCType)} and
+     *     {@link #toJDBCType(ColumnType, String)}.
      * </p>
      *
      * <p><i><b>Note: </b>
-     *  By default it is set to {@link DefaultJDBCColumnTypeConverter}.
+     *  By default it is set to {@link DefaultJDBCTypeConverter}.
      * </i></p>
      *
      * @param converter The converted to use (must not be <code>null</code>).
      */
-    public static void setDefaultJDBCConverter(final ColumnTypeConverter<JDBCColumnType> converter){
+    public static void setDefaultJDBCConverter(final ColumnTypeConverter<JDBCType> converter){
         defaultJDBCConverter = Objects.requireNonNull(converter);
     }
 
@@ -234,21 +235,21 @@ public final class ColumnTypeFactory {
      *
      * @param converter The converted to use (must not be <code>null</code>).
      */
-    public static void setJDBCColumnTypeConverter(final String dbms, final ColumnTypeConverter<JDBCColumnType> converter){
+    public static void setJDBCColumnTypeConverter(final String dbms, final ColumnTypeConverter<JDBCType> converter){
         mapDbmsConverters.put(Objects.requireNonNull(dbms).toLowerCase(), Objects.requireNonNull(converter));
     }
 
-    public static JDBCColumnType toJDBCColumnType(final ColumnType colType, final String dbms) throws UnknownColumnTypeException {
+    public static JDBCType toJDBCType(final ColumnType colType, final String dbms) throws UnknownColumnTypeException {
         final String normalizedDBMS = Objects.requireNonNull(dbms).toLowerCase();
-        final ColumnTypeConverter<JDBCColumnType> converter = mapDbmsConverters.getOrDefault(normalizedDBMS, defaultJDBCConverter);
+        final ColumnTypeConverter<JDBCType> converter = mapDbmsConverters.getOrDefault(normalizedDBMS, defaultJDBCConverter);
         return converter.fromColumnType(colType);
     }
 
-    public static ColumnType fromJDBCColumnType(final JDBCColumnType jdbcType) throws UnknownColumnTypeException {
+    public static ColumnType fromJDBCType(final JDBCType jdbcType) throws UnknownColumnTypeException {
         final Optional<String> dbms = Objects.requireNonNull(jdbcType).getDBMS();
         if (dbms.isPresent())
         {
-            final ColumnTypeConverter<JDBCColumnType> converter = mapDbmsConverters.getOrDefault(dbms.get().toLowerCase(), defaultJDBCConverter);
+            final ColumnTypeConverter<JDBCType> converter = mapDbmsConverters.getOrDefault(dbms.get().toLowerCase(), defaultJDBCConverter);
             return converter.toColumnType(jdbcType);
         }
         else

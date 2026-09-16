@@ -1,13 +1,12 @@
 package vollt.type.column.converter.jdbc;
 
 import vollt.type.column.*;
-import vollt.type.column.jdbc.JDBCColumnType;
+import vollt.type.column.jdbc.JDBCType;
 
-import java.sql.JDBCType;
 import java.sql.Types;
 import java.util.Optional;
 
-public class SQLiteColumnTypeConverter extends DefaultJDBCColumnTypeConverter {
+public class SQLiteTypeConverter extends DefaultJDBCTypeConverter {
 
     @Override
     protected Optional<ColumnType> resolveColumnTypeFromCode(final int jdbcCode, final String typeName, final String lengthSize){
@@ -79,23 +78,23 @@ public class SQLiteColumnTypeConverter extends DefaultJDBCColumnTypeConverter {
     }
 
     @Override
-    public JDBCColumnType fromColumnType(ColumnType type)
+    public JDBCType fromColumnType(ColumnType type)
     {
         if (type instanceof TypeBoolean
             || type instanceof TypeShort
             || type instanceof TypeInteger
             || type instanceof TypeLong)
-            return new JDBCColumnType(JDBCType.INTEGER.getName(), Types.INTEGER);
+            return new JDBCType(java.sql.JDBCType.INTEGER.getName(), Types.INTEGER);
 
         else if (type instanceof TypeFloat
                  || type instanceof TypeDouble)
-            return new JDBCColumnType("REAL", Types.FLOAT);
+            return new JDBCType("REAL", Types.FLOAT);
 
         else if (type instanceof TypeBit
                  || type instanceof TypeUnsignedByte)
-            return new JDBCColumnType(JDBCType.BLOB.getName(), Types.BLOB);
+            return new JDBCType(java.sql.JDBCType.BLOB.getName(), Types.BLOB);
 
         else
-            return new JDBCColumnType(JDBCType.VARCHAR.getName(), Types.VARCHAR);
+            return new JDBCType(java.sql.JDBCType.VARCHAR.getName(), Types.VARCHAR);
     }
 }

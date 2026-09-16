@@ -1,24 +1,27 @@
 package vollt.type.column.converter.jdbc;
 
 import vollt.type.column.*;
-import vollt.type.column.jdbc.JDBCColumnType;
 
-import java.sql.JDBCType;
-import java.sql.Types;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Gr&eacute;gory Mantelet (CDS)
  * @version (02/2026)
  */
-public class PostgresColumnTypeConverter extends DefaultJDBCColumnTypeConverter {
+public class H2TypeConverter extends DefaultJDBCTypeConverter {
+
+    private static final Pattern patternForArrayType = Pattern.compile("(\\w+) +ARRAY(\\[\\d+])?");
 
     @Override
     protected ColumnType resolveColumnTypeAsArray(final String dbmsTypeName) {
-        if (!isArrayType(dbmsTypeName))
+        final Matcher matcherForScalarType = patternForArrayType.matcher(dbmsTypeName);
+
+        if (!matcherForScalarType.matches())
             return null;
 
-        final String scalarType    = dbmsTypeName.substring(1);
-        final String defaultLength = "*";
+        final String scalarType    = matcherForScalarType.group(1);
+        final String defaultLength = extractLength(matcherForScalarType);
 
         if (isBit(scalarType))
             return new VectorType(new TypeBit(), defaultLength);
@@ -54,19 +57,11 @@ public class PostgresColumnTypeConverter extends DefaultJDBCColumnTypeConverter 
             return null;
     }
 
-    protected boolean isArrayType(final String dbmsTypeName){
-        return dbmsTypeName.charAt(0) == '_';
+    protected String extractLength(final Matcher matcherForScalarType){
+        String length = matcherForScalarType.group(3);
+        if (length == null)
+            length = "*";
+        return length;
     }
 
-    @Override
-    public JDBCColumnType fromColumnType(ColumnType type) {
-        if (type instanceof TypeDouble)
-            return new JDBCColumnType("DOUBLE PRECISION", Types.DOUBLE);
-        else if (type instanceof TypeFloatComplex)
-            return new JDBCColumnType("FLOAT[2]", Types.ARRAY);
-        else if (type instanceof TypeDoubleComplex)
-            return new JDBCColumnType("DOUBLE PRECISION[2]", Types.ARRAY);
-        else
-            return super.fromColumnType(type);
-    }
 }

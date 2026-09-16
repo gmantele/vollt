@@ -2,17 +2,15 @@ package vollt.type.column.converter.jdbc;
 
 import vollt.type.column.*;
 import vollt.type.column.converter.ColumnTypeConverter;
-import vollt.type.column.jdbc.JDBCColumnType;
+import vollt.type.column.jdbc.JDBCType;
 
-import java.sql.JDBCType;
-import java.sql.SQLType;
 import java.sql.Types;
 import java.util.Optional;
 
-public class DefaultJDBCColumnTypeConverter implements ColumnTypeConverter<JDBCColumnType> {
+public class DefaultJDBCTypeConverter implements ColumnTypeConverter<JDBCType> {
 
     @Override
-    public ColumnType toColumnType(final JDBCColumnType dbType) {
+    public ColumnType toColumnType(final JDBCType dbType) {
         final String lengthSize = extractLength(dbType);
 
         Optional<ColumnType> colType = extractColumnTypeFromTypeCode(dbType, lengthSize);
@@ -23,12 +21,12 @@ public class DefaultJDBCColumnTypeConverter implements ColumnTypeConverter<JDBCC
         return colType.orElseGet(ColumnTypeFactory::createString);
     }
 
-    protected Optional<ColumnType> extractColumnTypeFromTypeCode(final JDBCColumnType dbType, final String lengthSize){
+    protected Optional<ColumnType> extractColumnTypeFromTypeCode(final JDBCType dbType, final String lengthSize){
         return dbType.getJDBCCode()
                      .flatMap(code -> resolveColumnTypeFromCode(code, dbType.getSimpleName(), lengthSize));
     }
 
-    protected String extractLength(final JDBCColumnType dbType){
+    protected String extractLength(final JDBCType dbType){
         return dbType.getPrecision()
                 .map(precision -> precision >= 0 ? precision.toString() : "*")
                 .orElse("*");
@@ -112,7 +110,7 @@ public class DefaultJDBCColumnTypeConverter implements ColumnTypeConverter<JDBCC
         return Optional.ofNullable(colType);
     }
 
-    protected Optional<ColumnType> extractColumnTypeFromTypeName(final JDBCColumnType dbType, final String lengthSize){
+    protected Optional<ColumnType> extractColumnTypeFromTypeName(final JDBCType dbType, final String lengthSize){
         final String typeName = dbType.getSimpleName();
         return resolveColumnTypeFromName(typeName, lengthSize);
     }
@@ -176,7 +174,7 @@ public class DefaultJDBCColumnTypeConverter implements ColumnTypeConverter<JDBCC
      *
      * @return  The corresponding {@link ColumnType}.
      *
-     * @see PostgresColumnTypeConverter#resolveColumnTypeAsArray(String)
+     * @see PostgresTypeConverter#resolveColumnTypeAsArray(String)
      */
     protected ColumnType resolveColumnTypeAsArray(final String dbmsTypeName) {
         /* By default, assume that arrays are not supported! */
@@ -268,29 +266,29 @@ public class DefaultJDBCColumnTypeConverter implements ColumnTypeConverter<JDBCC
     }
 
     @Override
-    public JDBCColumnType fromColumnType(final ColumnType type) {
+    public JDBCType fromColumnType(final ColumnType type) {
         if (type instanceof TypeBoolean)
-            return new JDBCColumnType(JDBCType.BOOLEAN.getName(), Types.BOOLEAN);
+            return new JDBCType(java.sql.JDBCType.BOOLEAN.getName(), Types.BOOLEAN);
         else if (type instanceof TypeBit)
-            return new JDBCColumnType(JDBCType.BIT.getName(), Types.BIT);
+            return new JDBCType(java.sql.JDBCType.BIT.getName(), Types.BIT);
         else if (type instanceof TypeUnsignedByte)
-            return new JDBCColumnType(JDBCType.BINARY.getName(), Types.BINARY);
+            return new JDBCType(java.sql.JDBCType.BINARY.getName(), Types.BINARY);
         else if (type instanceof TypeShort)
-            return new JDBCColumnType(JDBCType.SMALLINT.getName(), Types.SMALLINT);
+            return new JDBCType(java.sql.JDBCType.SMALLINT.getName(), Types.SMALLINT);
         else if (type instanceof TypeInteger)
-            return new JDBCColumnType(JDBCType.INTEGER.getName(), Types.INTEGER);
+            return new JDBCType(java.sql.JDBCType.INTEGER.getName(), Types.INTEGER);
         else if (type instanceof TypeLong)
-            return new JDBCColumnType(JDBCType.BIGINT.getName(), Types.BIGINT);
+            return new JDBCType(java.sql.JDBCType.BIGINT.getName(), Types.BIGINT);
         else if (type instanceof TypeChar)
-            return new JDBCColumnType(JDBCType.CHAR.getName(), Types.CHAR);
+            return new JDBCType(java.sql.JDBCType.CHAR.getName(), Types.CHAR);
         else if (type instanceof TypeUnicodeChar)
-            return new JDBCColumnType(JDBCType.NCHAR.getName(), Types.NCHAR);
+            return new JDBCType(java.sql.JDBCType.NCHAR.getName(), Types.NCHAR);
         else if (type instanceof TypeFloat)
-            return new JDBCColumnType(JDBCType.FLOAT.getName(), Types.FLOAT);
+            return new JDBCType(java.sql.JDBCType.FLOAT.getName(), Types.FLOAT);
         else if (type instanceof TypeDouble)
-            return new JDBCColumnType(JDBCType.DOUBLE.getName(), Types.DOUBLE);
+            return new JDBCType(java.sql.JDBCType.DOUBLE.getName(), Types.DOUBLE);
         else if (type instanceof TypeTimestamp)
-            return new JDBCColumnType(JDBCType.TIMESTAMP.getName(), Types.TIMESTAMP);
+            return new JDBCType(java.sql.JDBCType.TIMESTAMP.getName(), Types.TIMESTAMP);
         else if (type instanceof TypeFloatComplex
                 || type instanceof TypeDoubleComplex
                 || type instanceof TypeInterval
@@ -304,9 +302,9 @@ public class DefaultJDBCColumnTypeConverter implements ColumnTypeConverter<JDBCC
                 || type instanceof TypeURI
                 || type instanceof TypeUUID
                 || type instanceof TypeJSON)
-            return new JDBCColumnType(JDBCType.VARCHAR.getName(), Types.VARCHAR);
+            return new JDBCType(java.sql.JDBCType.VARCHAR.getName(), Types.VARCHAR);
         else
-            return new JDBCColumnType(JDBCType.VARCHAR.getName(), Types.VARCHAR); // TODO Throw an exception or a special message according to DALI-1.2
+            return new JDBCType(java.sql.JDBCType.VARCHAR.getName(), Types.VARCHAR); // TODO Throw an exception or a special message according to DALI-1.2
     }
 
     /*
